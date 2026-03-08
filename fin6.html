@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Analyse Financière - Tableau de Financement</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['\\[', '\\]']]
+    }
+  };
+</script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7;text-align:justify;}
+
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 1.5rem;border-bottom:3px solid var(--gold);text-align:left;}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end;background:rgba(255,255,255,.03);padding:1rem 1.5rem;border-radius:6px;border:1px solid rgba(255,255,255,.1)}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.6)}
+.ctrl-inp, .ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.4rem .7rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none;transition:border-color .2s}
+.ctrl-inp:focus, .ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.5rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;transition:background .18s;margin-left:auto}
+.btn-gen:hover{background:var(--gold-light)}
+
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:700}
+
+.top-actions{display:flex;gap:.5rem;}
+.btn-action{background:#fff;border:1px solid var(--border);color:var(--navy);padding:.4rem .8rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.85rem;font-weight:600;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.btn-action:hover{border-color:var(--navy);background:var(--cream-dark);}
+
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem;text-align:left;}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+.event-list{list-style:none;}
+.event-list > li{margin-bottom:1.5rem;padding-left:1.5rem;position:relative;font-size:.95rem;text-align:justify}
+.event-list > li::before{content:"•";position:absolute;left:0;color:var(--gold);font-size:1.5rem;line-height:1}
+
+.exam-table-wrap { overflow-x: auto; margin: 1.5rem 0; }
+.exam-table{width:100%;border-collapse:collapse;font-size:.85rem;font-family:'Source Serif 4',serif; margin: 0;}
+.exam-table th, .exam-table td{border:1px solid var(--border);padding:.6rem;text-align:center;vertical-align:middle;}
+.exam-table th{background:var(--navy);color:var(--cream);font-weight:600;}
+.exam-table .txt-left{text-align:left;font-weight:600;color:var(--navy);}
+.exam-table .amt{font-family:'JetBrains Mono',monospace;text-align:right;white-space:nowrap;}
+
+.two-col-table { width: 100%; display: flex; gap: 2rem; margin: 1.5rem 0; }
+.col-half { flex: 1; }
+
+.sol-toggle-wrap{text-align:left; margin: 1.5rem 0 0 0;}
+.btn-toggle{background:transparent;border:2px solid var(--green);border-bottom:none;color:var(--green);font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;padding:.5rem 1.5rem;border-radius:4px 4px 0 0;cursor:pointer;transition:all .2s; position:relative; z-index:2; top:2px;}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--green);color:var(--cream)}
+.sol-card{border-top:2px solid var(--green);display:none; border-radius: 0 6px 6px 6px; position:relative; z-index:1;}
+.sol-card.visible{display:block;animation:fi .4s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+
+.calc-box{background:#f9fcf9;border:1px solid #c8e6c9;padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.9rem;color:var(--text);line-height:1.6;text-align:justify;}
+.math-formula { text-align: center; margin: 1.2rem 0; overflow-x: auto; }
+
+@media print{
+  body{background:#fff;}
+  header, .ctrls, .sol-toggle-wrap, .top-actions {display:none !important;}
+  .card{box-shadow:none; border:1px solid var(--border); margin-bottom:2rem;}
+  .sol-card{display:block !important; border-top:2px solid var(--green);}
+  #ex-area {display:block !important;}
+}
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-badge">INFORMATION COMPTABLE ET FINANCIÈRE</div>
+  <h1>Tableau de financement</h1>
+  <p class="subtitle">© Thomas Hossen – Version du 7 mars 2026</p>
+  
+  <div class="ctrls">
+    <div class="ctrl-g">
+      <span class="ctrl-lbl">Seed (Optionnel)</span>
+      <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999">
+    </div>
+    <button class="btn-gen" onclick="generateExercise(false)">Générer l'exercice →</button>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" style="text-align:center; padding:4rem; color:var(--text-muted); font-style:italic;">
+    Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="seed-badge">Seed active : <span id="seed-disp"></span></div>
+      <div class="top-actions">
+        <button class="btn-action" onclick="generateExercise(true)">↺ Nouvel énoncé</button>
+        <button class="btn-action" onclick="window.print()">⬇ Exporter PDF</button>
+        <button class="btn-action" onclick="exportWord()">⬇ Exporter DOC</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="tag">Énoncé</span><h2>Analyse de l'évolution des flux</h2></div>
+      <div class="card-body">
+        <div class="context-block" id="context-text"></div>
+        <div id="enonce-table-container"></div>
+        
+        <p style="margin-bottom:1rem; font-weight:600; color:var(--red); text-align:left;">Travail à faire</p>
+        <ul class="event-list" id="events-list"></ul>
+      </div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag">Corrigé</span><h2>Analyse de l'évolution des flux</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+let currentSeed = 0;
+function seedPRNG(seed) {
+    return function() {
+      let t = seed += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+let random = Math.random;
+
+function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
+
+function texM(num) {
+    let sign = num < 0 ? "-" : "";
+    let absNum = Math.abs(num);
+    absNum = Math.round(absNum * 100) / 100; 
+    let parts = absNum.toFixed(2).split('.');
+    let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, "\\,");
+    return sign + intPart + "{.}" + parts[1];
+}
+function texI(num) {
+    let sign = num < 0 ? "-" : "";
+    let absNum = Math.round(Math.abs(num));
+    return sign + absNum.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "\\,");
+}
+function formatMoney(num) {
+    return num.toLocaleString('fr-FR') + ' €';
+}
+
+function generateExercise(forceNew = false) {
+    if(forceNew) {
+        document.getElementById('seed-input').value = "";
+    }
+    let seedVal = document.getElementById('seed-input').value;
+    currentSeed = seedVal ? parseInt(seedVal) : Math.floor(Math.random() * 99999999);
+    document.getElementById('seed-disp').innerText = currentSeed;
+    document.getElementById('seed-input').value = currentSeed;
+    random = seedPRNG(currentSeed);
+
+    const companies = ["InnoMeca", "AgriFood", "TechnoPlast", "EcoBois", "MediTech"];
+    const company = companies[randInt(0, companies.length-1)];
+
+    // --- Génération des données de flux ---
+    // Ressources Stables
+    let caf = randInt(150, 500) * 1000;
+    let cessions = randInt(20, 90) * 1000; 
+    let aug_capital = randInt(0, 1) === 1 ? randInt(100, 300) * 1000 : 0;
+    let emprunts = randInt(100, 400) * 1000;
+    
+    let total_ressources = caf + cessions + aug_capital + emprunts;
+
+    // Emplois Stables
+    let dividendes = Math.round(caf * randInt(15, 35) / 100 / 1000) * 1000; 
+    let acquisitions = randInt(200, 700) * 1000;
+    let remboursements = randInt(50, 200) * 1000;
+    
+    let total_emplois = dividendes + acquisitions + remboursements;
+
+    // Variation FRNG
+    let var_frng = total_ressources - total_emplois;
+
+    // Variation BFR
+    let var_bfre = randInt(-80, 250) * 1000; 
+    let var_bfrhe = randInt(-30, 80) * 1000;
+    let var_bfr = var_bfre + var_bfrhe;
+
+    // Variation Trésorerie
+    let var_treso = var_frng - var_bfr;
+
+    // Affichage Énoncé
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('ex-area').style.display = 'block';
+    document.getElementById('sol-card').classList.remove('visible');
+    document.getElementById('toggle-btn').innerText = "Afficher le corrigé";
+    document.getElementById('toggle-btn').classList.remove('shown');
+
+    document.getElementById('context-text').innerHTML = `
+      Le directeur général de l'entreprise industrielle <strong>${company}</strong> s'étonne de l'évolution de la trésorerie de son entreprise au cours du dernier exercice comptable N. Malgré une activité rentable, les liquidités de l'entreprise ont fortement fluctué. Afin de lui expliquer l'origine précise de cette variation, vous êtes chargé(e) de dresser l'état des flux financiers de l'exercice. Le service comptable vous a préparé la synthèse des mouvements monétaires et quasi-monétaires de l'année.
+    `;
+
+    let augCapStr = aug_capital > 0 ? `<tr><td class="txt-left">Augmentation de capital en numéraire (libérée dans l'année)</td><td class="amt">${formatMoney(aug_capital)}</td></tr>` : "";
+
+    let varBfreStr = var_bfre > 0 ? `Augmentation du besoin de ${formatMoney(var_bfre)}` : `Dégagement d'une ressource de ${formatMoney(Math.abs(var_bfre))}`;
+    let varBfrheStr = var_bfrhe > 0 ? `Augmentation du besoin de ${formatMoney(var_bfrhe)}` : `Dégagement d'une ressource de ${formatMoney(Math.abs(var_bfrhe))}`;
+
+    let tableHtml = `<div class="exam-table-wrap">
+        <table class="exam-table" style="width: 70%; margin: 0 auto;">
+            <tr>
+                <th style="width: 60%;">Nature de l'opération ou du solde</th>
+                <th style="width: 40%;">Montant (€)</th>
+            </tr>
+            <tr><td class="txt-left">Capacité d'autofinancement (CAF) dégagée en N</td><td class="amt">${formatMoney(caf)}</td></tr>
+            <tr><td class="txt-left">Distributions de dividendes (mises en paiement en N)</td><td class="amt">${formatMoney(dividendes)}</td></tr>
+            <tr><td class="txt-left">Acquisitions d'immobilisations (corporelles et incorporelles)</td><td class="amt">${formatMoney(acquisitions)}</td></tr>
+            <tr><td class="txt-left">Cessions d'immobilisations (prix de cession encaissé)</td><td class="amt">${formatMoney(cessions)}</td></tr>
+            ${augCapStr}
+            <tr><td class="txt-left">Souscription de nouveaux emprunts (auprès des banques)</td><td class="amt">${formatMoney(emprunts)}</td></tr>
+            <tr><td class="txt-left">Remboursements des emprunts (part en capital)</td><td class="amt">${formatMoney(remboursements)}</td></tr>
+            <tr style="background:var(--cream-dark); border-top:2px solid var(--navy);"><td colspan="2" class="txt-left"><strong>Évolution du cycle d'exploitation et hors exploitation</strong></td></tr>
+            <tr><td class="txt-left">Variation du BFR d'exploitation (BFRE)</td><td class="amt">${varBfreStr}</td></tr>
+            <tr><td class="txt-left">Variation du BFR hors exploitation (BFRHE)</td><td class="amt">${varBfrheStr}</td></tr>
+        </table>
+    </div>`;
+    document.getElementById('enonce-table-container').innerHTML = tableHtml;
+
+    let htmlEnonce = "";
+    htmlEnonce += `<li><strong>1. Analyse du financement de long terme.</strong> Établissez la première partie du tableau de financement pour calculer la variation du fonds de roulement net global (FRNG) de l'exercice N, en justifiant rigoureusement la classification des ressources durables et des emplois stables.</li>`;
+    htmlEnonce += `<li><strong>2. Analyse de la trésorerie.</strong> À partir de la variation du FRNG calculée précédemment et des variations du BFR fournies, calculez formellement la variation de la trésorerie nette de l'exercice. Rédigez un commentaire pédagogique justifiant l'évolution finale de cette trésorerie auprès du directeur général.</li>`;
+
+    document.getElementById('events-list').innerHTML = htmlEnonce;
+
+    // --- GÉNÉRATION CORRIGÉ ---
+    let htmlSol = "";
+
+    // Corrigé Dossier 1
+    let augCapCorr = aug_capital > 0 ? `<li>$\\star\\;$ On note une augmentation de capital en numéraire (fonds propres levés auprès des associés) pour $${texI(aug_capital)}$ euros.</li>` : "";
+    let varFrngAnalysis = var_frng > 0 ? `Cette variation structurelle est favorable : l'entreprise a généré et levé davantage de ressources à long terme ($${texI(total_ressources)}$ euros) qu'elle n'en a consommé pour ses investissements et versements ($${texI(total_emplois)}$ euros). Cet excédent permet d'accroître la marge de sécurité financière (le FRNG augmente de $${texI(var_frng)}$ euros).` : `Cette variation traduit une dégradation de la structure financière de l'entreprise. En effet, sa politique d'investissement et de distribution ($${texI(total_emplois)}$ euros) a absorbé l'intégralité des nouvelles ressources générées dans l'année ($${texI(total_ressources)}$ euros). Ce déficit de financement externe et interne vient directement ponctionner le fonds de roulement, qui diminue de $${texI(Math.abs(var_frng))}$ euros.`;
+
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">1. Analyse du financement de long terme</span>
+        Le tableau de financement a pour objectif fondamental d'expliquer les choix stratégiques opérés par l'entreprise durant l'exercice. La première partie de cet état se concentre exclusivement sur le cycle long (opérations d'investissement et de financement) afin d'en déduire la variation du Fonds de Roulement Net Global (FRNG). Il convient d'identifier les nouvelles ressources stables collectées par l'entreprise et de les confronter aux emplois stables réalisés au cours de la même période.<br><br>
+        <strong>Recensement des ressources stables de l'exercice.</strong>
+        Les ressources durables proviennent de l'activité même de l'entreprise (ressources internes), de décisions de désinvestissement libérant des fonds, ou de financements externes (actionnaires et établissements de crédit) :
+        <ul style="list-style-type:none; padding-left:1rem; margin:0.8rem 0;">
+            <li>$\\star\\;$ La capacité d'autofinancement (ressource interne globale générée par l'activité) vaut $${texI(caf)}$ euros.</li>
+            <li>$\\star\\;$ Les cessions d'immobilisations (désinvestissements apportant de la liquidité pure) s'établissent à $${texI(cessions)}$ euros.</li>
+            ${augCapCorr}
+            <li>$\\star\\;$ Les nouveaux emprunts contractés (endettement à long terme) s'élèvent à $${texI(emprunts)}$ euros.</li>
+        </ul>
+        Le total des nouvelles ressources stables s'élève donc à $${texI(total_ressources)}$ euros.<br><br>
+        <strong>Recensement des emplois stables de l'exercice.</strong>
+        Les emplois représentent les utilisations de longue durée des fonds récoltés. Il s'agit des sommes immobilisées pour maintenir l'outil productif, rémunérer le capital ou se désendetter :
+        <ul style="list-style-type:none; padding-left:1rem; margin:0.8rem 0;">
+            <li>$\\star\\;$ On note des distributions de dividendes (rémunération des actionnaires constituant une fuite définitive de liquidités) pour $${texI(dividendes)}$ euros.</li>
+            <li>$\\star\\;$ Les acquisitions d'immobilisations (investissements corporels ou incorporels destinés à rester durablement dans l'entreprises) s'élèvent à $${texI(acquisitions)}$ euros.</li>
+            <li>$\\star\\;$ Les remboursements d'emprunts (part en capital rendue aux banques sur l'exercice) s'établissent à $${texI(remboursements)}$ euros.</li>
+        </ul>
+        Le total des nouveaux emplois stables s'élève par conséquent à $${texI(total_emplois)}$ euros.<br><br>
+        <strong>Calcul de la variation du FRNG.</strong>
+        La différence arithmétique entre ces flux de long terme détermine l'évolution du fonds de roulement : on a donc \\(\\Delta\\text{FRNG} = \\text{total des ressources} - \\text{total des emplois}\\), à savoir \\(\\Delta\\text{FRNG} = ${texI(total_ressources)} - ${texI(total_emplois)} = ${texI(var_frng)}\\text{ euros}\\).
+        ${varFrngAnalysis}
+    </div>`;
+
+    // Corrigé Dossier 2
+    let mathBfrSign = var_bfr > 0 ? "-" : "+";
+    let explicationFinale = "";
+    
+    if (var_treso > 0) {
+        if (var_frng > 0 && var_bfr > 0) {
+            explicationFinale = `L'augmentation du besoin en fonds de roulement, générée logiquement par la croissance de l'activité, a été parfaitement absorbée par l'excellent niveau de ressources levées en haut de bilan cette année (forte variation positive du FRNG). La trésorerie nette de l'entreprise augmente donc sainement de $${texI(var_treso)}$ euros. Le dirigeant peut être rassuré.`;
+        } else if (var_frng > 0 && var_bfr <= 0) {
+            explicationFinale = `L'entreprise bénéficie d'un double effet de levier très positif : ses opérations d'investissement et de financement dégagent un surplus (hausse du FRNG) et, de surcroît, son cycle d'exploitation dégage un flux de liquidités additionnel (baisse du BFR liée à un déstockage ou de meilleurs délais de règlement). La trésorerie explose donc à la hausse de $${texI(var_treso)}$ euros.`;
+        } else {
+            explicationFinale = `Fait contre-intuitif à noter pour le dirigeant : l'entreprise a détruit son fonds de roulement (FRNG en baisse suite à de lourds investissements ou paiements de dividendes), mais elle parvient à sauver sa trésorerie globale grâce à une gestion drastique de son BFR (forte baisse des stocks ou accélération du recouvrement client). C'est ce rattrapage monétaire sur le court terme qui explique la hausse de trésorerie de $${texI(var_treso)}$ euros, ce qui masque une possible fragilisation à long terme.`;
+        }
+    } else {
+        if (var_frng < 0 && var_bfr > 0) {
+            explicationFinale = `Le constat pour le dirigeant est sans appel. L'entreprise subit un dangereux effet de ciseaux : d'un côté sa politique de long terme (investissements massifs ou remboursements) a détruit son fonds de roulement, et de l'autre la croissance de son exploitation consomme du cash au quotidien (hausse du BFR). Conséquence mécanique de ces deux flux défavorables, la trésorerie s'effondre de $${texI(Math.abs(var_treso))}$ euros.`;
+        } else if (var_frng > 0 && var_bfr > 0) {
+            explicationFinale = `L'explication est la suivante : bien que l'entreprise ait réussi à lever de nouvelles ressources stables (hausse rassurante du FRNG), ce coussin de sécurité n'a pas été suffisant pour éponger l'énorme besoin de liquidité généré par le cycle d'exploitation (forte hausse des créances clients ou accumulation de stocks). La trésorerie subit donc une dégradation nette de $${texI(Math.abs(var_treso))}$ euros. Le problème n'est donc pas la rentabilité, mais la gestion du poste clients/fournisseurs.`;
+        } else {
+            explicationFinale = `La dégradation massive du fonds de roulement (les investissements et distributions ont largement excédé la capacité d'autofinancement et les emprunts) absorbe intégralement le léger surplus financier dégagé par la gestion courante de l'exploitation (baisse du BFR). La trésorerie nette diminue logiquement de $${texI(Math.abs(var_treso))}$ euros. L'entreprise vit au-dessus de ses moyens de financement de long terme.`;
+        }
+    }
+
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">2. Analyse de la trésorerie</span>
+        La seconde partie du tableau de financement vise à articuler la politique de long terme de l'entreprise (reflétée par l'évolution du FRNG) avec les contraintes monétaires immédiates de son cycle d'exploitation (traduites par la variation du BFR). Cette confrontation permet d'expliquer l'origine exacte du flux de trésorerie final. L'équation dynamique fondamentale qui régit ces masses s'écrit formellement $\\Delta\\text{Trésorerie} = \\Delta\\text{FRNG} - \\Delta\\text{BFR}$.<br><br>
+        <strong>Calcul de la variation du besoin global de financement.</strong>
+        Une variation positive du BFR traduit une consommation pure de trésorerie (une hausse des stocks ou des créances clients qui n'a pas été compensée par les facilités de paiement des fournisseurs), tandis qu'une variation négative dégage une ressource temporaire additionnelle. Nous cumulons ici les variations des cycles d'exploitation et hors exploitation :
+        <div class="math-formula">\\[\\Delta\\text{BFR} = \\Delta\\text{BFRE} + \\Delta\\text{BFRHE} = ${texI(var_bfre)} + (${texI(var_bfrhe)}) = ${texI(var_bfr)}\\text{ euros}\\]</div>
+        <strong>Détermination de la variation de trésorerie nette.</strong>
+        En appliquant rigoureusement la relation d'équilibre financier, nous observons si le fonds de roulement nouvellement généré (ou détruit) a permis de financer l'évolution des besoins circulants :
+        <div class="math-formula">\\[\\Delta\\text{Trésorerie} = \\Delta\\text{FRNG} - \\Delta\\text{BFR} = ${texI(var_frng)} - (${texI(var_bfr)}) = ${texI(var_treso)}\\text{ euros}\\]</div>
+        <strong>Conclusion.</strong>
+        ${explicationFinale}
+    </div>`;
+
+    document.getElementById('sol-content').innerHTML = htmlSol;
+    
+    if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
+        MathJax.typesetPromise().catch(function (err) {
+            console.error('Erreur MathJax :', err);
+        });
+    }
+}
+
+function toggleSol() {
+    let solCard = document.getElementById('sol-card');
+    let btn = document.getElementById('toggle-btn');
+    if(solCard.classList.contains('visible')) {
+        solCard.classList.remove('visible');
+        btn.innerText = "Afficher le corrigé";
+        btn.classList.remove('shown');
+    } else {
+        solCard.classList.add('visible');
+        btn.innerText = "Masquer le corrigé";
+        btn.classList.add('shown');
+    }
+}
+
+function exportWord() {
+    let content = document.getElementById('ex-area').cloneNode(true);
+    let actions = content.querySelector('.top-actions');
+    if(actions) actions.parentNode.removeChild(actions);
+    let toggle = content.querySelector('.sol-toggle-wrap');
+    if(toggle) toggle.parentNode.removeChild(toggle);
+    let solCard = content.querySelector('#sol-card');
+    if(solCard) solCard.style.display = 'block';
+
+    let html = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <meta charset='utf-8'>
+            <title>Exercice Finance</title>
+            <style>
+                body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5; text-align: justify; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 10pt; }
+                th, td { border: 1px solid #000; padding: 4px; }
+                th { background-color: #f2f2f2; text-align: center; font-weight: bold; }
+                .txt-left { text-align: left; font-weight: bold; }
+                .amt { text-align: right; white-space: nowrap; }
+                .calc-box { border: 1px solid #000; padding: 10px; margin-bottom: 15px; background-color: #f9f9f9; text-align: justify; }
+                .math-formula { text-align: center; font-style: italic; margin: 10px 0; }
+                ul { text-align: justify; }
+                li { margin-bottom: 5px; }
+            </style>
+        </head>
+        <body>
+            ${content.innerHTML}
+        </body>
+        </html>
+    `;
+    
+    let blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    let url = URL.createObjectURL(blob);
+    let link = document.createElement('a');
+    link.href = url;
+    link.download = 'Exercice_Tableau_Financement.doc';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>

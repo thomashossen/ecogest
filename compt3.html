@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Comptabilité - Séparation des exercices</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 1.5rem;border-bottom:3px solid var(--gold)}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end;background:rgba(255,255,255,.03);padding:1rem 1.5rem;border-radius:6px;border:1px solid rgba(255,255,255,.1)}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.6)}
+.ctrl-inp, .ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.4rem .7rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none;transition:border-color .2s}
+.ctrl-inp:focus, .ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.5rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;transition:background .18s;margin-left:auto}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN & CARDS */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:700}
+
+.top-actions{display:flex;gap:.5rem;}
+.btn-action{background:#fff;border:1px solid var(--border);color:var(--navy);padding:.4rem .8rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.85rem;font-weight:600;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.btn-action:hover{border-color:var(--navy);background:var(--cream-dark);}
+
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+.event-list{list-style:none;}
+.event-list li{margin-bottom:1.2rem;padding-left:1.5rem;position:relative;font-size:.95rem;text-align:justify}
+.event-list li::before{content:"•";position:absolute;left:0;color:var(--gold);font-size:1.5rem;line-height:1}
+.highlight{font-family:'JetBrains Mono',monospace;font-size:.85rem;font-weight:600;background:var(--cream-dark);padding:2px 6px;border-radius:3px;color:var(--navy)}
+
+/* JOURNAL TABLE */
+.journal-wrap{overflow-x:auto;margin:1.5rem 0}
+table.journal{width:100%;border-collapse:collapse;font-size:.85rem;font-family:'Source Serif 4',serif;box-shadow:0 0 0 1px var(--border)}
+table.journal th{background:var(--navy);color:var(--cream);padding:.6rem;text-align:left;font-weight:600;border:1px solid var(--navy-mid)}
+table.journal td{padding:.5rem .6rem;border:1px solid var(--border);vertical-align:middle}
+table.journal .num{font-family:'JetBrains Mono',monospace;width:80px;text-align:center;color:var(--navy);font-weight:600}
+table.journal .amt{font-family:'JetBrains Mono',monospace;text-align:right;width:115px;white-space:nowrap;}
+table.journal .date-row{background:var(--cream-dark);font-style:italic;text-align:center;font-weight:600;color:var(--text-muted)}
+table.journal .libelle{color:var(--text-muted);font-style:italic;text-align:center;font-size:.8rem}
+.debit-col{color:var(--navy)}
+.credit-col{color:var(--text)}
+
+/* SOLUTION TOGGLE */
+.sol-toggle-wrap{text-align:left; margin: 1.5rem 0 0 0;}
+.btn-toggle{background:transparent;border:2px solid var(--green);border-bottom:none;color:var(--green);font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;padding:.5rem 1.5rem;border-radius:4px 4px 0 0;cursor:pointer;transition:all .2s; position:relative; z-index:2; top:2px;}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--green);color:var(--cream)}
+.sol-card{border-top:2px solid var(--green);display:none; border-radius: 0 6px 6px 6px; position:relative; z-index:1;}
+.sol-card.visible{display:block;animation:fi .4s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+
+.calc-box{background:#f9fcf9;border:1px solid #c8e6c9;padding:1.2rem;border-radius:4px;margin-bottom:1rem;font-size:.9rem;color:var(--text);line-height:1.6;text-align:justify;}
+.calc-box strong{color:var(--green);font-family:'JetBrains Mono',monospace;}
+
+@media print{
+  body{background:#fff;}
+  header, .ctrls, .sol-toggle-wrap, .top-actions {display:none !important;}
+  .card{box-shadow:none; border:1px solid var(--border); margin-bottom:2rem;}
+  .sol-card{display:block !important; border-top:2px solid var(--green);}
+  #ex-area {display:block !important;}
+}
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-badge">INFORMATION COMPTABLE ET FINANCIÈRE</div>
+  <h1>Travaux d'inventaire : séparation des exercices</h1>
+  <p class="subtitle">© Thomas Hossen – Version du 7 mars 2026</p>
+  
+  <div class="ctrls">
+    <div class="ctrl-g">
+      <span class="ctrl-lbl">Seed (Optionnel)</span>
+      <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999">
+    </div>
+    <button class="btn-gen" onclick="generateExercise(false)">Générer l'exercice →</button>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" style="text-align:center; padding:4rem; color:var(--text-muted); font-style:italic;">
+    Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="seed-badge">Seed active : <span id="seed-disp"></span></div>
+      <div class="top-actions">
+        <button class="btn-action" onclick="generateExercise(true)">↺ Nouvel énoncé</button>
+        <button class="btn-action" onclick="window.print()">⬇ Exporter PDF</button>
+        <button class="btn-action" onclick="exportWord()">⬇ Exporter DOC</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="tag">Énoncé</span><h2>Opérations d'ajustement (<em>cut-off</em>) au 31/12/N et 01/01/N+1</h2></div>
+      <div class="card-body">
+        <div class="context-block" id="context-text"></div>
+        <p style="margin-bottom:1rem; font-weight:600; color:var(--navy);">Informations transmises par les différents services</p>
+        <ul class="event-list" id="events-list"></ul>
+        <p style="margin-top:1.5rem; font-weight:600; color:var(--red);">Travail à faire</p>
+        <p id="question-text" style="font-style:italic;"></p>
+      </div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag">Corrigé</span><h2>Opérations d'ajustement (<em>cut-off</em>)</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+// --- PRNG (Mulberry32) ---
+let currentSeed = 0;
+function seedPRNG(seed) {
+    return function() {
+      let t = seed += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+let random = Math.random;
+
+function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
+function formatMoney(num) { return num.toLocaleString('fr-FR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' €'; }
+
+const monthNames = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
+
+function generateExercise(forceNew = false) {
+    if(forceNew) {
+        document.getElementById('seed-input').value = "";
+    }
+    let seedVal = document.getElementById('seed-input').value;
+    currentSeed = seedVal ? parseInt(seedVal) : Math.floor(Math.random() * 99999999);
+    document.getElementById('seed-disp').innerText = currentSeed;
+    document.getElementById('seed-input').value = currentSeed;
+    random = seedPRNG(currentSeed);
+
+    // 1. CCA (Assurance)
+    let ccaTotal = randInt(12, 48) * 100;
+    let ccaDuration = randInt(0, 1) === 0 ? 6 : 12;
+    let ccaStartMonth = randInt(8, 11); 
+    let ccaEndMonth = ccaStartMonth + ccaDuration - 1;
+    let ccaMonthsInN1 = ccaEndMonth - 12;
+    let ccaAmtN1 = ccaTotal * (ccaMonthsInN1 / ccaDuration);
+
+    // 2. FNP (Marchandises)
+    let fnpHT = randInt(15, 80) * 100;
+    let fnpTVA = fnpHT * 0.20;
+    let fnpTTC = fnpHT + fnpTVA;
+
+    // 3. PCA (Maintenance facturée)
+    let pcaTotal = randInt(18, 60) * 100;
+    let pcaDuration = 6;
+    let pcaStartMonth = randInt(9, 11);
+    let pcaEndMonth = pcaStartMonth + pcaDuration - 1;
+    let pcaMonthsInN1 = pcaEndMonth - 12;
+    let pcaAmtN1 = pcaTotal * (pcaMonthsInN1 / pcaDuration);
+
+    // 4. FAE (Produits finis livrés)
+    let faeHT = randInt(30, 120) * 100;
+    let faeTVA = faeHT * 0.20;
+    let faeTTC = faeHT + faeTVA;
+
+    // 5. ICNE (Emprunt)
+    let loanCap = randInt(50, 200) * 1000;
+    let loanRate = randInt(2, 6);
+    let loanMonth = randInt(3, 9); 
+    let loanMonthsAccrued = 12 - loanMonth + 1;
+    let icneAmt = loanCap * (loanRate / 100) * (loanMonthsAccrued / 12);
+
+    // Affichage Enoncé
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('ex-area').style.display = 'block';
+    document.getElementById('sol-card').classList.remove('visible');
+    document.getElementById('toggle-btn').innerText = "Afficher le corrigé";
+    document.getElementById('toggle-btn').classList.remove('shown');
+
+    document.getElementById('context-text').innerHTML = `
+      Vous assistez le chef comptable de la société <strong>AlphaRéseaux SAS</strong> lors des travaux de clôture de l'exercice N (clôture au 31 décembre). 
+      Afin d'établir des états financiers reflétant une image fidèle, vous devez appliquer le principe de séparation des exercices (<em>cut-off</em>) en analysant une série d'informations qui vous ont été communiquées par les différents services.
+      <br><br>
+      <em>Règlementation applicable.</em> Toutes les factures courantes ont déjà été enregistrées. La TVA est au taux normal de 20 % (sauf pour l'assurance et les intérêts d'emprunt qui n'y sont pas soumis). Les calculs de prorata temporis s'effectuent par mois entiers.
+    `;
+
+    let htmlEnonce = "";
+
+    htmlEnonce += `<li>Le service général vous informe qu'une facture de prime d'assurance d'un montant de <span class="highlight">${formatMoney(ccaTotal)}</span> a été comptabilisée et payée en N. Cette prime couvre une période de ${ccaDuration} mois, débutant le 1er ${monthNames[ccaStartMonth-1]} N.</li>`;
+    
+    htmlEnonce += `<li>Le service logistique a réceptionné le 28 décembre un lot de marchandises d'une valeur de <span class="highlight">${formatMoney(fnpHT)}</span> HT. Le bon de livraison a été validé, mais la facture du fournisseur n'est toujours pas parvenue à l'entreprise au 31/12/N.</li>`;
+
+    htmlEnonce += `<li>Le service client indique qu'un contrat de maintenance a été facturé d'avance à un client pour un montant de <span class="highlight">${formatMoney(pcaTotal)}</span> HT. Ce contrat, intégralement enregistré en chiffre d'affaires en N, couvre une période de ${pcaDuration} mois à compter du 1er ${monthNames[pcaStartMonth-1]} N.</li>`;
+
+    htmlEnonce += `<li>Le service commercial signale qu'une importante commande de produits finis a été expédiée et réceptionnée par un client le 29 décembre. La valorisation de cette livraison est de <span class="highlight">${formatMoney(faeHT)}</span> HT. Cependant, la facturation administrative ne sera émise que le 5 janvier N+1.</li>`;
+
+    htmlEnonce += `<li>Le service financier vous transmet l'échéancier d'un emprunt bancaire souscrit par l'entreprise. Le capital restant dû s'élève à <span class="highlight">${formatMoney(loanCap)}</span>. Cet emprunt porte un taux d'intérêt annuel de <span class="highlight">${loanRate} %</span>. La dernière échéance annuelle a été prélevée le 1er ${monthNames[loanMonth-1]} N.</li>`;
+
+    document.getElementById('events-list').innerHTML = htmlEnonce;
+
+    document.getElementById('question-text').innerText = `Enregistrez au journal de l'entreprise les écritures d'ajustement requises au 31 décembre N, ainsi que leurs écritures d'extourne (contre-passation) au 1er janvier N+1.`;
+
+    // --- GENERATION CORRIGE ---
+    let htmlSol = "";
+
+    const addJournal = (date, entries) => {
+        let t = `<div class="journal-wrap"><table class="journal">
+        <tr class="date-row"><td colspan="4">${date}</td></tr>
+        <tr><th>N° Cpte</th><th>Libellé</th><th style="text-align:right">Débit</th><th style="text-align:right">Crédit</th></tr>`;
+        
+        entries.filter(e => e.sens === 'D').forEach(e => {
+            t += `<tr><td class="num">${e.c}</td><td class="debit-col">${e.l}</td><td class="amt">${formatMoney(e.m)}</td><td></td></tr>`;
+        });
+        entries.filter(e => e.sens === 'C').forEach(e => {
+            t += `<tr><td class="num">${e.c}</td><td class="credit-col" style="padding-left:1.5rem">${e.l}</td><td></td><td class="amt">${formatMoney(e.m)}</td></tr>`;
+        });
+        t += `</table></div>`;
+        return t;
+    };
+
+    // Corrigé CCA
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">1. Prime d'assurance (charges constatées d'avance)</span>
+        La charge d'assurance a été intégralement enregistrée en année N, or elle couvre une période qui déborde sur l'année N+1. Le contrat débute en ${monthNames[ccaStartMonth-1]} pour une durée de ${ccaDuration} mois, ce qui signifie qu'il se termine fin ${monthNames[ccaEndMonth-1-12]} N+1. Il y a donc ${ccaMonthsInN1} mois qui concernent l'exercice suivant. Pour respecter l'indépendance des exercices, il faut annuler la quote-part de la charge relative à N+1, soit ${formatMoney(ccaTotal)} × (${ccaMonthsInN1} / ${ccaDuration}) = <strong>${formatMoney(ccaAmtN1)}</strong>. Au 1er janvier N+1, cette écriture transitoire d'inventaire doit obligatoirement être extournée pour imputer la charge sur le nouvel exercice.
+    </div>`;
+
+    htmlSol += addJournal(`31/12/N`, [
+        {c:"486", l:"Charges constatées d'avance", m: ccaAmtN1, sens:'D'},
+        {c:"616", l:"Primes d'assurances", m: ccaAmtN1, sens:'C'}
+    ]);
+    htmlSol += addJournal(`01/01/N+1`, [
+        {c:"616", l:"Primes d'assurances", m: ccaAmtN1, sens:'D'},
+        {c:"486", l:"Charges constatées d'avance", m: ccaAmtN1, sens:'C'}
+    ]);
+
+    // Corrigé FNP
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">2. Marchandises réceptionnées (factures non parvenues)</span>
+        Les marchandises étant physiquement entrées dans les stocks de l'entreprise avant la clôture, l'achat doit être obligatoirement rattaché à l'exercice N, même en l'absence de facture. Il convient de constater la charge de ${formatMoney(fnpHT)} ainsi que la TVA déductible en attente de régularisation pour ${formatMoney(fnpTVA)}. La contrepartie constate une dette estimée envers le fournisseur pour le montant TTC de <strong>${formatMoney(fnpTTC)}</strong>. Au 1er janvier N+1, l'écriture est extournée (les comptes transitoires sont soldés) dans l'attente de la comptabilisation classique de la facture finale.
+    </div>`;
+
+    htmlSol += addJournal(`31/12/N`, [
+        {c:"607", l:"Achats de marchandises", m: fnpHT, sens:'D'},
+        {c:"44586", l:"TVA sur factures non parvenues", m: fnpTVA, sens:'D'},
+        {c:"4081", l:"Fournisseurs - factures non parvenues", m: fnpTTC, sens:'C'}
+    ]);
+    htmlSol += addJournal(`01/01/N+1`, [
+        {c:"4081", l:"Fournisseurs - factures non parvenues", m: fnpTTC, sens:'D'},
+        {c:"607", l:"Achats de marchandises", m: fnpHT, sens:'C'},
+        {c:"44586", l:"TVA sur factures non parvenues", m: fnpTVA, sens:'C'}
+    ]);
+
+    // Corrigé PCA
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">3. Contrat de maintenance (produits constatés d'avance)</span>
+        À l'inverse de l'assurance, il s'agit ici d'une prestation vendue par l'entreprise. Le chiffre d'affaires a été comptabilisé en N, mais une partie du service sera réalisée en N+1. La prestation de ${pcaDuration} mois débutant en ${monthNames[pcaStartMonth-1]}, elle concerne l'année N+1 à hauteur de ${pcaMonthsInN1} mois. Il faut extraire du résultat de N la part non encore réalisée, soit ${formatMoney(pcaTotal)} × (${pcaMonthsInN1} / ${pcaDuration}) = <strong>${formatMoney(pcaAmtN1)}</strong>. Ce montant est neutralisé hors taxes. Au 1er janvier N+1, l'écriture est extournée pour rattacher le produit au nouvel exercice.
+    </div>`;
+
+    htmlSol += addJournal(`31/12/N`, [
+        {c:"706", l:"Prestations de services", m: pcaAmtN1, sens:'D'},
+        {c:"487", l:"Produits constatés d'avance", m: pcaAmtN1, sens:'C'}
+    ]);
+    htmlSol += addJournal(`01/01/N+1`, [
+        {c:"487", l:"Produits constatés d'avance", m: pcaAmtN1, sens:'D'},
+        {c:"706", l:"Prestations de services", m: pcaAmtN1, sens:'C'}
+    ]);
+
+    // Corrigé FAE
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">4. Produits finis livrés (factures à établir)</span>
+        Le transfert de propriété ayant eu lieu en N (livraison effectuée), le produit de la vente doit être rattaché à l'exercice N bien que la facture n'ait pas encore été émise. Le chiffre d'affaires à constater s'élève à ${formatMoney(faeHT)}. La TVA collectée associée, qui sera exigible lors de la facturation, doit être provisionnée pour ${formatMoney(faeTVA)}. L'entreprise enregistre une créance client estimée de <strong>${formatMoney(faeTTC)}</strong>. Au 1er janvier N+1, l'écriture est extournée afin de ne pas comptabiliser le chiffre d'affaires en double lors de l'émission de la facture définitive.
+    </div>`;
+
+    htmlSol += addJournal(`31/12/N`, [
+        {c:"4181", l:"Clients - factures à établir", m: faeTTC, sens:'D'},
+        {c:"701", l:"Ventes de produits finis", m: faeHT, sens:'C'},
+        {c:"44587", l:"TVA sur factures à établir", m: faeTVA, sens:'C'}
+    ]);
+    htmlSol += addJournal(`01/01/N+1`, [
+        {c:"701", l:"Ventes de produits finis", m: faeHT, sens:'D'},
+        {c:"44587", l:"TVA sur factures à établir", m: faeTVA, sens:'D'},
+        {c:"4181", l:"Clients - factures à établir", m: faeTTC, sens:'C'}
+    ]);
+
+    // Corrigé ICNE
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">5. Emprunt bancaire (intérêts courus non échus)</span>
+        L'entreprise rembourse son emprunt par échéances annuelles. La dernière ayant eu lieu le 1er ${monthNames[loanMonth-1]} N, l'entreprise a bénéficié des fonds empruntés entre cette date et le 31/12/N, soit pendant ${loanMonthsAccrued} mois. Le coût financier de ces mois écoulés doit impérativement impacter l'exercice N. Le calcul des intérêts courus s'établit ainsi : capital de ${formatMoney(loanCap)} × taux de ${loanRate} % × (${loanMonthsAccrued} / 12 mois) = <strong>${formatMoney(icneAmt)}</strong>. Ce montant constitue une charge financière et une dette rattachée à l'emprunt. Au 1er janvier N+1, cette écriture est extournée. Le compte 1688 est ainsi soldé, et la charge financière viendra s'imputer en déduction de la prochaine échéance globale payée en N+1.
+    </div>`;
+
+    htmlSol += addJournal(`31/12/N`, [
+        {c:"6611", l:"Intérêts des emprunts et dettes", m: icneAmt, sens:'D'},
+        {c:"1688", l:"Intérêts courus sur emprunts", m: icneAmt, sens:'C'}
+    ]);
+    htmlSol += addJournal(`01/01/N+1`, [
+        {c:"1688", l:"Intérêts courus sur emprunts", m: icneAmt, sens:'D'},
+        {c:"6611", l:"Intérêts des emprunts et dettes", m: icneAmt, sens:'C'}
+    ]);
+
+    document.getElementById('sol-content').innerHTML = htmlSol;
+}
+
+function toggleSol() {
+    let solCard = document.getElementById('sol-card');
+    let btn = document.getElementById('toggle-btn');
+    if(solCard.classList.contains('visible')) {
+        solCard.classList.remove('visible');
+        btn.innerText = "Afficher le corrigé";
+        btn.classList.remove('shown');
+    } else {
+        solCard.classList.add('visible');
+        btn.innerText = "Masquer le corrigé";
+        btn.classList.add('shown');
+    }
+}
+
+// --- FONCTION EXPORT DOC ---
+function exportWord() {
+    let content = document.getElementById('ex-area').cloneNode(true);
+    let actions = content.querySelector('.top-actions');
+    if(actions) actions.parentNode.removeChild(actions);
+    let toggle = content.querySelector('.sol-toggle-wrap');
+    if(toggle) toggle.parentNode.removeChild(toggle);
+    let solCard = content.querySelector('#sol-card');
+    if(solCard) solCard.style.display = 'block';
+
+    let html = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <meta charset='utf-8'>
+            <title>Exercice Comptabilité</title>
+            <style>
+                body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                th, td { border: 1px solid #000; padding: 5px; }
+                th { background-color: #f2f2f2; text-align: left; }
+                .amt { text-align: right; white-space: nowrap; }
+                .calc-box { border: 1px solid #000; padding: 10px; margin-bottom: 15px; background-color: #f9f9f9; }
+                .date-row { font-style: italic; text-align: center; font-weight: bold; }
+                .highlight { font-weight: bold; }
+            </style>
+        </head>
+        <body>
+            ${content.innerHTML}
+        </body>
+        </html>
+    `;
+    
+    let blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    let url = URL.createObjectURL(blob);
+    let link = document.createElement('a');
+    link.href = url;
+    link.download = 'Exercice_CutOff.doc';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>

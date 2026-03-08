@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Générateur d'exercices - CAH</title>
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['\\[','\\]']], packages: {'[+]': ['ams']} },
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] }
+};
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 0;border-bottom:3px solid var(--gold)}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+.btn-group{display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem}
+.btn-factor{background:transparent;border:1.5px solid rgba(201,149,42,.5);color:var(--cream);padding:.65rem 1.4rem;border-radius:4px;cursor:pointer;transition:all .2s;text-align:left;font-family:'Source Serif 4',serif}
+.btn-factor:hover{background:rgba(201,149,42,.15);border-color:var(--gold-light)}
+.btn-factor.active{background:var(--gold);border-color:var(--gold);color:var(--navy)}
+.btn-top{font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;opacity:.7;display:block;margin-bottom:2px}
+.btn-bottom{font-size:.95rem;font-weight:600;display:block}
+
+/* CONTROLS */
+#controls-bar{display:block;border-top:1px solid rgba(255,255,255,.08);padding:1.1rem 0 1.3rem}
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.5)}
+.ctrl-inp{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.38rem .65rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.82rem;width:88px;outline:none;transition:border-color .2s}
+.ctrl-inp option {background:var(--navy); color:var(--cream);}
+.ctrl-inp:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.ctrl-tip{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:rgba(250,247,240,.33);margin-top:2px}
+.seed-row{display:flex;align-items:flex-end;gap:.45rem}
+.btn-copy-seed{background:transparent;border:1px solid rgba(201,149,42,.4);color:rgba(250,247,240,.55);padding:.38rem .55rem;border-radius:3px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:.65rem;transition:all .18s;white-space:nowrap}
+.btn-copy-seed:hover{border-color:var(--gold-light);color:var(--gold-light)}
+.ctrl-vsep{width:1px;background:rgba(255,255,255,.1);align-self:stretch;margin:0 .2rem}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.3rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.9rem;font-weight:600;transition:background .18s;white-space:nowrap;align-self:flex-end}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.welcome-msg{text-align:center;padding:5rem 2rem;color:var(--text-muted);font-style:italic;font-size:1.05rem}
+.welcome-msg .arrow{font-size:2rem;display:block;margin-bottom:1rem;opacity:.4}
+
+/* TOP BAR */
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.top-bar-left{display:flex;gap:.6rem;align-items:center}
+.btn-sm{background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:'JetBrains Mono',monospace;font-size:.67rem;letter-spacing:.08em;text-transform:uppercase;padding:.4rem 1rem;border-radius:3px;cursor:pointer;transition:all .18s;white-space:nowrap}
+.btn-sm:hover{background:var(--gold);color:var(--navy)}
+.btn-sm.pdf{border-color:#7bafd4;color:#7bafd4}
+.btn-sm.pdf:hover{background:#7bafd4;color:var(--navy)}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.67rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:500}
+
+/* CARDS */
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);margin-bottom:1.5rem;border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem; overflow-x: auto;}
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+
+/* SOLUTION */
+.sol-toggle-wrap{text-align:center;margin:1rem 0 0}
+.btn-toggle{background:transparent;border:2px solid var(--navy);color:var(--navy);font-family:'Source Serif 4',serif;font-size:.9rem;padding:.6rem 2rem;border-radius:4px;cursor:pointer;transition:all .2s}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--navy);color:var(--cream)}
+.sol-card{border-top:4px solid var(--green);display:none}
+.sol-card.visible{display:block;animation:fi .3s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+.sol-sec{margin-bottom:1.6rem}
+.sol-sec h3{display:flex;align-items:center;gap:.6rem;font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:var(--navy);margin-bottom:.7rem;padding-bottom:.35rem;border-bottom:1px solid var(--border)}
+.sn{width:24px;height:24px;background:var(--green);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.8rem;font-weight:600;flex-shrink:0}
+.st{font-size:.92rem;line-height:1.75;text-align:justify}
+.st p{margin-bottom:.7rem}
+
+/* Styles précis pour enlever absolument toutes les puces */
+.st ul, .st li { list-style: none !important; list-style-type: none !important; padding-left: 0; margin-left: 0; }
+.st > ul > li { margin-bottom: 3rem; background: rgba(255,255,255,0.6); padding: 1.8rem 1.5rem; border: 1px solid var(--border); border-radius: 4px; overflow-x: auto; }
+.st > ul > li ul { border-left: 2px solid var(--gold-light); padding-left: 1rem; margin-top: 0.8rem; }
+.st > ul > li ul li { margin-bottom: 1rem; background: transparent; padding: 0; border: none; overflow-x: visible; }
+
+/* Typographie spécifique des sous-étapes et couleurs */
+.math-class { color: var(--navy); font-weight: 600; }
+.step-heading { display: flex; align-items: center; gap: .6rem; font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 600; color: var(--navy); margin-bottom: 1.2rem; padding-bottom: .35rem; border-bottom: 1px solid var(--border); }
+.sn-letter { width: 24px; height: 24px; background: var(--gold); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: .85rem; font-weight: 600; flex-shrink: 0; }
+.sub-step { color: var(--green); font-variant: small-caps; font-weight: 600; font-size: 0.95rem; }
+.highlight-merge { margin-top: 1.5rem; padding: 0.8rem; background: rgba(201,149,42,0.1); border-left: 3px solid var(--gold); font-weight: 500; color: var(--navy); }
+
+/* PDF MODAL */
+#pdf-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;backdrop-filter:blur(2px)}
+#pdf-modal{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:101;background:#fff;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.25);width:390px;max-width:95vw;border-top:4px solid #7bafd4;overflow:hidden}
+.mh{background:var(--navy);color:var(--cream);padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
+.mh h3{font-family:'Playfair Display',serif;font-size:1rem;font-weight:600}
+.mclose{background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:1.2rem;line-height:1;padding:2px 6px;border-radius:3px;transition:color .15s}
+.mclose:hover{color:#fff}
+.mb2{padding:1.5rem}
+.opt-row{display:flex;align-items:flex-start;gap:.75rem;margin-bottom:1rem;cursor:pointer}
+.opt-row input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--navy);flex-shrink:0;margin-top:3px}
+.opt-lbl{font-size:.93rem}
+.opt-desc{font-size:.75rem;color:var(--text-muted);display:block}
+.seed-note{font-family:'JetBrains Mono',monospace;font-size:.7rem;background:var(--cream-dark);border:1px solid var(--border);padding:.55rem .85rem;border-radius:3px;color:var(--text-muted);margin-bottom:1.2rem;line-height:1.5}
+.seed-note strong{color:var(--navy)}
+.mactions{display:flex;gap:.6rem}
+.btn-print{flex:1;background:var(--navy);color:var(--cream);border:none;padding:.7rem;border-radius:4px;font-family:'Source Serif 4',serif;font-size:.9rem;cursor:pointer;transition:background .2s}
+.btn-print:hover{background:var(--navy-mid)}
+.btn-cancel{background:transparent;border:1px solid var(--border);color:var(--text-muted);padding:.7rem 1rem;border-radius:4px;font-family:'Source Serif 4',serif;font-size:.9rem;cursor:pointer;transition:all .2s}
+.btn-cancel:hover{border-color:var(--text);color:var(--text)}
+
+/* PRINT */
+@media print{
+:root{--navy:#0d1b2a;--cream:#fff;--cream-dark:#f8f8f8;--gold:#c9952a;--green:#2d6b4a;--border:#ccc}
+body{background:#fff;font-size:11pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+header{padding:1rem 1.5rem .8rem}
+header .subtitle{display:none}
+#controls-bar,.top-bar,.sol-toggle-wrap,#pdf-ov,#pdf-modal{display:none!important}
+.card{box-shadow:none;border-radius:0;page-break-inside:avoid;margin-bottom:1rem}
+main{padding:1rem 1.5rem;max-width:100%}
+body.print-no-header header{display:none!important}
+body.print-no-solution .sol-card{display:none!important}
+body.print-force-solution .sol-card{display:block!important}
+}
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-badge">DATA MINING</div>
+  <h1>Classification ascendante hiérarchique (CAH)</h1>
+  <p class="subtitle">© Thomas Hossen – Version du 7 mars 2026</p>
+
+  <div id="controls-bar">
+    <div class="ctrls">
+      
+      <div class="ctrl-g">
+        <span class="ctrl-lbl">Individus</span>
+        <select class="ctrl-inp" id="pts-input">
+          <option value="auto">Auto</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+        </select>
+        <span class="ctrl-tip">4 à 6 max</span>
+      </div>
+
+      <div class="ctrl-g">
+        <span class="ctrl-lbl">Variables</span>
+        <select class="ctrl-inp" id="vars-input">
+          <option value="auto">Auto</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+        </select>
+        <span class="ctrl-tip">2 ou 3</span>
+      </div>
+
+      <div class="ctrl-vsep"></div>
+
+      <div class="ctrl-g">
+        <span class="ctrl-lbl">Seed de reproductibilité</span>
+        <div class="seed-row">
+          <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="0" max="99999999">
+          <button class="btn-copy-seed" onclick="copySeed()" title="Copier la seed active">⧉ Copier</button>
+        </div>
+        <span class="ctrl-tip">Vide = aléatoire à chaque génération</span>
+      </div>
+      
+      <div class="ctrl-vsep"></div>
+      
+      <button class="btn-gen" onclick="generateFromControls()">Générer →</button>
+    </div>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" class="welcome-msg">
+    <span class="arrow">↑</span>
+    Configurez une seed optionnelle, puis cliquez sur Générer pour créer un énoncé de CAH.
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="top-bar-left">
+        <button class="btn-sm" onclick="regen()">↺ Nouvel énoncé</button>
+        <button class="btn-sm pdf" onclick="openPdfModal()">⬇ Exporter PDF</button>
+      </div>
+      <div class="seed-badge">Seed&nbsp;: <span id="seed-disp">—</span></div>
+    </div>
+
+    <div id="ex-card" class="card">
+      <div class="card-header"><span class="tag">Énoncé</span><h2 id="card-title">Classification ascendante hiérarchique</h2></div>
+      <div class="card-body" id="ex-content"></div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé complet</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag">Corrigé</span><h2>Classification ascendante hiérarchique</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+
+  </div>
+</main>
+
+<div id="pdf-ov" onclick="closePdfModal()"></div>
+<div id="pdf-modal">
+  <div class="mh">
+    <h3>Exporter en PDF</h3>
+    <button class="mclose" onclick="closePdfModal()">✕</button>
+  </div>
+  <div class="mb2">
+    <div class="seed-note">Seed&nbsp;: <strong id="modal-seed">—</strong> — notez cette valeur pour reproduire exactement cet exercice.</div>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-header" checked>
+      <div><span class="opt-lbl">Inclure l'en-tête de page</span>
+           <span class="opt-desc">Titre, badge « DATA MINING » et intitulés</span></div>
+    </label>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-sol">
+      <div><span class="opt-lbl">Inclure le corrigé complet</span>
+           <span class="opt-desc">Toutes les étapes de calculs (matrices, dendrogramme)</span></div>
+    </label>
+    <div class="mactions">
+      <button class="btn-print" onclick="doPrint()">🖨&nbsp;Imprimer / Sauvegarder PDF</button>
+      <button class="btn-cancel" onclick="closePdfModal()">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+// PRNG ET FRACTIONS (MATH EXACTES)
+// ════════════════════════════════════════
+let _rand, _activeSeed = 0;
+function initRand(seed) {
+  _activeSeed = seed >>> 0;
+  let s = _activeSeed;
+  _rand = () => {
+    s = (s + 0x6D2B79F5) >>> 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const rI = (a,b) => Math.floor(_rand()*(b-a+1))+a;
+
+class Frac {
+  constructor(n, d = 1) {
+    if (d === 0) throw "Division par zéro";
+    if (d < 0) { n = -n; d = -d; }
+    let g = this.gcd(Math.abs(n), Math.abs(d));
+    this.n = n / g; this.d = d / g;
+  }
+  gcd(a, b) {
+    while (b !== 0) { let temp = b; b = a % b; a = temp; }
+    return a;
+  }
+  add(f) { return new Frac(this.n * f.d + f.n * this.d, this.d * f.d); }
+  sub(f) { return new Frac(this.n * f.d - f.n * this.d, this.d * f.d); }
+  mul(f) { return new Frac(this.n * f.n, this.d * f.d); }
+  div(f) { return new Frac(this.n * f.d, this.d * f.n); }
+  val() { return this.n / this.d; }
+  toTex() {
+    if (this.d === 1) return this.n.toString();
+    if (this.n === 0) return "0";
+    return `\\frac{${this.n}}{${this.d}}`;
+  }
+  toTfrac() {
+    if (this.d === 1) return this.n.toString();
+    if (this.n === 0) return "0";
+    return `\\tfrac{${this.n}}{${this.d}}`;
+  }
+}
+
+// Formatage LaTeX pour la matrice avec les noms sur la droite
+function getMatrixLatex(name, step, clusters, mat) {
+    let latex = `\\[ \\textbf{${name}}_${step} := \\begin{array}{${"c".repeat(clusters.length)}|c}\n`;
+    latex += clusters.map(c => c.name).join(" & ") + ` & \\\\ \\hline\n`;
+    for (let i = 0; i < clusters.length; i++) {
+        latex += mat[i].map(val => val.toTex()).join(" & ") + ` & ${clusters[i].name} \\\\\n`;
+    }
+    latex += `\\end{array} \\]\n`;
+    return latex;
+}
+
+// Fonction utilitaire pour formater les coordonnées (x,y) ou (x,y,z)
+function formatCoordsTex(coords) {
+    return `\\left(${coords.map(c => c.toTex()).join(', ')}\\right)`;
+}
+
+// ════════════════════════════════════════
+// LOGIQUE DE GENERATION CAH
+// ════════════════════════════════════════
+let solVisible = false;
+
+function regen() {
+  document.getElementById('seed-input').value = '';
+  generateFromControls();
+}
+
+function generateFromControls() {
+  let sInp = document.getElementById('seed-input').value;
+  let s = sInp ? parseInt(sInp) : Math.floor(Math.random() * 99999999);
+  document.getElementById('seed-disp').textContent = s;
+  document.getElementById('modal-seed').textContent = s;
+  initRand(s);
+
+  document.getElementById('welcome').style.display = 'none';
+  document.getElementById('ex-area').style.display = 'block';
+  document.getElementById('sol-card').classList.remove('visible');
+  document.getElementById('toggle-btn').classList.remove('shown');
+  document.getElementById('toggle-btn').textContent = "Afficher le corrigé complet";
+  solVisible = false;
+
+  generateCAH();
+}
+
+function generateCAH() {
+  // 1. GÉNÉRER ENTRE 4 ET 6 POINTS DISTINCTS ET 2 OU 3 VARIABLES
+  let valPts = document.getElementById('pts-input').value;
+  let valVars = document.getElementById('vars-input').value;
+  
+  let numPts = valPts === 'auto' ? rI(4, 6) : parseInt(valPts);
+  let numVars = valVars === 'auto' ? rI(2, 3) : parseInt(valVars);
+  
+  let pts = [];
+  
+  while (pts.length < numPts) {
+    let coords = [];
+    for(let v = 0; v < numVars; v++) coords.push(new Frac(rI(1, 8)));
+    
+    // Check duplicates
+    let isDup = pts.some(p => {
+        for(let v = 0; v < numVars; v++) {
+            if(p.coords[v].val() !== coords[v].val()) return false;
+        }
+        return true;
+    });
+    
+    if (!isDup) {
+      pts.push({ id: pts.length + 1, coords: coords, weight: new Frac(1, numPts) });
+    }
+  }
+
+  // En-tête de la matrice X
+  let colsHeader = [];
+  for(let v=1; v<=numVars; v++) colsHeader.push(`V_${v}`);
+
+  // 2. CONSTRUIRE L'ÉNONCÉ
+  let enonceHtml = `
+    <div class="context-block">
+      En utilisant la distance de Ward et en justifiant précisément chaque étape, réaliser la classification ascendante hiérarchique (CAH) de ${numPts} individus numérotés de 1 à ${numPts} et décrits par ${numVars} variables selon la matrice $\\textbf{X}$ suivante :
+    </div>
+    \\[
+    \\textbf{X} := \\begin{array}{${"c".repeat(numVars)}|c}
+    ${colsHeader.join(' & ')} & \\\\ \\hline
+    ${pts.map(p => `${p.coords.map(c => c.toTex()).join(" & ")} & \\text{Individu } ${p.id}`).join(" \\\\ ")}
+    \\end{array}
+    \\]
+  `;
+  document.getElementById('ex-content').innerHTML = enonceHtml;
+
+  // 3. EFFECTUER LA CAH ET GÉNÉRER LE CORRIGÉ DÉTAILLÉ
+  let clusters = pts.map(p => ({
+    id: p.id,
+    name: "C_{" + p.id + "}",
+    coords: p.coords, 
+    weight: p.weight
+  }));
+
+  let treeNodes = {};
+  for (let i = 1; i <= numPts; i++) {
+    treeNodes[i] = { id: i, isLeaf: true, height: 0, label: "Ind " + i };
+  }
+
+  let history = [];
+  let nextId = numPts + 1;
+  let totalInertia = new Frac(0);
+
+  let solHtml = `
+    <div class="st">
+      <div class="sol-sec">
+        <h3><span class="sn">1</span> Réalisation de la CAH</h3>
+        <ul>
+  `;
+
+  for (let step = 0; step < numPts - 1; step++) {
+    let letter = String.fromCharCode(65 + step); // A, B, C, D...
+    let stepTitle = step === 0 ? 'Initialisation' : `Étape ${step}`;
+    
+    // On ajoute un grand saut de ligne avant le div du titre s'il s'agit d'une étape suivante
+    let brs = step > 0 ? `<br><br>` : ``;
+    
+    let liHtml = `${brs}<li><div class="step-heading"><span class="sn-letter">${letter}</span> ${stepTitle}</div>`;
+
+    if (step === 0) {
+        liHtml += `On considère au départ ${numPts} classes <span class="math-class">$C_1,\\dots,C_{${numPts}}$</span> qui contiennent un unique individu : le centre de gravité de chacune de ces classes est donc formé par les coordonnées de l'individu qui la constitue. Calculons les distances entre chaque centre de gravité :<br>`;
+    } else {
+        let lm = history[history.length - 1];
+        let cA = lm.c1Obj, cB = lm.c2Obj, cNew = lm.cNewObj;
+        liHtml += `On a regroupé les classes <span class="math-class">$${cA.name}$</span> et <span class="math-class">$${cB.name}$</span> en une nouvelle classe qu'on note <span class="math-class">$${cNew.name}$</span>. On rappelle que le centre de gravité de $${cA.name}$ est $g_{${cA.id}} := ${formatCoordsTex(cA.coords)}$, celui de $${cB.name}$ est $g_{${cB.id}} := ${formatCoordsTex(cB.coords)}$. La classe $${cA.name}$ est pondérée avec un poids de $${cA.weight.toTex()}$ et la classe $${cB.name}$ avec un poids de $${cB.weight.toTex()}$. Donc le centre de gravité de la nouvelle classe $${cNew.name}$ est : 
+\\[g_{${cNew.id}} := \\frac{${cA.weight.toTfrac()} g_{${cA.id}} + ${cB.weight.toTfrac()} g_{${cB.id}}}{${cA.weight.toTfrac()} + ${cB.weight.toTfrac()}} = ${formatCoordsTex(cNew.coords)}\\] 
+Cette classe a pour poids $p_{${cNew.id}} := p_{${cA.id}} + p_{${cB.id}} = ${cNew.weight.toTex()}$.<br>`;
+    }
+
+    let D = [], W = [];
+    let minW = null, mergeI = -1, mergeJ = -1;
+    for (let i = 0; i < clusters.length; i++) {
+        D[i] = []; W[i] = [];
+        for (let j = 0; j < clusters.length; j++) {
+            if (i === j) {
+                D[i][j] = new Frac(0); W[i][j] = new Frac(0);
+            } else {
+                let d2 = new Frac(0);
+                for(let v = 0; v < numVars; v++) {
+                    let diff = clusters[i].coords[v].sub(clusters[j].coords[v]);
+                    d2 = d2.add(diff.mul(diff));
+                }
+                D[i][j] = d2;
+
+                let pi = clusters[i].weight, pj = clusters[j].weight;
+                let rho = pi.mul(pj).div(pi.add(pj));
+                let w = d2.mul(rho);
+                W[i][j] = w;
+
+                if (i < j) {
+                    if (minW === null || w.val() < minW.val()) {
+                        minW = w; mergeI = i; mergeJ = j;
+                    }
+                }
+            }
+        }
+    }
+
+    liHtml += `<br><br><ul><li><strong class="sub-step">Calcul des distances euclidiennes entre les classes :</strong><br>`;
+    
+    if (step === 0) {
+        clusters.forEach(c => {
+            liHtml += `Le centre de gravité de <span class="math-class">$${c.name}$</span> est $${formatCoordsTex(c.coords)}$. `;
+        });
+        liHtml += `<br>`;
+        for (let i = 0; i < clusters.length; i++) {
+            for (let j = i + 1; j < clusters.length; j++) {
+                let diffParts = [];
+                for(let v=0; v<numVars; v++) {
+                    diffParts.push(`\\left(${clusters[j].coords[v].toTex()}-${clusters[i].coords[v].toTex()}\\right)^2`);
+                }
+                liHtml += `— La distance euclidienne (au carré) entre les classes $${clusters[i].name}$ et $${clusters[j].name}$ est : \\[||${clusters[j].name}-${clusters[i].name}||^2 = ${diffParts.join(' + ')} = ${D[i][j].toTex()}\\]`;
+            }
+        }
+    } else {
+        let lm = history[history.length - 1];
+        let cNew = lm.cNewObj;
+        let oldClusters = clusters.filter(c => c.id !== cNew.id);
+        liHtml += `Il ne reste plus que les classes ${clusters.map(c=>c.id).join(', ')}.<br>`;
+        for (let oldC of oldClusters) {
+            let oldIdx = clusters.indexOf(oldC);
+            let newIdx = clusters.indexOf(cNew);
+            let diffParts = [];
+            for(let v=0; v<numVars; v++) {
+                diffParts.push(`\\left(${cNew.coords[v].toTex()}-${oldC.coords[v].toTex()}\\right)^2`);
+            }
+            liHtml += `— La distance euclidienne (au carré) entre les classes $${oldC.name}$ et $${cNew.name}$ est : \\[||${cNew.name}-${oldC.name}||^2 = ${diffParts.join(' + ')} = ${D[oldIdx][newIdx].toTex()}\\]`;
+        }
+    }
+    
+    liHtml += `<br>On résume ces informations dans la matrice des distances suivante :<br>`;
+    liHtml += getMatrixLatex('D', step, clusters, D);
+    liHtml += `</li>`;
+
+    liHtml += `<li><strong class="sub-step">Calcul des distances de Ward :</strong><br>`;
+    if (step === 0) {
+        liHtml += `À l'étape d'initialisation, tous les individus sont équipondérés : chaque individu $i$ a donc un poids $p_i := \\frac{1}{${numPts}}$. On a donc, pour tous entiers $i$ et $j$ compris entre 1 et ${numPts}, $\\rho_{i,j} := \\frac{p_i p_j}{p_i + p_j} = \\frac{1/${numPts*numPts}}{2/${numPts}} = \\frac{1}{${numPts*2}}$. Dès lors, on peut calculer les distances de Ward entre toute classe $i$ et $j$ distinctes par la formule $W(C_i-C_j) = \\frac{p_i p_j}{p_i+p_j}||C_i-C_j||^2$ (avec, pour toute classe $i$, $W(C_i,C_i)=0$) en multipliant le coefficient de la $i$-ème ligne et de la $j$-ème colonne de la matrice $\\textbf{D}_0$ par $\\rho_{i,j} = \\frac{1}{${numPts*2}}$. `;
+    } else {
+        let lm = history[history.length - 1];
+        let cNew = lm.cNewObj;
+        let oldClusters = clusters.filter(c => c.id !== cNew.id);
+        let rhoList = [];
+        for (let oldC of oldClusters) {
+            let pi = oldC.weight;
+            let pnew = cNew.weight;
+            let rho = pi.mul(pnew).div(pi.add(pnew));
+            rhoList.push(`\\rho_{${oldC.id},${cNew.id}} := \\frac{p_{${oldC.id}} p_{${cNew.id}}}{p_{${oldC.id}} + p_{${cNew.id}}} = \\frac{${pi.toTex()} \\times ${pnew.toTex()}}{${pi.toTex()} + ${pnew.toTex()}} = ${rho.toTex()}`);
+        }
+        
+        let rhoListStrArray = [];
+        for (let i = 0; i < rhoList.length; i += 2) {
+            let chunk = rhoList.slice(i, i + 2);
+            rhoListStrArray.push(`$${chunk.join(' \\quad ; \\quad ')}$`);
+        }
+        let rhoListStr = rhoListStrArray.join('<br>');
+        
+        liHtml += `Pour les nouvelles distances inter-classes, on calcule :<br> ${rhoListStr}<br><br>`;
+        liHtml += `Dès lors, on peut calculer les distances de Ward inter-classes par la formule $W(C_i-C_j) = \\frac{p_i p_j}{p_i + p_j}||C_i-C_j||^2$ (avec $W(C_i,C_i)=0$) en multipliant le coefficient adéquat de la matrice $\\textbf{D}_${step}$ par $\\rho_{i,j}$. On obtient alors la matrice des distances de Ward inter-classes suivante :<br>`;
+    }
+    liHtml += getMatrixLatex('W', step, clusters, W);
+    liHtml += `</li></ul>`;
+
+    let ordinals = ["premier", "deuxième", "troisième", "quatrième", "cinquième", "sixième"];
+    let mergeWord = (step === numPts - 2) ? 
+        `On regroupe finalement les deux dernières classes pour agréger l'ensemble des points du nuage.` : 
+        `On constate que, parmi toutes les classes, les classes <span class="math-class">$${clusters[mergeI].name}$</span> et <span class="math-class">$${clusters[mergeJ].name}$</span> sont les plus proches. Regrouper ces deux classes permet donc de minimiser la perte d'inertie inter-classe : c'est le ${ordinals[step]} <em>clustering</em> qu'on réalise.`;
+    
+    liHtml += `<div class="highlight-merge">${mergeWord}</div>`;
+    liHtml += `</li>`;
+    solHtml += liHtml;
+
+    // FUSION
+    let cA = clusters[mergeI], cB = clusters[mergeJ];
+    let newW = cA.weight.add(cB.weight);
+    
+    let newCoords = [];
+    for(let v = 0; v < numVars; v++) {
+        let weightedA = cA.weight.mul(cA.coords[v]);
+        let weightedB = cB.weight.mul(cB.coords[v]);
+        newCoords.push(weightedA.add(weightedB).div(newW));
+    }
+    
+    let newClusterObj = {
+        id: nextId, name: "C_{" + nextId + "}",
+        coords: newCoords, weight: newW
+    };
+
+    totalInertia = totalInertia.add(minW);
+    history.push({
+        c1Obj: cA, c2Obj: cB, 
+        newId: nextId, cNewObj: newClusterObj,
+        dist: minW
+    });
+
+    let mergedNode = {
+        id: nextId, isLeaf: false,
+        height: minW.val(),
+        left: treeNodes[cA.id], right: treeNodes[cB.id],
+        label: "C" + nextId
+    };
+    treeNodes[nextId] = mergedNode;
+
+    clusters.splice(mergeJ, 1);
+    clusters.splice(mergeI, 1);
+    clusters.push(newClusterObj);
+    nextId++;
+  }
+
+  let finalMerge = history[history.length - 1];
+  let clA = finalMerge.c1Obj, clB = finalMerge.c2Obj, clNew = finalMerge.cNewObj;
+
+  solHtml += `
+        </ul>
+      </div>
+      <div class="sol-sec" style="margin-top:4rem">
+        <h3><span class="sn">2</span> Conclusion et dendrogramme</h3>
+        <p>On a regroupé les classes <span class="math-class">$${clA.name}$</span> et <span class="math-class">$${clB.name}$</span> en une nouvelle classe qu'on note <span class="math-class">$${clNew.name}$</span> (l'ensemble des points du nuage). On rappelle que le centre de gravité de $${clA.name}$ est $g_{${clA.id}} = ${formatCoordsTex(clA.coords)}$, celui de $${clB.name}$ est $g_{${clB.id}} = ${formatCoordsTex(clB.coords)}$. La classe $${clA.name}$ est pondérée avec un poids de $${clA.weight.toTex()}$ et la classe $${clB.name}$ avec un poids de $${clB.weight.toTex()}$. Donc le centre de gravité de la nouvelle classe $${clNew.name}$ (c'est-à-dire du nuage de points) est :
+\\[g_{${clNew.id}} := \\frac{${clA.weight.toTfrac()} g_{${clA.id}} + ${clB.weight.toTfrac()} g_{${clB.id}}}{${clA.weight.toTfrac()} + ${clB.weight.toTfrac()}} = ${formatCoordsTex(clNew.coords)}\\]
+On vérifie bien que cette classe qui regroupe l'ensemble des points du nuage a pour poids $p_{${clNew.id}} := p_{${clA.id}} + p_{${clB.id}} = ${clNew.weight.toTex()} = 1$. Par suite, l'inertie totale du nuage de points est $ ${history.map(h => h.dist.toTex()).join(" + ")} = ${totalInertia.toTex()} \\approx ${(totalInertia.val()).toFixed(3)}$. En effet, la distance de Ward entre les classes $${history[0].c1Obj.name}$ et $${history[0].c2Obj.name}$ (regroupées en $${history[0].cNewObj.name}$) est $${history[0].dist.toTex()}$, `;
+        
+  for(let i=1; i<history.length; i++) {
+      solHtml += `celle entre les classes $${history[i].c1Obj.name}$ et $${history[i].c2Obj.name}$ (regroupées en $${history[i].cNewObj.name}$) est $${history[i].dist.toTex()}$`;
+      if (i === history.length - 1) solHtml += `.`;
+      else solHtml += `, `;
+  }
+  
+  solHtml += ` On obtient ainsi le dendrogramme suivant :</p>
+        ${generateDendrogramSvg(treeNodes[clNew.id], numPts)}
+        <p style="text-align:center; margin-top:1rem; font-style:italic; font-size:0.85rem; color:var(--text-muted)">En choisissant alors un <em>cut-off</em> adéquat pour la distance de Ward, on peut choisir le nombre de <em>clusters</em> finaux retenus.</p>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('sol-content').innerHTML = solHtml;
+
+  // Render MathJax
+  if (window.MathJax && MathJax.typesetPromise) {
+    MathJax.typesetPromise([document.getElementById('ex-content'), document.getElementById('sol-content')]);
+  }
+}
+
+// 4. GENERATION SVG DU DENDROGRAMME
+function generateDendrogramSvg(rootNode, numPts) {
+  let leafOrder = [];
+  function getLeaves(n) {
+    if (n.isLeaf) leafOrder.push(n);
+    else { getLeaves(n.left); getLeaves(n.right); }
+  }
+  getLeaves(rootNode);
+
+  leafOrder.forEach((n, idx) => n.x = 60 + idx * 80);
+
+  function computeX(n) {
+    if (n.isLeaf) return n.x;
+    let lx = computeX(n.left);
+    let rx = computeX(n.right);
+    n.x = (lx + rx) / 2;
+    return n.x;
+  }
+  computeX(rootNode);
+
+  let maxH = rootNode.height || 1;
+  function getY(h) {
+    return 260 - (h / maxH) * 210; 
+  }
+
+  let svgWidth = 60 + numPts * 80 + 20;
+
+  let svg = `<svg width="100%" viewBox="0 0 ${svgWidth} 300" style="max-width:${svgWidth}px; font-family:'JetBrains Mono',monospace; font-size:11px; display:block; margin:1rem auto; background:#fff; border:2px solid var(--navy-mid); border-radius:6px; box-shadow:0 4px 12px rgba(0,0,0,0.05)">`;
+
+  for (let i = 0; i <= 5; i++) {
+    let hVal = (maxH * i / 5);
+    let yVal = getY(hVal);
+    svg += `<line x1="45" y1="${yVal}" x2="${svgWidth - 20}" y2="${yVal}" stroke="#e0e0e0" stroke-dasharray="4"/>`;
+    svg += `<text x="40" y="${yVal + 4}" text-anchor="end" fill="#888">${hVal.toFixed(2)}</text>`;
+  }
+
+  function drawTree(n) {
+    if (!n.isLeaf) {
+      let y = getY(n.height);
+      let ly = getY(n.left.height);
+      let ry = getY(n.right.height);
+
+      svg += `<line x1="${n.left.x}" y1="${y}" x2="${n.right.x}" y2="${y}" stroke="var(--navy)" stroke-width="2.5"/>`;
+      svg += `<line x1="${n.left.x}" y1="${y}" x2="${n.left.x}" y2="${ly}" stroke="var(--navy)" stroke-width="2.5"/>`;
+      svg += `<line x1="${n.right.x}" y1="${y}" x2="${n.right.x}" y2="${ry}" stroke="var(--navy)" stroke-width="2.5"/>`;
+      
+      svg += `<text x="${n.x}" y="${y - 8}" text-anchor="middle" fill="var(--gold)" font-weight="bold">${n.height.toFixed(2)}</text>`;
+      
+      drawTree(n.left);
+      drawTree(n.right);
+    } else {
+      svg += `<circle cx="${n.x}" cy="${getY(n.height)}" r="4.5" fill="var(--green)"/>`;
+      svg += `<text x="${n.x}" y="${getY(n.height) + 20}" text-anchor="middle" fill="var(--text)" font-weight="bold">${n.label}</text>`;
+    }
+  }
+  drawTree(rootNode);
+
+  svg += `</svg>`;
+  return svg;
+}
+
+// ════════════════════════════════════════
+// UI / INTERACTIONS
+// ════════════════════════════════════════
+function toggleSol() {
+  solVisible = !solVisible;
+  const c = document.getElementById('sol-card'), b = document.getElementById('toggle-btn');
+  if (solVisible) {
+    c.classList.add('visible'); b.classList.add('shown');
+    b.textContent = "Masquer le corrigé";
+  } else {
+    c.classList.remove('visible'); b.classList.remove('shown');
+    b.textContent = "Afficher le corrigé complet";
+  }
+}
+
+function copySeed() {
+  const s = document.getElementById('seed-disp').textContent;
+  if (s && s !== '—') {
+    navigator.clipboard.writeText(s).then(() => {
+      const b = event.target, o = b.textContent;
+      b.textContent = '✓ Copié'; setTimeout(() => b.textContent = o, 1500);
+    });
+  }
+}
+
+// ════════════════════════════════════════
+// PDF / PRINT
+// ════════════════════════════════════════
+function openPdfModal() {
+  document.getElementById('pdf-ov').style.display = 'block';
+  document.getElementById('pdf-modal').style.display = 'block';
+  document.getElementById('opt-sol').checked = solVisible;
+}
+function closePdfModal() {
+  document.getElementById('pdf-ov').style.display = 'none';
+  document.getElementById('pdf-modal').style.display = 'none';
+}
+function doPrint() {
+  const noHdr = !document.getElementById('opt-header').checked;
+  const inclSol = document.getElementById('opt-sol').checked;
+  const body = document.body, sc = document.getElementById('sol-card');
+  
+  if (noHdr) body.classList.add('print-no-header');
+  if (inclSol) { body.classList.add('print-force-solution'); body.classList.remove('print-no-solution'); sc.style.display = 'block'; }
+  else { body.classList.add('print-no-solution'); body.classList.remove('print-force-solution'); }
+  
+  closePdfModal();
+  setTimeout(() => {
+    window.print();
+    setTimeout(() => {
+      body.className = '';
+      if (!solVisible) sc.style.display = '';
+    }, 100);
+  }, 100);
+}
+</script>
+</body>
+</html>

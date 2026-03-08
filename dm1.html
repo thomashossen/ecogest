@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Générateur d'exercices</title>
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['\\(','\\)']], displayMath: [['\\[','\\]']], packages: {'[+]': ['ams']} },
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] }
+};
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 0;border-bottom:3px solid var(--gold)}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+.btn-group{display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem}
+.btn-factor{background:transparent;border:1.5px solid rgba(201,149,42,.5);color:var(--cream);padding:.65rem 1.4rem;border-radius:4px;cursor:pointer;transition:all .2s;text-align:left;font-family:'Source Serif 4',serif}
+.btn-factor:hover{background:rgba(201,149,42,.15);border-color:var(--gold-light)}
+.btn-factor.active{background:var(--gold);border-color:var(--gold);color:var(--navy)}
+.btn-top{font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;opacity:.7;display:block;margin-bottom:2px}
+.btn-bottom{font-size:.95rem;font-weight:600;display:block}
+
+/* CONTROLS */
+#controls-bar{display:none;border-top:1px solid rgba(255,255,255,.08);padding:1.1rem 0 1.3rem}
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.5)}
+.ctrl-inp{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.38rem .65rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.82rem;width:88px;outline:none;transition:border-color .2s}
+.ctrl-inp:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.ctrl-tip{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:rgba(250,247,240,.33);margin-top:2px}
+.seed-row{display:flex;align-items:flex-end;gap:.45rem}
+.btn-copy-seed{background:transparent;border:1px solid rgba(201,149,42,.4);color:rgba(250,247,240,.55);padding:.38rem .55rem;border-radius:3px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:.65rem;transition:all .18s;white-space:nowrap}
+.btn-copy-seed:hover{border-color:var(--gold-light);color:var(--gold-light)}
+.ctrl-vsep{width:1px;background:rgba(255,255,255,.1);align-self:stretch;margin:0 .2rem}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.3rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.9rem;font-weight:600;transition:background .18s;white-space:nowrap;align-self:flex-end}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.welcome-msg{text-align:center;padding:5rem 2rem;color:var(--text-muted);font-style:italic;font-size:1.05rem}
+.welcome-msg .arrow{font-size:2rem;display:block;margin-bottom:1rem;opacity:.4}
+
+/* TOP BAR */
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.top-bar-left{display:flex;gap:.6rem;align-items:center}
+.btn-sm{background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:'JetBrains Mono',monospace;font-size:.67rem;letter-spacing:.08em;text-transform:uppercase;padding:.4rem 1rem;border-radius:3px;cursor:pointer;transition:all .18s;white-space:nowrap}
+.btn-sm:hover{background:var(--gold);color:var(--navy)}
+.btn-sm.pdf{border-color:#7bafd4;color:#7bafd4}
+.btn-sm.pdf:hover{background:#7bafd4;color:var(--navy)}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.67rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:500}
+
+/* CARDS */
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);margin-bottom:1.5rem;border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+
+/* QUESTIONS */
+.questions ol{counter-reset:q;list-style:none}
+.questions ol>li{counter-increment:q;margin-bottom:1.4rem;display:flex;gap:1rem;align-items:flex-start}
+.questions ol>li::before{content:counter(q);min-width:28px;height:28px;background:var(--navy);color:var(--cream);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:500;flex-shrink:0;margin-top:.15rem}
+.questions ol>li .q-text{flex:1;font-size:.93rem;text-align:justify}
+.q-lbl{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:3px}
+
+/* ANOVA TABLE */
+.tw{overflow-x:auto;margin:1.2rem 0}
+table.at{border-collapse:collapse;width:100%;font-size:.86rem}
+table.at th{background:var(--navy);color:var(--cream);padding:.5rem .85rem;text-align:center;font-family:'Source Serif 4',serif;font-weight:600;font-size:.8rem;border:1px solid var(--navy-mid)}
+table.at th:first-child{text-align:left}
+table.at td{padding:.45rem .85rem;border:1px solid var(--border);text-align:center}
+table.at td:first-child{text-align:left;font-weight:600}
+table.at tr:nth-child(even) td{background:var(--cream-dark)}
+table.at tr:last-child td{background:#f5f0e8;font-style:italic}
+.ch{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--red);font-size:1rem}
+.cf{font-family:'JetBrains Mono',monospace;color:var(--green);font-weight:600}
+
+/* SOLUTION */
+.sol-toggle-wrap{text-align:center;margin:1rem 0 0}
+.btn-toggle{background:transparent;border:2px solid var(--navy);color:var(--navy);font-family:'Source Serif 4',serif;font-size:.9rem;padding:.6rem 2rem;border-radius:4px;cursor:pointer;transition:all .2s}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--navy);color:var(--cream)}
+.sol-card{border-top:4px solid var(--green);display:none}
+.sol-card.visible{display:block;animation:fi .3s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+.sol-sec{margin-bottom:1.6rem}
+.sol-sec h3{display:flex;align-items:center;gap:.6rem;font-family:'Playfair Display',serif;font-size:1rem;font-weight:600;color:var(--navy);margin-bottom:.7rem;padding-bottom:.35rem;border-bottom:1px solid var(--border)}
+.sn{width:24px;height:24px;background:var(--green);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.68rem;flex-shrink:0}
+.st{font-size:.92rem;line-height:1.75;text-align:justify}
+.st p{margin-bottom:.7rem}
+.st ul{list-style:disc;padding-left:1.5rem;margin-bottom:.7rem}
+.st ul li{margin-bottom:.35rem}
+.concl{background:rgba(45,107,74,.08);border-left:3px solid var(--green);padding:.8rem 1.1rem;border-radius:0 4px 4px 0;font-size:.9rem;margin-top:.8rem;text-align:justify}
+.mb{overflow-x:auto;padding:.8rem 0;text-align:center}
+
+/* PDF MODAL */
+#pdf-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;backdrop-filter:blur(2px)}
+#pdf-modal{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:101;background:#fff;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.25);width:390px;max-width:95vw;border-top:4px solid #7bafd4;overflow:hidden}
+.mh{background:var(--navy);color:var(--cream);padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
+.mh h3{font-family:'Playfair Display',serif;font-size:1rem;font-weight:600}
+.mclose{background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:1.2rem;line-height:1;padding:2px 6px;border-radius:3px;transition:color .15s}
+.mclose:hover{color:#fff}
+.mb2{padding:1.5rem}
+.opt-row{display:flex;align-items:flex-start;gap:.75rem;margin-bottom:1rem;cursor:pointer}
+.opt-row input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--navy);flex-shrink:0;margin-top:3px}
+.opt-lbl{font-size:.93rem}
+.opt-desc{font-size:.75rem;color:var(--text-muted);display:block}
+.seed-note{font-family:'JetBrains Mono',monospace;font-size:.7rem;background:var(--cream-dark);border:1px solid var(--border);padding:.55rem .85rem;border-radius:3px;color:var(--text-muted);margin-bottom:1.2rem;line-height:1.5}
+.seed-note strong{color:var(--navy)}
+.mactions{display:flex;gap:.6rem}
+.btn-print{flex:1;background:var(--navy);color:var(--cream);border:none;padding:.7rem;border-radius:4px;font-family:'Source Serif 4',serif;font-size:.9rem;cursor:pointer;transition:background .2s}
+.btn-print:hover{background:var(--navy-mid)}
+.btn-cancel{background:transparent;border:1px solid var(--border);color:var(--text-muted);padding:.7rem 1rem;border-radius:4px;font-family:'Source Serif 4',serif;font-size:.9rem;cursor:pointer;transition:all .2s}
+.btn-cancel:hover{border-color:var(--text);color:var(--text)}
+
+/* PRINT */
+@media print{
+:root{--navy:#0d1b2a;--cream:#fff;--cream-dark:#f8f8f8;--gold:#c9952a;--green:#2d6b4a;--border:#ccc}
+body{background:#fff;font-size:11pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+header{padding:1rem 1.5rem .8rem}
+header .subtitle{display:none}
+#controls-bar,.top-bar,.sol-toggle-wrap,#pdf-ov,#pdf-modal{display:none!important}
+.card{box-shadow:none;border-radius:0;page-break-inside:avoid;margin-bottom:1rem}
+main{padding:1rem 1.5rem;max-width:100%}
+body.print-no-header header{display:none!important}
+body.print-no-solution .sol-card{display:none!important}
+body.print-force-solution .sol-card{display:block!important}
+.mb{text-align:left}
+.tw{overflow:visible}
+table.at{font-size:9pt}
+}
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-badge">DATA MINING</div>
+  <h1>Analyse de la variance (ANOVA)</h1>
+  <p class="subtitle">© Thomas Hossen – Version du 7 mars 2026</p>
+  <div class="btn-group">
+    <button class="btn-factor" id="btn1" onclick="selectType(1)">
+      <span class="btn-top">Type</span>
+      <span class="btn-bottom">ANOVA à 1 facteur</span>
+    </button>
+    <button class="btn-factor" id="btn2" onclick="selectType(2)">
+      <span class="btn-top">Type</span>
+      <span class="btn-bottom">ANOVA à 2 facteurs</span>
+    </button>
+  </div>
+
+  <div id="controls-bar">
+    <div class="ctrls">
+
+      <div class="ctrl-g">
+        <span class="ctrl-lbl">Seed de reproductibilité</span>
+        <div class="seed-row">
+          <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="0" max="99999999">
+          <button class="btn-copy-seed" onclick="copySeed()" title="Copier la seed active">⧉ Copier</button>
+        </div>
+        <span class="ctrl-tip">Vide = aléatoire à chaque génération</span>
+      </div>
+
+      <div class="ctrl-vsep"></div>
+
+      <div id="p1f" style="display:none" class="ctrls">
+        <div class="ctrl-g">
+          <span class="ctrl-lbl">Obs. / modalité <em>(n)</em></span>
+          <input class="ctrl-inp" type="number" id="p1f-n" min="5" max="200" placeholder="défaut">
+          <span class="ctrl-tip">5 – 200, défaut thème</span>
+        </div>
+      </div>
+
+      <div id="p2f" style="display:none" class="ctrls">
+        <div class="ctrl-g">
+          <span class="ctrl-lbl">Obs. / cellule <em>(m)</em></span>
+          <input class="ctrl-inp" type="number" id="p2f-m" min="3" max="50" placeholder="défaut">
+          <span class="ctrl-tip">3 – 50, défaut thème</span>
+        </div>
+      </div>
+
+      <div class="ctrl-vsep"></div>
+
+      <button class="btn-gen" onclick="generateFromControls()">Générer →</button>
+    </div>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" class="welcome-msg">
+    <span class="arrow">↑</span>
+    Choisissez un type d'ANOVA, configurez les paramètres, puis cliquez sur Générer.
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="top-bar-left">
+        <button class="btn-sm" onclick="regen()">↺ Nouvel énoncé</button>
+        <button class="btn-sm pdf" onclick="openPdfModal()">⬇ Exporter PDF</button>
+      </div>
+      <div class="seed-badge">Seed&nbsp;: <span id="seed-disp">—</span></div>
+    </div>
+
+    <div id="ex-card" class="card">
+      <div class="card-header"><span class="tag">Énoncé</span><h2 id="card-title">ANOVA</h2></div>
+      <div class="card-body" id="ex-content"></div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag">Corrigé</span><h2>ANOVA</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+
+  </div>
+</main>
+
+<div id="pdf-ov" onclick="closePdfModal()"></div>
+<div id="pdf-modal">
+  <div class="mh">
+    <h3>Exporter en PDF</h3>
+    <button class="mclose" onclick="closePdfModal()">✕</button>
+  </div>
+  <div class="mb2">
+    <div class="seed-note">Seed&nbsp;: <strong id="modal-seed">—</strong> — notez cette valeur pour reproduire exactement cet exercice.</div>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-header" checked>
+      <div><span class="opt-lbl">Inclure l'en-tête de page</span>
+           <span class="opt-desc">Titre, badge « DATA MINING » et intitulé de l'exercice</span></div>
+    </label>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-sol">
+      <div><span class="opt-lbl">Inclure le corrigé complet</span>
+           <span class="opt-desc">Tableau ANOVA rempli, conclusions et interprétations</span></div>
+    </label>
+    <div class="mactions">
+      <button class="btn-print" onclick="doPrint()">🖨&nbsp;Imprimer / Sauvegarder PDF</button>
+      <button class="btn-cancel" onclick="closePdfModal()">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+// SEEDED PRNG — mulberry32
+// ════════════════════════════════════════
+let _rand, _activeSeed = 0;
+function initRand(seed) {
+  _activeSeed = seed >>> 0;
+  let s = _activeSeed;
+  _rand = () => {
+    s = (s + 0x6D2B79F5) >>> 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const rI = (a,b) => Math.floor(_rand()*(b-a+1))+a;
+const rA = arr => arr[Math.floor(_rand()*arr.length)];
+const rPv = () => (0.056 + _rand()*0.88).toFixed(3);
+
+// ════════════════════════════════════════
+// F CRITICAL TABLE + INTERPOLATION
+// df2 breakpoints: [10,20,30,40,60,80,100,120,1000]
+// ════════════════════════════════════════
+const DF2B = [10,20,30,40,60,80,100,120,1000];
+const FT = {
+  0.90:[
+    [3.29,2.97,2.88,2.84,2.79,2.77,2.76,2.75,2.71],
+    [2.92,2.59,2.49,2.44,2.39,2.37,2.36,2.35,2.30],
+    [2.73,2.38,2.28,2.23,2.18,2.15,2.14,2.13,2.08],
+    [2.61,2.25,2.14,2.09,2.04,2.02,2.00,1.99,1.94],
+    [2.52,2.16,2.05,2.00,1.95,1.92,1.91,1.90,1.85],
+    [2.46,2.09,1.98,1.93,1.87,1.85,1.83,1.82,1.77],
+    [2.41,2.04,1.93,1.87,1.82,1.79,1.78,1.77,1.72],
+    [2.38,2.00,1.88,1.83,1.77,1.75,1.73,1.72,1.67],
+    [2.35,1.96,1.85,1.79,1.74,1.71,1.69,1.68,1.63],
+    [2.32,1.94,1.82,1.76,1.71,1.68,1.66,1.65,1.60],
+    [2.30,1.91,1.79,1.74,1.68,1.65,1.63,1.62,1.57],
+    [2.28,1.89,1.77,1.71,1.66,1.63,1.61,1.60,1.55],
+    [2.27,1.87,1.75,1.69,1.64,1.61,1.59,1.58,1.52],
+    [2.25,1.86,1.74,1.68,1.62,1.59,1.57,1.56,1.51],
+  ],
+  0.95:[
+    [4.96,4.35,4.17,4.08,4.00,3.96,3.94,3.92,3.84],
+    [4.10,3.49,3.32,3.23,3.15,3.11,3.09,3.07,3.00],
+    [3.71,3.10,2.92,2.84,2.76,2.72,2.70,2.68,2.60],
+    [3.48,2.87,2.69,2.61,2.53,2.49,2.46,2.45,2.37],
+    [3.33,2.71,2.53,2.45,2.37,2.33,2.31,2.29,2.21],
+    [3.22,2.60,2.42,2.34,2.25,2.21,2.19,2.17,2.10],
+    [3.14,2.51,2.33,2.25,2.17,2.13,2.10,2.09,2.01],
+    [3.07,2.45,2.27,2.18,2.10,2.06,2.03,2.02,1.94],
+    [3.02,2.39,2.21,2.12,2.04,2.00,1.97,1.96,1.88],
+    [2.98,2.35,2.16,2.08,1.99,1.95,1.93,1.91,1.83],
+    [2.94,2.31,2.13,2.04,1.95,1.91,1.89,1.87,1.79],
+    [2.91,2.28,2.09,2.00,1.92,1.88,1.85,1.83,1.75],
+    [2.89,2.25,2.06,1.97,1.89,1.85,1.82,1.80,1.72],
+    [2.86,2.22,2.04,1.95,1.86,1.82,1.79,1.78,1.69],
+  ],
+  0.99:[
+    [10.04,8.10,7.56,7.31,7.08,6.96,6.90,6.85,6.63],
+    [7.56,5.85,5.39,5.18,4.98,4.88,4.82,4.79,4.61],
+    [6.55,4.94,4.51,4.31,4.13,4.04,3.98,3.95,3.78],
+    [5.99,4.43,4.02,3.83,3.65,3.56,3.51,3.48,3.32],
+    [5.64,4.10,3.70,3.51,3.34,3.26,3.21,3.17,3.02],
+    [5.39,3.87,3.47,3.29,3.12,3.04,2.99,2.96,2.80],
+    [5.20,3.70,3.30,3.12,2.95,2.87,2.82,2.79,2.64],
+    [5.06,3.56,3.17,2.99,2.82,2.74,2.69,2.66,2.51],
+    [4.94,3.46,3.07,2.89,2.72,2.64,2.59,2.56,2.41],
+    [4.85,3.37,2.98,2.80,2.63,2.55,2.50,2.47,2.32],
+    [4.77,3.30,2.91,2.73,2.57,2.49,2.44,2.41,2.25],
+    [4.71,3.23,2.84,2.66,2.50,2.42,2.37,2.34,2.18],
+    [4.65,3.18,2.79,2.61,2.44,2.36,2.31,2.28,2.12],
+    [4.60,3.13,2.74,2.56,2.39,2.32,2.27,2.24,2.07],
+  ]
+};
+function getFCrit(df1, df2, alpha) {
+  const row = FT[alpha][Math.min(Math.max(df1,1),14)-1];
+  if (!row) return 2.0;
+  if (df2 <= DF2B[0]) return row[0];
+  if (df2 >= DF2B[DF2B.length-1]) return row[row.length-1];
+  let lo = 0;
+  for (let i=0; i<DF2B.length-1; i++) { if (df2>=DF2B[i] && df2<=DF2B[i+1]){lo=i;break;} }
+  const x0=1/DF2B[lo], x1=1/DF2B[lo+1];
+  const t=(1/df2-x0)/(x1-x0);
+  return +((row[lo]+t*(row[lo+1]-row[lo])).toFixed(3));
+}
+
+// ════════════════════════════════════════
+// THEMES
+// ════════════════════════════════════════
+const T1 = [
+  {variable:"la durée hebdomadaire de travail (en heures)",varShort:"durée hebdomadaire de travail",factorLabel:"Statut",mods:["cadres","non-cadres","alternants","stagiaires"],context:"une grande entreprise de conseil parisienne",pop:"employés",popSing:"employé",k:4,npp:20,f_le:"le statut de l'employé",f_de:"du statut de l'employé"},
+  {variable:"le salaire mensuel net (en euros)",varShort:"salaire mensuel net",factorLabel:"Niveau d'études",mods:["Bac ou moins","Bac+2/Bac+3","Bac+5","Doctorat"],context:"une enquête nationale RH auprès de salariés du secteur privé",pop:"salariés",popSing:"salarié",k:4,npp:25,f_le:"le niveau d'études",f_de:"du niveau d'études"},
+  {variable:"la durée du trajet domicile-travail (en minutes)",varShort:"durée de trajet",factorLabel:"Mode de transport",mods:["voiture","transports en commun","vélo","marche à pied"],context:"une étude de mobilité urbaine menée à Lyon",pop:"navetteurs",popSing:"navetteur",k:4,npp:30,f_le:"le mode de transport",f_de:"du mode de transport"},
+  {variable:"le score de satisfaction client (sur 10)",varShort:"score de satisfaction",factorLabel:"Canal de contact",mods:["interface en ligne","téléphone","guichet physique","e-mail"],context:"une grande enseigne de distribution française",pop:"clients",popSing:"client",k:4,npp:15,f_le:"le canal de contact",f_de:"du canal de contact"},
+  {variable:"la durée d'hospitalisation (en jours)",varShort:"durée d'hospitalisation",factorLabel:"Service médical",mods:["cardiologie","orthopédie","pneumologie","neurologie"],context:"un hôpital universitaire de région parisienne",pop:"patients hospitalisés",popSing:"patient hospitalisé",k:4,npp:20,f_le:"le service médical",f_de:"du service médical"},
+  {variable:"la consommation électrique mensuelle (en kWh)",varShort:"consommation électrique",factorLabel:"Type de logement",mods:["studio (T1)","appartement T2/T3","appartement T4+","maison individuelle"],context:"une étude de l'ADEME sur la consommation résidentielle",pop:"foyers",popSing:"foyer",k:4,npp:25,f_le:"le type de logement",f_de:"du type de logement"},
+  {variable:"la note obtenue à l'examen final (sur 20)",varShort:"note à l'examen",factorLabel:"Méthode de révision",mods:["révision en groupe","révision individuelle","e-learning"],context:"une université parisienne en licence de mathématiques",pop:"étudiants",popSing:"étudiant",k:3,npp:20,f_le:"la méthode de révision",f_de:"de la méthode de révision"},
+  {variable:"le temps de réponse d'une requête réseau (en ms)",varShort:"temps de réponse",factorLabel:"Type de requête",mods:["GET simple","GET complexe","POST","DELETE"],context:"une plateforme SaaS d'entreprise en production",pop:"requêtes enregistrées",popSing:"requête",k:4,npp:50,f_le:"le type de requête",f_de:"du type de requête"}
+];
+const T2 = [
+  {variable:"la dépense mensuelle consacrée au logement (en euros)",varShort:"dépense en logement",factor1Label:"CSP",mods1:["agriculteurs","artisans/commerçants","cadres et prof. intel. sup.","prof. intermédiaires","employés","ouvriers","retraités","autres sans activité"],factor2Label:"Zone urbaine",mods2:["centre-ville","petite couronne","grande couronne"],context:"un échantillon représentatif de ménages d'Île-de-France",pop:"ménages",k1:8,k2:3,m:6,f1_le:"la CSP du chef de famille",f2_le:"le type de zone urbaine"},
+  {variable:"le salaire annuel brut (en k€)",varShort:"salaire annuel brut",factor1Label:"Secteur",mods1:["industrie","services aux entreprises","finance/assurance","technologies","santé","éducation","commerce","BTP"],factor2Label:"Région",mods2:["Île-de-France","Auvergne-Rhône-Alpes","PACA"],context:"une enquête nationale INSEE sur les salaires",pop:"salariés",k1:8,k2:3,m:5,f1_le:"le secteur d'activité",f2_le:"la région de l'entreprise"},
+  {variable:"le taux de congestion routière (en %)",varShort:"taux de congestion",factor1Label:"Type de voie",mods1:["autoroute urbaine","route nationale","route départementale","voie rapide périph.","boulevard principal","rue secondaire"],factor2Label:"Créneau horaire",mods2:["pointe matinale (7h–9h)","heures creuses (10h–16h)","pointe vespérale (17h–19h)"],context:"une étude de trafic SANEF en Île-de-France",pop:"tronçons observés",k1:6,k2:3,m:8,f1_le:"le type de voie",f2_le:"le créneau horaire"},
+  {variable:"le score de bien-être au travail (sur 100)",varShort:"score de bien-être",factor1Label:"Taille",mods1:["TPE (< 10 sal.)","PME (10–250 sal.)","ETI (250–5000 sal.)","Grande (> 5000 sal.)"],factor2Label:"Secteur",mods2:["secteur privé","secteur public","secteur associatif"],context:"une enquête DARES sur la qualité de vie au travail",pop:"salariés",k1:4,k2:3,m:10,f1_le:"la taille d'entreprise",f2_le:"le secteur institutionnel"},
+  {variable:"la consommation de chauffage mensuelle (en kWh)",varShort:"consommation de chauffage",factor1Label:"Type de logement",mods1:["studio","appart. T2","appart. T3","appart. T4+","maison individuelle","maison mitoyenne"],factor2Label:"Saison",mods2:["hiver","mi-saison","été"],context:"une étude de l'Observatoire de l'énergie résidentielle",pop:"logements",k1:6,k2:3,m:8,f1_le:"le type de logement",f2_le:"la saison"},
+  {variable:"la durée d'une consultation médicale (en minutes)",varShort:"durée de consultation",factor1Label:"Spécialité",mods1:["médecine générale","cardiologie","psychiatrie","ophtalmologie","gynécologie","dermatologie","orthopédie","gastro-entérologie"],factor2Label:"Tranche d'âge",mods2:["18–35 ans","36–60 ans","60+ ans"],context:"une étude CNAM sur les actes médicaux en ville",pop:"consultations",k1:8,k2:3,m:6,f1_le:"la spécialité médicale",f2_le:"la tranche d'âge du patient"},
+  {variable:"le chiffre d'affaires mensuel moyen (en k€)",varShort:"chiffre d'affaires",factor1Label:"Catégorie",mods1:["alimentaire","habillement","électronique","sport/loisirs","culture","bricolage","mobilier","cosmétique"],factor2Label:"Type de jour",mods2:["jour ouvrable","week-end","jour férié"],context:"un réseau de grandes surfaces spécialisées en France",pop:"magasins",k1:8,k2:3,m:5,f1_le:"la catégorie de produit",f2_le:"le type de jour"},
+  {variable:"la durée totale de trajet porte-à-porte (en heures)",varShort:"durée totale de trajet",factor1Label:"Transport",mods1:["voiture","TGV","avion","autocar","vélo","marche","moto","covoiturage"],factor2Label:"Distance",mods2:["courte (< 50 km)","moyenne (50–300 km)","longue (> 300 km)"],context:"une enquête nationale CEREMA sur les mobilités longue distance",pop:"voyages",k1:8,k2:3,m:6,f1_le:"le moyen de transport",f2_le:"la catégorie de distance"}
+];
+
+// ════════════════════════════════════════
+// OVERRIDE HELPERS
+// ════════════════════════════════════════
+function padMods(mods, k, pfx) {
+  const out = mods.slice(0, k);
+  for (let i=out.length+1; i<=k; i++) out.push(pfx+' '+i);
+  return out;
+}
+function applyOvr1(theme, ko, no) {
+  const t = {...theme};
+  if (ko>=2){t.k=ko; t.mods=padMods(theme.mods, ko, 'groupe');}
+  if (no>=2) t.npp=no;
+  return t;
+}
+function applyOvr2(theme, k1o, k2o, mo) {
+  const t = {...theme};
+  if (k1o>=2){t.k1=k1o; t.mods1=padMods(theme.mods1, k1o, 'groupe');}
+  if (k2o>=2){t.k2=k2o; t.mods2=padMods(theme.mods2, k2o, 'zone');}
+  if (mo>=2) t.m=mo;
+  return t;
+}
+
+// ════════════════════════════════════════
+// TABLE HELPERS
+// ════════════════════════════════════════
+const TH = `<thead><tr><th>Variation</th><th>Somme des carrés</th><th>Degrés de liberté</th><th>Carrés moyens</th><th><em>F</em> de Fisher</th></tr></thead>`;
+function atbl(rows) { return `<div class="tw"><table class="at">${TH}<tbody>${rows}</tbody></table></div>`; }
+function cch(val,show,key) { return show.includes(key)?`<td>${val}</td>`:`<td class="ch">?</td>`; }
+
+// ════════════════════════════════════════
+// GENERATE 1F
+// ════════════════════════════════════════
+function gen1F(t) {
+  const k=t.k, n=k*t.npp, df_f=k-1, df_r=n-k, df_t=n-1;
+  const MS_r=rI(1,20), F=rI(5,50), MS_f=F*MS_r, SC_f=MS_f*df_f, SC_r=MS_r*df_r, SC_t=SC_f+SC_r;
+  const show=rA([['SC_f','MS_r'],['SC_f','F'],['MS_f','MS_r']]);
+  const lev = rA([0.90, 0.95, 0.99]);
+  const pct = Math.round(lev * 100);
+  const fcrit = getFCrit(df_f, df_r, lev);
+  return {k, npp:t.npp, n, df_f, df_r, df_t, MS_r, F_stat:F, MS_f, SC_f, SC_r, SC_t, show, lev, pct, fcrit};
+}
+
+function ex1F(t, d) {
+  const pS=rPv(), pL=rPv(), {k,npp,n,pct}=d;
+  const rows = [
+    `<tr><td>${t.factorLabel}</td>${cch(d.SC_f,d.show,'SC_f')}<td class="ch">?</td>${cch(d.MS_f,d.show,'MS_f')}${cch(d.F_stat,d.show,'F')}</tr>`,
+    `<tr><td>Résiduelle</td><td class="ch">?</td><td class="ch">?</td>${cch(d.MS_r,d.show,'MS_r')}<td></td></tr>`,
+    `<tr><td>Totale</td><td class="ch">?</td><td class="ch">?</td><td></td><td></td></tr>`,
+  ].join('');
+  return {pS,pL,html:`
+<div class="context-block">On cherche à expliquer ${t.variable} pour ${t.context} en fonction ${t.f_de}&nbsp;:
+  ${t.mods.map((m,i)=>`<em>${m}</em>&nbsp;(modalité&nbsp;${i+1})`).join(', ')}.
+  Pour chacune des \\(k:=${k}\\) modalités, on interroge \\(${npp}\\)&nbsp;${t.pop}.
+  Pour tout \\(j\\in\\{1,\\ldots,${k}\\}\\) et tout \\(i\\in\\{1,\\ldots,${npp}\\}\\), on note \\(Y_{i,j}\\) la valeur observée de l'individu \\(i\\) pour ${t.variable} et \\(\\mu_j\\) la moyenne théorique de la modalité \\(j\\). L'étude repose sur le modèle d'analyse de la variance \\(Y_{i,j}=\\mu_j+u_{i,j}\\) où \\(u_{i,j}\\) est une variable aléatoire d'espérance nulle.</div>
+<div class="questions"><ol>
+  <li><div class="q-text"><span class="q-lbl">Questions préliminaires</span>Combien l'échantillon comporte-t-il d'individus au total ? Pourquoi le cadre de l'analyse de la variance (ANOVA) est-il ici approprié ? Quelles hypothèses doit vérifier la variable aléatoire \\(u_{i,j}\\) pour que celui-ci soit valide ?</div></li>
+  <li><div class="q-text"><span class="q-lbl">Validité des hypothèses</span>On suppose que la p-value du test de Shapiro-Wilk vaut ${pS} et que celle du test de Levene vaut ${pL}. Rappelez les hypothèses testées par ces deux procédures statistiques (hypothèses nulle et alternative). Que peut-on en déduire quant à la validité de l'ANOVA ?</div></li>
+  <li><div class="q-text"><span class="q-lbl">Tableau ANOVA</span>On obtient le tableau ci-dessous. Certaines valeurs sont manquantes (<span class="ch">?</span>). Retrouvez-les et complétez le tableau. Vous justifierez chacun des calculs réalisés. ${atbl(rows)}</div></li>
+  <li><div class="q-text"><span class="q-lbl">Réécriture en modèle linéaire</span>Réécrire le modèle \\(Y_{i,j}=\\mu_j+u_{i,j}\\) comme un modèle de régression linéaire à l'aide de variables dichotomiques. Définissez chaque variable et précisez le lien avec \\(\\mu_1,\\ldots,\\mu_{${k}}\\).</div></li>
+  <li><div class="q-text"><span class="q-lbl">Estimateurs et décomposition</span>On pose, pour tout \\(j\\in\\{1,\\ldots,${k}\\}\\)&nbsp;:
+    \\[\\overline{\\mathbf{Y}}_j=\\frac{1}{${npp}}\\sum_{i=1}^{${npp}}Y_{i,j}\\quad\\text{et}\\quad\\overline{\\mathbf{Y}}=\\frac{1}{${n}}\\sum_{j=1}^{${k}}\\sum_{i=1}^{${npp}}Y_{i,j}\\]
+    Quels sont les estimateurs MCO de \\(\\mu_j\\) ? Définissez la SCT, la SCE et la SCR. Rappelez l'équation d'analyse de la variance et interprétez-la.</div></li>
+  <li><div class="q-text"><span class="q-lbl">Test de l'effet global</span>Y a-t-il un effet significatif ${t.f_de} sur ${t.varShort} au seuil ${pct}&nbsp;%? Rappeler \\((H_0)\\), \\((H_1)\\), la statistique de test, sa loi sous \\((H_0)\\) et la règle de décision.</div></li>
+</ol></div>`};
+}
+
+function sol1F(t, d, pS, pL) {
+  const {k,n,npp,df_f,df_r,df_t,SC_f,SC_r,SC_t,MS_f,MS_r,F_stat,fcrit,pct,lev}=d;
+  const levStr = lev.toFixed(2).replace('.', '{,}');
+  const frows=[
+    `<tr><td>${t.factorLabel}</td><td class="cf">${SC_f}</td><td class="cf">${df_f}</td><td class="cf">${MS_f}</td><td class="cf">${F_stat}</td></tr>`,
+    `<tr><td>Résiduelle</td><td class="cf">${SC_r}</td><td class="cf">${df_r}</td><td class="cf">${MS_r}</td><td></td></tr>`,
+    `<tr><td>Totale</td><td class="cf">${SC_t}</td><td class="cf">${df_t}</td><td></td><td></td></tr>`,
+  ].join('');
+  const concl = F_stat > fcrit
+    ? `Or on a \\(\\widehat{F}=${F_stat}>${fcrit}\\) (voir tableau ANOVA de la troisième question). Donc on peut rejeter l'hypothèse nulle \\((H_0)\\) au seuil de confiance ${pct}&nbsp;%&nbsp;: on en déduit, avec un niveau de confiance de ${pct}&nbsp;%, que le facteur « ${t.factorLabel} » influence significativement ${t.varShort}.`
+    : `Or on a \\(\\widehat{F}=${F_stat}\\leq ${fcrit}\\) (voir tableau ANOVA de la troisième question). Donc on ne peut pas rejeter l'hypothèse nulle \\((H_0)\\) au seuil de confiance ${pct}&nbsp;%&nbsp;: on en déduit, avec un niveau de confiance de ${pct}&nbsp;%, que le facteur « ${t.factorLabel} » n'a pas d'effet statistiquement significatif sur ${t.varShort}.`;
+  return `
+<div class="sol-sec"><h3><span class="sn">1</span>Questions préliminaires</h3><div class="st">
+<p>Le facteur « ${t.factorLabel} » comporte \\(k:=${k}\\) modalités. Pour chacune de ces modalités, il y a \\(${npp}\\) ${t.pop} interrogés. Le nombre total d'individus dans l'échantillon est donc \\(n:=${npp}\\times ${k}=${n}\\). Par suite, on cherche à expliquer ${t.varShort} (variable quantitative) en fonction d'un facteur qualitatif : ${t.f_le}. Expliquer une variable quantitative à partir d'une ou plusieurs variables qualitatives, c'est justement le but de l'ANOVA. Enfin, reprenant les notations de l'énoncé, on peut écrire, pour tout entier \\(j\\) compris entre \\(1\\) et \\(${k}\\) et tout entier \\(i\\) compris entre \\(1\\) et \\(${npp}\\), \\(Y_{i,j}=\\mu_j+u_{i,j}\\), où \\(u_{i,j}\\) est une variable aléatoire d'espérance nulle. On suppose en outre que&nbsp;:</p>
+<ul>
+<li>Pour tout entier \\(j_1\\) compris entre \\(1\\) et \\(${k}\\), tout entier \\(j_2\\) compris entre \\(1\\) et \\(${k}\\), tout entier \\(i_1\\) compris entre \\(1\\) et \\(${npp}\\) et tout entier \\(i_2\\) compris entre \\(1\\) et \\(${npp}\\), on a \\(\\mathbf{Cov}(u_{i_1,j_1},u_{i_2,j_2})=0\\) dès que \\((i_1,j_1)\\neq(i_2,j_2)\\) (absence de corrélation entre les erreurs).</li>
+<li>Pour tout entier \\(j\\) compris entre \\(1\\) et \\(${k}\\), il existe un réel strictement positif \\(\\sigma_j\\) tel que, pour tout entier \\(i\\) compris entre \\(1\\) et \\(${npp}\\), on ait \\(\\mathbf{Var}(u_{i,j})=\\sigma_j^2\\) (homoscédasticité au sein de chaque modalité).</li>
+<li>Supposant l'homoscédasticité au sein de chaque modalité, on dispose d'un réel strictement positif \\(\\sigma\\) tel que, pour tout entier \\(j\\) compris entre \\(1\\) et \\(${k}\\), on ait \\(\\sigma_j^2=\\sigma^2\\) (homogénéité des variances).</li>
+<li>Pour tout entier \\(j\\) compris entre \\(1\\) et \\(${k}\\) et tout entier \\(i\\) compris entre \\(1\\) et \\(${npp}\\), la variable aléatoire \\(u_{i,j}\\) est normalement distribuée. Supposant les autres hypothèses vérifiées, cela implique que \\(u_{i,j}\\sim\\mathcal{N}(0,\\sigma^2)\\).</li>
+</ul>
+</div></div>
+
+<div class="sol-sec"><h3><span class="sn">2</span>Validité de la procédure — tests de Shapiro-Wilk et de Levene</h3><div class="st">
+<p>On va de prime abord supposer que les \\(${n}\\) individus sélectionnés dans l'échantillon sont représentatifs de la population étudiée, de sorte que l'hypothèse d'absence de corrélation entre les erreurs est plausible.</p>
+<ul>
+<li>Il faut vérifier d'une part l'hypothèse de normalité des erreurs. C'est justement ce que fait le test de Shapiro-Wilk, qui teste l'hypothèse \\((H_0)\\) selon laquelle les erreurs sont normalement distribuées contre l'hypothèse alternative \\((H_1)\\) selon laquelle les erreurs ne suivent pas une loi normale. Or le test de Shapiro-Wilk donne une \\(p\\)-value égale à \\(${pS}>0{,}05\\)&nbsp;: au niveau de confiance 95&nbsp;%, on ne peut donc pas rejeter l'hypothèse nulle, ce qui rend légitime l'hypothèse de normalité des erreurs.</li>
+<li>Reste à vérifier d'autre part l'hypothèse d'homogénéité des variances. C'est justement ce que fait le test de Levene, qui teste l'hypothèse \\((H_0):\\sigma_1^2=\\cdots=\\sigma_{${k}}^2\\) (soit \\(k-1=${df_f}\\) contraintes) contre l'hypothèse alternative \\((H_1)\\) selon laquelle au moins deux modalités présentent des variances significativement différentes. Or le test de Levene présente une \\(p\\)-value égale à \\(${pL}>0{,}05\\)&nbsp;: au niveau de confiance 95&nbsp;%, on ne peut donc pas rejeter l'hypothèse nulle, ce qui rend légitime l'hypothèse d'homogénéité des variances.</li>
+</ul>
+<div class="concl">Le cadre axiomatique de l'ANOVA est donc plausible. Les résultats qu'on pourra en tirer pourront donc être retenus comme valides.</div>
+</div></div>
+
+<div class="sol-sec"><h3><span class="sn">3</span>Complétion du tableau ANOVA</h3><div class="st">
+<p>On complète le tableau ANOVA. Tout d'abord, il y a \\(k=${k}\\) modalités associées au facteur « ${t.factorLabel} », donc le nombre de degrés de liberté associé à la variation liée à ce facteur est \\(k-1=${df_f}\\). De plus, il y a \\(n=${n}\\) individus interrogés au total, donc le nombre de degrés de liberté associé à la variation résiduelle est \\(n-k=${df_r}\\). En sommant le nombre de degrés de liberté lié au facteur d'une part et lié au résidu d'autre part, on trouve \\(${df_f}+${df_r}=${df_t}\\), soit le nombre total d'individus diminué de 1&nbsp;: cela correspond bien au nombre de degrés de liberté total.</p>
+<p>On peut alors compléter le tableau en notant que les carrés moyens pour une ligne donnée sont obtenus en divisant la somme des carrés par le degré de liberté de la ligne correspondante, puis que le \\(F\\) de Fisher est obtenu en divisant le carré moyen lié au facteur par le carré moyen résiduel&nbsp;: \\(\\mathrm{CM}_{\\text{fact.}}=${SC_f}/${df_f}=${MS_f}\\), \\(\\mathrm{SC}_{\\text{rés.}}=${MS_r}\\times ${df_r}=${SC_r}\\), \\(\\mathrm{SC}_{\\text{tot.}}=${SC_f}+${SC_r}=${SC_t}\\), \\(\\widehat{F}=${MS_f}/${MS_r}=${F_stat}\\).</p>
+${atbl(frows)}
+</div></div>
+
+<div class="sol-sec"><h3><span class="sn">4</span>Réécriture en modèle linéaire multiple avec variables dichotomiques</h3><div class="st">
+<p>Pour tout entier \\(j\\) compris entre \\(1\\) et \\(${k}\\) et tout entier \\(\\ell\\) compris entre \\(1\\) et \\(${n}\\), on note \\(\\delta_{j,\\ell}\\) la variable dichotomique qui prend la valeur \\(1\\) si, et seulement si, (les individus ayant été renumérotés de \\(1\\) à \\(${n}\\), par exemple grâce à la bijection \\(f:\\{1,\\ldots,${k}\\}\\times\\{1,\\ldots,${npp}\\}\\to\\{1,\\ldots,${n}\\}\\) qui, à tout individu \\(i\\) de la modalité \\(j\\), associe le numéro \\(f(i,j):=i+${npp}(j-1)\\)), l'individu \\(\\ell\\) appartient à la modalité \\(j\\), et \\(0\\) sinon.</p>
+<p> Le modèle \\(Y_{i,j}=\\mu_j+u_{i,j}\\) peut alors se réécrire, pour tout entier \\(\\ell\\) compris entre \\(1\\) et \\(${n}\\), par&nbsp; \\(Y'_\\ell=\\mu_1\\delta_{1,\\ell}+\\mu_2\\delta_{2,\\ell}+\\cdots+\\mu_{${k}}\\delta_{${k},\\ell}+v_\\ell\\) où \\(Y'_\\ell:=Y_{f^{-1}(\\ell)}\\) désigne la valeur de ${t.varShort} de l'individu \\(\\ell\\) renuméroté, et où les \\(v_\\ell:=u_{f^{-1}(\\ell)}\\) vérifient les hypothèses du cadre de Gauss-Markov augmenté. Les coefficients \\(\\mu_1,\\ldots,\\mu_{${k}}\\) du modèle linéaire coïncident exactement avec les moyennes théoriques par modalité du modèle ANOVA initial.</p>
+</div></div>
+
+<div class="sol-sec"><h3><span class="sn">5</span>Estimateurs MCO et décomposition de la variance</h3><div class="st">
+<p>On considère le modèle réécrit sous la forme linéaire multiple avec variables dichotomiques. Comme les hypothèses du cadre de Gauss-Markov augmenté sont vérifiées, la méthode des moindres carrés ordinaires est légitime. Pour tout entier \\(j\\) compris entre \\(1\\) et \\(${k}\\), on note \\(\\widehat{\\mu}_j\\) l'estimateur MCO de \\(\\mu_j\\)&nbsp;: on peut alors montrer que \\(\\widehat{\\mu}_j=\\overline{\\mathbf{Y}}_j\\). Par suite, on pose&nbsp;:</p>
+<div class="mb">\\[\\mathrm{SCT}:=\\sum_{j=1}^{${k}}\\sum_{i=1}^{${npp}}\\!\\left(Y_{i,j}-\\overline{\\mathbf{Y}}\\right)^2 \\qquad\\text{et}\\qquad \\mathrm{SCE}:=${npp}\\sum_{j=1}^{${k}}\\left(\\overline{\\mathbf{Y}}_j-\\overline{\\mathbf{Y}}\\right)^2\\]</div>
+<div class="mb">\\[\\mathrm{SCR}:=\\sum_{j=1}^{${k}}\\sum_{i=1}^{${npp}}\\!\\left(Y_{i,j}-\\overline{\\mathbf{Y}}_j\\right)^2\\]</div>
+<p>L'équation d'analyse de la variance donne alors \\(\\mathrm{SCT}=\\mathrm{SCE}+\\mathrm{SCR}\\)&nbsp;: ainsi, la somme des carrés totale (SCT), qui mesure la somme des carrés des écarts à la moyenne générale, se décompose donc en une somme des carrés expliquée par les modalités du facteur « ${t.factorLabel} » (SCE), qui mesure l'effet de ce facteur sur ${t.varShort}, et une somme des carrés résiduelle (SCR), qui représente la part de la dispersion due aux fluctuations individuelles.</p>
+</div></div>
+
+<div class="sol-sec"><h3><span class="sn">6</span>Test de l'effet global du facteur</h3><div class="st">
+<p>On veut tester l'hypothèse nulle \\((H_0):\\mu_1=\\mu_2=\\cdots=\\mu_{${k}}\\) (pas de différences significatives de ${t.varShort} entre les différentes modalités du facteur « ${t.factorLabel} ») contre l'hypothèse alternative \\((H_1)\\) selon laquelle ${t.varShort} varie significativement entre au moins deux modalités. On pose alors \\(\\widehat{F}:=\\frac{\\mathrm{SCE}/(k-1)}{\\mathrm{SCR}/(n-k)}\\). Sous l'hypothèse nulle, on sait que \\(\\widehat{F}\\) suit une loi de Fisher à \\(k-1=${df_f}\\) et \\(n-k=${df_r}\\) degrés de liberté. Dès lors, on pourra rejeter l'hypothèse nulle au seuil de confiance ${pct}&nbsp;% si, et seulement si, \\(\\widehat{F}\\) est supérieur au quantile de niveau ${pct}&nbsp;% d'une loi de Fisher à \\(k-1=${df_f}\\) et \\(n-k=${df_r}\\) degrés de liberté, à savoir \\(f_{${levStr}}(${df_f},${df_r})\\approx ${fcrit}\\).</p>
+<div class="concl">${concl}</div>
+</div></div>`;
+}
+
+// ════════════════════════════════════════
+// GENERATE 2F
+// ════════════════════════════════════════
+function gen2F(t) {
+  const {k1,k2,m}=t, n=k1*k2*m;
+  const df1=k1-1, df2=k2-1, dfI=df1*df2, dfR=k1*k2*(m-1), dfT=n-1;
+  const MS_r=rI(2,25), F1=rI(2,9), F2=rI(2,9), FI=rI(3,12);
+  const MS1=F1*MS_r, MS2=F2*MS_r, MSI=FI*MS_r;
+  const SC1=MS1*df1, SC2=MS2*df2, SCI=MSI*dfI, SCR=MS_r*dfR, SCT=SC1+SC2+SCI+SCR;
+  const lev = rA([0.90, 0.95, 0.99]);
+  const pct = Math.round(lev * 100);
+  
+  const pat = rI(1,4);
+  let show = [];
+  if(pat===1) show=['SC1','MS2','FI','SCR'];
+  else if(pat===2) show=['MS1','F2','SCI','MS_r'];
+  else if(pat===3) show=['F1','SC2','MSI','SCR'];
+  else show=['SC1','SC2','SCI','MS_r'];
+
+  return {k1,k2,m,n,df1,df2,dfI,dfR,dfT,MS_r,F1,F2,FI,MS1,MS2,MSI,SC1,SC2,SCI,SCR,SCT,
+    fcrit1:getFCrit(df1,dfR,lev),fcrit2:getFCrit(df2,dfR,lev),fcritI:getFCrit(dfI,dfR,lev),
+    lev,pct,show};
+}
+
+function ex2F(t, d) {
+  const {k1,k2,m,n,pct,show}=d, pS=rPv(), pL=rPv();
+  const rows=[
+    `<tr><td>${t.factor1Label}</td>${cch(d.SC1,show,'SC1')}<td class="ch">?</td>${cch(d.MS1,show,'MS1')}${cch(d.F1,show,'F1')}</tr>`,
+    `<tr><td>${t.factor2Label}</td>${cch(d.SC2,show,'SC2')}<td class="ch">?</td>${cch(d.MS2,show,'MS2')}${cch(d.F2,show,'F2')}</tr>`,
+    `<tr><td>${t.factor1Label}&nbsp;\\(\\times\\)&nbsp;${t.factor2Label}</td>${cch(d.SCI,show,'SCI')}<td class="ch">?</td>${cch(d.MSI,show,'MSI')}${cch(d.FI,show,'FI')}</tr>`,
+    `<tr><td>Résiduelle</td>${cch(d.SCR,show,'SCR')}<td class="ch">?</td>${cch(d.MS_r,show,'MS_r')}<td></td></tr>`,
+    `<tr><td>Totale</td><td class="ch">?</td><td class="ch">?</td><td></td><td></td></tr>`,
+  ].join('');
+  return {pS,pL,html:`
+<div class="context-block">On cherche à expliquer ${t.variable} pour ${t.context}, en fonction de deux facteurs qualitatifs&nbsp;: <em>(i)</em> ${t.f1_le} (\\(k_1:=${k1}\\) modalités&nbsp;: ${t.mods1.map((x,i)=>`(${i+1})&nbsp;${x}`).join(', ')})&nbsp;; <em>(ii)</em> ${t.f2_le} (\\(k_2:=${k2}\\) modalités&nbsp;: ${t.mods2.map((x,i)=>`(${i+1})&nbsp;${x}`).join(', ')}). Chaque cellule \\((j_1,j_2)\\) comporte \\(m:=${m}\\) observations. On note \\(Y_{i,j_1,j_2}\\) la valeur observée pour ${t.variable} d'un individu \\(i\\) présentant les modalités \\((j_1,j_2)\\) et on note \\(\\mu_{j_1,j_2}\\) la moyenne des individus présentant celles-ci. L'étude repose alors sur le modèle d'analyse de la variance \\(Y_{i,j_1,j_2}=\\mu_{j_1,j_2}+u_{i,j_1,j_2}\\) où \\(u_{i,j_1,j_2}\\) est une variable aléatoire d'espérance nulle.</div>
+<div class="questions"><ol>
+  <li><div class="q-text"><span class="q-lbl">Questions préliminaires</span>Combien l'échantillon comporte-t-il de ${t.pop} ? Pourquoi l'ANOVA est-elle appropriée ? Quelles hypothèses doit vérifier \\(u_{i,j_1,j_2}\\) ?</div></li>
+  <li><div class="q-text"><span class="q-lbl">Validité des hypothèses</span>On suppose que la p-value du test de Shapiro-Wilk vaut ${pS} et celle du test de Levene vaut ${pL}. Rappelez les hypothèses testées et concluez sur la validité de l'ANOVA.</div></li>
+  <li><div class="q-text"><span class="q-lbl">Tableau ANOVA</span>Certaines valeurs sont manquantes (<span class="ch">?</span>). Retrouvez-les.${atbl(rows)}</div></li>
+  <li><div class="q-text"><span class="q-lbl">Réécriture en modèle linéaire</span>Réécrire le modèle \\(Y_{i,j_1,j_2}=\\mu_{j_1,j_2}+u_{i,j_1,j_2}\\) comme un modèle de régression linéaire à l'aide de variables dichotomiques modélisant effets principaux et interactions. Précisez le lien avec les \\(\\mu_{j_1,j_2}\\).</div></li>
+  <li><div class="q-text"><span class="q-lbl">Décomposition de la variance</span>En notant \\(\\overline{\\mathbf{Y}}_{j_1,j_2}\\), \\(\\overline{\\mathbf{Y}}_{j_1,\\cdot}\\), \\(\\overline{\\mathbf{Y}}_{\\cdot,j_2}\\) et \\(\\overline{\\mathbf{Y}}\\) les moyennes cellulaires, marginales et globale, définissez sous forme de sommes la SCT (somme des carrés totale), la SCR (somme des carrés résiduelle), la \\(\\mathrm{SC}_1\\) (somme des carrés du premier facteur), la \\(\\mathrm{SC}_2\\) (somme des carrés du second facteur) et la \\(\\mathrm{SC}_I\\) (somme des carrés du facteur d'interaction). Rappelez et interprétez l'équation d'analyse de la variance.</div></li>
+  <li><div class="q-text"><span class="q-lbl">Tests des effets</span>Tester au seuil ${pct}&nbsp;% l'effet principal du facteur « ${t.factor2Label} », l'effet du facteur « ${t.factor1Label} », et l'effet d'interaction. Pour chaque test : \\((H_0)\\), \\((H_1)\\), statistique, loi sous \\((H_0)\\) et règle de décision.</div></li>
+</ol></div>`};
+}
+
+function sol2F(t, d, pS, pL) {
+  const {k1,k2,m,n,df1,df2,dfI,dfR,dfT,MS_r,F1,F2,FI,MS1,MS2,MSI,SC1,SC2,SCI,SCR,SCT,fcrit1,fcrit2,fcritI,lev,pct}=d;
+  const levStr = lev.toFixed(2).replace('.', '{,}');
+  const frows=[
+    `<tr><td>${t.factor1Label}</td><td class="cf">${SC1}</td><td class="cf">${df1}</td><td class="cf">${MS1}</td><td class="cf">${F1}</td></tr>`,
+    `<tr><td>${t.factor2Label}</td><td class="cf">${SC2}</td><td class="cf">${df2}</td><td class="cf">${MS2}</td><td class="cf">${F2}</td></tr>`,
+    `<tr><td>${t.factor1Label}&nbsp;×&nbsp;${t.factor2Label}</td><td class="cf">${SCI}</td><td class="cf">${dfI}</td><td class="cf">${MSI}</td><td class="cf">${FI}</td></tr>`,
+    `<tr><td>Résiduelle</td><td class="cf">${SCR}</td><td class="cf">${dfR}</td><td class="cf">${MS_r}</td><td></td></tr>`,
+    `<tr><td>Totale</td><td class="cf">${SCT}</td><td class="cf">${dfT}</td><td></td><td></td></tr>`,
+  ].join('');
+  const c1 = F1>fcrit1
+    ? `Or on a \\(\\widehat{F}^{(1)}=${F1}>${fcrit1}\\) (voir tableau ANOVA de la troisième question). Donc on peut rejeter l'hypothèse nulle \\((H_0^{(1)})\\) au seuil de confiance ${pct}&nbsp;%&nbsp;: on en déduit, avec un niveau de confiance de ${pct}&nbsp;%, que le facteur « ${t.factor1Label} » a un impact statistiquement significatif sur ${t.varShort}.`
+    : `Or on a \\(\\widehat{F}^{(1)}=${F1}\\leq ${fcrit1}\\) (voir tableau ANOVA de la troisième question). Donc on ne peut pas rejeter l'hypothèse nulle \\((H_0^{(1)})\\) au seuil de confiance ${pct}&nbsp;%&nbsp;: on en déduit, avec un niveau de confiance de ${pct}&nbsp;%, que le facteur « ${t.factor1Label} » n'a pas d'impact statistiquement significatif sur ${t.varShort}.`;
+  const c2 = F2>fcrit2
+    ? `Or on a \\(\\widehat{F}^{(2)}=${F2}>${fcrit2}\\) (voir tableau ANOVA de la troisième question). Donc on peut rejeter l'hypothèse nulle \\((H_0^{(2)})\\) au seuil de confiance ${pct}&nbsp;%&nbsp;: on en déduit, avec un niveau de confiance de ${pct}&nbsp;%, que le facteur « ${t.factor2Label} » a un impact statistiquement significatif sur ${t.varShort}.`
+    : `Or on a \\(\\widehat{F}^{(2)}=${F2}\\leq ${fcrit2}\\) (voir tableau ANOVA de la troisième question). Donc on ne peut pas rejeter l'hypothèse nulle \\((H_0^{(2)})\\) au seuil de confiance ${pct}&nbsp;%&nbsp;: on en déduit, avec un niveau de confiance de ${pct}&nbsp;%, que le facteur « ${t.factor2Label} » n'a pas d'impact statistiquement significatif sur ${t.varShort}.`;
+  const cI = FI>fcritI
+    ? `Or on a \\(\\widehat{F}_I=${FI}>${fcritI}\\) (voir tableau ANOVA de la troisième question). Donc on peut rejeter l'hypothèse nulle \\((H_0^I)\\) au seuil de confiance ${pct}&nbsp;%&nbsp;: on en déduit, avec un niveau de confiance de ${pct}&nbsp;%, qu'il existe un effet d'interaction entre ${t.factor1Label} et ${t.factor2Label} statistiquement significatif sur ${t.varShort}.`
+    : `Or on a \\(\\widehat{F}_I=${FI}\\leq ${fcritI}\\) (voir tableau ANOVA de la troisième question). Donc on ne peut pas rejeter l'hypothèse nulle \\((H_0^I)\\) au seuil de confiance ${pct}&nbsp;%&nbsp;: on en déduit, avec un niveau de confiance de ${pct}&nbsp;%, qu'il n'existe pas d'effet d'interaction statistiquement significatif entre les deux facteurs sur ${t.varShort}.`;
+
+  return `
+<div class="sol-sec"><h3><span class="sn">1</span>Questions préliminaires</h3><div class="st">
+<p>Le premier facteur (« ${t.factor1Label} ») comporte \\(k_1:=${k1}\\) modalités et le second (« ${t.factor2Label} ») en comporte \\(k_2:=${k2}\\). Il y a donc au total \\(${k1}\\times ${k2}=${k1*k2}\\) classes de la forme \\(C_{j_1,j_2}\\) (où \\(j_1\\) indique la modalité du premier facteur et \\(j_2\\) celle du second facteur). Or chaque classe \\(C_{j_1,j_2}\\) est supposée comporter \\(m:=${m}\\) individus. Il y a donc au total \\(${k1*k2}\\times ${m}=${n}\\) individus dans notre échantillon.</p>
+<p>Par suite, on cherche à expliquer ${t.varShort} (variable quantitative) en fonction de deux facteurs qualitatifs&nbsp;: ${t.f1_le} d'une part et ${t.f2_le} d'autre part. Expliquer une variable quantitative à partir d'une ou plusieurs variables qualitatives, c'est justement le but de l'ANOVA.</p>
+<p>Enfin, reprenant les notations de l'énoncé, on peut écrire, pour tout entier \\(i\\) compris entre \\(1\\) et \\(${m}\\), tout entier \\(j_1\\) compris entre \\(1\\) et \\(${k1}\\) et tout entier \\(j_2\\) compris entre \\(1\\) et \\(${k2}\\), \\(Y_{i,j_1,j_2}=\\mu_{j_1,j_2}+u_{i,j_1,j_2}\\), où \\(u_{i,j_1,j_2}\\) est une variable aléatoire d'espérance nulle. On doit en outre supposer que&nbsp;:</p>
+<ul>
+<li>Pour tous individus distincts \\((i,j_1,j_2)\\neq(i',j_1',j_2')\\), on a \\(\\mathbf{Cov}(u_{i,j_1,j_2},u_{i',j_1',j_2'})=0\\) (absence de corrélation entre les erreurs).</li>
+<li>Pour tout entier \\(j_1\\) compris entre \\(1\\) et \\(${k1}\\) et tout entier \\(j_2\\) compris entre \\(1\\) et \\(${k2}\\), il existe un réel \\(\\sigma_{j_1,j_2}>0\\) tel que, pour tout entier \\(i\\) compris entre \\(1\\) et \\(${m}\\), on ait \\(\\mathbf{Var}(u_{i,j_1,j_2})=\\sigma_{j_1,j_2}^2\\) (homoscédasticité au sein de chaque classe).</li>
+<li>Supposant l'homoscédasticité au sein de chaque classe, on dispose d'un réel \\(\\sigma>0\\) tel que, pour tout entier \\(j_1\\) compris entre \\(1\\) et \\(${k1}\\) et tout entier \\(j_2\\) compris entre \\(1\\) et \\(${k2}\\), on ait \\(\\sigma_{j_1,j_2}^2=\\sigma^2\\) (homogénéité des variances).</li>
+<li>Pour tout entier \\(j_1\\) compris entre \\(1\\) et \\(${k1}\\), tout entier \\(j_2\\) compris entre \\(1\\) et \\(${k2}\\) et tout entier \\(i\\) compris entre \\(1\\) et \\(${m}\\), la variable aléatoire \\(u_{i,j_1,j_2}\\) est normalement distribuée. Supposant les autres hypothèses vérifiées, cela implique que \\(u_{i,j_1,j_2}\\sim\\mathcal{N}(0,\\sigma^2)\\).</li>
+</ul>
+</div></div>
+
+<div class="sol-sec"><h3><span class="sn">2</span>Validité de la procédure — tests de Shapiro-Wilk et de Levene</h3><div class="st">
+<p>L'énoncé précise que l'échantillon a été sélectionné aléatoirement de sorte à être représentatif de la population étudiée&nbsp;: l'hypothèse d'absence de corrélation entre les erreurs est donc plausible.</p>
+<ul>
+<li>Il faut vérifier d'une part l'hypothèse de normalité des erreurs. C'est justement ce que fait le test de Shapiro-Wilk, qui teste l'hypothèse \\((H_0)\\) selon laquelle les erreurs sont normalement distribuées contre l'hypothèse alternative \\((H_1)\\) selon laquelle les erreurs ne sont pas normalement distribuées. Or le test de Shapiro-Wilk donne une \\(p\\)-value égale à \\(${pS}>0{,}05\\)&nbsp;: au niveau de confiance 95&nbsp;%, on ne peut donc pas rejeter l'hypothèse nulle, ce qui rend légitime l'hypothèse de normalité des erreurs.</li>
+<li>Reste à vérifier d'autre part l'hypothèse d'homogénéité des variances. C'est justement ce que fait le test de Levene, qui teste l'hypothèse \\((H_0):\\sigma_{1,1}^2=\\cdots=\\sigma_{{${k1}},{${k2}}}^2\\) (soit \\(k_1k_2-1=${k1*k2-1}\\) contraintes) contre l'hypothèse alternative \\((H_1)\\) selon laquelle au moins deux classes présentent des variances significativement différentes. Or le test de Levene présente une \\(p\\)-value égale à \\(${pL}>0{,}05\\)&nbsp;: au niveau de confiance 95&nbsp;%, on ne peut donc pas rejeter l'hypothèse nulle, ce qui rend légitime l'hypothèse d'homogénéité des variances.</li>
+</ul>
+<div class="concl">Le cadre axiomatique de l'ANOVA est donc plausible. Les résultats qu'on pourra en tirer pourront donc être retenus comme valides.</div>
+</div></div>
+
+<div class="sol-sec"><h3><span class="sn">3</span>Complétion du tableau ANOVA</h3><div class="st">
+<p>On complète le tableau de l'ANOVA. Tout d'abord, il y a \\(k_1:=${k1}\\) modalités associées au premier facteur, donc le nombre de degrés de liberté associé à la variation de ${t.factor1Label} est \\(k_1-1=${df1}\\)&nbsp;; de même, il y a \\(k_2:=${k2}\\) modalités associées au second facteur, donc le nombre de degrés de liberté associé à ${t.factor2Label} est \\(k_2-1=${df2}\\). On en déduit que le nombre de degrés de liberté associé au facteur d'interaction est \\((k_1-1)(k_2-1)=${dfI}\\). Reste à déterminer le nombre de degrés de liberté associé à la variation résiduelle&nbsp;: il y a \\(m:=${m}\\) individus dans chaque classe \\(C_{j_1,j_2}\\) (plan équilibré), donc le nombre de degrés de liberté cherché vaut \\(k_1k_2(m-1)=${dfR}\\). En sommant le nombre de degrés de liberté des deux facteurs, du facteur d'interaction et du résidu, on trouve \\(${df1}+${df2}+${dfI}+${dfR}=${dfT}\\), soit le nombre total d'observations diminué de 1.</p>
+<p>On peut alors compléter le tableau en notant que les carrés moyens pour une ligne donnée sont obtenus en divisant la somme des carrés par le degré de liberté de la ligne correspondante, et que le \\(F\\) de Fisher de chaque ligne est obtenu en divisant le carré moyen de la ligne par le carré moyen résiduel. En particulier, \\(\\mathrm{CM}_R=\\mathrm{CM}_I/\\widehat{F}_I=(${SCI}/${dfI})/${FI}=${MS_r}\\), puis toutes les valeurs restantes s'en déduisent par multiplication ou division.</p>
+${atbl(frows)}
+</div></div>
+
+<div class="sol-sec"><h3><span class="sn">4</span>Réécriture en modèle linéaire multiple avec variables dichotomiques</h3><div class="st">
+<p>Définissons, pour tout individu \\(i\\) de l'échantillon et tout entier \\(j_1\\) compris entre \\(1\\) et \\(${k1}\\), \\(\\delta^{(1)}_{j_1,i}\\) la variable dichotomique qui prend la valeur \\(1\\) si, et seulement si, l'individu \\(i\\) présente la modalité \\(j_1\\) du premier facteur (« ${t.factor1Label} »), et \\(0\\) sinon. De même, définissons, pour tout entier \\(j_2\\) compris entre \\(1\\) et \\(${k2}\\), \\(\\delta^{(2)}_{j_2,i}\\) la variable dichotomique qui prend la valeur \\(1\\) si, et seulement si, l'individu \\(i\\) présente la modalité \\(j_2\\) du second facteur (« ${t.factor2Label} »). Pour modéliser l'éventuel effet d'interaction entre les deux facteurs, définissons enfin, pour tout entier \\(j_1\\) compris entre \\(1\\) et \\(${k1}\\) et tout entier \\(j_2\\) compris entre \\(1\\) et \\(${k2}\\), \\(\\delta_{j_1,j_2,i}=\\delta^{(1)}_{j_1,i}\\times\\delta^{(2)}_{j_2,i}\\) (cette variable vaut donc \\(1\\) si, et seulement si, l'individu présente simultanément la modalité \\(j_1\\) du premier facteur et la modalité \\(j_2\\) du second). Alors le modèle \\(Y_{i,j_1,j_2}=\\mu_{j_1,j_2}+u_{i,j_1,j_2}\\) peut se réécrire&nbsp;:</p>
+<div class="mb">\\[Y_i=\\mu+\\sum_{j_1=1}^{${k1}}\\mu^{(1)}_{j_1}\\delta^{(1)}_{j_1,i}+\\sum_{j_2=1}^{${k2}}\\mu^{(2)}_{j_2}\\delta^{(2)}_{j_2,i}+\\sum_{j_1=1}^{${k1}}\\sum_{j_2=1}^{${k2}}\\gamma_{j_1,j_2}\\delta_{j_1,j_2,i}+u_i\\]</div>
+<p>sous les contraintes \\(\\sum_{j_1=1}^{${k1}}\\mu^{(1)}_{j_1}=\\sum_{j_2=1}^{${k2}}\\mu^{(2)}_{j_2}=\\sum_{j_1=1}^{${k1}}\\gamma_{j_1,j_2}=\\sum_{j_2=1}^{${k2}}\\gamma_{j_1,j_2}=0\\) (imposées pour éviter des problèmes de multicolinéarité parfaite entre les régresseurs), avec \\(\\mu+\\mu^{(1)}_{j_1}+\\mu^{(2)}_{j_2}+\\gamma_{j_1,j_2}=\\mu_{j_1,j_2}\\) pour tout entier \\(j_1\\) compris entre \\(1\\) et \\(${k1}\\) et tout entier \\(j_2\\) compris entre \\(1\\) et \\(${k2}\\).</p>
+</div></div>
+
+<div class="sol-sec"><h3><span class="sn">5</span>Décomposition de la variance</h3><div class="st">
+<p>Avec les notations de l'énoncé, on pose&nbsp;:</p>
+<div class="mb">\\[\\mathrm{SCT}:=\\sum_{j_1=1}^{${k1}}\\sum_{j_2=1}^{${k2}}\\sum_{i=1}^{${m}}\\!\\left(Y_{i,j_1,j_2}-\\overline{\\mathbf{Y}}\\right)^2\\qquad\\text{et} \\qquad \\mathrm{SCR}:=\\sum_{j_1=1}^{${k1}}\\sum_{j_2=1}^{${k2}}\\sum_{i=1}^{${m}}\\!\\left(Y_{i,j_1,j_2}-\\overline{\\mathbf{Y}}_{j_1,j_2}\\right)^2\\]</div>
+<div class="mb">\\[\\mathrm{SC}_1:=${m}\\sum_{j_1=1}^{${k1}}\\sum_{j_2=1}^{${k2}}\\left(\\overline{\\mathbf{Y}}_{j_1,\\cdot}-\\overline{\\mathbf{Y}}\\right)^2\\qquad\\text{et} \\qquad \\mathrm{SC}_2:=${m}\\sum_{j_1=1}^{${k1}}\\sum_{j_2=1}^{${k2}}\\left(\\overline{\\mathbf{Y}}_{\\cdot,j_2}-\\overline{\\mathbf{Y}}\\right)^2\\]</div>
+<div class="mb">\\[\\mathrm{SC}_I:=${m}\\sum_{j_1=1}^{${k1}}\\sum_{j_2=1}^{${k2}}\\left(\\overline{\\mathbf{Y}}_{j_1,j_2}-\\overline{\\mathbf{Y}}_{j_1,\\cdot}-\\overline{\\mathbf{Y}}_{\\cdot,j_2}+\\overline{\\mathbf{Y}}\\right)^2\\]</div>
+<p>L'équation d'analyse de la variance peut alors se décomposer par \\(\\mathrm{SCT}=\\mathrm{SC}_1+\\mathrm{SC}_2+\\mathrm{SC}_I+\\mathrm{SCR}\\)&nbsp;: autrement dit, la somme des carrés totale (SCT), qui mesure la somme des carrés des écarts à la moyenne générale toutes causes confondues, se décompose donc en une somme des carrés expliquée par les modalités du premier facteur (\\(\\mathrm{SC}_1\\)), qui mesure l'<em>effet principal du facteur « ${t.factor1Label} »</em>, une somme des carrés expliquée par les modalités du second facteur (\\(\\mathrm{SC}_2\\)), qui mesure l'<em>effet principal du facteur « ${t.factor2Label} »</em>, une somme des carrés expliquée par la combinaison des deux facteurs (\\(\\mathrm{SC}_I\\)), qui mesure l'<em>effet d'interaction</em> entre les deux facteurs, et une somme des carrés résiduelle (SCR), qui représente la part de la dispersion due aux <em>fluctuations individuelles</em>.</p>
+</div></div>
+
+<div class="sol-sec"><h3><span class="sn">6</span>Tests des effets principaux et d'interaction</h3><div class="st">
+<p><strong>Effet principal du facteur « ${t.factor2Label} » — seuil de confiance ${pct}&nbsp;%.</strong> On veut tester l'hypothèse nulle \\((H_0^{(2)}):\\mu_1^{(2)}=\\cdots=\\mu_{{${k2-1}}}^{(2)}=0\\) (pas de différences significatives entre les modalités du facteur « ${t.factor2Label} », soit \\(k_2-1=${df2}\\) contraintes) contre l'hypothèse alternative selon laquelle au moins un des coefficients \\(\\mu_{j_2}^{(2)}\\) est non nul. Notons que l'on n'impose pas que \\(\\mu_{${k2}}^{(2)}\\) soit nul dans l'hypothèse nulle, car la contrainte \\(\\sum_{j_2}\\mu_{j_2}^{(2)}=0\\) est déjà imposée dans le modèle&nbsp;: il n'y a bien que \\(k_2-1=${df2}\\) contraintes à tester. On admet alors que, sous \\((H_0^{(2)})\\), \\(\\widehat{F}^{(2)}:=\\frac{\\mathrm{SC}_2/(k_2-1)}{\\mathrm{SCR}/(k_1k_2(m-1))}\\) suit une loi de Fisher à \\(k_2-1=${df2}\\) et \\(k_1k_2(m-1)=${dfR}\\) degrés de liberté. Dès lors, on pourra rejeter l'hypothèse nulle \\((H_0^{(2)})\\) au seuil de confiance ${pct}&nbsp;% si, et seulement si, \\(\\widehat{F}^{(2)}\\) est supérieur au quantile de niveau ${pct}&nbsp;% d'une loi de Fisher à \\(k_2-1=${df2}\\) et \\(k_1k_2(m-1)=${dfR}\\) degrés de liberté, à savoir \\(f_{${levStr}}(${df2},${dfR})\\approx ${fcrit2}\\).</p>
+<div class="concl">${c2}</div>
+
+<p style="margin-top:1.2rem"><strong>Effet principal du facteur « ${t.factor1Label} » — seuil de confiance ${pct}&nbsp;%.</strong> On veut tester l'hypothèse nulle \\((H_0^{(1)}):\\mu_1^{(1)}=\\cdots=\\mu_{{${k1-1}}}^{(1)}=0\\) (pas de différences significatives entre les modalités du facteur « ${t.factor1Label} », soit \\(k_1-1=${df1}\\) contraintes) contre l'hypothèse alternative selon laquelle au moins un des coefficients \\(\\mu_{j_1}^{(1)}\\) est non nul. On admet que, sous \\((H_0^{(1)})\\), \\(\\widehat{F}^{(1)}:=\\frac{\\mathrm{SC}_1/(k_1-1)}{\\mathrm{SCR}/(k_1k_2(m-1))}\\) suit une loi de Fisher à \\(k_1-1=${df1}\\) et \\(k_1k_2(m-1)=${dfR}\\) degrés de liberté. Dès lors, on pourra rejeter l'hypothèse nulle \\((H_0^{(1)})\\) au seuil de confiance ${pct}&nbsp;% si, et seulement si, \\(\\widehat{F}^{(1)}\\) est supérieur au quantile de niveau ${pct}&nbsp;% d'une loi de Fisher à \\(k_1-1=${df1}\\) et \\(k_1k_2(m-1)=${dfR}\\) degrés de liberté, à savoir \\(f_{${levStr}}(${df1},${dfR})\\approx ${fcrit1}\\).</p>
+<div class="concl">${c1}</div>
+
+<p style="margin-top:1.2rem"><strong>Effet d'interaction ${t.factor1Label} × ${t.factor2Label} — seuil de confiance ${pct}&nbsp;%.</strong> On veut tester l'hypothèse nulle \\((H_0^I)\\) selon laquelle les effets d'interaction entre le premier et le second facteur sont tous nuls (\\(\\gamma_{j_1,j_2}=0\\) pour tout \\((j_1,j_2)\\)) contre l'hypothèse alternative selon laquelle au moins une des interactions est statistiquement significative. On admet que, sous \\((H_0^I)\\), \\(\\widehat{F}_I:=\\frac{\\mathrm{SC}_I/((k_1-1)(k_2-1))}{\\mathrm{SCR}/(k_1k_2(m-1))}\\) suit une loi de Fisher à \\((k_1-1)(k_2-1)=${dfI}\\) et \\(k_1k_2(m-1)=${dfR}\\) degrés de liberté. Dès lors, on pourra rejeter l'hypothèse nulle \\((H_0^I)\\) au seuil de confiance ${pct}&nbsp;% si, et seulement si, \\(\\widehat{F}_I\\) est supérieur au quantile de niveau ${pct}&nbsp;% d'une loi de Fisher à \\((k_1-1)(k_2-1)=${dfI}\\) et \\(k_1k_2(m-1)=${dfR}\\) degrés de liberté, à savoir \\(f_{${levStr}}(${dfI},${dfR})\\approx ${fcritI}\\).</p>
+<div class="concl">${cI}</div>
+</div></div>`;
+}
+
+// ════════════════════════════════════════
+// ORCHESTRATION
+// ════════════════════════════════════════
+let currentType=null, solVisible=false;
+async function typeset(){
+  if(window.MathJax&&MathJax.typesetPromise)
+    await MathJax.typesetPromise([document.getElementById('ex-area')]);
+}
+
+function selectType(type){
+  currentType=type;
+  document.getElementById('btn1').classList.toggle('active',type===1);
+  document.getElementById('btn2').classList.toggle('active',type===2);
+  document.getElementById('controls-bar').style.display='block';
+  document.getElementById('p1f').style.display=type===1?'flex':'none';
+  document.getElementById('p2f').style.display=type===2?'flex':'none';
+}
+
+function getParams(){
+  const sv=document.getElementById('seed-input').value.trim();
+  const seed=sv!==''?(parseInt(sv)>>>0):(Math.floor(Math.random()*1e8)>>>0);
+  return {
+    seed,
+    p1k: 0,
+    p1n: parseInt(document.getElementById('p1f-n').value)||0,
+    p2k1: 0,
+    p2k2: 0,
+    p2m: parseInt(document.getElementById('p2f-m').value)||0,
+  };
+}
+
+function generateFromControls(){ if(currentType) _gen(currentType, getParams()); }
+
+function regen(){
+  const p=getParams(); p.seed=Math.floor(Math.random()*1e8)>>>0;
+  document.getElementById('seed-input').value='';
+  _gen(currentType, p);
+}
+
+function _gen(type, p){
+  initRand(p.seed);
+  solVisible=false;
+  document.getElementById('welcome').style.display='none';
+  document.getElementById('ex-area').style.display='block';
+  document.getElementById('sol-card').classList.remove('visible');
+  const tb=document.getElementById('toggle-btn');
+  tb.textContent='Afficher le corrigé'; tb.classList.remove('shown');
+  document.getElementById('seed-disp').textContent=p.seed;
+  document.getElementById('modal-seed').textContent=p.seed;
+
+  if(type===1){
+    const raw=rA(T1), t=applyOvr1(raw,p.p1k,p.p1n), d=gen1F(t);
+    const {pS,pL,html}=ex1F(t,d);
+    document.getElementById('card-title').textContent=`ANOVA à un facteur — ${t.factorLabel}`;
+    document.getElementById('ex-content').innerHTML=html;
+    document.getElementById('sol-content').innerHTML=sol1F(t,d,pS,pL);
+  } else {
+    const raw=rA(T2), t=applyOvr2(raw,p.p2k1,p.p2k2,p.p2m), d=gen2F(t);
+    const {pS,pL,html}=ex2F(t,d);
+    document.getElementById('card-title').textContent=`ANOVA à deux facteurs — ${t.factor1Label} × ${t.factor2Label}`;
+    document.getElementById('ex-content').innerHTML=html;
+    document.getElementById('sol-content').innerHTML=sol2F(t,d,pS,pL);
+  }
+  typeset();
+}
+
+function toggleSol(){
+  const c=document.getElementById('sol-card'), b=document.getElementById('toggle-btn');
+  solVisible=!solVisible;
+  if(solVisible){c.classList.add('visible');b.textContent='Masquer le corrigé';b.classList.add('shown');c.scrollIntoView({behavior:'smooth',block:'start'});}
+  else{c.classList.remove('visible');b.textContent='Afficher le corrigé';b.classList.remove('shown');}
+}
+
+function copySeed(){
+  const s=document.getElementById('seed-disp').textContent;
+  if(s&&s!=='—'){
+    navigator.clipboard.writeText(s).then(()=>{
+      const b=event.target, o=b.textContent;
+      b.textContent='✓ Copié'; setTimeout(()=>b.textContent=o,1500);
+    });
+  }
+}
+
+// ════════════════════════════════════════
+// PDF / PRINT
+// ════════════════════════════════════════
+function openPdfModal(){
+  document.getElementById('pdf-ov').style.display='block';
+  document.getElementById('pdf-modal').style.display='block';
+  document.getElementById('opt-sol').checked=solVisible;
+}
+function closePdfModal(){
+  document.getElementById('pdf-ov').style.display='none';
+  document.getElementById('pdf-modal').style.display='none';
+}
+function doPrint(){
+  const noHdr=!document.getElementById('opt-header').checked;
+  const inclSol=document.getElementById('opt-sol').checked;
+  const body=document.body, sc=document.getElementById('sol-card');
+  const wasVis=solVisible;
+  if(noHdr) body.classList.add('print-no-header');
+  if(inclSol){body.classList.add('print-force-solution');body.classList.remove('print-no-solution');sc.style.display='block';}
+  else{body.classList.add('print-no-solution');body.classList.remove('print-force-solution');}
+  closePdfModal();
+  setTimeout(()=>{
+    window.print();
+    setTimeout(()=>{
+      body.classList.remove('print-no-header','print-no-solution','print-force-solution');
+      if(!wasVis){sc.style.display='';sc.classList.remove('visible');}
+    },600);
+  },200);
+}
+</script>
+
+</body>
+</html>

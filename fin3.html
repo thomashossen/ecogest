@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Analyse Financière - Bilan Fonctionnel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['\\[', '\\]']]
+    }
+  };
+</script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7;text-align:justify;}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 1.5rem;border-bottom:3px solid var(--gold);text-align:left;}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end;background:rgba(255,255,255,.03);padding:1rem 1.5rem;border-radius:6px;border:1px solid rgba(255,255,255,.1)}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.6)}
+.ctrl-inp, .ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.4rem .7rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none;transition:border-color .2s}
+.ctrl-inp:focus, .ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.5rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;transition:background .18s;margin-left:auto}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN & CARDS */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:700}
+
+.top-actions{display:flex;gap:.5rem;}
+.btn-action{background:#fff;border:1px solid var(--border);color:var(--navy);padding:.4rem .8rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.85rem;font-weight:600;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.btn-action:hover{border-color:var(--navy);background:var(--cream-dark);}
+
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem;text-align:left;}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+.event-list{list-style:none;}
+.event-list > li{margin-bottom:1.5rem;padding-left:1.5rem;position:relative;font-size:.95rem;text-align:justify}
+.event-list > li::before{content:"•";position:absolute;left:0;color:var(--gold);font-size:1.5rem;line-height:1}
+
+.sub-list { list-style-type: none; padding-left: 1rem; margin-top: 0.8rem; text-align:justify;}
+.sub-list li { margin-bottom: 0.5rem; }
+
+/* EXAM TABLE */
+.exam-table-wrap { overflow-x: auto; margin: 1.5rem 0; }
+.exam-table{width:100%;border-collapse:collapse;font-size:.85rem;font-family:'Source Serif 4',serif; margin: 0;}
+.exam-table th, .exam-table td{border:1px solid var(--border);padding:.6rem;text-align:center;vertical-align:middle;}
+.exam-table th{background:var(--navy);color:var(--cream);font-weight:600;}
+.exam-table .txt-left{text-align:left;font-weight:600;color:var(--navy);}
+.exam-table .amt{font-family:'JetBrains Mono',monospace;text-align:right;white-space:nowrap;}
+
+.two-col-table { width: 100%; display: flex; gap: 2rem; margin: 1.5rem 0; }
+.col-half { flex: 1; }
+
+/* SOLUTION TOGGLE */
+.sol-toggle-wrap{text-align:left; margin: 1.5rem 0 0 0;}
+.btn-toggle{background:transparent;border:2px solid var(--green);border-bottom:none;color:var(--green);font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;padding:.5rem 1.5rem;border-radius:4px 4px 0 0;cursor:pointer;transition:all .2s; position:relative; z-index:2; top:2px;}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--green);color:var(--cream)}
+.sol-card{border-top:2px solid var(--green);display:none; border-radius: 0 6px 6px 6px; position:relative; z-index:1;}
+.sol-card.visible{display:block;animation:fi .4s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+
+.calc-box{background:#f9fcf9;border:1px solid #c8e6c9;padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.9rem;color:var(--text);line-height:1.6;text-align:justify;}
+
+@media print{
+  body{background:#fff;}
+  header, .ctrls, .sol-toggle-wrap, .top-actions {display:none !important;}
+  .card{box-shadow:none; border:1px solid var(--border); margin-bottom:2rem;}
+  .sol-card{display:block !important; border-top:2px solid var(--green);}
+  #ex-area {display:block !important;}
+}
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-badge">INFORMATION COMPTABLE ET FINANCIÈRE</div>
+  <h1>Retraitements et bilan fonctionnel</h1>
+  <p class="subtitle">© Thomas Hossen – Version du 7 mars 2026</p>
+  
+  <div class="ctrls">
+    <div class="ctrl-g">
+      <span class="ctrl-lbl">Seed (Optionnel)</span>
+      <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999">
+    </div>
+    <button class="btn-gen" onclick="generateExercise(false)">Générer l'exercice →</button>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" style="text-align:center; padding:4rem; color:var(--text-muted); font-style:italic;">
+    Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="seed-badge">Seed active : <span id="seed-disp"></span></div>
+      <div class="top-actions">
+        <button class="btn-action" onclick="generateExercise(true)">↺ Nouvel énoncé</button>
+        <button class="btn-action" onclick="window.print()">⬇ Exporter PDF</button>
+        <button class="btn-action" onclick="exportWord()">⬇ Exporter DOC</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="tag">Énoncé</span><h2>Structure financière de l'entreprise</h2></div>
+      <div class="card-body">
+        <div class="context-block" id="context-text"></div>
+        <div id="enonce-table-container"></div>
+        <div class="context-block" id="additional-info" style="margin-top:1.5rem; background:#fff; border-left:3px solid var(--navy); border-radius:0;"></div>
+        
+        <p style="margin-bottom:1rem; font-weight:600; color:var(--red); text-align:left;">Travail à faire</p>
+        <ul class="event-list" id="events-list"></ul>
+      </div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag">Corrigé</span><h2>Structure financière de l'entreprise</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+// --- PRNG (Mulberry32) ---
+let currentSeed = 0;
+function seedPRNG(seed) {
+    return function() {
+      let t = seed += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+let random = Math.random;
+
+function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
+
+function texI(num) {
+    let sign = num < 0 ? "-" : "";
+    let absNum = Math.round(Math.abs(num));
+    return sign + absNum.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "\\,");
+}
+function formatMoney(num) {
+    return num.toLocaleString('fr-FR') + ' €';
+}
+
+function generateExercise(forceNew = false) {
+    if(forceNew) {
+        document.getElementById('seed-input').value = "";
+    }
+    let seedVal = document.getElementById('seed-input').value;
+    currentSeed = seedVal ? parseInt(seedVal) : Math.floor(Math.random() * 99999999);
+    document.getElementById('seed-disp').innerText = currentSeed;
+    document.getElementById('seed-input').value = currentSeed;
+    random = seedPRNG(currentSeed);
+
+    const companies = ["LogiTrans", "AgriMeca", "BuildPro", "TechGears", "BioPharma"];
+    const company = companies[randInt(0, companies.length-1)];
+
+    // Génération du Passif
+    let cp = randInt(500, 1000) * 1000;
+    let totAmort = randInt(200, 400) * 1000;
+    let cbc = randInt(20, 50) * 1000;
+    let df = randInt(300, 600) * 1000; // inclut CBC
+    let dfourn = randInt(150, 300) * 1000;
+    let dd = randInt(50, 150) * 1000;
+    let total_passif = cp + totAmort + df + dfourn + dd;
+
+    // Génération de l'Actif (pour correspondre au Total Passif)
+    let pro = randInt(10, 30) * 1000;
+    let stocks = randInt(150, 300) * 1000;
+    let cc = randInt(200, 400) * 1000;
+    let ac = randInt(50, 100) * 1000;
+    let ta = randInt(20, 80) * 1000;
+    let immo = total_passif - (pro + stocks + cc + ac + ta);
+
+    // Retraitements Annexe
+    let eene = randInt(30, 80) * 1000;
+    let cb_vo = randInt(100, 200) * 1000;
+    let cb_years = randInt(4, 6);
+    let cb_elapsed = randInt(1, 3);
+    let cb_amort = Math.round((cb_vo / cb_years) * cb_elapsed);
+    let cb_vnc = cb_vo - cb_amort;
+
+    // Calculs Bilan Fonctionnel
+    let emplois_stables = immo + cb_vo;
+    let actif_ce = stocks + cc + eene;
+    let actif_che = ac;
+    let treso_act = ta;
+    let total_emplois = emplois_stables + actif_ce + actif_che + treso_act;
+
+    let res_stables = cp + totAmort + cb_amort + (df - cbc) + cb_vnc - pro;
+    let passif_ce = dfourn;
+    let passif_che = dd;
+    let treso_pass = cbc + eene;
+    let total_ressources = res_stables + passif_ce + passif_che + treso_pass;
+
+    // Affichage Énoncé
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('ex-area').style.display = 'block';
+    document.getElementById('sol-card').classList.remove('visible');
+    document.getElementById('toggle-btn').innerText = "Afficher le corrigé";
+    document.getElementById('toggle-btn').classList.remove('shown');
+
+    document.getElementById('context-text').innerHTML = `
+      Vous assistez le directeur financier de l'entreprise <strong>${company}</strong> dans l'analyse de sa structure financière. Afin d'apprécier la solidité de l'entreprise et la couverture de ses besoins de financement, vous devez procéder au retraitement du bilan comptable de fin d'exercice pour établir un bilan fonctionnel.
+    `;
+
+    let tableHtml = `<div class="two-col-table">
+        <div class="col-half">
+            <table class="exam-table">
+                <tr><th colspan="2">Bilan comptable — ACTIF (valeurs brutes)</th></tr>
+                <tr><td class="txt-left">Actif immobilisé brut</td><td class="amt">${formatMoney(immo)}</td></tr>
+                <tr><td class="txt-left">Primes de remboursement des oblig. (PRO)</td><td class="amt">${formatMoney(pro)}</td></tr>
+                <tr><td class="txt-left">Stocks et en-cours</td><td class="amt">${formatMoney(stocks)}</td></tr>
+                <tr><td class="txt-left">Créances clients et comptes rattachés</td><td class="amt">${formatMoney(cc)}</td></tr>
+                <tr><td class="txt-left">Autres créances (hors exploitation)</td><td class="amt">${formatMoney(ac)}</td></tr>
+                <tr><td class="txt-left">Disponibilités</td><td class="amt">${formatMoney(ta)}</td></tr>
+                <tr><th class="txt-left">Total de l'Actif Brut</th><th class="amt">${formatMoney(total_passif)}</th></tr>
+            </table>
+        </div>
+        <div class="col-half">
+            <table class="exam-table">
+                <tr><th colspan="2">Bilan comptable — PASSIF</th></tr>
+                <tr><td class="txt-left">Capitaux propres</td><td class="amt">${formatMoney(cp)}</td></tr>
+                <tr><td class="txt-left">Amortissements et provisions</td><td class="amt">${formatMoney(totAmort)}</td></tr>
+                <tr><td class="txt-left">Dettes financières (dont CBC : ${formatMoney(cbc)})</td><td class="amt">${formatMoney(df)}</td></tr>
+                <tr><td class="txt-left">Dettes fournisseurs</td><td class="amt">${formatMoney(dfourn)}</td></tr>
+                <tr><td class="txt-left">Autres dettes (hors exploitation)</td><td class="amt">${formatMoney(dd)}</td></tr>
+                <tr><th class="txt-left">Total du Passif</th><th class="amt">${formatMoney(total_passif)}</th></tr>
+            </table>
+        </div>
+    </div>`;
+    document.getElementById('enonce-table-container').innerHTML = tableHtml;
+
+    document.getElementById('additional-info').innerHTML = `
+        <strong>Informations complémentaires.</strong> L'entreprise a financé l'une de ses machines par un contrat de crédit-bail. La valeur d'origine de cet équipement s'élève à ${formatMoney(cb_vo)}. La durée du contrat est de ${cb_years} ans et l'équipement est utilisé depuis ${cb_elapsed} an(s). L'amortissement théorique est linéaire. Par ailleurs, l'entreprise a escompté des effets de commerce avant la date de clôture de l'exercice. Le montant des effets escomptés non échus (EENE) s'élève à ${formatMoney(eene)}.
+    `;
+
+    let htmlEnonce = "";
+    htmlEnonce += `<li><strong>1. Analyse des retraitements.</strong> Justifiez et chiffrez les retraitements nécessaires pour passer du bilan comptable au bilan fonctionnel concernant le crédit-bail, les effets escomptés non échus, les primes de remboursement des obligations et les concours bancaires courants.</li>`;
+    htmlEnonce += `<li><strong>2. Établissement du bilan fonctionnel.</strong> Présentez le bilan fonctionnel condensé en grandes masses.</li>`;
+
+    document.getElementById('events-list').innerHTML = htmlEnonce;
+
+    // --- GÉNÉRATION CORRIGÉ ---
+    let htmlSol = "";
+
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">1. Analyse des retraitements</span>
+        La construction du bilan fonctionnel nécessite de retraiter l'information comptable pour privilégier la réalité économique de l'entreprise au détriment de l'approche juridique. Les grandes opérations à corriger s'analysent ainsi :
+        <ul class="sub-list">
+            <li>$\\star\\;$ <strong>Retraitement du crédit-bail.</strong> Le crédit-bail est un mode de financement qui se substitue économiquement à l'emprunt classique. Il convient d'intégrer la valeur d'origine du bien loué, soit $${texI(cb_vo)}$ euros, à l'actif dans la catégorie des emplois stables. En contrepartie, au passif, on considère que le bien a été financé par un emprunt en cours de remboursement. L'amortissement cumulé de ce bien (soit $\\frac{${texI(cb_vo)}}{${cb_years}} \\times ${cb_elapsed} = ${texI(cb_amort)}$ euros) vient augmenter les ressources propres (amortissements et provisions), tandis que la valeur nette comptable restante ($${texI(cb_vo)} - ${texI(cb_amort)} = ${texI(cb_vnc)}$ euros) vient majorer les dettes financières à long terme.</li>
+            <li>$\\star\\;$ <strong>Retraitement des effets escomptés non échus (EENE).</strong> Les EENE représentent des créances cédées à la banque avant leur échéance pour obtenir de la liquidité. D'un point de vue fonctionnel, l'entreprise supporte toujours le risque de défaut du client. Il faut donc réintégrer ces $${texI(eene)}$ euros dans l'actif circulant d'exploitation (créances clients) et enregistrer symétriquement au passif une avance de trésorerie de $${texI(eene)}$ euros dans la trésorerie passive (au même titre qu'un découvert bancaire).</li>
+            <li>$\\star\\;$ <strong>Retraitement des primes de remboursement des obligations.</strong> Ces primes constituent un actif fictif comptable correspondant à la différence entre la valeur de remboursement d'une obligation et son prix d'émission. N'ayant aucune valeur économique réelle, elles doivent être éliminées de l'actif (déduction des emplois) et symétriquement déduites des dettes financières dans les ressources stables pour un montant de $${texI(pro)}$ euros.</li>
+            <li>$\\star\\;$ <strong>Retraitement des concours bancaires courants (CBC).</strong> Les CBC (découverts, soldes créditeurs de banques), bien qu'inclus dans les dettes financières par le plan comptable, représentent en réalité des dettes de trésorerie à très court terme. Il faut les soustraire des ressources stables ($${texI(cbc)}$ euros) pour les reclasser au passif du bilan fonctionnel dans la rubrique de la trésorerie passive.</li>
+        </ul>
+    </div>`;
+
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">2. Établissement du bilan fonctionnel</span>
+        En appliquant les corrections analysées précédemment aux valeurs brutes du bilan comptable, on obtient le bilan fonctionnel condensé suivant :
+        <div class="exam-table-wrap">
+            <table class="exam-table">
+                <tr>
+                    <th style="width: 35%;">Emplois</th>
+                    <th style="width: 15%;">Montants</th>
+                    <th style="width: 35%;">Ressources</th>
+                    <th style="width: 15%;">Montants</th>
+                </tr>
+                <tr>
+                    <td class="txt-left"><strong>Emplois stables</strong><br><em>(immobilisations brutes + crédit-bail)</em></td>
+                    <td class="amt">${formatMoney(emplois_stables)}</td>
+                    <td class="txt-left"><strong>Ressources stables</strong><br><em>(capitaux propres + amortissements + emprunts + VNC crédit-bail — CBC — PRO)</em></td>
+                    <td class="amt">${formatMoney(res_stables)}</td>
+                </tr>
+                <tr>
+                    <td class="txt-left"><strong>Actif circulant d'exploitation (ACE)</strong><br><em>(stocks + créances clients + EENE)</em></td>
+                    <td class="amt">${formatMoney(actif_ce)}</td>
+                    <td class="txt-left"><strong>Passif circulant d'exploitation (PCE)</strong><br><em>(dettes fournisseurs)</em></td>
+                    <td class="amt">${formatMoney(passif_ce)}</td>
+                </tr>
+                <tr>
+                    <td class="txt-left"><strong>Actif circulant hors exploitation (ACHE)</strong><br><em>(autres créances)</em></td>
+                    <td class="amt">${formatMoney(actif_che)}</td>
+                    <td class="txt-left"><strong>Passif circulant hors exploitation (PCHE)</strong><br><em>(autres dettes)</em></td>
+                    <td class="amt">${formatMoney(passif_che)}</td>
+                </tr>
+                <tr>
+                    <td class="txt-left"><strong>Trésorerie active (TA)</strong><br><em>(disponibilités)</em></td>
+                    <td class="amt">${formatMoney(treso_act)}</td>
+                    <td class="txt-left"><strong>Trésorerie passive (TP)</strong><br><em>(CBC + EENE)</em></td>
+                    <td class="amt">${formatMoney(treso_pass)}</td>
+                </tr>
+                <tr style="background:var(--cream-dark); border-top:2px solid var(--navy);">
+                    <td class="txt-left"><strong>Total des emplois</strong></td>
+                    <td class="amt"><strong>${formatMoney(total_emplois)}</strong></td>
+                    <td class="txt-left"><strong>Total des ressources</strong></td>
+                    <td class="amt"><strong>${formatMoney(total_ressources)}</strong></td>
+                </tr>
+            </table>
+        </div>
+        Nous constatons bien l'équilibre parfait entre le total des emplois et le total des ressources après les retraitements croisés. Naturellement, le total des emplois et ressources du bilan fonctionnel diffère du total des actifs et passifs du bilan initial au vu des retraitements réalisés <em>supra</em>.
+    </div>`;
+
+    document.getElementById('sol-content').innerHTML = htmlSol;
+    
+    if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
+        MathJax.typesetPromise().catch(function (err) {
+            console.error('Erreur MathJax :', err);
+        });
+    }
+}
+
+function toggleSol() {
+    let solCard = document.getElementById('sol-card');
+    let btn = document.getElementById('toggle-btn');
+    if(solCard.classList.contains('visible')) {
+        solCard.classList.remove('visible');
+        btn.innerText = "Afficher le corrigé";
+        btn.classList.remove('shown');
+    } else {
+        solCard.classList.add('visible');
+        btn.innerText = "Masquer le corrigé";
+        btn.classList.add('shown');
+    }
+}
+
+function exportWord() {
+    let content = document.getElementById('ex-area').cloneNode(true);
+    let actions = content.querySelector('.top-actions');
+    if(actions) actions.parentNode.removeChild(actions);
+    let toggle = content.querySelector('.sol-toggle-wrap');
+    if(toggle) toggle.parentNode.removeChild(toggle);
+    let solCard = content.querySelector('#sol-card');
+    if(solCard) solCard.style.display = 'block';
+
+    let html = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <meta charset='utf-8'>
+            <title>Exercice Finance</title>
+            <style>
+                body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5; text-align: justify; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 10pt; }
+                th, td { border: 1px solid #000; padding: 4px; }
+                th { background-color: #f2f2f2; text-align: center; font-weight: bold; }
+                .txt-left { text-align: left; font-weight: bold; }
+                .amt { text-align: right; white-space: nowrap; }
+                .two-col-table { width: 100%; }
+                .col-half { width: 48%; display: inline-block; vertical-align: top; margin-right: 2%; }
+                .calc-box { border: 1px solid #000; padding: 10px; margin-bottom: 15px; background-color: #f9f9f9; text-align: justify; }
+                .math-formula { text-align: center; font-style: italic; margin: 10px 0; }
+                ul { text-align: justify; }
+                li { margin-bottom: 5px; }
+            </style>
+        </head>
+        <body>
+            ${content.innerHTML}
+        </body>
+        </html>
+    `;
+    
+    let blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    let url = URL.createObjectURL(blob);
+    let link = document.createElement('a');
+    link.href = url;
+    link.download = 'Exercice_Bilan_Fonctionnel.doc';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>

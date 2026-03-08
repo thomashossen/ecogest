@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Comptabilité - Capitaux Propres</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 1.5rem;border-bottom:3px solid var(--gold)}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end;background:rgba(255,255,255,.03);padding:1rem 1.5rem;border-radius:6px;border:1px solid rgba(255,255,255,.1)}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.6)}
+.ctrl-inp, .ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.4rem .7rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none;transition:border-color .2s}
+.ctrl-inp:focus, .ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.5rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;transition:background .18s;margin-left:auto}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN & CARDS */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:700}
+
+.top-actions{display:flex;gap:.5rem;}
+.btn-action{background:#fff;border:1px solid var(--border);color:var(--navy);padding:.4rem .8rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.85rem;font-weight:600;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.btn-action:hover{border-color:var(--navy);background:var(--cream-dark);}
+
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+.event-list{list-style:none;}
+.event-list li{margin-bottom:1.2rem;padding-left:1.5rem;position:relative;font-size:.95rem;text-align:justify}
+.event-list li::before{content:"•";position:absolute;left:0;color:var(--gold);font-size:1.5rem;line-height:1}
+.highlight{font-family:'JetBrains Mono',monospace;font-size:.85rem;font-weight:600;background:var(--cream-dark);padding:2px 6px;border-radius:3px;color:var(--navy)}
+
+/* JOURNAL TABLE */
+.journal-wrap{overflow-x:auto;margin:1.5rem 0}
+table.journal{width:100%;border-collapse:collapse;font-size:.85rem;font-family:'Source Serif 4',serif;box-shadow:0 0 0 1px var(--border)}
+table.journal th{background:var(--navy);color:var(--cream);padding:.6rem;text-align:left;font-weight:600;border:1px solid var(--navy-mid)}
+table.journal td{padding:.5rem .6rem;border:1px solid var(--border);vertical-align:middle}
+table.journal .num{font-family:'JetBrains Mono',monospace;width:80px;text-align:center;color:var(--navy);font-weight:600}
+table.journal .amt{font-family:'JetBrains Mono',monospace;text-align:right;width:115px;white-space:nowrap;}
+table.journal .date-row{background:var(--cream-dark);font-style:italic;text-align:center;font-weight:600;color:var(--text-muted)}
+table.journal .libelle{color:var(--text-muted);font-style:italic;text-align:center;font-size:.8rem}
+.debit-col{color:var(--navy)}
+.credit-col{color:var(--text)}
+
+/* SOLUTION TOGGLE */
+.sol-toggle-wrap{text-align:left; margin: 1.5rem 0 0 0;}
+.btn-toggle{background:transparent;border:2px solid var(--green);border-bottom:none;color:var(--green);font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;padding:.5rem 1.5rem;border-radius:4px 4px 0 0;cursor:pointer;transition:all .2s; position:relative; z-index:2; top:2px;}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--green);color:var(--cream)}
+.sol-card{border-top:2px solid var(--green);display:none; border-radius: 0 6px 6px 6px; position:relative; z-index:1;}
+.sol-card.visible{display:block;animation:fi .4s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+
+.calc-box{background:#f9fcf9;border:1px solid #c8e6c9;padding:1.2rem;border-radius:4px;margin-bottom:1rem;font-size:.9rem;color:var(--text);line-height:1.6;text-align:justify;}
+.calc-box strong{color:var(--green);font-family:'JetBrains Mono',monospace;}
+
+@media print{
+  body{background:#fff;}
+  header, .ctrls, .sol-toggle-wrap, .top-actions {display:none !important;}
+  .card{box-shadow:none; border:1px solid var(--border); margin-bottom:2rem;}
+  .sol-card{display:block !important; border-top:2px solid var(--green);}
+  #ex-area {display:block !important;}
+}
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-badge">INFORMATION COMPTABLE ET FINANCIÈRE</div>
+  <h1>Capitaux propres et affectation du résultat</h1>
+  <p class="subtitle">© Thomas Hossen – Version du 7 mars 2026</p>
+  
+  <div class="ctrls">
+    <div class="ctrl-g">
+      <span class="ctrl-lbl">Seed (Optionnel)</span>
+      <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999">
+    </div>
+    <button class="btn-gen" onclick="generateExercise(false)">Générer l'exercice →</button>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" style="text-align:center; padding:4rem; color:var(--text-muted); font-style:italic;">
+    Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="seed-badge">Seed active : <span id="seed-disp"></span></div>
+      <div class="top-actions">
+        <button class="btn-action" onclick="generateExercise(true)">↺ Nouvel énoncé</button>
+        <button class="btn-action" onclick="window.print()">⬇ Exporter PDF</button>
+        <button class="btn-action" onclick="exportWord()">⬇ Exporter DOC</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="tag">Énoncé</span><h2>De la création à l'affectation du premier bénéfice</h2></div>
+      <div class="card-body">
+        <div class="context-block" id="context-text"></div>
+        <p style="margin-bottom:1rem; font-weight:600; color:var(--navy);">Opérations réalisées (ordre chronologique)</p>
+        <ul class="event-list" id="events-list"></ul>
+        <p style="margin-top:1.5rem; font-weight:600; color:var(--red);">Travail à faire</p>
+        <p id="question-text" style="font-style:italic;"></p>
+      </div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag">Corrigé</span><h2>De la création à l'affectation du premier bénéfice</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+// --- PRNG (Mulberry32) ---
+let currentSeed = 0;
+function seedPRNG(seed) {
+    return function() {
+      let t = seed += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+let random = Math.random;
+
+function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
+function formatMoney(num) { return num.toLocaleString('fr-FR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' €'; }
+
+function generateExercise(forceNew = false) {
+    if(forceNew) {
+        document.getElementById('seed-input').value = "";
+    }
+    let seedVal = document.getElementById('seed-input').value;
+    currentSeed = seedVal ? parseInt(seedVal) : Math.floor(Math.random() * 99999999);
+    document.getElementById('seed-disp').innerText = currentSeed;
+    document.getElementById('seed-input').value = currentSeed;
+    random = seedPRNG(currentSeed);
+
+    // Variables Création
+    let capNumeraire = randInt(20, 80) * 1000;
+    let capNature = randInt(10, 30) * 1000;
+    let capitalTotal = capNumeraire + capNature;
+    
+    let ccaInitial = randInt(15, 40) * 1000;
+    let ccaRemboursement = randInt(5, Math.floor(ccaInitial/1000) - 5) * 1000;
+
+    // Variables Résultat N
+    let benefice = randInt(40, 120) * 1000;
+    
+    // Calcul Affectation
+    // Réserve légale = 5% du bénéfice (plafonnée à 10% du capital, mais en année 1 on l'atteint rarement)
+    let resLegale = benefice * 0.05;
+    let capLegal = capitalTotal * 0.10;
+    if (resLegale > capLegal) resLegale = capLegal;
+    
+    let resFacultative = randInt(5, 15) * 1000;
+    
+    // Reste distribuable
+    let resteDistribuable = benefice - resLegale - resFacultative;
+    let dividendes = randInt(15, Math.floor(resteDistribuable/1000) - 2) * 1000;
+    
+    // Report à nouveau
+    let reportANouveau = benefice - resLegale - resFacultative - dividendes;
+
+    // Affichage Enoncé
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('ex-area').style.display = 'block';
+    document.getElementById('sol-card').classList.remove('visible');
+    document.getElementById('toggle-btn').innerText = "Afficher le corrigé";
+    document.getElementById('toggle-btn').classList.remove('shown');
+
+    document.getElementById('context-text').innerHTML = `
+      La société <strong>InnoTech SAS</strong> a été constituée le 2 janvier de l'année N. L'exercice comptable coïncide avec l'année civile. L'entreprise ayant connu un fort développement dès ses débuts, l'assemblée générale ordinaire (AGO) se réunit l'année suivante pour statuer sur l'affectation du tout premier résultat de la société.
+    `;
+
+    let htmlEnonce = "";
+
+    htmlEnonce += `<li><strong>Le 2 janvier N :</strong> création de la société. Les actionnaires réalisent un apport en numéraire (intégralement libéré et versé sur le compte bancaire) d'un montant de <span class="highlight">${formatMoney(capNumeraire)}</span>. Ils apportent également du matériel industriel évalué à <span class="highlight">${formatMoney(capNature)}</span>. Enfin, pour soutenir la trésorerie de démarrage, l'un des actionnaires effectue une avance en compte courant d'associé (CCA) de <span class="highlight">${formatMoney(ccaInitial)}</span> par virement. L'ensemble de ces opérations est constaté à cette date.</li>`;
+    
+    htmlEnonce += `<li><strong>Le 15 septembre N :</strong> la trésorerie le permettant, la société rembourse partiellement l'avance en compte courant d'associé par un virement bancaire de <span class="highlight">${formatMoney(ccaRemboursement)}</span>.</li>`;
+
+    htmlEnonce += `<li><strong>Le 31 décembre N :</strong> clôture du premier exercice comptable de l'entreprise. Après enregistrement de toutes les opérations, le compte de résultat fait apparaître un bénéfice net de <span class="highlight">${formatMoney(benefice)}</span>. <em>(Aucune écriture comptable n'est demandée à cette date spécifique pour cet exercice)</em>.</li>`;
+
+    htmlEnonce += `<li><strong>Le 18 mai N+1 :</strong> tenue de l'assemblée générale ordinaire. Les actionnaires décident de l'affectation du bénéfice de l'exercice N de la manière suivante :
+    <br>— Dotation à la réserve légale dans les conditions fixées par la loi.
+    <br>— Dotation à une réserve facultative pour un montant de <span class="highlight">${formatMoney(resFacultative)}</span>.
+    <br>— Distribution d'un dividende global aux actionnaires de <span class="highlight">${formatMoney(dividendes)}</span>.
+    <br>— Affectation du solde éventuel en report à nouveau.</li>`;
+
+    document.getElementById('events-list').innerHTML = htmlEnonce;
+
+    document.getElementById('question-text').innerText = `Enregistrez au journal de l'entreprise les écritures de constitution au 2 janvier N, le remboursement du 15 septembre N, ainsi que l'écriture d'affectation du résultat suite à l'assemblée générale du 18 mai N+1.`;
+
+    // --- GENERATION CORRIGE ---
+    let htmlSol = "";
+
+    const addJournal = (date, entries) => {
+        let t = `<div class="journal-wrap"><table class="journal">
+        <tr class="date-row"><td colspan="4">${date}</td></tr>
+        <tr><th>N° Cpte</th><th>Libellé</th><th style="text-align:right">Débit</th><th style="text-align:right">Crédit</th></tr>`;
+        
+        entries.filter(e => e.sens === 'D').forEach(e => {
+            t += `<tr><td class="num">${e.c}</td><td class="debit-col">${e.l}</td><td class="amt">${formatMoney(e.m)}</td><td></td></tr>`;
+        });
+        entries.filter(e => e.sens === 'C').forEach(e => {
+            t += `<tr><td class="num">${e.c}</td><td class="credit-col" style="padding-left:1.5rem">${e.l}</td><td></td><td class="amt">${formatMoney(e.m)}</td></tr>`;
+        });
+        t += `</table></div>`;
+        return t;
+    };
+
+    // Corrigé Création
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Création de la société et apports (le 02/01/N)</span>
+        Le capital social de l'entreprise (compte 1013) est constitué de la somme de l'apport en numéraire (${formatMoney(capNumeraire)}) et de l'apport en nature (${formatMoney(capNature)}), soit un capital total de <strong>${formatMoney(capitalTotal)}</strong>. Parallèlement, l'avance consentie par l'actionnaire constitue une dette financière de l'entreprise envers ce dernier, enregistrée au crédit du compte courant d'associé (compte 4551) pour <strong>${formatMoney(ccaInitial)}</strong>. L'entreprise reçoit donc sur son compte bancaire la somme du capital en numéraire et de l'avance, soit ${formatMoney(capNumeraire + ccaInitial)}, et intègre le matériel industriel à son actif.
+    </div>`;
+
+    htmlSol += addJournal(`02/01/N`, [
+        {c:"512", l:"Banque", m: capNumeraire + ccaInitial, sens:'D'},
+        {c:"2154", l:"Matériel industriel (apport en nature)", m: capNature, sens:'D'},
+        {c:"1013", l:"Capital souscrit appelé versé", m: capitalTotal, sens:'C'},
+        {c:"4551", l:"Associés - comptes courants", m: ccaInitial, sens:'C'}
+    ]);
+    
+    // Corrigé Remboursement CCA
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Remboursement partiel du compte courant d'associé (le 15/09/N)</span>
+        Le compte courant d'associé fonctionnant comme un prêt à court ou moyen terme, son remboursement diminue la dette de l'entreprise envers l'actionnaire. On débite le compte 4551 par le crédit du compte banque.
+    </div>`;
+
+    htmlSol += addJournal(`15/09/N`, [
+        {c:"4551", l:"Associés - comptes courants", m: ccaRemboursement, sens:'D'},
+        {c:"512", l:"Banque", m: ccaRemboursement, sens:'C'}
+    ]);
+
+    // Corrigé Affectation du résultat
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Affectation du résultat de la première année (le 18/05/N+1)</span>
+        L'affectation permet de répartir le bénéfice net réalisé en année N (${formatMoney(benefice)}). S'agissant du premier exercice de l'entreprise, il n'y a aucun report à nouveau antérieur à prendre en compte.
+        La loi impose de doter la réserve légale à hauteur de 5 % du bénéfice (dans la limite de 10 % du capital). Le calcul donne : ${formatMoney(benefice)} × 5 % = <strong>${formatMoney(resLegale)}</strong>. Le plafond légal (${formatMoney(capLegal)}) n'étant pas atteint, on retient ce montant.
+        La réserve facultative décidée par l'assemblée s'élève à <strong>${formatMoney(resFacultative)}</strong>.
+        Les dividendes à verser aux actionnaires (compte 457) s'élèvent à <strong>${formatMoney(dividendes)}</strong>.
+        Le reliquat non affecté est placé en report à nouveau créditeur (compte 110) en attendant une décision future. Il se calcule par soustraction : bénéfice de ${formatMoney(benefice)} — réserves de ${formatMoney(resLegale + resFacultative)} — dividendes de ${formatMoney(dividendes)} = <strong>${formatMoney(reportANouveau)}</strong>.
+    </div>`;
+
+    htmlSol += addJournal(`18/05/N+1`, [
+        {c:"120", l:"Résultat de l'exercice (bénéfice)", m: benefice, sens:'D'},
+        {c:"1061", l:"Réserve légale", m: resLegale, sens:'C'},
+        {c:"1068", l:"Autres réserves (facultatives)", m: resFacultative, sens:'C'},
+        {c:"457", l:"Associés - dividendes à payer", m: dividendes, sens:'C'},
+        {c:"110", l:"Report à nouveau (solde créditeur)", m: reportANouveau, sens:'C'}
+    ]);
+
+    document.getElementById('sol-content').innerHTML = htmlSol;
+}
+
+function toggleSol() {
+    let solCard = document.getElementById('sol-card');
+    let btn = document.getElementById('toggle-btn');
+    if(solCard.classList.contains('visible')) {
+        solCard.classList.remove('visible');
+        btn.innerText = "Afficher le corrigé";
+        btn.classList.remove('shown');
+    } else {
+        solCard.classList.add('visible');
+        btn.innerText = "Masquer le corrigé";
+        btn.classList.add('shown');
+    }
+}
+
+// --- FONCTION EXPORT DOC ---
+function exportWord() {
+    let content = document.getElementById('ex-area').cloneNode(true);
+    let actions = content.querySelector('.top-actions');
+    if(actions) actions.parentNode.removeChild(actions);
+    let toggle = content.querySelector('.sol-toggle-wrap');
+    if(toggle) toggle.parentNode.removeChild(toggle);
+    let solCard = content.querySelector('#sol-card');
+    if(solCard) solCard.style.display = 'block';
+
+    let html = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <meta charset='utf-8'>
+            <title>Exercice Comptabilité</title>
+            <style>
+                body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                th, td { border: 1px solid #000; padding: 5px; }
+                th { background-color: #f2f2f2; text-align: left; }
+                .amt { text-align: right; white-space: nowrap; }
+                .calc-box { border: 1px solid #000; padding: 10px; margin-bottom: 15px; background-color: #f9f9f9; }
+                .date-row { font-style: italic; text-align: center; font-weight: bold; }
+                .highlight { font-weight: bold; }
+            </style>
+        </head>
+        <body>
+            ${content.innerHTML}
+        </body>
+        </html>
+    `;
+    
+    let blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    let url = URL.createObjectURL(blob);
+    let link = document.createElement('a');
+    link.href = url;
+    link.download = 'Exercice_Affectation_Resultat.doc';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>

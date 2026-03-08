@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Analyse Financière - Retraitements et Valeur Ajoutée</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['\\[', '\\]']]
+    }
+  };
+</script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7;text-align:justify;}
+
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 1.5rem;border-bottom:3px solid var(--gold);text-align:left;}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end;background:rgba(255,255,255,.03);padding:1rem 1.5rem;border-radius:6px;border:1px solid rgba(255,255,255,.1)}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.6)}
+.ctrl-inp, .ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.4rem .7rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none;transition:border-color .2s}
+.ctrl-inp:focus, .ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.5rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;transition:background .18s;margin-left:auto}
+.btn-gen:hover{background:var(--gold-light)}
+
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:700}
+
+.top-actions{display:flex;gap:.5rem;}
+.btn-action{background:#fff;border:1px solid var(--border);color:var(--navy);padding:.4rem .8rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.85rem;font-weight:600;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.btn-action:hover{border-color:var(--navy);background:var(--cream-dark);}
+
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem;text-align:left;}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+.event-list{list-style:none;}
+.event-list > li{margin-bottom:1.5rem;padding-left:1.5rem;position:relative;font-size:.95rem;text-align:justify}
+.event-list > li::before{content:"•";position:absolute;left:0;color:var(--gold);font-size:1.5rem;line-height:1}
+
+.exam-table-wrap { overflow-x: auto; margin: 1.5rem 0; }
+.exam-table{width:100%;border-collapse:collapse;font-size:.85rem;font-family:'Source Serif 4',serif; margin: 0;}
+.exam-table th, .exam-table td{border:1px solid var(--border);padding:.6rem;text-align:center;vertical-align:middle;}
+.exam-table th{background:var(--navy);color:var(--cream);font-weight:600;}
+.exam-table .txt-left{text-align:left;font-weight:600;color:var(--navy);}
+.exam-table .amt{font-family:'JetBrains Mono',monospace;text-align:right;white-space:nowrap;}
+
+.sol-toggle-wrap{text-align:left; margin: 1.5rem 0 0 0;}
+.btn-toggle{background:transparent;border:2px solid var(--green);border-bottom:none;color:var(--green);font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;padding:.5rem 1.5rem;border-radius:4px 4px 0 0;cursor:pointer;transition:all .2s; position:relative; z-index:2; top:2px;}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--green);color:var(--cream)}
+.sol-card{border-top:2px solid var(--green);display:none; border-radius: 0 6px 6px 6px; position:relative; z-index:1;}
+.sol-card.visible{display:block;animation:fi .4s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+
+.calc-box{background:#f9fcf9;border:1px solid #c8e6c9;padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.9rem;color:var(--text);line-height:1.6;text-align:justify;}
+.math-formula { text-align: center; margin: 1.2rem 0; overflow-x: auto; }
+
+/* Spécifique au tableau de retraitement */
+.ret-table th { background:var(--navy-mid); }
+.ret-table td { border-bottom: 1px solid #eee; }
+.ret-table .group-row td { background: var(--cream-dark); font-weight: bold; border-top: 2px solid var(--navy); }
+
+@media print{
+  body{background:#fff;}
+  header, .ctrls, .sol-toggle-wrap, .top-actions {display:none !important;}
+  .card{box-shadow:none; border:1px solid var(--border); margin-bottom:2rem;}
+  .sol-card{display:block !important; border-top:2px solid var(--green);}
+  #ex-area {display:block !important;}
+}
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-badge">INFORMATION COMPTABLE ET FINANCIÈRE</div>
+  <h1>Retraitement des SIG</h1>
+  <p class="subtitle">© Thomas Hossen – Version du 7 mars 2026</p>
+  
+  <div class="ctrls">
+    <div class="ctrl-g">
+      <span class="ctrl-lbl">Seed (Optionnel)</span>
+      <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999">
+    </div>
+    <button class="btn-gen" onclick="generateExercise(false)">Générer l'exercice →</button>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" style="text-align:center; padding:4rem; color:var(--text-muted); font-style:italic;">
+    Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="seed-badge">Seed active : <span id="seed-disp"></span></div>
+      <div class="top-actions">
+        <button class="btn-action" onclick="generateExercise(true)">↺ Nouvel énoncé</button>
+        <button class="btn-action" onclick="window.print()">⬇ Exporter PDF</button>
+        <button class="btn-action" onclick="exportWord()">⬇ Exporter DOC</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="tag">Énoncé</span><h2>Retraitement des SIG et répartition de la valeur ajoutée</h2></div>
+      <div class="card-body">
+        <div class="context-block" id="context-text"></div>
+        <div id="enonce-table-container"></div>
+        <div class="context-block" id="additional-info" style="margin-top:1.5rem; background:#fff; border-left:3px solid var(--navy); border-radius:0;"></div>
+        
+        <p style="margin-bottom:1rem; font-weight:600; color:var(--red); text-align:left;">Travail à faire</p>
+        <ul class="event-list" id="events-list"></ul>
+      </div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag">Corrigé</span><h2>Retraitement des SIG et répartition de la valeur ajoutée</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+let currentSeed = 0;
+function seedPRNG(seed) {
+    return function() {
+      let t = seed += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+let random = Math.random;
+
+function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
+
+function texM(num) {
+    let sign = num < 0 ? "-" : "";
+    let absNum = Math.abs(num);
+    absNum = Math.round(absNum * 100) / 100; 
+    let parts = absNum.toFixed(2).split('.');
+    let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, "\\,");
+    return sign + intPart + "{.}" + parts[1];
+}
+function texI(num) {
+    let sign = num < 0 ? "-" : "";
+    let absNum = Math.round(Math.abs(num));
+    return sign + absNum.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "\\,");
+}
+function formatMoney(num) {
+    return num.toLocaleString('fr-FR');
+}
+
+function generateExercise(forceNew = false) {
+    if(forceNew) {
+        document.getElementById('seed-input').value = "";
+    }
+    let seedVal = document.getElementById('seed-input').value;
+    currentSeed = seedVal ? parseInt(seedVal) : Math.floor(Math.random() * 99999999);
+    document.getElementById('seed-disp').innerText = currentSeed;
+    document.getElementById('seed-input').value = currentSeed;
+    random = seedPRNG(currentSeed);
+
+    const companies = ["AbriOuest", "MecaSud", "CreaNord", "TechEst", "Bois & Chalets"];
+    const company = companies[randInt(0, companies.length-1)];
+
+    // --- Génération inversée pour garantir des pourcentages cohérents ---
+    let VA_retr = randInt(1800, 3000) * 1000;
+    
+    let part_perso_pct = randInt(45, 55) / 100;
+    let part_etat_pct = randInt(8, 12) / 100;
+    let part_pret_pct = randInt(2, 5) / 100;
+    let part_assoc_pct = randInt(18, 25) / 100;
+    let part_ent_pct = 1 - part_perso_pct - part_etat_pct - part_pret_pct - part_assoc_pct;
+
+    let amt_perso = Math.round(VA_retr * part_perso_pct);
+    let amt_etat = Math.round(VA_retr * part_etat_pct);
+    let amt_pret = Math.round(VA_retr * part_pret_pct);
+    let amt_assoc = Math.round(VA_retr * part_assoc_pct);
+    let amt_ent = VA_retr - amt_perso - amt_etat - amt_pret - amt_assoc;
+
+    // Variables de retraitement
+    let Subv = randInt(20, 60) * 1000;
+    let PE = randInt(35, 85) * 1000;
+    
+    let VO_cb = randInt(40, 100) * 1000;
+    let N_years = 5;
+    let DAP_cb = VO_cb / N_years;
+    let Int_cb = randInt(1, 5) * 1000;
+    let CB = DAP_cb + Int_cb; // Redevance totale
+    
+    let IT = randInt(6, 18) * 1000;
+    let Part = randInt(60, 130) * 1000;
+
+    // Déduction des valeurs du PCG
+    let VA_pcg = VA_retr - Subv - PE - CB + IT;
+    let CP_pcg = amt_perso - PE - Part;
+    let IS = amt_etat - IT;
+    let CF_pcg = amt_pret - Int_cb;
+    let Dividendes = amt_assoc;
+
+    let EBE_pcg = VA_pcg + Subv - IT - CP_pcg;
+    let EBE_retr = EBE_pcg + CB - Part;
+
+    let DAP_pcg = randInt(120, 280) * 1000;
+    let REX_pcg = EBE_pcg - DAP_pcg;
+    let REX_retr = REX_pcg + Int_cb - Part;
+
+    // Affichage Énoncé
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('ex-area').style.display = 'block';
+    document.getElementById('sol-card').classList.remove('visible');
+    document.getElementById('toggle-btn').innerText = "Afficher le corrigé";
+    document.getElementById('toggle-btn').classList.remove('shown');
+
+    document.getElementById('context-text').innerHTML = `
+      Le service comptable de la société <strong>${company}</strong>, fabricant industriel d'équipements, vous communique l'extrait des soldes intermédiaires de gestion (SIG) de l'exercice N, strictement établi conformément aux règles juridiques du Plan comptable général (PCG).
+    `;
+
+    let tableHtml = `<div class="exam-table-wrap">
+        <table class="exam-table" style="width: 60%; margin: 0 auto;">
+            <tr>
+                <th style="width: 70%;">Soldes intermédiaires de gestion (PCG)</th>
+                <th style="width: 30%;">Montants (€)</th>
+            </tr>
+            <tr><td class="txt-left">Valeur ajoutée (VA)</td><td class="amt">${formatMoney(VA_pcg)}</td></tr>
+            <tr><td class="txt-left">Excédent brut d'exploitation (EBE)</td><td class="amt">${formatMoney(EBE_pcg)}</td></tr>
+            <tr><td class="txt-left">Résultat d'exploitation (REX)</td><td class="amt">${formatMoney(REX_pcg)}</td></tr>
+        </table>
+    </div>`;
+    document.getElementById('enonce-table-container').innerHTML = tableHtml;
+
+    document.getElementById('additional-info').innerHTML = `
+        <strong>Informations complémentaires issues de l'annexe.</strong> Afin de procéder à une analyse économique plus fidèle de la création de richesse, vous relevez les éléments suivants :<br>
+        — Les consommations de l'exercice en provenance des tiers comportent notamment des charges de personnel extérieur (intérimaires) pour ${formatMoney(PE)} € et une redevance annuelle de crédit-bail pour ${formatMoney(CB)} €.<br>
+        — Cette redevance de crédit-bail correspond au financement d'une machine-outil dont la valeur d'origine est de ${formatMoney(VO_cb)} € et la durée du contrat est de ${N_years} ans.<br>
+        — La subvention d'exploitation, comptabilisée classiquement après la valeur ajoutée, s'élève à ${formatMoney(Subv)} € et correspond à une aide directe pour compenser une réduction imposée des prix de vente.<br>
+        — Les impôts et taxes comptabilisés s'élèvent à ${formatMoney(IT)} €.<br>
+        — La participation des salariés aux résultats s'élève à ${formatMoney(Part)} €.<br>
+        — Les charges de personnel stricto sensu s'élèvent à ${formatMoney(CP_pcg)} €.<br>
+        — L'impôt sur les bénéfices (IS) payé par la société s'élève à ${formatMoney(IS)} €.<br>
+        — Les charges financières de l'exercice s'élèvent à ${formatMoney(CF_pcg)} €.<br>
+        — Le montant des dividendes distribués aux actionnaires s'élève à ${formatMoney(Dividendes)} €.
+    `;
+
+    let htmlEnonce = "";
+    htmlEnonce += `<li><strong>1. Analyse des retraitements économiques.</strong> Après avoir indiqué la nature des retraitements à effectuer (subvention, personnel extérieur, impôts, participation, crédit-bail) et justifié précisément leurs effets sur les principaux SIG, présentez le tableau de passage des SIG comptables aux SIG retraités (valeur ajoutée, EBE, résultat d'exploitation).</li>`;
+    htmlEnonce += `<li><strong>2. Répartition de la valeur ajoutée.</strong> À partir de la valeur ajoutée retraitée calculée précédemment, déterminez comment cette richesse globale s'est répartie entre les différents acteurs économiques (personnel, État, prêteurs, associés, entreprise). Concluez par une brève analyse de cette répartition.</li>`;
+
+    document.getElementById('events-list').innerHTML = htmlEnonce;
+
+    // --- GÉNÉRATION CORRIGÉ ---
+    let htmlSol = "";
+
+    // Corrigé Partie 1
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">1. Analyse des retraitements économiques</span>
+        Le passage des SIG comptables (vision juridique du PCG) aux SIG retraités (vision économique de l'analyste financier ou de la Banque de France) vise à comparer les performances des entreprises indépendamment de leurs choix juridiques d'externalisation ou de financement. Voici la justification économique de chaque correction :
+        <ul style="list-style-type:none; padding-left:1rem; margin:0.8rem 0;">
+            <li>$\\star\\;$ <strong>Subvention d'exploitation :</strong> puisqu'elle compense une insuffisance du prix de vente, elle est économiquement assimilable à un complément de chiffre d'affaires. Elle doit donc être ajoutée pour le calcul de la production et de la valeur ajoutée (VA).</li>
+            <li>$\\star\\;$ <strong>Personnel extérieur (intérimaires) :</strong> le PCG classe ce coût dans les services extérieurs (consommations en provenance des tiers). Or, d'un point de vue économique, il s'agit d'une force de travail. On soustrait donc ce montant des consommations externes (ce qui augmente mathématiquement la VA) pour l'ajouter aux charges de personnel (ce qui fera baisser l'EBE plus tard).</li>
+            <li>$\\star\\;$ <strong>Impôts et taxes :</strong> ces prélèvements ne créent pas de valeur intrinsèque pour l'entreprise. L'analyste considère qu'ils relèvent de l'environnement externe. On les réintègre donc dans les consommations en provenance des tiers, ce qui a pour effet direct de diminuer la VA.</li>
+            <li>$\\star\\;$ <strong>Participation des salariés :</strong> comptabilisée exceptionnellement ou en bas de compte de résultat par le PCG, elle constitue en réalité un supplément de rémunération lié au travail. On l'intègre donc aux charges de personnel, ce qui vient diminuer l'EBE et le REX.</li>
+            <li>$\\star\\;$ <strong>Crédit-bail :</strong> pour rendre comparable une entreprise qui loue son matériel avec une entreprise qui s'endette pour l'acheter, on annule la redevance locative (baisse des consommations externes, donc hausse< de la VA et de l'EBE). En contrepartie, on ventile cette redevance en deux éléments fictifs : une dotation aux amortissements (DAP) et une charge financière d'intérêts. La DAP s'obtient en divisant la valeur d'origine par la durée du contrat, à savoir $${texI(VO_cb)} \\div ${N_years} = ${texI(DAP_cb)}$ euros ; les intérêts correspondent alors à la différence entre la redevance totale et les DAP, à savoir $${texI(CB)} - ${texI(DAP_cb)} = ${texI(Int_cb)}$ euros.</li>
+        </ul>
+        <strong>Tableau de synthèse des retraitements :</strong>
+        <div class="exam-table-wrap">
+            <table class="exam-table ret-table">
+                <tr>
+                    <th style="width: 35%;">SIG du PCG</th>
+                    <th style="width: 45%;">Détail des retraitements</th>
+                    <th style="width: 20%;">SIG retraité</th>
+                </tr>
+                <tr class="group-row">
+                    <td class="txt-left">Valeur ajoutée (VA) : $${texI(VA_pcg)}$</td>
+                    <td class="txt-left"></td>
+                    <td class="amt">$${texI(VA_retr)}$</td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td class="txt-left" style="color:var(--green);">+ Subvention d'exploitation : $${texI(Subv)}$</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td class="txt-left" style="color:var(--green);">+ Redevance crédit-bail annulée : $${texI(CB)}$</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td class="txt-left" style="color:var(--green);">+ Personnel extérieur reclassé : $${texI(PE)}$</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td class="txt-left" style="color:var(--red);">- Impôts et taxes reclassés : $${texI(IT)}$</td>
+                    <td></td>
+                </tr>
+                <tr class="group-row">
+                    <td class="txt-left">EBE : $${texI(EBE_pcg)}$</td>
+                    <td class="txt-left"></td>
+                    <td class="amt">$${texI(EBE_retr)}$</td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td class="txt-left" style="color:var(--green);">+ Redevance crédit-bail annulée : $${texI(CB)}$</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td class="txt-left" style="color:var(--red);">- Participation des salariés : $${texI(Part)}$</td>
+                    <td></td>
+                </tr>
+                <tr class="group-row">
+                    <td class="txt-left">Résultat d'exploitation : $${texI(REX_pcg)}$</td>
+                    <td class="txt-left"></td>
+                    <td class="amt">$${texI(REX_retr)}$</td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td class="txt-left" style="color:var(--green);">+ Part intérêts du crédit-bail : $${texI(Int_cb)}$</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td class="txt-left" style="color:var(--red);">- Participation des salariés : $${texI(Part)}$</td>
+                    <td></td>
+                </tr>
+            </table>
+        </div>
+    </div>`;
+
+    // Corrigé Partie 2
+    let commentRepart = "";
+    if (part_perso_pct >= 0.50) {
+        commentRepart = `On constate que l'essentiel de la richesse créée (plus de $${texI(part_perso_pct*100)}\\,\\%$) est capté par le facteur travail. Cette forte intensité salariale est typique des secteurs de main-d'œuvre.`;
+    } else {
+        commentRepart = `Le facteur travail absorbe environ $${texI(part_perso_pct*100)}\\,\\%$ de la valeur ajoutée, ce qui indique une entreprise potentiellement très capitalistique (fortement automatisée).`;
+    }
+    
+    if (part_assoc_pct >= 0.20) {
+        commentRepart += ` La pression actionnariale est par ailleurs très forte, puisque les associés s'arrogent près d'un quart de la richesse sous forme de dividendes.`;
+    } else {
+        commentRepart += ` La rémunération des actionnaires reste modérée ($${texI(part_assoc_pct*100)}\\,\\%$).`;
+    }
+    
+    if (part_ent_pct <= 0.05) {
+        commentRepart += ` En conséquence, la part laissée à l'entreprise pour assurer son autofinancement et garantir sa survie à long terme est extrêmement faible (seulement $${texI(part_ent_pct*100)}\\,\\%$), ce qui constitue un risque stratégique majeur.`;
+    } else {
+        commentRepart += ` L'entreprise parvient néanmoins à conserver un matelas de sécurité d'environ $${texI(part_ent_pct*100)}\\,\\%$ pour financer sa croissance future sans dépendre intégralement des banques.`;
+    }
+
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">2. Répartition de la valeur ajoutée</span>
+        La valeur ajoutée retraitée ($${texI(VA_retr)}$ euros) constitue le gâteau économique global produit par l'entreprise. Il s'agit d'analyser comment ce gâteau est découpé pour rémunérer l'ensemble des parties prenantes ayant concouru à sa création. Le solde non distribué constituera l'autofinancement propre de l'entreprise.
+        <div class="exam-table-wrap">
+            <table class="exam-table" style="width: 100%; margin: 0 auto;">
+                <tr>
+                    <th style="width: 15%;">Acteur</th>
+                    <th style="width: 55%;">Calcul détaillé du montant alloué</th>
+                    <th style="width: 15%;">Montant (€)</th>
+                    <th style="width: 15%;">Part de la VA</th>
+                </tr>
+                <tr>
+                    <td class="txt-left"><strong>Personnel</strong></td>
+                    <td class="txt-left">Charges de personnel + personnel ext. + participation<br>($${texI(CP_pcg)} + ${texI(PE)} + ${texI(Part)}$)</td>
+                    <td class="amt">$${texI(amt_perso)}$</td>
+                    <td class="amt"><strong>$${texI(part_perso_pct * 100)}$ %</strong></td>
+                </tr>
+                <tr>
+                    <td class="txt-left"><strong>État</strong></td>
+                    <td class="txt-left">Impôts et taxes + impôts sur les bénéfices<br>($${texI(IT)} + ${texI(IS)}$)</td>
+                    <td class="amt">$${texI(amt_etat)}$</td>
+                    <td class="amt"><strong>$${texI(part_etat_pct * 100)}$ %</strong></td>
+                </tr>
+                <tr>
+                    <td class="txt-left"><strong>Prêteurs</strong></td>
+                    <td class="txt-left">Charges financières + intérêts du crédit-bail<br>($${texI(CF_pcg)} + ${texI(Int_cb)}$)</td>
+                    <td class="amt">$${texI(amt_pret)}$</td>
+                    <td class="amt"><strong>$${texI(part_pret_pct * 100)}$ %</strong></td>
+                </tr>
+                <tr>
+                    <td class="txt-left"><strong>Associés</strong></td>
+                    <td class="txt-left">Dividendes distribués au cours de l'exercice</td>
+                    <td class="amt">$${texI(amt_assoc)}$</td>
+                    <td class="amt"><strong>$${texI(part_assoc_pct * 100)}$ %</strong></td>
+                </tr>
+                <tr style="background:var(--cream-dark); border-top:2px solid var(--navy);">
+                    <td class="txt-left"><strong>Entreprise</strong></td>
+                    <td class="txt-left">Reliquat (autofinancement net par différence)</td>
+                    <td class="amt">$${texI(amt_ent)}$</td>
+                    <td class="amt"><strong>$${texI(part_ent_pct * 100)}$ %</strong></td>
+                </tr>
+            </table>
+        </div>
+        ${commentRepart}
+    </div>`;
+
+    document.getElementById('sol-content').innerHTML = htmlSol;
+    
+    if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
+        MathJax.typesetPromise().catch(function (err) {
+            console.error('Erreur MathJax :', err);
+        });
+    }
+}
+
+function toggleSol() {
+    let solCard = document.getElementById('sol-card');
+    let btn = document.getElementById('toggle-btn');
+    if(solCard.classList.contains('visible')) {
+        solCard.classList.remove('visible');
+        btn.innerText = "Afficher le corrigé";
+        btn.classList.remove('shown');
+    } else {
+        solCard.classList.add('visible');
+        btn.innerText = "Masquer le corrigé";
+        btn.classList.add('shown');
+    }
+}
+
+function exportWord() {
+    let content = document.getElementById('ex-area').cloneNode(true);
+    let actions = content.querySelector('.top-actions');
+    if(actions) actions.parentNode.removeChild(actions);
+    let toggle = content.querySelector('.sol-toggle-wrap');
+    if(toggle) toggle.parentNode.removeChild(toggle);
+    let solCard = content.querySelector('#sol-card');
+    if(solCard) solCard.style.display = 'block';
+
+    let html = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <meta charset='utf-8'>
+            <title>Exercice Finance</title>
+            <style>
+                body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5; text-align: justify; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 10pt; }
+                th, td { border: 1px solid #000; padding: 4px; }
+                th { background-color: #f2f2f2; text-align: center; font-weight: bold; }
+                .txt-left { text-align: left; font-weight: bold; }
+                .amt { text-align: right; white-space: nowrap; }
+                .calc-box { border: 1px solid #000; padding: 10px; margin-bottom: 15px; background-color: #f9f9f9; text-align: justify; }
+                .math-formula { text-align: center; font-style: italic; margin: 10px 0; }
+                ul { text-align: justify; }
+                li { margin-bottom: 5px; }
+                .ret-table th { background-color: #d9d9d9; }
+                .group-row td { background-color: #f2f2f2; font-weight: bold; border-top: 2px solid #000; }
+            </style>
+        </head>
+        <body>
+            ${content.innerHTML}
+        </body>
+        </html>
+    `;
+    
+    let blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    let url = URL.createObjectURL(blob);
+    let link = document.createElement('a');
+    link.href = url;
+    link.download = 'Exercice_Retraitements_VA.doc';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>

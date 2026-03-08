@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Comptabilité - Financement</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 1.5rem;border-bottom:3px solid var(--gold)}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end;background:rgba(255,255,255,.03);padding:1rem 1.5rem;border-radius:6px;border:1px solid rgba(255,255,255,.1)}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.6)}
+.ctrl-inp, .ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.4rem .7rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none;transition:border-color .2s}
+.ctrl-inp:focus, .ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.5rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;transition:background .18s;margin-left:auto}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN & CARDS */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:700}
+
+.top-actions{display:flex;gap:.5rem;}
+.btn-action{background:#fff;border:1px solid var(--border);color:var(--navy);padding:.4rem .8rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.85rem;font-weight:600;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.btn-action:hover{border-color:var(--navy);background:var(--cream-dark);}
+
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+.event-list{list-style:none;}
+.event-list li{margin-bottom:1.2rem;padding-left:1.5rem;position:relative;font-size:.95rem;text-align:justify}
+.event-list li::before{content:"•";position:absolute;left:0;color:var(--gold);font-size:1.5rem;line-height:1}
+.highlight{font-family:'JetBrains Mono',monospace;font-size:.85rem;font-weight:600;background:var(--cream-dark);padding:2px 6px;border-radius:3px;color:var(--navy)}
+
+/* JOURNAL TABLE */
+.journal-wrap{overflow-x:auto;margin:1.5rem 0}
+table.journal{width:100%;border-collapse:collapse;font-size:.85rem;font-family:'Source Serif 4',serif;box-shadow:0 0 0 1px var(--border)}
+table.journal th{background:var(--navy);color:var(--cream);padding:.6rem;text-align:left;font-weight:600;border:1px solid var(--navy-mid)}
+table.journal td{padding:.5rem .6rem;border:1px solid var(--border);vertical-align:middle}
+table.journal .num{font-family:'JetBrains Mono',monospace;width:80px;text-align:center;color:var(--navy);font-weight:600}
+table.journal .amt{font-family:'JetBrains Mono',monospace;text-align:right;width:115px;white-space:nowrap;}
+table.journal .date-row{background:var(--cream-dark);font-style:italic;text-align:center;font-weight:600;color:var(--text-muted)}
+table.journal .libelle{color:var(--text-muted);font-style:italic;text-align:center;font-size:.8rem}
+.debit-col{color:var(--navy)}
+.credit-col{color:var(--text)}
+
+/* SOLUTION TOGGLE */
+.sol-toggle-wrap{text-align:left; margin: 1.5rem 0 0 0;}
+.btn-toggle{background:transparent;border:2px solid var(--green);border-bottom:none;color:var(--green);font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;padding:.5rem 1.5rem;border-radius:4px 4px 0 0;cursor:pointer;transition:all .2s; position:relative; z-index:2; top:2px;}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--green);color:var(--cream)}
+.sol-card{border-top:2px solid var(--green);display:none; border-radius: 0 6px 6px 6px; position:relative; z-index:1;}
+.sol-card.visible{display:block;animation:fi .4s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+
+.calc-box{background:#f9fcf9;border:1px solid #c8e6c9;padding:1.2rem;border-radius:4px;margin-bottom:1rem;font-size:.9rem;color:var(--text);line-height:1.6;text-align:justify;}
+.calc-box strong{color:var(--green);font-family:'JetBrains Mono',monospace;}
+
+@media print{
+  body{background:#fff;}
+  header, .ctrls, .sol-toggle-wrap, .top-actions {display:none !important;}
+  .card{box-shadow:none; border:1px solid var(--border); margin-bottom:2rem;}
+  .sol-card{display:block !important; border-top:2px solid var(--green);}
+  #ex-area {display:block !important;}
+}
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-badge">INFORMATION COMPTABLE ET FINANCIÈRE</div>
+  <h1>Modes de financement et investissements</h1>
+  <p class="subtitle">© Thomas Hossen – Version du 7 mars 2026</p>
+  
+  <div class="ctrls">
+    <div class="ctrl-g">
+      <span class="ctrl-lbl">Seed (Optionnel)</span>
+      <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999">
+    </div>
+    <button class="btn-gen" onclick="generateExercise(false)">Générer l'exercice →</button>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" style="text-align:center; padding:4rem; color:var(--text-muted); font-style:italic;">
+    Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="seed-badge">Seed active : <span id="seed-disp"></span></div>
+      <div class="top-actions">
+        <button class="btn-action" onclick="generateExercise(true)">↺ Nouvel énoncé</button>
+        <button class="btn-action" onclick="window.print()">⬇ Exporter PDF</button>
+        <button class="btn-action" onclick="exportWord()">⬇ Exporter DOC</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="tag">Énoncé</span><h2>Emprunt bancaire et contrat de crédit-bail</h2></div>
+      <div class="card-body">
+        <div class="context-block" id="context-text"></div>
+        <p style="margin-bottom:1rem; font-weight:600; color:var(--navy);">Opérations réalisées par l'entreprise (ordre chronologique)</p>
+        <ul class="event-list" id="events-list"></ul>
+        <p style="margin-top:1.5rem; font-weight:600; color:var(--red);">Travail à faire</p>
+        <p id="question-text" style="font-style:italic;"></p>
+      </div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag">Corrigé</span><h2>Emprunt bancaire et contrat de crédit-bail</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+// --- PRNG (Mulberry32) ---
+let currentSeed = 0;
+function seedPRNG(seed) {
+    return function() {
+      let t = seed += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+let random = Math.random;
+
+function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
+function formatMoney(num) { return num.toLocaleString('fr-FR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' €'; }
+
+function generateExercise(forceNew = false) {
+    if(forceNew) {
+        document.getElementById('seed-input').value = "";
+    }
+    let seedVal = document.getElementById('seed-input').value;
+    currentSeed = seedVal ? parseInt(seedVal) : Math.floor(Math.random() * 99999999);
+    document.getElementById('seed-disp').innerText = currentSeed;
+    document.getElementById('seed-input').value = currentSeed;
+    random = seedPRNG(currentSeed);
+
+    // Variables Emprunt
+    let loanAmount = randInt(50, 200) * 1000;
+    let loanRate = randInt(2, 5);
+    let loanYears = randInt(4, 7);
+    
+    // Calcul de l'annuité constante : A = V0 * i / (1 - (1+i)^-n)
+    let iRate = loanRate / 100;
+    let exactAnnuity = loanAmount * (iRate / (1 - Math.pow(1 + iRate, -loanYears)));
+    let interestYear1 = loanAmount * iRate;
+    let amortYear1 = exactAnnuity - interestYear1;
+    
+    // Arrondis pour des écritures nettes
+    let int1R = Math.round(interestYear1);
+    let amort1R = Math.round(amortYear1);
+    let annuityR = int1R + amort1R;
+
+    // Variables Crédit-Bail
+    let leaseYears = randInt(3, 5);
+    let leaseMonths = leaseYears * 12;
+    let leaseRoyaltyHT = randInt(3, 9) * 1200; // Multiple de 12 pour simplifier la division
+    let leaseTVA = leaseRoyaltyHT * 0.20;
+    let leaseTTC = leaseRoyaltyHT + leaseTVA;
+    
+    // Calcul de la CCA sur le crédit-bail : contrat du 1er mars au 28/29 février
+    // La redevance annuelle couvre 10 mois en N (mars à décembre) et 2 mois en N+1 (janvier, février)
+    let ccaMonths = 2;
+    let ccaAmt = leaseRoyaltyHT * (ccaMonths / 12);
+    
+    let optionHT = randInt(2, 6) * 1000;
+    let optionTVA = optionHT * 0.20;
+    let optionTTC = optionHT + optionTVA;
+
+    // Affichage Enoncé
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('ex-area').style.display = 'block';
+    document.getElementById('sol-card').classList.remove('visible');
+    document.getElementById('toggle-btn').innerText = "Afficher le corrigé";
+    document.getElementById('toggle-btn').classList.remove('shown');
+
+    document.getElementById('context-text').innerHTML = `
+      L'entreprise <strong>Transport & Logistique SAS</strong> (assujettie à la TVA au taux de 20 %) procède au renouvellement de sa flotte de véhicules et à l'acquisition d'une nouvelle machine de tri. Pour ce faire, elle utilise deux modes de financement distincts. L'exercice comptable coïncide avec l'année civile.
+    `;
+
+    let htmlEnonce = "";
+
+    htmlEnonce += `<li><strong>Le 1er janvier N :</strong> obtention et encaissement sur le compte bancaire d'un emprunt d'un montant de <span class="highlight">${formatMoney(loanAmount)}</span> destiné à financer la machine de tri. Cet emprunt a été souscrit au taux annuel de <span class="highlight">${loanRate} %</span> et sera remboursé sur ${loanYears} ans par annuités constantes.</li>`;
+    
+    htmlEnonce += `<li><strong>Le 1er mars N :</strong> signature d'un contrat de crédit-bail pour l'acquisition d'un camion de livraison. La redevance annuelle (couvrant une année complète d'utilisation à compter de la signature), prélevée ce même jour, s'élève à <span class="highlight">${formatMoney(leaseRoyaltyHT)}</span> HT. Le contrat est conclu pour une durée totale de ${leaseMonths} mois.</li>`;
+
+    htmlEnonce += `<li><strong>Le 31 décembre N :</strong> prélèvement par la banque de la première échéance annuelle de l'emprunt souscrit le 1er janvier.</li>`;
+    
+    htmlEnonce += `<li><strong>Le 31 décembre N :</strong> travaux d'inventaire et d'ajustement (<em>cut-off</em>). L'entreprise doit régulariser la charge de redevance du crédit-bail pour respecter le principe d'indépendance des exercices.</li>`;
+    
+    htmlEnonce += `<li><strong>Le 1er janvier N+1 :</strong> contre-passation (extourne) de l'écriture d'inventaire passée la veille.</li>`;
+
+    htmlEnonce += `<li><strong>Le 1er mars N+${leaseYears} :</strong> à l'issue de la période de location, l'entreprise décide de lever l'option d'achat prévue au contrat de crédit-bail afin de devenir définitivement propriétaire du camion. Le prix de cette option est fixé à <span class="highlight">${formatMoney(optionHT)}</span> HT. La facture correspondante est réglée le jour même par virement.</li>`;
+
+    document.getElementById('events-list').innerHTML = htmlEnonce;
+
+    document.getElementById('question-text').innerText = `Enregistrez au journal de l'entreprise l'ensemble de ces opérations de la souscription initiale jusqu'à la levée de l'option d'achat en N+${leaseYears}.`;
+
+    // --- GENERATION CORRIGE ---
+    let htmlSol = "";
+
+    const addJournal = (date, entries) => {
+        let t = `<div class="journal-wrap"><table class="journal">
+        <tr class="date-row"><td colspan="4">${date}</td></tr>
+        <tr><th>N° Cpte</th><th>Libellé</th><th style="text-align:right">Débit</th><th style="text-align:right">Crédit</th></tr>`;
+        
+        entries.filter(e => e.sens === 'D').forEach(e => {
+            t += `<tr><td class="num">${e.c}</td><td class="debit-col">${e.l}</td><td class="amt">${formatMoney(e.m)}</td><td></td></tr>`;
+        });
+        entries.filter(e => e.sens === 'C').forEach(e => {
+            t += `<tr><td class="num">${e.c}</td><td class="credit-col" style="padding-left:1.5rem">${e.l}</td><td></td><td class="amt">${formatMoney(e.m)}</td></tr>`;
+        });
+        t += `</table></div>`;
+        return t;
+    };
+
+    // Corrigé Emprunt (Souscription)
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Souscription et encaissement de l'emprunt (le 01/01/N)</span>
+        L'encaissement du prêt constitue une ressource financière augmentant la trésorerie au débit (compte 512). En contrepartie, l'entreprise constate une dette financière à long terme envers l'établissement de crédit (compte 164) pour le montant exact du capital emprunté, soit <strong>${formatMoney(loanAmount)}</strong>.
+    </div>`;
+
+    htmlSol += addJournal(`01/01/N`, [
+        {c:"512", l:"Banque", m: loanAmount, sens:'D'},
+        {c:"164", l:"Emprunts auprès des établissements de crédit", m: loanAmount, sens:'C'}
+    ]);
+    
+    // Corrigé Crédit-bail (Redevance)
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Paiement de la redevance de crédit-bail (le 01/03/N)</span>
+        Le crédit-bail est assimilé comptablement à une location tant que l'option d'achat n'est pas levée. Le camion n'entre donc pas dans le patrimoine de l'entreprise à la signature. La redevance annuelle de ${formatMoney(leaseRoyaltyHT)} constitue une charge d'exploitation externe (compte 6122) soumise à la TVA déductible (compte 44566) pour ${formatMoney(leaseTVA)}, générant un décaissement total de <strong>${formatMoney(leaseTTC)}</strong>.
+    </div>`;
+
+    htmlSol += addJournal(`01/03/N`, [
+        {c:"6122", l:"Redevances de crédit-bail mobilier", m: leaseRoyaltyHT, sens:'D'},
+        {c:"44566", l:"TVA déductible sur autres B&S", m: leaseTVA, sens:'D'},
+        {c:"512", l:"Banque", m: leaseTTC, sens:'C'}
+    ]);
+
+    // Corrigé Emprunt (Échéance)
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Paiement de la première annuité d'emprunt (le 31/12/N)</span>
+        L'intérêt de la première année se calcule sur le capital initial : ${formatMoney(loanAmount)} × ${loanRate} % = <strong>${formatMoney(int1R)}</strong>. L'annuité globale constante, calculée pour rembourser la dette en ${loanYears} ans, s'élève à <strong>${formatMoney(annuityR)}</strong>. L'amortissement du capital s'obtient par différence : ${formatMoney(annuityR)} (annuité) - ${formatMoney(int1R)} (intérêts) = <strong>${formatMoney(amort1R)}</strong>. Lors du prélèvement, l'entreprise diminue sa dette (compte 164) pour la part de capital remboursée, et constate une charge financière (compte 6611) pour les intérêts.
+    </div>`;
+
+    htmlSol += addJournal(`31/12/N`, [
+        {c:"164", l:"Emprunts auprès des établissements de crédit", m: amort1R, sens:'D'},
+        {c:"6611", l:"Intérêts des emprunts et dettes", m: int1R, sens:'D'},
+        {c:"512", l:"Banque", m: annuityR, sens:'C'}
+    ]);
+
+    // Corrigé Cut-off (CCA Crédit bail)
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Ajustement de la redevance à l'inventaire (le 31/12/N)</span>
+        La redevance annuelle de crédit-bail a été payée le 1er mars N pour une année complète. Elle couvre donc la période du 1er mars N au 28 février N+1. L'entreprise a comptabilisé la totalité de la charge en année N, or ${ccaMonths} mois concernent l'exercice N+1 (janvier et février). Il convient d'extraire cette part de charge de l'exercice N en constatant une charge constatée d'avance : ${formatMoney(leaseRoyaltyHT)} × (${ccaMonths} / 12 mois) = <strong>${formatMoney(ccaAmt)}</strong>.
+    </div>`;
+
+    htmlSol += addJournal(`31/12/N`, [
+        {c:"486", l:"Charges constatées d'avance", m: ccaAmt, sens:'D'},
+        {c:"6122", l:"Redevances de crédit-bail mobilier", m: ccaAmt, sens:'C'}
+    ]);
+    
+    // Corrigé Extourne
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Extourne de la régularisation (le 01/01/N+1)</span>
+        À l'ouverture du nouvel exercice, l'écriture d'inventaire transitoire est obligatoirement extournée afin de réintégrer la charge de redevance dans les comptes de l'année N+1 à laquelle elle se rapporte.
+    </div>`;
+
+    htmlSol += addJournal(`01/01/N+1`, [
+        {c:"6122", l:"Redevances de crédit-bail mobilier", m: ccaAmt, sens:'D'},
+        {c:"486", l:"Charges constatées d'avance", m: ccaAmt, sens:'C'}
+    ]);
+
+    // Corrigé Crédit-bail (Levée d'option)
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Levée de l'option d'achat en fin de contrat (le 01/03/N+${leaseYears})</span>
+        À l'issue de la période de location, l'entreprise décide d'acquérir le véhicule. Celui-ci entre officiellement à l'actif du bilan (compte 2182) au coût d'acquisition fixé par le contrat, c'est-à-dire le prix de la levée d'option d'achat qui s'élève à <strong>${formatMoney(optionHT)}</strong>. L'entreprise déduit la TVA sur cette immobilisation (compte 44562) pour ${formatMoney(optionTVA)}, et règle le montant TTC de <strong>${formatMoney(optionTTC)}</strong> au bailleur.
+    </div>`;
+
+    htmlSol += addJournal(`01/03/N+${leaseYears}`, [
+        {c:"2182", l:"Matériel de transport", m: optionHT, sens:'D'},
+        {c:"44562", l:"TVA déductible sur immobilisations", m: optionTVA, sens:'D'},
+        {c:"512", l:"Banque", m: optionTTC, sens:'C'}
+    ]);
+
+    document.getElementById('sol-content').innerHTML = htmlSol;
+}
+
+function toggleSol() {
+    let solCard = document.getElementById('sol-card');
+    let btn = document.getElementById('toggle-btn');
+    if(solCard.classList.contains('visible')) {
+        solCard.classList.remove('visible');
+        btn.innerText = "Afficher le corrigé";
+        btn.classList.remove('shown');
+    } else {
+        solCard.classList.add('visible');
+        btn.innerText = "Masquer le corrigé";
+        btn.classList.add('shown');
+    }
+}
+
+// --- FONCTION EXPORT DOC ---
+function exportWord() {
+    let content = document.getElementById('ex-area').cloneNode(true);
+    let actions = content.querySelector('.top-actions');
+    if(actions) actions.parentNode.removeChild(actions);
+    let toggle = content.querySelector('.sol-toggle-wrap');
+    if(toggle) toggle.parentNode.removeChild(toggle);
+    let solCard = content.querySelector('#sol-card');
+    if(solCard) solCard.style.display = 'block';
+
+    let html = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <meta charset='utf-8'>
+            <title>Exercice Comptabilité</title>
+            <style>
+                body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                th, td { border: 1px solid #000; padding: 5px; }
+                th { background-color: #f2f2f2; text-align: left; }
+                .amt { text-align: right; white-space: nowrap; }
+                .calc-box { border: 1px solid #000; padding: 10px; margin-bottom: 15px; background-color: #f9f9f9; }
+                .date-row { font-style: italic; text-align: center; font-weight: bold; }
+                .highlight { font-weight: bold; }
+            </style>
+        </head>
+        <body>
+            ${content.innerHTML}
+        </body>
+        </html>
+    `;
+    
+    let blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    let url = URL.createObjectURL(blob);
+    let link = document.createElement('a');
+    link.href = url;
+    link.download = 'Exercice_Financement.doc';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Analyse Financière - Ratios et Liquidité</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['\\[', '\\]']]
+    }
+  };
+</script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7;text-align:justify;}
+
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 1.5rem;border-bottom:3px solid var(--gold);text-align:left;}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end;background:rgba(255,255,255,.03);padding:1rem 1.5rem;border-radius:6px;border:1px solid rgba(255,255,255,.1)}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.6)}
+.ctrl-inp, .ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.4rem .7rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none;transition:border-color .2s}
+.ctrl-inp:focus, .ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.5rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;transition:background .18s;margin-left:auto}
+.btn-gen:hover{background:var(--gold-light)}
+
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:700}
+
+.top-actions{display:flex;gap:.5rem;}
+.btn-action{background:#fff;border:1px solid var(--border);color:var(--navy);padding:.4rem .8rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.85rem;font-weight:600;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.btn-action:hover{border-color:var(--navy);background:var(--cream-dark);}
+
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem;text-align:left;}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+.event-list{list-style:none;}
+.event-list > li{margin-bottom:1.5rem;padding-left:1.5rem;position:relative;font-size:.95rem;text-align:justify}
+.event-list > li::before{content:"•";position:absolute;left:0;color:var(--gold);font-size:1.5rem;line-height:1}
+
+.exam-table-wrap { overflow-x: auto; margin: 1.5rem 0; }
+.exam-table{width:100%;border-collapse:collapse;font-size:.85rem;font-family:'Source Serif 4',serif; margin: 0;}
+.exam-table th, .exam-table td{border:1px solid var(--border);padding:.6rem;text-align:center;vertical-align:middle;}
+.exam-table th{background:var(--navy);color:var(--cream);font-weight:600;}
+.exam-table .txt-left{text-align:left;font-weight:600;color:var(--navy);}
+.exam-table .amt{font-family:'JetBrains Mono',monospace;text-align:right;white-space:nowrap;}
+
+.sol-toggle-wrap{text-align:left; margin: 1.5rem 0 0 0;}
+.btn-toggle{background:transparent;border:2px solid var(--green);border-bottom:none;color:var(--green);font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;padding:.5rem 1.5rem;border-radius:4px 4px 0 0;cursor:pointer;transition:all .2s; position:relative; z-index:2; top:2px;}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--green);color:var(--cream)}
+.sol-card{border-top:2px solid var(--green);display:none; border-radius: 0 6px 6px 6px; position:relative; z-index:1;}
+.sol-card.visible{display:block;animation:fi .4s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+
+.calc-box{background:#f9fcf9;border:1px solid #c8e6c9;padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.9rem;color:var(--text);line-height:1.6;text-align:justify;}
+.math-formula { text-align: center; margin: 1.2rem 0; overflow-x: auto; }
+
+@media print{
+  body{background:#fff;}
+  header, .ctrls, .sol-toggle-wrap, .top-actions {display:none !important;}
+  .card{box-shadow:none; border:1px solid var(--border); margin-bottom:2rem;}
+  .sol-card{display:block !important; border-top:2px solid var(--green);}
+  #ex-area {display:block !important;}
+}
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-badge">INFORMATION COMPTABLE ET FINANCIÈRE</div>
+  <h1>Ratios, BFR et liquidité</h1>
+  <p class="subtitle">© Thomas Hossen – Version du 7 mars 2026</p>
+  
+  <div class="ctrls">
+    <div class="ctrl-g">
+      <span class="ctrl-lbl">Seed (Optionnel)</span>
+      <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999">
+    </div>
+    <button class="btn-gen" onclick="generateExercise(false)">Générer l'exercice →</button>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" style="text-align:center; padding:4rem; color:var(--text-muted); font-style:italic;">
+    Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="seed-badge">Seed active : <span id="seed-disp"></span></div>
+      <div class="top-actions">
+        <button class="btn-action" onclick="generateExercise(true)">↺ Nouvel énoncé</button>
+        <button class="btn-action" onclick="window.print()">⬇ Exporter PDF</button>
+        <button class="btn-action" onclick="exportWord()">⬇ Exporter DOC</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="tag">Énoncé</span><h2>Diagnostic du cycle d'exploitation</h2></div>
+      <div class="card-body">
+        <div class="context-block" id="context-text"></div>
+        <div id="enonce-table-container"></div>
+        <div class="context-block" id="additional-info" style="margin-top:1.5rem; background:#fff; border-left:3px solid var(--navy); border-radius:0;"></div>
+        
+        <p style="margin-bottom:1rem; font-weight:600; color:var(--red); text-align:left;">Travail à faire</p>
+        <ul class="event-list" id="events-list"></ul>
+      </div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag">Corrigé</span><h2>Diagnostic du cycle d'exploitation</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+let currentSeed = 0;
+function seedPRNG(seed) {
+    return function() {
+      let t = seed += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+let random = Math.random;
+function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
+
+function texM(num) {
+    let sign = num < 0 ? "-" : "";
+    let absNum = Math.abs(num);
+    absNum = Math.round(absNum * 100) / 100; 
+    let parts = absNum.toFixed(2).split('.');
+    let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, "\\,");
+    return sign + intPart + "{.}" + parts[1];
+}
+function texI(num) {
+    let sign = num < 0 ? "-" : "";
+    let absNum = Math.round(Math.abs(num));
+    return sign + absNum.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "\\,");
+}
+function formatMoney(num) {
+    return num.toLocaleString('fr-FR'); // sans le sigle euro pour les tableaux denses
+}
+
+function generateExercise(forceNew = false) {
+    if(forceNew) {
+        document.getElementById('seed-input').value = "";
+    }
+    let seedVal = document.getElementById('seed-input').value;
+    currentSeed = seedVal ? parseInt(seedVal) : Math.floor(Math.random() * 99999999);
+    document.getElementById('seed-disp').innerText = currentSeed;
+    document.getElementById('seed-input').value = currentSeed;
+    random = seedPRNG(currentSeed);
+
+    const companies = ["Colibri", "NovaNégoce", "AzurDistrib", "PharmaStock", "MécaTech"];
+    const company = companies[randInt(0, companies.length-1)];
+
+    // Génération N-1
+    let stock_ini_N1 = randInt(1800, 2500) * 1000;
+    let stock_fin_N1 = randInt(1200, 1800) * 1000;
+    let ca_ht_N1 = randInt(22000, 28000) * 1000;
+    let cout_march_N1 = randInt(18000, 24000) * 1000;
+    let achats_ttc_N1 = randInt(20000, 24000) * 1000;
+    let ventes_ttc_N1 = randInt(17000, 21000) * 1000;
+    let clients_N1 = randInt(6000, 8000) * 1000;
+    let fourn_N1 = randInt(4000, 6000) * 1000;
+    let fiscales_N1 = randInt(1500, 2500) * 1000;
+    let eene_N1 = randInt(150, 400) * 1000;
+    let treso_disp_N1 = randInt(800, 1500) * 1000;
+    let dfct_N1 = randInt(500, 1200) * 1000; // Dettes financières à court terme (concours bancaires)
+
+    // Génération N (Croissance)
+    let stock_fin_N = randInt(1400, 2000) * 1000;
+    let ca_ht_N = Math.round(ca_ht_N1 * (randInt(110, 130)/100));
+    let cout_march_N = Math.round(cout_march_N1 * (randInt(105, 115)/100));
+    let achats_ttc_N = Math.round(achats_ttc_N1 * (randInt(90, 110)/100));
+    let ventes_ttc_N = Math.round(ventes_ttc_N1 * (randInt(120, 150)/100));
+    let clients_N = Math.round(clients_N1 * (randInt(110, 130)/100));
+    let fourn_N = Math.round(fourn_N1 * (randInt(110, 130)/100));
+    let fiscales_N = Math.round(fiscales_N1 * (randInt(105, 125)/100));
+    let eene_N = randInt(200, 500) * 1000;
+    let treso_disp_N = randInt(500, 2500) * 1000;
+    let dfct_N = randInt(800, 2000) * 1000;
+
+    // Secteur (Moyennes)
+    let sect_stock_N1 = randInt(45, 65);
+    let sect_stock_N = sect_stock_N1 - randInt(2, 8);
+    let sect_cli_N1 = randInt(70, 95);
+    let sect_cli_N = sect_cli_N1 + randInt(2, 6);
+    let sect_fourn_N1 = randInt(90, 120);
+    let sect_fourn_N = sect_fourn_N1 - randInt(5, 15);
+
+    // Calculs Corrigé N-1
+    let act_ce_N1 = stock_fin_N1 + clients_N1 + eene_N1;
+    let pass_ce_N1 = fourn_N1 + fiscales_N1;
+    let bfre_N1 = act_ce_N1 - pass_ce_N1;
+    let jours_N1 = (bfre_N1 / ca_ht_N1) * 360;
+    
+    let stock_moy_N1 = (stock_ini_N1 + stock_fin_N1) / 2;
+    let rot_stock_N1 = (stock_moy_N1 / cout_march_N1) * 360;
+    let rot_cli_N1 = ((clients_N1 + eene_N1) / ventes_ttc_N1) * 360;
+    let rot_fourn_N1 = (fourn_N1 / achats_ttc_N1) * 360;
+
+    let act_ct_N1 = act_ce_N1 + treso_disp_N1;
+    let pass_ct_N1 = pass_ce_N1 + dfct_N1 + eene_N1; // EENE reclassé en concours
+    let liq_gen_N1 = act_ct_N1 / pass_ct_N1;
+    let liq_red_N1 = (act_ct_N1 - stock_fin_N1) / pass_ct_N1;
+    let liq_imm_N1 = treso_disp_N1 / (dfct_N1 + eene_N1);
+
+    // Calculs Corrigé N
+    let act_ce_N = stock_fin_N + clients_N + eene_N;
+    let pass_ce_N = fourn_N + fiscales_N;
+    let bfre_N = act_ce_N - pass_ce_N;
+    let jours_N = (bfre_N / ca_ht_N) * 360;
+
+    let stock_moy_N = (stock_fin_N1 + stock_fin_N) / 2;
+    let rot_stock_N = (stock_moy_N / cout_march_N) * 360;
+    let rot_cli_N = ((clients_N + eene_N) / ventes_ttc_N) * 360;
+    let rot_fourn_N = (fourn_N / achats_ttc_N) * 360;
+
+    let act_ct_N = act_ce_N + treso_disp_N;
+    let pass_ct_N = pass_ce_N + dfct_N + eene_N;
+    let liq_gen_N = act_ct_N / pass_ct_N;
+    let liq_red_N = (act_ct_N - stock_fin_N) / pass_ct_N;
+    let liq_imm_N = treso_disp_N / (dfct_N + eene_N);
+
+    // Affichage Énoncé
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('ex-area').style.display = 'block';
+    document.getElementById('sol-card').classList.remove('visible');
+    document.getElementById('toggle-btn').innerText = "Afficher le corrigé";
+    document.getElementById('toggle-btn').classList.remove('shown');
+
+    document.getElementById('context-text').innerHTML = `
+      La société <strong>${company}</strong>, spécialisée dans la vente en gros, vous communique certaines informations utiles à l'analyse de l'évolution de son besoin en fonds de roulement d'exploitation et de sa liquidité entre les exercices $N-1$ et $N$.
+    `;
+
+    let tableHtml = `<div class="exam-table-wrap">
+        <table class="exam-table" style="width: 90%; margin: 0 auto;">
+            <tr>
+                <th style="width: 60%;">Données comptables (en milliers d'euros)</th>
+                <th style="width: 20%;">Exercice N-1</th>
+                <th style="width: 20%;">Exercice N</th>
+            </tr>
+            <tr><td class="txt-left">Stock initial de marchandises (début d'année)</td><td class="amt">${formatMoney(stock_ini_N1/1000)}</td><td class="amt">${formatMoney(stock_fin_N1/1000)}</td></tr>
+            <tr><td class="txt-left">Stock final de marchandises (fin d'année)</td><td class="amt">${formatMoney(stock_fin_N1/1000)}</td><td class="amt">${formatMoney(stock_fin_N/1000)}</td></tr>
+            <tr><td class="txt-left">Chiffre d'affaires hors taxes (CAHT)</td><td class="amt">${formatMoney(ca_ht_N1/1000)}</td><td class="amt">${formatMoney(ca_ht_N/1000)}</td></tr>
+            <tr><td class="txt-left">Coût des marchandises vendues (CMV)</td><td class="amt">${formatMoney(cout_march_N1/1000)}</td><td class="amt">${formatMoney(cout_march_N/1000)}</td></tr>
+            <tr><td class="txt-left">Achats TTC</td><td class="amt">${formatMoney(achats_ttc_N1/1000)}</td><td class="amt">${formatMoney(achats_ttc_N/1000)}</td></tr>
+            <tr><td class="txt-left">Ventes TTC</td><td class="amt">${formatMoney(ventes_ttc_N1/1000)}</td><td class="amt">${formatMoney(ventes_ttc_N/1000)}</td></tr>
+            <tr><td class="txt-left">Créances clients et comptes rattachés</td><td class="amt">${formatMoney(clients_N1/1000)}</td><td class="amt">${formatMoney(clients_N/1000)}</td></tr>
+            <tr><td class="txt-left">Effets escomptés non échus (EENE)</td><td class="amt">${formatMoney(eene_N1/1000)}</td><td class="amt">${formatMoney(eene_N/1000)}</td></tr>
+            <tr><td class="txt-left">Dettes fournisseurs et comptes rattachés</td><td class="amt">${formatMoney(fourn_N1/1000)}</td><td class="amt">${formatMoney(fourn_N/1000)}</td></tr>
+            <tr><td class="txt-left">Dettes fiscales et sociales</td><td class="amt">${formatMoney(fiscales_N1/1000)}</td><td class="amt">${formatMoney(fiscales_N/1000)}</td></tr>
+            <tr><td class="txt-left">Trésorerie disponible (banques et caisses positives)</td><td class="amt">${formatMoney(treso_disp_N1/1000)}</td><td class="amt">${formatMoney(treso_disp_N/1000)}</td></tr>
+            <tr><td class="txt-left">Dettes financières à court terme (hors EENE)</td><td class="amt">${formatMoney(dfct_N1/1000)}</td><td class="amt">${formatMoney(dfct_N/1000)}</td></tr>
+        </table>
+    </div>`;
+    document.getElementById('enonce-table-container').innerHTML = tableHtml;
+
+    document.getElementById('additional-info').innerHTML = `
+        <strong>Informations sectorielles complémentaires.</strong> 
+        Le délai de rotation des stocks moyen du secteur était de ${sect_stock_N1} jours en N-1 et de ${sect_stock_N} jours en N.
+        Le délai de rotation des créances clients moyen était de ${sect_cli_N1} jours en N-1 et de ${sect_cli_N} jours en N.
+        Le délai de rotation des dettes fournisseurs moyen était de ${sect_fourn_N1} jours en N-1 et de ${sect_fourn_N} jours en N.
+        Par ailleurs, on apparente les effets escomptés non échus à des créances clients en termes d'analyse d'exploitation, mais ils constituent des dettes bancaires à court terme pour l'analyse stricte de la liquidité.
+    `;
+
+    let htmlEnonce = "";
+    htmlEnonce += `<li><strong>1. Analyse statique du BFRE.</strong> Calculez le BFR d'exploitation en valeur pour les deux exercices, puis évaluez son poids en nombre de jours de chiffre d'affaires. Interprétez brièvement l'évolution.</li>`;
+    htmlEnonce += `<li><strong>2. Analyse dynamique par les ratios de rotation.</strong> Calculez les délais de rotation des stocks, des créances clients et des dettes fournisseurs pour les deux années (convention 360 jours). Rédigez une note de synthèse comparant vos résultats aux moyennes du secteur.</li>`;
+    htmlEnonce += `<li><strong>3. Analyse de la solvabilité à court terme.</strong> Calculez les ratios de liquidité générale, de liquidité réduite et de liquidité immédiate pour l'exercice N. Que concluez-vous quant au risque de cessation de paiement de l'entreprise ?</li>`;
+
+    document.getElementById('events-list').innerHTML = htmlEnonce;
+
+    // --- GÉNÉRATION CORRIGÉ ---
+    let htmlSol = "";
+
+    // Corrigé Dossier 1
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">1. Analyse statique du BFRE</span>
+        Nous reconstituons les masses du cycle d'exploitation. L'actif circulant d'exploitation (ACE) comprend les stocks finaux, les créances clients et les EENE (ces derniers représentant des créances cédées dont l'entreprise supporte toujours le risque économique). Le passif circulant d'exploitation (PCE) intègre les dettes fournisseurs, fiscales et sociales.
+        <div class="exam-table-wrap">
+            <table class="exam-table" style="width: 80%; margin: 0 auto;">
+                <tr>
+                    <th style="width: 50%;">Éléments (en milliers d'euros)</th>
+                    <th style="width: 25%;">Exercice N-1</th>
+                    <th style="width: 25%;">Exercice N</th>
+                </tr>
+                <tr><td class="txt-left">+ Stock final</td><td>$${texI(stock_fin_N1/1000)}$</td><td>$${texI(stock_fin_N/1000)}$</td></tr>
+                <tr><td class="txt-left">+ Créances clients et comptes rattachés</td><td>$${texI(clients_N1/1000)}$</td><td>$${texI(clients_N/1000)}$</td></tr>
+                <tr><td class="txt-left">+ Effets escomptés non échus (EENE)</td><td>$${texI(eene_N1/1000)}$</td><td>$${texI(eene_N/1000)}$</td></tr>
+                <tr style="background:#f0f0f0;"><td class="txt-left"><strong>= Actif circulant d'exploitation ($A$)</strong></td><td><strong>$${texI(act_ce_N1/1000)}$</strong></td><td><strong>$${texI(act_ce_N/1000)}$</strong></td></tr>
+                <tr><td class="txt-left">+ Dettes fournisseurs</td><td>$${texI(fourn_N1/1000)}$</td><td>$${texI(fourn_N/1000)}$</td></tr>
+                <tr><td class="txt-left">+ Dettes fiscales et sociales</td><td>$${texI(fiscales_N1/1000)}$</td><td>$${texI(fiscales_N/1000)}$</td></tr>
+                <tr style="background:#f0f0f0;"><td class="txt-left"><strong>= Passif circulant d'exploitation ($P$)</strong></td><td><strong>$${texI(pass_ce_N1/1000)}$</strong></td><td><strong>$${texI(pass_ce_N/1000)}$</strong></td></tr>
+                <tr style="border-top:2px solid var(--navy);"><td class="txt-left"><strong>Besoin en fonds de roulement d'exploitation ($A-P$)</strong></td><td><strong>$${texI(bfre_N1/1000)}$</strong></td><td><strong>$${texI(bfre_N/1000)}$</strong></td></tr>
+            </table>
+        </div>
+        Le poids de ce BFRE en jours de chiffre d'affaires s'évalue par la formule $\\frac{\\text{BFRE}}{\\text{CAHT}} \\times 360$. En $N-1$, le BFRE représente donc $\\frac{${texI(bfre_N1)}}{${texI(ca_ht_N1)}} \\times 360 \\approx ${texI(jours_N1)}$ jours, tandis qu'il représente l'année suivante $\\frac{${texI(bfre_N)}}{${texI(ca_ht_N)}} \\times 360 \\approx ${texI(jours_N)}$ jours. Ainsi, le BFRE en valeur absolue ${bfre_N > bfre_N1 ? "a augmenté" : "a diminué"} entre N-1 et N. Toutefois, rapporté au niveau d'activité, le poids relatif du besoin représente ${texI(jours_N)} jours de chiffre d'affaires, ce qui traduit une ${jours_N < jours_N1 ? "amélioration de l'efficacité opérationnelle (les besoins progressent moins vite que le CA)" : "dégradation structurelle : l'entreprise consomme proportionnellement plus de ressources pour faire tourner son exploitation"}.
+    </div>`;
+
+    // Corrigé Dossier 2
+    let evalStock = rot_stock_N < sect_stock_N ? "Le délai de rotation des stocks est inférieur à la moyenne du secteur, ce qui témoigne d'une excellente dynamique logistique : la société parvient à écouler ses marchandises très rapidement, s'approchant d'une gestion en flux tendus." : "Le délai d'écoulement des stocks est supérieur à la moyenne sectorielle, signe d'un engorgement ou de difficultés d'écoulement commercial qui immobilise inutilement de la trésorerie.";
+    let evalCli = rot_cli_N > sect_cli_N ? "En revanche, le délai de recouvrement client est anormalement élevé par rapport au marché : les clients paient la société bien moins vite que ses concurrents. Cette dérive pénalise lourdement les rentrées monétaires de l'entreprise." : "Le délai de règlement accordé aux clients est inférieur au secteur, ce qui dénote une politique de recouvrement agressive et efficace sécurisant les rentrées de fonds.";
+    let evalFourn = rot_fourn_N < sect_fourn_N ? "Parallèlement, la société règle ses fournisseurs bien plus rapidement que la moyenne de ses concurrents. Si cette pratique rassure les partenaires commerciaux, elle prive l'entreprise d'un crédit fournisseur gratuit, ce qui gonfle mécaniquement son BFR." : "L'entreprise compense ses éventuels points faibles par un grand pouvoir de négociation sur ses fournisseurs, qu'elle paie plus tardivement que la moyenne du secteur, ce qui lui octroie une source de financement gratuite.";
+
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">2. Analyse dynamique par les ratios de rotation</span>
+        Afin de comprendre la structure interne du BFRE, nous détaillons les trois grands ratios de délais de paiement. Les créances et dettes s'entendent TTC, tandis que le stock est valorisé au coût d'achat.
+        <div class="exam-table-wrap">
+            <table class="exam-table" style="width: 100%; margin: 0 auto;">
+                <tr>
+                    <th style="width: 25%;">Ratio (en jours)</th>
+                    <th style="width: 25%;">Formule de calcul</th>
+                    <th style="width: 25%;">Exercice N-1</th>
+                    <th style="width: 25%;">Exercice N</th>
+                </tr>
+                <tr>
+                    <td class="txt-left">Délai de rotation des stocks</td>
+                    <td>$\\frac{\\text{stock moyen}}{\\text{CMV}} \\times 360$</td>
+                    <td>$\\frac{${texI((stock_ini_N1 + stock_fin_N1)/2)}}{${texI(cout_march_N1)}} \\times 360 \\approx ${texI(rot_stock_N1)}$</td>
+                    <td>$\\frac{${texI((stock_fin_N1 + stock_fin_N)/2)}}{${texI(cout_march_N)}} \\times 360 \\approx ${texI(rot_stock_N)}$</td>
+                </tr>
+                <tr>
+                    <td class="txt-left">Délai de crédit clients</td>
+                    <td>$\\frac{\\text{créances clients + EENE}}{\\text{ventes TTC}} \\times 360$</td>
+                    <td>$\\frac{${texI(clients_N1 + eene_N1)}}{${texI(ventes_ttc_N1)}} \\times 360 \\approx ${texI(rot_cli_N1)}$</td>
+                    <td>$\\frac{${texI(clients_N + eene_N)}}{${texI(ventes_ttc_N)}} \\times 360 \\approx ${texI(rot_cli_N)}$</td>
+                </tr>
+                <tr>
+                    <td class="txt-left">Délai de crédit fournisseurs</td>
+                    <td>$\\frac{\\text{dettes fournisseurs}}{\\text{achats TTC}} \\times 360$</td>
+                    <td>$\\frac{${texI(fourn_N1)}}{${texI(achats_ttc_N1)}} \\times 360 \\approx ${texI(rot_fourn_N1)}$</td>
+                    <td>$\\frac{${texI(fourn_N)}}{${texI(achats_ttc_N)}} \\times 360 \\approx ${texI(rot_fourn_N)}$</td>
+                </tr>
+            </table>
+        </div>
+        En comparant les résultats de l'année N avec les normes du secteur, plusieurs points d'alerte et de satisfaction se dégagent. ${evalStock} ${evalCli} ${evalFourn} Afin de réduire son besoin en fonds de roulement, la société devra envisager une politique de relance clients plus ferme (par exemple une offre d'escomptes pour paiement comptant) et tenter d'allonger contractuellement ses conditions de règlement fournisseurs.
+    </div>`;
+
+    // Corrigé Dossier 3
+    let liqGenStatus = liq_gen_N > 1 ? "La liquidité générale est satisfaisante. L'ensemble des actifs à court terme suffit amplement à couvrir l'exigibilité des dettes à court terme." : "La liquidité générale est dangereusement inférieure à 1. Les dettes de court terme excèdent les actifs liquides ou facilement liquidables, exposant l'entreprise à une crise grave.";
+    let liqImmStatus = liq_imm_N > 1 ? "La trésorerie disponible seule permettrait de rembourser intégralement les concours bancaires. La solvabilité immédiate est totale." : "Si le banquier venait à exiger le remboursement immédiat de ses crédits de trésorerie et EENE, les liquidités actuelles ne suffiraient pas, l'entreprise serait en état de cessation de paiements théorique.";
+
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">3. Analyse de la solvabilité à court terme (liquidité en N)</span>
+        Les ratios de liquidité permettent d'évaluer la capacité de l'entreprise à honorer ses dettes exigibles (passif à court terme : fournisseurs, dettes fiscales, crédits bancaires dont EENE) en mobilisant tout ou partie de ses actifs à court terme (stocks, créances, trésorerie).
+        <ul style="list-style-type:none; padding-left:1rem; margin:0.8rem 0;">
+            <li>$\\star\\;$ <strong>Liquidité générale :</strong> $\\frac{\\text{actifs à court terme}}{\\text{passifs à court terme}} = \\frac{${texI(act_ct_N)}}{${texI(pass_ct_N)}} \\approx ${texM(liq_gen_N)}$. ${liqGenStatus} Il faut néanmoins supposer que les stocks soient correctement évalués et effectivement vendables à court terme pour que cette garantie soit parfaite.</li>
+            <li style="margin-top:0.8rem;">$\\star\\;$ <strong>Liquidité réduite :</strong> $\\frac{\\text{créances + trésorerie}}{\\text{passifs à court terme}} = \\frac{${texI(act_ct_N - stock_fin_N)}}{${texI(pass_ct_N)}} \\approx ${texM(liq_red_N)}$. Ce ratio de liquidité dite « de test acide » exclut les stocks, jugés trop illiquides. Il mesure si les simples créances et l'argent en banque suffisent à rembourser les créanciers.</li>
+            <li style="margin-top:0.8rem;">$\\star\\;$ <strong>Liquidité immédiate :</strong> $\\frac{\\text{trésorerie disponible}}{\\text{dettes financières à court terme + EENE}} = \\frac{${texI(treso_disp_N)}}{${texI(dfct_N + eene_N)}} \\approx ${texM(liq_imm_N)}$. ${liqImmStatus} Ce ratio quantifie le risque ultime d'asphyxie bancaire.</li>
+        </ul>
+    </div>`;
+
+    document.getElementById('sol-content').innerHTML = htmlSol;
+    
+    if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
+        MathJax.typesetPromise().catch(function (err) {
+            console.error('Erreur MathJax :', err);
+        });
+    }
+}
+
+function toggleSol() {
+    let solCard = document.getElementById('sol-card');
+    let btn = document.getElementById('toggle-btn');
+    if(solCard.classList.contains('visible')) {
+        solCard.classList.remove('visible');
+        btn.innerText = "Afficher le corrigé";
+        btn.classList.remove('shown');
+    } else {
+        solCard.classList.add('visible');
+        btn.innerText = "Masquer le corrigé";
+        btn.classList.add('shown');
+    }
+}
+
+function exportWord() {
+    let content = document.getElementById('ex-area').cloneNode(true);
+    let actions = content.querySelector('.top-actions');
+    if(actions) actions.parentNode.removeChild(actions);
+    let toggle = content.querySelector('.sol-toggle-wrap');
+    if(toggle) toggle.parentNode.removeChild(toggle);
+    let solCard = content.querySelector('#sol-card');
+    if(solCard) solCard.style.display = 'block';
+
+    let html = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <meta charset='utf-8'>
+            <title>Exercice Finance</title>
+            <style>
+                body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5; text-align: justify; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 10pt; }
+                th, td { border: 1px solid #000; padding: 4px; }
+                th { background-color: #f2f2f2; text-align: center; font-weight: bold; }
+                .txt-left { text-align: left; font-weight: bold; }
+                .amt { text-align: right; white-space: nowrap; }
+                .calc-box { border: 1px solid #000; padding: 10px; margin-bottom: 15px; background-color: #f9f9f9; text-align: justify; }
+                .math-formula { text-align: center; font-style: italic; margin: 10px 0; }
+                ul { text-align: justify; }
+                li { margin-bottom: 5px; }
+            </style>
+        </head>
+        <body>
+            ${content.innerHTML}
+        </body>
+        </html>
+    `;
+    
+    let blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    let url = URL.createObjectURL(blob);
+    let link = document.createElement('a');
+    link.href = url;
+    link.download = 'Exercice_Ratios_Liquidite.doc';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>

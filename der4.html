@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Finance - Stratégies de Couverture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['\\[', '\\]']],
+      macros: {
+        E: ['\\mathbb{E}\\left[#1\\right]', 1],
+        P: ['\\mathbb{P}\\left(#1\\right)', 1],
+        ee: '\\text{e}'
+      }
+    }
+  };
+</script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7;text-align:justify;}
+
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 1.5rem;border-bottom:3px solid var(--gold);text-align:left;}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end;background:rgba(255,255,255,.03);padding:1rem 1.5rem;border-radius:6px;border:1px solid rgba(255,255,255,.1)}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.6)}
+.ctrl-inp, .ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.4rem .7rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none;transition:border-color .2s}
+.ctrl-inp:focus, .ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.5rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;transition:background .18s;margin-left:auto}
+.btn-gen:hover{background:var(--gold-light)}
+
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:700}
+
+.top-actions{display:flex;gap:.5rem;}
+.btn-action{background:#fff;border:1px solid var(--border);color:var(--navy);padding:.4rem .8rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.85rem;font-weight:600;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.btn-action:hover{border-color:var(--navy);background:var(--cream-dark);}
+
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem;text-align:left;}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+
+.enum-list { list-style-type: decimal; padding-left: 1.5rem; margin-top: 0.8rem; margin-bottom: 1.5rem; }
+.enum-list > li { margin-bottom: 1.2rem; }
+
+.sol-toggle-wrap{text-align:left; margin: 1.5rem 0 0 0;}
+.btn-toggle{background:transparent;border:2px solid var(--green);border-bottom:none;color:var(--green);font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;padding:.5rem 1.5rem;border-radius:4px 4px 0 0;cursor:pointer;transition:all .2s; position:relative; z-index:2; top:2px;}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--green);color:var(--cream)}
+.sol-card{border-top:2px solid var(--green);display:none; border-radius: 0 6px 6px 6px; position:relative; z-index:1;}
+.sol-card.visible{display:block;animation:fi .4s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+
+.calc-box{background:#f9fcf9;border:1px solid #c8e6c9;padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.9rem;color:var(--text);line-height:1.6;text-align:justify;}
+.math-formula { text-align: center; margin: 1.2rem 0; overflow-x: auto; }
+
+.chart-container { width: 100%; display: flex; justify-content: center; margin: 2rem 0; }
+.svg-chart { background: #fcfcfc; border: 1px solid var(--border); border-radius: 4px; box-shadow: inset 0 2px 8px rgba(0,0,0,0.02); }
+
+@media print{
+  body{background:#fff;}
+  header, .ctrls, .sol-toggle-wrap, .top-actions {display:none !important;}
+  .card{box-shadow:none; border:1px solid var(--border); margin-bottom:2rem;}
+  .sol-card{display:block !important; border-top:2px solid var(--green);}
+  #ex-area {display:block !important;}
+}
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-badge">PRODUITS DÉRIVÉS ET STRATÉGIES DE COUVERTURE</div>
+  <h1>Combinaison d'options</h1>
+  <p class="subtitle">© Thomas Hossen – Version du 7 mars 2026</p>
+  
+  <div class="ctrls">
+    <div class="ctrl-g">
+      <span class="ctrl-lbl">Stratégie</span>
+      <select class="ctrl-sel" id="strat-select">
+        <option value="long_butterfly">Long butterfly</option>
+        <option value="short_butterfly">Short butterfly</option>
+        <option value="short_condor">Short condor</option>
+        <option value="long_condor">Long condor</option>
+      </select>
+    </div>
+    <div class="ctrl-g">
+      <span class="ctrl-lbl">Seed (Optionnel)</span>
+      <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999">
+    </div>
+    <button class="btn-gen" onclick="generateExercise(false)">Générer l'exercice →</button>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" style="text-align:center; padding:4rem; color:var(--text-muted); font-style:italic;">
+    Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice d'analyse de stratégie.
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="seed-badge">Seed active : <span id="seed-disp"></span></div>
+      <div class="top-actions">
+        <button class="btn-action" onclick="generateExercise(true)">↺ Nouvel énoncé</button>
+        <button class="btn-action" onclick="window.print()">⬇ Exporter PDF</button>
+        <button class="btn-action" onclick="exportWord()">⬇ Exporter DOC</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="tag">Énoncé</span><h2>Profil de couverture et analyse de profitabilité</h2></div>
+      <div class="card-body">
+        <div class="context-block" id="context-text"></div>
+        
+        <p style="margin-bottom:1rem; font-weight:600; color:var(--red); text-align:left;">Travail à faire</p>
+        <ul class="enum-list" id="events-list"></ul>
+      </div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag">Corrigé</span><h2>Profil de couverture et analyse de profitabilité</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+let currentSeed = 0;
+function seedPRNG(seed) {
+    return function() {
+      let t = seed += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+let random = Math.random;
+function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
+
+function texI(num) {
+    let sign = num < 0 ? "-" : "";
+    let absNum = Math.round(Math.abs(num));
+    return sign + absNum.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "\\,");
+}
+
+function generateExercise(forceNew = false) {
+    if(forceNew) {
+        document.getElementById('seed-input').value = "";
+    }
+    let seedVal = document.getElementById('seed-input').value;
+    currentSeed = seedVal ? parseInt(seedVal) : Math.floor(Math.random() * 99999999);
+    document.getElementById('seed-disp').innerText = currentSeed;
+    document.getElementById('seed-input').value = currentSeed;
+    random = seedPRNG(currentSeed);
+
+    let stratType = document.getElementById('strat-select').value;
+    
+    let S0 = randInt(5, 15) * 10;
+    let deltaK = randInt(1, 3) * 5;
+    let T_months = randInt(1, 6);
+
+    let K1, K2, K3, K4;
+    let C1, C2, C3, C4;
+    let isCondor = stratType.includes("condor");
+
+    // Variables communes
+    let enonceText = "";
+    let compText = "";
+    let solText = "";
+    let points = [];
+    let altPoints = [];
+
+    if (!isCondor) {
+        // Butterfly
+        K2 = S0;
+        K1 = K2 - deltaK;
+        K3 = K2 + deltaK;
+        
+        C3 = randInt(1, 4);
+        C2 = C3 + randInt(3, 6);
+        C1 = C2 + (C2 - C3) + randInt(1, 3);
+    } else {
+        // Condor
+        K2 = S0 - deltaK/2;
+        K3 = S0 + deltaK/2;
+        K1 = K2 - deltaK;
+        K4 = K3 + deltaK;
+
+        C4 = randInt(1, 3);
+        C3 = C4 + randInt(2, 4);
+        C2 = C3 + randInt(3, 5);
+        let diff1 = C3 - C4;
+        let diff2 = diff1 + randInt(1, 3);
+        C1 = C2 + diff2;
+    }
+
+    if (stratType === "long_butterfly") {
+        let D = C1 - 2*C2 + C3;
+        enonceText = `Un investisseur anticipe une faible volatilité du titre XYZ, dont le cours actuel est $S_0 = ${S0}$ euros. Il met en place un <em>long butterfly</em> en utilisant des options d'achat européennes de même échéance $T = ${T_months}$ mois, aux prix d'exercice $K_1 = ${K1}$ euros, $K_2 = ${K2}$ euros et $K_3 = ${K3}$ euros, avec les primes suivantes : $C_1 = ${C1}$ euros, $C_2 = ${C2}$ euros et $C_3 = ${C3}$ euros. La stratégie consiste à (i) acheter un <em>call</em> de <em>strike</em> $K_1 = ${K1}$ euros ; (ii) vendre deux <em>calls</em> de <em>strike</em> $K_2 = ${K2}$ euros ; (iii) acheter un <em>call</em> de <em>strike</em> $K_3 = ${K3}$ euros.`;
+        
+        // Garantie de non arbitrage : Le gain max du Straddle (P) doit être > au gain max du Butterfly (deltaK - D)
+        let minP2 = Math.max(1, deltaK - D - C2 + randInt(1, 3));
+        let P2 = minP2;
+        let P = C2 + P2;
+        
+        compText = `Comparer analytiquement ce profil à celui d'un <em>short straddle</em> de même <em>strike</em> central $K_2 = ${K2}$ euros, en admettant que le <em>put</em> de <em>strike</em> $K_2$ coûte ${P2} euros. Quels sont les avantages et inconvénients respectifs des deux stratégies ?`;
+
+        let maxGain = K2 - K1 - D;
+        let pm1 = K1 + D;
+        let pm2 = K3 - D;
+        
+        solText += `
+        <ol class="enum-list">
+            <li>Le coût net de mise en place vaut $C_1 - 2C_2 + C_3 = ${C1} - 2\\times ${C2} + ${C3} = ${D}$ euros. La stratégie est un débit net et l'investisseur paie ${D} euros pour mettre en place le <em>butterfly</em>.</li>
+            <li>Le profit à maturité s'écrit :
+            \\[\\Pi(S_T) = \\max(S_T - K_1, 0) - 2\\max(S_T - K_2, 0) + \\max(S_T - K_3, 0) - ${D}\\]
+            — Si $S_T \\leq ${K1}$, tous les <em>calls</em> expirent sans valeur et on a : \\[\\Pi = -${D} < 0\\]
+            — Si $${K1} < S_T \\leq ${K2}$, seul le <em>call</em> $K_1$ est exercé et on a : \\[\\Pi = (S_T - ${K1}) - ${D} = S_T - ${pm1}\\]
+            — Si $${K2} < S_T \\leq ${K3}$, les <em>calls</em> $K_1$ et $K_2$ sont exercés et on a : \\[\\Pi = (S_T - ${K1}) - 2(S_T - ${K2}) - ${D} = -S_T + ${pm2}\\]
+            — Si $S_T > ${K3}$, les trois <em>calls</em> sont exercés et on a : \\[\\Pi = (S_T - ${K1}) - 2(S_T - ${K2}) + (S_T - ${K3}) - ${D} = -${D}\\]</li>
+            <li>Les points morts s'obtiennent en résolvant $\\Pi(S_T) = 0$. Pour la branche gauche ($S_T$ compris entre ${K1} et ${K2}), on a $S_T - ${pm1} = 0$ si, et seulement si, on a $S_T^* = ${pm1}$ euros tandis que, pour la branche droite ($S_T$ compris entre ${K2} et ${K3}), on a $-S_T + ${pm2} = 0$ si, et seulement si, on a $S_T^{**} = ${pm2}$ euros. Les deux points morts sont donc parfaitement symétriques autour du <em>strike</em> central.</li>
+            <li>Le gain maximal est atteint en $S_T = K_2 = ${K2}$ euros et on a alors $\\Pi_{\\max} = ${K2} - ${pm1} = ${maxGain}$ euros. Inversement, la perte maximale est atteinte pour $S_T \\leq K_1$ ou $S_T \\geq K_3$ et on a alors $\\Pi_{\\min} = -${D}$ euros. Le rapport gain sur perte est donc de $${maxGain}/${D} = ${(maxGain/D).toFixed(2).replace('.00','')}$, ce qui illustre l'attrait de la stratégie pour une anticipation de faible volatilité.</li>
+            <li>Le <em>short straddle</em> consiste à vendre simultanément un <em>call</em> et un <em>put</em> de même <em>strike</em> $K_2 = ${K2}$ euros et même maturité. La prime totale encaissée vaut $C_2 + P_2 = ${C2} + ${P2} = ${P}$ euros, et le profit à maturité s'écrit :
+            <div class="math-formula">\\[\\Pi_{\\text{straddle}}(S_T) = \\begin{cases} S_T - ${K2 - P} & \\text{si } S_T \\leq ${K2} \\\\ ${K2 + P} - S_T & \\text{si } S_T > ${K2} \\end{cases}\\]</div>
+            Les points morts sont $S_T^* = ${K2 - P}$ euros et $S_T^{**} = ${K2 + P}$ euros, symétriques autour de $K_2$. Le gain maximal de $${P}$ euros est atteint en $S_T = K_2 = ${K2}$ euros, tandis que la perte est illimitée des deux côtés. Ainsi, les deux stratégies partagent la même intuition directionnelle (parier sur une faible réalisation de la volatilité autour de $K_2$) mais diffèrent radicalement dans leur profil de risque. Du côté du <em>long butterfly</em>, la perte maximale est strictement bornée à la prime nette payée (${D} euros), quelles que soient les variations du sous-jacent, ce qui le distingue fondamentalement du <em>short straddle</em> dont les jambes vendues exposent à des pertes théoriquement illimitées en cas d'éloignement marqué de $S_T$. Le <em>short straddle</em> présente néanmoins des avantages propres qui justifient son utilisation par des opérateurs disposant de fonds propres suffisants. Son gain maximal de $${P}$ euros est supérieur à celui du <em>butterfly</em> ($${maxGain}$ euros), et sa zone de profit est plus étendue. Par ailleurs, l'encaissement immédiat d'une prime de $${P}$ euros à l'initiation constitue un avantage de trésorerie significatif car cette somme peut être placée sur la durée de la stratégie, ce que le <em>butterfly</em>, à débit net, ne permet pas.</li>
+            <li>Le profil de profit des deux stratégies est superposé sur le graphique ci-dessous.</li>
+        </ol>`;
+        
+        points = [
+            { x: K1 - deltaK, y: -D }, { x: K1, y: -D }, { x: K2, y: maxGain }, { x: K3, y: -D }, { x: K3 + deltaK, y: -D }
+        ];
+        altPoints = [
+            { x: K1 - deltaK, y: (K1 - deltaK) - K2 + P }, { x: K2, y: P }, { x: K3 + deltaK, y: K2 - (K3 + deltaK) + P }
+        ];
+
+    } else if (stratType === "short_butterfly") {
+        let C = C1 - 2*C2 + C3;
+        enonceText = `Un investisseur anticipe une forte volatilité du titre XYZ, dont le cours actuel est $S_0 = ${S0}$ euros. Il met en place un <em>short butterfly</em> en utilisant des options d'achat européennes de même échéance $T = ${T_months}$ mois, aux prix d'exercice $K_1 = ${K1}$ euros, $K_2 = ${K2}$ euros et $K_3 = ${K3}$ euros, avec les primes suivantes : $C_1 = ${C1}$ euros, $C_2 = ${C2}$ euros et $C_3 = ${C3}$ euros. La stratégie consiste à (i) vendre un <em>call</em> de <em>strike</em> $K_1 = ${K1}$ euros ; (ii) acheter deux <em>calls</em> de <em>strike</em> $K_2 = ${K2}$ euros ; (iii) vendre un <em>call</em> de <em>strike</em> $K_3 = ${K3}$ euros.`;
+        
+        // Garantie de non arbitrage : La perte max du Straddle (-P) doit être < à la perte max du Butterfly (-(deltaK - C))
+        let minP2 = Math.max(1, deltaK - C - C2 + randInt(1, 3));
+        let P2 = minP2;
+        let P = C2 + P2;
+        
+        compText = `Comparer analytiquement ce profil à celui d'un <em>long straddle</em> de même <em>strike</em> central $K_2 = ${K2}$ euros, en admettant que le <em>put</em> de <em>strike</em> $K_2$ coûte ${P2} euros. Quels sont les avantages et inconvénients respectifs des deux stratégies ?`;
+
+        let maxLoss = -(K2 - K1 - C);
+        let pm1 = K1 + C;
+        let pm2 = K3 - C;
+        
+        solText += `
+        <ol class="enum-list">
+            <li>Le crédit net de mise en place vaut $C_1 - 2C_2 + C_3 = ${C1} - 2\\times ${C2} + ${C3} = +${C}$ euros. La stratégie est un crédit net et l'investisseur encaisse ${C} euros pour mettre en place le <em>short butterfly</em>.</li>
+            <li>Le profit à maturité s'écrit :
+            \\[\\Pi(S_T) = -\\max(S_T - K_1, 0) + 2\\max(S_T - K_2, 0) - \\max(S_T - K_3, 0) + ${C}\\]
+            — Si $S_T \\leq ${K1}$, aucun <em>call</em> n'est exercé et on a : \\[\\Pi = +${C} > 0\\]
+            — Si $${K1} < S_T \\leq ${K2}$, seul le <em>call</em> vendu $K_1$ est exercé contre nous et on a : \\[\\Pi = -(S_T - ${K1}) + ${C} = -S_T + ${pm1}\\]
+            — Si $${K2} < S_T \\leq ${K3}$, les <em>calls</em> $K_1$ et $K_2$ sont exercés et on a : \\[\\Pi = -(S_T - ${K1}) + 2(S_T - ${K2}) + ${C} = S_T - ${pm2}\\]
+            — Si $S_T > ${K3}$, les trois <em>calls</em> sont exercés et on a : \\[\\Pi = -(S_T - ${K1}) + 2(S_T - ${K2}) - (S_T - ${K3}) + ${C} = +${C}\\]</li>
+            <li>Les points morts s'obtiennent en résolvant $\\Pi(S_T) = 0$. Pour la branche gauche, on a $-S_T + ${pm1} = 0$ si, et seulement si, on a $S_T^* = ${pm1}$ euros tandis que, pour la branche droite, on a $S_T - ${pm2} = 0$ si, et seulement si, on a $S_T^{**} = ${pm2}$ euros. Les deux points morts sont symétriques.</li>
+            <li>La perte maximale est atteinte en $S_T = K_2 = ${K2}$ euros et on a alors $\\Pi_{\\min} = -${K2} + ${pm1} = ${maxLoss}$ euros. Inversement, le gain maximal est atteint pour $S_T \\leq K_1$ ou $S_T \\geq K_3$ et on a alors $\\Pi_{\\max} = +${C}$ euros. La perte est donc mathématiquement plafonnée.</li>
+            <li>Le <em>long straddle</em> consiste à acheter simultanément un <em>call</em> et un <em>put</em> de <em>strike</em> $K_2 = ${K2}$ euros. La prime payée vaut $C_2 + P_2 = ${C2} + ${P2} = ${P}$ euros, et le profit à maturité s'écrit :
+            <div class="math-formula">\\[\\Pi_{\\text{straddle}}(S_T) = \\begin{cases} ${K2 - P} - S_T & \\text{si } S_T \\leq ${K2} \\\\ S_T - ${K2 + P} & \\text{si } S_T > ${K2} \\end{cases}\\]</div>
+            Les points morts sont $S_T^* = ${K2 - P}$ euros et $S_T^{**} = ${K2 + P}$ euros. La perte maximale de $${P}$ euros est atteinte en $S_T = ${K2}$ euros, tandis que le gain est théoriquement illimité. Ainsi, les deux stratégies partagent la même intuition directionnelle longue volatilité. Le <em>short butterfly</em> est particulièrement attractif car il génère un crédit initial et limite la perte absolue en cas de stagnation du sous-jacent, mais il plafonne sévèrement le gain en cas de mouvement très violent, contrairement au <em>long straddle</em> qui tire pleinement profit des chocs extrêmes.</li>
+            <li>Le profil de profit des deux stratégies est superposé sur le graphique ci-dessous.</li>
+        </ol>`;
+        
+        points = [
+            { x: K1 - deltaK, y: C }, { x: K1, y: C }, { x: K2, y: maxLoss }, { x: K3, y: C }, { x: K3 + deltaK, y: C }
+        ];
+        altPoints = [
+            { x: K1 - deltaK, y: K2 - (K1 - deltaK) - P }, { x: K2, y: -P }, { x: K3 + deltaK, y: (K3 + deltaK) - K2 - P }
+        ];
+
+    } else if (stratType === "short_condor") {
+        let C = C1 - C2 - C3 + C4;
+        enonceText = `Un investisseur anticipe une forte volatilité du titre XYZ, dont le cours actuel est $S_0 = ${S0}$ euros. Il met en place un <em>short condor</em> en utilisant des options d'achat européennes de même échéance $T = ${T_months}$ mois, aux prix d'exercice $K_1 = ${K1}$ euros, $K_2 = ${K2}$ euros, $K_3 = ${K3}$ euros et $K_4 = ${K4}$ euros, avec les primes suivantes : $C_1 = ${C1}$ euros, $C_2 = ${C2}$ euros, $C_3 = ${C3}$ euros et $C_4 = ${C4}$ euros. La stratégie consiste à (i) vendre un <em>call</em> de <em>strike</em> $K_1 = ${K1}$ euros ; (ii) acheter un <em>call</em> de $K_2 = ${K2}$ euros ; (iii) acheter un <em>call</em> de $K_3 = ${K3}$ euros ; (iv) vendre un <em>call</em> de $K_4 = ${K4}$ euros.`;
+        
+        let PA = randInt(2, 5);
+        let CB = Math.max(1, deltaK - C - PA + randInt(1, 3));
+        let P = PA + CB;
+        let KA = K2;
+        let KB = K3;
+        
+        compText = `Comparer analytiquement ce profil à celui d'un <em>strangle</em> acheté de <em>strikes</em> $K_A = ${KA}$ euros (<em>put</em> acheté, prime $P_A = ${PA}$ euros) et $K_B = ${KB}$ euros (<em>call</em> acheté, prime $C_B = ${CB}$ euros). Quels sont les avantages et inconvénients respectifs des deux stratégies ?`;
+
+        let maxLoss = -(K2 - K1 - C);
+        let pm1 = K1 + C;
+        let pm2 = K4 - C;
+        
+        solText += `
+        <ol class="enum-list">
+            <li>Le crédit net encaissé à l'initiation vaut $C_1 - C_2 - C_3 + C_4 = ${C1} - ${C2} - ${C3} + ${C4} = +${C}$ euros. La stratégie est un crédit net et elle génère un encaissement immédiat de ${C} euros. Ce crédit initial constitue le gain maximal de la stratégie.</li>
+            <li>Le profit à maturité s'écrit :
+            \\[\\Pi(S_T) = -\\max(S_T-K_1,0)+\\max(S_T-K_2,0)+\\max(S_T-K_3,0)-\\max(S_T-K_4,0)+${C}\\]
+            — Si $S_T \\leq ${K1}$, aucun <em>call</em> n'est exercé et on a : \\[\\Pi = +${C}\\]
+            — Si $${K1} < S_T \\leq ${K2}$, seul le <em>call</em> vendu $K_1$ est exercé contre nous et on a : \\[\\Pi = -(S_T-${K1})+${C} = -S_T+${pm1}\\]
+            — Si $${K2} < S_T \\leq ${K3}$, les <em>calls</em> $K_1$ (vendu) et $K_2$ (acheté) sont exercés et on a : \\[\\Pi = -(S_T-${K1})+(S_T-${K2})+${C} = ${maxLoss}\\]
+            — Si $${K3} < S_T \\leq ${K4}$, les <em>calls</em> $K_1$, $K_2$ et $K_3$ sont exercés et on a : \\[\\Pi = -(S_T-${K1})+(S_T-${K2})+(S_T-${K3})+${C} = S_T-${pm2}\\]
+            — Si $S_T > ${K4}$, les quatre <em>calls</em> sont exercés et on a : \\[\\Pi = -(S_T-${K1})+(S_T-${K2})+(S_T-${K3})-(S_T-${K4})+${C} = +${C}\\]</li>
+            <li>Les points morts s'obtiennent en résolvant $\\Pi(S_T) = 0$. Pour la branche gauche, on a $-S_T+${pm1} = 0$ si, et seulement si, on a $S_T^* = ${pm1}$ euros et pour la branche droite, on a $S_T - ${pm2} = 0$ si, et seulement si, on a $S_T^{**} = ${pm2}$ euros. Les deux points morts sont rigoureusement symétriques.</li>
+            <li>Le gain maximal vaut $\\Pi_{\\max} = +${C}$ euros et il est atteint pour $S_T \\leq ${K1}$ ou $S_T \\geq ${K4}$. À l'inverse, la perte maximale vaut $\\Pi_{\\min} = ${maxLoss}$ euros et elle est atteinte pour tout $S_T \\in [${K2}, ${K3}]$, c'est-à-dire lorsque le sous-jacent reste parfaitement stable. L'investisseur risque ${Math.abs(maxLoss)} euros pour en gagner ${C}, ce qui est la contrepartie logique d'une stratégie à crédit net.</li>
+            <li>Le <em>long strangle</em> consiste à acheter simultanément un <em>put</em> de <em>strike</em> $K_A = ${KA}$ euros et un <em>call</em> de <em>strike</em> $K_B = ${KB}$ euros. La prime totale payée vaut $P_A + C_B = ${PA} + ${CB} = ${P}$ euros, et le profit à maturité s'écrit :
+            <div class="math-formula">\\[\\Pi_{\\text{strangle}}(S_T) = \\begin{cases} ${KA - P} - S_T & \\text{si } S_T < ${KA} \\\\ -${P} & \\text{si } ${KA} \\leq S_T \\leq ${KB} \\\\ S_T - ${KB + P} & \\text{si } S_T > ${KB} \\end{cases}\\]</div>
+            Les points morts sont $S_T^* = ${KA - P}$ euros et $S_T^{**} = ${KB + P}$ euros. La perte maximale de $${P}$ euros est atteinte sur toute la plage $[${KA}, ${KB}]$, tandis que le gain est illimité au-delà des points morts. Ainsi, les deux stratégies partagent la même intuition directionnelle (parier sur une forte réalisation de la volatilité) mais diffèrent fondamentalement dans leur profil de risque. Le <em>long strangle</em> génère un débit net de $${P}$ euros, alors que le <em>short condor</em> génère un crédit net de ${C} euros. Cependant, le gain du <em>long strangle</em> est théoriquement illimité dans les deux directions, tandis que celui du <em>short condor</em> est strictement plafonné. L'encaissement immédiat d'une prime à l'initiation du <em>short condor</em> constitue toutefois un avantage de trésorerie significatif.</li>
+            <li>Le profil de profit des deux stratégies est superposé sur le graphique ci-dessous.</li>
+        </ol>`;
+        
+        points = [
+            { x: K1 - deltaK, y: C }, { x: K1, y: C }, { x: K2, y: maxLoss }, { x: K3, y: maxLoss }, { x: K4, y: C }, { x: K4 + deltaK, y: C }
+        ];
+        altPoints = [
+            { x: K1 - deltaK, y: KA - (K1 - deltaK) - P }, { x: KA, y: -P }, { x: KB, y: -P }, { x: K4 + deltaK, y: (K4 + deltaK) - KB - P }
+        ];
+
+    } else if (stratType === "long_condor") {
+        let D = C1 - C2 - C3 + C4;
+        enonceText = `Un investisseur anticipe une faible volatilité du titre XYZ, dont le cours actuel est $S_0 = ${S0}$ euros. Il met en place un <em>long condor</em> en utilisant des options d'achat européennes de même échéance $T = ${T_months}$ mois, aux prix d'exercice $K_1 = ${K1}$ euros, $K_2 = ${K2}$ euros, $K_3 = ${K3}$ euros et $K_4 = ${K4}$ euros, avec les primes suivantes : $C_1 = ${C1}$ euros, $C_2 = ${C2}$ euros, $C_3 = ${C3}$ euros et $C_4 = ${C4}$ euros. La stratégie consiste à (i) acheter un <em>call</em> de <em>strike</em> $K_1 = ${K1}$ euros ; (ii) vendre un <em>call</em> de $K_2 = ${K2}$ euros ; (iii) vendre un <em>call</em> de $K_3 = ${K3}$ euros ; (iv) acheter un <em>call</em> de $K_4 = ${K4}$ euros.`;
+        
+        let PA = randInt(2, 5);
+        let CB = Math.max(1, deltaK - D - PA + randInt(1, 3));
+        let P = PA + CB;
+        let KA = K2;
+        let KB = K3;
+        
+        compText = `Comparer analytiquement ce profil à celui d'un <em>strangle</em> vendu (<em>short strangle</em>) de <em>strikes</em> $K_A = ${KA}$ euros (<em>put</em> vendu, prime $P_A = ${PA}$ euros) et $K_B = ${KB}$ euros (<em>call</em> vendu, prime $C_B = ${CB}$ euros). Quels sont les avantages et inconvénients respectifs des deux stratégies ?`;
+
+        let maxGain = (K2 - K1 - D);
+        let pm1 = K1 + D;
+        let pm2 = K4 - D;
+        
+        solText += `
+        <ol class="enum-list">
+            <li>Le coût net encaissé à l'initiation vaut $C_1 - C_2 - C_3 + C_4 = ${C1} - ${C2} - ${C3} + ${C4} = ${D}$ euros. La stratégie est un débit net et l'investisseur paie ${D} euros. Cette prime nette décaissée constitue la perte maximale de la stratégie.</li>
+            <li>Le profit à maturité s'écrit :
+            \\[\\Pi(S_T) = \\max(S_T-K_1,0)-\\max(S_T-K_2,0)-\\max(S_T-K_3,0)+\\max(S_T-K_4,0)-${D}\\]
+            — Si $S_T \\leq ${K1}$, aucun <em>call</em> n'est exercé et on a : \\[\\Pi = -${D}\\]
+            — Si $${K1} < S_T \\leq ${K2}$, seul le <em>call</em> $K_1$ est exercé et on a : \\[\\Pi = (S_T-${K1})-${D} = S_T-${pm1}\\]
+            — Si $${K2} < S_T \\leq ${K3}$, les <em>calls</em> $K_1$ et $K_2$ sont exercés et on a : \\[\\Pi = (S_T-${K1})-(S_T-${K2})-${D} = ${maxGain}\\]
+            — Si $${K3} < S_T \\leq ${K4}$, les <em>calls</em> $K_1$, $K_2$ et $K_3$ sont exercés et on a : \\[\\Pi = (S_T-${K1})-(S_T-${K2})-(S_T-${K3})-${D} = -S_T+${pm2}\\]
+            — Si $S_T > ${K4}$, les quatre <em>calls</em> sont exercés et on a : \\[\\Pi = (S_T-${K1})-(S_T-${K2})-(S_T-${K3})+(S_T-${K4})-${D} = -${D}\\]</li>
+            <li>Les points morts s'obtiennent en résolvant $\\Pi(S_T) = 0$. Pour la branche gauche, on a $S_T-${pm1} = 0$ si, et seulement si, on a $S_T^* = ${pm1}$ euros et pour la branche droite, on a $-S_T + ${pm2} = 0$ si, et seulement si, on a $S_T^{**} = ${pm2}$ euros. Les deux points morts sont symétriques.</li>
+            <li>Le gain maximal vaut $\\Pi_{\\max} = ${maxGain}$ euros et il est atteint pour tout $S_T \\in [${K2}, ${K3}]$, c'est-à-dire lorsque le sous-jacent reste parfaitement stable dans le corridor. À l'inverse, la perte maximale vaut $\\Pi_{\\min} = -${D}$ euros et elle est atteinte pour $S_T \\leq ${K1}$ ou $S_T \\geq ${K4}$. La perte est ainsi rigoureusement couverte.</li>
+            <li>Le <em>short strangle</em> consiste à vendre simultanément un <em>put</em> de <em>strike</em> $K_A = ${KA}$ euros et un <em>call</em> de <em>strike</em> $K_B = ${KB}$ euros. La prime totale encaissée vaut $P_A + C_B = ${PA} + ${CB} = ${P}$ euros, et le profit à maturité s'écrit :
+            <div class="math-formula">\\[\\Pi_{\\text{strangle}}(S_T) = \\begin{cases} S_T - ${KA - P} & \\text{si } S_T < ${KA} \\\\ ${P} & \\text{si } ${KA} \\leq S_T \\leq ${KB} \\\\ ${KB + P} - S_T & \\text{si } S_T > ${KB} \\end{cases}\\]</div>
+            Les points morts sont $S_T^* = ${KA - P}$ euros et $S_T^{**} = ${KB + P}$ euros. Le gain maximal de $${P}$ euros est atteint sur toute la plage $[${KA}, ${KB}]$, tandis que la perte est théoriquement illimitée au-delà des points morts. Ainsi, les deux stratégies partagent la même intuition directionnelle (parier sur une stagnation du cours). Le <em>long condor</em> nécessite de débourser un débit initial de ${D} euros mais offre une sécurité absolue grâce aux ailes protectrices (perte bornée à ${D}). Le <em>short strangle</em> procure un crédit initial de $${P}$ euros (avantage de trésorerie et rentabilité immédiate) mais expose l'investisseur à un risque de ruine en cas de décalage brutal du marché.</li>
+            <li>Le profil de profit des deux stratégies est superposé sur le graphique ci-dessous.</li>
+        </ol>`;
+        
+        points = [
+            { x: K1 - deltaK, y: -D }, { x: K1, y: -D }, { x: K2, y: maxGain }, { x: K3, y: maxGain }, { x: K4, y: -D }, { x: K4 + deltaK, y: -D }
+        ];
+        altPoints = [
+            { x: K1 - deltaK, y: (K1 - deltaK) - KA + P }, { x: KA, y: P }, { x: KB, y: P }, { x: K4 + deltaK, y: KB - (K4 + deltaK) + P }
+        ];
+    }
+
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('ex-area').style.display = 'block';
+    document.getElementById('sol-card').classList.remove('visible');
+    document.getElementById('toggle-btn').innerText = "Afficher le corrigé";
+    document.getElementById('toggle-btn').classList.remove('shown');
+
+    document.getElementById('context-text').innerHTML = enonceText;
+
+    let htmlEnonce = "";
+    htmlEnonce += `<li>Calculer le coût (ou crédit) net de mise en place de la stratégie. Interpréter son signe.</li>`;
+    htmlEnonce += `<li>Exprimer le profit à maturité $\\Pi(S_T)$ en fonction du cours $S_T$, en distinguant les différents cas d'exercice.</li>`;
+    htmlEnonce += `<li>Déterminer les deux points morts (<em>break-even points</em>) de la stratégie.</li>`;
+    htmlEnonce += `<li>Calculer le gain maximal et la perte maximale, et préciser en quels points ils sont atteints.</li>`;
+    htmlEnonce += `<li>${compText}</li>`;
+    htmlEnonce += `<li>Représenter graphiquement le profil de profit $\\Pi(S_T)$ en fonction de $S_T$ sur un même graphique pour les deux stratégies.</li>`;
+    
+    document.getElementById('events-list').innerHTML = htmlEnonce;
+
+    // --- GENERATION DU SVG ---
+    let svgWidth = 800;
+    let svgHeight = 400;
+    let marginX = 60;
+    let marginY = 50;
+
+    let minX = points[0].x;
+    let maxX = points[points.length-1].x;
+    
+    let allY = [...points.map(p => p.y), ...altPoints.map(p => p.y)];
+    let minY = Math.min(...allY) - 2;
+    let maxY = Math.max(...allY) + 2;
+
+    function mapX(x) { return marginX + ((x - minX) / (maxX - minX)) * (svgWidth - 2*marginX); }
+    function mapY(y) { return svgHeight - marginY - ((y - minY) / (maxY - minY)) * (svgHeight - 2*marginY); }
+
+    let zeroY = mapY(0);
+    
+    let pathD = `M ${mapX(points[0].x)} ${mapY(points[0].y)}`;
+    for (let i = 1; i < points.length; i++) {
+        pathD += ` L ${mapX(points[i].x)} ${mapY(points[i].y)}`;
+    }
+    
+    let altPathD = `M ${mapX(altPoints[0].x)} ${mapY(altPoints[0].y)}`;
+    for (let i = 1; i < altPoints.length; i++) {
+        altPathD += ` L ${mapX(altPoints[i].x)} ${mapY(altPoints[i].y)}`;
+    }
+
+    let svgHtml = `<div class="chart-container"><svg class="svg-chart" width="${svgWidth}" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}">`;
+    
+    // Axes
+    svgHtml += `<line x1="${marginX}" y1="${zeroY}" x2="${svgWidth-10}" y2="${zeroY}" stroke="#1a2e42" stroke-width="2" />`; 
+    svgHtml += `<line x1="${mapX(S0)}" y1="${svgHeight-marginY}" x2="${mapX(S0)}" y2="${10}" stroke="#d4cfc4" stroke-width="1" stroke-dasharray="4,4" />`; 
+    
+    // Arrow X
+    svgHtml += `<polygon points="${svgWidth-10},${zeroY-5} ${svgWidth},${zeroY} ${svgWidth-10},${zeroY+5}" fill="#1a2e42" />`;
+    svgHtml += `<text x="${svgWidth-15}" y="${zeroY+20}" font-family="'Source Serif 4', serif" font-size="14" fill="#1a2e42" text-anchor="end">S_T</text>`;
+    
+    // Y axis 
+    svgHtml += `<line x1="${marginX}" y1="${svgHeight-marginY}" x2="${marginX}" y2="${10}" stroke="#1a2e42" stroke-width="2" />`;
+    svgHtml += `<polygon points="${marginX-5},10 ${marginX},0 ${marginX+5},10" fill="#1a2e42" />`;
+    svgHtml += `<text x="${marginX-10}" y="${20}" font-family="'Source Serif 4', serif" font-size="14" fill="#1a2e42" text-anchor="end">Profit</text>`;
+
+    // Dashed lines for Strikes
+    for (let i = 1; i < points.length - 1; i++) {
+        let p = points[i];
+        svgHtml += `<line x1="${mapX(p.x)}" y1="${zeroY}" x2="${mapX(p.x)}" y2="${mapY(p.y)}" stroke="#c9952a" stroke-width="1.5" stroke-dasharray="5,5" />`;
+        svgHtml += `<text x="${mapX(p.x)}" y="${zeroY + (p.y > 0 ? 20 : -10)}" font-family="'Source Serif 4', serif" font-size="13" fill="#1a2e42" text-anchor="middle">K${i}</text>`;
+    }
+
+    // Min and Max Y labels
+    let minPy = Math.min(...allY);
+    let maxPy = Math.max(...allY);
+    
+    svgHtml += `<text x="${marginX-10}" y="${mapY(maxPy)+5}" font-family="'Source Serif 4', serif" font-size="13" fill="#1a2e42" text-anchor="end">${texI(maxPy)}</text>`;
+    svgHtml += `<line x1="${marginX-5}" y1="${mapY(maxPy)}" x2="${marginX+5}" y2="${mapY(maxPy)}" stroke="#1a2e42" stroke-width="2" />`;
+    
+    svgHtml += `<text x="${marginX-10}" y="${mapY(minPy)+5}" font-family="'Source Serif 4', serif" font-size="13" fill="#1a2e42" text-anchor="end">${texI(minPy)}</text>`;
+    svgHtml += `<line x1="${marginX-5}" y1="${mapY(minPy)}" x2="${marginX+5}" y2="${mapY(minPy)}" stroke="#1a2e42" stroke-width="2" />`;
+
+    // Alt Strategy Path (Dashed Green)
+    svgHtml += `<path d="${altPathD}" fill="none" stroke="#2d6b4a" stroke-width="2.5" stroke-dasharray="6,4" />`;
+    
+    // Main Strategy Path (Solid Red)
+    svgHtml += `<path d="${pathD}" fill="none" stroke="#b94040" stroke-width="3" />`;
+
+    // Legend
+    svgHtml += `<rect x="${svgWidth - 220}" y="15" width="200" height="60" fill="#fff" stroke="#d4cfc4" rx="4" />`;
+    svgHtml += `<line x1="${svgWidth - 210}" y1="30" x2="${svgWidth - 170}" y2="30" stroke="#b94040" stroke-width="3" />`;
+    svgHtml += `<text x="${svgWidth - 160}" y="35" font-family="'Source Serif 4', serif" font-size="13" fill="#1a2e42">Stratégie étudiée</text>`;
+    svgHtml += `<line x1="${svgWidth - 210}" y1="55" x2="${svgWidth - 170}" y2="55" stroke="#2d6b4a" stroke-width="2.5" stroke-dasharray="6,4" />`;
+    svgHtml += `<text x="${svgWidth - 160}" y="60" font-family="'Source Serif 4', serif" font-size="13" fill="#1a2e42">Stratégie alternative</text>`;
+
+    svgHtml += `</svg></div>`;
+
+    document.getElementById('sol-content').innerHTML = solText + svgHtml;
+    
+    if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
+        MathJax.typesetPromise().catch(function (err) {
+            console.error('Erreur MathJax :', err);
+        });
+    }
+}
+
+function toggleSol() {
+    let solCard = document.getElementById('sol-card');
+    let btn = document.getElementById('toggle-btn');
+    if(solCard.classList.contains('visible')) {
+        solCard.classList.remove('visible');
+        btn.innerText = "Afficher le corrigé";
+        btn.classList.remove('shown');
+    } else {
+        solCard.classList.add('visible');
+        btn.innerText = "Masquer le corrigé";
+        btn.classList.add('shown');
+    }
+}
+
+function exportWord() {
+    let content = document.getElementById('ex-area').cloneNode(true);
+    let actions = content.querySelector('.top-actions');
+    if(actions) actions.parentNode.removeChild(actions);
+    let toggle = content.querySelector('.sol-toggle-wrap');
+    if(toggle) toggle.parentNode.removeChild(toggle);
+    let solCard = content.querySelector('#sol-card');
+    if(solCard) solCard.style.display = 'block';
+
+    let html = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <meta charset='utf-8'>
+            <title>Exercice Stratégies Options</title>
+            <style>
+                body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5; text-align: justify; }
+                .calc-box { border: 1px solid #000; padding: 10px; margin-bottom: 15px; background-color: #f9f9f9; text-align: justify; }
+                .math-formula { text-align: center; font-style: italic; margin: 10px 0; }
+                .enum-list { list-style-type: decimal; padding-left: 20px; }
+                li { margin-bottom: 8px; }
+                .chart-container { margin: 20px 0; text-align: center; }
+            </style>
+        </head>
+        <body>
+            ${content.innerHTML}
+            <p><em>(Note : Le graphe SVG dynamique superposant les deux stratégies ne s'exporte pas nativement dans Word, il doit être capturé ou tracé manuellement via l'outil d'équation / dessin).</em></p>
+        </body>
+        </html>
+    `;
+    
+    let blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    let url = URL.createObjectURL(blob);
+    let link = document.createElement('a');
+    link.href = url;
+    link.download = 'Exercice_Strategies_Couverture.doc';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>

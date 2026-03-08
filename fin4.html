@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Analyse Financière - Équilibre et Ratios</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['\\[', '\\]']]
+    }
+  };
+</script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7;text-align:justify;}
+
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 1.5rem;border-bottom:3px solid var(--gold);text-align:left;}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end;background:rgba(255,255,255,.03);padding:1rem 1.5rem;border-radius:6px;border:1px solid rgba(255,255,255,.1)}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.6)}
+.ctrl-inp, .ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.4rem .7rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none;transition:border-color .2s}
+.ctrl-inp:focus, .ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.5rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;transition:background .18s;margin-left:auto}
+.btn-gen:hover{background:var(--gold-light)}
+
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:700}
+
+.top-actions{display:flex;gap:.5rem;}
+.btn-action{background:#fff;border:1px solid var(--border);color:var(--navy);padding:.4rem .8rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.85rem;font-weight:600;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.btn-action:hover{border-color:var(--navy);background:var(--cream-dark);}
+
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem;text-align:left;}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+.event-list{list-style:none;}
+.event-list > li{margin-bottom:1.5rem;padding-left:1.5rem;position:relative;font-size:.95rem;text-align:justify}
+.event-list > li::before{content:"•";position:absolute;left:0;color:var(--gold);font-size:1.5rem;line-height:1}
+
+.exam-table-wrap { overflow-x: auto; margin: 1.5rem 0; }
+.exam-table{width:100%;border-collapse:collapse;font-size:.85rem;font-family:'Source Serif 4',serif; margin: 0;}
+.exam-table th, .exam-table td{border:1px solid var(--border);padding:.6rem;text-align:center;vertical-align:middle;}
+.exam-table th{background:var(--navy);color:var(--cream);font-weight:600;}
+.exam-table .txt-left{text-align:left;font-weight:600;color:var(--navy);}
+.exam-table .amt{font-family:'JetBrains Mono',monospace;text-align:right;white-space:nowrap;}
+
+.sol-toggle-wrap{text-align:left; margin: 1.5rem 0 0 0;}
+.btn-toggle{background:transparent;border:2px solid var(--green);border-bottom:none;color:var(--green);font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;padding:.5rem 1.5rem;border-radius:4px 4px 0 0;cursor:pointer;transition:all .2s; position:relative; z-index:2; top:2px;}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--green);color:var(--cream)}
+.sol-card{border-top:2px solid var(--green);display:none; border-radius: 0 6px 6px 6px; position:relative; z-index:1;}
+.sol-card.visible{display:block;animation:fi .4s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+
+.calc-box{background:#f9fcf9;border:1px solid #c8e6c9;padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.9rem;color:var(--text);line-height:1.6;text-align:justify;}
+.math-formula { text-align: center; margin: 1.2rem 0; overflow-x: auto; }
+
+@media print{
+  body{background:#fff;}
+  header, .ctrls, .sol-toggle-wrap, .top-actions {display:none !important;}
+  .card{box-shadow:none; border:1px solid var(--border); margin-bottom:2rem;}
+  .sol-card{display:block !important; border-top:2px solid var(--green);}
+  #ex-area {display:block !important;}
+}
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-badge">INFORMATION COMPTABLE ET FINANCIÈRE</div>
+  <h1>Équilibre financier et ratios</h1>
+  <p class="subtitle">© Thomas Hossen – Version du 7 mars 2026</p>
+  
+  <div class="ctrls">
+    <div class="ctrl-g">
+      <span class="ctrl-lbl">Seed (Optionnel)</span>
+      <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999">
+    </div>
+    <button class="btn-gen" onclick="generateExercise(false)">Générer l'exercice →</button>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" style="text-align:center; padding:4rem; color:var(--text-muted); font-style:italic;">
+    Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="seed-badge">Seed active : <span id="seed-disp"></span></div>
+      <div class="top-actions">
+        <button class="btn-action" onclick="generateExercise(true)">↺ Nouvel énoncé</button>
+        <button class="btn-action" onclick="window.print()">⬇ Exporter PDF</button>
+        <button class="btn-action" onclick="exportWord()">⬇ Exporter DOC</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="tag">Énoncé</span><h2>Analyse de la structure fonctionnelle</h2></div>
+      <div class="card-body">
+        <div class="context-block" id="context-text"></div>
+        <div id="enonce-table-container"></div>
+        <div class="context-block" id="additional-info" style="margin-top:1.5rem; background:#fff; border-left:3px solid var(--navy); border-radius:0;"></div>
+        
+        <p style="margin-bottom:1rem; font-weight:600; color:var(--red); text-align:left;">Travail à faire</p>
+        <ul class="event-list" id="events-list"></ul>
+      </div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag">Corrigé</span><h2>Analyse de la structure fonctionnelle</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+let currentSeed = 0;
+function seedPRNG(seed) {
+    return function() {
+      let t = seed += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+let random = Math.random;
+
+function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
+
+function texM(num) {
+    let sign = num < 0 ? "-" : "";
+    let absNum = Math.abs(num);
+    absNum = Math.round(absNum * 100) / 100; 
+    let parts = absNum.toFixed(2).split('.');
+    let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, "\\,");
+    return sign + intPart + "{.}" + parts[1];
+}
+function texI(num) {
+    let sign = num < 0 ? "-" : "";
+    let absNum = Math.round(Math.abs(num));
+    return sign + absNum.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "\\,");
+}
+function texR(num) {
+    return Number(Math.round(num+'e4')+'e-4').toString().replace('.', '{.}');
+}
+function formatMoney(num) {
+    return num.toLocaleString('fr-FR') + ' €';
+}
+
+function generateExercise(forceNew = false) {
+    if(forceNew) {
+        document.getElementById('seed-input').value = "";
+    }
+    let seedVal = document.getElementById('seed-input').value;
+    currentSeed = seedVal ? parseInt(seedVal) : Math.floor(Math.random() * 99999999);
+    document.getElementById('seed-disp').innerText = currentSeed;
+    document.getElementById('seed-input').value = currentSeed;
+    random = seedPRNG(currentSeed);
+
+    const companies = ["AlphaTech", "GlobalMéca", "InnoBat", "NégocePro", "Synapse Santé"];
+    const company = companies[randInt(0, companies.length-1)];
+
+    // Génération des données pour le Bilan Fonctionnel
+    let cp = randInt(1500, 4500) * 1000;
+    let df = randInt(1000, 3000) * 1000;
+    let rs = cp + df;
+    
+    // On force la génération pour avoir tantôt un FRNG positif, tantôt négatif (majoritairement positif)
+    let diff_es = randInt(-800, 1800) * 1000;
+    let es = rs - diff_es;
+    if (es < 1000000) es = 1000000 + randInt(0, 500)*1000;
+    let frng = rs - es;
+
+    let ace = randInt(2500, 5500) * 1000;
+    let pce = randInt(1500, 4000) * 1000;
+    let bfre = ace - pce;
+
+    let ache = randInt(200, 900) * 1000;
+    let pche = randInt(100, 600) * 1000;
+    let bfrhe = ache - pche;
+
+    let bfr = bfre + bfrhe;
+    let tn = frng - bfr;
+
+    let ta = 0;
+    let tp = 0;
+    if (tn > 0) {
+        tp = randInt(50, 300) * 1000;
+        ta = tn + tp;
+    } else {
+        ta = randInt(50, 300) * 1000;
+        tp = ta - tn;
+    }
+
+    let total_actif = es + ace + ache + ta;
+    let total_passif = rs + pce + pche + tp; // Doit être égal à total_actif
+
+    // Génération du CA pour le ratio en jours
+    let ca_ratio = randInt(50, 90) / 10; // BFRE représentera entre 50 et 90 jours
+    let ca = Math.round((bfre * 360) / ca_ratio / 1000) * 1000; 
+    if (ca <= 0) ca = ace * 5; // Sécurité si BFRE négatif (rare mais possible)
+
+    // Calcul Ratios
+    let ratio_couv = rs / es;
+    let ratio_indep = cp / df;
+    let poids_bfre = (bfre / ca) * 360;
+
+    // Affichage Énoncé
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('ex-area').style.display = 'block';
+    document.getElementById('sol-card').classList.remove('visible');
+    document.getElementById('toggle-btn').innerText = "Afficher le corrigé";
+    document.getElementById('toggle-btn').classList.remove('shown');
+
+    document.getElementById('context-text').innerHTML = `
+      Vous êtes chargé(e) d'analyser l'équilibre financier de l'entreprise <strong>${company}</strong>. Le chef comptable a déjà procédé aux reclassements et retraitements nécessaires pour aboutir au bilan fonctionnel condensé (en grandes masses) présenté ci-dessous.
+    `;
+
+    let tableHtml = `<div class="exam-table-wrap">
+        <table class="exam-table">
+            <tr>
+                <th style="width: 35%;">Emplois</th>
+                <th style="width: 15%;">Montants (€)</th>
+                <th style="width: 35%;">Ressources</th>
+                <th style="width: 15%;">Montants (€)</th>
+            </tr>
+            <tr>
+                <td class="txt-left">Emplois stables</td><td class="amt">${formatMoney(es)}</td>
+                <td class="txt-left">Ressources stables</td><td class="amt">${formatMoney(rs)}</td>
+            </tr>
+            <tr>
+                <td class="txt-left">Actif circulant d'exploitation (ACE)</td><td class="amt">${formatMoney(ace)}</td>
+                <td class="txt-left">Passif circulant d'exploitation (PCE)</td><td class="amt">${formatMoney(pce)}</td>
+            </tr>
+            <tr>
+                <td class="txt-left">Actif circulant hors exploitation (ACHE)</td><td class="amt">${formatMoney(ache)}</td>
+                <td class="txt-left">Passif circulant hors exploitation (PCHE)</td><td class="amt">${formatMoney(pche)}</td>
+            </tr>
+            <tr>
+                <td class="txt-left">Trésorerie active (TA)</td><td class="amt">${formatMoney(ta)}</td>
+                <td class="txt-left">Trésorerie passive (TP)</td><td class="amt">${formatMoney(tp)}</td>
+            </tr>
+            <tr style="background:var(--cream-dark); border-top:2px solid var(--navy);">
+                <td class="txt-left"><strong>Total des emplois</strong></td><td class="amt"><strong>${formatMoney(total_actif)}</strong></td>
+                <td class="txt-left"><strong>Total des ressources</strong></td><td class="amt"><strong>${formatMoney(total_passif)}</strong></td>
+            </tr>
+        </table>
+    </div>`;
+    document.getElementById('enonce-table-container').innerHTML = tableHtml;
+
+    document.getElementById('additional-info').innerHTML = `
+        <strong>Informations issues de l'annexe et du compte de résultat.</strong>
+Le montant total des ressources stables intègre des capitaux propres pour ${formatMoney(cp)} et des dettes financières stables pour ${formatMoney(df)}.
+        Le chiffre d'affaires hors taxes (CAHT) réalisé au cours de l'exercice s'élève à ${formatMoney(ca)}. L'année comptable est conventionnellement fixée à 360 jours.
+    `;
+
+    let htmlEnonce = "";
+    htmlEnonce += `<li><strong>1. Analyse de l'équilibre financier.</strong> Calculez le fonds de roulement net global (FRNG), le besoin en fonds de roulement d'exploitation (BFRE), le besoin en fonds de roulement hors exploitation (BFRHE), le BFR global et la trésorerie nette (TN). Vérifiez ensuite la relation fondamentale de la trésorerie et proposez un bref commentaire sur la situation.</li>`;
+    htmlEnonce += `<li><strong>2. Analyse de la structure par les ratios.</strong> Calculez et interprétez précisément les trois ratios suivants : le taux de couverture des emplois stables, l'indépendance financière, et le poids du BFRE en jours de chiffre d'affaires.</li>`;
+
+    document.getElementById('events-list').innerHTML = htmlEnonce;
+
+    // --- GÉNÉRATION CORRIGÉ ---
+    let htmlSol = "";
+
+    // Commentaires conditionnels
+    let commentFRNG = frng > 0 ? "le FRNG est positif, ce qui signifie que les ressources de long terme couvrent intégralement les investissements durables. L'entreprise dispose d'un excédent structurel pour financer son cycle d'exploitation." : "le FRNG est négatif. Les ressources stables sont insuffisantes pour financer l'outil de production. Une partie des emplois stables est donc dangereusement financée par des dettes à court terme.";
+    let commentBFR = bfr > 0 ? "le cycle d'exploitation génère un besoin de financement (BFR positif) lié aux décalages de paiement entre les clients, les stocks et les fournisseurs." : "le BFR est négatif, constituant ainsi une ressource en fonds de roulement. L'entreprise encaisse ses clients avant de payer ses fournisseurs (situation fréquente dans la grande distribution).";
+    let commentTN = tn > 0 ? "la trésorerie nette est positive, confirmant que le fonds de roulement couvre plus que largement le besoin en fonds de roulement." : "la trésorerie nette est négative. Le FRNG est insuffisant pour absorber le BFR, obligeant l'entreprise à recourir à des concours bancaires courants (découverts) pour équilibrer sa situation.";
+
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">1. Analyse de l'équilibre financier</span>
+        L'analyse fonctionnelle s'articule autour de trois indicateurs majeurs permettant de juger de la pérennité du modèle économique de l'entreprise. Les calculs s'établissent de la manière suivante.
+        <ul style="list-style-type:none; padding-left:1rem; margin:0.8rem 0;">
+            <li>$\\star\\;$ Tout d'abord, le FRNG, c'est-à-dire la différence entre les ressources stables et les emplois stables, vérifie $${texI(rs)} - ${texI(es)} = ${texI(frng)}$ euros.</li>
+            <li>$\\star\\;$ De plus, le BFRE, c'est-à-dire la différence entre l'actif circulant d'exploitation et le passif circulant d'exploitation, vaut $${texI(ace)} - ${texI(pce)} = ${texI(bfre)}$ euros.</li>
+            <li>$\\star\\;$ De même, le BFRHE, c'est-à-dire la différence entre l'actif circulant hors exploitation et le passif circulant hors exploitation, vaut $${texI(ache)} - ${texI(pche)} = ${texI(bfrhe)}$ euros.</li>
+            <li>$\\star\\;$ Par suite, le BFR global correspond à la somme du BFR d'exploitation et du BFR hors exploitation, à savoir $${texI(bfre)} + ${texI(bfrhe)} = ${texI(bfr)}\\text{ euros}.$</li>
+            <li>$\\star\\;$ Pour finir, la trésorerie nette, calculée par le haut du bilan, correspond à la différence entre le FRNG et le BFR, à savoir $${texI(frng)} - ${texI(bfr)} = ${texI(tn)}\\text{ euros}.$</li>
+        </ul>
+        Afin de fiabiliser notre analyse, nous vérifions la relation fondamentale de la trésorerie par le bas du bilan. Or la différence entre la trésorerie active et la trésorerie passive vaut justement \\(${texI(ta)} - ${texI(tp)} = ${texI(ta - tp)}\\) euros. La relation est donc vérifiée. Sur le plan de l'interprétation financière, ${commentFRNG} Par suite, ${commentBFR} Enfin, ${commentTN}
+    </div>`;
+
+    // Commentaires des ratios
+    let commentRatioCouv = ratio_couv > 1 ? "Ce ratio est supérieur à 1, confirmant la bonne orthodoxie financière de l'entreprise (les emplois longs sont financés par des capitaux longs)." : "Ce ratio est inférieur à 1, ce qui témoigne d'un grave déséquilibre structurel violant la règle de l'équilibre financier minimum.";
+    let commentRatioIndep = ratio_indep > 1 ? "L'entreprise possède une excellente autonomie financière puisque ses fonds propres sont supérieurs à son endettement externe. Elle conserve une capacité d'emprunt mobilisable." : "L'entreprise est fortement dépendante de ses créanciers bancaires, ses dettes surpassant ses capitaux propres. Cela l'expose à un fort risque de taux et limite ses futures levées de fonds.";
+
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">2. Analyse de la structure par les ratios</span>
+        Afin d'affiner le diagnostic porté sur les masses du bilan, nous déterminons les trois ratios structurels demandés :
+        <ul style="list-style-type:none; padding-left:1rem; margin:0.8rem 0;">
+            <li>$\\star\\;$ <strong>Taux de couverture des emplois stables :</strong> $\\frac{\\text{ressources stables}}{\\text{emplois stables}} = \\frac{${texI(rs)}}{${texI(es)}} \\approx ${texM(ratio_couv)}$. ${commentRatioCouv}</li>
+            <li style="margin-top:0.8rem;">$\\star\\;$ <strong>Indépendance financière :</strong> $\\frac{\\text{capitaux propres}}{\\text{dettes financières}} = \\frac{${texI(cp)}}{${texI(df)}} \\approx ${texM(ratio_indep)}$. 
+            ${commentRatioIndep}</li>
+            <li style="margin-top:0.8rem;">$\\star\\;$ <strong>Poids du BFRE (en jours de CA) :</strong> $\\frac{\\text{BFRE}}{\\text{CAHT}} \\times 360 = \\frac{${texI(bfre)}}{${texI(ca)}} \\times 360 \\approx ${texI(poids_bfre)}~\\text{jours}$.
+            Le besoin structurel généré par le cycle d'exploitation représente l'équivalent de $${texI(poids_bfre)}$ jours pleins de facturation. Ce ratio permet de comparer le besoin de liquidité de l'entreprise avec d'autres acteurs du même secteur d'activité, indépendamment de leur volume d'affaires.</li>
+        </ul>
+    </div>`;
+
+    document.getElementById('sol-content').innerHTML = htmlSol;
+    
+    if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
+        MathJax.typesetPromise().catch(function (err) {
+            console.error('Erreur MathJax :', err);
+        });
+    }
+}
+
+function toggleSol() {
+    let solCard = document.getElementById('sol-card');
+    let btn = document.getElementById('toggle-btn');
+    if(solCard.classList.contains('visible')) {
+        solCard.classList.remove('visible');
+        btn.innerText = "Afficher le corrigé";
+        btn.classList.remove('shown');
+    } else {
+        solCard.classList.add('visible');
+        btn.innerText = "Masquer le corrigé";
+        btn.classList.add('shown');
+    }
+}
+
+function exportWord() {
+    let content = document.getElementById('ex-area').cloneNode(true);
+    let actions = content.querySelector('.top-actions');
+    if(actions) actions.parentNode.removeChild(actions);
+    let toggle = content.querySelector('.sol-toggle-wrap');
+    if(toggle) toggle.parentNode.removeChild(toggle);
+    let solCard = content.querySelector('#sol-card');
+    if(solCard) solCard.style.display = 'block';
+
+    let html = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <meta charset='utf-8'>
+            <title>Exercice Finance</title>
+            <style>
+                body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5; text-align: justify; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 10pt; }
+                th, td { border: 1px solid #000; padding: 4px; }
+                th { background-color: #f2f2f2; text-align: center; font-weight: bold; }
+                .txt-left { text-align: left; font-weight: bold; }
+                .amt { text-align: right; white-space: nowrap; }
+                .calc-box { border: 1px solid #000; padding: 10px; margin-bottom: 15px; background-color: #f9f9f9; text-align: justify; }
+                .math-formula { text-align: center; font-style: italic; margin: 10px 0; }
+                ul { text-align: justify; }
+                li { margin-bottom: 5px; }
+            </style>
+        </head>
+        <body>
+            ${content.innerHTML}
+        </body>
+        </html>
+    `;
+    
+    let blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    let url = URL.createObjectURL(blob);
+    let link = document.createElement('a');
+    link.href = url;
+    link.download = 'Exercice_Equilibre_Financier.doc';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>

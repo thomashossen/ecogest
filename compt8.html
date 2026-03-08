@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Comptabilité - Cryptomonnaies</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 1.5rem;border-bottom:3px solid var(--gold)}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end;background:rgba(255,255,255,.03);padding:1rem 1.5rem;border-radius:6px;border:1px solid rgba(255,255,255,.1)}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.6)}
+.ctrl-inp, .ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.4rem .7rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none;transition:border-color .2s}
+.ctrl-inp:focus, .ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.5rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;transition:background .18s;margin-left:auto}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN & CARDS */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:700}
+
+.top-actions{display:flex;gap:.5rem;}
+.btn-action{background:#fff;border:1px solid var(--border);color:var(--navy);padding:.4rem .8rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.85rem;font-weight:600;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.btn-action:hover{border-color:var(--navy);background:var(--cream-dark);}
+
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+.event-list{list-style:none;}
+.event-list li{margin-bottom:1.2rem;padding-left:1.5rem;position:relative;font-size:.95rem;text-align:justify}
+.event-list li::before{content:"•";position:absolute;left:0;color:var(--gold);font-size:1.5rem;line-height:1}
+.highlight{font-family:'JetBrains Mono',monospace;font-size:.85rem;font-weight:600;background:var(--cream-dark);padding:2px 6px;border-radius:3px;color:var(--navy)}
+
+/* JOURNAL TABLE */
+.journal-wrap{overflow-x:auto;margin:1.5rem 0}
+table.journal{width:100%;border-collapse:collapse;font-size:.85rem;font-family:'Source Serif 4',serif;box-shadow:0 0 0 1px var(--border)}
+table.journal th{background:var(--navy);color:var(--cream);padding:.6rem;text-align:left;font-weight:600;border:1px solid var(--navy-mid)}
+table.journal td{padding:.5rem .6rem;border:1px solid var(--border);vertical-align:middle}
+table.journal .num{font-family:'JetBrains Mono',monospace;width:80px;text-align:center;color:var(--navy);font-weight:600}
+/* LARGUEUR AUGMENTÉE ET NOWRAP POUR LES MONTANTS */
+table.journal .amt{font-family:'JetBrains Mono',monospace;text-align:right;width:115px;white-space:nowrap;}
+table.journal .date-row{background:var(--cream-dark);font-style:italic;text-align:center;font-weight:600;color:var(--text-muted)}
+table.journal .libelle{color:var(--text-muted);font-style:italic;text-align:center;font-size:.8rem}
+.debit-col{color:var(--navy)}
+.credit-col{color:var(--text)}
+
+/* SOLUTION TOGGLE */
+.sol-toggle-wrap{text-align:left; margin: 1.5rem 0 0 0;}
+.btn-toggle{background:transparent;border:2px solid var(--green);border-bottom:none;color:var(--green);font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;padding:.5rem 1.5rem;border-radius:4px 4px 0 0;cursor:pointer;transition:all .2s; position:relative; z-index:2; top:2px;}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--green);color:var(--cream)}
+.sol-card{border-top:2px solid var(--green);display:none; border-radius: 0 6px 6px 6px; position:relative; z-index:1;}
+.sol-card.visible{display:block;animation:fi .4s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+
+.calc-box{background:#f9fcf9;border:1px solid #c8e6c9;padding:1.2rem;border-radius:4px;margin-bottom:1rem;font-size:.9rem;color:var(--text);line-height:1.6;text-align:justify;}
+.calc-box strong{color:var(--green);font-family:'JetBrains Mono',monospace;}
+
+@media print{
+  body{background:#fff;}
+  header, .ctrls, .sol-toggle-wrap, .top-actions {display:none !important;}
+  .card{box-shadow:none; border:1px solid var(--border); margin-bottom:2rem;}
+  .sol-card{display:block !important; border-top:2px solid var(--green);}
+  #ex-area {display:block !important;}
+}
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-badge">INFORMATION COMPTABLE ET FINANCIÈRE</div>
+  <h1>Actifs numériques : minage et trading</h1>
+  <p class="subtitle">© Thomas Hossen – Version du 7 mars 2026</p>
+  
+  <div class="ctrls">
+    <div class="ctrl-g">
+      <span class="ctrl-lbl">Seed (Optionnel)</span>
+      <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999">
+    </div>
+    <button class="btn-gen" onclick="generateExercise(false)">Générer l'exercice →</button>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" style="text-align:center; padding:4rem; color:var(--text-muted); font-style:italic;">
+    Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="seed-badge">Seed active : <span id="seed-disp"></span></div>
+      <div class="top-actions">
+        <button class="btn-action" onclick="generateExercise(true)">↺ Nouvel énoncé</button>
+        <button class="btn-action" onclick="window.print()">⬇ Exporter PDF</button>
+        <button class="btn-action" onclick="exportWord()">⬇ Exporter DOC</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="tag">Énoncé</span><h2>Opérations liées aux cryptomonnaies</h2></div>
+      <div class="card-body">
+        <div class="context-block" id="context-text"></div>
+        <p style="margin-bottom:1rem; font-weight:600; color:var(--navy);">Opérations réalisées au cours de l'exercice N</p>
+        <ul class="event-list" id="events-list"></ul>
+        <p style="margin-top:1.5rem; font-weight:600; color:var(--red);">Travail à faire</p>
+        <p id="question-text" style="font-style:italic;"></p>
+      </div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag">Corrigé</span><h2>Opérations liées aux cryptomonnaies</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+// --- PRNG (Mulberry32) ---
+let currentSeed = 0;
+function seedPRNG(seed) {
+    return function() {
+      let t = seed += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+let random = Math.random;
+
+function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
+function formatMoney(num) { return num.toLocaleString('fr-FR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' €'; }
+function formatToken(num) { return num.toLocaleString('fr-FR', {minimumFractionDigits:4, maximumFractionDigits:4}); }
+
+const cryptos = ["Bitcoin (BTC)", "Ethereum (ETH)", "Solana (SOL)"];
+
+function generateExercise(forceNew = false) {
+    if(forceNew) {
+        document.getElementById('seed-input').value = "";
+    }
+    let seedVal = document.getElementById('seed-input').value;
+    currentSeed = seedVal ? parseInt(seedVal) : Math.floor(Math.random() * 99999999);
+    document.getElementById('seed-disp').innerText = currentSeed;
+    document.getElementById('seed-input').value = currentSeed;
+    random = seedPRNG(currentSeed);
+
+    // Initialisation des variables aléatoires
+    let tokenName = cryptos[randInt(0, cryptos.length-1)];
+    let equipPriceHT = randInt(50, 150) * 100;
+    let equipTVA = equipPriceHT * 0.20;
+    let equipTTC = equipPriceHT + equipTVA;
+    
+    let elecPriceHT = randInt(10, 40) * 100;
+    let elecTVA = elecPriceHT * 0.20;
+    let elecTTC = elecPriceHT + elecTVA;
+
+    // Prix réalistes modifiés pour s'adapter au token
+    let basePrice = tokenName.includes("BTC") ? 40000 : (tokenName.includes("ETH") ? 2500 : 150);
+    
+    // Minage
+    let miningQty = (randInt(5, 50) / 100) * (40000 / basePrice); 
+    let miningPriceUnit = randInt(basePrice*0.9, basePrice*1.1);
+    let miningTotal = miningQty * miningPriceUnit;
+
+    // Trading (Achat)
+    let tradeQty = (randInt(20, 100) / 100) * (40000 / basePrice);
+    let tradePriceUnit = randInt(basePrice*0.8, basePrice*1.2);
+    let tradeTotal = tradeQty * tradePriceUnit;
+
+    // Trading (Vente d'une fraction du trading)
+    let sellQty = tradeQty * (randInt(30, 70) / 100);
+    let sellPriceUnit = tradePriceUnit * (randInt(85, 140) / 100); 
+    let isGain = sellPriceUnit > tradePriceUnit;
+    let sellTotal = sellQty * sellPriceUnit;
+    let vncVente = sellQty * tradePriceUnit;
+    let resultatCession = Math.abs(sellTotal - vncVente);
+
+    // Clôture
+    let closingPriceUnit = tradePriceUnit * (randInt(75, 125) / 100); 
+    
+    // Valorisation du portefeuille restant 
+    let totalQtyRemaining = miningQty + (tradeQty - sellQty);
+    let totalVncRemaining = miningTotal + ((tradeQty - sellQty) * tradePriceUnit);
+    let totalMarketVal = totalQtyRemaining * closingPriceUnit;
+    let isLatentLoss = totalMarketVal < totalVncRemaining;
+    let valDiffAmt = Math.abs(totalVncRemaining - totalMarketVal);
+
+    // Amortissement
+    let dotationAmort = equipPriceHT / 3 * (6/12);
+
+    // Affichage Enoncé
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('ex-area').style.display = 'block';
+    document.getElementById('sol-card').classList.remove('visible');
+    document.getElementById('toggle-btn').innerText = "Afficher le corrigé";
+    document.getElementById('toggle-btn').classList.remove('shown');
+
+    document.getElementById('context-text').innerHTML = `
+      L'entreprise <strong>BlockTech SAS</strong>, assujettie à la TVA au taux normal de 20%, a décidé de diversifier sa trésorerie en investissant dans les actifs numériques et de développer une activité secondaire de validation de blocs (minage). L'exercice comptable coïncide avec l'année civile.
+      <br><br>
+      <em>Règlementation applicable.</em> Vous appliquerez strictement les préconisations du règlement de l'ANC (2018-07) relatif à la comptabilisation des jetons (comptes 522). La TVA s'applique sur les biens matériels et services classiques, mais la jurisprudence exonère de TVA les acquisitions, cessions et récompenses de minage de cryptomonnaies.
+    `;
+
+    let htmlEnonce = "";
+
+    htmlEnonce += `<li><strong>Le 01/07/N :</strong> acquisition de serveurs informatiques spécialisés (ASIC) spécifiquement dédiés au minage de cryptomonnaies pour un montant de <span class="highlight">${formatMoney(equipPriceHT)}</span> HT. L'entreprise décide d'amortir ce matériel en mode linéaire sur une durée de 3 ans. La mise en service est immédiate.</li>`;
+    
+    htmlEnonce += `<li><strong>Le 15/09/N :</strong> réception d'une facture d'électricité de <span class="highlight">${formatMoney(elecPriceHT)}</span> HT, liée exclusivement à l'activité de minage. En parallèle, l'entreprise reçoit sa première récompense de minage, qui s'élève à <span class="highlight">${formatToken(miningQty)}</span> jetons <strong>${tokenName}</strong>. À cette date précise, le cours de ce jeton est valorisé à <span class="highlight">${formatMoney(miningPriceUnit)}</span> l'unité.</li>`;
+
+    htmlEnonce += `<li><strong>Le 10/10/N :</strong> dans une optique de placement de trésorerie à court terme (trading), l'entreprise achète sur une plateforme d'échange <span class="highlight">${formatToken(tradeQty)}</span> jetons <strong>${tokenName}</strong> au cours unitaire de <span class="highlight">${formatMoney(tradePriceUnit)}</span>. L'opération est réglée par virement bancaire.</li>`;
+
+    htmlEnonce += `<li><strong>Le 20/11/N :</strong> revente partielle d'une partie des jetons acquis à des fins de trading le mois précédent, soit <span class="highlight">${formatToken(sellQty)}</span> jetons <strong>${tokenName}</strong>, au cours unitaire de <span class="highlight">${formatMoney(sellPriceUnit)}</span>. L'argent est rapatrié sur le compte bancaire de l'entreprise.</li>`;
+
+    htmlEnonce += `<li><strong>Le 31/12/N :</strong> travaux d'inventaire. Le cours du jeton <strong>${tokenName}</strong> à la date de clôture de l'exercice s'établit à <span class="highlight">${formatMoney(closingPriceUnit)}</span>. L'entreprise doit procéder à l'évaluation de son portefeuille global de jetons restants et à l'amortissement de son matériel informatique.</li>`;
+
+    document.getElementById('events-list').innerHTML = htmlEnonce;
+
+    document.getElementById('question-text').innerText = `Enregistrez ces opérations au journal de l'entreprise BlockTech SAS, incluant les écritures d'inventaire de fin d'année.`;
+
+    // --- GENERATION CORRIGE ---
+    let htmlSol = "";
+
+    const addJournal = (date, entries) => {
+        let t = `<div class="journal-wrap"><table class="journal">
+        <tr class="date-row"><td colspan="4">${date}/N</td></tr>
+        <tr><th>N° Cpte</th><th>Libellé</th><th style="text-align:right">Débit</th><th style="text-align:right">Crédit</th></tr>`;
+        
+        entries.filter(e => e.sens === 'D').forEach(e => {
+            t += `<tr><td class="num">${e.c}</td><td class="debit-col">${e.l}</td><td class="amt">${formatMoney(e.m)}</td><td></td></tr>`;
+        });
+        entries.filter(e => e.sens === 'C').forEach(e => {
+            t += `<tr><td class="num">${e.c}</td><td class="credit-col" style="padding-left:1.5rem">${e.l}</td><td></td><td class="amt">${formatMoney(e.m)}</td></tr>`;
+        });
+        t += `</table></div>`;
+        return t;
+    };
+
+    // Corrigé Achat Immo
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Acquisition du matériel de minage (01/07/N)</span>
+        Le matériel informatique spécialisé (ASIC) est une immobilisation corporelle inscrite à l'actif du bilan. Le montant brut de l'acquisition s'élève à ${formatMoney(equipPriceHT)}. La TVA déductible sur cette immobilisation (au taux de 20 %) s'élève à ${formatMoney(equipTVA)}, générant une dette totale envers le fournisseur d'immobilisations de <strong>${formatMoney(equipTTC)}</strong>.
+    </div>`;
+
+    htmlSol += addJournal("01/07", [
+        {c:"2183", l:"Matériel informatique (serveurs ASIC)", m: equipPriceHT, sens:'D'},
+        {c:"44562", l:"TVA déductible sur immobilisations", m: equipTVA, sens:'D'},
+        {c:"404", l:"Fournisseurs d'immobilisations", m: equipTTC, sens:'C'}
+    ]);
+
+    // Corrigé Minage
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Opérations de minage (15/09/N)</span>
+        L'entreprise enregistre en charges sa facture d'électricité d'un montant HT de ${formatMoney(elecPriceHT)}, assortie d'une TVA déductible de ${formatMoney(elecTVA)}, soit un TTC de ${formatMoney(elecTTC)}. Parallèlement, la récompense perçue pour la validation de blocs constitue un produit d'exploitation (prestation de services). Les ${formatToken(miningQty)} jetons reçus sont valorisés au cours du jour, soit ${formatMoney(miningPriceUnit)} l'unité. Le montant total du produit comptabilisé (et du portefeuille d'actifs numériques créé) s'élève donc à <strong>${formatMoney(miningTotal)}</strong>. Cette opération de minage n'est pas soumise à la TVA.
+    </div>`;
+
+    htmlSol += addJournal("15/09", [
+        {c:"6061", l:"Fournitures non stockables (électricité)", m: elecPriceHT, sens:'D'},
+        {c:"44566", l:"TVA déductible sur autres B&S", m: elecTVA, sens:'D'},
+        {c:"401", l:"Fournisseurs", m: elecTTC, sens:'C'},
+        {c:"522", l:"Jetons détenus (actifs numériques)", m: miningTotal, sens:'D'},
+        {c:"706", l:"Prestations de services (minage)", m: miningTotal, sens:'C'}
+    ]);
+
+    // Corrigé Trading Achat
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Acquisition de jetons de trésorerie (10/10/N)</span>
+        L'achat des jetons est enregistré dans un compte de trésorerie dédié aux actifs numériques selon la réglementation ANC. L'acquisition de ${formatToken(tradeQty)} jetons au prix unitaire de ${formatMoney(tradePriceUnit)} représente un décaissement total de <strong>${formatMoney(tradeTotal)}</strong>.
+    </div>`;
+
+    htmlSol += addJournal("10/10", [
+        {c:"522", l:"Jetons détenus (actifs numériques)", m: tradeTotal, sens:'D'},
+        {c:"512", l:"Banque", m: tradeTotal, sens:'C'}
+    ]);
+
+    // Corrigé Trading Vente
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Cession d'une fraction des jetons (20/11/N)</span>
+        L'entreprise cède ${formatToken(sellQty)} jetons issus de son lot de trading. La valeur nette comptable (VNC) de ces jetons, acquise au cours de ${formatMoney(tradePriceUnit)}, s'élève à ${formatMoney(vncVente)}. 
+        La cession au nouveau cours de ${formatMoney(sellPriceUnit)} génère un encaissement bancaire de <strong>${formatMoney(sellTotal)}</strong>. L'opération se solde donc par une <strong>${isGain ? 'plus-value' : 'moins-value'} de ${formatMoney(resultatCession)}</strong> (${formatMoney(sellTotal)} - ${formatMoney(vncVente)}), enregistrée en résultat financier.
+    </div>`;
+
+    if(isGain) {
+        htmlSol += addJournal("20/11", [
+            {c:"512", l:"Banque", m: sellTotal, sens:'D'},
+            {c:"522", l:"Jetons détenus (sortie VNC)", m: vncVente, sens:'C'},
+            {c:"766", l:"Gains sur cessions d'actifs numériques", m: resultatCession, sens:'C'}
+        ]);
+    } else {
+        htmlSol += addJournal("20/11", [
+            {c:"512", l:"Banque", m: sellTotal, sens:'D'},
+            {c:"666", l:"Pertes sur cessions d'actifs numériques", m: resultatCession, sens:'D'},
+            {c:"522", l:"Jetons détenus (sortie VNC)", m: vncVente, sens:'C'}
+        ]);
+    }
+
+    // Corrigé Clôture (Amortissement + Valuation)
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Travaux d'inventaire : amortissement (31/12/N)</span>
+        L'équipement de minage de ${formatMoney(equipPriceHT)}, acquis le 01/07/N, est amorti linéairement sur 3 ans. L'annuité complète serait de ${formatMoney(equipPriceHT / 3)}. L'acquisition ayant eu lieu en milieu d'année (prorata temporis de 6 mois sur 12), la dotation aux amortissements de l'exercice N s'élève à <strong>${formatMoney(dotationAmort)}</strong>.
+    </div>`;
+
+    htmlSol += addJournal("31/12", [
+        {c:"6811", l:"Dotations aux amortissements sur immo. corp.", m: dotationAmort, sens:'D'},
+        {c:"28183", l:"Amortissement du matériel informatique", m: dotationAmort, sens:'C'}
+    ]);
+
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Travaux d'inventaire : évaluation du portefeuille de jetons (31/12/N)</span>
+        À la clôture, l'entreprise possède un portefeuille global composé de ${formatToken(miningQty)} jetons issus du minage (valeur d'origine : ${formatMoney(miningTotal)}) et de ${formatToken(tradeQty - sellQty)} jetons restants du trading (valeur d'origine : ${formatMoney((tradeQty - sellQty) * tradePriceUnit)}). La quantité totale de jetons en stock est de ${formatToken(totalQtyRemaining)}, pour une valeur comptable globale (VNC) de <strong>${formatMoney(totalVncRemaining)}</strong>. Au cours de clôture de ${formatMoney(closingPriceUnit)}, la valeur vénale de ce portefeuille est de <strong>${formatMoney(totalMarketVal)}</strong>.
+        ${isLatentLoss ? `Le portefeuille subit une <strong>moins-value latente globale de ${formatMoney(valDiffAmt)}</strong>. L'entreprise doit constater cette différence d'évaluation à l'actif (4786) en contrepartie du compte de jetons, et doter une provision pour risque (1517) pour ce même montant.` : `Le portefeuille présente une <strong>plus-value latente globale de ${formatMoney(valDiffAmt)}</strong>. L'entreprise doit constater cette différence d'évaluation au passif (4787) par la réévaluation du portefeuille de jetons.`}
+    </div>`;
+
+    if(isLatentLoss) {
+        htmlSol += addJournal("31/12", [
+            {c:"4786", l:"Différences d'évaluation de jetons - Actif", m: valDiffAmt, sens:'D'},
+            {c:"6868", l:"Dotations aux provisions", m: valDiffAmt, sens:'D'},
+            {c:"522", l:`Jetons ${tokenName}`, m: valDiffAmt, sens:'C'},
+            {c:"1517", l:"Provisions pour risques", m: valDiffAmt, sens:'C'}
+        ]);
+    } else if (valDiffAmt > 0) {
+        htmlSol += addJournal("31/12", [
+            {c:"522", l:`Jetons ${tokenName}`, m: valDiffAmt, sens:'D'},
+            {c:"4787", l:"Différences d'évaluation de jetons - Passif", m: valDiffAmt, sens:'C'}
+        ]);
+    }
+
+    document.getElementById('sol-content').innerHTML = htmlSol;
+}
+
+function toggleSol() {
+    let solCard = document.getElementById('sol-card');
+    let btn = document.getElementById('toggle-btn');
+    if(solCard.classList.contains('visible')) {
+        solCard.classList.remove('visible');
+        btn.innerText = "Afficher le corrigé";
+        btn.classList.remove('shown');
+    } else {
+        solCard.classList.add('visible');
+        btn.innerText = "Masquer le corrigé";
+        btn.classList.add('shown');
+    }
+}
+
+// --- FONCTION EXPORT DOCX ---
+function exportWord() {
+    // On clone la zone d'exercice pour ne pas modifier l'affichage courant
+    let content = document.getElementById('ex-area').cloneNode(true);
+    
+    // On supprime les boutons d'action et de toggle du clone
+    let actions = content.querySelector('.top-actions');
+    if(actions) actions.parentNode.removeChild(actions);
+    let toggle = content.querySelector('.sol-toggle-wrap');
+    if(toggle) toggle.parentNode.removeChild(toggle);
+    
+    // On force l'affichage du corrigé dans l'export
+    let solCard = content.querySelector('#sol-card');
+    if(solCard) solCard.style.display = 'block';
+
+    // On prépare le code HTML au format accepté par Microsoft Word
+    let html = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <meta charset='utf-8'>
+            <title>Exercice Comptabilité</title>
+            <style>
+                body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                th, td { border: 1px solid #000; padding: 5px; }
+                th { background-color: #f2f2f2; text-align: left; }
+                .amt { text-align: right; white-space: nowrap; }
+                .calc-box { border: 1px solid #000; padding: 10px; margin-bottom: 15px; background-color: #f9f9f9; }
+                .date-row { font-style: italic; text-align: center; font-weight: bold; }
+                .highlight { font-weight: bold; }
+            </style>
+        </head>
+        <body>
+            ${content.innerHTML}
+        </body>
+        </html>
+    `;
+    
+    // Création et téléchargement du fichier .doc
+    let blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    let url = URL.createObjectURL(blob);
+    let link = document.createElement('a');
+    link.href = url;
+    link.download = 'Exercice_Cryptomonnaies.doc';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>

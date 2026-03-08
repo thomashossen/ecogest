@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Comptabilité - Facturation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 1.5rem;border-bottom:3px solid var(--gold)}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end;background:rgba(255,255,255,.03);padding:1rem 1.5rem;border-radius:6px;border:1px solid rgba(255,255,255,.1)}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.6)}
+.ctrl-inp, .ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.4rem .7rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none;transition:border-color .2s}
+.ctrl-inp:focus, .ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.5rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;transition:background .18s;margin-left:auto}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN & CARDS */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:700}
+
+.top-actions{display:flex;gap:.5rem;}
+.btn-action{background:#fff;border:1px solid var(--border);color:var(--navy);padding:.4rem .8rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.85rem;font-weight:600;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.btn-action:hover{border-color:var(--navy);background:var(--cream-dark);}
+
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+.event-list{list-style:none;}
+.event-list li{margin-bottom:1.2rem;padding-left:1.5rem;position:relative;font-size:.95rem;text-align:justify}
+.event-list li::before{content:"•";position:absolute;left:0;color:var(--gold);font-size:1.5rem;line-height:1}
+.highlight{font-family:'JetBrains Mono',monospace;font-size:.85rem;font-weight:600;background:var(--cream-dark);padding:2px 6px;border-radius:3px;color:var(--navy)}
+
+/* JOURNAL TABLE */
+.journal-wrap{overflow-x:auto;margin:1.5rem 0}
+table.journal{width:100%;border-collapse:collapse;font-size:.85rem;font-family:'Source Serif 4',serif;box-shadow:0 0 0 1px var(--border)}
+table.journal th{background:var(--navy);color:var(--cream);padding:.6rem;text-align:left;font-weight:600;border:1px solid var(--navy-mid)}
+table.journal td{padding:.5rem .6rem;border:1px solid var(--border);vertical-align:middle}
+table.journal .num{font-family:'JetBrains Mono',monospace;width:80px;text-align:center;color:var(--navy);font-weight:600}
+/* LARGUEUR AUGMENTÉE ET NOWRAP POUR LES MONTANTS */
+table.journal .amt{font-family:'JetBrains Mono',monospace;text-align:right;width:115px;white-space:nowrap;}
+table.journal .date-row{background:var(--cream-dark);font-style:italic;text-align:center;font-weight:600;color:var(--text-muted)}
+table.journal .libelle{color:var(--text-muted);font-style:italic;text-align:center;font-size:.8rem}
+.debit-col{color:var(--navy)}
+.credit-col{color:var(--text)}
+
+/* SOLUTION TOGGLE */
+.sol-toggle-wrap{text-align:left; margin: 1.5rem 0 0 0;}
+.btn-toggle{background:transparent;border:2px solid var(--green);border-bottom:none;color:var(--green);font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;padding:.5rem 1.5rem;border-radius:4px 4px 0 0;cursor:pointer;transition:all .2s; position:relative; z-index:2; top:2px;}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--green);color:var(--cream)}
+.sol-card{border-top:2px solid var(--green);display:none; border-radius: 0 6px 6px 6px; position:relative; z-index:1;}
+.sol-card.visible{display:block;animation:fi .4s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+
+.calc-box{background:#f9fcf9;border:1px solid #c8e6c9;padding:1.2rem;border-radius:4px;margin-bottom:1rem;font-size:.9rem;color:var(--text);line-height:1.6;text-align:justify;}
+.calc-box strong{color:var(--green);font-family:'JetBrains Mono',monospace;}
+
+@media print{
+  body{background:#fff;}
+  header, .ctrls, .sol-toggle-wrap, .top-actions {display:none !important;}
+  .card{box-shadow:none; border:1px solid var(--border); margin-bottom:2rem;}
+  .sol-card{display:block !important; border-top:2px solid var(--green);}
+  #ex-area {display:block !important;}
+}
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-badge">INFORMATION COMPTABLE ET FINANCIÈRE</div>
+  <h1>Facturation, TVA et emballages</h1>
+  <p class="subtitle">© Thomas Hossen – Version du 7 mars 2026</p>
+  
+  <div class="ctrls">
+    <div class="ctrl-g">
+      <span class="ctrl-lbl">Seed (Optionnel)</span>
+      <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999">
+    </div>
+    <button class="btn-gen" onclick="generateExercise(false)">Générer l'exercice →</button>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" style="text-align:center; padding:4rem; color:var(--text-muted); font-style:italic;">
+    Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="seed-badge">Seed active : <span id="seed-disp"></span></div>
+      <div class="top-actions">
+        <button class="btn-action" onclick="generateExercise(true)">↺ Nouvel énoncé</button>
+        <button class="btn-action" onclick="window.print()">⬇ Exporter PDF</button>
+        <button class="btn-action" onclick="exportWord()">⬇ Exporter DOC</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="tag">Énoncé</span><h2>Comptabilisation d'opérations commerciales courantes</h2></div>
+      <div class="card-body">
+        <div class="context-block" id="context-text"></div>
+        <p style="margin-bottom:1rem; font-weight:600; color:var(--navy);">Opérations réalisées au cours du mois</p>
+        <ul class="event-list" id="events-list"></ul>
+        <p style="margin-top:1.5rem; font-weight:600; color:var(--red);">Travail à faire</p>
+        <p id="question-text" style="font-style:italic;"></p>
+      </div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag">Corrigé</span><h2>Comptabilisation d'opérations commerciales courantes</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+// --- PRNG (Mulberry32) ---
+let currentSeed = 0;
+function seedPRNG(seed) {
+    return function() {
+      let t = seed += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+let random = Math.random;
+
+function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
+function formatMoney(num) { return num.toLocaleString('fr-FR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' €'; }
+
+const companies = ["AlphaDistrib SA", "MobiDesign", "TechIndustries", "ElectroPro", "LumiDéco", "Cabinet Dubois", "SARL Optima", "Avenir Services", "Consulting Group", "Ateliers Martin"];
+
+function generateExercise(forceNew = false) {
+    if(forceNew) {
+        document.getElementById('seed-input').value = "";
+    }
+    let seedVal = document.getElementById('seed-input').value;
+    currentSeed = seedVal ? parseInt(seedVal) : Math.floor(Math.random() * 99999999);
+    document.getElementById('seed-disp').innerText = currentSeed;
+    document.getElementById('seed-input').value = currentSeed;
+    random = seedPRNG(currentSeed);
+
+    // Initialisation des entreprises
+    let myCompany = companies[randInt(0, companies.length-1)];
+    let partner1 = companies[randInt(0, companies.length-1)];
+    while(partner1 === myCompany) partner1 = companies[randInt(0, companies.length-1)];
+    let partner2 = companies[randInt(0, companies.length-1)];
+    while(partner2 === myCompany || partner2 === partner1) partner2 = companies[randInt(0, companies.length-1)];
+
+    // Logique croisée : on garantit qu'il y a une vente ET un achat
+    let isSale1 = random() > 0.5;
+    let isSale2 = !isSale1;
+
+    // Variables financières F101
+    let brut1 = randInt(250, 800) * 10;
+    let remise1 = randInt(1, 3) * 5; 
+    let escompte = randInt(1, 3); 
+    let port = randInt(5, 15) * 10;
+    let qEmb = randInt(10, 30);
+    let pxEmb = randInt(15, 25);
+    let consignation = qEmb * pxEmb;
+
+    // Calculs F101
+    let mntRemise1 = brut1 * (remise1/100);
+    let netCo1 = brut1 - mntRemise1;
+    let mntEscompte1 = netCo1 * (escompte/100);
+    let netFin1 = netCo1 - mntEscompte1;
+    let baseTva1 = netFin1 + port;
+    let tva1 = baseTva1 * 0.20;
+    let ttc1 = baseTva1 + tva1;
+    let nap1 = ttc1 + consignation;
+
+    // Variables financières Avoir
+    let brutRet = randInt(30, 80) * 10;
+    let qRet = randInt(qEmb - 5, qEmb);
+    let qCassee = qEmb - qRet; 
+
+    // Calculs Avoir
+    let mntRemiseRet = brutRet * (remise1/100);
+    let netCoRet = brutRet - mntRemiseRet;
+    let mntEscompteRet = netCoRet * (escompte/100);
+    let netFinRet = netCoRet - mntEscompteRet;
+    let tvaRet = netFinRet * 0.20;
+    let ttcRet = netFinRet + tvaRet;
+    
+    // Traitement Emballages non rendus
+    let venteEmbHT = qCassee * pxEmb;
+    let tvaEmb = venteEmbHT * 0.20;
+    let repriseEmb = qRet * pxEmb;
+    let facturationEmbTTC = venteEmbHT + tvaEmb;
+    let napAvoirTotal = ttcRet + repriseEmb - facturationEmbTTC; 
+
+    // Variables F102 (Mixte)
+    let brut2_20 = randInt(100, 300) * 10;
+    let brut2_55 = randInt(50, 150) * 10;
+    let escompte2 = randInt(1, 2);
+    let escompteMnt2_20 = brut2_20 * (escompte2/100);
+    let escompteMnt2_55 = brut2_55 * (escompte2/100);
+    let netFin2_20 = brut2_20 - escompteMnt2_20;
+    let netFin2_55 = brut2_55 - escompteMnt2_55;
+    let tva2_20 = netFin2_20 * 0.20;
+    let tva2_55 = netFin2_55 * 0.055;
+    let nap2 = netFin2_20 + netFin2_55 + tva2_20 + tva2_55;
+
+    // TVA fin de mois
+    let tvaColMois = randInt(1500, 4000);
+    let tvaDedMois = randInt(800, 3500);
+
+    // Affichage Enoncé
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('ex-area').style.display = 'block';
+    document.getElementById('sol-card').classList.remove('visible');
+    document.getElementById('toggle-btn').innerText = "Afficher le corrigé";
+    document.getElementById('toggle-btn').classList.remove('shown');
+
+    document.getElementById('context-text').innerHTML = `
+      Vous êtes le comptable de l'entreprise <strong>${myCompany}</strong>. 
+      Toutes les opérations ci-dessous sont réalisées au cours du mois d'octobre N. 
+      <br><br>
+      <em>Règles applicables.</em> L'escompte se calcule toujours sur le net commercial (hors port). La TVA s'applique au taux normal de 20% (sauf mention contraire). Les emballages sont consignés nets de taxe.
+    `;
+
+    let htmlEnonce = "";
+
+    // Opération 1 (Facture F101)
+    htmlEnonce += `<li><strong>Le 04/10 :</strong> vous ${isSale1 ? "adressez la facture n°F101 à votre client" : "recevez la facture n°F101 de votre fournisseur"} <strong>${partner1}</strong>, relative à un${isSale1 ? "e vente" : " achat"} de marchandises d'un montant brut de <span class="highlight">${formatMoney(brut1)}</span>. Une remise commerciale de <span class="highlight">${remise1} %</span> est ${isSale1 ? "accordée" : "obtenue"} sur ce montant. La facturation inclut également des frais de port forfaitaires s'élevant à <span class="highlight">${formatMoney(port)}</span>, ainsi que la consignation de ${qEmb} palettes au prix unitaire de <span class="highlight">${formatMoney(pxEmb)}</span>. Par ailleurs, un escompte de règlement de <span class="highlight">${escompte} %</span> est directement déduit sur la facture.</li>`;
+    
+    // Opération 2 (Avoir A10)
+    htmlEnonce += `<li><strong>Le 08/10 :</strong> vous ${isSale1 ? "adressez la facture d'avoir n°A10 à votre client" : "recevez la facture d'avoir n°A10 de votre fournisseur"} <strong>${partner1}</strong>, faisant suite à un retour partiel de marchandises lié à la facture initiale F101. Le montant brut des marchandises retournées s'élève à <span class="highlight">${formatMoney(brutRet)}</span> (les conditions de réductions de la facture d'origine s'appliquent sur ce retour, mais les frais de port ne sont pas remboursés). À cette occasion, ${isSale1 ? "le client vous restitue" : "vous restituez au fournisseur"} ${qRet} palettes en parfait état. Cependant, les ${qCassee} palettes restantes ont été détruites et sont donc considérées comme définitivement conservées.</li>`;
+
+    // Opération 3 (Paiement)
+    htmlEnonce += `<li><strong>Le 12/10 :</strong> vous ${isSale1 ? "recevez un virement bancaire de" : "émettez un virement bancaire en faveur de"} <strong>${partner1}</strong> pour le règlement pour solde de la facture F101, en tenant compte de la déduction de l'avoir A10.</li>`;
+
+    // Opération 4 (Facture Mixte F102)
+    htmlEnonce += `<li><strong>Le 18/10 :</strong> vous ${isSale2 ? "adressez la facture n°F102 à votre client" : "recevez la facture n°F102 de votre fournisseur"} <strong>${partner2}</strong>, correspondant à un${isSale2 ? "e vente" : " achat"} de marchandises réparties selon deux taux de TVA distincts. Le premier lot d'articles, soumis au taux normal de 20 %, représente un montant brut de <span class="highlight">${formatMoney(brut2_20)}</span>. Le second lot d'articles, soumis au taux réduit de 5,5 %, s'élève à <span class="highlight">${formatMoney(brut2_55)}</span> brut. Un escompte de règlement de <span class="highlight">${escompte2} %</span> est déduit sur l'ensemble de cette facture.</li>`;
+
+    // Opération 5 (TVA)
+    htmlEnonce += `<li><strong>Le 31/10 :</strong> vous procédez à la liquidation de la TVA du mois d'octobre. Indépendamment des opérations décrites ci-dessus, l'entreprise a enregistré tout au long du mois une TVA collectée d'un montant total de <span class="highlight">${formatMoney(tvaColMois)}</span> et une TVA déductible sur autres biens et services d'un montant de <span class="highlight">${formatMoney(tvaDedMois)}</span>. Il est par ailleurs précisé qu'aucun crédit de TVA n'a été reporté du mois précédent.</li>`;
+
+    document.getElementById('events-list').innerHTML = htmlEnonce;
+
+    document.getElementById('question-text').innerText = `Enregistrez ces opérations au journal de l'entreprise ${myCompany}.`;
+
+    // --- GENERATION CORRIGE ---
+    let htmlSol = "";
+
+    const addJournal = (date, entries) => {
+        let t = `<div class="journal-wrap"><table class="journal">
+        <tr class="date-row"><td colspan="4">${date}/10/N</td></tr>
+        <tr><th>N° Cpte</th><th>Libellé</th><th style="text-align:right">Débit</th><th style="text-align:right">Crédit</th></tr>`;
+        
+        entries.filter(e => e.sens === 'D').forEach(e => {
+            t += `<tr><td class="num">${e.c}</td><td class="debit-col">${e.l}</td><td class="amt">${formatMoney(e.m)}</td><td></td></tr>`;
+        });
+        entries.filter(e => e.sens === 'C').forEach(e => {
+            t += `<tr><td class="num">${e.c}</td><td class="credit-col" style="padding-left:1.5rem">${e.l}</td><td></td><td class="amt">${formatMoney(e.m)}</td></tr>`;
+        });
+        t += `</table></div>`;
+        return t;
+    };
+
+    // Corrigé F101
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Détail des calculs de la facture F101</span>
+        Le montant brut des marchandises s'élève à <strong>${formatMoney(brut1)}</strong>. Une remise commerciale de ${remise1} % est appliquée, représentant une déduction de ${formatMoney(mntRemise1)}, ce qui donne un net commercial de <strong>${formatMoney(netCo1)}</strong>. 
+        Un escompte de règlement de ${escompte} % est ensuite calculé sur ce net commercial (soit ${formatMoney(mntEscompte1)}), aboutissant à un net financier de <strong>${formatMoney(netFin1)}</strong>. 
+        Des frais de port forfaitaires de ${formatMoney(port)} s'y ajoutent, portant la base soumise à la TVA à ${formatMoney(baseTva1)}. La TVA au taux normal (20 %) s'élève donc à <strong>${formatMoney(tva1)}</strong>. 
+        Enfin, la consignation de ${qEmb} palettes à ${formatMoney(pxEmb)} l'unité ajoute ${formatMoney(consignation)} (les emballages consignés étant hors champ de la TVA). Le net à payer total (TTC) de la facture s'établit à <strong>${formatMoney(nap1)}</strong>.
+    </div>`;
+
+    if(isSale1) {
+        htmlSol += addJournal("04", [
+            {c:"411", l:"Clients", m: nap1, sens:'D'},
+            {c:"668", l:"Escomptes accordés", m: mntEscompte1, sens:'D'},
+            {c:"707", l:"Ventes de marchandises", m: netCo1, sens:'C'},
+            {c:"7085", l:"Ports et frais facturés", m: port, sens:'C'},
+            {c:"4196", l:"Clients - dettes emballages", m: consignation, sens:'C'},
+            {c:"44571", l:"TVA collectée", m: tva1, sens:'C'}
+        ]);
+    } else {
+        htmlSol += addJournal("04", [
+            {c:"607", l:"Achats de marchandises", m: netCo1, sens:'D'},
+            {c:"6241", l:"Transports sur achats", m: port, sens:'D'},
+            {c:"4096", l:"Fournisseurs - créances emballages", m: consignation, sens:'D'},
+            {c:"44566", l:"TVA déductible sur B&S", m: tva1, sens:'D'},
+            {c:"401", l:"Fournisseurs", m: nap1, sens:'C'},
+            {c:"768", l:"Escomptes obtenus", m: mntEscompte1, sens:'C'}
+        ]);
+    }
+
+    // Corrigé A10
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Détail des calculs de la facture d'avoir A10</span>
+        Le montant brut des marchandises retournées est de <strong>${formatMoney(brutRet)}</strong>. L'annulation de la remise initiale de ${remise1} % représente ${formatMoney(mntRemiseRet)}, donnant un net commercial de <strong>${formatMoney(netCoRet)}</strong>. L'annulation de l'escompte (${escompte} %) s'élève à ${formatMoney(mntEscompteRet)}, soit un net financier de <strong>${formatMoney(netFinRet)}</strong> et une TVA annulée de ${formatMoney(tvaRet)}. 
+        Concernant les emballages, sur les ${qEmb} initialement consignés, ${qRet} sont restitués en bon état, ce qui génère une reprise comptable de ${formatMoney(repriseEmb)}. Les ${qCassee} emballages restants, considérés comme non rendus, sont facturés de manière définitive au prix unitaire de ${formatMoney(pxEmb)}, générant une vente de <strong>${formatMoney(venteEmbHT)}</strong> (HT) soumise à une TVA de ${formatMoney(tvaEmb)}. 
+        Le net à déduire (total de l'avoir) correspond au TTC du retour de marchandises, additionné de la reprise des emballages rendus, et minoré de la facturation des emballages détruits. Le montant total de l'avoir s'élève ainsi à <strong>${formatMoney(napAvoirTotal)}</strong>.
+    </div>`;
+
+    if(isSale1) {
+        htmlSol += addJournal("08", [
+            {c:"707", l:"Ventes de marchandises", m: netCoRet, sens:'D'},
+            {c:"44571", l:"TVA collectée", m: tvaRet, sens:'D'},
+            {c:"4196", l:"Clients - dettes emballages", m: consignation, sens:'D'},
+            {c:"411", l:"Clients", m: napAvoirTotal, sens:'C'},
+            {c:"668", l:"Escomptes accordés", m: mntEscompteRet, sens:'C'},
+            {c:"7088", l:"Autres produits accessoires", m: venteEmbHT, sens:'C'},
+            {c:"44571", l:"TVA collectée", m: tvaEmb, sens:'C'}
+        ]);
+    } else {
+        htmlSol += addJournal("08", [
+            {c:"401", l:"Fournisseurs", m: napAvoirTotal, sens:'D'},
+            {c:"768", l:"Escomptes obtenus", m: mntEscompteRet, sens:'D'},
+            {c:"6026", l:"Achats d'emballages", m: venteEmbHT, sens:'D'},
+            {c:"44566", l:"TVA déductible sur B&S", m: tvaEmb, sens:'D'},
+            {c:"607", l:"Achats de marchandises", m: netCoRet, sens:'C'},
+            {c:"44566", l:"TVA déductible sur B&S", m: tvaRet, sens:'C'},
+            {c:"4096", l:"Fournisseurs - créances emballages", m: consignation, sens:'C'}
+        ]);
+    }
+
+    // Corrigé Paiement
+    let solde = nap1 - napAvoirTotal;
+    if(isSale1) {
+        htmlSol += addJournal("12", [
+            {c:"512", l:"Banque", m: solde, sens:'D'},
+            {c:"411", l:"Clients", m: solde, sens:'C'}
+        ]);
+    } else {
+        htmlSol += addJournal("12", [
+            {c:"401", l:"Fournisseurs", m: solde, sens:'D'},
+            {c:"512", l:"Banque", m: solde, sens:'C'}
+        ]);
+    }
+
+    // Corrigé F102
+    let tva102Total = tva2_20 + tva2_55;
+    let escompte102Total = escompteMnt2_20 + escompteMnt2_55;
+
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Détail des calculs de la facture F102 (taux de TVA mixtes)</span>
+        Cette facture comprend des marchandises soumises à deux taux de TVA distincts. Pour la base à 20 %, le montant brut est de ${formatMoney(brut2_20)}. Après déduction d'un escompte de règlement de ${escompte2} % (soit ${formatMoney(escompteMnt2_20)}), le net financier s'élève à <strong>${formatMoney(netFin2_20)}</strong>, ce qui génère une TVA de ${formatMoney(tva2_20)}. 
+        Pour la base à 5,5 %, le montant brut de ${formatMoney(brut2_55)} minoré du même taux d'escompte (soit ${formatMoney(escompteMnt2_55)}) donne un net financier de <strong>${formatMoney(netFin2_55)}</strong>, produisant une TVA de ${formatMoney(tva2_55)}. 
+        Le net à payer (montant TTC total exigible) s'élève finalement à <strong>${formatMoney(nap2)}</strong>.
+    </div>`;
+
+    if(isSale2) {
+        htmlSol += addJournal("18", [
+            {c:"411", l:"Clients", m: nap2, sens:'D'},
+            {c:"668", l:"Escomptes accordés", m: escompte102Total, sens:'D'},
+            {c:"707", l:"Ventes (20%)", m: brut2_20, sens:'C'},
+            {c:"707", l:"Ventes (5.5%)", m: brut2_55, sens:'C'},
+            {c:"44571", l:"TVA collectée (20%)", m: tva2_20, sens:'C'},
+            {c:"44571", l:"TVA collectée (5.5%)", m: tva2_55, sens:'C'}
+        ]);
+    } else {
+         htmlSol += addJournal("18", [
+            {c:"607", l:"Achats (20%)", m: brut2_20, sens:'D'},
+            {c:"607", l:"Achats (5.5%)", m: brut2_55, sens:'D'},
+            {c:"44566", l:"TVA déductible (20%)", m: tva2_20, sens:'D'},
+            {c:"44566", l:"TVA déductible (5.5%)", m: tva2_55, sens:'D'},
+            {c:"401", l:"Fournisseurs", m: nap2, sens:'C'},
+            {c:"768", l:"Escomptes obtenus", m: escompte102Total, sens:'C'}
+        ]);
+    }
+
+    // Corrigé TVA
+    let tvaColMoisTotal = tvaColMois + (isSale1 ? tva1 - tvaRet + tvaEmb : 0) + (isSale2 ? tva102Total : 0);
+    let tvaDedMoisTotal = tvaDedMois + (!isSale1 ? tva1 - tvaRet + tvaEmb : 0) + (!isSale2 ? tva102Total : 0);
+    let soldeTVA = tvaColMoisTotal - tvaDedMoisTotal;
+
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Liquidation de la TVA du mois</span>
+        La TVA collectée s'élève à ${formatMoney(tvaColMois)} pour les opérations extérieures, à laquelle s'ajoute la TVA des opérations de l'énoncé, portant le total collecté à <strong>${formatMoney(tvaColMoisTotal)}</strong>. 
+        Parallèlement, la TVA déductible s'élève à ${formatMoney(tvaDedMois)} pour les opérations extérieures, majorée de la TVA des opérations de l'énoncé, soit un total déductible de <strong>${formatMoney(tvaDedMoisTotal)}</strong>. 
+        La différence entre ces deux montants fait apparaître ${soldeTVA >= 0 ? `une TVA à décaisser (dette envers l'État) d'un montant de <strong>${formatMoney(soldeTVA)}</strong>.` : `un crédit de TVA (créance sur l'État) d'un montant de <strong>${formatMoney(-soldeTVA)}</strong>.`}
+    </div>`;
+
+    if(soldeTVA >= 0) {
+        htmlSol += addJournal("31", [
+            {c:"44571", l:"TVA collectée", m: tvaColMoisTotal, sens:'D'},
+            {c:"44566", l:"TVA déductible sur B&S", m: tvaDedMoisTotal, sens:'C'},
+            {c:"44551", l:"TVA à décaisser", m: soldeTVA, sens:'C'}
+        ]);
+    } else {
+         htmlSol += addJournal("31", [
+            {c:"44571", l:"TVA collectée", m: tvaColMoisTotal, sens:'D'},
+            {c:"44567", l:"Crédit de TVA à reporter", m: -soldeTVA, sens:'D'},
+            {c:"44566", l:"TVA déductible sur B&S", m: tvaDedMoisTotal, sens:'C'}
+        ]);
+    }
+
+    document.getElementById('sol-content').innerHTML = htmlSol;
+}
+
+function toggleSol() {
+    let solCard = document.getElementById('sol-card');
+    let btn = document.getElementById('toggle-btn');
+    if(solCard.classList.contains('visible')) {
+        solCard.classList.remove('visible');
+        btn.innerText = "Afficher le corrigé";
+        btn.classList.remove('shown');
+    } else {
+        solCard.classList.add('visible');
+        btn.innerText = "Masquer le corrigé";
+        btn.classList.add('shown');
+    }
+}
+
+// --- FONCTION EXPORT DOCX ---
+function exportWord() {
+    // On clone la zone d'exercice pour ne pas modifier l'affichage courant
+    let content = document.getElementById('ex-area').cloneNode(true);
+    
+    // On supprime les boutons d'action et de toggle du clone
+    let actions = content.querySelector('.top-actions');
+    if(actions) actions.parentNode.removeChild(actions);
+    let toggle = content.querySelector('.sol-toggle-wrap');
+    if(toggle) toggle.parentNode.removeChild(toggle);
+    
+    // On force l'affichage du corrigé dans l'export
+    let solCard = content.querySelector('#sol-card');
+    if(solCard) solCard.style.display = 'block';
+
+    // On prépare le code HTML au format accepté par Microsoft Word
+    let html = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <meta charset='utf-8'>
+            <title>Exercice Comptabilité</title>
+            <style>
+                body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                th, td { border: 1px solid #000; padding: 5px; }
+                th { background-color: #f2f2f2; text-align: left; }
+                .amt { text-align: right; white-space: nowrap; }
+                .calc-box { border: 1px solid #000; padding: 10px; margin-bottom: 15px; background-color: #f9f9f9; }
+                .date-row { font-style: italic; text-align: center; font-weight: bold; }
+                .highlight { font-weight: bold; }
+            </style>
+        </head>
+        <body>
+            ${content.innerHTML}
+        </body>
+        </html>
+    `;
+    
+    // Création et téléchargement du fichier .doc
+    let blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    let url = URL.createObjectURL(blob);
+    let link = document.createElement('a');
+    link.href = url;
+    link.download = 'Exercice_Facturation.doc';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>

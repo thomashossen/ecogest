@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Macroeconomics Simulator - IS/LM Model</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['\\[', '\\]']]
+    }
+  };
+</script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7;text-align:justify;}
+
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 1.5rem;border-bottom:3px solid var(--gold);text-align:left;}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end;background:rgba(255,255,255,.03);padding:1rem 1.5rem;border-radius:6px;border:1px solid rgba(255,255,255,.1)}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.6)}
+.ctrl-inp, .ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.4rem .7rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none;transition:border-color .2s}
+.ctrl-inp:focus, .ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.5rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;transition:background .18s;margin-left:auto}
+.btn-gen:hover{background:var(--gold-light)}
+
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:700}
+
+.top-actions{display:flex;gap:.5rem;}
+.btn-action{background:#fff;border:1px solid var(--border);color:var(--navy);padding:.4rem .8rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.85rem;font-weight:600;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.btn-action:hover{border-color:var(--navy);background:var(--cream-dark);}
+
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem;text-align:left;}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+
+.enum-list { list-style-type: decimal; padding-left: 1.5rem; margin-bottom: 1.5rem; }
+.enum-list > li { margin-bottom: 1.2rem; font-weight: 600; color: var(--navy); }
+.enum-sublist { list-style-type: lower-alpha; padding-left: 1.5rem; margin-top: 0.5rem; font-weight: normal; color: var(--text); }
+.enum-sublist > li { margin-bottom: 0.8rem; }
+
+.sol-toggle-wrap{text-align:left; margin: 1.5rem 0 0 0;}
+.btn-toggle{background:transparent;border:2px solid var(--green);border-bottom:none;color:var(--green);font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;padding:.5rem 1.5rem;border-radius:4px 4px 0 0;cursor:pointer;transition:all .2s; position:relative; z-index:2; top:2px;}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--green);color:var(--cream)}
+.sol-card{border-top:2px solid var(--green);display:none; border-radius: 0 6px 6px 6px; position:relative; z-index:1;}
+.sol-card.visible{display:block;animation:fi .4s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+
+.calc-box{background:#f9fcf9;border:1px solid #c8e6c9;padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.9rem;color:var(--text);line-height:1.6;text-align:justify;}
+.math-formula { text-align: center; margin: 1.2rem 0; overflow-x: auto; }
+
+@media print{
+  body{background:#fff;}
+  header, .ctrls, .sol-toggle-wrap, .top-actions {display:none !important;}
+  .card{box-shadow:none; border:1px solid var(--border); margin-bottom:2rem;}
+  .sol-card{display:block !important; border-top:2px solid var(--green);}
+  #ex-area {display:block !important;}
+}
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-badge">GROWTH AND BUSINESS CYCLES</div>
+  <h1>The IS/LM Model</h1>
+  <p class="subtitle">© Thomas Hossen – March 7, 2026 Version</p>
+  
+  <div class="ctrls">
+    <div class="ctrl-g">
+      <span class="ctrl-lbl">Seed (Optional)</span>
+      <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999">
+    </div>
+    <button class="btn-gen" onclick="generateExercise(false)">Generate Exercise →</button>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" style="text-align:center; padding:4rem; color:var(--text-muted); font-style:italic;">
+    Configure the parameters and click Generate to create a new exercise.
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="seed-badge">Active Seed: <span id="seed-disp"></span></div>
+      <div class="top-actions">
+        <button class="btn-action" onclick="generateExercise(true)">↺ New Statement</button>
+        <button class="btn-action" onclick="window.print()">⬇ Export PDF</button>
+        <button class="btn-action" onclick="exportWord()">⬇ Export DOC</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="tag">Problem</span><h2>Aggregate Demand and Demand Shocks</h2></div>
+      <div class="card-body">
+        <div class="context-block" id="context-text"></div>
+        
+        <p style="margin-bottom:1rem; font-weight:600; color:var(--red); text-align:left;">Assignment</p>
+        <div id="events-list"></div>
+      </div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Show Solution</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag">Solution</span><h2>Aggregate Demand and Demand Shocks</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+let currentSeed = 0;
+function seedPRNG(seed) {
+    return function() {
+      let t = seed += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+let random = Math.random;
+
+function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
+
+function texM(num) {
+    let sign = num < 0 ? "-" : "";
+    let absNum = Math.abs(num);
+    absNum = Math.round(absNum * 100) / 100; 
+    let parts = absNum.toFixed(2).split('.');
+    let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return sign + intPart + "." + parts[1];
+}
+
+function generateExercise(forceNew = false) {
+    if(forceNew) {
+        document.getElementById('seed-input').value = "";
+    }
+    let seedVal = document.getElementById('seed-input').value;
+    currentSeed = seedVal ? parseInt(seedVal) : Math.floor(Math.random() * 99999999);
+    document.getElementById('seed-disp').innerText = currentSeed;
+    document.getElementById('seed-input').value = currentSeed;
+    random = seedPRNG(currentSeed);
+
+    // Structural parameters ensuring 1 - c(1-t) = 0.5 (greatly simplifies the resolution)
+    const models = [
+        { c_str: "0.8", t_str: "\\frac{3}{8}", t_rec: "\\frac{5}{8}", t_val: 3/8 },
+        { c_str: "0.75", t_str: "\\frac{1}{3}", t_rec: "\\frac{2}{3}", t_val: 1/3 },
+        { c_str: "0.6", t_str: "\\frac{1}{6}", t_rec: "\\frac{5}{6}", t_val: 1/6 }
+    ];
+    let model = models[randInt(0, models.length - 1)];
+    
+    // Other parameters
+    let b_vals = [40, 50, 100];
+    let b = b_vals[randInt(0, b_vals.length - 1)];
+    let b2 = b * 2; // Shortcut for denominators
+    
+    let A_vals = [1, 2];
+    let A = A_vals[randInt(0, A_vals.length - 1)];
+    let N_vals = [4, 9, 16];
+    let Ns = N_vals[randInt(0, N_vals.length - 1)];
+    let Y0 = A * Math.sqrt(Ns);
+
+    // Shocks
+    let dC = -randInt(1, 3);
+    let dI = -randInt(1, 3);
+    let dpi_val = -randInt(1, 5) / 100; 
+    let dpi_str = texM(dpi_val);
+
+    let total_shock = dC + dI + b * dpi_val;
+
+    // Display Statement
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('ex-area').style.display = 'block';
+    document.getElementById('sol-card').classList.remove('visible');
+    document.getElementById('toggle-btn').innerText = "Show Solution";
+    document.getElementById('toggle-btn').classList.remove('shown');
+
+    document.getElementById('context-text').innerHTML = `
+      Consider a closed economy with fixed prices. The following structural equations are given:
+   $C = C_0 + ${model.c_str}(Y - T)$ (consumption function), $T = ${model.t_str}Y$ (tax function), $I = I_0 - ${b}(r - \\pi)$ (investment function), $\\frac{M^D}{P} = 0.5Y - ${b}r$ (money demand function), $Y = A\\sqrt{N}$ (where $N$ denotes the quantity of labor in hours and $A$ the total factor productivity), $N^s = ${Ns}$ (labor supply). Recall that $Y$ is GDP, $C$ is consumption, $T$ is the tax level, $r$ is the nominal interest rate, $\\pi$ is the expected inflation rate, $P$ is the price level, $N$ is the employment level, $G$ is government spending (assumed exogenous), $C_0$ is autonomous consumption, and $I_0$ is autonomous investment.
+    `;
+
+    let htmlEnonce = `
+    <ol class="enum-list">
+        <li><span>Determination of the short-run equilibrium</span>
+            <ol class="enum-sublist">
+                <li>Determine the equation of the IS curve and comment on the relationship between the real interest rate and income.</li>
+                <li>Determine the equation of the LM curve and comment on the relationship between the nominal interest rate and income.</li>
+                <li>Determine the equilibrium of the IS/LM model by solving the system formed by the two curves. Express the equilibrium income $Y^*$ and the equilibrium nominal interest rate $r^*$ as a function of the model parameters. Comment on the results obtained.</li>
+                <li>Assume $A = ${A}$. Determine the full-employment equilibrium income $Y_0$.</li>
+            </ol>
+        </li>
+        <li><span>Study of a short-run shock</span>
+            <ol class="enum-sublist">
+                <li>Estimate the relative impact of a shock to autonomous consumption $C_0$ on the equilibrium income. What are the macroeconomic policy implications?</li>
+                <li>Estimate the relative impact of a shock to autonomous investment $I_0$ on the equilibrium income. What are the macroeconomic policy implications?</li>
+                <li>Estimate the relative impact of a shock to expected inflation $\\pi$ on the equilibrium income. Comment on the effects of Central Bank announcements.</li>
+                <li>Assume there is a triple negative shock: $\\text{d}C_0 < 0$, $\\text{d}I_0 < 0$, and $\\text{d}\\pi < 0$. Determine the total impact on income $Y$. Calculate this impact numerically assuming $\\text{d}C_0 = ${dC}$, $\\text{d}I_0 = ${dI}$, and $\\text{d}\\pi = ${dpi_str}$.</li>
+            </ol>
+        </li>
+    </ol>
+    `;
+
+    document.getElementById('events-list').innerHTML = htmlEnonce;
+
+    // --- SOLUTION GENERATION ---
+    let htmlSol = `
+    <ol class="enum-list">
+        <li><span>Determination of the short-run equilibrium</span>
+            <ol class="enum-sublist">
+                <li>The (IS) curve is an accounting identity: inflows into the country, i.e., income or GDP $Y$, must equal uses, i.e., consumption $C$, government spending $G$, and investment $I$. Assume $G$ is exogenous, equal to $\\overline{G}$. The equation of the IS curve is therefore $Y = C + I + G$. We proceed with the substitution:
+                <div class="math-formula">\\[\\begin{aligned}
+                Y = C + I + G
+                &\\iff Y = C_0 + ${model.c_str}(Y - T) + I_0 - ${b}(r - \\pi) + \\overline{G} \\\\\\\\
+                &\\iff Y = C_0 + ${model.c_str}\\left(Y - ${model.t_str}Y\\right) + I_0 - ${b}(r - \\pi) + \\overline{G} \\\\\\\\
+                &\\iff ${b}r = C_0 + ${model.c_str} \\times ${model.t_rec}Y - Y + I_0 + ${b}\\pi + \\overline{G} \\\\\\\\
+                &\\iff r = \\frac{C_0}{${b}} - \\frac{Y}{${b2}} + \\frac{I_0}{${b}} + \\pi + \\frac{\\overline{G}}{${b}} \\\\\\\\
+                &\\iff r - \\pi = \\frac{C_0}{${b}} - \\frac{Y}{${b2}} + \\frac{I_0}{${b}} + \\frac{\\overline{G}}{${b}}
+                \\end{aligned}\\]</div>
+                Let us comment on this relationship. We note that the real interest rate $r-\\pi$ is a decreasing function of income. Indeed, if the real interest rate decreases, then money is cheaper. It is therefore easier to borrow, and at a lower cost. Private investment then increases and, with it, national income via the Keynesian multiplier.
+                </li>
+                
+                <li>Similarly, for the money market curve (LM), we find the equation reflecting equilibrium in the real money balances market:
+                <div class="math-formula">\\[\\begin{aligned}
+                \\frac{M^D}{P} = 0.5Y - ${b}r
+                &\\iff ${b}r = 0.5Y - \\frac{M^D}{P} \\\\\\\\
+                &\\iff r = \\frac{Y}{${b2}} - \\frac{M^D}{${b}P}
+                \\end{aligned}\\]</div>
+                The (LM) curve is indeed an increasing function of national income. If income increases, economic agents consequently have more money to invest and carry out more transactions (transaction demand for money). Consequently, the cost of money, i.e., the interest rate, inevitably adjusts upwards to absorb this excess demand: this is the pure law of supply and demand applied to the money market.
+                </li>
+
+                <li>The equilibrium of the IS/LM model designates the set of pairs $(Y,r)$ that simultaneously equalize aggregate demand and aggregate supply. We must therefore solve the following linear system:
+                <div class="math-formula">\\[(S):\\begin{cases}
+                r = \\frac{C_0}{${b}} - \\frac{Y}{${b2}} + \\frac{I_0}{${b}} + \\pi + \\frac{\\overline{G}}{${b}} & (\\text{IS}) \\\\\\\\
+                r = \\frac{Y}{${b2}} - \\frac{M^D}{${b}P} & (\\text{LM})
+                \\end{cases}\\]</div>
+                We solve this system by equalization:
+                <div class="math-formula">\\[\\begin{aligned}
+                (S)
+                &\\iff \\begin{cases}
+                \\frac{Y}{${b2}} - \\frac{M^D}{${b}P} = \\frac{C_0}{${b}} - \\frac{Y}{${b2}} + \\frac{I_0}{${b}} + \\pi + \\frac{\\overline{G}}{${b}} \\\\\\\\
+                r = \\frac{Y}{${b2}} - \\frac{M^D}{${b}P}
+                \\end{cases} \\\\\\\\
+                &\\iff \\begin{cases}
+                \\frac{Y}{${b}} = \\frac{C_0}{${b}} + \\frac{I_0}{${b}} + \\pi + \\frac{\\overline{G}}{${b}} + \\frac{M^D}{${b}P} \\\\\\\\
+                r = \\frac{Y}{${b2}} - \\frac{M^D}{${b}P}
+                \\end{cases} \\\\\\\\
+                &\\iff \\begin{cases}
+                Y = C_0 + I_0 + ${b}\\pi + \\overline{G} + \\frac{M^D}{P} \\\\\\\\
+                r = \\frac{1}{${b2}}\\left(C_0 + I_0 + ${b}\\pi + \\overline{G} + \\frac{M^D}{P}\\right) - \\frac{M^D}{${b}P}
+                \\end{cases} \\\\\\\\
+                &\\iff \\begin{cases}
+                Y = C_0 + I_0 + ${b}\\pi + \\overline{G} + \\frac{M^D}{P} \\\\\\\\
+                r = \\frac{C_0}{${b2}} + \\frac{I_0}{${b2}} + \\frac{\\pi}{2} + \\frac{\\overline{G}}{${b2}} - \\frac{M^D}{${b2}P}
+                \\end{cases}
+                \\end{aligned}\\]</div>
+                We have thus determined the equilibrium income of the economy $Y^* = C_0 + I_0 + ${b}\\pi + \\overline{G} + \\frac{M^D}{P}$ as well as the associated nominal interest rate $r^*$ which equalizes supply and demand in this closed economy. We can indeed see that $Y^*$ decreases if the price $P$ increases. Indeed, $Y^*$ designates the equilibrium volume. Therefore, if prices increase, the same amount of money allows buying a smaller volume, which is perfectly consistent. Similarly, the nominal interest rate is an increasing function of the price level $P$.
+                </li>
+
+                <li>Assume $A = ${A}$. Knowing that the production function $Y = A\\sqrt{N}$ is a one-factor Cobb-Douglas type function (the labor factor) with technical progress, the assumption fixes the technology level. Let $Y_0$ be the full-employment equilibrium income. According to the production function, we have on the one hand $Y_0 = ${A}\\sqrt{N}$. On the other hand, since there is full employment, the labor market is saturated and $N = N^s = ${Ns}$. Hence $Y_0 = ${A}\\sqrt{${Ns}} = ${Y0}$.
+                </li>
+            </ol>
+        </li>
+        
+        <li><span>Study of a short-run shock</span>
+            <ol class="enum-sublist">
+                <li>Let's estimate the relative impact of a shock to autonomous consumption. According to our equilibrium equation, we have $\\frac{\\text{d}Y}{\\text{d}C_0} = 1$. This means that an infinitesimal change in autonomous consumption causes, all else being equal, a change in income of the same direction and magnitude. To simplify, we can say that a one-unit increase in autonomous consumption generates a one-unit increase in GDP. What are the macroeconomic policy implications? Imagine a government that subsidizes its citizens with an additional unit of $C_0$. Then $Y$ will increase by one unit, which will allow the State to mechanically recover $${model.t_str} \\times 1 = ${model.t_str}$ in taxes. In other words, the government would increase its deficit by $1 - ${model.t_str} = ${model.t_rec}$ per subsidized unit, making it a heavily deficit-producing measure from the perspective of public finances.
+                </li>
+
+                <li>Let's estimate the relative impact of a shock to autonomous investment $I_0$. The equilibrium equation gives $\\frac{\\text{d}Y}{\\text{d}I_0} = 1$. The multiplier effect is identical to that of consumption. A one-unit increase in autonomous investment generates a one-unit increase in GDP. In terms of public policy, if a government supports investment through incentives, income will increase, generating an additional tax return of $${model.t_str}$. Such a measure will therefore only be truly profitable for the State if the initial cost of the incentive scheme is strictly less than $${model.t_str}$ per additional unit of investment generated.
+                </li>
+
+                <li>Let's estimate the impact of a shock to expected inflation $\\pi$. Differentiating $Y^*$, we obtain $\\frac{\\text{d}Y}{\\text{d}\\pi} = ${b}$. This means that, if agents expect a one percentage point (i.e., 0.01) increase in inflation, all else being equal, then income will increase by $0.01 \\times ${b} = ${texM(b * 0.01)}$ (a positive shock driving immediate consumption). Conversely, deflationary expectations violently curb demand. Thus, the announcement effects of the Central Bank regarding its inflation targets will have a highly procyclical and self-fulfilling effect on the real economy.
+                </li>
+
+                <li>Assume there is a triple negative shock, likely to cause a recession. The total shock on income $Y$ will be determined by the exact total differential:
+                <div class="math-formula">\\[\\begin{aligned}
+                \\text{d}Y &= \\frac{\\partial Y}{\\partial C_0}\\text{d}C_0 + \\frac{\\partial Y}{\\partial I_0}\\text{d}I_0 + \\frac{\\partial Y}{\\partial \\pi}\\text{d}\\pi \\\\\\\\
+                &= 1 \\times \\text{d}C_0 + 1 \\times \\text{d}I_0 + ${b} \\times \\text{d}\\pi \\\\\\\\
+                &= \\text{d}C_0 + \\text{d}I_0 + ${b}\\text{d}\\pi
+                \\end{aligned}\\]</div>
+                By injecting the proposed numerical values: if autonomous consumption undergoes a shock of $\\text{d}C_0 = ${dC}$, if investment collapses by $\\text{d}I_0 = ${dI}$ and if inflation expectations fall by $\\text{d}\\pi = ${dpi_str}$, then the magnitude of the national income contraction will be $${dC} + (${dI}) + ${b} \\times (${dpi_str}) = ${texM(total_shock)}$.
+                </li>
+            </ol>
+        </li>
+    </ol>
+    `;
+
+    document.getElementById('sol-content').innerHTML = htmlSol;
+    
+    if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
+        MathJax.typesetPromise().catch(function (err) {
+            console.error('MathJax Error:', err);
+        });
+    }
+}
+
+function toggleSol() {
+    let solCard = document.getElementById('sol-card');
+    let btn = document.getElementById('toggle-btn');
+    if(solCard.classList.contains('visible')) {
+        solCard.classList.remove('visible');
+        btn.innerText = "Show Solution";
+        btn.classList.remove('shown');
+    } else {
+        solCard.classList.add('visible');
+        btn.innerText = "Hide Solution";
+        btn.classList.add('shown');
+    }
+}
+
+function exportWord() {
+    let content = document.getElementById('ex-area').cloneNode(true);
+    let actions = content.querySelector('.top-actions');
+    if(actions) actions.parentNode.removeChild(actions);
+    let toggle = content.querySelector('.sol-toggle-wrap');
+    if(toggle) toggle.parentNode.removeChild(toggle);
+    let solCard = content.querySelector('#sol-card');
+    if(solCard) solCard.style.display = 'block';
+
+    let html = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <meta charset='utf-8'>
+            <title>Macroeconomics Exercise</title>
+            <style>
+                body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5; text-align: justify; }
+                .calc-box { border: 1px solid #000; padding: 10px; margin-bottom: 15px; background-color: #f9f9f9; text-align: justify; }
+                .math-formula { text-align: center; font-style: italic; margin: 10px 0; }
+                .enum-list { list-style-type: decimal; padding-left: 20px; }
+                .enum-sublist { list-style-type: lower-alpha; padding-left: 20px; }
+                li { margin-bottom: 8px; }
+            </style>
+        </head>
+        <body>
+            ${content.innerHTML}
+        </body>
+        </html>
+    `;
+    
+    let blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    let url = URL.createObjectURL(blob);
+    let link = document.createElement('a');
+    link.href = url;
+    link.download = 'IS_LM_Exercise.doc';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>

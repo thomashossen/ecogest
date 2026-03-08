@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Générateur d'exercices - Économétrie</title>
+<script>
+window.MathJax = {
+  tex: { 
+    inlineMath: [['\\(','\\)']], 
+    displayMath: [['\\[','\\]']], 
+    packages: {'[+]': ['ams']},
+    macros: {
+      Var: ['\\textbf{Var}\\left(#1\\right)', 1],
+      Cov: ['\\textbf{Cov}\\left(#1\\right)', 1]
+    }
+  },
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] }
+};
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 0;border-bottom:3px solid var(--gold)}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+#controls-bar{border-top:1px solid rgba(255,255,255,.08);padding:1.1rem 0 1.3rem}
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.5)}
+.ctrl-inp{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.38rem .65rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.82rem;width:88px;outline:none;transition:border-color .2s}
+.ctrl-inp:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.ctrl-tip{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:rgba(250,247,240,.33);margin-top:2px}
+.seed-row{display:flex;align-items:flex-end;gap:.45rem}
+.btn-copy-seed{background:transparent;border:1px solid rgba(201,149,42,.4);color:rgba(250,247,240,.55);padding:.38rem .55rem;border-radius:3px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:.65rem;transition:all .18s;white-space:nowrap}
+.btn-copy-seed:hover{border-color:var(--gold-light);color:var(--gold-light)}
+.ctrl-vsep{width:1px;background:rgba(255,255,255,.1);align-self:stretch;margin:0 .2rem}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.3rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.9rem;font-weight:600;transition:background .18s;white-space:nowrap;align-self:flex-end}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.welcome-msg{text-align:center;padding:5rem 2rem;color:var(--text-muted);font-style:italic;font-size:1.05rem}
+.welcome-msg .arrow{font-size:2rem;display:block;margin-bottom:1rem;opacity:.4}
+
+/* TOP BAR */
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.top-bar-left{display:flex;gap:.6rem;align-items:center}
+.btn-sm{background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:'JetBrains Mono',monospace;font-size:.67rem;letter-spacing:.08em;text-transform:uppercase;padding:.4rem 1rem;border-radius:3px;cursor:pointer;transition:all .18s;white-space:nowrap}
+.btn-sm:hover{background:var(--gold);color:var(--navy)}
+.btn-sm.pdf{border-color:#7bafd4;color:#7bafd4}
+.btn-sm.pdf:hover{background:#7bafd4;color:var(--navy)}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.67rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:500}
+
+/* CARDS */
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);margin-bottom:1.5rem;border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+
+/* QUESTIONS */
+.questions ol{counter-reset:q;list-style:none}
+.questions ol>li{counter-increment:q;margin-bottom:1.4rem;display:flex;gap:1rem;align-items:flex-start}
+.questions ol>li::before{content:counter(q);min-width:28px;height:28px;background:var(--navy);color:var(--cream);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:500;flex-shrink:0;margin-top:.15rem}
+.questions ol>li .q-text{flex:1;font-size:.93rem;text-align:justify}
+
+/* SOLUTION */
+.sol-toggle-wrap{text-align:center;margin:1rem 0 0}
+.btn-toggle{background:transparent;border:2px solid var(--navy);color:var(--navy);font-family:'Source Serif 4',serif;font-size:.9rem;padding:.6rem 2rem;border-radius:4px;cursor:pointer;transition:all .2s}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--navy);color:var(--cream)}
+.sol-card{border-top:4px solid var(--green);display:none}
+.sol-card.visible{display:block;animation:fi .3s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+.st{font-size:.92rem;line-height:1.75;text-align:justify}
+.st p{margin-bottom:.7rem}
+.st ol{counter-reset:sq;list-style:none}
+.st>ol>li{counter-increment:sq;margin-bottom:1.6rem;display:flex;gap:1rem;align-items:flex-start}
+.st>ol>li::before{content:counter(sq);min-width:24px;height:24px;background:var(--green);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.68rem;flex-shrink:0;margin-top:.15rem}
+.st ul{list-style:disc;padding-left:1.5rem;margin-bottom:.7rem}
+.st ul li{margin-bottom:1rem}
+
+/* PDF MODAL */
+#pdf-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;backdrop-filter:blur(2px)}
+#pdf-modal{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:101;background:#fff;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.25);width:390px;max-width:95vw;border-top:4px solid #7bafd4;overflow:hidden}
+.mh{background:var(--navy);color:var(--cream);padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
+.mh h3{font-family:'Playfair Display',serif;font-size:1rem;font-weight:600}
+.mclose{background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:1.2rem;line-height:1;padding:2px 6px;border-radius:3px;transition:color .15s}
+.mclose:hover{color:#fff}
+.mb2{padding:1.5rem}
+.opt-row{display:flex;align-items:flex-start;gap:.75rem;margin-bottom:1rem;cursor:pointer}
+.opt-row input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--navy);flex-shrink:0;margin-top:3px}
+.opt-lbl{font-size:.93rem}
+.opt-desc{font-size:.75rem;color:var(--text-muted);display:block}
+.seed-note{font-family:'JetBrains Mono',monospace;font-size:.7rem;background:var(--cream-dark);border:1px solid var(--border);padding:.55rem .85rem;border-radius:3px;color:var(--text-muted);margin-bottom:1.2rem;line-height:1.5}
+.seed-note strong{color:var(--navy)}
+.mactions{display:flex;gap:.6rem}
+.btn-print{flex:1;background:var(--navy);color:var(--cream);border:none;padding:.7rem;border-radius:4px;font-family:'Source Serif 4',serif;font-size:.9rem;cursor:pointer;transition:background .2s}
+.btn-print:hover{background:var(--navy-mid)}
+.btn-cancel{background:transparent;border:1px solid var(--border);color:var(--text-muted);padding:.7rem 1rem;border-radius:4px;font-family:'Source Serif 4',serif;font-size:.9rem;cursor:pointer;transition:all .2s}
+.btn-cancel:hover{border-color:var(--text);color:var(--text)}
+
+/* PRINT */
+@media print{
+:root{--navy:#0d1b2a;--cream:#fff;--cream-dark:#f8f8f8;--gold:#c9952a;--green:#2d6b4a;--border:#ccc}
+body{background:#fff;font-size:11pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+header{padding:1rem 1.5rem .8rem}
+header .subtitle{display:none}
+#controls-bar,.top-bar,.sol-toggle-wrap,#pdf-ov,#pdf-modal{display:none!important}
+.card{box-shadow:none;border-radius:0;page-break-inside:avoid;margin-bottom:1rem}
+main{padding:1rem 1.5rem;max-width:100%}
+body.print-no-header header{display:none!important}
+body.print-no-solution .sol-card{display:none!important}
+body.print-force-solution .sol-card{display:block!important}
+}
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-badge">ÉCONOMÉTRIE</div>
+  <h1>Tests d'hypothèses</h1>
+  <p class="subtitle">© Thomas Hossen – Version du 7 mars 2026</p>
+
+  <div id="controls-bar">
+    <div class="ctrls">
+      <div class="ctrl-g">
+        <span class="ctrl-lbl">Seed de reproductibilité</span>
+        <div class="seed-row">
+          <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="0" max="99999999">
+          <button class="btn-copy-seed" onclick="copySeed()" title="Copier la seed active">⧉ Copier</button>
+        </div>
+        <span class="ctrl-tip">Vide = aléatoire à chaque génération</span>
+      </div>
+      <div class="ctrl-vsep"></div>
+      <div class="ctrl-g">
+        <span class="ctrl-lbl">Observations <em>(n)</em></span>
+        <input class="ctrl-inp" type="number" id="param-n" min="20" max="200" placeholder="défaut">
+        <span class="ctrl-tip">20 – 200, auto si vide</span>
+      </div>
+      <div class="ctrl-vsep"></div>
+      <button class="btn-gen" onclick="generateFromControls()">Générer →</button>
+    </div>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" class="welcome-msg">
+    <span class="arrow">↑</span>
+    Configurez les paramètres (ou laissez vide pour de l'aléatoire), puis cliquez sur Générer.
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="top-bar-left">
+        <button class="btn-sm" onclick="regen()">↺ Nouvel énoncé</button>
+        <button class="btn-sm pdf" onclick="openPdfModal()">⬇ Exporter PDF</button>
+      </div>
+      <div class="seed-badge">Seed&nbsp;: <span id="seed-disp">—</span></div>
+    </div>
+
+    <div id="ex-card" class="card">
+      <div class="card-header"><span class="tag">Énoncé</span><h2 id="card-title">Tests d'hypothèses simples</h2></div>
+      <div class="card-body" id="ex-content"></div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag">Corrigé</span><h2>Tests d'hypothèses simples</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+
+  </div>
+</main>
+
+<div id="pdf-ov" onclick="closePdfModal()"></div>
+<div id="pdf-modal">
+  <div class="mh">
+    <h3>Exporter en PDF</h3>
+    <button class="mclose" onclick="closePdfModal()">✕</button>
+  </div>
+  <div class="mb2">
+    <div class="seed-note">Seed&nbsp;: <strong id="modal-seed">—</strong> — notez cette valeur pour reproduire exactement cet exercice.</div>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-header" checked>
+      <div><span class="opt-lbl">Inclure l'en-tête de page</span>
+           <span class="opt-desc">Titre, badge « ÉCONOMÉTRIE » et intitulé de l'exercice</span></div>
+    </label>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-sol">
+      <div><span class="opt-lbl">Inclure le corrigé complet</span>
+           <span class="opt-desc">Démonstrations des variables aléatoires et conclusions des tests</span></div>
+    </label>
+    <div class="mactions">
+      <button class="btn-print" onclick="doPrint()">🖨&nbsp;Imprimer / Sauvegarder PDF</button>
+      <button class="btn-cancel" onclick="closePdfModal()">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+// SEEDED PRNG — mulberry32
+// ════════════════════════════════════════
+let _rand, _activeSeed = 0;
+function initRand(seed) {
+  _activeSeed = seed >>> 0;
+  let s = _activeSeed;
+  _rand = () => {
+    s = (s + 0x6D2B79F5) >>> 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const rI = (a,b) => Math.floor(_rand()*(b-a+1))+a;
+const rA = arr => arr[Math.floor(_rand()*arr.length)];
+
+// ════════════════════════════════════════
+// STUDENT T APPROXIMATION 
+// ════════════════════════════════════════
+function studentTInv(p, df) {
+  const a0=2.50662823884, a1=-18.61500062529, a2=41.39119773534, a3=-25.44106049237;
+  const b1=-8.47351093090, b2=23.08336743743, b3=-21.06224101826, b4=3.13082909833;
+  const c0=-2.78718931138, c1=-2.29796479134, c2=4.85014127135, c3=2.32121276858;
+  const d1=3.5438892008, d2=1.63706780097;
+
+  let x = p - 0.5;
+  let r, z;
+  if (Math.abs(x) < 0.42) {
+    r = x * x;
+    z = x * (((a3 * r + a2) * r + a1) * r + a0) / ((((b4 * r + b3) * r + b2) * r + b1) * r + 1);
+  } else {
+    r = p;
+    if (x > 0) r = 1 - p;
+    r = Math.log(-Math.log(r));
+    z = c0 + r * (c1 + r * (c2 + r * c3));
+    z = z / (1 + r * (d1 + r * d2));
+    if (x < 0) z = -z;
+  }
+  
+  const z2 = z * z, z3 = z2 * z, z5 = z3 * z2, z7 = z5 * z2, z9 = z7 * z2;
+  const term1 = (z3 + z) / (4 * df);
+  const term2 = (5 * z5 + 16 * z3 + 3 * z) / (96 * df * df);
+  const term3 = (3 * z7 + 19 * z5 + 17 * z3 - 15 * z) / (384 * Math.pow(df, 3));
+  const term4 = (79 * z9 + 776 * z7 + 1482 * z5 - 1920 * z3 - 945 * z) / (92160 * Math.pow(df, 4));
+  
+  return z + term1 + term2 + term3 + term4;
+}
+
+// ════════════════════════════════════════
+// GENERATION LOGIC
+// ════════════════════════════════════════
+let solVisible = false;
+
+function regen() {
+  document.getElementById('seed-input').value = '';
+  generateFromControls();
+}
+
+function generateFromControls() {
+  const seedInp = document.getElementById('seed-input').value;
+  const seed = seedInp ? parseInt(seedInp) : Math.floor(Math.random()*10000000);
+  initRand(seed);
+  document.getElementById('seed-disp').textContent = seed;
+  document.getElementById('modal-seed').textContent = seed;
+  
+  const nInp = document.getElementById('param-n').value;
+  const n = nInp ? parseInt(nInp) : rI(30, 80);
+  const df = n - 3;
+  
+  // Paramètres MCO
+  const b0 = rI(-3000, 3000)/1000;
+  const b1 = rI(-3000, 3000)/1000;
+  const b2 = rI(-3000, 3000)/1000;
+  
+  // Variances
+  const v00 = rI(200, 800)/1000;
+  const v11 = rI(50, 400)/1000;
+  const v22 = rI(50, 400)/1000;
+  
+  // Covariances
+  const v01 = ((rI(0,1)?1:-1) * rI(10, Math.floor(Math.sqrt(v00*v11)*0.4*1000))/1000);
+  const v02 = ((rI(0,1)?1:-1) * rI(10, Math.floor(Math.sqrt(v00*v22)*0.4*1000))/1000);
+  const v12 = ((rI(0,1)?1:-1) * rI(10, Math.floor(Math.sqrt(v11*v22)*0.4*1000))/1000);
+
+  const fb0 = b0.toFixed(3), fb1 = b1.toFixed(3), fb2 = b2.toFixed(3);
+  const fv00 = v00.toFixed(3), fv11 = v11.toFixed(3), fv22 = v22.toFixed(3);
+  const fv01 = v01.toFixed(3), fv02 = v02.toFixed(3), fv12 = v12.toFixed(3);
+
+  // Configuration Questions (Interdiction du 0 pour c0, c1, c2 et sens opposé garanti Q2/Q3)
+  const C1 = rA([90, 95, 99]);
+  
+  let c0; do { c0 = rI(-2, 2); } while(c0 === 0);
+  const C2 = rA([90, 95, 99]);
+  const H1_b0_less = rI(0,1) === 1; 
+  
+  let c1; do { c1 = rI(-3, 3); } while(c1 === 0);
+  const C3 = rA([80, 90, 95]);
+  const H1_b1_less = !H1_b0_less; // On garantit que le sens est l'opposé de la Q2
+  
+  let c2; do { c2 = rI(-2, 2); } while(c2 === 0);
+  const C4 = rA([90, 95, 99]);
+  
+  const C5 = rA([90, 95, 99]);
+  
+  const C6 = rA([90, 95, 99]), lam1 = rA([2, 3, 4]), lam2 = rA([2, 3, 4]), c3 = rI(-2, 2), H1_comb_less = rI(0,1) === 1;
+
+  // Render HTML Énoncé
+  const opC3 = c3 >= 0 ? '+'+c3 : c3.toString();
+  let exHTML = `
+    <div class="context-block">
+      On considère le modèle linéaire \\(Y_i=b_0+b_1X_{1,i}+b_2X_{2,i}+u_i\\), où \\(u_i\\) est une variable aléatoire suivant les hypothèses du cadre de Gauss-Markov étendu. Ce modèle est estimé à l'aide de la méthode des moindres carrés ordinaires à partir de \\(n=${n}\\) observations, et on obtient les résultats suivants :
+      \\[\\widehat{\\textbf{b}}=\\begin{pmatrix}\\widehat{b}_0\\\\\\widehat{b}_1\\\\\\widehat{b}_2\\end{pmatrix}=\\begin{pmatrix}${fb0}\\\\${fb1}\\\\${fb2}\\end{pmatrix}\\quad\\text{et}\\quad\\Var{\\widehat{\\textbf{b}}}=\\begin{pmatrix}
+      ${fv00}&${fv01}&${fv02}\\\\${fv01}&${fv11}&${fv12}\\\\${fv02}&${fv12}&${fv22}
+      \\end{pmatrix}\\]
+    </div>
+    <div class="questions"><ol>
+      <li><div class="q-text">Tester la significativité des différents coefficients au seuil de confiance ${C1}&nbsp;%.</div></li>
+      <li><div class="q-text">Tester, au seuil de confiance ${C2}&nbsp;%, l'hypothèse \\((H_0):b_0=${c0}\\) contre l'hypothèse \\((H_1):b_0${H1_b0_less?'<':'>'}${c0}\\).</div></li>
+      <li><div class="q-text">Tester, au seuil de confiance ${C3}&nbsp;%, l'hypothèse \\((H_0):b_1=${c1}\\) contre \\((H_1):b_1${H1_b1_less?'<':'>'}${c1}\\).</div></li>
+      <li><div class="q-text">Tester, au seuil de confiance ${C4}&nbsp;%, l'hypothèse \\((H_0):b_2=${c2}\\) contre l'hypothèse \\((H_1):b_2\\ne ${c2}\\).</div></li>
+      <li><div class="q-text">On veut tester l'hypothèse nulle \\((H_0):b_1+b_2=0\\) contre l'hypothèse alternative \\((H_1):b_1+b_2\\ne 0\\). Quelle est la loi de \\(\\widehat{b}_1+\\widehat{b}_2\\)&nbsp;? Calculer la variance estimée de \\(\\widehat{b}_1+\\widehat{b}_2\\), puis mener le test d'hypothèse correspondant au seuil de confiance ${C5}&nbsp;%.</div></li>
+      <li><div class="q-text">On veut enfin tester l'hypothèse nulle \\((H_0):${lam1}b_2=${lam2}b_0${opC3}\\) contre l'hypothèse alternative \\((H_1):${lam1}b_2${H1_comb_less?'<':'>'}${lam2}b_0${opC3}\\). En vous inspirant de la question précédente, mener ce test d'hypothèse au seuil de confiance ${C6}&nbsp;%.</div></li>
+    </ol></div>
+  `;
+  document.getElementById('ex-content').innerHTML = exHTML;
+
+  // Render Corrigé
+  const fmt = (x) => x >= 0 ? '+'+x.toFixed(3) : x.toFixed(3);
+  const fmtP = (x) => x < 0 ? `(${x})` : x; 
+  let solHTML = `<div class="st"><ol><li><ul>`;
+  
+  // Q1
+  let p1 = 0.5 + C1/200, tc1 = studentTInv(p1, df);
+  let tests = [
+    {id:0, val:b0, v:v00, c:fb0, fv:fv00, var:'constante'},
+    {id:1, val:b1, v:v11, c:fb1, fv:fv11, var:'\\(b_1\\)'},
+    {id:2, val:b2, v:v22, c:fb2, fv:fv22, var:'\\(b_2\\)'}
+  ];
+  tests.forEach(t => {
+    let t_val = t.val / Math.sqrt(t.v), rej = Math.abs(t_val) > tc1;
+    solHTML += `<li>On veut ${t.id===0?'tout d\'abord':(t.id===1?'maintenant':'enfin')} tester l'hypothèse nulle \\((H_0):b_${t.id}=0\\) contre l'hypothèse alternative \\((H_1):b_${t.id}\\ne 0\\). On note \\(\\widehat{\\sigma}_${t.id}\\) la racine de la variance estimée de \\(\\widehat{b}_${t.id}\\). Alors, sous l'hypothèse nulle, la variable aléatoire \\(\\widehat{t}_${t.id}:=\\frac{\\widehat{b}_${t.id}}{\\widehat{\\sigma}_${t.id}}\\) suit une loi de Student à \\(${n}-(2+1)=${df}\\) degrés de liberté. Or on a :
+    \\[\\widehat{t}_${t.id}:=\\frac{\\widehat{b}_${t.id}}{\\widehat{\\sigma}_${t.id}}=\\frac{${t.c}}{\\sqrt{${t.fv}}}=${t_val.toFixed(3)}\\]
+    Or le quantile à ${C1 + (100-C1)/2}&nbsp;% d'une loi de Student à ${df} degrés de liberté est \\(t_{${df},${p1}} := ${tc1.toFixed(3)}\\). Comme on a \\(|\\widehat{t}_${t.id}| ${rej ? '>' : '<'} t_{${df},${p1}}\\), alors on ${rej ? 'rejette' : 'ne peut rejeter'} l'hypothèse nulle avec un risque d'erreur de ${100-C1}&nbsp;% : on conclut que la ${t.var} ${rej ? 'est significativement' : "n'est pas significativement"} différente de 0.</li>`;
+  });
+  solHTML += `</ul></li>`;
+
+  // Q2
+  let tq2 = (b0 - c0)/Math.sqrt(v00), p2 = C2/100, tc2 = studentTInv(p2, df);
+  let rej2 = H1_b0_less ? (tq2 < -tc2) : (tq2 > tc2);
+  let phr2 = rej2 ? `Comme on a \\(\\widehat{t}'_0 ${H1_b0_less?'< -':'> '} t_{${df},${p2}}\\), alors on peut rejeter` : `Comme on n'a pas \\(\\widehat{t}'_0 ${H1_b0_less?'< -':'> '} t_{${df},${p2}}\\), alors on ne peut pas rejeter`;
+  solHTML += `<li><div>On veut tester l'hypothèse nulle \\((H_0):b_0=${c0}\\) contre l'hypothèse alternative \\((H_1):b_0${H1_b0_less?'<':'>'}${c0}\\) (test unilatéral à ${H1_b0_less?'gauche':'droite'}). On note \\(\\widehat{\\sigma}_0\\) la racine de la variance estimée de \\(\\widehat{b}_0\\). Alors, sous l'hypothèse nulle, la variable aléatoire \\(\\widehat{t}'_0:=\\frac{\\widehat{b}_0-${fmtP(c0)}}{\\widehat{\\sigma}_0}\\) suit une loi de Student à \\(${df}\\) degrés de liberté. Or on a :
+  \\[\\widehat{t}'_0:=\\frac{\\widehat{b}_0-${fmtP(c0)}}{\\widehat{\\sigma}_0}=\\frac{${fb0}${fmt(-c0)}}{\\sqrt{${fv00}}}=${tq2.toFixed(3)}\\]
+  Or le quantile à ${C2}&nbsp;% d'une loi de Student à ${df} degrés de liberté est \\(t_{${df},${p2}} := ${tc2.toFixed(3)}\\). ${phr2} l'hypothèse nulle avec un niveau de confiance de ${C2}&nbsp;% : on conclut que \\(b_0\\) ${rej2 ? 'est significativement' : "n'est pas significativement"} ${H1_b0_less?'inférieur':'supérieur'} à \\(${c0}\\).</div></li>`;
+
+  // Q3
+  let tq3 = (b1 - c1)/Math.sqrt(v11), p3 = C3/100, tc3 = studentTInv(p3, df);
+  let rej3 = H1_b1_less ? (tq3 < -tc3) : (tq3 > tc3);
+  let phr3 = rej3 ? `Comme on a \\(\\widehat{t}'_1 ${H1_b1_less?'< -':'> '} t_{${df},${p3}}\\), alors on peut rejeter` : `Comme on n'a pas \\(\\widehat{t}'_1 ${H1_b1_less?'< -':'> '} t_{${df},${p3}}\\), alors on ne peut pas rejeter`;
+  solHTML += `<li><div>On veut tester l'hypothèse nulle \\((H_0):b_1=${c1}\\) contre l'hypothèse alternative \\((H_1):b_1${H1_b1_less?'<':'>'}${c1}\\) (test unilatéral à ${H1_b1_less?'gauche':'droite'}). On note \\(\\widehat{\\sigma}_1\\) la racine de la variance estimée de \\(\\widehat{b}_1\\). Alors, sous l'hypothèse nulle, la variable aléatoire \\(\\widehat{t}'_1:=\\frac{\\widehat{b}_1-${fmtP(c1)}}{\\widehat{\\sigma}_1}\\) suit une loi de Student à \\(${df}\\) degrés de liberté. Or on a :
+  \\[\\widehat{t}'_1:=\\frac{\\widehat{b}_1-${fmtP(c1)}}{\\widehat{\\sigma}_1}=\\frac{${fb1}${fmt(-c1)}}{\\sqrt{${fv11}}}=${tq3.toFixed(3)}\\]
+  Or le quantile à ${C3}&nbsp;% d'une loi de Student à ${df} degrés de liberté est \\(t_{${df},${p3}} := ${tc3.toFixed(3)}\\). ${phr3} l'hypothèse nulle avec un niveau de confiance de ${C3}&nbsp;% : on conclut que \\(b_1\\) ${rej3 ? 'est significativement' : "n'est pas significativement"} ${H1_b1_less?'inférieur':'supérieur'} à \\(${c1}\\).</div></li>`;
+
+  // Q4
+  let tq4 = (b2 - c2)/Math.sqrt(v22), p4 = 0.5 + C4/200, tc4 = studentTInv(p4, df), rej4 = Math.abs(tq4) > tc4;
+  solHTML += `<li><div>On veut à présent tester l'hypothèse nulle \\((H_0):b_2=${c2}\\) contre l'hypothèse alternative \\((H_1):b_2\\ne ${c2}\\). On note \\(\\widehat{\\sigma}_2\\) la racine de la variance estimée de \\(\\widehat{b}_2\\). Alors, sous l'hypothèse nulle, la variable aléatoire \\(\\widehat{t}_{3}:=\\frac{\\widehat{b}_2-${fmtP(c2)}}{\\widehat{\\sigma}_2}\\) suit une loi de Student à \\(${df}\\) degrés de liberté. Or on a :
+  \\[\\widehat{t}_{3}:=\\frac{\\widehat{b}_2-${fmtP(c2)}}{\\widehat{\\sigma}_2}=\\frac{${fb2}${fmt(-c2)}}{\\sqrt{${fv22}}}=${tq4.toFixed(3)}\\]
+  Or le quantile à ${C4 + (100-C4)/2}&nbsp;% d'une loi de Student à ${df} degrés de liberté est \\(t_{${df},${p4}} := ${tc4.toFixed(3)}\\). Comme on a \\(|\\widehat{t}_{3}| ${rej4 ? '>' : '<'} t_{${df},${p4}}\\), alors on ${rej4 ? 'rejette' : 'ne peut rejeter'} l'hypothèse nulle avec un risque d'erreur de ${100-C4}&nbsp;% : on conclut que \\(b_2\\) ${rej4 ? 'est significativement' : "n'est pas significativement"} différente de ${c2}.</div></li>`;
+
+  // Q5
+  let var_sum = v11 + v22 + 2*v12, tq5 = (b1 + b2)/Math.sqrt(var_sum), p5 = 0.5 + C5/200, tc5 = studentTInv(p5, df), rej5 = Math.abs(tq5) > tc5;
+  solHTML += `<li><div>Comme les erreurs sont supposées normalement distribuées et que les estimateurs des MCO sont des estimateurs linéaires (et sans biais), par stabilité de la loi normale, les \\(\\widehat{b}_i\\) sont tous normalement distribués. Par suite, \\(\\widehat{b}_1+\\widehat{b}_2\\) suit une loi normale d'espérance \\(b_1+b_2\\) et de variance \\(\\Var{\\widehat{b}_2}+\\Var{\\widehat{b}_1}+2\\Cov{\\widehat{b}_1,\\widehat{b}_2}\\). Or, d'après la matrice de variance-covariance de \\(\\widehat{\\textbf{b}}\\), la variance de \\(\\widehat{b}_1+\\widehat{b}_2\\) est estimée par \\(${fv11}+${fv22}+2\\times (${fv12})=${var_sum.toFixed(3)}\\). On peut alors tester l'hypothèse nulle \\((H_0):b_1+b_2=0\\) contre l'hypothèse alternative \\((H_1):b_1+b_2\\ne 0\\). On note en effet \\(\\widehat{\\sigma}^*\\) la racine de la variance estimée de \\(\\widehat{b}_1+\\widehat{b}_2\\). Alors, sous l'hypothèse nulle, la variable aléatoire \\(\\widehat{t}_4:=\\frac{\\widehat{b}_1+\\widehat{b}_2}{\\widehat{\\sigma}^*}\\) suit une loi de Student à \\(${df}\\) degrés de liberté. Or on a :
+  \\[\\widehat{t}_4:=\\frac{\\widehat{b}_1+\\widehat{b}_2}{\\widehat{\\sigma}^*}=\\frac{${fb1}${fmt(b2)}}{\\sqrt{${var_sum.toFixed(3)}}}=${tq5.toFixed(3)}\\]
+  Or le quantile à ${C5 + (100-C5)/2}&nbsp;% d'une loi de Student à ${df} degrés de liberté est \\(t_{${df},${p5}} := ${tc5.toFixed(3)}\\). Comme on a \\(|\\widehat{t}_4| ${rej5 ? '>' : '<'} t_{${df},${p5}}\\), alors on ${rej5 ? 'rejette' : 'ne peut rejeter'} l'hypothèse nulle avec un risque d'erreur de ${100-C5}&nbsp;% : on conclut que \\(b_1+b_2\\) ${rej5 ? 'est significativement' : "n'est pas significativement"} différent de 0.</div></li>`;
+
+  // Q6
+  let var_cb = lam1*lam1*v22 + lam2*lam2*v00 - 2*lam1*lam2*v02;
+  let tq6 = (lam1*b2 - lam2*b0 - c3)/Math.sqrt(var_cb), p6 = C6/100, tc6 = studentTInv(p6, df);
+  let rej6 = H1_comb_less ? (tq6 < -tc6) : (tq6 > tc6);
+  let phr6 = rej6 ? `Comme on a \\(\\widehat{t}_5 ${H1_comb_less?'< -':'> '} t_{${df},${p6}}\\), alors on peut rejeter` : `Comme on n'a pas \\(\\widehat{t}_5 ${H1_comb_less?'< -':'> '} t_{${df},${p6}}\\), alors on ne peut rejeter`;
+  solHTML += `<li><div>On veut tester \\((H_0):${lam1}b_2-${lam2}b_0=${c3}\\) contre \\((H_1):${lam1}b_2-${lam2}b_0${H1_comb_less?'<':'>'}${c3}\\). Par stabilité de la loi normale, \\(${lam1}\\widehat{b}_2-${lam2}\\widehat{b}_0\\) suit une loi normale d'espérance \\(${lam1}b_2-${lam2}b_0\\) et de variance \\(\\Var{${lam1}\\widehat{b}_2-${lam2}\\widehat{b}_0}=${lam1*lam1}\\Var{\\widehat{b}_2}+${lam2*lam2}\\Var{\\widehat{b}_0}-${2*lam1*lam2}\\Cov{\\widehat{b}_2,\\widehat{b}_0}\\). Or, d'après la matrice de variance-covariance de \\(\\widehat{\\textbf{b}}\\), la variance de \\(${lam1}\\widehat{b}_2-${lam2}\\widehat{b}_0\\) est estimée par \\(${lam1*lam1}\\times ${fv22} + ${lam2*lam2}\\times ${fv00} - ${2*lam1*lam2}\\times (${fv02}) = ${var_cb.toFixed(3)}\\). On note \\(\\widehat{\\sigma}^{**}\\) la racine de cette variance. Alors, sous l'hypothèse nulle, la variable aléatoire \\(\\widehat{t}_5:=\\frac{${lam1}\\widehat{b}_2-${lam2}\\widehat{b}_0-${fmtP(c3)}}{\\widehat{\\sigma}^{**}}\\) suit une loi de Student à \\(${df}\\) degrés de liberté. Or on a :
+  \\[\\widehat{t}_5:=\\frac{${lam1}\\times(${fb2})-${lam2}\\times(${fb0})${fmt(-c3)}}{\\sqrt{${var_cb.toFixed(3)}}}=${tq6.toFixed(3)}\\]
+  Or le quantile à ${C6}&nbsp;% d'une loi de Student à ${df} degrés de liberté est \\(t_{${df},${p6}} := ${tc6.toFixed(3)}\\). ${phr6} l'hypothèse nulle avec un risque d'erreur de ${100-C6}&nbsp;% : on conclut que \\(${lam1}b_2\\) ${rej6 ? 'est significativement' : "n'est pas significativement"} ${H1_comb_less?'inférieur':'supérieur'} à \\(${lam2}b_0${opC3}\\).</div></li>`;
+
+  solHTML += `</ol></div>`;
+  document.getElementById('sol-content').innerHTML = solHTML;
+
+  // Affichage
+  document.getElementById('welcome').style.display = 'none';
+  document.getElementById('ex-area').style.display = 'block';
+  solVisible = false;
+  let solC = document.getElementById('sol-card'), btn = document.getElementById('toggle-btn');
+  solC.classList.remove('visible'); btn.classList.remove('shown'); btn.textContent = 'Afficher le corrigé';
+
+  if (window.MathJax) MathJax.typesetPromise();
+}
+
+// ════════════════════════════════════════
+// UI / PDF EXPORT
+// ════════════════════════════════════════
+function toggleSol(){
+  solVisible = !solVisible;
+  const sol = document.getElementById('sol-card'), btn = document.getElementById('toggle-btn');
+  if(solVisible){sol.classList.add('visible'); btn.classList.add('shown'); btn.textContent = 'Masquer le corrigé';}
+  else{sol.classList.remove('visible'); btn.classList.remove('shown'); btn.textContent = 'Afficher le corrigé';}
+}
+
+function copySeed(){
+  const s = document.getElementById('seed-disp').textContent;
+  if(s && s !== '—'){
+    navigator.clipboard.writeText(s).then(() => {
+      const b = event.target, o = b.textContent;
+      b.textContent = '✓ Copié'; setTimeout(()=>b.textContent=o,1500);
+    });
+  }
+}
+
+function openPdfModal(){
+  document.getElementById('pdf-ov').style.display = 'block';
+  document.getElementById('pdf-modal').style.display = 'block';
+  document.getElementById('opt-sol').checked = solVisible;
+}
+function closePdfModal(){
+  document.getElementById('pdf-ov').style.display = 'none';
+  document.getElementById('pdf-modal').style.display = 'none';
+}
+function doPrint(){
+  const noHdr = !document.getElementById('opt-header').checked;
+  const inclSol = document.getElementById('opt-sol').checked;
+  const body = document.body;
+  if(noHdr) body.classList.add('print-no-header');
+  if(inclSol){body.classList.add('print-force-solution');body.classList.remove('print-no-solution');}
+  else{body.classList.add('print-no-solution');body.classList.remove('print-force-solution');}
+  closePdfModal();
+  setTimeout(() => {
+    window.print();
+    setTimeout(() => { body.classList.remove('print-no-header','print-force-solution','print-no-solution'); }, 500);
+  }, 100);
+}
+</script>
+
+</body>
+</html>

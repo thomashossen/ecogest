@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Finance - Choix d'Investissement</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['\\[', '\\]']]
+    }
+  };
+</script>
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7;text-align:justify;}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 1.5rem;border-bottom:3px solid var(--gold);text-align:left;}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end;background:rgba(255,255,255,.03);padding:1rem 1.5rem;border-radius:6px;border:1px solid rgba(255,255,255,.1)}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.6)}
+.ctrl-inp, .ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.4rem .7rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none;transition:border-color .2s}
+.ctrl-inp:focus, .ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.5rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;transition:background .18s;margin-left:auto}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN & CARDS */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:700}
+
+.top-actions{display:flex;gap:.5rem;}
+.btn-action{background:#fff;border:1px solid var(--border);color:var(--navy);padding:.4rem .8rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.85rem;font-weight:600;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.btn-action:hover{border-color:var(--navy);background:var(--cream-dark);}
+
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem;text-align:left;}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+
+.question-list { list-style-type: decimal; padding-left: 1.5rem; margin-bottom: 1.5rem; text-align: justify; }
+.question-list li { margin-bottom: 0.8rem; padding-left: 0.5rem; }
+.question-list li::marker { font-weight: 600; color: var(--navy); }
+
+/* EXAM TABLE */
+.exam-table-wrap { overflow-x: auto; margin: 1.5rem 0; }
+.exam-table{width:100%;border-collapse:collapse;font-size:.85rem;font-family:'Source Serif 4',serif;}
+.exam-table th, .exam-table td{border:1px solid var(--border);padding:.5rem;text-align:center;vertical-align:middle;}
+.exam-table th{background:var(--navy);color:var(--cream);font-weight:600;}
+.exam-table .txt-left{text-align:left;font-weight:600;color:var(--navy);}
+.exam-table .amt{font-family:'JetBrains Mono',monospace;text-align:right;white-space:nowrap;}
+
+/* SOLUTION TOGGLE */
+.sol-toggle-wrap{text-align:left; margin: 1.5rem 0 0 0;}
+.btn-toggle{background:transparent;border:2px solid var(--green);border-bottom:none;color:var(--green);font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;padding:.5rem 1.5rem;border-radius:4px 4px 0 0;cursor:pointer;transition:all .2s; position:relative; z-index:2; top:2px;}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--green);color:var(--cream)}
+.sol-card{border-top:2px solid var(--green);display:none; border-radius: 0 6px 6px 6px; position:relative; z-index:1;}
+.sol-card.visible{display:block;animation:fi .4s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+
+.calc-box{background:#f9fcf9;border:1px solid #c8e6c9;padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.9rem;color:var(--text);line-height:1.6;text-align:justify;}
+.math-formula { text-align: center; margin: 1.5rem 0; overflow-x: auto; }
+
+@media print{
+  body{background:#fff;}
+  header, .ctrls, .sol-toggle-wrap, .top-actions {display:none !important;}
+  .card{box-shadow:none; border:1px solid var(--border); margin-bottom:2rem;}
+  .sol-card{display:block !important; border-top:2px solid var(--green);}
+  #ex-area {display:block !important;}
+}
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-badge">MÉTHODE D'ÉVALUATION DES ACTIFS FINANCIERS</div>
+  <h1>Investissement et rentabilité</h1>
+  <p class="subtitle">© Thomas Hossen – Version du 7 mars 2026</p>
+  
+  <div class="ctrls">
+    <div class="ctrl-g">
+      <span class="ctrl-lbl">Seed (Optionnel)</span>
+      <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999">
+    </div>
+    <button class="btn-gen" onclick="generateExercise(false)">Générer l'exercice →</button>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" style="text-align:center; padding:4rem; color:var(--text-muted); font-style:italic;">
+    Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="seed-badge">Seed active : <span id="seed-disp"></span></div>
+      <div class="top-actions">
+        <button class="btn-action" onclick="generateExercise(true)">↺ Nouvel énoncé</button>
+        <button class="btn-action" onclick="window.print()">⬇ Exporter PDF</button>
+        <button class="btn-action" onclick="exportWord()">⬇ Exporter DOC</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="tag">Énoncé</span><h2>Choix d'investissement</h2></div>
+      <div class="card-body">
+        <div class="context-block" id="context-text"></div>
+        <p style="margin-bottom:1rem; font-weight:600; color:var(--red); text-align:left;">Travail à faire</p>
+        <ol class="question-list" id="events-list"></ol>
+      </div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag">Corrigé</span><h2>Choix d'investissement</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+// --- PRNG (Mulberry32) ---
+let currentSeed = 0;
+function seedPRNG(seed) {
+    return function() {
+      let t = seed += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+let random = Math.random;
+
+function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
+function formatMoney(num) { return num.toLocaleString('fr-FR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' €'; }
+
+// Fonctions de formatage strict pour le rendu LaTeX (MathJax)
+function texM(num) {
+    let sign = num < 0 ? "-" : "";
+    let absNum = Math.abs(num);
+    let parts = absNum.toFixed(2).split('.');
+    let intPart = parts[0].replace(/\\B(?=(\\d{3})+(?!\\d))/g, "\\,");
+    return sign + intPart + "{.}" + parts[1];
+}
+function texI(num) {
+    let sign = num < 0 ? "-" : "";
+    let absNum = Math.round(Math.abs(num));
+    return sign + absNum.toString().replace(/\\B(?=(\\d{3})+(?!\\d))/g, "\\,");
+}
+function texR(num) {
+    // Pour les pourcentages avec potentiellement des décimales
+    return Number(Math.round(num+'e2')+'e-2').toString().replace('.', '{.}');
+}
+
+function generateExercise(forceNew = false) {
+    if(forceNew) {
+        document.getElementById('seed-input').value = "";
+    }
+    let seedVal = document.getElementById('seed-input').value;
+    currentSeed = seedVal ? parseInt(seedVal) : Math.floor(Math.random() * 99999999);
+    document.getElementById('seed-disp').innerText = currentSeed;
+    document.getElementById('seed-input').value = currentSeed;
+    random = seedPRNG(currentSeed);
+
+    // Context
+    const companies = ["Café-Théâtre", "GastroPro", "FoodEquip", "RestoTech"];
+    const company = companies[randInt(0, companies.length-1)];
+
+    let isVanPositive = false;
+    let n, i0, taxRate, taxDec, amort, ca_base, ch_base, g_ca, g_ch, k1, k2;
+    let ca = [], ch = [], ebt = [], is = [], net = [], fnt = [], fnta = [], cumul = [];
+    let van1, van2;
+
+    // Génération du scénario (on boucle jusqu'à obtenir une VAN positive pour calculer un DRCI)
+    do {
+        n = randInt(4, 6);
+        i0 = randInt(45, 95) * 1000;
+        
+        let taxRates = [20, 25, 27.5, 33.33];
+        taxRate = taxRates[randInt(0, taxRates.length-1)];
+        taxDec = taxRate / 100;
+        
+        amort = i0 / n;
+        ca_base = Math.round(i0 * (randInt(80, 110)/100) / 1000) * 1000; 
+        ch_base = Math.round(ca_base * (randInt(40, 55)/100) / 1000) * 1000;
+        
+        g_ca = randInt(2, 5) / 100;
+        g_ch = randInt(1, 3) / 100;
+        
+        k1 = randInt(9, 14) / 100;
+        
+        ca = []; ch = []; ebt = []; is = []; net = []; fnt = []; fnta = []; cumul = [];
+        van1 = 0;
+        
+        let currentCumul = 0;
+        for(let i=1; i<=n; i++) {
+            let currentCa = ca_base * Math.pow(1 + g_ca, i - 1);
+            let currentCh = ch_base * Math.pow(1 + g_ch, i - 1);
+            
+            ca.push(currentCa);
+            ch.push(currentCh);
+            
+            let currentEbt = currentCa - currentCh - amort;
+            ebt.push(currentEbt);
+            
+            let currentIs = currentEbt * taxDec;
+            is.push(currentIs);
+            
+            let currentNet = currentEbt - currentIs;
+            net.push(currentNet);
+            
+            let currentFnt = currentNet + amort;
+            fnt.push(currentFnt);
+            
+            let currentFnta = currentFnt * Math.pow(1 + k1, -i);
+            fnta.push(currentFnta);
+            
+            currentCumul += currentFnta;
+            cumul.push(currentCumul);
+            
+            van1 += currentFnta;
+        }
+        van1 -= i0;
+        
+        if (van1 > 0) {
+            isVanPositive = true;
+        }
+    } while (!isVanPositive);
+
+    // Génération d'un deuxième taux pour forcer une VAN négative (Interpolation TRI)
+    k2 = k1 + 0.05;
+    do {
+        van2 = -i0;
+        for(let i=1; i<=n; i++) {
+            van2 += fnt[i-1] * Math.pow(1 + k2, -i);
+        }
+        if(van2 >= 0) k2 += 0.02;
+    } while (van2 >= 0);
+
+    // Calcul DRCI
+    let drciYear = -1;
+    let drciDays = 0;
+    for(let i=0; i<n; i++) {
+        if(cumul[i] >= i0) {
+            drciYear = i; 
+            let diff = i0 - (i === 0 ? 0 : cumul[i-1]);
+            let dailyFnta = fnta[i] / 360;
+            let daysNeeded = diff / dailyFnta;
+            drciDays = Math.round(daysNeeded);
+            break;
+        }
+    }
+    let drciMonths = Math.floor(drciDays / 30);
+    let drciRemDays = drciDays % 30;
+
+    // IP
+    let ip = (van1 + i0) / i0;
+
+    // Affichage Énoncé
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('ex-area').style.display = 'block';
+    document.getElementById('sol-card').classList.remove('visible');
+    document.getElementById('toggle-btn').innerText = "Afficher le corrigé";
+    document.getElementById('toggle-btn').classList.remove('shown');
+
+    document.getElementById('context-text').innerHTML = `
+      L'unité commerciale <strong>${company}</strong>, spécialisée dans la fabrication de machines pour les bars et restaurants, souhaite investir dans de nouvelles machines-outils. Le responsable vous informe des paramètres suivants pour cette étude de rentabilité prévisionnelle : acquisition de $${texI(i0)}$ euros HT au début de l'année $N$, amortissement linéaire sur ${n} ans, chiffre d'affaires supplémentaire de $${texI(ca_base)}$ euros la première année avec une croissance annuelle de $${Math.round(g_ca*100)}\\,\\%$, charges annuelles de $${texI(ch_base)}$ euros la première année avec une inflation de $${Math.round(g_ch*100)}\\,\\%$, valeur résiduelle nulle, taux d'impôt de $${texR(taxRate)}\\,\\%$.
+    `;
+
+    let htmlEnonce = "";
+
+    htmlEnonce += `<li>Etablir le tableau des flux nets de trésorerie de l'entreprise de l'année $N$ à l'année $N+${n-1}$.</li>`;
+    htmlEnonce += `<li>Compléter le tableau précédent en ajoutant les flux nets actualisés au taux de $${Math.round(k1*100)}\\,\\%$.</li>`;
+    htmlEnonce += `<li>Calculer la valeur actuelle nette (VAN) du projet. L'entreprise doit-elle investir ?</li>`;
+    htmlEnonce += `<li>Retrouver le résultat de la question précédente en utilisant le critère de l'indice de profitabilité (IP).</li>`;
+    htmlEnonce += `<li>Calculer le délai de récupération du capital investi (DRCI). Commenter.</li>`;
+    htmlEnonce += `<li>On suppose que, pour un taux d'actualisation de $${Math.round(k2*100)}\\,\\%$, la VAN s'établirait à $${texM(van2)}$ euros. Proposer une approximation du taux de rentabilité interne (TRI) du projet.</li>`;
+
+    document.getElementById('events-list').innerHTML = htmlEnonce;
+
+    // --- GÉNÉRATION CORRIGÉ ---
+    let htmlSol = "";
+
+    function generateFntTable(includeActualise) {
+        let thead = `<tr><th>Éléments</th>`;
+        for(let i=0; i<n; i++) {
+            thead += `<th>N${i===0 ? '' : ' + '+i}</th>`;
+        }
+        thead += `</tr>`;
+        
+        let rowCa = `<tr><td class="txt-left">Chiffre d'affaires</td>`;
+        let rowCh = `<tr><td class="txt-left">Charges annuelles</td>`;
+        let rowAm1 = `<tr><td class="txt-left">Amortissement</td>`;
+        let rowEbt = `<tr><td class="txt-left">Résultat avant IS</td>`;
+        let rowIs = `<tr><td class="txt-left">Impôt sur les sociétés</td>`;
+        let rowNet = `<tr><td class="txt-left">Résultat net</td>`;
+        let rowAm2 = `<tr><td class="txt-left">Amortissement</td>`;
+        let rowFnt = `<tr><td class="txt-left">Flux nets de trésorerie</td>`;
+        let rowFnta = includeActualise ? `<tr><td class="txt-left">Flux de trésorerie actualisé</td>` : "";
+
+        for(let i=0; i<n; i++) {
+            rowCa += `<td class="amt">${formatMoney(ca[i])}</td>`;
+            rowCh += `<td class="amt">${formatMoney(ch[i])}</td>`;
+            rowAm1 += `<td class="amt">${formatMoney(amort)}</td>`;
+            rowEbt += `<td class="amt">${formatMoney(ebt[i])}</td>`;
+            rowIs += `<td class="amt">${formatMoney(is[i])}</td>`;
+            rowNet += `<td class="amt">${formatMoney(net[i])}</td>`;
+            rowAm2 += `<td class="amt">${formatMoney(amort)}</td>`;
+            rowFnt += `<td class="amt">${formatMoney(fnt[i])}</td>`;
+            if(includeActualise) rowFnta += `<td class="amt">${formatMoney(fnta[i])}</td>`;
+        }
+        
+        rowCa += `</tr>`; rowCh += `</tr>`; rowAm1 += `</tr>`; rowEbt += `</tr>`; 
+        rowIs += `</tr>`; rowNet += `</tr>`; rowAm2 += `</tr>`; rowFnt += `</tr>`;
+        if(includeActualise) rowFnta += `</tr>`;
+
+        return `<div class="exam-table-wrap"><table class="exam-table">${thead}${rowCa}${rowCh}${rowAm1}${rowEbt}${rowIs}${rowNet}${rowAm2}${rowFnt}${rowFnta}</table></div>`;
+    }
+
+    htmlSol += `<div class="calc-box">`;
+    htmlSol += `<ol class="question-list" style="margin-bottom:0;">`;
+
+    // Q1
+    htmlSol += `<li>En reprenant les données de l'énoncé, on constate que le chiffre d'affaires débute à $${texI(ca_base)}$ euros et croît de $${Math.round(g_ca*100)}\\,\\%$ par an. Les charges suivent une logique similaire avec une croissance de $${Math.round(g_ch*100)}\\,\\%$ à partir de $${texI(ch_base)}$ euros. L'amortissement linéaire se calcule en divisant $${texI(i0)}$ euros par ${n}, soit $${texI(amort)}$ euros par an. Le résultat courant avant impôt est égal aux encaissements moins les décaissements. Pour l'année $N$, cela donne $${texI(ca[0])} - ${texI(ch[0])} - ${texI(amort)} = ${texI(ebt[0])}$ euros. L'impôt sur les sociétés correspond à $${texI(ebt[0])} \\times ${texR(taxRate)}\\,\\% = ${texM(is[0])}$ euros. Le résultat net après impôt vaut $${texI(ebt[0])} - ${texM(is[0])} = ${texM(net[0])}$ euros. On réintègre ensuite l'amortissement, qui est une charge non décaissée, de $${texI(amort)}$ euros. Le flux net de trésorerie annuel pour l'année $N$ est alors de $${texM(net[0])} + ${texI(amort)} = ${texM(fnt[0])}$ euros. Le tableau des flux nets de trésorerie (FNT) rempli reprend ces calculs pour chaque exercice de $N$ à $N+${n-1}$ :
+    ${generateFntTable(false)}</li>`;
+
+    // Q2
+    htmlSol += `<li>Pour chaque période $N+i$, le flux net actualisé se calcule à partir du flux net de trésorerie annuel à l'aide de la formule $\\text{FNT actualisé} = \\text{FNT annuel} \\times (1 + \\text{taux})^{-(i+1)}$. En appliquant un taux d'actualisation de $${Math.round(k1*100)}\\,\\%$ et en reprenant par exemple le FNT de la première année de $${texM(fnt[0])}$ euros, on obtient pour la période 1 (année $N$) le calcul suivant : $${texM(fnt[0])} \\times (1 + ${texR(k1*100)}\\,\\%)^{-1} = ${texM(fnta[0])}$ euros. On procède de la même manière pour chaque année afin de compléter la ligne des FNT actualisés :
+    ${generateFntTable(true)}</li>`;
+
+    // Q3
+    let decisionVan = van1 > 0 ? "la VAN étant positive, l'unité commerciale peut envisager l'investissement dans ces nouvelles machines" : "la VAN étant négative, le projet détruit de la valeur et doit être rejeté";
+    htmlSol += `<li>La valeur actuelle nette se détermine en retranchant le montant de l'investissement à la somme des FNT actualisés, soit $\\text{VAN} = \\sum \\text{FNT actualisés} - \\text{Investissement}$. En additionnant les FNT actualisés successifs ($${texM(fnta[0])}$ euros, $${texM(fnta[1])}$ euros, etc.), la somme atteint $${texM(van1 + i0)}$ euros. La VAN vaut donc $${texM(van1 + i0)} - ${texI(i0)} = ${texM(van1)}$ euros. Par conséquent, ${decisionVan}.</li>`;
+
+    // Q4
+    let decisionIp = ip > 1 ? "comme l'indice est supérieur à 1, l'unité commerciale peut envisager d'investir dans la solution" : "l'indice étant inférieur à 1, le projet n'est pas jugé rentable";
+    htmlSol += `<li>L'indice de profitabilité est égal au rapport entre la somme des FNT actualisés et le montant de l'investissement, soit $\\text{IP} = \\frac{\\sum \\text{FNT actualisés}}{\\text{Investissement}}$. En retenant la somme de $${texM(van1 + i0)}$ euros et un investissement de $${texI(i0)}$ euros, on obtient $\\text{IP} = ${texM(van1 + i0)} \\div ${texI(i0)} = ${texM(ip)}$. Ainsi, ${decisionIp}.</li>`;
+
+    // Q5
+    let yearLabelMinus1 = drciYear === 0 ? "N-1" : (drciYear === 1 ? "N" : "N+" + (drciYear - 1));
+    let yearLabelCurrent = drciYear === 0 ? "N" : "N+" + drciYear;
+    let cumulMinus1 = drciYear === 0 ? 0 : cumul[drciYear - 1];
+    let cumulCurrent = cumul[drciYear];
+    let fntaCurrent = fnta[drciYear];
+    let drciDiff = i0 - cumulMinus1;
+    let dailyCurrent = fntaCurrent / 360;
+
+    htmlSol += `<li>Le DRCI s'obtient en cumulant les FNT actualisés année après année jusqu'à atteindre ou dépasser le montant investi. On reporte pour $N$ le FNT actualisé de l'année, puis on additionne successivement pour les années suivantes, par exemple $${texM(fnta[0])} + ${texM(fnta[1])} = ${texM(cumul[1])}$ euros pour $N+1$, et l'on poursuit jusqu'à constater par simple lecture que le cumul dépasse $${texI(i0)}$ euros (il atteint $${texM(cumulCurrent)}$ euros) dès la fin de l'année ${yearLabelCurrent}. Pour connaître précisément le DRCI, on procède par interpolation linéaire. Au dernier jour de l'année ${yearLabelMinus1}, on a $${texM(cumulMinus1)}$ euros cumulés, au dernier jour de l'année ${yearLabelCurrent}, on a $${texM(cumulCurrent)}$ euros cumulés. À partir de quand a-t-on récupéré $${texI(i0)}$ euros exactement ? En un an, la somme des FNT actualisés a crû de $${texM(cumulCurrent)} - ${texM(cumulMinus1)} = ${texM(fntaCurrent)}$ euros, soit environ $${texM(fntaCurrent)} \\div 360 \\approx ${texM(dailyCurrent)}$ euros par jour en moyenne (on rappelle qu'en analyse financière, tous les mois ont 30 jours). Pour aller de $${texM(cumulMinus1)}$ à $${texI(i0)}$ euros, on a besoin de $${texM(drciDiff)}$ euros, soit $${texM(drciDiff)} \\div ${texM(dailyCurrent)} \\approx ${drciDays}$ jours. C'est donc au bout de ${drciDays} jours, soit ${drciMonths} mois et ${drciRemDays} jours, après la fin de l'année ${yearLabelMinus1} que le DRCI est atteint. Ainsi, le DRCI est de ${drciYear} an(s), ${drciMonths} mois et ${drciRemDays} jour(s). Le délai de récupération étant inférieur à la durée du projet (${n} ans), l'investissement peut être retenu.</li>`;
+
+    // Q6 (TRI Interpolation)
+    let k1_pct = Math.round(k1 * 100);
+    let k2_pct = Math.round(k2 * 100);
+    let deltaK_pct = k2_pct - k1_pct;
+    let deltaVan = van2 - van1;
+    let b = deltaVan / (deltaK_pct / 100); 
+    let a = van1 - b * (k1_pct / 100);
+    let tri = -a / b;
+
+    htmlSol += `<li>Le TRI est le taux qui annule la VAN et se déduit par interpolation linéaire entre deux taux encadrant le zéro. On a deux points : pour un taux de $${k1_pct}\\,\\%$, la VAN vaut $${texM(van1)}$ euros ; pour un taux de $${k2_pct}\\,\\%$, elle vaut $${texM(van2)}$ euros. On suppose qu'on a $\\text{VAN} = a + b \\times \\text{Taux}$. On est donc amené à résoudre le système suivant, à deux inconnues réelles $a$ et $b$ :
+        <div class="math-formula">\\[(S):\\begin{cases}
+        ${texM(van1)} &= a + b \\times ${k1_pct}\\,\\% \\\\\\\\
+        ${texM(van2)} &= a + b \\times ${k2_pct}\\,\\%
+        \\end{cases}\\]</div>
+        Or on a :
+        <div class="math-formula">\\[\\begin{aligned}
+        (S)
+        &\\iff\\begin{cases}
+        ${texM(van1)} = a + b \\times ${k1_pct}\\,\\% \\\\\\\\
+        ${texM(van2)} - ${texM(van1)} = (a - a) + b \\times (${k2_pct}\\,\\% - ${k1_pct}\\,\\%)
+        \\end{cases} \\\\\\\\
+        &\\iff\\begin{cases}
+        ${texM(van1)} = a + b \\times ${k1_pct}\\,\\% \\\\\\\\
+        ${texM(deltaVan)} = b \\times ${deltaK_pct}\\,\\%
+        \\end{cases} \\\\\\\\
+        &\\iff\\begin{cases}
+        b = \\frac{${texM(deltaVan)}}{${deltaK_pct}\\,\\%} \\approx ${texM(b)} \\\\\\\\
+        a = ${texM(van1)} - (${texM(b)}) \\times ${k1_pct}\\,\\% \\approx ${texM(a)}
+        \\end{cases}
+        \\end{aligned}\\]</div>
+        On cherche maintenant la valeur TRI telle que $a + b \\times \\text{TRI} = 0$, c'est-à-dire $\\text{TRI} = -\\frac{a}{b}$. On trouve donc $\\text{TRI} \\approx \\frac{${texM(-a)}}{${texM(b)}} \\approx ${(tri*100).toFixed(2)}\\,\\%$.</li>`;
+
+    htmlSol += `</ol></div>`;
+
+    document.getElementById('sol-content').innerHTML = htmlSol;
+    
+    // On force MathJax à faire le rendu une fois le DOM mis à jour
+    if (window.MathJax) {
+        MathJax.typesetPromise();
+    }
+}
+
+function toggleSol() {
+    let solCard = document.getElementById('sol-card');
+    let btn = document.getElementById('toggle-btn');
+    if(solCard.classList.contains('visible')) {
+        solCard.classList.remove('visible');
+        btn.innerText = "Afficher le corrigé";
+        btn.classList.remove('shown');
+    } else {
+        solCard.classList.add('visible');
+        btn.innerText = "Masquer le corrigé";
+        btn.classList.add('shown');
+    }
+}
+
+function exportWord() {
+    let content = document.getElementById('ex-area').cloneNode(true);
+    let actions = content.querySelector('.top-actions');
+    if(actions) actions.parentNode.removeChild(actions);
+    let toggle = content.querySelector('.sol-toggle-wrap');
+    if(toggle) toggle.parentNode.removeChild(toggle);
+    let solCard = content.querySelector('#sol-card');
+    if(solCard) solCard.style.display = 'block';
+
+    let html = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <meta charset='utf-8'>
+            <title>Exercice Finance</title>
+            <style>
+                body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5; text-align: justify; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                th, td { border: 1px solid #000; padding: 5px; }
+                th { background-color: #f2f2f2; text-align: center; font-weight: bold; }
+                .amt { text-align: right; white-space: nowrap; }
+                .txt-left { text-align: left; font-weight: bold; }
+                .calc-box { border: 1px solid #000; padding: 10px; margin-bottom: 15px; background-color: #f9f9f9; text-align: justify; }
+                .math-formula { text-align: center; font-style: italic; margin: 10px 0; }
+                ol { text-align: justify; }
+                li { margin-bottom: 5px; }
+            </style>
+        </head>
+        <body>
+            ${content.innerHTML}
+        </body>
+        </html>
+    `;
+    
+    let blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    let url = URL.createObjectURL(blob);
+    let link = document.createElement('a');
+    link.href = url;
+    link.download = 'Exercice_Choix_Investissement.doc';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>

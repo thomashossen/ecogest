@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Finance - Options Barrières</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['\\[', '\\]']],
+      macros: {
+        E: ['\\mathbb{E}\\left[#1\\right]', 1],
+        P: ['\\mathbb{P}\\left(#1\\right)', 1],
+        ee: '\\text{e}',
+        mathds: ['\\mathbb{#1}', 1]
+      }
+    }
+  };
+</script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --blue:#2a6bc9;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7;text-align:justify;}
+
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 1.5rem;border-bottom:3px solid var(--gold);text-align:left;}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end;background:rgba(255,255,255,.03);padding:1rem 1.5rem;border-radius:6px;border:1px solid rgba(255,255,255,.1)}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.6)}
+.ctrl-inp, .ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.4rem .7rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none;transition:border-color .2s}
+.ctrl-inp:focus, .ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.5rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;transition:background .18s;margin-left:auto}
+.btn-gen:hover{background:var(--gold-light)}
+
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:700}
+
+.top-actions{display:flex;gap:.5rem;}
+.btn-action{background:#fff;border:1px solid var(--border);color:var(--navy);padding:.4rem .8rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.85rem;font-weight:600;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.btn-action:hover{border-color:var(--navy);background:var(--cream-dark);}
+
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem;text-align:left;}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+
+.sol-toggle-wrap{text-align:left; margin: 1.5rem 0 0 0;}
+.btn-toggle{background:transparent;border:2px solid var(--green);border-bottom:none;color:var(--green);font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;padding:.5rem 1.5rem;border-radius:4px 4px 0 0;cursor:pointer;transition:all .2s; position:relative; z-index:2; top:2px;}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--green);color:var(--cream)}
+.sol-card{border-top:2px solid var(--green);display:none; border-radius: 0 6px 6px 6px; position:relative; z-index:1;}
+.sol-card.visible{display:block;animation:fi .4s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+
+.calc-box{background:#f9fcf9;border:1px solid #c8e6c9;padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.9rem;color:var(--text);line-height:1.6;text-align:justify;}
+.math-formula { text-align: center; margin: 1.2rem 0; overflow-x: auto; }
+
+.chart-container { width: 100%; display: flex; justify-content: center; margin: 2rem 0; }
+.svg-chart { background: #fcfcfc; border: 1px solid var(--border); border-radius: 4px; box-shadow: inset 0 2px 8px rgba(0,0,0,0.02); }
+
+@media print{
+  body{background:#fff;}
+  header, .ctrls, .sol-toggle-wrap, .top-actions {display:none !important;}
+  .card{box-shadow:none; border:1px solid var(--border); margin-bottom:2rem;}
+  .sol-card{display:block !important; border-top:2px solid var(--green);}
+  #ex-area {display:block !important;}
+}
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-badge">PRODUITS DÉRIVÉS ET STRATÉGIES DE COUVERTURE</div>
+  <h1>Options exotiques</h1>
+  <p class="subtitle">© Thomas Hossen – Version du 7 mars 2026</p>
+  
+  <div class="ctrls">
+    <div class="ctrl-g">
+      <span class="ctrl-lbl">Type d'Option</span>
+      <select class="ctrl-sel" id="opt-select">
+        <option value="UOC">Up-and-out call (UOC)</option>
+        <option value="DOC">Down-and-out call (DOC)</option>
+        <option value="UIC">Up-and-in call (UIC)</option>
+        <option value="DIC">Down-and-in call (DIC)</option>
+        <option value="UOP">Up-and-out put (UOP)</option>
+        <option value="DOP">Down-and-out put (DOP)</option>
+        <option value="UIP">Up-and-in put (UIP)</option>
+        <option value="DIP">Down-and-in put (DIP)</option>
+      </select>
+    </div>
+    <div class="ctrl-g">
+      <span class="ctrl-lbl">Seed (Optionnel)</span>
+      <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999">
+    </div>
+    <button class="btn-gen" onclick="generateExercise(false)">Générer l'exercice →</button>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" style="text-align:center; padding:4rem; color:var(--text-muted); font-style:italic;">
+    Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice sur les options barrières.
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="seed-badge">Seed active : <span id="seed-disp"></span></div>
+      <div class="top-actions">
+        <button class="btn-action" onclick="generateExercise(true)">↺ Nouvel énoncé</button>
+        <button class="btn-action" onclick="window.print()">⬇ Exporter PDF</button>
+        <button class="btn-action" onclick="exportWord()">⬇ Exporter DOC</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="tag">Énoncé</span><h2>Option barrière</h2></div>
+      <div class="card-body">
+        <div class="context-block" id="context-text"></div>
+        <p id="enonce-actions" style="margin-bottom:1rem; color:var(--navy); text-align:justify;"></p>
+      </div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag">Corrigé</span><h2>Option barrière</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+let currentSeed = 0;
+function seedPRNG(seed) {
+    return function() {
+      let t = seed += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+let random = Math.random;
+function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
+
+function texI(num) {
+    let sign = num < 0 ? "-" : "";
+    let absNum = Math.round(Math.abs(num));
+    return sign + absNum.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "\\,");
+}
+
+function generateExercise(forceNew = false) {
+    if(forceNew) {
+        document.getElementById('seed-input').value = "";
+    }
+    let seedVal = document.getElementById('seed-input').value;
+    currentSeed = seedVal ? parseInt(seedVal) : Math.floor(Math.random() * 99999999);
+    document.getElementById('seed-disp').innerText = currentSeed;
+    document.getElementById('seed-input').value = currentSeed;
+    random = seedPRNG(currentSeed);
+
+    let optType = document.getElementById('opt-select').value;
+    
+    let isCall = optType.endsWith("C");
+    let isUp = optType.startsWith("U");
+    let isIn = optType.charAt(1) === "I";
+    let typeName = optType === "UOC" ? "up-and-out call" :
+                   optType === "DOC" ? "down-and-out call" :
+                   optType === "UIC" ? "up-and-in call" :
+                   optType === "DIC" ? "down-and-in call" :
+                   optType === "UOP" ? "up-and-out put" :
+                   optType === "DOP" ? "down-and-out put" :
+                   optType === "UIP" ? "up-and-in put" : "down-and-in put";
+    
+    let euroType = isCall ? "call européen" : "put européen";
+
+    const companies = ["Amazonia", "GigaTech", "NovaPharma", "EcoBank", "BlueSpace"];
+    let company = companies[randInt(0, companies.length-1)];
+
+    let S0 = randInt(90, 120);
+    let K, B;
+
+    // Logique avancée pour générer des cas asymétriques très instructifs
+    if (isUp) {
+        B = S0 + randInt(15, 35);
+        if (isCall) {
+            K = B - randInt(10, 40); // S0 < K < B ou K < S0 < B
+        } else {
+            K = B + randInt(5, 20);  // K > B : Intéressant car systématiquement ITM si survie
+        }
+    } else {
+        B = S0 - randInt(15, 35);
+        if (isCall) {
+            K = B - randInt(5, 20);  // K < B : Intéressant car systématiquement ITM si survie
+        } else {
+            K = B + randInt(10, 40); // B < K < S0 ou B < S0 < K
+        }
+    }
+    // Sécurité visuelle
+    if (K === B) K += 5;
+
+    let pi = randInt(12, 25);
+    let piB = pi - randInt(4, 9); // Prime barrière strictement inférieure
+
+    // SÉCURITÉ : S'assurer que l'option barrière peut passer au moins une fois strictement positive
+    if (isUp && !isIn && isCall && (B - K <= piB)) { // Pour le UOC
+        K = B - piB - randInt(2, 10);
+    } else if (!isUp && !isIn && !isCall && (K - B <= piB)) { // Pour le DOP
+        K = B + piB + randInt(2, 10);
+    }
+
+    let dirCond = isUp ? "demeure strictement en dessous de" : "demeure strictement au-dessus de";
+    let breakCond = isUp ? "franchit à la hausse au moins une fois" : "franchit à la baisse au moins une fois";
+
+    let contextHTML = `Soit un <em>${typeName}</em> de maturité $T=1$ an, de <em>strike</em> $K=${K}$, de barrière $B=${B}$, sur l'action ${company}, dont le prix spot actuel est de $S_0=${S0}$. Cette option est vendue $\\pi_B=${piB}$ euros, contre $\\pi=${pi}$ euros pour un <em>${euroType}</em> de même <em>strike</em> et de même maturité (sans barrière). `;
+    
+    if (isUp && !isIn && isCall) contextHTML += `Vous souhaitez parier sur une hausse de l'action ${company} sans croire à une envolée supérieure à $B$. `;
+    if (!isUp && !isIn && isCall) contextHTML += `Vous êtes haussier mais vous souhaitez vous protéger en payant moins cher, excluant un effondrement du titre sous $B$. `;
+    if (isUp && isIn && isCall) contextHTML += `Vous anticipez un mouvement haussier très fort et durable, capable de franchir le seuil $B$. `;
+    if (!isUp && isIn && isCall) contextHTML += `Vous pariez sur un creux suivi d'un rebond vigoureux au-delà de $K$ (stratégie <em>buy the dip</em>). `;
+    if (isUp && !isIn && !isCall) contextHTML += `Vous cherchez une couverture contre une baisse sans redouter de forte hausse préalable au-delà de $B$. `;
+    if (!isUp && !isIn && !isCall) contextHTML += `Vous vous couvrez contre des baisses modérées en acceptant de ne pas être protégé en cas de krach sous $B$. `;
+    if (isUp && isIn && !isCall) contextHTML += `Vous anticipez une surchauffe du marché au-delà de $B$ suivie d'un retournement violent. `;
+    if (!isUp && isIn && !isCall) contextHTML += `Vous anticipez une chute extrêmement sévère du marché sous $B$. `;
+    
+    contextHTML += `Vous décidez donc d'acheter ce <em>${typeName}</em>.`;
+
+    document.getElementById('context-text').innerHTML = contextHTML;
+
+    let enonceText = `Rappeler à quelles conditions le <em>${typeName}</em> générera un paiement pour l'acheteur. Justifier alors la valeur intrinsèque et le <em>payoff</em> du <em>${typeName}</em> et du <em>${euroType}</em> en fonction de ces conditions. Tracer enfin sur un même graphique le <em>payoff</em> à maturité du <em>${typeName}</em> si la barrière est franchie, le <em>payoff</em> à maturité du <em>${typeName}</em> si la barrière ne l'est pas et le <em>payoff</em> à maturité du <em>${euroType}</em>.`;
+    document.getElementById('enonce-actions').innerHTML = enonceText;
+
+    // --- CORRIGÉ ---
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('ex-area').style.display = 'block';
+    document.getElementById('sol-card').classList.remove('visible');
+    document.getElementById('toggle-btn').innerText = "Afficher le corrigé";
+    document.getElementById('toggle-btn').classList.remove('shown');
+
+    let condPaieText = "";
+    if (!isIn) { // OUT
+        condPaieText = `cela signifie que ce produit ne paiera que si le cours de l'action ${company} ${dirCond} $B=${B}$ au cours de l'année qui suit l'acquisition du <em>${typeName}</em>`;
+    } else { // IN
+        condPaieText = `cela signifie que ce produit ne paiera que si le cours de l'action ${company} ${breakCond} $B=${B}$ au cours de l'année qui suit l'acquisition du <em>${typeName}</em>`;
+    }
+
+    let valIntrinsicEq = isCall ? `\\max(S_T-K,0)` : `\\max(K-S_T,0)`;
+    let valIntrinsicDev = isCall ? `S_T-${K}` : `${K}-S_T`;
+    let payoffCond = isCall ? `dépasse $K=${K}$` : `n'excède pas $K=${K}$`;
+    let noPayoffCond = isCall ? `n'excède pas $K=${K}$` : `dépasse $K=${K}$`;
+    let symbolOpt = optType;
+
+    let solText = `<div class="calc-box">On considère un <em>${typeName}</em> de maturité $T=1$ an, de <em>strike</em> $K=${K}$, de barrière $B=${B}$, sur l'action ${company}, dont le prix spot actuel est de $S_0=${S0}$. L'analyse contractuelle est la suivante. ${condPaieText.charAt(0).toUpperCase() + condPaieText.slice(1)}.<br><br>`;
+
+    if (!isIn) { // OUT
+        solText += `Dès lors, la valeur intrinsèque du <em>${typeName}</em> vaudra $\\Psi_T^{${symbolOpt}}=0$ si le cours de ${company} ${breakCond} $B=${B}$ au cours de l'année. Le <em>payoff</em> du <em>${typeName}</em> s'établira alors à $\\Psi_T^{${symbolOpt}}-\\pi_B=-${piB}$ (perte sèche). En revanche, si le cours de l'action ${company} ${dirCond} $B=${B}$ au cours de l'année, alors la valeur intrinsèque de ce dernier vaudra $\\Psi_T^{${symbolOpt}}=${valIntrinsicEq}$, soit $\\Psi_T^{${symbolOpt}}=${valIntrinsicDev}$ (d'où un <em>payoff</em> de $\\Psi_T^{${symbolOpt}}-\\pi_B=${valIntrinsicDev}-${piB}$) si le prix spot à l'échéance ${payoffCond}, et $\\Psi_T^{${symbolOpt}}=0$ (d'où un <em>payoff</em> de $\\Psi_T^{${symbolOpt}}-\\pi_B=-${piB}$) s'il ${noPayoffCond}. `;
+    } else { // IN
+        solText += `Dès lors, la valeur intrinsèque du <em>${typeName}</em> vaudra $\\Psi_T^{${symbolOpt}}=0$ si le cours de ${company} ${dirCond} $B=${B}$ au cours de l'année. Le <em>payoff</em> du <em>${typeName}</em> s'établira alors à $\\Psi_T^{${symbolOpt}}-\\pi_B=-${piB}$ (perte sèche). En revanche, si le cours de l'action ${company} ${breakCond} $B=${B}$ au cours de l'année, alors l'option s'active et la valeur intrinsèque de ce dernier vaudra $\\Psi_T^{${symbolOpt}}=${valIntrinsicEq}$, soit $\\Psi_T^{${symbolOpt}}=${valIntrinsicDev}$ (d'où un <em>payoff</em> de $\\Psi_T^{${symbolOpt}}-\\pi_B=${valIntrinsicDev}-${piB}$) si le prix spot à l'échéance ${payoffCond}, et $\\Psi_T^{${symbolOpt}}=0$ (d'où un <em>payoff</em> de $\\Psi_T^{${symbolOpt}}-\\pi_B=-${piB}$) s'il ${noPayoffCond}. `;
+    }
+
+    // Fait notable
+    let faitNotable = "";
+    if (!isIn && !isUp && isCall && K < B) {
+        faitNotable = `<br><br><strong>Fait notable.</strong> L'architecture de cette option est particulièrement intéressante. Comme le prix d'exercice $K=${K}$ est inférieur à la barrière $B=${B}$, si le <em>${typeName}</em> survit jusqu'à l'échéance (ce qui implique obligatoirement $S_T \\ge B$), il finira mécaniquement et systématiquement dans la monnaie car $S_T > K$.`;
+    } else if (!isIn && isUp && !isCall && K > B) {
+        faitNotable = `<br><br><strong>Fait notable.</strong> L'architecture de cette option est particulièrement intéressante. Comme le prix d'exercice $K=${K}$ est supérieur à la barrière $B=${B}$, si le <em>${typeName}</em> survit jusqu'à l'échéance (ce qui implique obligatoirement $S_T \\le B$), il finira mécaniquement et systématiquement dans la monnaie car $S_T < K$.`;
+    }
+    solText += faitNotable;
+
+    let symbolEuro = isCall ? "C" : "P";
+    solText += `<br><br>Par suite, le <em>${euroType}</em> aura une valeur intrinsèque inconditionnelle à maturité de $\\Psi_T^{${symbolEuro}}=${valIntrinsicEq}$, soit $\\Psi_T^{${symbolEuro}}=${valIntrinsicDev}$ si le prix spot à l'échéance ${payoffCond} (donnant un <em>payoff</em> de $\\Psi_T^{${symbolEuro}}-\\pi=${valIntrinsicDev}-${pi}$) et $\\Psi_T^{${symbolEuro}}=0$ si le prix spot à l'échéance ${noPayoffCond} (donnant un <em>payoff</em> de $\\Psi_T^{${symbolEuro}}-\\pi=-${pi}$). On en déduit alors le graphique suivant avec, en <span style="color:var(--green);font-weight:bold;">vert</span>, le <em>payoff</em> du <em>${euroType}</em>, en <span style="color:var(--blue);font-weight:bold;">bleu</span>, celui du <em>${typeName}</em> lorsque la barrière est franchie et, en <span style="color:var(--red);font-weight:bold;">rouge</span>, celui du <em>${typeName}</em> lorsqu'elle ne l'est pas.</div>`;
+
+    // --- GENERATION DU SVG ---
+    let svgWidth = 800;
+    let svgHeight = 420;
+    let marginX = 60;
+    let marginY = 60;
+
+    let minX = 0;
+    let maxX = Math.max(K * 1.5, B * 1.3, S0 * 1.3);
+    
+    function getEuro(s) { return Math.max(0, isCall ? s - K : K - s) - pi; }
+    function getActiveBar(s) { return Math.max(0, isCall ? s - K : K - s) - piB; }
+    function getDeadBar(s) { return -piB; }
+
+    let allY = [getEuro(0), getEuro(K), getEuro(maxX), getActiveBar(0), getActiveBar(K), getActiveBar(maxX), getDeadBar(0)];
+    let maxY = Math.max(...allY, 5) + 5;
+    let minY = Math.min(...allY, -5) - 5;
+
+    function mapX(x) { return marginX + ((x - minX) / (maxX - minX)) * (svgWidth - 2*marginX); }
+    function mapY(y) { return svgHeight - marginY - ((y - minY) / (maxY - minY)) * (svgHeight - 2*marginY); }
+
+    let zeroY = mapY(0);
+
+    let svgHtml = `<div class="chart-container"><svg class="svg-chart" width="${svgWidth}" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}">`;
+    
+    // Axes
+    svgHtml += `<line x1="${marginX}" y1="${zeroY}" x2="${svgWidth-10}" y2="${zeroY}" stroke="#1a2e42" stroke-width="2" />`; 
+    
+    // Arrow X
+    svgHtml += `<polygon points="${svgWidth-10},${zeroY-5} ${svgWidth},${zeroY} ${svgWidth-10},${zeroY+5}" fill="#1a2e42" />`;
+    svgHtml += `<text x="${svgWidth-15}" y="${zeroY+20}" font-family="'Source Serif 4', serif" font-size="14" fill="#1a2e42" text-anchor="end">S<tspan dy="3" font-size="0.8em">T</tspan></text>`;
+    
+    // Y axis 
+    let xZero = mapX(0);
+    svgHtml += `<line x1="${xZero}" y1="${svgHeight-marginY}" x2="${xZero}" y2="${10}" stroke="#1a2e42" stroke-width="2" />`;
+    svgHtml += `<polygon points="${xZero-5},10 ${xZero},0 ${xZero+5},10" fill="#1a2e42" />`;
+    svgHtml += `<text x="${xZero-10}" y="${20}" font-family="'Source Serif 4', serif" font-size="14" fill="#1a2e42" text-anchor="end">Payoff</text>`;
+
+    // Dashed lines for K and B
+    svgHtml += `<line x1="${mapX(K)}" y1="${zeroY}" x2="${mapX(K)}" y2="${mapY(getEuro(K))}" stroke="#c9952a" stroke-width="1.5" stroke-dasharray="5,5" />`;
+    svgHtml += `<text x="${mapX(K)}" y="${zeroY + 20}" font-family="'Source Serif 4', serif" font-size="13" fill="#1a2e42" text-anchor="middle">K=${K}</text>`;
+    
+    svgHtml += `<line x1="${mapX(B)}" y1="${zeroY}" x2="${mapX(B)}" y2="${mapY(getActiveBar(B))}" stroke="#c9952a" stroke-width="1.5" stroke-dasharray="5,5" />`;
+    svgHtml += `<text x="${mapX(B)}" y="${zeroY - 10}" font-family="'Source Serif 4', serif" font-size="13" fill="#1a2e42" text-anchor="middle">B=${B}</text>`;
+
+    // --- PATHS ---
+    // 1. Euro (Green)
+    let ptsEuro = [[0, getEuro(0)], [K, getEuro(K)], [maxX, getEuro(maxX)]];
+    let dEuro = `M ${mapX(ptsEuro[0][0])} ${mapY(ptsEuro[0][1])} L ${mapX(ptsEuro[1][0])} ${mapY(ptsEuro[1][1])} L ${mapX(ptsEuro[2][0])} ${mapY(ptsEuro[2][1])}`;
+    svgHtml += `<path d="${dEuro}" fill="none" stroke="#2d6b4a" stroke-width="3" />`;
+
+    let colHit = "#2a6bc9"; // Blue
+    let colNotHit = "#b94040"; // Red
+
+    // Segmentation of X axis based on K and B to draw pieces accurately
+    let ptsX = [0, K, B, maxX];
+    ptsX = [...new Set(ptsX)].sort((a,b) => a-b);
+    
+    let prevYNotHit = null;
+
+    for (let i = 0; i < ptsX.length - 1; i++) {
+        let xStart = ptsX[i];
+        let xEnd = ptsX[i+1];
+        if(xStart === xEnd) continue;
+
+        let xMid = (xStart + xEnd) / 2;
+        let isValidNotHit = isUp ? (xMid < B) : (xMid > B);
+        
+        let yHitStart, yHitEnd, dashHit;
+        let yNotHitStart, yNotHitEnd, dashNotHit;
+
+        if (!isIn) { // OUT options
+            yHitStart = getDeadBar(xStart);
+            yHitEnd = getDeadBar(xEnd);
+            dashHit = true; 
+
+            if (isValidNotHit) {
+                yNotHitStart = getActiveBar(xStart);
+                yNotHitEnd = getActiveBar(xEnd);
+                dashNotHit = (yNotHitStart === -piB && yNotHitEnd === -piB);
+            } else {
+                yNotHitStart = getDeadBar(xStart);
+                yNotHitEnd = getDeadBar(xEnd);
+                dashNotHit = true;
+            }
+        } else { // IN options
+            yHitStart = getActiveBar(xStart);
+            yHitEnd = getActiveBar(xEnd);
+            dashHit = (yHitStart === -piB && yHitEnd === -piB);
+
+            if (isValidNotHit) {
+                yNotHitStart = getDeadBar(xStart);
+                yNotHitEnd = getDeadBar(xEnd);
+                dashNotHit = true;
+            } else {
+                yNotHitStart = getActiveBar(xStart);
+                yNotHitEnd = getActiveBar(xEnd);
+                dashNotHit = (yNotHitStart === -piB && yNotHitEnd === -piB);
+            }
+        }
+
+        // Draw mathematical jump for the Red curve if discontinuity exists
+        if (prevYNotHit !== null && Math.abs(prevYNotHit - yNotHitStart) > 0.01) {
+            svgHtml += `<line x1="${mapX(xStart)}" y1="${mapY(prevYNotHit)}" x2="${mapX(xStart)}" y2="${mapY(yNotHitStart)}" stroke="${colNotHit}" stroke-width="2.5" stroke-dasharray="3,4" opacity="0.7" />`;
+        }
+        prevYNotHit = yNotHitEnd;
+
+        // Offset to prevent perfect overlap visually between Red and Blue
+        let offsetBlue = (Math.abs(yHitStart - yNotHitStart) < 0.01) ? 3 : 0;
+        
+        // Blue (Hit)
+        svgHtml += `<line x1="${mapX(xStart)}" y1="${mapY(yHitStart)+offsetBlue}" x2="${mapX(xEnd)}" y2="${mapY(yHitEnd)+offsetBlue}" stroke="${colHit}" stroke-width="${dashHit ? 2.5 : 3.5}" ${dashHit ? 'stroke-dasharray="4,4"' : ''} />`;
+        
+        // Red (Not Hit)
+        svgHtml += `<line x1="${mapX(xStart)}" y1="${mapY(yNotHitStart)}" x2="${mapX(xEnd)}" y2="${mapY(yNotHitEnd)}" stroke="${colNotHit}" stroke-width="${dashNotHit ? 2.5 : 3.5}" ${dashNotHit ? 'stroke-dasharray="6,4"' : ''} />`;
+    }
+
+    // Y Axis Text Labels (Cleaned)
+    svgHtml += `<text x="${xZero-10}" y="${mapY(-pi)+7}" font-family="'Source Serif 4', serif" font-size="13" fill="#2d6b4a" text-anchor="end">Eur : -${pi}</text>`;
+    svgHtml += `<text x="${xZero-10}" y="${mapY(-piB)+1}" font-family="'Source Serif 4', serif" font-size="13" fill="#1a2e42" text-anchor="end">Bar : -${piB}</text>`;
+    
+    svgHtml += `<line x1="${xZero-5}" y1="${mapY(-pi)}" x2="${xZero+5}" y2="${mapY(-pi)}" stroke="#2d6b4a" stroke-width="2" />`;
+    svgHtml += `<line x1="${xZero-5}" y1="${mapY(-piB)}" x2="${xZero+5}" y2="${mapY(-piB)}" stroke="#1a2e42" stroke-width="2" />`;
+
+    // Max payoff label logic
+    let achievableMaxX = isCall ? maxX : 0;
+    if (!isIn) {
+        if (isUp && isCall) achievableMaxX = B;     // UOC maximal payoff est à la barrière B
+        if (!isUp && !isCall) achievableMaxX = B;   // DOP maximal payoff est à la barrière B
+    }
+
+    let maxB_Payoff = getActiveBar(achievableMaxX);
+    if (maxB_Payoff > 0) {
+        svgHtml += `<text x="${xZero-10}" y="${mapY(maxB_Payoff)+5}" font-family="'Source Serif 4', serif" font-size="13" fill="#1a2e42" text-anchor="end">${texI(maxB_Payoff)}</text>`;
+        svgHtml += `<line x1="${xZero-5}" y1="${mapY(maxB_Payoff)}" x2="${xZero+5}" y2="${mapY(maxB_Payoff)}" stroke="#1a2e42" stroke-width="2" />`;
+        svgHtml += `<line x1="${xZero}" y1="${mapY(maxB_Payoff)}" x2="${mapX(achievableMaxX)}" y2="${mapY(maxB_Payoff)}" stroke="#1a2e42" stroke-width="1" stroke-dasharray="4,4" opacity="0.3"/>`;
+        
+        // On dessine l'abscisse en pointillé seulement pour les calls ET si la ligne n'est pas déjà dessinée par la Barrière B
+        if (isCall && achievableMaxX !== B) {
+            svgHtml += `<line x1="${mapX(achievableMaxX)}" y1="${zeroY}" x2="${mapX(achievableMaxX)}" y2="${mapY(maxB_Payoff)}" stroke="#1a2e42" stroke-width="1" stroke-dasharray="4,4" opacity="0.3"/>`;
+            svgHtml += `<text x="${mapX(achievableMaxX)}" y="${zeroY + 20}" font-family="'Source Serif 4', serif" font-size="13" fill="#1a2e42" text-anchor="middle">${Math.round(achievableMaxX)}</text>`;
+        }
+    }
+
+    svgHtml += `</svg></div>`;
+
+    document.getElementById('sol-content').innerHTML = solText + svgHtml;
+    
+    if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
+        MathJax.typesetPromise().catch(function (err) {
+            console.error('Erreur MathJax :', err);
+        });
+    }
+}
+
+function toggleSol() {
+    let solCard = document.getElementById('sol-card');
+    let btn = document.getElementById('toggle-btn');
+    if(solCard.classList.contains('visible')) {
+        solCard.classList.remove('visible');
+        btn.innerText = "Afficher le corrigé";
+        btn.classList.remove('shown');
+    } else {
+        solCard.classList.add('visible');
+        btn.innerText = "Masquer le corrigé";
+        btn.classList.add('shown');
+    }
+}
+
+function exportWord() {
+    let content = document.getElementById('ex-area').cloneNode(true);
+    let actions = content.querySelector('.top-actions');
+    if(actions) actions.parentNode.removeChild(actions);
+    let toggle = content.querySelector('.sol-toggle-wrap');
+    if(toggle) toggle.parentNode.removeChild(toggle);
+    let solCard = content.querySelector('#sol-card');
+    if(solCard) solCard.style.display = 'block';
+
+    let html = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <meta charset='utf-8'>
+            <title>Exercice Options Barrières</title>
+            <style>
+                body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5; text-align: justify; }
+                .calc-box { border: 1px solid #000; padding: 10px; margin-bottom: 15px; background-color: #f9f9f9; text-align: justify; }
+                .math-formula { text-align: center; font-style: italic; margin: 10px 0; }
+                .chart-container { margin: 20px 0; text-align: center; }
+            </style>
+        </head>
+        <body>
+            ${content.innerHTML}
+        </body>
+        </html>
+    `;
+    
+    let blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    let url = URL.createObjectURL(blob);
+    let link = document.createElement('a');
+    link.href = url;
+    link.download = 'Exercice_Options_Barrieres.doc';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Finance - Évaluation des Actifs Financiers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['\\[', '\\]']]
+    }
+  };
+</script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7;text-align:justify;}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 1.5rem;border-bottom:3px solid var(--gold);text-align:left;}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end;background:rgba(255,255,255,.03);padding:1rem 1.5rem;border-radius:6px;border:1px solid rgba(255,255,255,.1)}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.6)}
+.ctrl-inp, .ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.4rem .7rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none;transition:border-color .2s}
+.ctrl-inp:focus, .ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.5rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;transition:background .18s;margin-left:auto}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN & CARDS */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:700}
+
+.top-actions{display:flex;gap:.5rem;}
+.btn-action{background:#fff;border:1px solid var(--border);color:var(--navy);padding:.4rem .8rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.85rem;font-weight:600;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.btn-action:hover{border-color:var(--navy);background:var(--cream-dark);}
+
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem;text-align:left;}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+.event-list{list-style:none;}
+.event-list > li{margin-bottom:1.5rem;padding-left:1.5rem;position:relative;font-size:.95rem;text-align:justify}
+.event-list > li::before{content:"•";position:absolute;left:0;color:var(--gold);font-size:1.5rem;line-height:1}
+.sub-list { list-style-type: decimal; padding-left: 1.5rem; margin-top: 0.5rem; }
+.sub-list li { margin-bottom: 0.5rem; }
+
+/* EXAM TABLE */
+.exam-table{width:100%;border-collapse:collapse;font-size:.85rem;font-family:'Source Serif 4',serif; margin: 1.5rem 0;}
+.exam-table th, .exam-table td{border:1px solid var(--border);padding:.6rem;text-align:center;vertical-align:middle;}
+.exam-table th{background:var(--navy);color:var(--cream);font-weight:600;}
+.exam-table .txt-left{text-align:left;font-weight:600;color:var(--navy);}
+
+/* SOLUTION TOGGLE */
+.sol-toggle-wrap{text-align:left; margin: 1.5rem 0 0 0;}
+.btn-toggle{background:transparent;border:2px solid var(--green);border-bottom:none;color:var(--green);font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;padding:.5rem 1.5rem;border-radius:4px 4px 0 0;cursor:pointer;transition:all .2s; position:relative; z-index:2; top:2px;}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--green);color:var(--cream)}
+.sol-card{border-top:2px solid var(--green);display:none; border-radius: 0 6px 6px 6px; position:relative; z-index:1;}
+.sol-card.visible{display:block;animation:fi .4s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+
+.calc-box{background:#f9fcf9;border:1px solid #c8e6c9;padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.9rem;color:var(--text);line-height:1.6;text-align:justify;}
+.math-formula { text-align: center; margin: 1.2rem 0; overflow-x: auto; }
+
+@media print{
+  body{background:#fff;}
+  header, .ctrls, .sol-toggle-wrap, .top-actions {display:none !important;}
+  .card{box-shadow:none; border:1px solid var(--border); margin-bottom:2rem;}
+  .sol-card{display:block !important; border-top:2px solid var(--green);}
+  #ex-area {display:block !important;}
+}
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-badge">MÉTHODE D'ÉVALUATION DES ACTIFS FINANCIERS</div>
+  <h1>Valorisation des actifs et stratégies de change</h1>
+  <p class="subtitle">© Thomas Hossen – Version du 7 mars 2026</p>
+  
+  <div class="ctrls">
+    <div class="ctrl-g">
+      <span class="ctrl-lbl">Seed (Optionnel)</span>
+      <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999">
+    </div>
+    <button class="btn-gen" onclick="generateExercise(false)">Générer l'exercice →</button>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" style="text-align:center; padding:4rem; color:var(--text-muted); font-style:italic;">
+    Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="seed-badge">Seed active : <span id="seed-disp"></span></div>
+      <div class="top-actions">
+        <button class="btn-action" onclick="generateExercise(true)">↺ Nouvel énoncé</button>
+        <button class="btn-action" onclick="window.print()">⬇ Exporter PDF</button>
+        <button class="btn-action" onclick="exportWord()">⬇ Exporter DOC</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="tag">Énoncé</span><h2>Évaluation et stratégie financière</h2></div>
+      <div class="card-body">
+        <div class="context-block" id="context-text"></div>
+        <ul class="event-list" id="events-list"></ul>
+      </div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag">Corrigé</span><h2>Évaluation et stratégie financière</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+// --- PRNG (Mulberry32) ---
+let currentSeed = 0;
+function seedPRNG(seed) {
+    return function() {
+      let t = seed += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+let random = Math.random;
+
+function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
+
+// Fonctions de formatage strict pour le rendu LaTeX (MathJax)
+function texM(num) {
+    let sign = num < 0 ? "-" : "";
+    let absNum = Math.abs(num);
+    absNum = Math.round(absNum * 100) / 100; // Force la précision stricte à 2 décimales
+    let parts = absNum.toFixed(2).split('.');
+    let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, "\\,");
+    return sign + intPart + "{.}" + parts[1];
+}
+function texI(num) {
+    let sign = num < 0 ? "-" : "";
+    let absNum = Math.round(Math.abs(num));
+    return sign + absNum.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "\\,");
+}
+function texBeta(num) {
+    let sign = num < 0 ? "-" : "";
+    let absNum = Math.abs(num);
+    absNum = Math.round(absNum * 100) / 100;
+    let parts = absNum.toString().split('.');
+    let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, "\\,");
+    if(parts.length > 1) return sign + intPart + "{.}" + parts[1];
+    return sign + intPart;
+}
+function texR(num) {
+    return Number(Math.round(num+'e4')+'e-4').toString().replace('.', '{.}');
+}
+
+function generateExercise(forceNew = false) {
+    if(forceNew) {
+        document.getElementById('seed-input').value = "";
+    }
+    let seedVal = document.getElementById('seed-input').value;
+    currentSeed = seedVal ? parseInt(seedVal) : Math.floor(Math.random() * 99999999);
+    document.getElementById('seed-disp').innerText = currentSeed;
+    document.getElementById('seed-input').value = currentSeed;
+    random = seedPRNG(currentSeed);
+
+    // --- DOSSIER 1 : OBLIGATION ---
+    let n_obs = randInt(3, 4); 
+    let nominal = 100; 
+    let c_rate_pct = randInt(2, 6);
+    let c_rate = c_rate_pct / 100;
+    let coupon = nominal * c_rate;
+    
+    let r_market_pct = c_rate_pct + (randInt(0, 1) === 0 ? randInt(1, 3) : -randInt(1, 2));
+    if (r_market_pct <= 0) r_market_pct = 1;
+    let r_market = r_market_pct / 100;
+
+    let price = 0;
+    for(let t=1; t<=n_obs; t++) {
+        price += coupon / Math.pow(1 + r_market, t);
+    }
+    price += nominal / Math.pow(1 + r_market, n_obs);
+
+    let durationNum = 0;
+    for(let t=1; t<=n_obs; t++) {
+        durationNum += (t * coupon) / Math.pow(1 + r_market, t);
+    }
+    durationNum += (n_obs * nominal) / Math.pow(1 + r_market, n_obs);
+    let duration = durationNum / price;
+
+    let totalDays = Math.round(duration * 360);
+    let d_years = Math.floor(totalDays / 360);
+    let remDays = totalDays % 360;
+    let d_months = Math.floor(remDays / 30);
+    let d_days = remDays % 30;
+
+    let sensitivity = duration / (1 + r_market);
+
+    // --- DOSSIER 2 : ACTION (Gordon-Shapiro) ---
+    let d0 = randInt(20, 80) / 10; 
+    let g_rate_pct = randInt(1, 4); 
+    let g_rate = g_rate_pct / 100;
+    let k_rate_pct = g_rate_pct + randInt(4, 7); 
+    let k_rate = k_rate_pct / 100;
+    
+    let d1 = d0 * (1 + g_rate);
+    let v0 = d1 / (k_rate - g_rate);
+
+    // --- DOSSIER 3 : MEDAF (CAPM) ---
+    const capmScenarios = [
+        { pi: [0.5, 0.3, 0.2], beta: [0, -2, 8], w: [0.1, 0.45, 0.27, 0.18] },
+        { pi: [0.4, 0.2, 0.4], beta: [0, -1, 3], w: [0.1, 0.40, 0.20, 0.30] },
+        { pi: [0.5, 0.25, 0.25], beta: [0, -2, 6], w: [0.1, 0.50, 0.20, 0.20] }
+    ];
+    let scen = capmScenarios[randInt(0, capmScenarios.length-1)];
+    
+    let v_tot_opts = [500, 1000, 2000, 5000];
+    let v_tot = v_tot_opts[randInt(0, v_tot_opts.length-1)];
+    let v_A = v_tot * scen.pi[0];
+    let v_B = v_tot * scen.pi[1];
+    let v_C = v_tot * scen.pi[2];
+
+    let rf_medaf_pct = randInt(2, 4); 
+    let premium_opts = [0.25, 0.5, 0.75, 1];
+    let premium_pct = premium_opts[randInt(0, premium_opts.length-1)];
+    
+    let mu_M_pct = rf_medaf_pct + premium_pct;
+    let mu_A_pct = rf_medaf_pct + scen.beta[0] * premium_pct;
+    let mu_B_pct = rf_medaf_pct + scen.beta[1] * premium_pct;
+    let mu_C_pct = rf_medaf_pct + scen.beta[2] * premium_pct;
+
+    let port_w_opts = [100, 200, 500];
+    let port_W = port_w_opts[randInt(0, port_w_opts.length-1)];
+    let amt_f = Math.round(port_W * scen.w[0]);
+    let amt_A = Math.round(port_W * scen.w[1]);
+    let amt_B = Math.round(port_W * scen.w[2]);
+    let amt_C = Math.round(port_W * scen.w[3]);
+
+    let mu_P_pct = scen.w[0]*rf_medaf_pct + scen.w[1]*mu_A_pct + scen.w[2]*mu_B_pct + scen.w[3]*mu_C_pct;
+    let beta_P = (mu_P_pct - rf_medaf_pct) / premium_pct;
+
+    // --- DOSSIER 4 : CARRY TRADE ---
+    let r_eur_pct = randInt(35, 55) / 10;
+    let r_jpy_pct = randInt(1, 5) / 10;
+    let diff_r_pct = r_eur_pct - r_jpy_pct;
+    
+    let amt_opts = [100000, 250000, 500000];
+    let ct_amt = amt_opts[randInt(0, amt_opts.length-1)];
+    
+    let ct_spot = randInt(14000, 16500) / 100;
+    let ct_days = [60, 90, 120][randInt(0,2)];
+
+    let daily_gain_exact = ct_amt * (diff_r_pct / 100) / 360;
+    let cumul_gain_exact = daily_gain_exact * ct_days;
+    let gain_jpy_exact = cumul_gain_exact * ct_spot;
+    let drop_jpy_exact = gain_jpy_exact / ct_amt;
+    let s_be_exact = ct_spot - drop_jpy_exact;
+    let var_pct_exact = (s_be_exact - ct_spot) / ct_spot * 100;
+
+    // Affichage Énoncé
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('ex-area').style.display = 'block';
+    document.getElementById('sol-card').classList.remove('visible');
+    document.getElementById('toggle-btn').innerText = "Afficher le corrigé";
+    document.getElementById('toggle-btn').classList.remove('shown');
+
+    document.getElementById('context-text').innerHTML = `
+      Vous intégrez le département d'analyse financière d'une société de gestion de portefeuille. Votre responsable vous demande d'évaluer théoriquement plusieurs actifs et stratégies d'investissement afin de décider de leur intégration dans le fonds de l'entreprise.
+    `;
+
+    let htmlEnonce = "";
+
+    htmlEnonce += `<li><strong>Dossier 1 — Évaluation d'une obligation.</strong> Vous étudiez une obligation classique in fine d'une valeur nominale de $${texI(nominal)}$ euros. Son taux de coupon annuel est fixé à $${texM(c_rate_pct)}\\,\\%$ et sa maturité résiduelle est de ${n_obs} ans. Le taux d'intérêt exigé par le marché pour des obligations de risque équivalent s'établit aujourd'hui à $${texM(r_market_pct)}\\,\\%$. Déterminez le prix théorique de cette obligation. Calculez ensuite sa duration ainsi que sa sensibilité en interprétant précisément ces deux indicateurs.</li>`;
+    
+    htmlEnonce += `<li><strong>Dossier 2 — Valorisation d'une action.</strong> Vous analysez l'action d'une entreprise cotée. Le dernier dividende net versé par l'entreprise ($D_0$) s'élève à $${texM(d0)}$ euros. Les analystes estiment que ce dividende croîtra de manière perpétuelle et constante au taux annuel de $${texM(g_rate_pct)}\\,\\%$. Le taux de rentabilité exigé par les actionnaires pour ce niveau de risque est de $${texM(k_rate_pct)}\\,\\%$. En utilisant le modèle d'actualisation des dividendes de Gordon-Shapiro, déterminez la valeur théorique de cette action aujourd'hui.</li>`;
+
+    htmlEnonce += `<li><strong>Dossier 3 — Modèle d'évaluation des actifs financiers (MEDAF).</strong> On se place sous les hypothèses du modèle d'évaluation des actifs financiers. Supposons que le portefeuille de marché soit composé de trois titres risqués, notés $A$, $B$ et $C$. Les valeurs (en milliards d'euros) de ces actifs dans le portefeuille du marché et les rendements espérés $\\mu_A$, $\\mu_B$ et $\\mu_C$ sont donnés par le tableau suivant :
+    <table class="exam-table" style="width: 80%; margin: 1rem auto;">
+        <tr><th>Actif</th><th>$A$</th><th>$B$</th><th>$C$</th></tr>
+        <tr><td class="txt-left">Capitalisation</td><td>$${texI(v_A)}$</td><td>$${texI(v_B)}$</td><td>$${texI(v_C)}$</td></tr>
+        <tr><td class="txt-left">Rendement espéré</td><td>$${texM(mu_A_pct)}\\,\\%$</td><td>$${texM(mu_B_pct)}\\,\\%$</td><td>$${texM(mu_C_pct)}\\,\\%$</td></tr>
+    </table>
+    Donner le vecteur poids du portefeuille de marché $M$ et en déduire sa rentabilité espérée. Calculer pour chaque actif son $\\beta$, sachant que le rendement sans risque est $r_f=${texM(rf_medaf_pct)}\\,\\%$. Par suite, considérons un portefeuille où l'on place (valeurs en milliers d'euros), ${amt_f} dans l'actif sans risque, ${amt_A} dans l'actif $A$, ${amt_B} dans l'actif $B$ et ${amt_C} dans l'actif $C$. Donner alors le $\\beta$ d'un tel portefeuille et son rendement attendu. Qu'en pensez-vous ?</li>`;
+
+    htmlEnonce += `<li><strong>Dossier 4 — <em>Carry trade</em> EUR/JPY.</strong> Le taux directeur de la Banque centrale européenne (BCE) s'établit à $${texM(r_eur_pct)}\\,\\%$ l'an et le taux directeur de la Banque du Japon (BoJ) à $${texM(r_jpy_pct)}\\,\\%$ l'an. Un investisseur institutionnel décide de mettre en œuvre une stratégie de <em>carry trade</em> : il emprunte $${texI(ct_amt)}$ euros à $${texM(r_jpy_pct)}\\,\\%$ l'an (taux de financement yen, reflété dans le coût du <em>rollover overnight</em>) et place le produit en euros à $${texM(r_eur_pct)}\\,\\%$ l'an. Le taux de change EUR/JPY au comptant est de $${texM(ct_spot)}$ yens pour un euro le jour d'initiation de la position.
+    <ol class="sub-list">
+        <li>Calculez le gain de portage (<em>carry income</em>) quotidien net pour une position de $${texI(ct_amt)}$ euros, en appliquant la convention 360 jours.</li>
+        <li>Calculez le gain de portage cumulé sur une période de <em>holding</em> de ${ct_days} jours ouvrés consécutifs, en supposant une reconduction quotidienne de la position sans variation de taux directeurs.</li>
+        <li>Déterminez le niveau du taux de change EUR/JPY en dessous duquel la stratégie devient déficitaire au bout de ${ct_days} jours (seuil de <em>break-even</em>).</li>
+        <li>Calculez la variation relative du cours EUR/JPY (en pourcentage) correspondant à ce seuil de <em>break-even</em>. Commentez.</li>
+    </ol>
+    </li>`;
+
+    document.getElementById('events-list').innerHTML = htmlEnonce;
+
+    // --- GÉNÉRATION CORRIGÉ ---
+    let htmlSol = "";
+
+    // Corrigé Dossier 1
+    let priceFormula = `P = `;
+    for(let t=1; t<n_obs; t++) {
+        priceFormula += `\\frac{${texI(coupon)}}{(1+${texR(r_market)})^{${t}}} + `;
+    }
+    priceFormula += `\\frac{${texI(nominal + coupon)}}{(1+${texR(r_market)})^{${n_obs}}} \\approx ${texM(price)}\\text{ euros}`;
+
+    let durationFormula = `D = \\frac{1}{${texM(price)}} \\left( `;
+    for(let t=1; t<n_obs; t++) {
+        durationFormula += `\\frac{${t} \\times ${texI(coupon)}}{(1+${texR(r_market)})^{${t}}} + `;
+    }
+    durationFormula += `\\frac{${n_obs} \\times ${texI(nominal + coupon)}}{(1+${texR(r_market)})^{${n_obs}}} \\right) \\approx ${texM(duration)}`;
+
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Dossier 1 — Évaluation d'une obligation</span>
+        Le prix théorique d'une obligation correspond mathématiquement à la somme des valeurs actuelles de ses flux de trésorerie futurs (les coupons annuels et le remboursement du nominal in fine), actualisés au taux de rendement exigé par le marché. Le coupon annuel versé est de $${texI(nominal)} \\times ${texM(c_rate_pct)}\\,\\% = ${texI(coupon)}$ euros. Le calcul du prix $P$ s'établit ainsi :
+        <div class="math-formula">\\[${priceFormula}\\]</div>
+        La duration de Macaulay représente la durée de vie moyenne pondérée des flux financiers de l'obligation. Elle se calcule en pondérant chaque période par la valeur actuelle du flux correspondant, le tout rapporté au prix de l'obligation :
+        <div class="math-formula">\\[${durationFormula}\\]</div>
+        Cela signifie qu'à partir de $${texM(duration)}$ années, soit ${d_years} an(s), ${d_months} mois et ${d_days} jour(s) (convention d'une année financière durant 360 jours), le prix de l'obligation n'est plus impacté par une variation structurelle du taux d'intérêt du marché. La sensibilité $S$ de l'obligation mesure le risque de taux, c'est-à-dire l'évolution relative du prix de l'obligation pour une variation infinitésimale des taux. Elle s'établit à :
+        <div class="math-formula">\\[S = \\frac{D}{1+r} = \\frac{${texM(duration)}}{1+${texR(r_market)}} \\approx ${texM(sensitivity)}\\]</div>
+        En moyenne, lorsque les taux d'intérêt montent de $1\\,\\%$, alors le cours actuel de l'obligation chute proportionnellement de $${texM(sensitivity)}\\,\\%$.
+    </div>`;
+
+    // Corrigé Dossier 2
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Dossier 2 — Valorisation d'une action</span>
+        Le modèle de Gordon-Shapiro repose sur le principe fondamental de l'actualisation des flux de trésorerie futurs à l'infini. Ce modèle postule que la valeur intrinsèque d'une action est égale à la somme de tous ses dividendes futurs actualisés, en supposant que ces dividendes croissent à un taux constant $g$. La formule d'évaluation de la valeur théorique $V_0$ s'écrit $V_0 = \\frac{D_1}{k - g}$, où $D_1$ est le dividende attendu à la fin de la première année, $k$ le taux de rentabilité exigé par l'investisseur, et $g$ le taux de croissance perpétuelle. On calcule en premier lieu le dividende futur attendu $D_1$ :
+        <div class="math-formula">\\[D_1 = D_0 \\times (1 + g) = ${texM(d0)} \\times (1 + ${texR(g_rate)}) = ${texM(d1)}\\text{ euros}\\]</div>
+        On applique ensuite la formule principale pour en déduire la valorisation théorique de l'action aujourd'hui :
+        <div class="math-formula">\\[V_0 = \\frac{${texM(d1)}}{${texR(k_rate)} - ${texR(g_rate)}} = \\frac{${texM(d1)}}{${texR(k_rate - g_rate)}} \\approx ${texM(v0)}\\text{ euros}\\]</div>
+        Si le cours actuel de l'action sur les marchés financiers est inférieur à $${texM(v0)}$ euros, le titre est considéré comme sous-évalué et constitue une opportunité d'achat pour la société de gestion.
+    </div>`;
+
+    // Corrigé Dossier 3
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Dossier 3 — Modèle d'évaluation des actifs financiers (MEDAF)</span>
+        La capitalisation du marché est égale à la somme des capitalisations de chaque actif constitutif du marché, à savoir $${texI(v_A)} + ${texI(v_B)} + ${texI(v_C)} = ${texI(v_tot)}$ milliards d'euros. Sur ces $${texI(v_tot)}$ milliards d'euros, la part de l'actif $A$ est $\\frac{${texI(v_A)}}{${texI(v_tot)}} = ${texM(scen.pi[0]*100)}\\,\\%$, celle de l'actif $B$ est de $\\frac{${texI(v_B)}}{${texI(v_tot)}} = ${texM(scen.pi[1]*100)}\\,\\%$ et celle de l'actif $C$ est de $\\frac{${texI(v_C)}}{${texI(v_tot)}} = ${texM(scen.pi[2]*100)}\\,\\%$. Le vecteur poids du portefeuille de marché s'écrit donc $(\\pi_A,\\pi_B,\\pi_C)=(${texBeta(scen.pi[0])}, ${texBeta(scen.pi[1])}, ${texBeta(scen.pi[2])})$. Dès lors, le rendement espéré du portefeuille de marché $\\mu_M$ est la moyenne pondérée de chaque actif constitutif du marché, à savoir $\\mu_M=\\pi_A\\mu_A+\\pi_B\\mu_B+\\pi_C\\mu_C$, soit $\\mu_M=${texBeta(scen.pi[0])}\\times ${texM(mu_A_pct)}\\,\\% + ${texBeta(scen.pi[1])}\\times ${texM(mu_B_pct)}\\,\\% + ${texBeta(scen.pi[2])}\\times ${texM(mu_C_pct)}\\,\\% = ${texM(mu_M_pct)}\\,\\%$. On en déduit alors le $\\beta$ de chaque actif $i$ par la formule $\\beta_i=\\frac{\\mu_i-r_f}{\\mu_M-r_f}$. On a donc :
+        <ul style="list-style-type:none; padding-left:1rem; margin:0.8rem 0;">
+            <li>$\\star\\; \\beta_A=\\frac{${texM(mu_A_pct)}\\,\\% - ${texM(rf_medaf_pct)}\\,\\%}{${texM(mu_M_pct)}\\,\\% - ${texM(rf_medaf_pct)}\\,\\%} = ${texBeta(scen.beta[0])}$ : c'est un actif risqué qui rapporte autant qu'un actif sans risque : pas étonnant que son $\\beta$ soit nul.</li>
+            <li>$\\star\\; \\beta_B=\\frac{${texM(mu_B_pct)}\\,\\% - ${texM(rf_medaf_pct)}\\,\\%}{${texM(mu_M_pct)}\\,\\% - ${texM(rf_medaf_pct)}\\,\\%} = ${texBeta(scen.beta[1])}$ : un $\\beta$ négatif caractérise un actif de couverture ; il varie en sens contraire du marché, et naturellement son rendement attendu est inférieur au taux sans risque.</li>
+            <li>$\\star\\; \\beta_C=\\frac{${texM(mu_C_pct)}\\,\\% - ${texM(rf_medaf_pct)}\\,\\%}{${texM(mu_M_pct)}\\,\\% - ${texM(rf_medaf_pct)}\\,\\%} = ${texBeta(scen.beta[2])}$ : c'est un actif ultra offensif qui amplifie très fortement les fluctuations du marché, pour le meilleur et pour le pire.</li>
+        </ul>
+        Par suite, on considère un portefeuille où l'on place (valeurs en milliers d'euros), ${amt_f} dans l'actif sans risque, ${amt_A} dans l'actif $A$, ${amt_B} dans l'actif $B$ et ${amt_C} dans l'actif $C$. On a donc placé au total $${amt_f} + ${amt_A} + ${amt_B} + ${amt_C} = ${port_W}$ milliers d'euros. On peut alors calculer le rendement espéré de ce portefeuille $\\mu_P$ par $\\frac{${amt_f}}{${port_W}}\\times ${texM(rf_medaf_pct)}\\,\\% + \\frac{${amt_A}}{${port_W}}\\times ${texM(mu_A_pct)}\\,\\% + \\frac{${amt_B}}{${port_W}}\\times ${texM(mu_B_pct)}\\,\\% + \\frac{${amt_C}}{${port_W}}\\times ${texM(mu_C_pct)}\\,\\%$, soit $\\mu_P = ${texM(mu_P_pct)}\\,\\%$. On obtient donc pour le $\\beta$ de ce portefeuille la valeur $\\beta_P=\\frac{\\mu_P-r_f}{\\mu_M-r_f}$, c'est-à-dire $\\beta_P=\\frac{${texM(mu_P_pct)}\\,\\% - ${texM(rf_medaf_pct)}\\,\\%}{${texM(mu_M_pct)}\\,\\% - ${texM(rf_medaf_pct)}\\,\\%} = ${texM(beta_P)}$. Cette valeur étant comprise entre 0 et 1, on est sur un portefeuille plutôt défensif qui lisse les variations du marché (la prime de risque du portefeuille augmente lorsque celle du marché augmente, mais moins que cette dernière ; inversement, lorsque le marché dévisse, le portefeuille dévisse également mais moins que celui-ci).
+    </div>`;
+
+    // Corrigé Dossier 4
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Dossier 4 — <em>Carry trade</em> EUR/JPY</span>
+        <ol class="sub-list">
+            <li>Le différentiel de taux d'intérêt annuel est $\\Delta r = ${texM(r_eur_pct)}\\,\\% - ${texM(r_jpy_pct)}\\,\\% = ${texM(diff_r_pct)}\\,\\%$ par an. En base 360 jours, le gain de portage quotidien pour une position de $${texI(ct_amt)}$ euros s'écrit donc $G_{\\text{jour}} = ${texI(ct_amt)} \\times \\frac{${texM(diff_r_pct)}\\,\\%}{360} \\approx ${texM(daily_gain_exact)}~\\text{euros par jour}$. Ce montant correspond au crédit <em>overnight</em> porté sur le compte de l'investisseur lors de chaque <em>rollover tomorrow-next</em>, en rémunération nette de la détention de la devise à haut rendement.</li>
+            <li>En supposant les taux directeurs inchangés et une reconduction quotidienne sans écart de cotation, le gain cumulé sur ${ct_days} jours ouvrés est alors : $G_{${ct_days}} = ${texM(daily_gain_exact)} \\times ${ct_days} \\approx ${texM(cumul_gain_exact)}~\\text{euros}$. Exprimé en pourcentage du montant de la position initiale, ce gain représente proportionnellement la part du rendement accumulée.</li>
+            <li>Le gain cumulé de $${texM(cumul_gain_exact)}$ euros correspond, au cours initial de $${texM(ct_spot)}$ yens par euro, à une contrepartie en yens de $${texM(cumul_gain_exact)} \\times ${texM(ct_spot)} = ${texM(gain_jpy_exact)}~\\text{yens}$. Or la position initiale de $${texI(ct_amt)}$ euros vaut $${texI(ct_amt * ct_spot)}~\\text{yens}$ au cours d'initiation. Pour que la stratégie soit à l'équilibre, la perte en capital due à une appréciation du yen doit donc être strictement inférieure au gain de portage cumulé de $${texM(gain_jpy_exact)}$ yens. En d'autres termes, il faut vérifier $${texI(ct_amt)} \\times (${texM(ct_spot)} - S) \\leq ${texM(gain_jpy_exact)}$, soit $${texM(ct_spot)} - S \\leq ${texM(drop_jpy_exact)}$ ou encore $S \\geq ${texM(ct_spot)} - ${texM(drop_jpy_exact)} = ${texM(s_be_exact)}~\\text{yens pour un euro}$. La stratégie devient donc déficitaire si le taux de change EUR/JPY passe en dessous du seuil de <em>break-even</em> de $S_{\\text{BE}} := ${texM(s_be_exact)}$.</li>
+            <li>La variation relative correspondant au seuil de <em>break-even</em> est donc de $\\frac{${texM(s_be_exact)} - ${texM(ct_spot)}}{${texM(ct_spot)}} \\approx ${texM(var_pct_exact)}\\,\\%$. Il suffit donc d'une appréciation du yen de seulement $${texM(Math.abs(var_pct_exact))}\\,\\%$ sur ${ct_days} jours pour anéantir l'intégralité du gain de portage accumulé. Ce calcul illustre précisément le profil de risque asymétrique décrit par Brunnermeier et al. (2009) : le gain est lent, progressif et plafonné à $${texM(diff_r_pct)}\\,\\%$ l'an, tandis que le risque de perte est en principe non-borné et peut se matérialiser brutalement. Un gain de portage accumulé sur plusieurs semaines peut ainsi être effacé en quelques minutes lors d'un épisode de liquidation forcée, conformément à la formule imagée « <em>going up by the stairs, coming down by the elevator</em> » : la stratégie offre des rendements réguliers qui induisent un faux sentiment de sécurité, masquant la probabilité faible mais non nulle d'une perte catastrophique et soudaine.</li>
+        </ol>
+    </div>`;
+
+    document.getElementById('sol-content').innerHTML = htmlSol;
+    
+    // Rendu sécurisé via une promesse pour s'assurer que MathJax ne bloque jamais l'interface
+    if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
+        MathJax.typesetPromise().catch(function (err) {
+            console.error('Erreur MathJax :', err);
+        });
+    }
+}
+
+function toggleSol() {
+    let solCard = document.getElementById('sol-card');
+    let btn = document.getElementById('toggle-btn');
+    if(solCard.classList.contains('visible')) {
+        solCard.classList.remove('visible');
+        btn.innerText = "Afficher le corrigé";
+        btn.classList.remove('shown');
+    } else {
+        solCard.classList.add('visible');
+        btn.innerText = "Masquer le corrigé";
+        btn.classList.add('shown');
+    }
+}
+
+function exportWord() {
+    let content = document.getElementById('ex-area').cloneNode(true);
+    let actions = content.querySelector('.top-actions');
+    if(actions) actions.parentNode.removeChild(actions);
+    let toggle = content.querySelector('.sol-toggle-wrap');
+    if(toggle) toggle.parentNode.removeChild(toggle);
+    let solCard = content.querySelector('#sol-card');
+    if(solCard) solCard.style.display = 'block';
+
+    let html = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <meta charset='utf-8'>
+            <title>Exercice Finance</title>
+            <style>
+                body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5; text-align: justify; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                th, td { border: 1px solid #000; padding: 5px; }
+                th { background-color: #f2f2f2; text-align: center; font-weight: bold; }
+                .txt-left { text-align: left; font-weight: bold; }
+                .calc-box { border: 1px solid #000; padding: 10px; margin-bottom: 15px; background-color: #f9f9f9; text-align: justify; }
+                .math-formula { text-align: center; font-style: italic; margin: 10px 0; }
+                ul { text-align: justify; }
+                ol { text-align: justify; }
+                li { margin-bottom: 5px; }
+            </style>
+        </head>
+        <body>
+            ${content.innerHTML}
+        </body>
+        </html>
+    `;
+    
+    let blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    let url = URL.createObjectURL(blob);
+    let link = document.createElement('a');
+    link.href = url;
+    link.download = 'Exercice_Valorisation_Actifs.doc';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>

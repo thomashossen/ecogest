@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Générateur d'exercices - Économétrie</title>
+<script>
+window.MathJax = {
+  tex: { 
+    inlineMath: [['\\(','\\)']], 
+    displayMath: [['\\[','\\]']], 
+    packages: {'[+]': ['ams']},
+    macros: {
+      Var: ['\\textbf{Var}\\left(#1\\right)', 1],
+      Cov: ['\\textbf{Cov}\\left(#1\\right)', 1],
+      dsum: ['\\sum_{#1}^{#2}', 2]
+    }
+  },
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] }
+};
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 0;border-bottom:3px solid var(--gold)}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+#controls-bar{border-top:1px solid rgba(255,255,255,.08);padding:1.1rem 0 1.3rem}
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.5)}
+.ctrl-inp{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.38rem .65rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.82rem;width:88px;outline:none;transition:border-color .2s}
+.ctrl-inp:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.ctrl-tip{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:rgba(250,247,240,.33);margin-top:2px}
+.seed-row{display:flex;align-items:flex-end;gap:.45rem}
+.btn-copy-seed{background:transparent;border:1px solid rgba(201,149,42,.4);color:rgba(250,247,240,.55);padding:.38rem .55rem;border-radius:3px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:.65rem;transition:all .18s;white-space:nowrap}
+.btn-copy-seed:hover{border-color:var(--gold-light);color:var(--gold-light)}
+.ctrl-vsep{width:1px;background:rgba(255,255,255,.1);align-self:stretch;margin:0 .2rem}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.3rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.9rem;font-weight:600;transition:background .18s;white-space:nowrap;align-self:flex-end}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.welcome-msg{text-align:center;padding:5rem 2rem;color:var(--text-muted);font-style:italic;font-size:1.05rem}
+.welcome-msg .arrow{font-size:2rem;display:block;margin-bottom:1rem;opacity:.4}
+
+/* TOP BAR */
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.top-bar-left{display:flex;gap:.6rem;align-items:center}
+.btn-sm{background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:'JetBrains Mono',monospace;font-size:.67rem;letter-spacing:.08em;text-transform:uppercase;padding:.4rem 1rem;border-radius:3px;cursor:pointer;transition:all .18s;white-space:nowrap}
+.btn-sm:hover{background:var(--gold);color:var(--navy)}
+.btn-sm.pdf{border-color:#7bafd4;color:#7bafd4}
+.btn-sm.pdf:hover{background:#7bafd4;color:var(--navy)}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.67rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:500}
+
+/* CARDS */
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);margin-bottom:1.5rem;border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+.info-block{background:rgba(0,0,0,0.03);border-left:3px solid var(--text-muted);padding:1rem 1.2rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.85rem;font-style:italic;}
+
+/* QUESTIONS */
+.questions ol{counter-reset:q;list-style:none}
+.questions ol>li{counter-increment:q;margin-bottom:1.4rem;display:flex;gap:1rem;align-items:flex-start}
+.questions ol>li::before{content:counter(q);min-width:28px;height:28px;background:var(--navy);color:var(--cream);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:500;flex-shrink:0;margin-top:.15rem}
+.questions ol>li .q-text{flex:1;font-size:.93rem;text-align:justify}
+
+/* SOLUTION */
+.sol-toggle-wrap{text-align:center;margin:1rem 0 0}
+.btn-toggle{background:transparent;border:2px solid var(--navy);color:var(--navy);font-family:'Source Serif 4',serif;font-size:.9rem;padding:.6rem 2rem;border-radius:4px;cursor:pointer;transition:all .2s}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--navy);color:var(--cream)}
+.sol-card{border-top:4px solid var(--green);display:none}
+.sol-card.visible{display:block;animation:fi .3s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+.st{font-size:.92rem;line-height:1.75;text-align:justify}
+.st p{margin-bottom:.7rem}
+.st ol{counter-reset:sq;list-style:none}
+.st>ol>li{counter-increment:sq;margin-bottom:1.6rem;display:flex;gap:1rem;align-items:flex-start}
+.st>ol>li::before{content:counter(sq);min-width:24px;height:24px;background:var(--green);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.68rem;flex-shrink:0;margin-top:.15rem}
+.st ul{list-style:disc;padding-left:1.5rem;margin-bottom:.7rem}
+.st ul li{margin-bottom:1rem}
+.st .q-content{flex:1;} /* Force la colonne unique */
+
+/* PDF MODAL */
+#pdf-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;backdrop-filter:blur(2px)}
+#pdf-modal{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:101;background:#fff;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.25);width:390px;max-width:95vw;border-top:4px solid #7bafd4;overflow:hidden}
+.mh{background:var(--navy);color:var(--cream);padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
+.mh h3{font-family:'Playfair Display',serif;font-size:1rem;font-weight:600}
+.mclose{background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:1.2rem;line-height:1;padding:2px 6px;border-radius:3px;transition:color .15s}
+.mclose:hover{color:#fff}
+.mb2{padding:1.5rem}
+.opt-row{display:flex;align-items:flex-start;gap:.75rem;margin-bottom:1rem;cursor:pointer}
+.opt-row input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--navy);flex-shrink:0;margin-top:3px}
+.opt-lbl{font-size:.93rem}
+.opt-desc{font-size:.75rem;color:var(--text-muted);display:block}
+.seed-note{font-family:'JetBrains Mono',monospace;font-size:.7rem;background:var(--cream-dark);border:1px solid var(--border);padding:.55rem .85rem;border-radius:3px;color:var(--text-muted);margin-bottom:1.2rem;line-height:1.5}
+.seed-note strong{color:var(--navy)}
+.mactions{display:flex;gap:.6rem}
+.btn-print{flex:1;background:var(--navy);color:var(--cream);border:none;padding:.7rem;border-radius:4px;font-family:'Source Serif 4',serif;font-size:.9rem;cursor:pointer;transition:background .2s}
+.btn-print:hover{background:var(--navy-mid)}
+.btn-cancel{background:transparent;border:1px solid var(--border);color:var(--text-muted);padding:.7rem 1rem;border-radius:4px;font-family:'Source Serif 4',serif;font-size:.9rem;cursor:pointer;transition:all .2s}
+.btn-cancel:hover{border-color:var(--text);color:var(--text)}
+
+/* PRINT */
+@media print{
+:root{--navy:#0d1b2a;--cream:#fff;--cream-dark:#f8f8f8;--gold:#c9952a;--green:#2d6b4a;--border:#ccc}
+body{background:#fff;font-size:11pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+header{padding:1rem 1.5rem .8rem}
+header .subtitle{display:none}
+#controls-bar,.top-bar,.sol-toggle-wrap,#pdf-ov,#pdf-modal{display:none!important}
+.card{box-shadow:none;border-radius:0;page-break-inside:avoid;margin-bottom:1rem}
+main{padding:1rem 1.5rem;max-width:100%}
+body.print-no-header header{display:none!important}
+body.print-no-solution .sol-card{display:none!important}
+body.print-force-solution .sol-card{display:block!important}
+}
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-badge">ÉCONOMÉTRIE</div>
+  <h1>Modèle de régression linéaire multiple</h1>
+  <p class="subtitle">© Thomas Hossen – Version du 7 mars 2026</p>
+
+  <div id="controls-bar">
+    <div class="ctrls">
+      <div class="ctrl-g">
+        <span class="ctrl-lbl">Seed de reproductibilité</span>
+        <div class="seed-row">
+          <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="0" max="99999999">
+          <button class="btn-copy-seed" onclick="copySeed()" title="Copier la seed active">⧉ Copier</button>
+        </div>
+        <span class="ctrl-tip">Vide = aléatoire à chaque génération</span>
+      </div>
+      <div class="ctrl-vsep"></div>
+      <div class="ctrl-g">
+        <span class="ctrl-lbl">Observations <em>(n)</em></span>
+        <input class="ctrl-inp" type="number" id="param-n" min="10" max="100" placeholder="défaut">
+        <span class="ctrl-tip">10 – 100, auto si vide</span>
+      </div>
+      <div class="ctrl-vsep"></div>
+      <button class="btn-gen" onclick="generateFromControls()">Générer →</button>
+    </div>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" class="welcome-msg">
+    <span class="arrow">↑</span>
+    Configurez les paramètres (ou laissez vide pour de l'aléatoire), puis cliquez sur Générer.
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="top-bar-left">
+        <button class="btn-sm" onclick="regen()">↺ Nouvel énoncé</button>
+        <button class="btn-sm pdf" onclick="openPdfModal()">⬇ Exporter PDF</button>
+      </div>
+      <div class="seed-badge">Seed&nbsp;: <span id="seed-disp">—</span></div>
+    </div>
+
+    <div id="ex-card" class="card">
+      <div class="card-header"><span class="tag">Énoncé</span><h2 id="card-title">Calculs matriciels et tests statistiques</h2></div>
+      <div class="card-body" id="ex-content"></div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag">Corrigé</span><h2>Calculs matriciels et tests statistiques</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+
+  </div>
+</main>
+
+<div id="pdf-ov" onclick="closePdfModal()"></div>
+<div id="pdf-modal">
+  <div class="mh">
+    <h3>Exporter en PDF</h3>
+    <button class="mclose" onclick="closePdfModal()">✕</button>
+  </div>
+  <div class="mb2">
+    <div class="seed-note">Seed&nbsp;: <strong id="modal-seed">—</strong> — notez cette valeur pour reproduire exactement cet exercice.</div>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-header" checked>
+      <div><span class="opt-lbl">Inclure l'en-tête de page</span>
+           <span class="opt-desc">Titre, badge « ÉCONOMÉTRIE » et intitulé de l'exercice</span></div>
+    </label>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-sol">
+      <div><span class="opt-lbl">Inclure le corrigé complet</span>
+           <span class="opt-desc">Détail des matrices, variances empiriques et test de Fisher</span></div>
+    </label>
+    <div class="mactions">
+      <button class="btn-print" onclick="doPrint()">🖨&nbsp;Imprimer / Sauvegarder PDF</button>
+      <button class="btn-cancel" onclick="closePdfModal()">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+// SEEDED PRNG — mulberry32
+// ════════════════════════════════════════
+let _rand, _activeSeed = 0;
+function initRand(seed) {
+  _activeSeed = seed >>> 0;
+  let s = _activeSeed;
+  _rand = () => {
+    s = (s + 0x6D2B79F5) >>> 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const rI = (a,b) => Math.floor(_rand()*(b-a+1))+a;
+const rA = arr => arr[Math.floor(_rand()*arr.length)];
+
+let solVisible = false;
+
+function regen() {
+  document.getElementById('seed-input').value = '';
+  generateFromControls();
+}
+
+function generateFromControls() {
+  const seedInp = document.getElementById('seed-input').value;
+  const seed = seedInp ? parseInt(seedInp) : Math.floor(Math.random()*10000000);
+  initRand(seed);
+  document.getElementById('seed-disp').textContent = seed;
+  document.getElementById('modal-seed').textContent = seed;
+  
+  // Variables 
+  const nInp = document.getElementById('param-n').value;
+  const n = nInp ? parseInt(nInp) : rI(20, 60);
+  
+  // Estimateurs b
+  const b0 = rI(-400, 400) / 100;
+  const b1 = (rI(0,1)?1:-1) * rI(20, 180) / 100;
+  const b2 = (rI(0,1)?1:-1) * rI(20, 180) / 100;
+  
+  // Matrice X'X: S11, S22, S12
+  let S11, S22, S12, det;
+  do {
+    S11 = rI(50, 300) / 10;
+    S22 = rI(50, 300) / 10;
+    S12 = rI(-150, 150) / 10;
+    det = S11 * S22 - S12 * S12;
+  } while (det <= 5); // Assure matrice définie positive robuste
+  
+  const scr = rI(10, 200) / 100;
+  
+  const inv11 = 1 / n;
+  const inv22 = S22 / det;
+  const inv33 = S11 / det;
+  const inv23 = -S12 / det;
+
+  const confLevel = rA([90, 95, 99]);
+
+  // Formattage des variables
+  const fb0 = b0.toFixed(2), fb1 = b1.toFixed(2), fb2 = b2.toFixed(2);
+  const fS11 = S11.toFixed(1), fS22 = S22.toFixed(1), fS12 = S12.toFixed(1);
+  const finv11 = inv11.toFixed(4), finv22 = inv22.toFixed(4), finv33 = inv33.toFixed(4), finv23 = inv23.toFixed(4);
+
+  // ÉNONCÉ
+  let exHTML = `
+    <div class="context-block">
+      On examine l'évolution d'une variable à expliquer \\(Y\\) à l'aide de deux variables explicatives \\(X_1\\) et \\(X_2\\). On dispose de \\(n\\) observations conjointes \\((X_{1,1},X_{2,1},Y_1),\\ldots,(X_{1,n},X_{2,n},Y_n)\\) de ces variables, où \\(n\\) est un entier naturel au moins égal à \\(3\\), et on cherche à estimer le modèle économétrique \\(Y_i=b_0+b_1X_{1,i}+b_2X_{2,i}+u_i\\) pour tout individu \\(i\\), où \\(i\\) est un entier compris entre \\(1\\) et \\(n\\) et où \\(u_i\\) est une variable aléatoire réelle suivant les hypothèses de Gauss-Markov. On pose alors :
+      \\[\\textbf{X}:=\\begin{pmatrix}1&X_{1,1}&X_{2,1}\\\\\\vdots&\\vdots&\\vdots\\\\1&X_{1,n}&X_{2,n}\\end{pmatrix}\\quad\\text{et}\\quad\\textbf{b}:=\\begin{pmatrix}b_0\\\\b_1\\\\b_2\\end{pmatrix}\\quad\\text{et}\\quad\\textbf{u}:=\\begin{pmatrix}u_1\\\\\\vdots\\\\u_n\\end{pmatrix}\\quad\\text{et}\\quad\\textbf{Y}:=\\begin{pmatrix}Y_1\\\\\\vdots\\\\Y_n\\end{pmatrix}\\]
+      Les estimateurs des moindres carrés ordinaires de \\(b_0\\), \\(b_1\\) et \\(b_2\\) sont respectivement donnés par \\(\\widehat{b}_0=${fb0}\\), \\(\\widehat{b}_1=${fb1}\\) et \\(\\widehat{b}_2=${fb2}\\), et la somme des carrés des résidus (SCR) vaut ${scr.toFixed(2)}. On donne par ailleurs :
+      \\[\\textbf{X}^T\\textbf{X}:=\\begin{pmatrix}${n}&0&0\\\\?&${fS11}&${fS12}\\\\?&?&${fS22}\\end{pmatrix}\\quad\\text{et}\\quad\\left(\\textbf{X}^T\\textbf{X}\\right)^{-1}:=\\begin{pmatrix}${finv11}&0&0\\\\0&${finv22}&${finv23}\\\\0&${finv23}&${finv33}\\end{pmatrix}\\]
+    </div>
+    <div class="questions"><ol>
+      <li><div class="q-text">Que vaut \\(n\\), le nombre d'observations du modèle ? Donner les valeurs manquantes de \\(\\textbf{X}^T\\textbf{X}\\).</div></li>
+      <li><div class="q-text">Calculer le coefficient de corrélation linéaire empirique entre \\(X_1\\) et \\(X_2\\).</div></li>
+      <li><div class="q-text">Déterminer la moyenne empirique \\(\\overline{\\textbf{Y}}\\) de \\((Y_1,\\ldots,Y_n)\\).</div></li>
+      <li><div class="q-text">Calculer la somme des carrés expliquée (SCE) du modèle.</div></li>
+      <li><div class="q-text">En déduire la somme des carrés totale (SCT) et le \\(R^2\\) du modèle. Commenter.</div></li>
+      <li><div class="q-text">Estimer la matrice de variance-covariance des estimateurs des MCO.</div></li>
+      <li><div class="q-text">Tester la significativité globale du modèle au seuil de confiance ${confLevel}&nbsp;%.</div></li>
+    </ol></div>
+  `;
+  document.getElementById('ex-content').innerHTML = exHTML;
+
+  // CORRECTION - Calculs préparatoires
+  const cov_emp = S12 / n;
+  const var1_emp = S11 / n;
+  const var2_emp = S22 / n;
+  const rho = S12 / Math.sqrt(S11 * S22);
+  
+  // Formule analytique de la SCE
+  const y_mean_sq = b0*b0 + b1*b1*var1_emp + b2*b2*var2_emp + 2*b1*b2*cov_emp;
+  const sce = n * (y_mean_sq - b0*b0); // b1^2*S11 + b2^2*S22 + 2*b1*b2*S12
+  const sct = sce + scr;
+  const r2 = sce / sct;
+  
+  const ddl = n - 3;
+  const sig2_hat = scr / ddl;
+  
+  const f_stat = (r2 / (1 - r2)) * (ddl / 2);
+  const p_val = confLevel / 100;
+  // Quantile exact de la loi de Fisher (k=2) : F(2, nu) -> (1-p) = (1 + 2f/nu)^(-nu/2)
+  const f_crit = (ddl / 2) * (Math.pow(1 - p_val, -2 / ddl) - 1);
+  const rej = f_stat > f_crit;
+  
+  const fmt = (x) => x >= 0 ? '+' + x.toFixed(2) : x.toFixed(2);
+  const b0_sq = (b0*b0).toFixed(5);
+  
+  let solHTML = `<div class="st"><ol>`;
+
+  // Q1
+  solHTML += `<li><div class="q-content"><p>On commence par exprimer théoriquement \\(\\textbf{X}^T\\textbf{X}\\) à partir de la matrice \\(\\textbf{X}^T\\). On a :
+  \\[\\begin{aligned}
+  \\textbf{X}^T\\textbf{X}
+  &=\\begin{pmatrix}1&X_{1,1}&X_{2,1}\\\\\\vdots&\\vdots&\\vdots\\\\1&X_{1,n}&X_{2,n}\\end{pmatrix}^T\\begin{pmatrix}1&X_{1,i}&X_{2,1}\\\\\\vdots&\\vdots&\\vdots\\\\1&X_{1,n}&X_{2,n}\\end{pmatrix}\\\\
+  &=\\begin{pmatrix}1&\\cdots&1\\\\X_{1,1}&\\cdots&X_{1,n}\\\\X_{2,1}&\\cdots&X_{2,n}\\\\\\end{pmatrix}\\begin{pmatrix}1&X_{1,1}&X_{2,1}\\\\\\vdots&\\vdots&\\vdots\\\\1&X_{1,n}&X_{2,n}\\end{pmatrix}\\\\
+  &=\\begin{pmatrix}
+  \\dsum{i=1}{n}1&\\dsum{i=1}{n}X_{1,i}&\\dsum{i=1}{n}X_{2,i} \\\\
+  \\dsum{i=1}{n}X_{1,i}&\\dsum{i=1}{n}X_{1,i}^2&\\dsum{i=1}{n}X_{1,i}X_{2,i}\\\\
+  \\dsum{i=1}{n}X_{2,i}&\\dsum{i=1}{n}X_{1,i}X_{2,i}&\\dsum{i=1}{n}X_{2,i}^2
+  \\end{pmatrix}\\\\
+  &=\\begin{pmatrix}
+  n&\\dsum{i=1}{n}X_{1,i}&\\dsum{i=1}{n}X_{2,i} \\\\
+  \\dsum{i=1}{n}X_{1,i}&\\dsum{i=1}{n}X_{1,i}^2&\\dsum{i=1}{n}X_{1,i}X_{2,i}\\\\
+  \\dsum{i=1}{n}X_{2,i}&\\dsum{i=1}{n}X_{1,i}X_{2,i}&\\dsum{i=1}{n}X_{2,i}^2
+  \\end{pmatrix}\\\\
+  \\end{aligned}\\]</p>
+  <p>Par identification des coefficients de la matrice \\(\\textbf{X}^T\\textbf{X}\\), on constate que le nombre d'observations du modèle vérifie \\(n=${n}\\). On constate également que la matrice \\(\\textbf{X}^T\\textbf{X}\\) est symétrique (ce que l'on pouvait déjà déduire du fait que son inverse l'était ; en effet, une matrice inversible est symétrique si, et seulement si, son inverse l'est). Par symétrie, on obtient donc :
+  \\[\\textbf{X}^T\\textbf{X}:=\\begin{pmatrix}${n}&0&0\\\\0&${fS11}&${fS12}\\\\0&${fS12}&${fS22}\\end{pmatrix}\\]</p></div></li>`;
+
+  // Q2
+  solHTML += `<li><div class="q-content"><p>Pour calculer le coefficient linéaire empirique entre les séries statistiques \\(\\textbf{X}_1:=(X_{1,1},\\ldots,X_{1,n})\\) et \\(\\textbf{X}_2:=(X_{2,1},\\ldots,X_{2,n})\\), on a tout d'abord besoin de la covariance empirique entre \\(\\textbf{X}_1\\) et \\(\\textbf{X}_2\\). On a, en vertu de la formule de Kœnig-Huygens :
+  \\[\\begin{aligned}
+  \\widetilde{\\textbf{Cov}}(\\textbf{X}_1,\\textbf{X}_2)
+  &=\\dfrac{1}{n}\\dsum{i=1}{n}X_{1,i}X_{2,i}-\\left(\\dfrac{1}{n}\\dsum{i=1}{n}X_{1,i}\\right)\\left(\\dfrac{1}{n}\\dsum{i=1}{n}X_{2,i}\\right)\\\\
+  &=\\dfrac{${fS12}}{${n}}-\\dfrac{0}{${n}}\\times\\dfrac{0}{${n}}\\\\
+  &=\\dfrac{${fS12}}{${n}}= ${cov_emp.toFixed(4)}
+  \\end{aligned}\\]</p>
+  <p>Il convient désormais de déterminer la variance empirique de \\(\\textbf{X}_1\\). En vertu de la formule de Kœnig-Huygens, on a :
+  \\[\\begin{aligned}\\widetilde{\\textbf{Var}}(\\textbf{X}_1)
+  &=\\dfrac{1}{n}\\dsum{i=1}{n}X_{1,i}^2-\\left(\\dfrac{1}{n}\\dsum{i=1}{n}X_{1,i}\\right)^2\\\\
+  &=\\dfrac{${fS11}}{${n}}-\\left(\\dfrac{0}{${n}}\\right)^2\\\\
+  &=\\dfrac{${fS11}}{${n}}= ${var1_emp.toFixed(4)}\\end{aligned}\\]</p>
+  <p>Enfin, on doit déterminer la variance empirique de \\(\\textbf{X}_2\\). Toujours en vertu de la formule de Kœnig-Huygens, on a :
+  \\[\\begin{aligned}\\widetilde{\\textbf{Var}}(\\textbf{X}_2)
+  &=\\dfrac{1}{n}\\dsum{i=1}{n}X_{2,i}^2-\\left(\\dfrac{1}{n}\\dsum{i=1}{n}X_{2,i}\\right)^2\\\\
+  &=\\dfrac{${fS22}}{${n}}-\\left(\\dfrac{0}{${n}}\\right)^2\\\\
+  &=\\dfrac{${fS22}}{${n}}= ${var2_emp.toFixed(4)}\\end{aligned}\\]</p>
+  <p>On peut à présent calculer le coefficient de corrélation empirique \\(\\rho\\) entre \\(\\textbf{X}_1\\) et \\(\\textbf{X}_2\\). On a :
+  \\[\\begin{aligned}
+  \\rho
+  &=\\dfrac{\\widetilde{\\textbf{Cov}}(\\textbf{X}_1,\\textbf{X}_2)}{\\sqrt{\\widetilde{\\textbf{Var}}(\\textbf{X}_1)\\times\\widetilde{\\textbf{Var}}(\\textbf{X}_2)}}\\\\
+  &=\\dfrac{${cov_emp.toFixed(4)}}{\\sqrt{${var1_emp.toFixed(4)}\\times ${var2_emp.toFixed(4)}}}\\approx ${rho.toFixed(4)}
+  \\end{aligned}\\]</p></div></li>`;
+
+  // Q3
+  solHTML += `<li><div class="q-content"><p>Déterminons maintenant la moyenne empirique \\(\\overline{\\textbf{Y}}\\) de \\(\\textbf{Y}:=(Y_1,\\ldots,Y_n)\\). On sait que la droite de régression des moindres carrés ordinaires passe par le point moyen (barycentre) du nuage. Autrement dit, si l'on note \\(\\overline{\\widehat{\\textbf{Y}}}\\) la moyenne empirique du vecteur des valeurs prédites \\(\\widehat{\\textbf{Y}}=(\\widehat{Y}_1,\\ldots,\\widehat{Y}_n)\\), ce résultat signifie qu'on a \\(\\overline{\\textbf{Y}}=\\overline{\\widehat{\\textbf{Y}}}\\). On note alors respectivement \\(\\overline{\\textbf{X}_1}\\) la moyenne empirique de \\(\\textbf{X}_1\\) et \\(\\overline{\\textbf{X}_2}\\) celle de \\(\\textbf{X}_2\\). On vérifie dès lors qu'on a :
+  \\[\\begin{aligned}
+  \\overline{\\textbf{Y}}
+  &=\\overline{\\widehat{\\textbf{Y}}}\\\\
+  &=\\widehat{b}_0+\\widehat{b}_1\\overline{\\textbf{X}_1}+\\widehat{b}_2\\overline{\\textbf{X}_2}\\\\
+  &=${fb0}${fmt(b1)}\\times 0${fmt(b2)}\\times 0\\\\
+  &=${fb0}
+  \\end{aligned}\\]</p></div></li>`;
+
+  // Q4
+  solHTML += `<li><div class="q-content"><p>On sait que la somme des carrés expliquée (SCE) du modèle vérifie par définition l'égalité \\(\\text{SCE}=n\\widetilde{\\textbf{Var}}(\\widehat{\\textbf{Y}})\\), avec \\(\\widehat{\\textbf{Y}}:=(\\widehat{Y}_1,\\ldots,\\widehat{Y}_n)\\). Il nous faut donc calculer la variance empirique de \\(\\widehat{\\textbf{Y}}\\). Commençons par calculer la moyenne empirique \\(\\overline{\\widehat{\\textbf{Y}}^2}\\) de \\(\\widehat{\\textbf{Y}}^2:=(\\widehat{Y}_1^2,\\ldots,\\widehat{Y}_n^2)\\). On a :
+  \\[\\begin{aligned}
+  \\overline{\\widehat{\\textbf{Y}}^2}
+  &=\\dfrac{1}{${n}}\\dsum{i=1}{n}\\widehat{Y}_i^2\\\\
+  &=\\dfrac{1}{${n}}\\dsum{i=1}{n}\\left(\\widehat{b}_0+\\widehat{b}_1X_{1,i}+\\widehat{b}_2X_{2,i}\\right)^2\\\\
+  &=\\dfrac{1}{${n}}\\dsum{i=1}{n}\\left(\\widehat{b}_0^2+\\widehat{b}_1^2X_{1,i}^2+\\widehat{b}_2^2X_{2,i}^2+2\\widehat{b}_0\\widehat{b}_1X_{1,i}+2\\widehat{b}_0\\widehat{b}_2X_{2,i}+2\\widehat{b}_1\\widehat{b}_2X_{1,i}X_{2,i}\\right)\\\\
+  &=\\dfrac{1}{${n}}\\left(n\\widehat{b}_0^2+\\widehat{b}_1^2\\dsum{i=1}{n}X_{1,i}^2+\\widehat{b}_2^2\\dsum{i=1}{n}X_{2,i}^2+2\\widehat{b}_0\\widehat{b}_1\\dsum{i=1}{n}X_{1,i}+2\\widehat{b}_0\\widehat{b}_2\\dsum{i=1}{n}X_{2,i}+2\\widehat{b}_1\\widehat{b}_2\\dsum{i=1}{n}X_{1,i}X_{2,i}\\right)\\\\
+  &=\\dfrac{1}{${n}}(${n}\\times (${fb0})^2+(${fb1})^2\\times ${fS11}+(${fb2})^2\\times ${fS22}+2\\times (${fb0})\\times (${fb1})\\times 0\\\\
+  &\\qquad+2\\times (${fb0})\\times (${fb2})\\times 0+2\\times (${fb1})\\times (${fb2})\\times (${fS12}))\\\\
+  &=\\dfrac{${(y_mean_sq * n).toFixed(5)}}{${n}}\\approx ${y_mean_sq.toFixed(5)}
+  \\end{aligned}\\]</p>
+  <p>On peut alors déterminer la somme des carrés expliquée par la formule de Kœnig-Huygens :
+  \\[\\begin{aligned}
+  \\text{SCE}
+  &=n\\widetilde{\\textbf{Var}}(\\widehat{\\textbf{Y}})\\\\
+  &=n\\left(\\overline{\\widehat{\\textbf{Y}}^2}-\\overline{\\widehat{\\textbf{Y}}}^2\\right)\\\\
+  &=n\\left(\\overline{\\widehat{\\textbf{Y}}^2}-\\overline{\\textbf{Y}}^2\\right)\\\\
+  &=${n}\\times\\left(${y_mean_sq.toFixed(5)}-(${fb0})^2\\right)\\approx ${sce.toFixed(5)}
+  \\end{aligned}\\]</p></div></li>`;
+
+  // Q5
+  solHTML += `<li><div class="q-content"><p>On se rappelle que l'addition de la somme des carrés des résidus (SCR) et de la somme des carrés expliquée (SCE) fournit exactement la somme des carrés totale (SCT), en vertu de l'équation d'analyse de la variance. Ainsi, on vérifie l'égalité  
+  \\(\\text{SCT}=\\text{SCE}+\\text{SCR}=${sce.toFixed(5)}+${scr.toFixed(2)}=${sct.toFixed(5)}\\). On peut dès lors en déduire le coefficient de détermination \\(R^2\\) du modèle par : 
+  \\[R^2=\\dfrac{\\text{SCE}}{\\text{SCT}}=\\dfrac{${sce.toFixed(5)}}{${sct.toFixed(5)}}\\approx ${r2.toFixed(4)}\\]</p>
+  <p>Cela signifie que ${(r2*100).toFixed(2)} % de la variation observée de la variable \\(Y\\) est expliquée par la variation des variables \\(X_1\\) et \\(X_2\\) au sein de notre échantillon.</p></div></li>`;
+
+  // Q6
+  solHTML += `<li><div class="q-content"><p>On sait que la matrice de variance-covariance \\(\\widehat{\\textbf{b}}\\) vérifie \\(\\textbf{Var}(\\widehat{\\textbf{b}})=\\sigma^2\\left(\\textbf{X}^T\\textbf{X}\\right)^{-1}\\), où \\(\\sigma^2\\) est la variance homoscédastique du modèle. On va l'estimer par son estimateur sans biais usuel qui vérifie (comme on a \\(n=${n}\\) observations et \\(k=2\\) régresseurs et une constante) \\(\\widehat{\\sigma^2}=\\frac{\\text{SCR}}{n-(k+1)}=\\frac{${scr.toFixed(2)}}{${ddl}}\\approx ${sig2_hat.toFixed(4)}\\). On peut alors en déduire une estimation de la matrice de variance-covariance de \\(\\widehat{\\textbf{b}}\\) comme suit :
+  \\[\\widehat{\\textbf{Var}}(\\widehat{\\textbf{b}})=\\widehat{\\sigma^2}\\left(\\textbf{X}^T\\textbf{X}\\right)^{-1}\\approx ${sig2_hat.toFixed(4)}\\begin{pmatrix}${finv11}&0&0\\\\0&${finv22}&${finv23}\\\\0&${finv23}&${finv33}\\end{pmatrix}\\]</p></div></li>`;
+
+  // Q7
+  solHTML += `<li><div class="q-content"><p>Pour finir, on veut tester la significativité globale du modèle. On veut tester l'hypothèse nulle \\((H_0):b_1=b_2=0\\) contre l'hypothèse alternative \\((H_1):b_1\\ne 0\\text{ ou }b_2\\ne 0\\). Or, sous l'hypothèse nulle, la statistique de Fisher :
+  \\[\\widehat{F}:=\\dfrac{R^2}{1-R^2}\\times\\dfrac{n-(k+1)}{k}\\approx \\dfrac{${r2.toFixed(4)}}{1-${r2.toFixed(4)}}\\times\\dfrac{${n}-3}{2}\\]
+  c'est-à-dire \\(\\widehat{F}\\approx ${f_stat.toFixed(3)}\\), suit une loi de Fisher à \\(k=2\\) et \\(n-(k+1)=${ddl}\\) degrés de liberté. Or le quantile à ${confLevel}&nbsp;% d'une loi de Fisher à 2 et ${ddl} degrés de liberté vérifie \\(f:=${f_crit.toFixed(3)}\\). Comme on a \\(\\widehat{F}${rej?'>':'<'} f\\), alors on ${rej?'peut rejeter':'ne peut rejeter'} l'hypothèse nulle au seuil de confiance ${confLevel}&nbsp;% et en déduire que notre modèle ${rej?'est':'n\'est pas'} globalement significatif ${rej?': au moins une des variables \\(X_1\\) et \\(X_2\\) préside significativement à la formation de la variable \\(Y\\)':''}.</p></div></li>`;
+
+  solHTML += `</ol></div>`;
+  document.getElementById('sol-content').innerHTML = solHTML;
+
+  // Affichage
+  document.getElementById('welcome').style.display = 'none';
+  document.getElementById('ex-area').style.display = 'block';
+  solVisible = false;
+  let solC = document.getElementById('sol-card'), btn = document.getElementById('toggle-btn');
+  solC.classList.remove('visible'); btn.classList.remove('shown'); btn.textContent = 'Afficher le corrigé';
+
+  if (window.MathJax) MathJax.typesetPromise();
+}
+
+// ════════════════════════════════════════
+// UI / PDF EXPORT
+// ════════════════════════════════════════
+function toggleSol(){
+  solVisible = !solVisible;
+  const sol = document.getElementById('sol-card'), btn = document.getElementById('toggle-btn');
+  if(solVisible){sol.classList.add('visible'); btn.classList.add('shown'); btn.textContent = 'Masquer le corrigé';}
+  else{sol.classList.remove('visible'); btn.classList.remove('shown'); btn.textContent = 'Afficher le corrigé';}
+}
+
+function copySeed(){
+  const s = document.getElementById('seed-disp').textContent;
+  if(s && s !== '—'){
+    navigator.clipboard.writeText(s).then(() => {
+      const b = event.target, o = b.textContent;
+      b.textContent = '✓ Copié'; setTimeout(()=>b.textContent=o,1500);
+    });
+  }
+}
+
+function openPdfModal(){
+  document.getElementById('pdf-ov').style.display = 'block';
+  document.getElementById('pdf-modal').style.display = 'block';
+  document.getElementById('opt-sol').checked = solVisible;
+}
+function closePdfModal(){
+  document.getElementById('pdf-ov').style.display = 'none';
+  document.getElementById('pdf-modal').style.display = 'none';
+}
+function doPrint(){
+  const noHdr = !document.getElementById('opt-header').checked;
+  const inclSol = document.getElementById('opt-sol').checked;
+  const body = document.body;
+  if(noHdr) body.classList.add('print-no-header');
+  if(inclSol){body.classList.add('print-force-solution');body.classList.remove('print-no-solution');}
+  else{body.classList.add('print-no-solution');body.classList.remove('print-force-solution');}
+  closePdfModal();
+  setTimeout(() => {
+    window.print();
+    setTimeout(() => { body.classList.remove('print-no-header','print-force-solution','print-no-solution'); }, 500);
+  }, 100);
+}
+</script>
+
+</body>
+</html>

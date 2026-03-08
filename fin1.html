@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Analyse Financière - SIG et CAF</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['\\[', '\\]']]
+    }
+  };
+</script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7;text-align:justify;}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 1.5rem;border-bottom:3px solid var(--gold);text-align:left;}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end;background:rgba(255,255,255,.03);padding:1rem 1.5rem;border-radius:6px;border:1px solid rgba(255,255,255,.1)}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.6)}
+.ctrl-inp, .ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.4rem .7rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none;transition:border-color .2s}
+.ctrl-inp:focus, .ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.5rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;transition:background .18s;margin-left:auto}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN & CARDS */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:700}
+
+.top-actions{display:flex;gap:.5rem;}
+.btn-action{background:#fff;border:1px solid var(--border);color:var(--navy);padding:.4rem .8rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.85rem;font-weight:600;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.btn-action:hover{border-color:var(--navy);background:var(--cream-dark);}
+
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem;text-align:left;}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+.event-list{list-style:none;}
+.event-list > li{margin-bottom:1.5rem;padding-left:1.5rem;position:relative;font-size:.95rem;text-align:justify}
+.event-list > li::before{content:"•";position:absolute;left:0;color:var(--gold);font-size:1.5rem;line-height:1}
+
+.sub-list { list-style-type: decimal; padding-left: 1.5rem; margin-top: 0.5rem; text-align:justify;}
+.sub-list li { margin-bottom: 0.8rem; padding-left: 0.5rem; }
+.sub-list li::marker { font-weight: 600; color: var(--navy); }
+
+/* EXAM TABLE */
+.exam-table-wrap { overflow-x: auto; margin: 1.5rem 0; }
+.exam-table{width:100%;border-collapse:collapse;font-size:.85rem;font-family:'Source Serif 4',serif; margin: 0;}
+.exam-table th, .exam-table td{border:1px solid var(--border);padding:.6rem;text-align:center;vertical-align:middle;}
+.exam-table th{background:var(--navy);color:var(--cream);font-weight:600;}
+.exam-table .txt-left{text-align:left;font-weight:600;color:var(--navy);}
+.exam-table .amt{font-family:'JetBrains Mono',monospace;text-align:right;white-space:nowrap;}
+
+.two-col-table { width: 100%; display: flex; gap: 2rem; margin: 1.5rem 0; }
+.col-half { flex: 1; }
+.header-row { background: var(--cream-dark); font-weight: 600; text-align: center; }
+
+/* SOLUTION TOGGLE */
+.sol-toggle-wrap{text-align:left; margin: 1.5rem 0 0 0;}
+.btn-toggle{background:transparent;border:2px solid var(--green);border-bottom:none;color:var(--green);font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;padding:.5rem 1.5rem;border-radius:4px 4px 0 0;cursor:pointer;transition:all .2s; position:relative; z-index:2; top:2px;}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--green);color:var(--cream)}
+.sol-card{border-top:2px solid var(--green);display:none; border-radius: 0 6px 6px 6px; position:relative; z-index:1;}
+.sol-card.visible{display:block;animation:fi .4s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+
+.calc-box{background:#f9fcf9;border:1px solid #c8e6c9;padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.9rem;color:var(--text);line-height:1.6;text-align:justify;}
+.math-formula { text-align: center; margin: 1.2rem 0; overflow-x: auto; }
+
+@media print{
+  body{background:#fff;}
+  header, .ctrls, .sol-toggle-wrap, .top-actions {display:none !important;}
+  .card{box-shadow:none; border:1px solid var(--border); margin-bottom:2rem;}
+  .sol-card{display:block !important; border-top:2px solid var(--green);}
+  #ex-area {display:block !important;}
+}
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-badge">INFORMATION COMPTABLE ET FINANCIÈRE</div>
+  <h1>Soldes intermédiaires de gestion et CAF</h1>
+  <p class="subtitle">© Thomas Hossen – Version du 7 mars 2026</p>
+  
+  <div class="ctrls">
+    <div class="ctrl-g">
+      <span class="ctrl-lbl">Seed (Optionnel)</span>
+      <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999">
+    </div>
+    <button class="btn-gen" onclick="generateExercise(false)">Générer l'exercice →</button>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" style="text-align:center; padding:4rem; color:var(--text-muted); font-style:italic;">
+    Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="seed-badge">Seed active : <span id="seed-disp"></span></div>
+      <div class="top-actions">
+        <button class="btn-action" onclick="generateExercise(true)">↺ Nouvel énoncé</button>
+        <button class="btn-action" onclick="window.print()">⬇ Exporter PDF</button>
+        <button class="btn-action" onclick="exportWord()">⬇ Exporter DOC</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="tag">Énoncé</span><h2>Performance et autofinancement</h2></div>
+      <div class="card-body">
+        <div class="context-block" id="context-text"></div>
+        <div id="enonce-table-container"></div>
+        <div class="context-block" id="additional-info" style="margin-top:1.5rem; background:#fff; border-left:3px solid var(--navy); border-radius:0;"></div>
+        
+        <p style="margin-bottom:1rem; font-weight:600; color:var(--red); text-align:left;">Travail à faire</p>
+        <ul class="event-list" id="events-list"></ul>
+      </div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag">Corrigé</span><h2>Performance et autofinancement</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+// --- PRNG (Mulberry32) ---
+let currentSeed = 0;
+function seedPRNG(seed) {
+    return function() {
+      let t = seed += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+let random = Math.random;
+
+function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
+
+// Fonctions de formatage strict pour le rendu LaTeX (MathJax) et l'affichage normal
+function texM(num) {
+    let sign = num < 0 ? "-" : "";
+    let absNum = Math.abs(num);
+    absNum = Math.round(absNum * 100) / 100;
+    let parts = absNum.toFixed(2).split('.');
+    let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, "\\,");
+    return sign + intPart + "{.}" + parts[1];
+}
+function texI(num) {
+    let sign = num < 0 ? "-" : "";
+    let absNum = Math.round(Math.abs(num));
+    return sign + absNum.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "\\,");
+}
+function formatMoney(num) {
+    return num.toLocaleString('fr-FR') + ' €';
+}
+
+function generateExercise(forceNew = false) {
+    if(forceNew) {
+        document.getElementById('seed-input').value = "";
+    }
+    let seedVal = document.getElementById('seed-input').value;
+    currentSeed = seedVal ? parseInt(seedVal) : Math.floor(Math.random() * 99999999);
+    document.getElementById('seed-disp').innerText = currentSeed;
+    document.getElementById('seed-input').value = currentSeed;
+    random = seedPRNG(currentSeed);
+
+    const companies = ["TechIndus", "MécaProd", "Bois & Habitat", "PolyPlast", "ÉcoConstruction"];
+    const company = companies[randInt(0, companies.length-1)];
+
+    let rn = -1;
+    let v_m, a_m, p_v, p_s, a_mp, aace, it, cp, sub_e, dap_e, rap_e, ape, ace, p_fin, c_fin;
+    let pcea, autre_p_exc, qp_sub_inv, p_exc;
+    let vnc, autre_c_exc, c_exc;
+    let marge, prod, va, ebe, re, rfin, rcai, rexc, r_avt_imp, part, is;
+
+    // Boucle pour s'assurer d'obtenir un scénario cohérent avec un RN positif
+    do {
+        v_m = randInt(250, 600) * 1000;
+        a_m = Math.round(v_m * randInt(40, 60)/100);
+        
+        p_v = randInt(1200, 2500) * 1000;
+        p_s = randInt(-80, 120) * 1000;
+        
+        a_mp = Math.round(p_v * randInt(25, 40)/100);
+        aace = Math.round(p_v * randInt(15, 25)/100);
+        
+        it = randInt(30, 80) * 1000;
+        cp = Math.round(p_v * randInt(25, 35)/100);
+        
+        sub_e = randInt(10, 40) * 1000;
+        
+        dap_e = randInt(80, 200) * 1000;
+        rap_e = randInt(10, 30) * 1000;
+        
+        ape = randInt(5, 25) * 1000;
+        ace = randInt(5, 25) * 1000;
+        
+        p_fin = randInt(10, 30) * 1000;
+        c_fin = randInt(20, 60) * 1000;
+        
+        pcea = randInt(30, 90) * 1000;
+        autre_p_exc = randInt(5, 15) * 1000;
+        qp_sub_inv = randInt(10, 20) * 1000;
+        p_exc = pcea + autre_p_exc + qp_sub_inv;
+        
+        vnc = randInt(20, 70) * 1000;
+        autre_c_exc = randInt(5, 15) * 1000;
+        c_exc = vnc + autre_c_exc;
+        
+        // Calculs intermédiaires
+        marge = v_m - a_m;
+        prod = p_v + p_s;
+        va = marge + prod - a_mp - aace;
+        ebe = va + sub_e - it - cp;
+        re = ebe + rap_e + ape - dap_e - ace;
+        rfin = p_fin - c_fin;
+        rcai = re + rfin;
+        rexc = p_exc - c_exc;
+        r_avt_imp = rcai + rexc;
+        
+        part = Math.max(0, Math.round(rcai * 0.05));
+        is = Math.max(0, Math.round((r_avt_imp - part) * 0.25));
+        
+        rn = r_avt_imp - part - is;
+    } while (rn <= 0 || ebe <= 0 || va <= 0);
+
+    // Affichage Énoncé
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('ex-area').style.display = 'block';
+    document.getElementById('sol-card').classList.remove('visible');
+    document.getElementById('toggle-btn').innerText = "Afficher le corrigé";
+    document.getElementById('toggle-btn').classList.remove('shown');
+
+    document.getElementById('context-text').innerHTML = `
+      Le directeur financier de la société industrielle <strong>${company}</strong> vous communique un extrait de ses comptes de gestion arrêtés à la fin du dernier exercice comptable (N). L'entreprise exerce une double activité : une activité purement commerciale (achat-revente de marchandises en l'état) et une activité de production industrielle de biens.
+    `;
+
+    // Tableaux des charges et produits
+    let tableHtml = `<div class="two-col-table">
+        <div class="col-half">
+            <table class="exam-table">
+                <tr><th colspan="2">Extrait des comptes de CHARGES (en €)</th></tr>
+                <tr><td class="txt-left">Achats de marchandises (y compris var. de stocks)</td><td class="amt">${formatMoney(a_m)}</td></tr>
+                <tr><td class="txt-left">Achats de matières premières (y compris var. stocks)</td><td class="amt">${formatMoney(a_mp)}</td></tr>
+                <tr><td class="txt-left">Autres achats et charges externes</td><td class="amt">${formatMoney(aace)}</td></tr>
+                <tr><td class="txt-left">Impôts, taxes et versements assimilés</td><td class="amt">${formatMoney(it)}</td></tr>
+                <tr><td class="txt-left">Charges de personnel</td><td class="amt">${formatMoney(cp)}</td></tr>
+                <tr><td class="txt-left">Dotations aux amort. et prov. d'exploitation</td><td class="amt">${formatMoney(dap_e)}</td></tr>
+                <tr><td class="txt-left">Autres charges d'exploitation</td><td class="amt">${formatMoney(ace)}</td></tr>
+                <tr><td class="txt-left">Charges financières</td><td class="amt">${formatMoney(c_fin)}</td></tr>
+                <tr><td class="txt-left">Charges exceptionnelles</td><td class="amt">${formatMoney(c_exc)}</td></tr>
+                <tr><td class="txt-left">Participation des salariés aux résultats</td><td class="amt">${formatMoney(part)}</td></tr>
+                <tr><td class="txt-left">Impôt sur les bénéfices</td><td class="amt">${formatMoney(is)}</td></tr>
+            </table>
+        </div>
+        <div class="col-half">
+            <table class="exam-table">
+                <tr><th colspan="2">Extrait des comptes de PRODUITS (en €)</th></tr>
+                <tr><td class="txt-left">Ventes de marchandises</td><td class="amt">${formatMoney(v_m)}</td></tr>
+                <tr><td class="txt-left">Production vendue</td><td class="amt">${formatMoney(p_v)}</td></tr>
+                <tr><td class="txt-left">Production stockée</td><td class="amt">${formatMoney(p_s)}</td></tr>
+                <tr><td class="txt-left">Subventions d'exploitation</td><td class="amt">${formatMoney(sub_e)}</td></tr>
+                <tr><td class="txt-left">Reprises sur amort. et prov. d'exploitation</td><td class="amt">${formatMoney(rap_e)}</td></tr>
+                <tr><td class="txt-left">Autres produits d'exploitation</td><td class="amt">${formatMoney(ape)}</td></tr>
+                <tr><td class="txt-left">Produits financiers</td><td class="amt">${formatMoney(p_fin)}</td></tr>
+                <tr><td class="txt-left">Produits exceptionnels</td><td class="amt">${formatMoney(p_exc)}</td></tr>
+            </table>
+        </div>
+    </div>`;
+    document.getElementById('enonce-table-container').innerHTML = tableHtml;
+
+    document.getElementById('additional-info').innerHTML = `
+        <strong>Informations complémentaires issues de l'annexe</strong><br>
+        Le détail des opérations exceptionnelles de l'exercice se décompose comme suit : les charges exceptionnelles comprennent la valeur nette comptable des éléments d'actif cédés (VNC) pour un montant de ${formatMoney(vnc)} ; les produits exceptionnels comprennent les produits des cessions d'éléments d'actif (PCEA) pour un montant de ${formatMoney(pcea)} et la quote-part des subventions d'investissement virée au résultat de l'exercice pour ${formatMoney(qp_sub_inv)}.
+    `;
+
+    let htmlEnonce = "";
+    htmlEnonce += `<li><strong>1. Soldes intermédiaires de gestion.</strong> Établissez le tableau des Soldes Intermédiaires de Gestion (SIG) en détaillant rigoureusement le calcul de chaque indicateur depuis la marge commerciale jusqu'au résultat net de l'exercice.</li>`;
+    htmlEnonce += `<li><strong>2. Méthode soustractive d'évaluation de la CAF.</strong> Déterminez la capacité d'autofinancement (CAF) de l'entreprise en partant de l'excédent brut d'exploitation (EBE).</li>`;
+    htmlEnonce += `<li><strong>3. Méthode additive d'évaluation de la CAF.</strong> Vérifiez votre résultat précédent en recalculant cette même CAF à partir du résultat net de l'exercice.</li>`;
+
+    document.getElementById('events-list').innerHTML = htmlEnonce;
+
+    // --- GÉNÉRATION CORRIGÉ ---
+    let htmlSol = "";
+
+    // Corrigé Dossier 1 : SIG
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">1. Soldes intermédiaires de gestion</span>
+        L'analyse de l'activité repose sur la construction en cascade des soldes intermédiaires de gestion (SIG). Chaque niveau met en évidence une facette spécifique de la création de richesse de l'entreprise.
+        <ol class="sub-list" style="margin-top:1rem; margin-bottom:1rem;">
+            <li><strong>La marge commerciale.</strong> Elle s'applique exclusivement à l'activité de négoce. Elle se calcule par la différence entre les ventes de marchandises et le coût d'achat des marchandises vendues. L'application numérique donne $${texI(v_m)} - ${texI(a_m)} = ${texI(marge)}$ euros.</li>
+            <li><strong>La production de l'exercice.</strong> Elle mesure l'activité industrielle brute. Elle est la somme algébrique de la production vendue et de la production stockée (qui peut être négative en cas de déstockage). On obtient donc $${texI(p_v)} + (${texI(p_s)}) = ${texI(prod)}$ euros.</li>
+            <li><strong>La valeur ajoutée (VA).</strong> Elle exprime la richesse véritablement créée par l'entreprise après rémunération de ses fournisseurs externes. Elle correspond à la somme de la marge commerciale et de la production, diminuée des consommations en provenance de tiers (achats de matières premières et autres achats et charges externes). Le calcul s'établit à $${texI(marge)} + ${texI(prod)} - ${texI(a_mp)} - ${texI(aace)} = ${texI(va)}$ euros.</li>
+            <li><strong>L'excédent brut d'exploitation (EBE).</strong> C'est la ressource fondamentale tirée de l'exploitation, indépendamment de la politique d'investissement (amortissements) et de financement. Il s'obtient en ajoutant les subventions d'exploitation à la VA, puis en déduisant les impôts et taxes ainsi que les charges de personnel. On obtient $${texI(va)} + ${texI(sub_e)} - ${texI(it)} - ${texI(cp)} = ${texI(ebe)}$ euros.</li>
+            <li><strong>Le résultat d'exploitation (REX).</strong> Il mesure la performance économique nette. À l'EBE, on ajoute les reprises sur provisions d'exploitation et autres produits d'exploitation, puis on retranche les dotations aux amortissements et provisions d'exploitation ainsi que les autres charges d'exploitation. Le calcul est $${texI(ebe)} + ${texI(rap_e)} + ${texI(ape)} - ${texI(dap_e)} - ${texI(ace)} = ${texI(re)}$ euros.</li>
+            <li><strong>Le résultat courant avant impôts (RCAI).</strong> Il intègre l'impact de la politique de financement. On lui incorpore le résultat financier (produits financiers moins charges financières). Le résultat financier étant de $${texI(p_fin)} - ${texI(c_fin)} = ${texI(rfin)}$ euros, le RCAI s'établit à $${texI(re)} + (${texI(rfin)}) = ${texI(rcai)}$ euros.</li>
+            <li><strong>Le résultat exceptionnel.</strong> Ce solde isole les éléments non récurrents, calculé par la différence entre les produits et charges exceptionnels. Il s'élève à $${texI(p_exc)} - ${texI(c_exc)} = ${texI(rexc)}$ euros.</li>
+            <li><strong>Le résultat net de l'exercice (RN).</strong> Il représente le bénéfice attribuable aux actionnaires après prélèvement de la participation des salariés et de l'impôt sur les bénéfices. On additionne le RCAI et le résultat exceptionnel, puis on retranche ces deux postes. On obtient $${texI(rcai)} + (${texI(rexc)}) - ${texI(part)} - ${texI(is)} = ${texI(rn)}$ euros.</li>
+        </ol>
+    </div>`;
+
+    // Corrigé Dossier 2 : CAF méthode soustractive
+    let caf_soust = ebe + ape - ace + p_fin - c_fin + autre_p_exc - autre_c_exc - part - is;
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">2. Méthode soustractive d'évaluation de la CAF</span>
+        La capacité d'autofinancement (CAF) représente le flux potentiel de trésorerie dégagé par l'activité globale de l'entreprise, servant à financer les investissements, rembourser les emprunts ou distribuer des dividendes. La méthode de l'EBE, ou méthode soustractive, consiste à partir de l'excédent brut d'exploitation pour y rajouter les produits encaissables et y retrancher les charges décaissables, à l'exclusion stricte des flux liés au cycle d'investissement ou de financement (comme les plus-values de cession). On procède de la façon suivante :
+        <ul style="list-style-type:none; padding-left:1rem; margin:0.8rem 0;">
+            <li>$\\star\\; \\text{Excédent brut d'exploitation (EBE)} : + ${texI(ebe)}$ euros.</li>
+            <li>$\\star\\; \\text{Autres produits d'exploitation encaissables} : + ${texI(ape)}$ euros.</li>
+            <li>$\\star\\; \\text{Autres charges d'exploitation décaissables} : - ${texI(ace)}$ euros.</li>
+            <li>$\\star\\; \\text{Produits financiers encaissables} : + ${texI(p_fin)}$ euros.</li>
+            <li>$\\star\\; \\text{Charges financières décaissables} : - ${texI(c_fin)}$ euros.</li>
+            <li>$\\star\\; \\text{Produits exceptionnels encaissables (hors PCEA et quote-part subvention)} : + ${texI(autre_p_exc)}$ euros.</li>
+            <li>$\\star\\; \\text{Charges exceptionnelles décaissables (hors VNC)} : - ${texI(autre_c_exc)}$ euros.</li>
+            <li>$\\star\\; \\text{Participation des salariés} : - ${texI(part)}$ euros.</li>
+            <li>$\\star\\; \\text{Impôt sur les bénéfices} : - ${texI(is)}$ euros.</li>
+        </ul>
+        La somme algébrique de ces éléments nous donne une capacité d'autofinancement de $${texI(ebe)} + ${texI(ape)} - ${texI(ace)} + ${texI(p_fin)} - ${texI(c_fin)} + ${texI(autre_p_exc)} - ${texI(autre_c_exc)} - ${texI(part)} - ${texI(is)} = ${texI(caf_soust)}$ euros.
+    </div>`;
+
+    // Corrigé Dossier 3 : CAF méthode additive
+    let caf_add = rn + dap_e + vnc - rap_e - pcea - qp_sub_inv;
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">3. Méthode additive d'évaluation de la CAF</span>
+        La méthode de résultat net, ou méthode additive, procède par retraitement. Le point de départ est le résultat net comptable (qui synthétise l'ensemble des charges et des produits), que l'on va corriger pour annuler l'impact des écritures purement calculées (sans flux monétaire) et des écritures exceptionnelles de cession. Les charges calculées sont réintégrées (additionnées) et les produits calculés ou liés aux cessions sont neutralisés (soustraits).
+        <ul style="list-style-type:none; padding-left:1rem; margin:0.8rem 0;">
+            <li>$\\star\\; \\text{Résultat net de l'exercice} : + ${texI(rn)}$ euros.</li>
+            <li>$\\star\\; \\text{Dotations aux amortissements et provisions (charges calculées)} : + ${texI(dap_e)}$ euros.</li>
+            <li>$\\star\\; \\text{Valeur nette comptable des cessions (VNC)} : + ${texI(vnc)}$ euros.</li>
+            <li>$\\star\\; \\text{Reprises sur amortissements et provisions (produits calculés)} : - ${texI(rap_e)}$ euros.</li>
+            <li>$\\star\\; \\text{Produits des cessions d'éléments d'actif (PCEA)} : - ${texI(pcea)}$ euros.</li>
+            <li>$\\star\\; \\text{Quote-part des subv. d'investissement virée au résultat} : - ${texI(qp_sub_inv)}$ euros.</li>
+        </ul>
+        Le calcul algébrique nous donne $${texI(rn)} + ${texI(dap_e)} + ${texI(vnc)} - ${texI(rap_e)} - ${texI(pcea)} - ${texI(qp_sub_inv)} = ${texI(caf_add)}$ euros. Nous vérifions ainsi la stricte égalité entre la méthode soustractive et la méthode additive.
+    </div>`;
+
+    document.getElementById('sol-content').innerHTML = htmlSol;
+    
+    // Rendu LaTeX asynchrone
+    if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
+        MathJax.typesetPromise().catch(function (err) {
+            console.error('Erreur MathJax :', err);
+        });
+    }
+}
+
+function toggleSol() {
+    let solCard = document.getElementById('sol-card');
+    let btn = document.getElementById('toggle-btn');
+    if(solCard.classList.contains('visible')) {
+        solCard.classList.remove('visible');
+        btn.innerText = "Afficher le corrigé";
+        btn.classList.remove('shown');
+    } else {
+        solCard.classList.add('visible');
+        btn.innerText = "Masquer le corrigé";
+        btn.classList.add('shown');
+    }
+}
+
+function exportWord() {
+    let content = document.getElementById('ex-area').cloneNode(true);
+    let actions = content.querySelector('.top-actions');
+    if(actions) actions.parentNode.removeChild(actions);
+    let toggle = content.querySelector('.sol-toggle-wrap');
+    if(toggle) toggle.parentNode.removeChild(toggle);
+    let solCard = content.querySelector('#sol-card');
+    if(solCard) solCard.style.display = 'block';
+
+    let html = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <meta charset='utf-8'>
+            <title>Exercice Finance</title>
+            <style>
+                body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5; text-align: justify; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 10pt; }
+                th, td { border: 1px solid #000; padding: 4px; }
+                th { background-color: #f2f2f2; text-align: center; font-weight: bold; }
+                .txt-left { text-align: left; font-weight: bold; }
+                .amt { text-align: right; white-space: nowrap; }
+                .two-col-table { width: 100%; }
+                .col-half { width: 48%; display: inline-block; vertical-align: top; margin-right: 2%; }
+                .calc-box { border: 1px solid #000; padding: 10px; margin-bottom: 15px; background-color: #f9f9f9; text-align: justify; }
+                .math-formula { text-align: center; font-style: italic; margin: 10px 0; }
+                ul { text-align: justify; }
+                ol { text-align: justify; }
+                li { margin-bottom: 5px; }
+            </style>
+        </head>
+        <body>
+            ${content.innerHTML}
+        </body>
+        </html>
+    `;
+    
+    let blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    let url = URL.createObjectURL(blob);
+    let link = document.createElement('a');
+    link.href = url;
+    link.download = 'Exercice_SIG_CAF.doc';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>

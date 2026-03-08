@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Générateur d'exercices - Économétrie</title>
+<script>
+window.MathJax = {
+  tex: { 
+    inlineMath: [['\\(','\\)']], 
+    displayMath: [['\\[','\\]']], 
+    packages: {'[+]': ['ams']},
+    macros: {
+      Var: ['\\textbf{Var}\\left(#1\\right)', 1],
+      Cov: ['\\textbf{Cov}\\left(#1\\right)', 1],
+      dsum: ['\\sum_{#1}^{#2}', 2]
+    }
+  },
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] }
+};
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 0;border-bottom:3px solid var(--gold)}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+#controls-bar{border-top:1px solid rgba(255,255,255,.08);padding:1.1rem 0 1.3rem}
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.5)}
+.ctrl-inp{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.38rem .65rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.82rem;width:88px;outline:none;transition:border-color .2s}
+.ctrl-inp:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.ctrl-tip{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:rgba(250,247,240,.33);margin-top:2px}
+.seed-row{display:flex;align-items:flex-end;gap:.45rem}
+.btn-copy-seed{background:transparent;border:1px solid rgba(201,149,42,.4);color:rgba(250,247,240,.55);padding:.38rem .55rem;border-radius:3px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:.65rem;transition:all .18s;white-space:nowrap}
+.btn-copy-seed:hover{border-color:var(--gold-light);color:var(--gold-light)}
+.ctrl-vsep{width:1px;background:rgba(255,255,255,.1);align-self:stretch;margin:0 .2rem}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.3rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.9rem;font-weight:600;transition:background .18s;white-space:nowrap;align-self:flex-end}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.welcome-msg{text-align:center;padding:5rem 2rem;color:var(--text-muted);font-style:italic;font-size:1.05rem}
+.welcome-msg .arrow{font-size:2rem;display:block;margin-bottom:1rem;opacity:.4}
+
+/* TOP BAR */
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.top-bar-left{display:flex;gap:.6rem;align-items:center}
+.btn-sm{background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:'JetBrains Mono',monospace;font-size:.67rem;letter-spacing:.08em;text-transform:uppercase;padding:.4rem 1rem;border-radius:3px;cursor:pointer;transition:all .18s;white-space:nowrap}
+.btn-sm:hover{background:var(--gold);color:var(--navy)}
+.btn-sm.pdf{border-color:#7bafd4;color:#7bafd4}
+.btn-sm.pdf:hover{background:#7bafd4;color:var(--navy)}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.67rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:500}
+
+/* CARDS */
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);margin-bottom:1.5rem;border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+
+/* QUESTIONS */
+.questions ol{counter-reset:q;list-style:none}
+.questions ol>li{counter-increment:q;margin-bottom:1.4rem;display:flex;gap:1rem;align-items:flex-start}
+.questions ol>li::before{content:counter(q);min-width:28px;height:28px;background:var(--navy);color:var(--cream);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:500;flex-shrink:0;margin-top:.15rem}
+.questions ol>li .q-text{flex:1;font-size:.93rem;text-align:justify}
+
+/* SOLUTION */
+.sol-toggle-wrap{text-align:center;margin:1rem 0 0}
+.btn-toggle{background:transparent;border:2px solid var(--navy);color:var(--navy);font-family:'Source Serif 4',serif;font-size:.9rem;padding:.6rem 2rem;border-radius:4px;cursor:pointer;transition:all .2s}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--navy);color:var(--cream)}
+.sol-card{border-top:4px solid var(--green);display:none}
+.sol-card.visible{display:block;animation:fi .3s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+.st{font-size:.92rem;line-height:1.75;text-align:justify}
+.st p{margin-bottom:.7rem}
+.st ol{counter-reset:sq;list-style:none}
+.st>ol>li{counter-increment:sq;margin-bottom:1.6rem;display:flex;gap:1rem;align-items:flex-start}
+.st>ol>li::before{content:counter(sq);min-width:24px;height:24px;background:var(--green);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.68rem;flex-shrink:0;margin-top:.15rem}
+.st ul{list-style:disc;padding-left:1.5rem;margin-bottom:.7rem}
+.st ul li{margin-bottom:1rem}
+.st .q-content{flex:1;} /* Assure que le texte prend toute la largeur restante */
+
+/* PDF MODAL */
+#pdf-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;backdrop-filter:blur(2px)}
+#pdf-modal{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:101;background:#fff;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.25);width:390px;max-width:95vw;border-top:4px solid #7bafd4;overflow:hidden}
+.mh{background:var(--navy);color:var(--cream);padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
+.mh h3{font-family:'Playfair Display',serif;font-size:1rem;font-weight:600}
+.mclose{background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:1.2rem;line-height:1;padding:2px 6px;border-radius:3px;transition:color .15s}
+.mclose:hover{color:#fff}
+.mb2{padding:1.5rem}
+.opt-row{display:flex;align-items:flex-start;gap:.75rem;margin-bottom:1rem;cursor:pointer}
+.opt-row input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--navy);flex-shrink:0;margin-top:3px}
+.opt-lbl{font-size:.93rem}
+.opt-desc{font-size:.75rem;color:var(--text-muted);display:block}
+.seed-note{font-family:'JetBrains Mono',monospace;font-size:.7rem;background:var(--cream-dark);border:1px solid var(--border);padding:.55rem .85rem;border-radius:3px;color:var(--text-muted);margin-bottom:1.2rem;line-height:1.5}
+.seed-note strong{color:var(--navy)}
+.mactions{display:flex;gap:.6rem}
+.btn-print{flex:1;background:var(--navy);color:var(--cream);border:none;padding:.7rem;border-radius:4px;font-family:'Source Serif 4',serif;font-size:.9rem;cursor:pointer;transition:background .2s}
+.btn-print:hover{background:var(--navy-mid)}
+.btn-cancel{background:transparent;border:1px solid var(--border);color:var(--text-muted);padding:.7rem 1rem;border-radius:4px;font-family:'Source Serif 4',serif;font-size:.9rem;cursor:pointer;transition:all .2s}
+.btn-cancel:hover{border-color:var(--text);color:var(--text)}
+
+/* PRINT */
+@media print{
+:root{--navy:#0d1b2a;--cream:#fff;--cream-dark:#f8f8f8;--gold:#c9952a;--green:#2d6b4a;--border:#ccc}
+body{background:#fff;font-size:11pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+header{padding:1rem 1.5rem .8rem}
+header .subtitle{display:none}
+#controls-bar,.top-bar,.sol-toggle-wrap,#pdf-ov,#pdf-modal{display:none!important}
+.card{box-shadow:none;border-radius:0;page-break-inside:avoid;margin-bottom:1rem}
+main{padding:1rem 1.5rem;max-width:100%}
+body.print-no-header header{display:none!important}
+body.print-no-solution .sol-card{display:none!important}
+body.print-force-solution .sol-card{display:block!important}
+}
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-badge">ÉCONOMÉTRIE</div>
+  <h1>Modèle de régression linéaire simple</h1>
+  <p class="subtitle">© Thomas Hossen – Version du 7 mars 2026</p>
+
+  <div id="controls-bar">
+    <div class="ctrls">
+      <div class="ctrl-g">
+        <span class="ctrl-lbl">Seed de reproductibilité</span>
+        <div class="seed-row">
+          <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="0" max="99999999">
+          <button class="btn-copy-seed" onclick="copySeed()" title="Copier la seed active">⧉ Copier</button>
+        </div>
+        <span class="ctrl-tip">Vide = aléatoire à chaque génération</span>
+      </div>
+      <div class="ctrl-vsep"></div>
+      <div class="ctrl-g">
+        <span class="ctrl-lbl">Années <em>(n)</em></span>
+        <input class="ctrl-inp" type="number" id="param-n" min="15" max="50" placeholder="défaut">
+        <span class="ctrl-tip">15 – 50, auto si vide</span>
+      </div>
+      <div class="ctrl-vsep"></div>
+      <button class="btn-gen" onclick="generateFromControls()">Générer →</button>
+    </div>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" class="welcome-msg">
+    <span class="arrow">↑</span>
+    Configurez les paramètres (ou laissez vide pour de l'aléatoire), puis cliquez sur Générer.
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="top-bar-left">
+        <button class="btn-sm" onclick="regen()">↺ Nouvel énoncé</button>
+        <button class="btn-sm pdf" onclick="openPdfModal()">⬇ Exporter PDF</button>
+      </div>
+      <div class="seed-badge">Seed&nbsp;: <span id="seed-disp">—</span></div>
+    </div>
+
+    <div id="ex-card" class="card">
+      <div class="card-header"><span class="tag">Énoncé</span><h2 id="card-title">Estimation de la demande</h2></div>
+      <div class="card-body" id="ex-content"></div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag">Corrigé</span><h2>Estimation de la demande</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+
+  </div>
+</main>
+
+<div id="pdf-ov" onclick="closePdfModal()"></div>
+<div id="pdf-modal">
+  <div class="mh">
+    <h3>Exporter en PDF</h3>
+    <button class="mclose" onclick="closePdfModal()">✕</button>
+  </div>
+  <div class="mb2">
+    <div class="seed-note">Seed&nbsp;: <strong id="modal-seed">—</strong> — notez cette valeur pour reproduire exactement cet exercice.</div>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-header" checked>
+      <div><span class="opt-lbl">Inclure l'en-tête de page</span>
+           <span class="opt-desc">Titre, badge « ÉCONOMÉTRIE » et intitulé de l'exercice</span></div>
+    </label>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-sol">
+      <div><span class="opt-lbl">Inclure le corrigé complet</span>
+           <span class="opt-desc">Démonstrations des estimateurs, variances et prévisions</span></div>
+    </label>
+    <div class="mactions">
+      <button class="btn-print" onclick="doPrint()">🖨&nbsp;Imprimer / Sauvegarder PDF</button>
+      <button class="btn-cancel" onclick="closePdfModal()">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+// SEEDED PRNG — mulberry32
+// ════════════════════════════════════════
+let _rand, _activeSeed = 0;
+function initRand(seed) {
+  _activeSeed = seed >>> 0;
+  let s = _activeSeed;
+  _rand = () => {
+    s = (s + 0x6D2B79F5) >>> 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const rI = (a,b) => Math.floor(_rand()*(b-a+1))+a;
+const rA = arr => arr[Math.floor(_rand()*arr.length)];
+
+// ════════════════════════════════════════
+// SCENARIOS & DATA
+// ════════════════════════════════════════
+const situations = [
+  {
+    nom: "engrais",
+    desc: "ventes annuelles d'engrais aux États-Unis",
+    q_desc: "le nombre de tonnes d'engrais vendues",
+    p_desc: "le prix annuel moyen de l'engrais",
+    q_unit: "tonne",
+    p_unit: "prix à la tonne",
+    geo: "aux États-Unis",
+    prod: "d'engrais"
+  },
+  {
+    nom: "pétrole",
+    desc: "consommations annuelles de pétrole brut au Brésil",
+    q_desc: "le nombre de millions de barils consommés",
+    p_desc: "le prix moyen annuel du baril",
+    q_unit: "million de barils",
+    p_unit: "prix au baril",
+    geo: "au Brésil",
+    prod: "de pétrole"
+  },
+  {
+    nom: "acier",
+    desc: "ventes annuelles d'acier au Japon",
+    q_desc: "le nombre de milliers de tonnes d'acier vendues",
+    p_desc: "le prix moyen à la tonne de l'acier",
+    q_unit: "millier de tonnes",
+    p_unit: "prix à la tonne",
+    geo: "au Japon",
+    prod: "d'acier"
+  },
+  {
+    nom: "ciment",
+    desc: "ventes annuelles de ciment en Europe",
+    q_desc: "le nombre de millions de tonnes de ciment vendues",
+    p_desc: "le prix moyen à la tonne du ciment",
+    q_unit: "million de tonnes",
+    p_unit: "prix à la tonne",
+    geo: "en Europe",
+    prod: "de ciment"
+  }
+];
+
+let solVisible = false;
+
+function regen() {
+  document.getElementById('seed-input').value = '';
+  generateFromControls();
+}
+
+function generateFromControls() {
+  const seedInp = document.getElementById('seed-input').value;
+  const seed = seedInp ? parseInt(seedInp) : Math.floor(Math.random()*10000000);
+  initRand(seed);
+  document.getElementById('seed-disp').textContent = seed;
+  document.getElementById('modal-seed').textContent = seed;
+  
+  const nInp = document.getElementById('param-n').value;
+  const n = nInp ? parseInt(nInp) : rI(15, 30);
+  
+  const sit = rA(situations);
+  
+  // Génération des données cohérentes empiriquement
+  const meanX = rI(-150, 200) / 100;
+  const meanY = rI(10, 350) / 100;
+  
+  let vX, vY, cov;
+  do {
+    vX = rI(20, 150) / 1000;
+    vY = rI(100, 400) / 1000;
+    cov = rI(-120, -20) / 1000; // Élasticité négative
+  } while (cov * cov >= 0.95 * vX * vY); // S'assurer que R^2 < 0.95
+
+  const p_futur = (rI(15, 30) / 10).toFixed(1);
+
+  // Formatage
+  const fmX = meanX.toFixed(2), fmY = meanY.toFixed(2);
+  const fvX = vX.toFixed(3), fvY = vY.toFixed(3), fcov = cov.toFixed(3);
+
+  // Calculs corrigé
+  const b_hat = cov / vX;
+  const a_hat = meanY - b_hat * meanX;
+  const r2 = (cov * cov) / (vX * vY);
+  
+  const sct = n * vY;
+  const scr = sct * (1 - r2);
+  const sig2_hat = scr / (n - 2);
+  const var_b_hat = sig2_hat / (n * vX);
+  
+  const y_pred = a_hat + b_hat * Math.log(parseFloat(p_futur));
+  const q_pred = Math.exp(y_pred);
+
+  // Render HTML Énoncé
+  let exHTML = `
+    <div class="context-block">
+      On considère les ${sit.desc} sur les ${n} dernières années. Pour tout entier \\(t\\) compris entre 1 et ${n}, on note \\(q_t\\) ${sit.q_desc} à l'année \\(t\\) et \\(p_t\\) ${sit.p_desc} (rapporté à l'indice des prix). Pour tout entier \\(t\\) compris entre 1 et ${n}, on pose alors \\(Y_t=\\ln(q_t)\\) et \\(X_t=\\ln(p_t)\\). On considère alors le modèle linéaire simple \\(Y_t=a+bX_t+u_t\\) (modèle 1), où \\(a\\) et \\(b\\) sont des réels à estimer et \\(u_1,\\ldots,u_n\\) des variables aléatoires vérifiant les hypothèses de Gauss-Markov (dont on note \\(\\sigma^2\\) la variance commune). On observe :
+      \\[\\begin{cases}
+      \\overline{\\textbf{X}}=\\frac{1}{${n}}\\sum\\limits_{t=1}^{${n}}X_t=${fmX}\\text{ et }\\overline{\\textbf{Y}}=\\frac{1}{${n}}\\sum\\limits_{t=1}^{${n}}Y_t=${fmY}\\\\[-6pt]
+      \\widetilde{\\textbf{Var}}(\\textbf{X})=\\frac{1}{${n}}\\sum\\limits_{t=1}^{${n}}(X_t-\\overline{\\textbf{X}})^2=${fvX}\\text{ et } \\widetilde{\\textbf{Var}}(\\textbf{Y})=\\frac{1}{${n}}\\sum\\limits_{t=1}^{${n}}(Y_t-\\overline{\\textbf{Y}})^2=${fvY}\\\\[-12pt]
+      \\widetilde{\\textbf{Cov}}(\\textbf{X},\\textbf{Y})=\\frac{1}{${n}}\\sum\\limits_{t=1}^{${n}}(X_t-\\overline{\\textbf{X}})(Y_t-\\overline{\\textbf{Y}})=${fcov}
+      \\end{cases}\\]
+    </div>
+    <div class="questions"><ol>
+      <li><div class="q-text">Estimer et interpréter \\(\\widehat{a}\\) et \\(\\widehat{b}\\), les estimateurs des moindres carrés ordinaires (MCO) des paramètres \\(a\\) et \\(b\\), respectivement.</div></li>
+      <li><div class="q-text">Quelle est la valeur du coefficient de détermination \\(R^2\\) du modèle ? Commenter.</div></li>
+      <li><div class="q-text">Quelle est la valeur de \\(\\widehat{\\sigma^2}\\), l'estimateur sans biais usuel de \\(\\sigma^2\\) ? En déduire la valeur de \\(\\widehat{\\textbf{Var}}(\\widehat{b})\\), la variance estimée de \\(\\widehat{b}\\) ?</div></li>
+      <li><div class="q-text">On suppose que le modèle 1 restera valable l'année \\(t=${n+1}\\). On estime l'indice des ${sit.p_unit} ${sit.prod} à l'année \\(t=${n+1}\\) à ${p_futur}. Quel sera le niveau des ventes ${sit.prod} ${sit.geo} à l'année \\(t=${n+1}\\) selon le modèle 1 ?</div></li>
+      <li><div class="q-text">On pose maintenant, pour tout entier \\(t\\) compris entre 1 et \\(n\\), \\(Y'_t=\\ln(p_tq_t)\\) et on considère le modèle \\(Y'_t=c+dX_t+v_t\\) (modèle 2), où \\(c\\) et \\(d\\) sont à estimer et \\(v_1,\\ldots,v_n\\) des variables aléatoires vérifiant les hypothèses de Gauss-Markov. Quelle relation y a-t-il d'une part entre \\(\\widehat{b}\\) et \\(\\widehat{d}\\), l'estimateur des MCO de \\(d\\), et d'autre part entre \\(\\widehat{a}\\) et \\(\\widehat{c}\\), l'estimateur des MCO de \\(c\\) ?</div></li>
+    </ol></div>
+  `;
+  document.getElementById('ex-content').innerHTML = exHTML;
+
+  // Render HTML Corrigé
+  let fmt = (x) => x >= 0 ? '+' + x : x.toString();
+  let b_perc = Math.abs(b_hat * 100).toFixed(2); // Convert to % wording for log-log
+  let a_exp = Math.exp(a_hat).toFixed(2);
+  
+  let solHTML = `<div class="st"><ol>`;
+  
+  // Q1 (Wrapped in div.q-content)
+  solHTML += `<li><div class="q-content"><p>L'estimateur \\(\\widehat{b}\\) des moindres carrés ordinaires du paramètre \\(b\\) est égal au rapport de la covariance des séries statistiques \\(\\textbf{X}:=(X_1,\\ldots,X_{${n}})\\) et \\(\\textbf{Y}:=(Y_1,\\ldots,Y_{${n}})\\) sur la variance de la série statistique \\(\\textbf{X}\\). Autrement dit, une estimation de \\(b\\) est donnée par \\(\\widehat{b}=\\frac{${fcov}}{${fvX}}\\approx ${b_hat.toFixed(2)}\\) (arrondi au centième). Comme on est en présence d'un modèle log-log, cette estimation signifie qu'une hausse de 1 % du ${sit.p_unit} ${sit.prod} est corrélée à une baisse des quantités vendues de ${Math.abs(b_hat).toFixed(2)} % en moyenne.</p>
+  <p>Par suite, l'estimateur \\(\\widehat{a}\\) des moindres carrés ordinaires du paramètre \\(a\\) vérifie l'égalité \\(\\widehat{a}=\\overline{\\textbf{Y}}-\\widehat{b}\\,\\overline{\\textbf{X}}\\approx ${fmY}-(${b_hat.toFixed(2)})\\times(${fmX})\\), c'est-à-dire \\(\\widehat{a}\\approx ${a_hat.toFixed(3)}\\) (arrondi au millième). Cela signifie, pour tout entier \\(t\\) compris entre 1 et \\(n\\), que la valeur moyenne attendue de \\(Y_t\\) lorsque \\(X_t\\) prend la valeur 0 (c'est-à-dire lorsque \\(p_t\\) prend la valeur 1) est égal à ${a_hat.toFixed(3)} : la quantité attendue ${sit.prod} vendue pour un ${sit.p_unit} de 1 (rapporté à l'indice des prix) est de \\(\\exp(${a_hat.toFixed(3)})\\approx ${a_exp}\\) ${sit.q_unit}(s) par an.</p></div></li>`;
+
+  // Q2 (Wrapped in div.q-content)
+  solHTML += `<li><div class="q-content"><p>Le coefficient de détermination \\(R^2\\) dans le modèle linéaire simple est égal au carré du coefficient de corrélation linéaire entre les séries statistiques \\(\\textbf{X}\\) et \\(\\textbf{Y}\\). On rappelle que le coefficient de corrélation linéaire est égal à la covariance entre les séries \\(\\textbf{X}\\) et \\(\\textbf{Y}\\) divisée par le produit des erreurs-types des séries \\(\\textbf{X}\\) et \\(\\textbf{Y}\\). On a donc \\(R^2=\\frac{(${fcov})^2}{${fvX}\\times ${fvY}}\\approx ${r2.toFixed(2)}\\) (arrondi au centième). Cela signifie donc que ${(r2*100).toFixed(0)} % de la variation observée (en pourcentage) des ventes annuelles ${sit.prod} ${sit.geo} est expliquée par la variation (en pourcentage) du ${sit.p_unit} ${sit.prod}.</p></div></li>`;
+
+  // Q3 (Wrapped in div.q-content)
+  solHTML += `<li><div class="q-content"><p>On note SCT la somme des carrés totale et SCR la somme des carrés résiduelle. Comme il y a ${n} observations, on a \\(\\text{SCT}=${n}\\,\\widetilde{\\textbf{Var}}(\\textbf{Y})=${sct.toFixed(3)}\\). Soit \\(\\widehat{\\sigma^2}\\) l'estimateur sans biais usuel de \\(\\sigma^2\\). De plus, on a \\(R^2=1-\\frac{\\text{SCR}}{\\text{SCT}}\\), c'est-à-dire \\(\\text{SCR}=\\text{SCT}(1-R^2)\\approx ${sct.toFixed(3)}(1-${r2.toFixed(2)})\\), soit \\(\\text{SCR}\\approx ${scr.toFixed(2)}\\) (arrondi au centième). Dès lors, on a \\(\\widehat{\\sigma^2}=\\frac{\\text{SCR}}{${n-2}} \\approx \\frac{${scr.toFixed(2)}}{${n-2}}\\), soit \\(\\widehat{\\sigma^2}\\approx ${sig2_hat.toFixed(3)}\\) (arrondi au millième). On a donc \\(\\widehat{\\textbf{Var}}(\\widehat{b})=\\frac{\\widehat{\\sigma^2}}{n\\widetilde{\\textbf{Var}}(\\textbf{X})}\\approx\\frac{${sig2_hat.toFixed(3)}}{${n}\\times ${fvX}}\\), c'est-à-dire \\(\\widehat{\\textbf{Var}}(\\widehat{b})\\approx ${var_b_hat.toFixed(3)}\\).</p></div></li>`;
+
+  // Q4 (Wrapped in div.q-content)
+  solHTML += `<li><div class="q-content"><p>On suppose que le modèle 1 restera valable l'année suivante, c'est-à-dire à l'année \\(t=${n+1}\\). On estime que le ${sit.p_unit} ${sit.prod} à l'année \\(t=${n+1}\\) sera de ${p_futur} (rapporté à l'indice des prix). Alors le modèle prévoit pour valeur de \\(Y_{${n+1}}\\) la valeur \\(\\widehat{Y}_{${n+1}}:=\\widehat{a}+\\widehat{b}\\ln(${p_futur})\\), c'est-à-dire \\(\\widehat{Y}_{${n+1}}\\approx ${a_hat.toFixed(3)}${fmt(b_hat.toFixed(2))}\\times\\ln(${p_futur})\\), soit \\(\\widehat{Y}_{${n+1}}\\approx ${y_pred.toFixed(3)}\\) (arrondi au millième). Ainsi, si le modèle demeure valable à l'année \\(t=${n+1}\\), on prévoit que \\(\\exp(${y_pred.toFixed(3)})\\approx ${q_pred.toFixed(2)}\\) ${sit.q_unit}(s) ${sit.prod} seront vendues ${sit.geo} pour l'année \\(t=${n+1}\\) (arrondi au centième).</p></div></li>`;
+
+  // Q5 (Wrapped in div.q-content)
+  solHTML += `<li><div class="q-content"><p>On pose maintenant, pour tout entier \\(t\\) compris entre 1 et \\(${n}\\), \\(Y'_t=\\ln(p_tq_t)\\) et on considère le modèle \\(Y'_t=c+dX_t+v_t\\) (modèle 2), où \\(c\\) et \\(d\\) sont des réels à estimer et \\(v_1,\\ldots,v_n\\) des variables aléatoires vérifiant les hypothèses de Gauss-Markov. Pour tout entier \\(t\\) compris entre 1 et ${n}, on a :
+  \\[\\begin{aligned}
+  Y'_t=c+dX_t+v_t
+  &\\iff \\ln(p_t)+\\ln(q_t)=c+d\\ln(p_t)+v_t\\\\
+  &\\iff \\ln(q_t)=c+(d-1)\\ln(p_t)+v_t\\\\
+  &\\iff Y_t=c+(d-1)X_t+v_t
+  \\end{aligned}\\]</p>
+  <p>Par unicité des estimateurs des moindres carrés ordinaires dans un modèle linéaire simple où l'on régresse \\(Y\\) sur \\(X\\) à partir des observations conjointes \\((X_1,Y_1),\\ldots,(X_{${n}},Y_{${n}})\\), on en déduit qu'on a \\(\\widehat{c}=\\widehat{a}\\) et \\(\\widehat{b}=\\widehat{d}-1\\). En particulier, on a \\(\\widehat{d}=\\widehat{b}+1\\).</p></div></li>`;
+
+  solHTML += `</ol></div>`;
+  document.getElementById('sol-content').innerHTML = solHTML;
+
+  // Affichage
+  document.getElementById('welcome').style.display = 'none';
+  document.getElementById('ex-area').style.display = 'block';
+  solVisible = false;
+  let solC = document.getElementById('sol-card'), btn = document.getElementById('toggle-btn');
+  solC.classList.remove('visible'); btn.classList.remove('shown'); btn.textContent = 'Afficher le corrigé';
+
+  if (window.MathJax) MathJax.typesetPromise();
+}
+
+// ════════════════════════════════════════
+// UI / PDF EXPORT
+// ════════════════════════════════════════
+function toggleSol(){
+  solVisible = !solVisible;
+  const sol = document.getElementById('sol-card'), btn = document.getElementById('toggle-btn');
+  if(solVisible){sol.classList.add('visible'); btn.classList.add('shown'); btn.textContent = 'Masquer le corrigé';}
+  else{sol.classList.remove('visible'); btn.classList.remove('shown'); btn.textContent = 'Afficher le corrigé';}
+}
+
+function copySeed(){
+  const s = document.getElementById('seed-disp').textContent;
+  if(s && s !== '—'){
+    navigator.clipboard.writeText(s).then(() => {
+      const b = event.target, o = b.textContent;
+      b.textContent = '✓ Copié'; setTimeout(()=>b.textContent=o,1500);
+    });
+  }
+}
+
+function openPdfModal(){
+  document.getElementById('pdf-ov').style.display = 'block';
+  document.getElementById('pdf-modal').style.display = 'block';
+  document.getElementById('opt-sol').checked = solVisible;
+}
+function closePdfModal(){
+  document.getElementById('pdf-ov').style.display = 'none';
+  document.getElementById('pdf-modal').style.display = 'none';
+}
+function doPrint(){
+  const noHdr = !document.getElementById('opt-header').checked;
+  const inclSol = document.getElementById('opt-sol').checked;
+  const body = document.body;
+  if(noHdr) body.classList.add('print-no-header');
+  if(inclSol){body.classList.add('print-force-solution');body.classList.remove('print-no-solution');}
+  else{body.classList.add('print-no-solution');body.classList.remove('print-force-solution');}
+  closePdfModal();
+  setTimeout(() => {
+    window.print();
+    setTimeout(() => { body.classList.remove('print-no-header','print-force-solution','print-no-solution'); }, 500);
+  }, 100);
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Finance - Modèle Binomial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['\\[', '\\]']],
+      macros: {
+        E: ['\\mathbb{E}\\left[#1\\right]', 1],
+        P: ['\\mathbb{P}\\left(#1\\right)', 1],
+        ee: '\\text{e}'
+      }
+    }
+  };
+</script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7;text-align:justify;}
+
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 1.5rem;border-bottom:3px solid var(--gold);text-align:left;}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end;background:rgba(255,255,255,.03);padding:1rem 1.5rem;border-radius:6px;border:1px solid rgba(255,255,255,.1)}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.6)}
+.ctrl-inp, .ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.4rem .7rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none;transition:border-color .2s}
+.ctrl-inp:focus, .ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.5rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;transition:background .18s;margin-left:auto}
+.btn-gen:hover{background:var(--gold-light)}
+
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:700}
+
+.top-actions{display:flex;gap:.5rem;}
+.btn-action{background:#fff;border:1px solid var(--border);color:var(--navy);padding:.4rem .8rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.85rem;font-weight:600;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.btn-action:hover{border-color:var(--navy);background:var(--cream-dark);}
+
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem;text-align:left;}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+
+.sol-toggle-wrap{text-align:left; margin: 1.5rem 0 0 0;}
+.btn-toggle{background:transparent;border:2px solid var(--green);border-bottom:none;color:var(--green);font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;padding:.5rem 1.5rem;border-radius:4px 4px 0 0;cursor:pointer;transition:all .2s; position:relative; z-index:2; top:2px;}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--green);color:var(--cream)}
+.sol-card{border-top:2px solid var(--green);display:none; border-radius: 0 6px 6px 6px; position:relative; z-index:1;}
+.sol-card.visible{display:block;animation:fi .4s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+
+.calc-box{background:#f9fcf9;border:1px solid #c8e6c9;padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.9rem;color:var(--text);line-height:1.6;text-align:justify;}
+.math-formula { text-align: center; margin: 1.2rem 0; overflow-x: auto; }
+
+/* Styles pour l'arbre SVG/HTML */
+.tree-container { position: relative; width: 100%; margin: 2rem auto; font-family: 'Source Serif 4', serif; overflow-x: auto; }
+.tree-node { 
+    background: #fff; border: 2px solid var(--navy); border-radius: 6px; padding: 0.8rem; 
+    text-align: center; min-width: 110px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.tree-node .lbl { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px; display: block; border-bottom: 1px solid #eee; padding-bottom: 2px;}
+.tree-node .val { font-weight: 600; color: var(--navy); }
+.tree-node .payoff { font-weight: 600; color: var(--green); margin-top: 4px; }
+
+.enum-list { list-style-type: disc; padding-left: 1.5rem; margin-top: 0.8rem; margin-bottom: 1.5rem; }
+.enum-list > li { margin-bottom: 0.8rem; }
+
+@media print{
+  body{background:#fff;}
+  header, .ctrls, .sol-toggle-wrap, .top-actions {display:none !important;}
+  .card{box-shadow:none; border:1px solid var(--border); margin-bottom:2rem;}
+  .sol-card{display:block !important; border-top:2px solid var(--green);}
+  #ex-area {display:block !important;}
+}
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-badge">PRODUITS DÉRIVÉS ET STRATÉGIES DE COUVERTURE</div>
+  <h1>Modèle binomial de Cox-Ross-Rubinstein</h1>
+  <p class="subtitle">© Thomas Hossen – Version du 7 mars 2026</p>
+  
+  <div class="ctrls">
+    <div class="ctrl-g">
+      <span class="ctrl-lbl">Périodes (pas)</span>
+      <select class="ctrl-sel" id="step-select">
+        <option value="1">1 pas (2 dates)</option>
+        <option value="2">2 pas (3 dates)</option>
+        <option value="3">3 pas (4 dates)</option>
+      </select>
+    </div>
+    <div class="ctrl-g">
+      <span class="ctrl-lbl">Seed (Optionnel)</span>
+      <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999">
+    </div>
+    <button class="btn-gen" onclick="generateExercise(false)">Générer l'exercice →</button>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" style="text-align:center; padding:4rem; color:var(--text-muted); font-style:italic;">
+    Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice d'évaluation d'options.
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="seed-badge">Seed active : <span id="seed-disp"></span></div>
+      <div class="top-actions">
+        <button class="btn-action" onclick="generateExercise(true)">↺ Nouvel énoncé</button>
+        <button class="btn-action" onclick="window.print()">⬇ Exporter PDF</button>
+        <button class="btn-action" onclick="exportWord()">⬇ Exporter DOC</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="tag">Énoncé</span><h2>Évaluation d'options européennes</h2></div>
+      <div class="card-body">
+        <div class="context-block" id="context-text"></div>
+        <p style="margin-bottom:1rem; font-weight:600; color:var(--red); text-align:left;">Travail à faire</p>
+        <ul style="list-style-type: decimal; padding-left: 1.5rem; margin-bottom: 1rem;">
+
+            <li style="margin-bottom: 0.5rem; padding-left: 0.5rem;">Déterminer la probabilité risque-neutre et vérifiez l'absence d'opportunité d'arbitrage.</li>
+
+            <li style="margin-bottom: 0.5rem; padding-left: 0.5rem;">Déterminer la valeur du <em>call</em> européen à la date $t=0$ en utilisant la méthode de l'arbre binomial.</li>
+
+            <li style="margin-bottom: 0.5rem; padding-left: 0.5rem;">Déduire la valeur du <em>put</em> européen de mêmes caractéristiques par la relation de parité <em>call-put</em>. Commenter.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag">Corrigé</span><h2>Évaluation d'options européennes</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+let currentSeed = 0;
+function seedPRNG(seed) {
+    return function() {
+      let t = seed += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+let random = Math.random;
+
+function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
+
+function texM(num) {
+    let sign = num < 0 ? "-" : "";
+    let absNum = Math.abs(num);
+    let parts = absNum.toFixed(2).split('.');
+    let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, "\\,");
+    return sign + intPart + "{.}" + parts[1];
+}
+function texM4(num) {
+    let sign = num < 0 ? "-" : "";
+    let absNum = Math.abs(num);
+    let parts = absNum.toFixed(4).split('.');
+    let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, "\\,");
+    return sign + intPart + "{.}" + parts[1];
+}
+
+// Fonction de calcul de combinaisons
+function binomialCoeff(n, k) {
+    let coeff = 1;
+    for (let x = n - k + 1; x <= n; x++) coeff *= x;
+    for (let x = 1; x <= k; x++) coeff /= x;
+    return coeff;
+}
+
+// Raccourcir le segment pour les flèches SVG
+function shortenLine(x1, y1, x2, y2, padX, padY, arrowOffset) {
+    let dx = x2 - x1;
+    let dy = y2 - y1;
+    let dist = Math.sqrt(dx*dx + dy*dy);
+    
+    let ratioStart = Math.min(Math.abs(padX / dx), Math.abs(padY / dy));
+    let ratioEnd = Math.min(Math.abs(padX / dx), Math.abs(padY / dy)) + arrowOffset/dist;
+    
+    return {
+        x1: x1 + dx * ratioStart,
+        y1: y1 + dy * ratioStart,
+        x2: x2 - dx * ratioEnd,
+        y2: y2 - dy * ratioEnd
+    };
+}
+
+function generateExercise(forceNew = false) {
+    if(forceNew) {
+        document.getElementById('seed-input').value = "";
+    }
+    let seedVal = document.getElementById('seed-input').value;
+    currentSeed = seedVal ? parseInt(seedVal) : Math.floor(Math.random() * 99999999);
+    document.getElementById('seed-disp').innerText = currentSeed;
+    document.getElementById('seed-input').value = currentSeed;
+    random = seedPRNG(currentSeed);
+
+    let n = parseInt(document.getElementById('step-select').value);
+    
+    // Génération des paramètres
+    let S0 = randInt(40, 120);
+    let K = S0 + randInt(-5, 5); 
+    let r_ann_pct = randInt(4, 10);
+    let r_ann = r_ann_pct / 100;
+    
+    // Durée dynamique
+    let T_months = n === 1 ? [1, 2, 3, 6][randInt(0, 3)] : (n === 2 ? [2, 4, 6, 12][randInt(0, 3)] : [3, 6, 12][randInt(0, 2)]);
+    let T = T_months / 12;
+    let dt = T / n;
+    let dt_months = Math.round(T_months / n);
+    
+    let R_exact = Math.exp(r_ann * dt);
+    
+    // Facteurs u et d (AOA stricte : d < R < u)
+    let u_pct = randInt(5, 20); 
+    let u = 1 + u_pct / 100;
+    let d = 1 - u_pct / 100;
+    
+    while(R_exact <= d || R_exact >= u) {
+        u_pct += 2;
+        u = 1 + u_pct / 100;
+        d = 1 - (u_pct - 2) / 100;
+    }
+
+    let q = (R_exact - d) / (u - d);
+
+    // Affichage Énoncé
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('ex-area').style.display = 'block';
+    document.getElementById('sol-card').classList.remove('visible');
+    document.getElementById('toggle-btn').innerText = "Afficher le corrigé";
+    document.getElementById('toggle-btn').classList.remove('shown');
+
+    let textPeriod = n === 1 ? `à une période (soit deux dates : $t=0$ et $t=1$)` : (n === 2 ? `à deux périodes (soit trois dates : $t=0$, $t=1$ et $t=2$)` : `à trois périodes (soit quatre dates : de $t=0$ à $t=3$)`);
+    
+    document.getElementById('context-text').innerHTML = `
+      On considère deux actifs : l'un non risqué qui donne un rendement continu de $${r_ann_pct}~\\%$ par an, et l'autre risqué (une action), proposé au prix unitaire $S_0=${S0}$ euros à la date $t=0$. L'échéance totale de l'option est fixée à ${T_months} mois. L'évolution du prix de l'action est modélisée par un arbre binomial à ${n} pas d'évolution indépendants (chaque pas correspondant à ${dt_months} mois). À chaque période, le prix de l'action peut soit augmenter de $${u_pct}~\\%$ (facteur de hausse $u=${u}$), soit diminuer de $${Math.round((1-d)*100)}~\\%$ (facteur de baisse $d=${d}$). Vous devez évaluer un <em>call</em> et un <em>put</em> européens portant sur cette action, de prix d'exercice $K=${K}$ euros.
+    `;
+
+    // --- GÉNÉRATION CORRIGÉ ---
+    let htmlSol = "";
+
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">1. Probabilité risque-neutre et absence d'opportunité d'arbitrage</span>
+        Notons tout d'abord que le rendement sur chaque sous-période de ${dt_months} mois pour l'actif non risqué vérifie $\\ee^{${r_ann_pct}\\,\\% \\times ${dt_months}/12}$, soit un taux périodique $r \\approx ${texM(r_ann * dt * 100)}\\,\\%$. Le facteur de capitalisation périodique est donc $R = \\ee^{${texM4(r_ann * dt)}} \\approx ${texM4(R_exact)}$.
+        Comme on vérifie strictement la condition $d < R < u$ (soit $${d} < ${texM4(R_exact)} < ${u}$), alors il n'y a pas d'opportunité d'arbitrage sur ce marché. Il est donc possible de déterminer le prix unique de l'option en utilisant l'approche risque-neutre. La probabilité risque-neutre $q$ d'un mouvement haussier s'obtient par la relation :
+        <div class="math-formula">\\[q = \\frac{\\ee^{r \\Delta t} - d}{u - d} = \\frac{${texM4(R_exact)} - ${d}}{${u} - ${d}} \\approx ${texM4(q)}\\]</div>
+        La probabilité d'un mouvement baissier est logiquement $1-q \\approx ${texM4(1-q)}$.
+    </div>`;
+
+    // Dessin de l'arbre en absolu avec des flèches SVG
+    let w = 800;
+    let h = n === 1 ? 250 : (n === 2 ? 350 : 450);
+    
+    function getPathLabel(n_total, i_up) {
+        if(n_total === 0) return "0";
+        let str = "";
+        for(let k=0; k<i_up; k++) str += "u";
+        for(let k=0; k<(n_total - i_up); k++) str += "d";
+        return str;
+    }
+
+    function getX_px(t, n) { return 100 + (t / n) * (w - 200); }
+    function getY_px(t, i, n) { 
+        let y = t - 2 * i; 
+        return (h / 2) + (y / n) * (h / 2 - 50); 
+    }
+
+    let svgLines = `<svg width="100%" height="100%" style="position:absolute; top:0; left:0; z-index: 1;">
+       <defs>
+         <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+           <path d="M 0 0 L 10 5 L 0 10 z" fill="#1a2e42" />
+         </marker>
+       </defs>`;
+       
+    let nodesHtml = '';
+    
+    for (let t = 0; t <= n; t++) {
+        for (let i = 0; i <= t; i++) {
+            let cx = getX_px(t, n);
+            let cy = getY_px(t, i, n);
+            
+            // Flèches vers les noeuds suivants
+            if (t < n) {
+                let nx_up = getX_px(t+1, n);
+                let ny_up = getY_px(t+1, i+1, n);
+                let nx_down = getX_px(t+1, n);
+                let ny_down = getY_px(t+1, i, n);
+                
+                // Raccourcir les lignes pour que la flèche ne soit pas cachée sous le div
+                let l_up = shortenLine(cx, cy, nx_up, ny_up, 55, 35, 12);
+                let l_down = shortenLine(cx, cy, nx_down, ny_down, 55, 35, 12);
+                
+                svgLines += `<line x1="${l_up.x1}" y1="${l_up.y1}" x2="${l_up.x2}" y2="${l_up.y2}" stroke="#1a2e42" stroke-width="2" marker-end="url(#arrow)" />`;
+                svgLines += `<line x1="${l_down.x1}" y1="${l_down.y1}" x2="${l_down.x2}" y2="${l_down.y2}" stroke="#1a2e42" stroke-width="2" marker-end="url(#arrow)" />`;
+                
+                // Placement des étiquettes q et 1-q
+                let mx_up = (l_up.x1 + l_up.x2) / 2;
+                let my_up = (l_up.y1 + l_up.y2) / 2;
+                let mx_down = (l_down.x1 + l_down.x2) / 2;
+                let my_down = (l_down.y1 + l_down.y2) / 2;
+                
+                svgLines += `<text x="${mx_up}" y="${my_up - 10}" dominant-baseline="middle" text-anchor="middle" font-size="15" fill="#c9952a" font-family="'Source Serif 4', serif" font-style="italic">q</text>`;
+                svgLines += `<text x="${mx_down}" y="${my_down + 14}" dominant-baseline="middle" text-anchor="middle" font-size="15" fill="#c9952a" font-family="'Source Serif 4', serif" font-style="italic">1-q</text>`;
+            }
+            
+            // Calcul financier
+            let S_val = S0 * Math.pow(u, i) * Math.pow(d, t - i);
+            let C_val = Math.max(S_val - K, 0);
+            let lbl = "S_{" + getPathLabel(t, i) + "}";
+            let extraPayoff = t === n ? `<div class="payoff">$C = ${texM(C_val)}$</div>` : "";
+            
+            nodesHtml += `
+            <div class="tree-node" style="position:absolute; left:${cx}px; top:${cy}px; transform:translate(-50%, -50%); z-index:2;">
+                <span class="lbl">$${lbl}$</span>
+                <span class="val">$${texM(S_val)}$</span>
+                ${extraPayoff}
+            </div>`;
+        }
+    }
+    svgLines += `</svg>`;
+    let treeHtml = `<div class="tree-container" style="height: ${h}px; max-width:${w}px;">` + svgLines + nodesHtml + `</div>`;
+
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">2. Modélisation de l'arbre binomial et valeur du <em>call</em></span>
+        Nous construisons l'arbre des trajectoires possibles pour le sous-jacent. À l'échéance $t=${n}$, la valeur intrinsèque du <em>call</em> est donnée par $\\max(S_{${n}} - K, 0)$.
+        ${treeHtml}
+        Puisque les évolutions sur chaque période sont indépendantes, la loi de probabilité du prix terminal suit une loi binomiale. Pour chaque état terminal caractérisé par $i$ hausses et $n-i$ baisses, la probabilité risque-neutre associée est $\\binom{n}{i} q^i (1-q)^{n-i}$. L'analyse des scénarios terminaux permet d'obtenir :
+        <ul class="enum-list">`;
+
+    let E_C = 0;
+    for (let i = n; i >= 0; i--) {
+        let S_term = S0 * Math.pow(u, i) * Math.pow(d, n - i);
+        let C_term = Math.max(S_term - K, 0);
+        let prob = binomialCoeff(n, i) * Math.pow(q, i) * Math.pow(1 - q, n - i);
+        E_C += prob * C_term;
+        
+        let pathName = getPathLabel(n, i);
+        let binomialText = i === n || i === 0 ? "1 chemin" : `${binomialCoeff(n, i)} chemins`;
+        
+        htmlSol += `<li>Si l'état du monde à l'échéance correspond à $S_{${pathName}}$, le cours atteint $${texM(S_term)}$ euros. La valeur intrinsèque du <em>call</em> est $\\max(${texM(S_term)} - ${K}, 0) = ${texM(C_term)}$. Cet état peut être atteint par ${binomialText}, soit une probabilité totale de $\\binom{${n}}{${i}} \\times q^{${i}} \\times (1-q)^{${n-i}} \\approx ${texM4(prob)}$.</li>`;
+    }
+
+    let C0 = E_C * Math.exp(-r_ann * T);
+
+    htmlSol += `</ul>
+        La valeur de l'option d'achat est alors donnée par l'espérance, actualisée au taux sans risque continu $r$, de son <em>payoff</em> $C_{${n}}$ à la date $t=${n}$, calculée sous la probabilité risque-neutre $q$. Autrement dit, la valeur $C_0$ du <em>call</em> à la date $t=0$ vérifie :
+        <div class="math-formula">\\[C_0 = \\ee^{-rT} \\E{C_{${n}}} = \\ee^{-${r_ann_pct}\\% \\times ${T_months}/12} \\times (${texM(E_C)}) \\approx ${texM(C0)}\\text{ euros}\\]</div>
+        En conclusion, pour acquérir ce <em>call</em>, l'investisseur devra débourser une prime de $${texM(C0)}$ euros aujourd'hui.
+    </div>`;
+
+    // Corrigé Partie 3 : Put
+    let P0 = C0 - S0 + K * Math.exp(-r_ann * T);
+    let K_act = K * Math.exp(-r_ann * T);
+
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">3. Déduction de la valeur du <em>put</em> par parité</span>
+        La relation de parité call-put constitue un principe d'absence d'arbitrage liant de manière déterministe les prix d'un call et d'un put européens ayant les mêmes paramètres (sous-jacent $S_0$, prix d'exercice $K$, et échéance $T$). Elle s'écrit formellement \\(C_0 - P_0 = S_0 - K\\ee^{-rT}\\). On en déduit immédiatement l'équation de valorisation du <em>put</em> initial : $P_0 = C_0 - S_0 + K\\ee^{-rT}$, c'est-à-dire $P_0= ${texM(C0)} - ${S0} + ${K}\\ee^{-${r_ann_pct}\\% \\times ${T_months}/12} \\approx ${texM(P0)}\\text{ euros}$. Ainsi, l'investisseur souhaitant se couvrir contre une baisse de l'action en deçà de $${K}$ euros dans ${T_months} mois devra acquérir ce <em>put</em> pour une prime de $${texM(P0)}$ euros. Si le sous-jacent chute à l'échéance comme dans le scénario baissier extrême ($S_{${getPathLabel(n, 0)}} = ${texM(S0 * Math.pow(d, n))}$), la valeur intrinsèque du <em>put</em> explosera, compensant ainsi la dépréciation de l'action détenue en portefeuille.
+    </div>`;
+
+    document.getElementById('sol-content').innerHTML = htmlSol;
+    
+    if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
+        MathJax.typesetPromise().catch(function (err) {
+            console.error('Erreur MathJax :', err);
+        });
+    }
+}
+
+function toggleSol() {
+    let solCard = document.getElementById('sol-card');
+    let btn = document.getElementById('toggle-btn');
+    if(solCard.classList.contains('visible')) {
+        solCard.classList.remove('visible');
+        btn.innerText = "Afficher le corrigé";
+        btn.classList.remove('shown');
+    } else {
+        solCard.classList.add('visible');
+        btn.innerText = "Masquer le corrigé";
+        btn.classList.add('shown');
+    }
+}
+
+function exportWord() {
+    let content = document.getElementById('ex-area').cloneNode(true);
+    let actions = content.querySelector('.top-actions');
+    if(actions) actions.parentNode.removeChild(actions);
+    let toggle = content.querySelector('.sol-toggle-wrap');
+    if(toggle) toggle.parentNode.removeChild(toggle);
+    let solCard = content.querySelector('#sol-card');
+    if(solCard) solCard.style.display = 'block';
+
+    let html = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <meta charset='utf-8'>
+            <title>Exercice Modèle Binomial</title>
+            <style>
+                body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5; text-align: justify; }
+                .calc-box { border: 1px solid #000; padding: 10px; margin-bottom: 15px; background-color: #f9f9f9; text-align: justify; }
+                .math-formula { text-align: center; font-style: italic; margin: 10px 0; }
+                .enum-list { list-style-type: disc; padding-left: 20px; }
+                li { margin-bottom: 8px; }
+            </style>
+        </head>
+        <body>
+            ${content.innerHTML}
+            <p><em>(Note : L'arbre visuel SVG n'est pas optimisé pour l'export Word brut, il est recommandé de s'appuyer sur les probabilités textuelles détaillées ci-dessus).</em></p>
+        </body>
+        </html>
+    `;
+    
+    let blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    let url = URL.createObjectURL(blob);
+    let link = document.createElement('a');
+    link.href = url;
+    link.download = 'Exercice_Binomial.doc';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>

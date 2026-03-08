@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Comptabilité de Gestion - Résultat Différentiel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7;text-align:justify;}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 1.5rem;border-bottom:3px solid var(--gold);text-align:left;}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end;background:rgba(255,255,255,.03);padding:1rem 1.5rem;border-radius:6px;border:1px solid rgba(255,255,255,.1)}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.6)}
+.ctrl-inp, .ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.4rem .7rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none;transition:border-color .2s}
+.ctrl-inp:focus, .ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.5rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;transition:background .18s;margin-left:auto}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN & CARDS */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:700}
+
+.top-actions{display:flex;gap:.5rem;}
+.btn-action{background:#fff;border:1px solid var(--border);color:var(--navy);padding:.4rem .8rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.85rem;font-weight:600;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.btn-action:hover{border-color:var(--navy);background:var(--cream-dark);}
+
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem;text-align:left;}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+.event-list{list-style:none;}
+.event-list li{margin-bottom:0.4rem;padding-left:1.5rem;position:relative;font-size:.95rem;text-align:justify}
+.event-list li::before{content:"•";position:absolute;left:0;color:var(--gold);font-size:1.5rem;line-height:1}
+.highlight{font-family:'JetBrains Mono',monospace;font-size:.85rem;font-weight:600;background:var(--cream-dark);padding:2px 6px;border-radius:3px;color:var(--navy)}
+
+/* EXAM TABLE */
+.exam-table{width:100%;border-collapse:collapse;margin:1.5rem 0;font-size:.9rem;font-family:'Source Serif 4',serif;}
+.exam-table th, .exam-table td{border:1px solid var(--border);padding:.6rem;text-align:center;vertical-align:middle;}
+.exam-table th{background:var(--navy);color:var(--cream);font-weight:600;}
+.exam-table .txt-left{text-align:left;font-weight:600;color:var(--navy);}
+.exam-table .amt{font-family:'JetBrains Mono',monospace;text-align:right;white-space:nowrap;}
+.exam-table .pct{font-family:'JetBrains Mono',monospace;text-align:center;width:100px;background:var(--cream-dark);}
+
+/* SOLUTION TOGGLE */
+.sol-toggle-wrap{text-align:left; margin: 1.5rem 0 0 0;}
+.btn-toggle{background:transparent;border:2px solid var(--green);border-bottom:none;color:var(--green);font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;padding:.5rem 1.5rem;border-radius:4px 4px 0 0;cursor:pointer;transition:all .2s; position:relative; z-index:2; top:2px;}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--green);color:var(--cream)}
+.sol-card{border-top:2px solid var(--green);display:none; border-radius: 0 6px 6px 6px; position:relative; z-index:1;}
+.sol-card.visible{display:block;animation:fi .4s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+
+.calc-box{background:#f9fcf9;border:1px solid #c8e6c9;padding:1.2rem;border-radius:4px;margin-bottom:1rem;font-size:.9rem;color:var(--text);line-height:1.6;text-align:justify;}
+.calc-box strong{color:var(--green);font-family:'JetBrains Mono',monospace;}
+
+@media print{
+  body{background:#fff;}
+  header, .ctrls, .sol-toggle-wrap, .top-actions {display:none !important;}
+  .card{box-shadow:none; border:1px solid var(--border); margin-bottom:2rem;}
+  .sol-card{display:block !important; border-top:2px solid var(--green);}
+  #ex-area {display:block !important;}
+}
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-badge">INFORMATION COMPTABLE ET FINANCIÈRE</div>
+  <h1>Résultat différentiel et levier opérationnel</h1>
+  <p class="subtitle">© Thomas Hossen – Version du 7 mars 2026</p>
+  
+  <div class="ctrls">
+    <div class="ctrl-g">
+      <span class="ctrl-lbl">Seed (Optionnel)</span>
+      <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999">
+    </div>
+    <button class="btn-gen" onclick="generateExercise(false)">Générer l'exercice →</button>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" style="text-align:center; padding:4rem; color:var(--text-muted); font-style:italic;">
+    Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="seed-badge">Seed active : <span id="seed-disp"></span></div>
+      <div class="top-actions">
+        <button class="btn-action" onclick="generateExercise(true)">↺ Nouvel énoncé</button>
+        <button class="btn-action" onclick="window.print()">⬇ Exporter PDF</button>
+        <button class="btn-action" onclick="exportWord()">⬇ Exporter DOC</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="tag">Énoncé</span><h2>Analyse de la structure des coûts</h2></div>
+      <div class="card-body">
+        <div class="context-block" id="context-text"></div>
+        <p style="margin-bottom:1rem; font-weight:600; color:var(--navy); text-align:left;">Données d'exploitation de l'exercice N</p>
+        <ul class="event-list" id="events-list"></ul>
+        <p style="margin-top:1.5rem; font-weight:600; color:var(--red); text-align:left;">Travail à faire</p>
+        <p id="question-text" style="font-style:italic; text-align:justify;"></p>
+      </div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag">Corrigé</span><h2>Analyse de la structure des coûts</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+// --- PRNG (Mulberry32) ---
+let currentSeed = 0;
+function seedPRNG(seed) {
+    return function() {
+      let t = seed += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+let random = Math.random;
+
+function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
+function formatMoney(num) { return num.toLocaleString('fr-FR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' €'; }
+function formatPct(num) { return num.toLocaleString('fr-FR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' %'; }
+
+function generateExercise(forceNew = false) {
+    if(forceNew) {
+        document.getElementById('seed-input').value = "";
+    }
+    let seedVal = document.getElementById('seed-input').value;
+    currentSeed = seedVal ? parseInt(seedVal) : Math.floor(Math.random() * 99999999);
+    document.getElementById('seed-disp').innerText = currentSeed;
+    document.getElementById('seed-input').value = currentSeed;
+    random = seedPRNG(currentSeed);
+
+    // Produits et Entreprises
+    const products = ["vélos à assistance électrique", "trottinettes premium", "planches de paddle", "scooters urbains"];
+    const product = products[randInt(0, products.length-1)];
+    const unitName = product.split(" ")[0];
+
+    // Variables de base
+    let qty = randInt(12, 45) * 100;
+    let unitPrice = randInt(12, 35) * 10;
+    let ca = qty * unitPrice;
+
+    // Structure des coûts variables
+    let targetCvRate = randInt(55, 75);
+    let targetCvTotal = ca * (targetCvRate / 100);
+    
+    let cvDistUnit = randInt(5, 18);
+    let cvDistTotal = qty * cvDistUnit;
+    
+    // Le coût variable de production total est calculé par différence, arrondi à la centaine
+    let cvProdTotal = Math.round((targetCvTotal - cvDistTotal) / 100) * 100;
+    
+    // Calculs réels finaux
+    let cvTotal = cvProdTotal + cvDistTotal;
+    let mcv = ca - cvTotal;
+    let tauxMCV = (mcv / ca) * 100;
+    let tauxCV = (cvTotal / ca) * 100;
+    
+    // Charges fixes (absorbent entre 40% et 70% de la MCV)
+    let cf = Math.round((mcv * (randInt(40, 70) / 100)) / 100) * 100; 
+    let resultat = mcv - cf;
+
+    // Levier opérationnel
+    let levier = mcv / resultat;
+
+    // Scénario prévisionnel
+    let cfIncrease = randInt(10, 30) * 1000;
+    let newCf = cf + cfIncrease;
+    let targetCa = (newCf + resultat) / (tauxMCV / 100);
+
+    // Affichage Enoncé
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('ex-area').style.display = 'block';
+    document.getElementById('sol-card').classList.remove('visible');
+    document.getElementById('toggle-btn').innerText = "Afficher le corrigé";
+    document.getElementById('toggle-btn').classList.remove('shown');
+
+    document.getElementById('context-text').innerHTML = `
+      L'entreprise industrielle <strong>GigaRide SAS</strong> est spécialisée dans la fabrication de ${product}. Elle utilise pour sa gestion la méthode du coût variable afin d'analyser la rentabilité de son exploitation et d'évaluer son risque opérationnel. Le contrôleur de gestion vous a communiqué les éléments bruts de l'exercice N.
+    `;
+
+    let htmlEnonce = "";
+
+    htmlEnonce += `<li>L'entreprise a vendu <span class="highlight">${qty.toLocaleString('fr-FR')} ${unitName}</span> au cours de l'année.</li>`;
+    htmlEnonce += `<li>Le prix de vente unitaire est fixé à <span class="highlight">${formatMoney(unitPrice)}</span>.</li>`;
+    htmlEnonce += `<li>Les coûts variables de production totaux s'élèvent à <span class="highlight">${formatMoney(cvProdTotal)}</span>.</li>`;
+    htmlEnonce += `<li>Le coût variable de distribution est évalué à <span class="highlight">${formatMoney(cvDistUnit)}</span> par unité vendue.</li>`;
+    htmlEnonce += `<li>Les charges fixes annuelles s'élèvent à <span class="highlight">${formatMoney(cf)}</span>.</li>`;
+
+    document.getElementById('events-list').innerHTML = htmlEnonce;
+
+    document.getElementById('question-text').innerHTML = `
+      Présentez le compte de résultat différentiel de l'entreprise pour l'exercice N (en intégrant les montants globaux et les pourcentages par rapport au chiffre d'affaires). Dans un second temps, définissez puis calculez le levier opérationnel de l'entreprise. Enfin, imaginez que l'entreprise envisage l'acquisition d'une nouvelle ligne d'assemblage l'année prochaine, ce qui ferait passer ses charges fixes totales à <strong>${formatMoney(newCf)}</strong>. Déterminez alors le chiffre d'affaires minimum que l'entreprise devra réaliser pour maintenir un résultat net strictement identique à celui de l'année N.
+    `;
+
+    // --- GENERATION CORRIGE ---
+    let htmlSol = "";
+
+    // 1. Compte de résultat différentiel
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">1. Compte de résultat différentiel de l'exercice N</span>
+        Il faut tout d'abord reconstituer les grands agrégats financiers à partir des données brutes de l'énoncé. Le chiffre d'affaires (CA) correspond aux quantités vendues multipliées par le prix de vente unitaire, ce qui donne un total de ${qty.toLocaleString('fr-FR')} × ${formatMoney(unitPrice)} = <strong>${formatMoney(ca)}</strong>. Le coût variable total intègre à la fois la production et la distribution. Les frais de distribution variables s'élèvent à ${qty.toLocaleString('fr-FR')} × ${formatMoney(cvDistUnit)} = ${formatMoney(cvDistTotal)}. En ajoutant cela au coût de production, le coût variable total (CV) est donc de ${formatMoney(cvProdTotal)} pour la production additionné à ${formatMoney(cvDistTotal)} pour la distribution, soit un total de <strong>${formatMoney(cvTotal)}</strong>. La marge sur coût variable (MCV) est ensuite obtenue par la simple différence entre le chiffre d'affaires et ce coût variable total, tandis que le résultat net est déduit en soustrayant les charges fixes de la marge sur coût variable.
+    </div>`;
+
+    htmlSol += `<table class="exam-table">
+        <tr>
+            <th>Éléments</th>
+            <th>Montants (en €)</th>
+            <th>% du CA</th>
+        </tr>
+        <tr>
+            <td class="txt-left">Chiffre d'affaires</td>
+            <td class="amt">${formatMoney(ca)}</td>
+            <td class="pct">100,00 %</td>
+        </tr>
+        <tr>
+            <td class="txt-left">Coût variable total</td>
+            <td class="amt">${formatMoney(cvTotal)}</td>
+            <td class="pct">${formatPct(tauxCV)}</td>
+        </tr>
+        <tr>
+            <td class="txt-left">Marge sur coût variable</td>
+            <td class="amt">${formatMoney(mcv)}</td>
+            <td class="pct">${formatPct(tauxMCV)}</td>
+        </tr>
+        <tr>
+            <td class="txt-left">Charges fixes</td>
+            <td class="amt">${formatMoney(cf)}</td>
+            <td class="pct">${formatPct((cf/ca)*100)}</td>
+        </tr>
+        <tr>
+            <td class="txt-left">Résultat net</td>
+            <td class="amt">${formatMoney(resultat)}</td>
+            <td class="pct">${formatPct((resultat/ca)*100)}</td>
+        </tr>
+    </table>`;
+
+    // 2. Levier Opérationnel
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">2. Définition et calcul du levier opérationnel</span>
+        Le levier opérationnel mesure la sensibilité du résultat net aux variations du chiffre d'affaires. Plus la part des charges fixes est importante dans la structure de coûts, plus ce levier est fort, ce qui signifie que le résultat devient très volatil à la hausse comme à la baisse en fonction des ventes. Il est calculé mathématiquement en divisant la marge sur coût variable (MCV) par le résultat net, ce qui nous donne dans le cas présent un rapport de ${formatMoney(mcv)} divisé par ${formatMoney(resultat)}, soit un levier opérationnel de <strong>${levier.toFixed(2)}</strong>. L'interprétation analytique de ce chiffre indique qu'une variation de 1 % du chiffre d'affaires de l'entreprise entraînera une variation proportionnelle de <strong>${levier.toFixed(2)} %</strong> de son résultat net.
+    </div>`;
+
+    // 3. Scénario prévisionnel (Maintien du résultat)
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">3. Chiffre d'affaires cible suite à la hausse des charges fixes</span>
+        Si les charges fixes augmentent pour atteindre le seuil de ${formatMoney(newCf)}, il est impératif de recalculer le chiffre d'affaires minimum permettant de conserver un résultat net strictement identique à celui de l'année N, soit un montant de ${formatMoney(resultat)}. On commence par déterminer la nouvelle marge sur coût variable à atteindre pour couvrir ces nouvelles charges fixes tout en générant le bénéfice souhaité. Cette marge cible s'obtient en additionnant les nouvelles charges fixes et le résultat cible, c'est-à-dire ${formatMoney(newCf)} additionné à ${formatMoney(resultat)}, ce qui donne <strong>${formatMoney(newCf + resultat)}</strong>. En supposant que la structure de coûts variables reste identique avec un taux de marge de ${formatPct(tauxMCV)}, le chiffre d'affaires nécessaire s'obtient en divisant cette marge cible par le taux correspondant. Le chiffre d'affaires cible s'élève par conséquent à ${formatMoney(newCf + resultat)} divisé par ${(tauxMCV/100).toFixed(4)}, pour aboutir au montant final de <strong>${formatMoney(targetCa)}</strong>.
+    </div>`;
+
+    document.getElementById('sol-content').innerHTML = htmlSol;
+}
+
+function toggleSol() {
+    let solCard = document.getElementById('sol-card');
+    let btn = document.getElementById('toggle-btn');
+    if(solCard.classList.contains('visible')) {
+        solCard.classList.remove('visible');
+        btn.innerText = "Afficher le corrigé";
+        btn.classList.remove('shown');
+    } else {
+        solCard.classList.add('visible');
+        btn.innerText = "Masquer le corrigé";
+        btn.classList.add('shown');
+    }
+}
+
+// --- FONCTION EXPORT DOC ---
+function exportWord() {
+    let content = document.getElementById('ex-area').cloneNode(true);
+    let actions = content.querySelector('.top-actions');
+    if(actions) actions.parentNode.removeChild(actions);
+    let toggle = content.querySelector('.sol-toggle-wrap');
+    if(toggle) toggle.parentNode.removeChild(toggle);
+    let solCard = content.querySelector('#sol-card');
+    if(solCard) solCard.style.display = 'block';
+
+    let html = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <meta charset='utf-8'>
+            <title>Exercice Comptabilité de Gestion</title>
+            <style>
+                body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5; text-align: justify; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                th, td { border: 1px solid #000; padding: 5px; }
+                th { background-color: #f2f2f2; text-align: center; font-weight: bold; }
+                .amt { text-align: right; white-space: nowrap; }
+                .pct { text-align: center; }
+                .txt-left { text-align: left; font-weight: bold; }
+                .calc-box { border: 1px solid #000; padding: 10px; margin-bottom: 15px; background-color: #f9f9f9; text-align: justify; }
+                .date-row { font-style: italic; text-align: center; font-weight: bold; }
+                .highlight { font-weight: bold; }
+                ul { text-align: justify; }
+                li { margin-bottom: 5px; }
+            </style>
+        </head>
+        <body>
+            ${content.innerHTML}
+        </body>
+        </html>
+    `;
+    
+    let blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    let url = URL.createObjectURL(blob);
+    let link = document.createElement('a');
+    link.href = url;
+    link.download = 'Exercice_Resultat_Differentiel.doc';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>
