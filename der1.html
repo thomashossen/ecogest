@@ -89,19 +89,35 @@ main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
   .sol-card{display:block !important; border-top:2px solid var(--green);}
   #ex-area {display:block !important;}
 }
+
+/* --- Selecteur de langue / Language switch --- */
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem}
+.header-top .header-badge{margin-bottom:0}
+.lang-switch{display:flex;gap:.45rem;flex-shrink:0}
+.flag-btn{background:rgba(255,255,255,.06);border:1px solid rgba(201,149,42,.35);border-radius:3px;padding:3px;cursor:pointer;line-height:0;opacity:.5;transition:opacity .2s,border-color .2s,transform .15s}
+.flag-btn:hover{opacity:1;transform:translateY(-1px)}
+.flag-btn.active{opacity:1;border-color:var(--gold-light);box-shadow:0 0 0 1px rgba(232,184,75,.35)}
+.flag-btn svg{display:block;width:30px;height:20px;border-radius:1px}
+@media print{ .lang-switch{display:none !important;} }
 </style>
 </head>
 <body>
 
 <header>
 <div class="header-inner">
-  <div class="header-badge">PRODUITS DÉRIVÉS ET STRATÉGIES DE COUVERTURE</div>
-  <h1>Options exotiques</h1>
-  <p class="subtitle">© Thomas Hossen – Version du 7 mars 2026</p>
+  <div class="header-top">
+    <div class="header-badge" id="lbl-badge">PRODUITS DÉRIVÉS ET STRATÉGIES DE COUVERTURE</div>
+    <div class="lang-switch">
+      <button type="button" class="flag-btn active" id="flag-fr" onclick="setLang('fr')" title="Français" aria-label="Français"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="20" height="40" fill="#002654"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ED2939"/></svg></button>
+      <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
+    </div>
+  </div>
+  <h1 id="lbl-h1">Options exotiques</h1>
+  <p class="subtitle" id="lbl-subtitle">© Thomas Hossen – Version du 7 mars 2026</p>
   
   <div class="ctrls">
     <div class="ctrl-g">
-      <span class="ctrl-lbl">Type d'Option</span>
+      <span class="ctrl-lbl" id="lbl-opttype">Type d'Option</span>
       <select class="ctrl-sel" id="opt-select">
         <option value="UOC">Up-and-out call (UOC)</option>
         <option value="DOC">Down-and-out call (DOC)</option>
@@ -114,10 +130,10 @@ main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
       </select>
     </div>
     <div class="ctrl-g">
-      <span class="ctrl-lbl">Seed (Optionnel)</span>
+      <span class="ctrl-lbl" id="lbl-seed">Seed (Optionnel)</span>
       <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999">
     </div>
-    <button class="btn-gen" onclick="generateExercise(false)">Générer l'exercice →</button>
+    <button class="btn-gen" id="lbl-gen" onclick="generateExercise(false)">Générer l'exercice →</button>
   </div>
 </div>
 </header>
@@ -129,16 +145,16 @@ main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
 
   <div id="ex-area" style="display:none">
     <div class="top-bar">
-      <div class="seed-badge">Seed active : <span id="seed-disp"></span></div>
+      <div class="seed-badge"><span id="lbl-seed-active">Seed active :</span> <span id="seed-disp"></span></div>
       <div class="top-actions">
-        <button class="btn-action" onclick="generateExercise(true)">↺ Nouvel énoncé</button>
-        <button class="btn-action" onclick="window.print()">⬇ Exporter PDF</button>
-        <button class="btn-action" onclick="exportWord()">⬇ Exporter DOC</button>
+        <button class="btn-action" id="lbl-new" onclick="generateExercise(true)">↺ Nouvel énoncé</button>
+        <button class="btn-action" id="lbl-pdf" onclick="window.print()">⬇ Exporter PDF</button>
+        <button class="btn-action" id="lbl-doc" onclick="exportWord()">⬇ Exporter DOC</button>
       </div>
     </div>
 
     <div class="card">
-      <div class="card-header"><span class="tag">Énoncé</span><h2>Option barrière</h2></div>
+      <div class="card-header"><span class="tag" id="lbl-tag-enonce">Énoncé</span><h2 id="lbl-title-enonce">Option barrière</h2></div>
       <div class="card-body">
         <div class="context-block" id="context-text"></div>
         <p id="enonce-actions" style="margin-bottom:1rem; color:var(--navy); text-align:justify;"></p>
@@ -150,13 +166,265 @@ main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
     </div>
 
     <div id="sol-card" class="card sol-card">
-      <div class="card-header"><span class="tag">Corrigé</span><h2>Option barrière</h2></div>
+      <div class="card-header"><span class="tag" id="lbl-tag-sol">Corrigé</span><h2 id="lbl-title-sol">Option barrière</h2></div>
       <div class="card-body" id="sol-content"></div>
     </div>
   </div>
 </main>
 
 <script>
+/* ============================================================
+   DICTIONNAIRE BILINGUE  /  BILINGUAL DICTIONARY
+   Tous les textes de la page sont regroupes ici.
+   ============================================================ */
+const I18N = {
+
+  fr: {
+    htmlLang: 'fr',
+    title: "Simulateur Finance - Options Barrières",
+    badge: "PRODUITS DÉRIVÉS ET STRATÉGIES DE COUVERTURE",
+    h1: "Options exotiques",
+    subtitle: "© Thomas Hossen – Version du 7 mars 2026",
+    optTypeLabel: "Type d'Option",
+    seedLabel: "Seed (Optionnel)",
+    btnGen: "Générer l'exercice →",
+    welcome: "Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice sur les options barrières.",
+    seedActive: "Seed active :",
+    btnNew: "↺ Nouvel énoncé",
+    btnPdf: "⬇ Exporter PDF",
+    btnDoc: "⬇ Exporter DOC",
+    tagEnonce: "Énoncé",
+    cardTitle: "Option barrière",
+    tagSol: "Corrigé",
+    showSol: "Afficher le corrigé",
+    hideSol: "Masquer le corrigé",
+    docTitle: "Exercice Options Barrières",
+    docFile: "Exercice_Options_Barrieres.doc",
+
+    thousands: "\\,",
+    lblEur: "Eur : -",
+    lblBar: "Bar : -",
+
+    euroCall: "call européen",
+    euroPut: "put européen",
+    dirBelow: "demeure strictement en dessous de",
+    dirAbove: "demeure strictement au-dessus de",
+    crossUp: "franchit à la hausse au moins une fois",
+    crossDown: "franchit à la baisse au moins une fois",
+    exceeds: function(K) { return `dépasse $K=${K}$`; },
+    notExceeds: function(K) { return `n'excède pas $K=${K}$`; },
+
+    scenario: {
+      UOC: p => `Vous souhaitez parier sur une hausse de l'action ${p.company} sans croire à une envolée supérieure à $B$. `,
+      DOC: p => `Vous êtes haussier mais vous souhaitez vous protéger en payant moins cher, excluant un effondrement du titre sous $B$. `,
+      UIC: p => `Vous anticipez un mouvement haussier très fort et durable, capable de franchir le seuil $B$. `,
+      DIC: p => `Vous pariez sur un creux suivi d'un rebond vigoureux au-delà de $K$ (stratégie <em>buy the dip</em>). `,
+      UOP: p => `Vous cherchez une couverture contre une baisse sans redouter de forte hausse préalable au-delà de $B$. `,
+      DOP: p => `Vous vous couvrez contre des baisses modérées en acceptant de ne pas être protégé en cas de krach sous $B$. `,
+      UIP: p => `Vous anticipez une surchauffe du marché au-delà de $B$ suivie d'un retournement violent. `,
+      DIP: p => `Vous anticipez une chute extrêmement sévère du marché sous $B$. `
+    },
+
+    context: function(p) {
+      let s = `Soit un <em>${p.typeName}</em> de maturité $T=1$ an, de <em>strike</em> $K=${p.K}$, de barrière $B=${p.B}$, sur l'action ${p.company}, dont le prix spot actuel est de $S_0=${p.S0}$. Cette option est vendue $\\pi_B=${p.piB}$ euros, contre $\\pi=${p.pi}$ euros pour un <em>${p.euroType}</em> de même <em>strike</em> et de même maturité (sans barrière). `;
+      s += this.scenario[p.symbolOpt](p);
+      s += `Vous décidez donc d'acheter ce <em>${p.typeName}</em>.`;
+      return s;
+    },
+
+    enonce: function(p) {
+      return `Rappeler à quelles conditions le <em>${p.typeName}</em> générera un paiement pour l'acheteur. Justifier alors la valeur intrinsèque et le <em>payoff</em> du <em>${p.typeName}</em> et du <em>${p.euroType}</em> en fonction de ces conditions. Tracer enfin sur un même graphique le <em>payoff</em> à maturité du <em>${p.typeName}</em> si la barrière est franchie, le <em>payoff</em> à maturité du <em>${p.typeName}</em> si la barrière ne l'est pas et le <em>payoff</em> à maturité du <em>${p.euroType}</em>.`;
+    },
+
+    sol: function(p) {
+      let condPaieText = "";
+      if (!p.isIn) {
+        condPaieText = `cela signifie que ce produit ne paiera que si le cours de l'action ${p.company} ${p.dirCond} $B=${p.B}$ au cours de l'année qui suit l'acquisition du <em>${p.typeName}</em>`;
+      } else {
+        condPaieText = `cela signifie que ce produit ne paiera que si le cours de l'action ${p.company} ${p.breakCond} $B=${p.B}$ au cours de l'année qui suit l'acquisition du <em>${p.typeName}</em>`;
+      }
+
+      let solText = `<div class="calc-box">On considère un <em>${p.typeName}</em> de maturité $T=1$ an, de <em>strike</em> $K=${p.K}$, de barrière $B=${p.B}$, sur l'action ${p.company}, dont le prix spot actuel est de $S_0=${p.S0}$. L'analyse contractuelle est la suivante. ${condPaieText.charAt(0).toUpperCase() + condPaieText.slice(1)}.<br><br>`;
+
+      if (!p.isIn) {
+        solText += `Dès lors, la valeur intrinsèque du <em>${p.typeName}</em> vaudra $\\Psi_T^{${p.symbolOpt}}=0$ si le cours de ${p.company} ${p.breakCond} $B=${p.B}$ au cours de l'année. Le <em>payoff</em> du <em>${p.typeName}</em> s'établira alors à $\\Psi_T^{${p.symbolOpt}}-\\pi_B=-${p.piB}$ (perte sèche). En revanche, si le cours de l'action ${p.company} ${p.dirCond} $B=${p.B}$ au cours de l'année, alors la valeur intrinsèque de ce dernier vaudra $\\Psi_T^{${p.symbolOpt}}=${p.valIntrinsicEq}$, soit $\\Psi_T^{${p.symbolOpt}}=${p.valIntrinsicDev}$ (d'où un <em>payoff</em> de $\\Psi_T^{${p.symbolOpt}}-\\pi_B=${p.valIntrinsicDev}-${p.piB}$) si le prix spot à l'échéance ${p.payoffCond}, et $\\Psi_T^{${p.symbolOpt}}=0$ (d'où un <em>payoff</em> de $\\Psi_T^{${p.symbolOpt}}-\\pi_B=-${p.piB}$) s'il ${p.noPayoffCond}. `;
+      } else {
+        solText += `Dès lors, la valeur intrinsèque du <em>${p.typeName}</em> vaudra $\\Psi_T^{${p.symbolOpt}}=0$ si le cours de ${p.company} ${p.dirCond} $B=${p.B}$ au cours de l'année. Le <em>payoff</em> du <em>${p.typeName}</em> s'établira alors à $\\Psi_T^{${p.symbolOpt}}-\\pi_B=-${p.piB}$ (perte sèche). En revanche, si le cours de l'action ${p.company} ${p.breakCond} $B=${p.B}$ au cours de l'année, alors l'option s'active et la valeur intrinsèque de ce dernier vaudra $\\Psi_T^{${p.symbolOpt}}=${p.valIntrinsicEq}$, soit $\\Psi_T^{${p.symbolOpt}}=${p.valIntrinsicDev}$ (d'où un <em>payoff</em> de $\\Psi_T^{${p.symbolOpt}}-\\pi_B=${p.valIntrinsicDev}-${p.piB}$) si le prix spot à l'échéance ${p.payoffCond}, et $\\Psi_T^{${p.symbolOpt}}=0$ (d'où un <em>payoff</em> de $\\Psi_T^{${p.symbolOpt}}-\\pi_B=-${p.piB}$) s'il ${p.noPayoffCond}. `;
+      }
+
+      let faitNotable = "";
+      if (!p.isIn && !p.isUp && p.isCall && p.K < p.B) {
+        faitNotable = `<br><br><strong>Fait notable.</strong> L'architecture de cette option est particulièrement intéressante. Comme le prix d'exercice $K=${p.K}$ est inférieur à la barrière $B=${p.B}$, si le <em>${p.typeName}</em> survit jusqu'à l'échéance (ce qui implique obligatoirement $S_T \\ge B$), il finira mécaniquement et systématiquement dans la monnaie car $S_T > K$.`;
+      } else if (!p.isIn && p.isUp && !p.isCall && p.K > p.B) {
+        faitNotable = `<br><br><strong>Fait notable.</strong> L'architecture de cette option est particulièrement intéressante. Comme le prix d'exercice $K=${p.K}$ est supérieur à la barrière $B=${p.B}$, si le <em>${p.typeName}</em> survit jusqu'à l'échéance (ce qui implique obligatoirement $S_T \\le B$), il finira mécaniquement et systématiquement dans la monnaie car $S_T < K$.`;
+      }
+      solText += faitNotable;
+
+      solText += `<br><br>Par suite, le <em>${p.euroType}</em> aura une valeur intrinsèque inconditionnelle à maturité de $\\Psi_T^{${p.symbolEuro}}=${p.valIntrinsicEq}$, soit $\\Psi_T^{${p.symbolEuro}}=${p.valIntrinsicDev}$ si le prix spot à l'échéance ${p.payoffCond} (donnant un <em>payoff</em> de $\\Psi_T^{${p.symbolEuro}}-\\pi=${p.valIntrinsicDev}-${p.pi}$) et $\\Psi_T^{${p.symbolEuro}}=0$ si le prix spot à l'échéance ${p.noPayoffCond} (donnant un <em>payoff</em> de $\\Psi_T^{${p.symbolEuro}}-\\pi=-${p.pi}$). On en déduit alors le graphique suivant avec, en <span style="color:var(--green);font-weight:bold;">vert</span>, le <em>payoff</em> du <em>${p.euroType}</em>, en <span style="color:var(--blue);font-weight:bold;">bleu</span>, celui du <em>${p.typeName}</em> lorsque la barrière est franchie et, en <span style="color:var(--red);font-weight:bold;">rouge</span>, celui du <em>${p.typeName}</em> lorsqu'elle ne l'est pas.</div>`;
+
+      return solText;
+    }
+  },
+
+  en: {
+    htmlLang: 'en',
+    title: "Finance Simulator - Barrier Options",
+    badge: "DERIVATIVES AND HEDGING STRATEGIES",
+    h1: "Exotic Options",
+    subtitle: "© Thomas Hossen – March 7, 2026 Version",
+    optTypeLabel: "Option Type",
+    seedLabel: "Seed (Optional)",
+    btnGen: "Generate Exercise →",
+    welcome: "Configure the parameters and click Generate to create a new exercise on barrier options.",
+    seedActive: "Active Seed:",
+    btnNew: "↺ New Statement",
+    btnPdf: "⬇ Export PDF",
+    btnDoc: "⬇ Export DOC",
+    tagEnonce: "Problem",
+    cardTitle: "Barrier Option",
+    tagSol: "Solution",
+    showSol: "Show Solution",
+    hideSol: "Hide Solution",
+    docTitle: "Barrier Options Exercise",
+    docFile: "Barrier_Options_Exercise.doc",
+
+    thousands: ",",
+    lblEur: "Eur: -",
+    lblBar: "Bar: -",
+
+    euroCall: "European call",
+    euroPut: "European put",
+    dirBelow: "remains strictly below",
+    dirAbove: "remains strictly above",
+    crossUp: "crosses at least once above",
+    crossDown: "crosses at least once below",
+    exceeds: function(K) { return `exceeds $K=${K}$`; },
+    notExceeds: function(K) { return `does not exceed $K=${K}$`; },
+
+    scenario: {
+      UOC: p => `You wish to bet on a rise in the ${p.company} stock without believing in a surge above $B$. `,
+      DOC: p => `You are bullish but you wish to protect yourself while paying less, ruling out a collapse of the stock below $B$. `,
+      UIC: p => `You anticipate a very strong and lasting upward movement, capable of crossing the threshold $B$. `,
+      DIC: p => `You are betting on a trough followed by a vigorous rebound beyond $K$ (<em>buy the dip</em> strategy). `,
+      UOP: p => `You are looking for a hedge against a decline without fearing a strong prior rise beyond $B$. `,
+      DOP: p => `You are hedging against moderate declines while accepting not to be protected in the event of a crash below $B$. `,
+      UIP: p => `You anticipate an overheating of the market beyond $B$ followed by a violent reversal. `,
+      DIP: p => `You anticipate an extremely severe fall of the market below $B$. `
+    },
+
+    context: function(p) {
+      const art = p.isUp ? "an" : "a";
+      let s = `Consider ${art} <em>${p.typeName}</em> with maturity $T=1$ year, <em>strike</em> $K=${p.K}$, barrier $B=${p.B}$, on the ${p.company} stock, whose current spot price is $S_0=${p.S0}$. This option is sold for $\\pi_B=${p.piB}$ euros, versus $\\pi=${p.pi}$ euros for a <em>${p.euroType}</em> with the same <em>strike</em> and the same maturity (without barrier). `;
+      s += this.scenario[p.symbolOpt](p);
+      s += `You therefore decide to buy this <em>${p.typeName}</em>.`;
+      return s;
+    },
+
+    enonce: function(p) {
+      return `Recall under which conditions the <em>${p.typeName}</em> will generate a payment for the buyer. Then justify the intrinsic value and the <em>payoff</em> of the <em>${p.typeName}</em> and of the <em>${p.euroType}</em> according to these conditions. Finally, plot on a single graph the <em>payoff</em> at maturity of the <em>${p.typeName}</em> if the barrier is crossed, the <em>payoff</em> at maturity of the <em>${p.typeName}</em> if it is not, and the <em>payoff</em> at maturity of the <em>${p.euroType}</em>.`;
+    },
+
+    sol: function(p) {
+      let condPaieText = "";
+      if (!p.isIn) {
+        condPaieText = `this means that this product will only pay if the price of the ${p.company} stock ${p.dirCond} $B=${p.B}$ during the year following the acquisition of the <em>${p.typeName}</em>`;
+      } else {
+        condPaieText = `this means that this product will only pay if the price of the ${p.company} stock ${p.breakCond} $B=${p.B}$ during the year following the acquisition of the <em>${p.typeName}</em>`;
+      }
+
+      const art = p.isUp ? "an" : "a";
+      let solText = `<div class="calc-box">Consider ${art} <em>${p.typeName}</em> with maturity $T=1$ year, <em>strike</em> $K=${p.K}$, barrier $B=${p.B}$, on the ${p.company} stock, whose current spot price is $S_0=${p.S0}$. The contractual analysis is as follows. ${condPaieText.charAt(0).toUpperCase() + condPaieText.slice(1)}.<br><br>`;
+
+      if (!p.isIn) {
+        solText += `Consequently, the intrinsic value of the <em>${p.typeName}</em> will be $\\Psi_T^{${p.symbolOpt}}=0$ if the price of ${p.company} ${p.breakCond} $B=${p.B}$ during the year. The <em>payoff</em> of the <em>${p.typeName}</em> will then amount to $\\Psi_T^{${p.symbolOpt}}-\\pi_B=-${p.piB}$ (dead loss). Conversely, if the price of the ${p.company} stock ${p.dirCond} $B=${p.B}$ during the year, then its intrinsic value will be $\\Psi_T^{${p.symbolOpt}}=${p.valIntrinsicEq}$, that is $\\Psi_T^{${p.symbolOpt}}=${p.valIntrinsicDev}$ (hence a <em>payoff</em> of $\\Psi_T^{${p.symbolOpt}}-\\pi_B=${p.valIntrinsicDev}-${p.piB}$) if the spot price at maturity ${p.payoffCond}, and $\\Psi_T^{${p.symbolOpt}}=0$ (hence a <em>payoff</em> of $\\Psi_T^{${p.symbolOpt}}-\\pi_B=-${p.piB}$) if it ${p.noPayoffCond}. `;
+      } else {
+        solText += `Consequently, the intrinsic value of the <em>${p.typeName}</em> will be $\\Psi_T^{${p.symbolOpt}}=0$ if the price of ${p.company} ${p.dirCond} $B=${p.B}$ during the year. The <em>payoff</em> of the <em>${p.typeName}</em> will then amount to $\\Psi_T^{${p.symbolOpt}}-\\pi_B=-${p.piB}$ (dead loss). Conversely, if the price of the ${p.company} stock ${p.breakCond} $B=${p.B}$ during the year, then the option is activated and its intrinsic value will be $\\Psi_T^{${p.symbolOpt}}=${p.valIntrinsicEq}$, that is $\\Psi_T^{${p.symbolOpt}}=${p.valIntrinsicDev}$ (hence a <em>payoff</em> of $\\Psi_T^{${p.symbolOpt}}-\\pi_B=${p.valIntrinsicDev}-${p.piB}$) if the spot price at maturity ${p.payoffCond}, and $\\Psi_T^{${p.symbolOpt}}=0$ (hence a <em>payoff</em> of $\\Psi_T^{${p.symbolOpt}}-\\pi_B=-${p.piB}$) if it ${p.noPayoffCond}. `;
+      }
+
+      let faitNotable = "";
+      if (!p.isIn && !p.isUp && p.isCall && p.K < p.B) {
+        faitNotable = `<br><br><strong>Notable fact.</strong> The architecture of this option is particularly interesting. Since the exercise price $K=${p.K}$ is below the barrier $B=${p.B}$, if the <em>${p.typeName}</em> survives until maturity (which necessarily implies $S_T \\ge B$), it will mechanically and systematically end up in the money since $S_T > K$.`;
+      } else if (!p.isIn && p.isUp && !p.isCall && p.K > p.B) {
+        faitNotable = `<br><br><strong>Notable fact.</strong> The architecture of this option is particularly interesting. Since the exercise price $K=${p.K}$ is above the barrier $B=${p.B}$, if the <em>${p.typeName}</em> survives until maturity (which necessarily implies $S_T \\le B$), it will mechanically and systematically end up in the money since $S_T < K$.`;
+      }
+      solText += faitNotable;
+
+      solText += `<br><br>Consequently, the <em>${p.euroType}</em> will have an unconditional intrinsic value at maturity of $\\Psi_T^{${p.symbolEuro}}=${p.valIntrinsicEq}$, that is $\\Psi_T^{${p.symbolEuro}}=${p.valIntrinsicDev}$ if the spot price at maturity ${p.payoffCond} (giving a <em>payoff</em> of $\\Psi_T^{${p.symbolEuro}}-\\pi=${p.valIntrinsicDev}-${p.pi}$) and $\\Psi_T^{${p.symbolEuro}}=0$ if the spot price at maturity ${p.noPayoffCond} (giving a <em>payoff</em> of $\\Psi_T^{${p.symbolEuro}}-\\pi=-${p.pi}$). We then deduce the following graph with, in <span style="color:var(--green);font-weight:bold;">green</span>, the <em>payoff</em> of the <em>${p.euroType}</em>, in <span style="color:var(--blue);font-weight:bold;">blue</span>, that of the <em>${p.typeName}</em> when the barrier is crossed and, in <span style="color:var(--red);font-weight:bold;">red</span>, that of the <em>${p.typeName}</em> when it is not.</div>`;
+
+      return solText;
+    }
+  }
+};
+
+/* ============================================================
+   GESTION DE LA LANGUE  /  LANGUAGE HANDLING
+   ============================================================ */
+let LANG = 'fr';
+
+function detectLang() {
+    try {
+        const q = new URLSearchParams(window.location.search).get('lang');
+        if (q && I18N[q.toLowerCase()]) return q.toLowerCase();
+    } catch (e) {}
+    const h = (window.location.hash || '').replace('#', '').toLowerCase();
+    if (I18N[h]) return h;
+    return 'fr';
+}
+
+function setText(id, txt) {
+    const el = document.getElementById(id);
+    if (el) el.innerText = txt;
+}
+
+function applyLang() {
+    const T = I18N[LANG];
+    document.documentElement.lang = T.htmlLang;
+    document.title = T.title;
+
+    setText('lbl-badge', T.badge);
+    setText('lbl-h1', T.h1);
+    setText('lbl-subtitle', T.subtitle);
+    setText('lbl-opttype', T.optTypeLabel);
+    setText('lbl-seed', T.seedLabel);
+    setText('lbl-gen', T.btnGen);
+    setText('welcome', T.welcome);
+    setText('lbl-seed-active', T.seedActive);
+    setText('lbl-new', T.btnNew);
+    setText('lbl-pdf', T.btnPdf);
+    setText('lbl-doc', T.btnDoc);
+    setText('lbl-tag-enonce', T.tagEnonce);
+    setText('lbl-title-enonce', T.cardTitle);
+    setText('lbl-tag-sol', T.tagSol);
+    setText('lbl-title-sol', T.cardTitle);
+
+    const btn = document.getElementById('toggle-btn');
+    btn.innerText = document.getElementById('sol-card').classList.contains('visible') ? T.hideSol : T.showSol;
+
+    document.getElementById('flag-fr').classList.toggle('active', LANG === 'fr');
+    document.getElementById('flag-en').classList.toggle('active', LANG === 'en');
+}
+
+function setLang(lang) {
+    if (!I18N[lang] || lang === LANG) return;
+    LANG = lang;
+
+    /* La langue est memorisee dans l'URL (partage / rechargement) */
+    try {
+        const u = new URL(window.location.href);
+        u.searchParams.set('lang', lang);
+        history.replaceState(null, '', u.toString());
+    } catch (e) {}
+
+    applyLang();
+
+    /* Si un exercice est affiche, on le regenere a l'identique (meme seed) */
+    if (document.getElementById('ex-area').style.display !== 'none') {
+        const solWasVisible = document.getElementById('sol-card').classList.contains('visible');
+        generateExercise(false);
+        if (solWasVisible) toggleSol();
+    }
+}
+
 let currentSeed = 0;
 function seedPRNG(seed) {
     return function() {
@@ -172,7 +440,7 @@ function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min
 function texI(num) {
     let sign = num < 0 ? "-" : "";
     let absNum = Math.round(Math.abs(num));
-    return sign + absNum.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "\\,");
+    return sign + absNum.toString().replace(/\B(?=(\d{3})+(?!\d))/g, I18N[LANG].thousands);
 }
 
 function generateExercise(forceNew = false) {
@@ -198,7 +466,6 @@ function generateExercise(forceNew = false) {
                    optType === "DOP" ? "down-and-out put" :
                    optType === "UIP" ? "up-and-in put" : "down-and-in put";
     
-    let euroType = isCall ? "call européen" : "put européen";
 
     const companies = ["Amazonia", "GigaTech", "NovaPharma", "EcoBank", "BlueSpace"];
     let company = companies[randInt(0, companies.length-1)];
@@ -235,66 +502,36 @@ function generateExercise(forceNew = false) {
         K = B + piB + randInt(2, 10);
     }
 
-    let dirCond = isUp ? "demeure strictement en dessous de" : "demeure strictement au-dessus de";
-    let breakCond = isUp ? "franchit à la hausse au moins une fois" : "franchit à la baisse au moins une fois";
+    const T = I18N[LANG];
 
-    let contextHTML = `Soit un <em>${typeName}</em> de maturité $T=1$ an, de <em>strike</em> $K=${K}$, de barrière $B=${B}$, sur l'action ${company}, dont le prix spot actuel est de $S_0=${S0}$. Cette option est vendue $\\pi_B=${piB}$ euros, contre $\\pi=${pi}$ euros pour un <em>${euroType}</em> de même <em>strike</em> et de même maturité (sans barrière). `;
-    
-    if (isUp && !isIn && isCall) contextHTML += `Vous souhaitez parier sur une hausse de l'action ${company} sans croire à une envolée supérieure à $B$. `;
-    if (!isUp && !isIn && isCall) contextHTML += `Vous êtes haussier mais vous souhaitez vous protéger en payant moins cher, excluant un effondrement du titre sous $B$. `;
-    if (isUp && isIn && isCall) contextHTML += `Vous anticipez un mouvement haussier très fort et durable, capable de franchir le seuil $B$. `;
-    if (!isUp && isIn && isCall) contextHTML += `Vous pariez sur un creux suivi d'un rebond vigoureux au-delà de $K$ (stratégie <em>buy the dip</em>). `;
-    if (isUp && !isIn && !isCall) contextHTML += `Vous cherchez une couverture contre une baisse sans redouter de forte hausse préalable au-delà de $B$. `;
-    if (!isUp && !isIn && !isCall) contextHTML += `Vous vous couvrez contre des baisses modérées en acceptant de ne pas être protégé en cas de krach sous $B$. `;
-    if (isUp && isIn && !isCall) contextHTML += `Vous anticipez une surchauffe du marché au-delà de $B$ suivie d'un retournement violent. `;
-    if (!isUp && isIn && !isCall) contextHTML += `Vous anticipez une chute extrêmement sévère du marché sous $B$. `;
-    
-    contextHTML += `Vous décidez donc d'acheter ce <em>${typeName}</em>.`;
+    /* Jeu de parametres transmis aux gabarits de texte (voir I18N) */
+    const p = {
+        typeName: typeName,
+        euroType: isCall ? T.euroCall : T.euroPut,
+        company: company,
+        symbolOpt: optType,
+        symbolEuro: isCall ? "C" : "P",
+        isCall: isCall, isUp: isUp, isIn: isIn,
+        K: K, B: B, S0: S0, pi: pi, piB: piB,
+        dirCond: isUp ? T.dirBelow : T.dirAbove,
+        breakCond: isUp ? T.crossUp : T.crossDown,
+        valIntrinsicEq: isCall ? `\\max(S_T-K,0)` : `\\max(K-S_T,0)`,
+        valIntrinsicDev: isCall ? `S_T-${K}` : `${K}-S_T`,
+        payoffCond: isCall ? T.exceeds(K) : T.notExceeds(K),
+        noPayoffCond: isCall ? T.notExceeds(K) : T.exceeds(K)
+    };
 
-    document.getElementById('context-text').innerHTML = contextHTML;
-
-    let enonceText = `Rappeler à quelles conditions le <em>${typeName}</em> générera un paiement pour l'acheteur. Justifier alors la valeur intrinsèque et le <em>payoff</em> du <em>${typeName}</em> et du <em>${euroType}</em> en fonction de ces conditions. Tracer enfin sur un même graphique le <em>payoff</em> à maturité du <em>${typeName}</em> si la barrière est franchie, le <em>payoff</em> à maturité du <em>${typeName}</em> si la barrière ne l'est pas et le <em>payoff</em> à maturité du <em>${euroType}</em>.`;
-    document.getElementById('enonce-actions').innerHTML = enonceText;
+    document.getElementById('context-text').innerHTML = T.context(p);
+    document.getElementById('enonce-actions').innerHTML = T.enonce(p);
 
     // --- CORRIGÉ ---
     document.getElementById('welcome').style.display = 'none';
     document.getElementById('ex-area').style.display = 'block';
     document.getElementById('sol-card').classList.remove('visible');
-    document.getElementById('toggle-btn').innerText = "Afficher le corrigé";
+    document.getElementById('toggle-btn').innerText = T.showSol;
     document.getElementById('toggle-btn').classList.remove('shown');
 
-    let condPaieText = "";
-    if (!isIn) { // OUT
-        condPaieText = `cela signifie que ce produit ne paiera que si le cours de l'action ${company} ${dirCond} $B=${B}$ au cours de l'année qui suit l'acquisition du <em>${typeName}</em>`;
-    } else { // IN
-        condPaieText = `cela signifie que ce produit ne paiera que si le cours de l'action ${company} ${breakCond} $B=${B}$ au cours de l'année qui suit l'acquisition du <em>${typeName}</em>`;
-    }
-
-    let valIntrinsicEq = isCall ? `\\max(S_T-K,0)` : `\\max(K-S_T,0)`;
-    let valIntrinsicDev = isCall ? `S_T-${K}` : `${K}-S_T`;
-    let payoffCond = isCall ? `dépasse $K=${K}$` : `n'excède pas $K=${K}$`;
-    let noPayoffCond = isCall ? `n'excède pas $K=${K}$` : `dépasse $K=${K}$`;
-    let symbolOpt = optType;
-
-    let solText = `<div class="calc-box">On considère un <em>${typeName}</em> de maturité $T=1$ an, de <em>strike</em> $K=${K}$, de barrière $B=${B}$, sur l'action ${company}, dont le prix spot actuel est de $S_0=${S0}$. L'analyse contractuelle est la suivante. ${condPaieText.charAt(0).toUpperCase() + condPaieText.slice(1)}.<br><br>`;
-
-    if (!isIn) { // OUT
-        solText += `Dès lors, la valeur intrinsèque du <em>${typeName}</em> vaudra $\\Psi_T^{${symbolOpt}}=0$ si le cours de ${company} ${breakCond} $B=${B}$ au cours de l'année. Le <em>payoff</em> du <em>${typeName}</em> s'établira alors à $\\Psi_T^{${symbolOpt}}-\\pi_B=-${piB}$ (perte sèche). En revanche, si le cours de l'action ${company} ${dirCond} $B=${B}$ au cours de l'année, alors la valeur intrinsèque de ce dernier vaudra $\\Psi_T^{${symbolOpt}}=${valIntrinsicEq}$, soit $\\Psi_T^{${symbolOpt}}=${valIntrinsicDev}$ (d'où un <em>payoff</em> de $\\Psi_T^{${symbolOpt}}-\\pi_B=${valIntrinsicDev}-${piB}$) si le prix spot à l'échéance ${payoffCond}, et $\\Psi_T^{${symbolOpt}}=0$ (d'où un <em>payoff</em> de $\\Psi_T^{${symbolOpt}}-\\pi_B=-${piB}$) s'il ${noPayoffCond}. `;
-    } else { // IN
-        solText += `Dès lors, la valeur intrinsèque du <em>${typeName}</em> vaudra $\\Psi_T^{${symbolOpt}}=0$ si le cours de ${company} ${dirCond} $B=${B}$ au cours de l'année. Le <em>payoff</em> du <em>${typeName}</em> s'établira alors à $\\Psi_T^{${symbolOpt}}-\\pi_B=-${piB}$ (perte sèche). En revanche, si le cours de l'action ${company} ${breakCond} $B=${B}$ au cours de l'année, alors l'option s'active et la valeur intrinsèque de ce dernier vaudra $\\Psi_T^{${symbolOpt}}=${valIntrinsicEq}$, soit $\\Psi_T^{${symbolOpt}}=${valIntrinsicDev}$ (d'où un <em>payoff</em> de $\\Psi_T^{${symbolOpt}}-\\pi_B=${valIntrinsicDev}-${piB}$) si le prix spot à l'échéance ${payoffCond}, et $\\Psi_T^{${symbolOpt}}=0$ (d'où un <em>payoff</em> de $\\Psi_T^{${symbolOpt}}-\\pi_B=-${piB}$) s'il ${noPayoffCond}. `;
-    }
-
-    // Fait notable
-    let faitNotable = "";
-    if (!isIn && !isUp && isCall && K < B) {
-        faitNotable = `<br><br><strong>Fait notable.</strong> L'architecture de cette option est particulièrement intéressante. Comme le prix d'exercice $K=${K}$ est inférieur à la barrière $B=${B}$, si le <em>${typeName}</em> survit jusqu'à l'échéance (ce qui implique obligatoirement $S_T \\ge B$), il finira mécaniquement et systématiquement dans la monnaie car $S_T > K$.`;
-    } else if (!isIn && isUp && !isCall && K > B) {
-        faitNotable = `<br><br><strong>Fait notable.</strong> L'architecture de cette option est particulièrement intéressante. Comme le prix d'exercice $K=${K}$ est supérieur à la barrière $B=${B}$, si le <em>${typeName}</em> survit jusqu'à l'échéance (ce qui implique obligatoirement $S_T \\le B$), il finira mécaniquement et systématiquement dans la monnaie car $S_T < K$.`;
-    }
-    solText += faitNotable;
-
-    let symbolEuro = isCall ? "C" : "P";
-    solText += `<br><br>Par suite, le <em>${euroType}</em> aura une valeur intrinsèque inconditionnelle à maturité de $\\Psi_T^{${symbolEuro}}=${valIntrinsicEq}$, soit $\\Psi_T^{${symbolEuro}}=${valIntrinsicDev}$ si le prix spot à l'échéance ${payoffCond} (donnant un <em>payoff</em> de $\\Psi_T^{${symbolEuro}}-\\pi=${valIntrinsicDev}-${pi}$) et $\\Psi_T^{${symbolEuro}}=0$ si le prix spot à l'échéance ${noPayoffCond} (donnant un <em>payoff</em> de $\\Psi_T^{${symbolEuro}}-\\pi=-${pi}$). On en déduit alors le graphique suivant avec, en <span style="color:var(--green);font-weight:bold;">vert</span>, le <em>payoff</em> du <em>${euroType}</em>, en <span style="color:var(--blue);font-weight:bold;">bleu</span>, celui du <em>${typeName}</em> lorsque la barrière est franchie et, en <span style="color:var(--red);font-weight:bold;">rouge</span>, celui du <em>${typeName}</em> lorsqu'elle ne l'est pas.</div>`;
+    let solText = T.sol(p);
 
     // --- GENERATION DU SVG ---
     let svgWidth = 800;
@@ -413,8 +650,8 @@ function generateExercise(forceNew = false) {
     }
 
     // Y Axis Text Labels (Cleaned)
-    svgHtml += `<text x="${xZero-10}" y="${mapY(-pi)+7}" font-family="'Source Serif 4', serif" font-size="13" fill="#2d6b4a" text-anchor="end">Eur : -${pi}</text>`;
-    svgHtml += `<text x="${xZero-10}" y="${mapY(-piB)+1}" font-family="'Source Serif 4', serif" font-size="13" fill="#1a2e42" text-anchor="end">Bar : -${piB}</text>`;
+    svgHtml += `<text x="${xZero-10}" y="${mapY(-pi)+7}" font-family="'Source Serif 4', serif" font-size="13" fill="#2d6b4a" text-anchor="end">${T.lblEur}${pi}</text>`;
+    svgHtml += `<text x="${xZero-10}" y="${mapY(-piB)+1}" font-family="'Source Serif 4', serif" font-size="13" fill="#1a2e42" text-anchor="end">${T.lblBar}${piB}</text>`;
     
     svgHtml += `<line x1="${xZero-5}" y1="${mapY(-pi)}" x2="${xZero+5}" y2="${mapY(-pi)}" stroke="#2d6b4a" stroke-width="2" />`;
     svgHtml += `<line x1="${xZero-5}" y1="${mapY(-piB)}" x2="${xZero+5}" y2="${mapY(-piB)}" stroke="#1a2e42" stroke-width="2" />`;
@@ -455,11 +692,11 @@ function toggleSol() {
     let btn = document.getElementById('toggle-btn');
     if(solCard.classList.contains('visible')) {
         solCard.classList.remove('visible');
-        btn.innerText = "Afficher le corrigé";
+        btn.innerText = I18N[LANG].showSol;
         btn.classList.remove('shown');
     } else {
         solCard.classList.add('visible');
-        btn.innerText = "Masquer le corrigé";
+        btn.innerText = I18N[LANG].hideSol;
         btn.classList.add('shown');
     }
 }
@@ -477,7 +714,7 @@ function exportWord() {
         <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
         <head>
             <meta charset='utf-8'>
-            <title>Exercice Options Barrières</title>
+            <title>${I18N[LANG].docTitle}</title>
             <style>
                 body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5; text-align: justify; }
                 .calc-box { border: 1px solid #000; padding: 10px; margin-bottom: 15px; background-color: #f9f9f9; text-align: justify; }
@@ -495,12 +732,16 @@ function exportWord() {
     let url = URL.createObjectURL(blob);
     let link = document.createElement('a');
     link.href = url;
-    link.download = 'Exercice_Options_Barrieres.doc';
+    link.download = I18N[LANG].docFile;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 }
+
+/* Initialisation */
+LANG = detectLang();
+applyLang();
 </script>
 </body>
 </html>

@@ -94,22 +94,38 @@ main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
   .sol-card{display:block !important; border-top:2px solid var(--green);}
   #ex-area {display:block !important;}
 }
+
+/* --- Selecteur de langue / Language switch --- */
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem}
+.header-top .header-badge{margin-bottom:0}
+.lang-switch{display:flex;gap:.45rem;flex-shrink:0}
+.flag-btn{background:rgba(255,255,255,.06);border:1px solid rgba(201,149,42,.35);border-radius:3px;padding:3px;cursor:pointer;line-height:0;opacity:.5;transition:opacity .2s,border-color .2s,transform .15s}
+.flag-btn:hover{opacity:1;transform:translateY(-1px)}
+.flag-btn.active{opacity:1;border-color:var(--gold-light);box-shadow:0 0 0 1px rgba(232,184,75,.35)}
+.flag-btn svg{display:block;width:30px;height:20px;border-radius:1px}
+@media print{ .lang-switch{display:none !important;} }
 </style>
 </head>
 <body>
 
 <header>
 <div class="header-inner">
-  <div class="header-badge">MÉTHODE D'ÉVALUATION DES ACTIFS FINANCIERS</div>
-  <h1>Prêts bancaires</h1>
-  <p class="subtitle">© Thomas Hossen – Version du 7 mars 2026</p>
+  <div class="header-top">
+    <div class="header-badge" id="lbl-badge">MÉTHODE D'ÉVALUATION DES ACTIFS FINANCIERS</div>
+    <div class="lang-switch">
+      <button type="button" class="flag-btn active" id="flag-fr" onclick="setLang('fr')" title="Français" aria-label="Français"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="20" height="40" fill="#002654"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ED2939"/></svg></button>
+      <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
+    </div>
+  </div>
+  <h1 id="lbl-h1">Prêts bancaires</h1>
+  <p class="subtitle" id="lbl-subtitle">© Thomas Hossen – Version du 7 mars 2026</p>
   
   <div class="ctrls">
     <div class="ctrl-g">
-      <span class="ctrl-lbl">Seed (Optionnel)</span>
+      <span class="ctrl-lbl" id="lbl-seed">Seed (Optionnel)</span>
       <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999">
     </div>
-    <button class="btn-gen" onclick="generateExercise(false)">Générer l'exercice →</button>
+    <button class="btn-gen" id="lbl-gen" onclick="generateExercise(false)">Générer l'exercice →</button>
   </div>
 </div>
 </header>
@@ -121,19 +137,19 @@ main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
 
   <div id="ex-area" style="display:none">
     <div class="top-bar">
-      <div class="seed-badge">Seed active : <span id="seed-disp"></span></div>
+      <div class="seed-badge"><span id="lbl-seed-active">Seed active :</span> <span id="seed-disp"></span></div>
       <div class="top-actions">
-        <button class="btn-action" onclick="generateExercise(true)">↺ Nouvel énoncé</button>
-        <button class="btn-action" onclick="window.print()">⬇ Exporter PDF</button>
-        <button class="btn-action" onclick="exportWord()">⬇ Exporter DOC</button>
+        <button class="btn-action" id="lbl-new" onclick="generateExercise(true)">↺ Nouvel énoncé</button>
+        <button class="btn-action" id="lbl-pdf" onclick="window.print()">⬇ Exporter PDF</button>
+        <button class="btn-action" id="lbl-doc" onclick="exportWord()">⬇ Exporter DOC</button>
       </div>
     </div>
 
     <div class="card">
-      <div class="card-header"><span class="tag">Énoncé</span><h2>Analyse des modes de financement</h2></div>
+      <div class="card-header"><span class="tag" id="lbl-tag-enonce">Énoncé</span><h2 id="lbl-title-enonce">Analyse des modes de financement</h2></div>
       <div class="card-body">
         <div class="context-block" id="context-text"></div>
-        <p style="margin-bottom:1rem; font-weight:600; color:var(--navy); text-align:left;">Dossiers indépendants à traiter</p>
+        <p style="margin-bottom:1rem; font-weight:600; color:var(--navy); text-align:left;" id="lbl-assignment">Dossiers indépendants à traiter</p>
         <ul class="event-list" id="events-list"></ul>
       </div>
     </div>
@@ -143,13 +159,287 @@ main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
     </div>
 
     <div id="sol-card" class="card sol-card">
-      <div class="card-header"><span class="tag">Corrigé</span><h2>Analyse des modes de financement</h2></div>
+      <div class="card-header"><span class="tag" id="lbl-tag-sol">Corrigé</span><h2 id="lbl-title-sol">Analyse des modes de financement</h2></div>
       <div class="card-body" id="sol-content"></div>
     </div>
   </div>
 </main>
 
 <script>
+/* ============================================================
+   DICTIONNAIRE BILINGUE  /  BILINGUAL DICTIONARY
+   Tous les textes de la page sont regroupes ici.
+   ============================================================ */
+const I18N = {
+
+  fr: {
+    htmlLang: "fr",
+    title: "Simulateur Finance - Prêts Bancaires",
+    badge: "MÉTHODE D'ÉVALUATION DES ACTIFS FINANCIERS",
+    h1: "Prêts bancaires",
+    subtitle: "© Thomas Hossen – Version du 7 mars 2026",
+    seedLabel: "Seed (Optionnel)",
+    btnGen: "Générer l'exercice →",
+    welcome: "Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.",
+    seedActive: "Seed active :",
+    btnNew: "↺ Nouvel énoncé",
+    btnPdf: "⬇ Exporter PDF",
+    btnDoc: "⬇ Exporter DOC",
+    tagEnonce: "Énoncé",
+    cardTitle: "Analyse des modes de financement",
+    assignment: "Dossiers indépendants à traiter",
+    tagSol: "Corrigé",
+    showSol: "Afficher le corrigé",
+    hideSol: "Masquer le corrigé",
+    docTitle: "Exercice Finance",
+    docFile: "Exercice_Mathematiques_Financieres.doc",
+    locale: "fr-FR",
+    labelStart: "(début de l'amortissement)",
+    labelCont: "(poursuite de l'amortissement)",
+    thousands: "\\,",
+    decimal: "{.}",
+
+    tbl: {
+      year: "Année",
+      capStart: "Capital restant dû (début)",
+      int: "Intérêts",
+      amort: "Amortissement",
+      annuity: "Annuité totale",
+      capEnd: "Capital restant dû (fin)"
+    },
+
+    amortsStr: function(pcts) {
+      const L = ["première", "deuxième", "troisième", "quatrième", "cinquième"];
+      return pcts.map(function(p, i) { return `${p} % la ${L[i]} année`; }).join(", ").replace(/, ([^,]*)$/, " et $1");
+    },
+
+    enonce: [
+      function(P) { return `<li><strong>Dossier 1 — Amortissement constant.</strong> L'entreprise souscrit un emprunt de <span class="highlight">${formatMoney(P.c1)}</span> remboursable sur ${P.n1} ans au taux annuel de ${P.r1*100} %, avec la méthode des amortissements constants du capital. Établissez le tableau d'amortissement.</li>`; },
+      function(P) { return `<li><strong>Dossier 2 — Annuités constantes.</strong> L'entreprise souscrit un emprunt de <span class="highlight">${formatMoney(P.c2)}</span> remboursable sur ${P.n2} ans au taux annuel de ${P.r2*100} %, avec la méthode des annuités constantes. Établissez le tableau d'amortissement.</li>`; },
+      function(P) { return `<li><strong>Dossier 3 — Prêt à la carte.</strong> L'entreprise souscrit un emprunt de <span class="highlight">${formatMoney(P.c3)}</span> sur ${P.n3} ans au taux de ${P.r3*100} %. Le banquier autorise un amortissement flexible du capital. L'entreprise décide d'amortir ${P.amorts3_str}. Établissez le tableau de remboursement.</li>`; },
+      function(P) { return `<li><strong>Dossier 4 — Lissage de crédits.</strong> L'entreprise finance un projet immobilier avec une combinaison de deux prêts. Le premier est un prêt classique de <span class="highlight">${formatMoney(P.c4_main)}</span> sur ${P.n4_main} ans au taux de ${(P.r4*100).toLocaleString('fr-FR', {minimumFractionDigits:1, maximumFractionDigits:2})} %. Le second est un prêt aidé à taux zéro (PTZ) de <span class="highlight">${formatMoney(P.c4_ptz)}</span> remboursable sur ${P.n4_ptz} ans par annuités constantes avec un différé de remboursement de ${P.d4_ptz} an(s). La banque propose un lissage, c'est-à-dire une annuité globale (PTZ et prêt à annuités constantes) strictement constante sur les ${P.n4_main} années. Calculez le montant de cette annuité globale lissée.</li>`; },
+      function(P) { return `<li><strong>Dossier 5 — Différé de paiement total.</strong> L'entreprise souscrit un emprunt de <span class="highlight">${formatMoney(P.c5)}</span> au taux de ${P.r5*100} %. Le contrat prévoit un différé de paiement total (franchise totale) de ${P.n5_diff} an(s), suivi d'un remboursement par annuités constantes sur les ${P.n5_amort} années suivantes. Établissez le tableau d'amortissement complet sur la durée totale du contrat.</li>`; }
+    ],
+
+    context: function(P) { return `
+      Vous assistez le responsable financier du groupe <strong>${P.company}</strong> dans l'analyse de différentes offres de financement proposées par des partenaires bancaires. Le dirigeant souhaite comparer l'impact mathématique et financier de chaque option. Il vous confie cinq dossiers indépendants.
+    `; },
+    sol1Head: function(P) { return `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Dossier 1 — Emprunt par amortissement constant</span>
+        Pour un prêt par amortissements constants, chaque année l'emprunteur rembourse une part strictement identique du capital initial. Cet amortissement constant $A$ est déterminé par la simple division du capital emprunté par la durée totale, soit $A = \\frac{E}{n} = \\frac{${texM(P.c1)}}{${P.n1}} = ${texM(P.amortC1)}\\text{ euros}$, où $E$ est le capital emprunté et $n$ la durée de l'emprunt. L'intérêt de chaque année est calculé sur le capital restant dû au début de l'année au taux effectif de $${P.r1*100}\\,\\%$. L'annuité versée à la banque est obtenue par addition ($A + \\text{intérêt}$). La valeur nette est mise à jour en fin d'année. Plus précisément :
+        <ul class="event-list" style="margin-top:1rem; margin-bottom:1rem;">`; },
+    sol1Item: function(P, R) { return `<li><strong>Année ${R.y}.</strong> L'intérêt de l'année est obtenu en multipliant le capital restant dû au début de la période par le taux d'intérêt annuel, soit $${texM(R.capStart)}\\times ${texR(P.r1)}=${texM(R.int)}$ euros. L'amortissement fixe étant de $${texM(R.amort)}$ euros, l'annuité exigée s'élève à $${texM(R.amort)}+${texM(R.int)}=${texM(R.annuity)}$ euros. La valeur nette comptable en fin d'année, c'est-à-dire le capital restant dû, s'établit ainsi à $${texM(R.capStart)}-${texM(R.amort)}=${texM(R.capEnd)}$ euros.</li>`; },
+    sol1Tail: function(P) { return `</ul>
+        Le total des intérêts versés sur ${P.n1} ans est donc de $${texM(P.sumInt1)}$ euros. Le tableau complet s'établit comme suit :
+    </div>`; },
+    sol2Head: function(P) { return `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Dossier 2 — Emprunt par annuités constantes</span>
+        Pour un prêt à annuités constantes, chaque année l'emprunteur rembourse la même somme fixe. Cette annuité $a$ est déterminée par la formule d'actualisation d'une rente :
+        <div class="math-formula">\\[a = \\frac{iE}{1-(1+i)^{-n}} = \\frac{${texR(P.r2)}\\times ${texI(P.c2)}}{1-(1+${texR(P.r2)})^{-${P.n2}}} \\approx ${texM(P.annC2)}\\text{ euros}\\]</div>
+        où $E$ est le capital emprunté, $i$ le taux d'intérêt et $n$ la durée de l'emprunt. L'intérêt de chaque année est calculé sur le capital restant dû au début de l'année au taux effectif de $${P.r2*100}\\,\\%$. L'amortissement est obtenu par différence ($a - \\text{intérêt}$). La valeur nette est mise à jour en fin d'année. Plus précisément :
+        <ul class="event-list" style="margin-top:1rem; margin-bottom:1rem;">`; },
+    sol2ItemLast: function(P, R) { return `<li><strong>Année ${R.y}.</strong> L'intérêt final de la dernière année est calculé sur le solde résiduel, soit $${texM(R.capStart)}\\times ${texR(P.r2)}=${texM(R.int)}$ euros. Le dernier amortissement de $${texM(R.annuity)}-${texM(R.int)}=${texM(R.amort)}$ euros clôture le prêt (cet amortissement peut être ajusté de quelques centimes du fait des arrondis successifs). Le capital restant dû est ainsi réduit à $${texM(R.capStart)}-${texM(R.amort)}=${texM(R.capEnd)}$ euros, confirmant le remboursement intégral de l'emprunt.</li>`; },
+    sol2Item: function(P, R) { return `<li><strong>Année ${R.y}.</strong> L'intérêt de l'année est obtenu en multipliant le capital restant dû au début de la période par le taux, soit $${texM(R.capStart)}\\times ${texR(P.r2)}=${texM(R.int)}$ euros. L'annuité fixe étant de $${texM(P.annC2)}$ euros, l'amortissement s'élève à $${texM(P.annC2)}-${texM(R.int)}=${texM(R.amort)}$ euros. La valeur nette comptable en fin d'année s'établit ainsi à $${texM(R.capStart)}-${texM(R.amort)}=${texM(R.capEnd)}$ euros.</li>`; },
+    sol2Tail: function(P) { return `</ul>
+        Le total des intérêts versés sur ${P.n2} ans est donc de $${texM(P.sumInt2)}$ euros. Le tableau complet s'établit comme suit :
+    </div>`; },
+    sol3Head: function(P) { return `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Dossier 3 — Emprunt avec amortissement modulable</span>
+        Dans le cadre d'un prêt à la carte, l'entreprise adapte le remboursement de son capital selon ses prévisions. L'amortissement de chaque année $A_k$ est calculé directement en appliquant le pourcentage contractuel $p_k$ au capital initial $E$, selon la formule $A_k = E \\times p_k$. Les intérêts sont systématiquement liquidés sur la base du capital restant dû à l'ouverture de la période, au taux de $${P.r3*100}\\,\\%$. L'annuité est la somme de l'amortissement choisi et des intérêts. Plus précisément :
+        <ul class="event-list" style="margin-top:1rem; margin-bottom:1rem;">`; },
+    sol3Item: function(P, R) { return `<li><strong>Année ${R.y}.</strong> L'amortissement du capital est défini à $${R.pct}\\,\\%$ de $${texM(P.c3)}$ euros, soit $${texM(R.amort)}$ euros. L'intérêt de l'année est de $${texM(R.capStart)}\\times ${texR(P.r3)}=${texM(R.int)}$ euros. L'annuité exigée s'élève à $${texM(R.amort)}+${texM(R.int)}=${texM(R.annuity)}$ euros. Le capital restant dû en fin d'année passe à $${texM(R.capStart)}-${texM(R.amort)}=${texM(R.capEnd)}$ euros.</li>`; },
+    sol3Tail: function(P) { return `</ul>
+        Le tableau d'amortissement reflétant ces pondérations est présenté ci-dessous :
+    </div>`; },
+    sol4: function(P) { return `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Dossier 4 — Lissage de crédits avec différé</span>
+        Le lissage consiste à rendre l'effort de remboursement global strictement constant pour l'entreprise sur toute la durée du financement le plus long (soit ${P.n4_main} ans). L'annuité du prêt à taux zéro $a_1$ est d'abord déterminée par la division du capital par la durée d'amortissement propre au PTZ, soit $a_1 = \\frac{${texI(P.c4_ptz)}}{${P.n4_ptz}} = ${texI(P.a4_ptz)}\\text{ euros}$.
+        L'annuité constante (ou lissée) $a^*$ pour le prêt principal ainsi que les prêts secondaires sur toute la durée du prêt principal vérifie l'équation générale :
+        <div class="math-formula">\\[a^* := \\dfrac{1}{1-(1+i_0)^{-n_0}}\\left(i_0 E_0 + \\sum_{k=1}^{N} a_k (1+i_0)^{-d_k}\\left(1-(1+i_0)^{-n_k}\\right)\\right)\\]</div>
+        où $E_0$ représente le capital du prêt principal, $i_0$ son taux d'intérêt, $n_0$ sa durée. Pour chaque prêt secondaire $k$, $a_k$ est son annuité, $d_k$ son différé, et $n_k$ sa durée de remboursement. L'application numérique précise avec nos paramètres s'établit au centime d'euro près de la façon suivante :
+        <div class="math-formula">\\[a^* := \\dfrac{1}{1-(1+${texR(P.r4)})^{-${P.n4_main}}}\\times \\left(${texI(P.c4_main)}\\times ${texR(P.r4)} + ${texI(P.a4_ptz)}\\times(1+${texR(P.r4)})^{-${P.d4_ptz}}\\times\\left(1-(1+${texR(P.r4)})^{-${P.n4_ptz}}\\right)\\right) \\approx ${texM(P.smoothedAnnuity)}\\]</div>
+        Pendant la période de remboursement croisé, l'entreprise paiera cette annuité globale lissée $a^*$ (qui couvrira intégralement l'échéance du PTZ et une part réduite du prêt principal), puis continuera de payer exactement cette même annuité au titre du prêt principal seul lors de la dernière phase de l'emprunt.
+    </div>`; },
+    sol5Head: function(P) { return `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Dossier 5 — Emprunt avec différé de paiement total</span>
+        Un différé de paiement total (franchise totale) signifie que l'emprunteur ne paie absolument rien à la banque durant les $n_d = ${P.n5_diff}$ premières années. Cependant, les intérêts courent toujours au taux souscrit $i = ${P.r5*100}\\,\\%$. Ne pouvant être payés, ils sont capitalisés et ajoutés à la dette principale (amortissement négatif), ce qui augmente le capital (phénomène d'anatocisme). À l'issue du différé, une annuité constante $A$ est calculée sur cette nouvelle base pour la durée d'amortissement restante $n_a = ${P.n5_amort}$. Plus précisément :
+        <ul class="event-list" style="margin-top:1rem; margin-bottom:1rem;">`; },
+    sol5ItemDiff: function(P, R) { return `<li><strong>Année ${R.y} (période de différé).</strong> L'intérêt dû est de $${texM(R.capStart)}\\times ${texR(P.r5)}=${texM(R.int)}$ euros. L'annuité versée étant nulle ($0{.}00$), l'amortissement est négatif et s'élève à $-${texM(R.int)}$ euros. Le capital restant dû en fin d'année s'alourdit à $${texM(R.capStart)}+${texM(R.int)}=${texM(R.capEnd)}$ euros.</li>`; },
+    sol5ItemAmort: function(P, R) { return `<li><strong>Année ${R.y} ${R.label}.</strong> La nouvelle base de calcul est de $${texM(P.capAmortStart)}$ euros. L'intérêt de l'année est de $${texM(R.capStart)}\\times ${texR(P.r5)}=${texM(R.int)}$ euros. L'annuité théorique calculée sur ${P.n5_amort} ans est de $${texM(P.annC5)}$ euros. L'amortissement est donc $${texM(P.annC5)}-${texM(R.int)}=${texM(R.amort)}$ euros. Le capital restant dû passe à $${texM(R.capStart)}-${texM(R.amort)}=${texM(R.capEnd)}$ euros.</li>`; },
+    sol5Tail: function(P) { return `</ul>
+        Le tableau décrivant rigoureusement les deux phases successives est présenté ci-dessous :
+    </div>`; }
+  },
+
+  en: {
+    htmlLang: "en",
+    title: "Finance Simulator - Bank Loans",
+    badge: "FINANCIAL ASSET VALUATION METHODS",
+    h1: "Bank Loans",
+    subtitle: "© Thomas Hossen – March 7, 2026 Version",
+    seedLabel: "Seed (Optional)",
+    btnGen: "Generate Exercise →",
+    welcome: "Configure the parameters and click Generate to create a new exercise.",
+    seedActive: "Active Seed:",
+    btnNew: "↺ New Statement",
+    btnPdf: "⬇ Export PDF",
+    btnDoc: "⬇ Export DOC",
+    tagEnonce: "Problem",
+    cardTitle: "Analysis of Financing Methods",
+    assignment: "Independent cases to be dealt with",
+    tagSol: "Solution",
+    showSol: "Show Solution",
+    hideSol: "Hide Solution",
+    docTitle: "Finance Exercise",
+    docFile: "Financial_Mathematics_Exercise.doc",
+    locale: "en-GB",
+    labelStart: "(start of repayment)",
+    labelCont: "(repayment continued)",
+    thousands: ",",
+    decimal: ".",
+
+    tbl: {
+      year: "Year",
+      capStart: "Outstanding capital (start)",
+      int: "Interest",
+      amort: "Principal repaid",
+      annuity: "Total annuity",
+      capEnd: "Outstanding capital (end)"
+    },
+
+    amortsStr: function(pcts) {
+      const L = ["first", "second", "third", "fourth", "fifth"];
+      return pcts.map(function(p, i) { return `${p}% in the ${L[i]} year`; }).join(", ").replace(/, ([^,]*)$/, " and $1");
+    },
+
+    enonce: [
+      function(P) { return `<li><strong>Case 1 — Constant principal repayment.</strong> The company takes out a loan of <span class="highlight">${formatMoney(P.c1)}</span> repayable over ${P.n1} years at an annual rate of ${P.r1*100}%, using the constant principal repayment method. Draw up the amortisation schedule.</li>`; },
+      function(P) { return `<li><strong>Case 2 — Constant annuities.</strong> The company takes out a loan of <span class="highlight">${formatMoney(P.c2)}</span> repayable over ${P.n2} years at an annual rate of ${P.r2*100}%, using the constant annuity method. Draw up the amortisation schedule.</li>`; },
+      function(P) { return `<li><strong>Case 3 — Flexible loan.</strong> The company takes out a loan of <span class="highlight">${formatMoney(P.c3)}</span> over ${P.n3} years at a rate of ${P.r3*100}%. The banker allows flexible repayment of the principal. The company decides to repay ${P.amorts3_str}. Draw up the repayment schedule.</li>`; },
+      function(P) { return `<li><strong>Case 4 — Loan smoothing.</strong> The company finances a property project with a combination of two loans. The first is a conventional loan of <span class="highlight">${formatMoney(P.c4_main)}</span> over ${P.n4_main} years at a rate of ${(P.r4*100).toLocaleString('en-GB', {minimumFractionDigits:1, maximumFractionDigits:2})}%. The second is a subsidised zero-interest loan (ZIL) of <span class="highlight">${formatMoney(P.c4_ptz)}</span> repayable over ${P.n4_ptz} years by constant annuities with a repayment deferral of ${P.d4_ptz} year(s). The bank offers a smoothing arrangement, that is, an overall annuity (ZIL and constant-annuity loan) that is strictly constant over the ${P.n4_main} years. Compute the amount of this smoothed overall annuity.</li>`; },
+      function(P) { return `<li><strong>Case 5 — Total payment deferral.</strong> The company takes out a loan of <span class="highlight">${formatMoney(P.c5)}</span> at a rate of ${P.r5*100}%. The contract provides for a total payment deferral (full grace period) of ${P.n5_diff} year(s), followed by repayment by constant annuities over the following ${P.n5_amort} years. Draw up the complete amortisation schedule over the total term of the contract.</li>`; }
+    ],
+
+    context: function(P) { return `
+      You are assisting the finance manager of the <strong>${P.company}</strong> group in the analysis of various financing offers made by banking partners. The director wishes to compare the mathematical and financial impact of each option. He entrusts you with five independent cases.
+    `; },
+    sol1Head: function(P) { return `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Case 1 — Loan with constant principal repayment</span>
+        For a loan with constant principal repayments, each year the borrower repays a strictly identical share of the initial capital. This constant repayment $A$ is determined by simply dividing the capital borrowed by the total term, that is $A = \\frac{E}{n} = \\frac{${texM(P.c1)}}{${P.n1}} = ${texM(P.amortC1)}\\text{ euros}$, where $E$ is the capital borrowed and $n$ the term of the loan. The interest of each year is computed on the capital outstanding at the beginning of the year at the effective rate of $${P.r1*100}\\,\\%$. The annuity paid to the bank is obtained by addition ($A + \\text{interest}$). The net value is updated at the end of the year. More precisely:
+        <ul class="event-list" style="margin-top:1rem; margin-bottom:1rem;">`; },
+    sol1Item: function(P, R) { return `<li><strong>Year ${R.y}.</strong> The interest of the year is obtained by multiplying the capital outstanding at the beginning of the period by the annual interest rate, that is $${texM(R.capStart)}\\times ${texR(P.r1)}=${texM(R.int)}$ euros. The fixed principal repayment being $${texM(R.amort)}$ euros, the annuity due amounts to $${texM(R.amort)}+${texM(R.int)}=${texM(R.annuity)}$ euros. The net book value at the end of the year, that is to say the capital outstanding, therefore stands at $${texM(R.capStart)}-${texM(R.amort)}=${texM(R.capEnd)}$ euros.</li>`; },
+    sol1Tail: function(P) { return `</ul>
+        The total interest paid over ${P.n1} years therefore amounts to $${texM(P.sumInt1)}$ euros. The complete schedule is as follows:
+    </div>`; },
+    sol2Head: function(P) { return `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Case 2 — Loan with constant annuities</span>
+        For a constant-annuity loan, each year the borrower repays the same fixed sum. This annuity $a$ is determined by the present-value formula of an annuity:
+        <div class="math-formula">\\[a = \\frac{iE}{1-(1+i)^{-n}} = \\frac{${texR(P.r2)}\\times ${texI(P.c2)}}{1-(1+${texR(P.r2)})^{-${P.n2}}} \\approx ${texM(P.annC2)}\\text{ euros}\\]</div>
+        where $E$ is the capital borrowed, $i$ the interest rate and $n$ the term of the loan. The interest of each year is computed on the capital outstanding at the beginning of the year at the effective rate of $${P.r2*100}\\,\\%$. The principal repayment is obtained by difference ($a - \\text{interest}$). The net value is updated at the end of the year. More precisely:
+        <ul class="event-list" style="margin-top:1rem; margin-bottom:1rem;">`; },
+    sol2ItemLast: function(P, R) { return `<li><strong>Year ${R.y}.</strong> The final interest of the last year is computed on the residual balance, that is $${texM(R.capStart)}\\times ${texR(P.r2)}=${texM(R.int)}$ euros. The last principal repayment of $${texM(R.annuity)}-${texM(R.int)}=${texM(R.amort)}$ euros closes the loan (this repayment may be adjusted by a few cents because of the successive roundings). The capital outstanding is thus reduced to $${texM(R.capStart)}-${texM(R.amort)}=${texM(R.capEnd)}$ euros, confirming the full repayment of the loan.</li>`; },
+    sol2Item: function(P, R) { return `<li><strong>Year ${R.y}.</strong> The interest of the year is obtained by multiplying the capital outstanding at the beginning of the period by the rate, that is $${texM(R.capStart)}\\times ${texR(P.r2)}=${texM(R.int)}$ euros. The fixed annuity being $${texM(P.annC2)}$ euros, the principal repayment amounts to $${texM(P.annC2)}-${texM(R.int)}=${texM(R.amort)}$ euros. The net book value at the end of the year therefore stands at $${texM(R.capStart)}-${texM(R.amort)}=${texM(R.capEnd)}$ euros.</li>`; },
+    sol2Tail: function(P) { return `</ul>
+        The total interest paid over ${P.n2} years therefore amounts to $${texM(P.sumInt2)}$ euros. The complete schedule is as follows:
+    </div>`; },
+    sol3Head: function(P) { return `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Case 3 — Loan with flexible principal repayment</span>
+        Under a flexible loan, the company adapts the repayment of its capital to its own forecasts. The repayment of each year $A_k$ is computed directly by applying the contractual percentage $p_k$ to the initial capital $E$, according to the formula $A_k = E \\times p_k$. Interest is systematically settled on the basis of the capital outstanding at the opening of the period, at the rate of $${P.r3*100}\\,\\%$. The annuity is the sum of the chosen repayment and of the interest. More precisely:
+        <ul class="event-list" style="margin-top:1rem; margin-bottom:1rem;">`; },
+    sol3Item: function(P, R) { return `<li><strong>Year ${R.y}.</strong> The principal repayment is set at $${R.pct}\\,\\%$ of $${texM(P.c3)}$ euros, that is $${texM(R.amort)}$ euros. The interest of the year is $${texM(R.capStart)}\\times ${texR(P.r3)}=${texM(R.int)}$ euros. The annuity due amounts to $${texM(R.amort)}+${texM(R.int)}=${texM(R.annuity)}$ euros. The capital outstanding at the end of the year falls to $${texM(R.capStart)}-${texM(R.amort)}=${texM(R.capEnd)}$ euros.</li>`; },
+    sol3Tail: function(P) { return `</ul>
+        The amortisation schedule reflecting these weightings is presented below:
+    </div>`; },
+    sol4: function(P) { return `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Case 4 — Loan smoothing with deferral</span>
+        Smoothing consists in making the overall repayment effort strictly constant for the company over the whole term of the longest financing (that is ${P.n4_main} years). The annuity of the zero-interest loan $a_1$ is first determined by dividing its capital by the repayment term specific to the ZIL, that is $a_1 = \\frac{${texI(P.c4_ptz)}}{${P.n4_ptz}} = ${texI(P.a4_ptz)}\\text{ euros}$.
+        The constant (or smoothed) annuity $a^*$ for the main loan together with the secondary loans over the whole term of the main loan satisfies the general equation:
+        <div class="math-formula">\\[a^* := \\dfrac{1}{1-(1+i_0)^{-n_0}}\\left(i_0 E_0 + \\sum_{k=1}^{N} a_k (1+i_0)^{-d_k}\\left(1-(1+i_0)^{-n_k}\\right)\\right)\\]</div>
+        where $E_0$ stands for the capital of the main loan, $i_0$ its interest rate, $n_0$ its term. For each secondary loan $k$, $a_k$ is its annuity, $d_k$ its deferral, and $n_k$ its repayment term. The precise numerical application with our parameters is established to the nearest cent as follows:
+        <div class="math-formula">\\[a^* := \\dfrac{1}{1-(1+${texR(P.r4)})^{-${P.n4_main}}}\\times \\left(${texI(P.c4_main)}\\times ${texR(P.r4)} + ${texI(P.a4_ptz)}\\times(1+${texR(P.r4)})^{-${P.d4_ptz}}\\times\\left(1-(1+${texR(P.r4)})^{-${P.n4_ptz}}\\right)\\right) \\approx ${texM(P.smoothedAnnuity)}\\]</div>
+        During the overlapping repayment period, the company will pay this smoothed overall annuity $a^*$ (which will fully cover the ZIL instalment and a reduced share of the main loan), then will keep paying exactly this same annuity for the main loan alone during the last phase of the borrowing.
+    </div>`; },
+    sol5Head: function(P) { return `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Case 5 — Loan with total payment deferral</span>
+        A total payment deferral (full grace period) means that the borrower pays absolutely nothing to the bank during the first $n_d = ${P.n5_diff}$ years. However, interest still accrues at the contractual rate $i = ${P.r5*100}\\,\\%$. As it cannot be paid, it is capitalised and added to the principal debt (negative repayment), which increases the capital (the phenomenon of anatocism, that is interest charged on interest). At the end of the deferral, a constant annuity $A$ is computed on this new basis for the remaining repayment term $n_a = ${P.n5_amort}$. More precisely:
+        <ul class="event-list" style="margin-top:1rem; margin-bottom:1rem;">`; },
+    sol5ItemDiff: function(P, R) { return `<li><strong>Year ${R.y} (deferral period).</strong> The interest due is $${texM(R.capStart)}\\times ${texR(P.r5)}=${texM(R.int)}$ euros. The annuity paid being nil ($0.00$), the principal repayment is negative and amounts to $-${texM(R.int)}$ euros. The capital outstanding at the end of the year rises to $${texM(R.capStart)}+${texM(R.int)}=${texM(R.capEnd)}$ euros.</li>`; },
+    sol5ItemAmort: function(P, R) { return `<li><strong>Year ${R.y} ${R.label}.</strong> The new basis of calculation is $${texM(P.capAmortStart)}$ euros. The interest of the year is $${texM(R.capStart)}\\times ${texR(P.r5)}=${texM(R.int)}$ euros. The theoretical annuity computed over ${P.n5_amort} years is $${texM(P.annC5)}$ euros. The principal repayment is therefore $${texM(P.annC5)}-${texM(R.int)}=${texM(R.amort)}$ euros. The capital outstanding falls to $${texM(R.capStart)}-${texM(R.amort)}=${texM(R.capEnd)}$ euros.</li>`; },
+    sol5Tail: function(P) { return `</ul>
+        The table rigorously describing the two successive phases is presented below:
+    </div>`; }
+  }
+};
+
+/* ============================================================
+   GESTION DE LA LANGUE  /  LANGUAGE HANDLING
+   ============================================================ */
+let LANG = 'fr';
+
+function detectLang() {
+    try {
+        const q = new URLSearchParams(window.location.search).get('lang');
+        if (q && I18N[q.toLowerCase()]) return q.toLowerCase();
+    } catch (e) {}
+    const h = (window.location.hash || '').replace('#', '').toLowerCase();
+    if (I18N[h]) return h;
+    return 'fr';
+}
+
+function setText(id, txt) {
+    const el = document.getElementById(id);
+    if (el) el.innerText = txt;
+}
+
+function applyLang() {
+    const D = I18N[LANG];
+    document.documentElement.lang = D.htmlLang;
+    document.title = D.title;
+
+    setText('lbl-badge', D.badge);
+    setText('lbl-h1', D.h1);
+    setText('lbl-subtitle', D.subtitle);
+    setText('lbl-seed', D.seedLabel);
+    setText('lbl-gen', D.btnGen);
+    setText('welcome', D.welcome);
+    setText('lbl-seed-active', D.seedActive);
+    setText('lbl-new', D.btnNew);
+    setText('lbl-pdf', D.btnPdf);
+    setText('lbl-doc', D.btnDoc);
+    setText('lbl-tag-enonce', D.tagEnonce);
+    setText('lbl-title-enonce', D.cardTitle);
+    setText('lbl-assignment', D.assignment);
+    setText('lbl-tag-sol', D.tagSol);
+    setText('lbl-title-sol', D.cardTitle);
+
+    const btn = document.getElementById('toggle-btn');
+    btn.innerText = document.getElementById('sol-card').classList.contains('visible') ? D.hideSol : D.showSol;
+
+    document.getElementById('flag-fr').classList.toggle('active', LANG === 'fr');
+    document.getElementById('flag-en').classList.toggle('active', LANG === 'en');
+}
+
+function setLang(lang) {
+    if (!I18N[lang] || lang === LANG) return;
+    LANG = lang;
+
+    /* La langue est memorisee dans l'URL (partage / rechargement) */
+    try {
+        const u = new URL(window.location.href);
+        u.searchParams.set('lang', lang);
+        history.replaceState(null, '', u.toString());
+    } catch (e) {}
+
+    applyLang();
+
+    /* Si un exercice est affiche, on le regenere a l'identique (meme seed) */
+    if (document.getElementById('ex-area').style.display !== 'none') {
+        const solWasVisible = document.getElementById('sol-card').classList.contains('visible');
+        generateExercise(false);
+        if (solWasVisible) toggleSol();
+    }
+}
+
 // --- PRNG (Mulberry32) ---
 let currentSeed = 0;
 function seedPRNG(seed) {
@@ -163,19 +453,19 @@ function seedPRNG(seed) {
 let random = Math.random;
 
 function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
-function formatMoney(num) { return num.toLocaleString('fr-FR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' €'; }
+function formatMoney(num) { return num.toLocaleString(I18N[LANG].locale, {minimumFractionDigits:2, maximumFractionDigits:2}) + ' €'; }
 
 // Formatting numbers for LaTeX display (e.g. 15\,000{.}00)
 function texM(num) {
     let parts = num.toFixed(2).split('.');
-    let intPart = parts[0].replace(/\\B(?=(\\d{3})+(?!\\d))/g, "\\,");
-    return intPart + "{.}" + parts[1];
+    let intPart = parts[0].replace(/\\B(?=(\\d{3})+(?!\\d))/g, I18N[LANG].thousands);
+    return intPart + I18N[LANG].decimal + parts[1];
 }
 function texI(num) {
-    return num.toLocaleString('fr-FR').replace(/\\s/g, "\\,");
+    return num.toLocaleString(I18N[LANG].locale).replace(/\\s/g, I18N[LANG].thousands);
 }
 function texR(num) {
-    return num.toString().replace('.', '{.}');
+    return num.toString().replace('.', I18N[LANG].decimal);
 }
 
 function generateExercise(forceNew = false) {
@@ -187,6 +477,8 @@ function generateExercise(forceNew = false) {
     document.getElementById('seed-disp').innerText = currentSeed;
     document.getElementById('seed-input').value = currentSeed;
     random = seedPRNG(currentSeed);
+
+    const DIC = I18N[LANG];
 
     // Context
     const companies = ["TechSolutions", "BatiPro", "AgriNova", "EcoLogis"];
@@ -218,8 +510,7 @@ function generateExercise(forceNew = false) {
         remainingPct -= p;
     }
     amorts3_pct.push(remainingPct);
-    let amorts3_labels = ["première", "deuxième", "troisième", "quatrième", "cinquième"];
-    let amorts3_str = amorts3_pct.map((p, i) => `${p} % la ${amorts3_labels[i]} année`).join(", ").replace(/, ([^,]*)$/, " et $1");
+    let amorts3_str = DIC.amortsStr(amorts3_pct);
 
     // Q4 : Lissage
     let c4_main = randInt(50, 150) * 1000;
@@ -242,24 +533,26 @@ function generateExercise(forceNew = false) {
     document.getElementById('welcome').style.display = 'none';
     document.getElementById('ex-area').style.display = 'block';
     document.getElementById('sol-card').classList.remove('visible');
-    document.getElementById('toggle-btn').innerText = "Afficher le corrigé";
+    document.getElementById('toggle-btn').innerText = DIC.showSol;
     document.getElementById('toggle-btn').classList.remove('shown');
 
-    document.getElementById('context-text').innerHTML = `
-      Vous assistez le responsable financier du groupe <strong>${company}</strong> dans l'analyse de différentes offres de financement proposées par des partenaires bancaires. Le dirigeant souhaite comparer l'impact mathématique et financier de chaque option. Il vous confie cinq dossiers indépendants.
-    `;
+    const P = {
+        company: company,
+        c1: c1, r1: r1, n1: n1,
+        c2: c2, r2: r2, n2: n2,
+        c3: c3, r3: r3, n3: n3,
+        c4_main: c4_main, c4_ptz: c4_ptz, r4: r4, n4_main: n4_main,
+        d4_ptz: d4_ptz, n4_ptz: n4_ptz, a4_ptz: a4_ptz,
+        c5: c5, r5: r5, n5_diff: n5_diff, n5_amort: n5_amort, n5_total: n5_total,
+        amorts3_str: amorts3_str
+    };
+
+    document.getElementById('context-text').innerHTML = DIC.context(P);
 
     let htmlEnonce = "";
-
-    htmlEnonce += `<li><strong>Dossier 1 — Amortissement constant.</strong> L'entreprise souscrit un emprunt de <span class="highlight">${formatMoney(c1)}</span> remboursable sur ${n1} ans au taux annuel de ${r1*100} %, avec la méthode des amortissements constants du capital. Établissez le tableau d'amortissement.</li>`;
-    
-    htmlEnonce += `<li><strong>Dossier 2 — Annuités constantes.</strong> L'entreprise souscrit un emprunt de <span class="highlight">${formatMoney(c2)}</span> remboursable sur ${n2} ans au taux annuel de ${r2*100} %, avec la méthode des annuités constantes. Établissez le tableau d'amortissement.</li>`;
-
-    htmlEnonce += `<li><strong>Dossier 3 — Prêt à la carte.</strong> L'entreprise souscrit un emprunt de <span class="highlight">${formatMoney(c3)}</span> sur ${n3} ans au taux de ${r3*100} %. Le banquier autorise un amortissement flexible du capital. L'entreprise décide d'amortir ${amorts3_str}. Établissez le tableau de remboursement.</li>`;
-
-    htmlEnonce += `<li><strong>Dossier 4 — Lissage de crédits.</strong> L'entreprise finance un projet immobilier avec une combinaison de deux prêts. Le premier est un prêt classique de <span class="highlight">${formatMoney(c4_main)}</span> sur ${n4_main} ans au taux de ${(r4*100).toLocaleString('fr-FR', {minimumFractionDigits:1, maximumFractionDigits:2})} %. Le second est un prêt aidé à taux zéro (PTZ) de <span class="highlight">${formatMoney(c4_ptz)}</span> remboursable sur ${n4_ptz} ans par annuités constantes avec un différé de remboursement de ${d4_ptz} an(s). La banque propose un lissage, c'est-à-dire une annuité globale (PTZ et prêt à annuités constantes) strictement constante sur les ${n4_main} années. Calculez le montant de cette annuité globale lissée.</li>`;
-
-    htmlEnonce += `<li><strong>Dossier 5 — Différé de paiement total.</strong> L'entreprise souscrit un emprunt de <span class="highlight">${formatMoney(c5)}</span> au taux de ${r5*100} %. Le contrat prévoit un différé de paiement total (franchise totale) de ${n5_diff} an(s), suivi d'un remboursement par annuités constantes sur les ${n5_amort} années suivantes. Établissez le tableau d'amortissement complet sur la durée totale du contrat.</li>`;
+    for (let qi = 0; qi < DIC.enonce.length; qi++) {
+        htmlEnonce += DIC.enonce[qi](P);
+    }
 
     document.getElementById('events-list').innerHTML = htmlEnonce;
 
@@ -269,12 +562,12 @@ function generateExercise(forceNew = false) {
     function createTable(rows) {
         let t = `<table class="exam-table">
         <tr>
-            <th>Année</th>
-            <th>Capital restant dû (début)</th>
-            <th>Intérêts</th>
-            <th>Amortissement</th>
-            <th>Annuité totale</th>
-            <th>Capital restant dû (fin)</th>
+            <th>${DIC.tbl.year}</th>
+            <th>${DIC.tbl.capStart}</th>
+            <th>${DIC.tbl.int}</th>
+            <th>${DIC.tbl.amort}</th>
+            <th>${DIC.tbl.annuity}</th>
+            <th>${DIC.tbl.capEnd}</th>
         </tr>`;
         rows.forEach(r => {
             t += `<tr>
@@ -302,20 +595,17 @@ function generateExercise(forceNew = false) {
         rem1 = end;
     }
     
-    htmlSol += `<div class="calc-box">
-        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Dossier 1 — Emprunt par amortissement constant</span>
-        Pour un prêt par amortissements constants, chaque année l'emprunteur rembourse une part strictement identique du capital initial. Cet amortissement constant $A$ est déterminé par la simple division du capital emprunté par la durée totale, soit $A = \\frac{E}{n} = \\frac{${texM(c1)}}{${n1}} = ${texM(amortC1)}\\text{ euros}$, où $E$ est le capital emprunté et $n$ la durée de l'emprunt. L'intérêt de chaque année est calculé sur le capital restant dû au début de l'année au taux effectif de $${r1*100}\\,\\%$. L'annuité versée à la banque est obtenue par addition ($A + \\text{intérêt}$). La valeur nette est mise à jour en fin d'année. Plus précisément :
-        <ul class="event-list" style="margin-top:1rem; margin-bottom:1rem;">`;
+    P.amortC1 = amortC1;
+    htmlSol += DIC.sol1Head(P);
     
     let sumInt1 = 0;
     for(let i=0; i<rows1.length; i++) {
         let r = rows1[i];
         sumInt1 += r.int;
-        htmlSol += `<li><strong>Année ${r.y}.</strong> L'intérêt de l'année est obtenu en multipliant le capital restant dû au début de la période par le taux d'intérêt annuel, soit $${texM(r.capStart)}\\times ${texR(r1)}=${texM(r.int)}$ euros. L'amortissement fixe étant de $${texM(r.amort)}$ euros, l'annuité exigée s'élève à $${texM(r.amort)}+${texM(r.int)}=${texM(r.annuity)}$ euros. La valeur nette comptable en fin d'année, c'est-à-dire le capital restant dû, s'établit ainsi à $${texM(r.capStart)}-${texM(r.amort)}=${texM(r.capEnd)}$ euros.</li>`;
+        htmlSol += DIC.sol1Item(P, r);
     }
-    htmlSol += `</ul>
-        Le total des intérêts versés sur ${n1} ans est donc de $${texM(sumInt1)}$ euros. Le tableau complet s'établit comme suit :
-    </div>`;
+    P.sumInt1 = sumInt1;
+    htmlSol += DIC.sol1Tail(P);
     htmlSol += createTable(rows1);
 
     // CORRIGÉ Q2 : Annuité constante
@@ -333,26 +623,21 @@ function generateExercise(forceNew = false) {
         rem2 = end;
     }
     
-    htmlSol += `<div class="calc-box">
-        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Dossier 2 — Emprunt par annuités constantes</span>
-        Pour un prêt à annuités constantes, chaque année l'emprunteur rembourse la même somme fixe. Cette annuité $a$ est déterminée par la formule d'actualisation d'une rente :
-        <div class="math-formula">\\[a = \\frac{iE}{1-(1+i)^{-n}} = \\frac{${texR(r2)}\\times ${texI(c2)}}{1-(1+${texR(r2)})^{-${n2}}} \\approx ${texM(annC2)}\\text{ euros}\\]</div>
-        où $E$ est le capital emprunté, $i$ le taux d'intérêt et $n$ la durée de l'emprunt. L'intérêt de chaque année est calculé sur le capital restant dû au début de l'année au taux effectif de $${r2*100}\\,\\%$. L'amortissement est obtenu par différence ($a - \\text{intérêt}$). La valeur nette est mise à jour en fin d'année. Plus précisément :
-        <ul class="event-list" style="margin-top:1rem; margin-bottom:1rem;">`;
+    P.annC2 = annC2;
+    htmlSol += DIC.sol2Head(P);
     
     let sumInt2 = 0;
     for(let i=0; i<rows2.length; i++) {
         let r = rows2[i];
         sumInt2 += r.int;
         if(i === rows2.length - 1) {
-            htmlSol += `<li><strong>Année ${r.y}.</strong> L'intérêt final de la dernière année est calculé sur le solde résiduel, soit $${texM(r.capStart)}\\times ${texR(r2)}=${texM(r.int)}$ euros. Le dernier amortissement de $${texM(r.annuity)}-${texM(r.int)}=${texM(r.amort)}$ euros clôture le prêt (cet amortissement peut être ajusté de quelques centimes du fait des arrondis successifs). Le capital restant dû est ainsi réduit à $${texM(r.capStart)}-${texM(r.amort)}=${texM(r.capEnd)}$ euros, confirmant le remboursement intégral de l'emprunt.</li>`;
+            htmlSol += DIC.sol2ItemLast(P, r);
         } else {
-            htmlSol += `<li><strong>Année ${r.y}.</strong> L'intérêt de l'année est obtenu en multipliant le capital restant dû au début de la période par le taux, soit $${texM(r.capStart)}\\times ${texR(r2)}=${texM(r.int)}$ euros. L'annuité fixe étant de $${texM(annC2)}$ euros, l'amortissement s'élève à $${texM(annC2)}-${texM(r.int)}=${texM(r.amort)}$ euros. La valeur nette comptable en fin d'année s'établit ainsi à $${texM(r.capStart)}-${texM(r.amort)}=${texM(r.capEnd)}$ euros.</li>`;
+            htmlSol += DIC.sol2Item(P, r);
         }
     }
-    htmlSol += `</ul>
-        Le total des intérêts versés sur ${n2} ans est donc de $${texM(sumInt2)}$ euros. Le tableau complet s'établit comme suit :
-    </div>`;
+    P.sumInt2 = sumInt2;
+    htmlSol += DIC.sol2Tail(P);
     htmlSol += createTable(rows2);
 
     // CORRIGÉ Q3 : Prêt à la carte
@@ -368,19 +653,13 @@ function generateExercise(forceNew = false) {
         rem3 = end;
     }
     
-    htmlSol += `<div class="calc-box">
-        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Dossier 3 — Emprunt avec amortissement modulable</span>
-        Dans le cadre d'un prêt à la carte, l'entreprise adapte le remboursement de son capital selon ses prévisions. L'amortissement de chaque année $A_k$ est calculé directement en appliquant le pourcentage contractuel $p_k$ au capital initial $E$, selon la formule $A_k = E \\times p_k$. Les intérêts sont systématiquement liquidés sur la base du capital restant dû à l'ouverture de la période, au taux de $${r3*100}\\,\\%$. L'annuité est la somme de l'amortissement choisi et des intérêts. Plus précisément :
-        <ul class="event-list" style="margin-top:1rem; margin-bottom:1rem;">`;
+    htmlSol += DIC.sol3Head(P);
     
     for(let i=0; i<rows3.length; i++) {
         let r = rows3[i];
-        let pct = amorts3_pct[i];
-        htmlSol += `<li><strong>Année ${r.y}.</strong> L'amortissement du capital est défini à $${pct}\\,\\%$ de $${texM(c3)}$ euros, soit $${texM(r.amort)}$ euros. L'intérêt de l'année est de $${texM(r.capStart)}\\times ${texR(r3)}=${texM(r.int)}$ euros. L'annuité exigée s'élève à $${texM(r.amort)}+${texM(r.int)}=${texM(r.annuity)}$ euros. Le capital restant dû en fin d'année passe à $${texM(r.capStart)}-${texM(r.amort)}=${texM(r.capEnd)}$ euros.</li>`;
+        htmlSol += DIC.sol3Item(P, Object.assign({}, r, { pct: amorts3_pct[i] }));
     }
-    htmlSol += `</ul>
-        Le tableau d'amortissement reflétant ces pondérations est présenté ci-dessous :
-    </div>`;
+    htmlSol += DIC.sol3Tail(P);
     htmlSol += createTable(rows3);
 
     // CORRIGÉ Q4 : Lissage
@@ -389,15 +668,8 @@ function generateExercise(forceNew = false) {
     let term3 = a4_ptz * Math.pow(1 + r4, -d4_ptz) * (1 - Math.pow(1 + r4, -n4_ptz));
     let smoothedAnnuity = term1 * (term2 + term3);
 
-    htmlSol += `<div class="calc-box">
-        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Dossier 4 — Lissage de crédits avec différé</span>
-        Le lissage consiste à rendre l'effort de remboursement global strictement constant pour l'entreprise sur toute la durée du financement le plus long (soit ${n4_main} ans). L'annuité du prêt à taux zéro $a_1$ est d'abord déterminée par la division du capital par la durée d'amortissement propre au PTZ, soit $a_1 = \\frac{${texI(c4_ptz)}}{${n4_ptz}} = ${texI(a4_ptz)}\\text{ euros}$.
-        L'annuité constante (ou lissée) $a^*$ pour le prêt principal ainsi que les prêts secondaires sur toute la durée du prêt principal vérifie l'équation générale :
-        <div class="math-formula">\\[a^* := \\dfrac{1}{1-(1+i_0)^{-n_0}}\\left(i_0 E_0 + \\sum_{k=1}^{N} a_k (1+i_0)^{-d_k}\\left(1-(1+i_0)^{-n_k}\\right)\\right)\\]</div>
-        où $E_0$ représente le capital du prêt principal, $i_0$ son taux d'intérêt, $n_0$ sa durée. Pour chaque prêt secondaire $k$, $a_k$ est son annuité, $d_k$ son différé, et $n_k$ sa durée de remboursement. L'application numérique précise avec nos paramètres s'établit au centime d'euro près de la façon suivante :
-        <div class="math-formula">\\[a^* := \\dfrac{1}{1-(1+${texR(r4)})^{-${n4_main}}}\\times \\left(${texI(c4_main)}\\times ${texR(r4)} + ${texI(a4_ptz)}\\times(1+${texR(r4)})^{-${d4_ptz}}\\times\\left(1-(1+${texR(r4)})^{-${n4_ptz}}\\right)\\right) \\approx ${texM(smoothedAnnuity)}\\]</div>
-        Pendant la période de remboursement croisé, l'entreprise paiera cette annuité globale lissée $a^*$ (qui couvrira intégralement l'échéance du PTZ et une part réduite du prêt principal), puis continuera de payer exactement cette même annuité au titre du prêt principal seul lors de la dernière phase de l'emprunt.
-    </div>`;
+    P.smoothedAnnuity = smoothedAnnuity;
+    htmlSol += DIC.sol4(P);
 
     // CORRIGÉ Q5 : Différé total
     let rows5 = [];
@@ -422,23 +694,20 @@ function generateExercise(forceNew = false) {
         rem5 = end;
     }
     
-    htmlSol += `<div class="calc-box">
-        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Dossier 5 — Emprunt avec différé de paiement total</span>
-        Un différé de paiement total (franchise totale) signifie que l'emprunteur ne paie absolument rien à la banque durant les $n_d = ${n5_diff}$ premières années. Cependant, les intérêts courent toujours au taux souscrit $i = ${r5*100}\\,\\%$. Ne pouvant être payés, ils sont capitalisés et ajoutés à la dette principale (amortissement négatif), ce qui augmente le capital (phénomène d'anatocisme). À l'issue du différé, une annuité constante $A$ est calculée sur cette nouvelle base pour la durée d'amortissement restante $n_a = ${n5_amort}$. Plus précisément :
-        <ul class="event-list" style="margin-top:1rem; margin-bottom:1rem;">`;
+    P.capAmortStart = capAmortStart;
+    P.annC5 = annC5;
+    htmlSol += DIC.sol5Head(P);
     
     for(let i=0; i<rows5.length; i++) {
         let r = rows5[i];
         if(i < n5_diff) {
-            htmlSol += `<li><strong>Année ${r.y} (période de différé).</strong> L'intérêt dû est de $${texM(r.capStart)}\\times ${texR(r5)}=${texM(r.int)}$ euros. L'annuité versée étant nulle ($0{.}00$), l'amortissement est négatif et s'élève à $-${texM(r.int)}$ euros. Le capital restant dû en fin d'année s'alourdit à $${texM(r.capStart)}+${texM(r.int)}=${texM(r.capEnd)}$ euros.</li>`;
+            htmlSol += DIC.sol5ItemDiff(P, r);
         } else {
-            let label = i === n5_diff ? `(début de l'amortissement)` : `(poursuite de l'amortissement)`;
-            htmlSol += `<li><strong>Année ${r.y} ${label}.</strong> La nouvelle base de calcul est de $${texM(capAmortStart)}$ euros. L'intérêt de l'année est de $${texM(r.capStart)}\\times ${texR(r5)}=${texM(r.int)}$ euros. L'annuité théorique calculée sur ${n5_amort} ans est de $${texM(annC5)}$ euros. L'amortissement est donc $${texM(annC5)}-${texM(r.int)}=${texM(r.amort)}$ euros. Le capital restant dû passe à $${texM(r.capStart)}-${texM(r.amort)}=${texM(r.capEnd)}$ euros.</li>`;
+            let label = i === n5_diff ? DIC.labelStart : DIC.labelCont;
+            htmlSol += DIC.sol5ItemAmort(P, Object.assign({}, r, { label: label }));
         }
     }
-    htmlSol += `</ul>
-        Le tableau décrivant rigoureusement les deux phases successives est présenté ci-dessous :
-    </div>`;
+    htmlSol += DIC.sol5Tail(P);
     htmlSol += createTable(rows5);
 
     document.getElementById('sol-content').innerHTML = htmlSol;
@@ -453,11 +722,11 @@ function toggleSol() {
     let btn = document.getElementById('toggle-btn');
     if(solCard.classList.contains('visible')) {
         solCard.classList.remove('visible');
-        btn.innerText = "Afficher le corrigé";
+        btn.innerText = I18N[LANG].showSol;
         btn.classList.remove('shown');
     } else {
         solCard.classList.add('visible');
-        btn.innerText = "Masquer le corrigé";
+        btn.innerText = I18N[LANG].hideSol;
         btn.classList.add('shown');
     }
 }
@@ -475,7 +744,7 @@ function exportWord() {
         <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
         <head>
             <meta charset='utf-8'>
-            <title>Exercice Finance</title>
+            <title>${I18N[LANG].docTitle}</title>
             <style>
                 body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5; text-align: justify; }
                 table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
@@ -499,12 +768,16 @@ function exportWord() {
     let url = URL.createObjectURL(blob);
     let link = document.createElement('a');
     link.href = url;
-    link.download = 'Exercice_Mathematiques_Financieres.doc';
+    link.download = I18N[LANG].docFile;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 }
+
+/* Initialisation */
+LANG = detectLang();
+applyLang();
 </script>
 </body>
 </html>

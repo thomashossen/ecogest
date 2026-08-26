@@ -93,22 +93,38 @@ main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
   .sol-card{display:block !important; border-top:2px solid var(--green);}
   #ex-area {display:block !important;}
 }
+
+/* --- Selecteur de langue / Language switch --- */
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem}
+.header-top .header-badge{margin-bottom:0}
+.lang-switch{display:flex;gap:.45rem;flex-shrink:0}
+.flag-btn{background:rgba(255,255,255,.06);border:1px solid rgba(201,149,42,.35);border-radius:3px;padding:3px;cursor:pointer;line-height:0;opacity:.5;transition:opacity .2s,border-color .2s,transform .15s}
+.flag-btn:hover{opacity:1;transform:translateY(-1px)}
+.flag-btn.active{opacity:1;border-color:var(--gold-light);box-shadow:0 0 0 1px rgba(232,184,75,.35)}
+.flag-btn svg{display:block;width:30px;height:20px;border-radius:1px}
+@media print{ .lang-switch{display:none !important;} }
 </style>
 </head>
 <body>
 
 <header>
 <div class="header-inner">
-  <div class="header-badge">MÉTHODE D'ÉVALUATION DES ACTIFS FINANCIERS</div>
-  <h1>Investissement et rentabilité</h1>
-  <p class="subtitle">© Thomas Hossen – Version du 7 mars 2026</p>
+  <div class="header-top">
+    <div class="header-badge" id="lbl-badge">MÉTHODE D'ÉVALUATION DES ACTIFS FINANCIERS</div>
+    <div class="lang-switch">
+      <button type="button" class="flag-btn active" id="flag-fr" onclick="setLang('fr')" title="Français" aria-label="Français"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="20" height="40" fill="#002654"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ED2939"/></svg></button>
+      <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
+    </div>
+  </div>
+  <h1 id="lbl-h1">Investissement et rentabilité</h1>
+  <p class="subtitle" id="lbl-subtitle">© Thomas Hossen – Version du 7 mars 2026</p>
   
   <div class="ctrls">
     <div class="ctrl-g">
-      <span class="ctrl-lbl">Seed (Optionnel)</span>
+      <span class="ctrl-lbl" id="lbl-seed">Seed (Optionnel)</span>
       <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999">
     </div>
-    <button class="btn-gen" onclick="generateExercise(false)">Générer l'exercice →</button>
+    <button class="btn-gen" id="lbl-gen" onclick="generateExercise(false)">Générer l'exercice →</button>
   </div>
 </div>
 </header>
@@ -120,19 +136,19 @@ main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
 
   <div id="ex-area" style="display:none">
     <div class="top-bar">
-      <div class="seed-badge">Seed active : <span id="seed-disp"></span></div>
+      <div class="seed-badge"><span id="lbl-seed-active">Seed active :</span> <span id="seed-disp"></span></div>
       <div class="top-actions">
-        <button class="btn-action" onclick="generateExercise(true)">↺ Nouvel énoncé</button>
-        <button class="btn-action" onclick="window.print()">⬇ Exporter PDF</button>
-        <button class="btn-action" onclick="exportWord()">⬇ Exporter DOC</button>
+        <button class="btn-action" id="lbl-new" onclick="generateExercise(true)">↺ Nouvel énoncé</button>
+        <button class="btn-action" id="lbl-pdf" onclick="window.print()">⬇ Exporter PDF</button>
+        <button class="btn-action" id="lbl-doc" onclick="exportWord()">⬇ Exporter DOC</button>
       </div>
     </div>
 
     <div class="card">
-      <div class="card-header"><span class="tag">Énoncé</span><h2>Choix d'investissement</h2></div>
+      <div class="card-header"><span class="tag" id="lbl-tag-enonce">Énoncé</span><h2 id="lbl-title-enonce">Choix d'investissement</h2></div>
       <div class="card-body">
         <div class="context-block" id="context-text"></div>
-        <p style="margin-bottom:1rem; font-weight:600; color:var(--red); text-align:left;">Travail à faire</p>
+        <p style="margin-bottom:1rem; font-weight:600; color:var(--red); text-align:left;" id="lbl-assignment">Travail à faire</p>
         <ol class="question-list" id="events-list"></ol>
       </div>
     </div>
@@ -142,13 +158,265 @@ main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
     </div>
 
     <div id="sol-card" class="card sol-card">
-      <div class="card-header"><span class="tag">Corrigé</span><h2>Choix d'investissement</h2></div>
+      <div class="card-header"><span class="tag" id="lbl-tag-sol">Corrigé</span><h2 id="lbl-title-sol">Choix d'investissement</h2></div>
       <div class="card-body" id="sol-content"></div>
     </div>
   </div>
 </main>
 
 <script>
+/* ============================================================
+   DICTIONNAIRE BILINGUE  /  BILINGUAL DICTIONARY
+   Tous les textes de la page sont regroupes ici.
+   ============================================================ */
+const I18N = {
+
+  fr: {
+    htmlLang: "fr",
+    title: "Simulateur Finance - Choix d'Investissement",
+    badge: "MÉTHODE D'ÉVALUATION DES ACTIFS FINANCIERS",
+    h1: "Investissement et rentabilité",
+    subtitle: "© Thomas Hossen – Version du 7 mars 2026",
+    seedLabel: "Seed (Optionnel)",
+    btnGen: "Générer l'exercice →",
+    welcome: "Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.",
+    seedActive: "Seed active :",
+    btnNew: "↺ Nouvel énoncé",
+    btnPdf: "⬇ Exporter PDF",
+    btnDoc: "⬇ Exporter DOC",
+    tagEnonce: "Énoncé",
+    cardTitle: "Choix d'investissement",
+    assignment: "Travail à faire",
+    tagSol: "Corrigé",
+    showSol: "Afficher le corrigé",
+    hideSol: "Masquer le corrigé",
+    docTitle: "Exercice Finance",
+    docFile: "Exercice_Choix_Investissement.doc",
+    locale: "fr-FR",
+    thousands: "\\,",
+    decimal: "{.}",
+
+    decVanPos: "la VAN étant positive, l'unité commerciale peut envisager l'investissement dans ces nouvelles machines",
+    decVanNeg: "la VAN étant négative, le projet détruit de la valeur et doit être rejeté",
+    decIpPos: "comme l'indice est supérieur à 1, l'unité commerciale peut envisager d'investir dans la solution",
+    decIpNeg: "l'indice étant inférieur à 1, le projet n'est pas jugé rentable",
+
+    tbl: {
+      elements: "Éléments",
+      ca: "Chiffre d'affaires",
+      ch: "Charges annuelles",
+      amort: "Amortissement",
+      ebt: "Résultat avant IS",
+      is: "Impôt sur les sociétés",
+      net: "Résultat net",
+      fnt: "Flux nets de trésorerie",
+      fnta: "Flux de trésorerie actualisé"
+    },
+
+    context: function(P) { return `
+      L'unité commerciale <strong>${P.company}</strong>, spécialisée dans la fabrication de machines pour les bars et restaurants, souhaite investir dans de nouvelles machines-outils. Le responsable vous informe des paramètres suivants pour cette étude de rentabilité prévisionnelle : acquisition de $${texI(P.i0)}$ euros HT au début de l'année $N$, amortissement linéaire sur ${P.n} ans, chiffre d'affaires supplémentaire de $${texI(P.ca_base)}$ euros la première année avec une croissance annuelle de $${Math.round(P.g_ca*100)}\\,\\%$, charges annuelles de $${texI(P.ch_base)}$ euros la première année avec une inflation de $${Math.round(P.g_ch*100)}\\,\\%$, valeur résiduelle nulle, taux d'impôt de $${texR(P.taxRate)}\\,\\%$.
+    `; },
+
+    enonce: [
+      function(P) { return `<li>Etablir le tableau des flux nets de trésorerie de l'entreprise de l'année $N$ à l'année $N+${P.n-1}$.</li>`; },
+      function(P) { return `<li>Compléter le tableau précédent en ajoutant les flux nets actualisés au taux de $${Math.round(P.k1*100)}\\,\\%$.</li>`; },
+      function(P) { return `<li>Calculer la valeur actuelle nette (VAN) du projet. L'entreprise doit-elle investir ?</li>`; },
+      function(P) { return `<li>Retrouver le résultat de la question précédente en utilisant le critère de l'indice de profitabilité (IP).</li>`; },
+      function(P) { return `<li>Calculer le délai de récupération du capital investi (DRCI). Commenter.</li>`; },
+      function(P) { return `<li>On suppose que, pour un taux d'actualisation de $${Math.round(P.k2*100)}\\,\\%$, la VAN s'établirait à $${texM(P.van2)}$ euros. Proposer une approximation du taux de rentabilité interne (TRI) du projet.</li>`; }
+    ],
+
+    sol: [
+      function(P) { return `<li>En reprenant les données de l'énoncé, on constate que le chiffre d'affaires débute à $${texI(P.ca_base)}$ euros et croît de $${Math.round(P.g_ca*100)}\\,\\%$ par an. Les charges suivent une logique similaire avec une croissance de $${Math.round(P.g_ch*100)}\\,\\%$ à partir de $${texI(P.ch_base)}$ euros. L'amortissement linéaire se calcule en divisant $${texI(P.i0)}$ euros par ${P.n}, soit $${texI(P.amort)}$ euros par an. Le résultat courant avant impôt est égal aux encaissements moins les décaissements. Pour l'année $N$, cela donne $${texI(P.ca[0])} - ${texI(P.ch[0])} - ${texI(P.amort)} = ${texI(P.ebt[0])}$ euros. L'impôt sur les sociétés correspond à $${texI(P.ebt[0])} \\times ${texR(P.taxRate)}\\,\\% = ${texM(P.is[0])}$ euros. Le résultat net après impôt vaut $${texI(P.ebt[0])} - ${texM(P.is[0])} = ${texM(P.net[0])}$ euros. On réintègre ensuite l'amortissement, qui est une charge non décaissée, de $${texI(P.amort)}$ euros. Le flux net de trésorerie annuel pour l'année $N$ est alors de $${texM(P.net[0])} + ${texI(P.amort)} = ${texM(P.fnt[0])}$ euros. Le tableau des flux nets de trésorerie (FNT) rempli reprend ces calculs pour chaque exercice de $N$ à $N+${P.n-1}$ :
+    ${P.table0}</li>`; },
+      function(P) { return `<li>Pour chaque période $N+i$, le flux net actualisé se calcule à partir du flux net de trésorerie annuel à l'aide de la formule $\\text{FNT actualisé} = \\text{FNT annuel} \\times (1 + \\text{taux})^{-(i+1)}$. En appliquant un taux d'actualisation de $${Math.round(P.k1*100)}\\,\\%$ et en reprenant par exemple le FNT de la première année de $${texM(P.fnt[0])}$ euros, on obtient pour la période 1 (année $N$) le calcul suivant : $${texM(P.fnt[0])} \\times (1 + ${texR(P.k1*100)}\\,\\%)^{-1} = ${texM(P.fnta[0])}$ euros. On procède de la même manière pour chaque année afin de compléter la ligne des FNT actualisés :
+    ${P.table1}</li>`; },
+      function(P) { return `<li>La valeur actuelle nette se détermine en retranchant le montant de l'investissement à la somme des FNT actualisés, soit $\\text{VAN} = \\sum \\text{FNT actualisés} - \\text{Investissement}$. En additionnant les FNT actualisés successifs ($${texM(P.fnta[0])}$ euros, $${texM(P.fnta[1])}$ euros, etc.), la somme atteint $${texM(P.van1 + P.i0)}$ euros. La VAN vaut donc $${texM(P.van1 + P.i0)} - ${texI(P.i0)} = ${texM(P.van1)}$ euros. Par conséquent, ${P.decisionVan}.</li>`; },
+      function(P) { return `<li>L'indice de profitabilité est égal au rapport entre la somme des FNT actualisés et le montant de l'investissement, soit $\\text{IP} = \\frac{\\sum \\text{FNT actualisés}}{\\text{Investissement}}$. En retenant la somme de $${texM(P.van1 + P.i0)}$ euros et un investissement de $${texI(P.i0)}$ euros, on obtient $\\text{IP} = ${texM(P.van1 + P.i0)} \\div ${texI(P.i0)} = ${texM(P.ip)}$. Ainsi, ${P.decisionIp}.</li>`; },
+      function(P) { return `<li>Le DRCI s'obtient en cumulant les FNT actualisés année après année jusqu'à atteindre ou dépasser le montant investi. On reporte pour $N$ le FNT actualisé de l'année, puis on additionne successivement pour les années suivantes, par exemple $${texM(P.fnta[0])} + ${texM(P.fnta[1])} = ${texM(P.cumul[1])}$ euros pour $N+1$, et l'on poursuit jusqu'à constater par simple lecture que le cumul dépasse $${texI(P.i0)}$ euros (il atteint $${texM(P.cumulCurrent)}$ euros) dès la fin de l'année ${P.yearLabelCurrent}. Pour connaître précisément le DRCI, on procède par interpolation linéaire. Au dernier jour de l'année ${P.yearLabelMinus1}, on a $${texM(P.cumulMinus1)}$ euros cumulés, au dernier jour de l'année ${P.yearLabelCurrent}, on a $${texM(P.cumulCurrent)}$ euros cumulés. À partir de quand a-t-on récupéré $${texI(P.i0)}$ euros exactement ? En un an, la somme des FNT actualisés a crû de $${texM(P.cumulCurrent)} - ${texM(P.cumulMinus1)} = ${texM(P.fntaCurrent)}$ euros, soit environ $${texM(P.fntaCurrent)} \\div 360 \\approx ${texM(P.dailyCurrent)}$ euros par jour en moyenne (on rappelle qu'en analyse financière, tous les mois ont 30 jours). Pour aller de $${texM(P.cumulMinus1)}$ à $${texI(P.i0)}$ euros, on a besoin de $${texM(P.drciDiff)}$ euros, soit $${texM(P.drciDiff)} \\div ${texM(P.dailyCurrent)} \\approx ${P.drciDays}$ jours. C'est donc au bout de ${P.drciDays} jours, soit ${P.drciMonths} mois et ${P.drciRemDays} jours, après la fin de l'année ${P.yearLabelMinus1} que le DRCI est atteint. Ainsi, le DRCI est de ${P.drciYear} an(s), ${P.drciMonths} mois et ${P.drciRemDays} jour(s). Le délai de récupération étant inférieur à la durée du projet (${P.n} ans), l'investissement peut être retenu.</li>`; },
+      function(P) { return `<li>Le TRI est le taux qui annule la VAN et se déduit par interpolation linéaire entre deux taux encadrant le zéro. On a deux points : pour un taux de $${P.k1_pct}\\,\\%$, la VAN vaut $${texM(P.van1)}$ euros ; pour un taux de $${P.k2_pct}\\,\\%$, elle vaut $${texM(P.van2)}$ euros. On suppose qu'on a $\\text{VAN} = a + b \\times \\text{Taux}$. On est donc amené à résoudre le système suivant, à deux inconnues réelles $a$ et $b$ :
+        <div class="math-formula">\\[(S):\\begin{cases}
+        ${texM(P.van1)} &= a + b \\times ${P.k1_pct}\\,\\% \\\\\\\\
+        ${texM(P.van2)} &= a + b \\times ${P.k2_pct}\\,\\%
+        \\end{cases}\\]</div>
+        Or on a :
+        <div class="math-formula">\\[\\begin{aligned}
+        (S)
+        &\\iff\\begin{cases}
+        ${texM(P.van1)} = a + b \\times ${P.k1_pct}\\,\\% \\\\\\\\
+        ${texM(P.van2)} - ${texM(P.van1)} = (a - a) + b \\times (${P.k2_pct}\\,\\% - ${P.k1_pct}\\,\\%)
+        \\end{cases} \\\\\\\\
+        &\\iff\\begin{cases}
+        ${texM(P.van1)} = a + b \\times ${P.k1_pct}\\,\\% \\\\\\\\
+        ${texM(P.deltaVan)} = b \\times ${P.deltaK_pct}\\,\\%
+        \\end{cases} \\\\\\\\
+        &\\iff\\begin{cases}
+        b = \\frac{${texM(P.deltaVan)}}{${P.deltaK_pct}\\,\\%} \\approx ${texM(P.b)} \\\\\\\\
+        a = ${texM(P.van1)} - (${texM(P.b)}) \\times ${P.k1_pct}\\,\\% \\approx ${texM(P.a)}
+        \\end{cases}
+        \\end{aligned}\\]</div>
+        On cherche maintenant la valeur TRI telle que $a + b \\times \\text{TRI} = 0$, c'est-à-dire $\\text{TRI} = -\\frac{a}{b}$. On trouve donc $\\text{TRI} \\approx \\frac{${texM(-P.a)}}{${texM(P.b)}} \\approx ${(P.tri*100).toFixed(2)}\\,\\%$.</li>`; }
+    ]
+  },
+
+  en: {
+    htmlLang: "en",
+    title: "Finance Simulator - Investment Decisions",
+    badge: "FINANCIAL ASSET VALUATION METHODS",
+    h1: "Investment and Profitability",
+    subtitle: "© Thomas Hossen – March 7, 2026 Version",
+    seedLabel: "Seed (Optional)",
+    btnGen: "Generate Exercise →",
+    welcome: "Configure the parameters and click Generate to create a new exercise.",
+    seedActive: "Active Seed:",
+    btnNew: "↺ New Statement",
+    btnPdf: "⬇ Export PDF",
+    btnDoc: "⬇ Export DOC",
+    tagEnonce: "Problem",
+    cardTitle: "Investment Decision",
+    assignment: "Assignment",
+    tagSol: "Solution",
+    showSol: "Show Solution",
+    hideSol: "Hide Solution",
+    docTitle: "Finance Exercise",
+    docFile: "Investment_Decision_Exercise.doc",
+    locale: "en-GB",
+    thousands: ",",
+    decimal: ".",
+
+    decVanPos: "the NPV being positive, the retail unit can consider investing in these new machines",
+    decVanNeg: "the NPV being negative, the project destroys value and must be rejected",
+    decIpPos: "as the index is greater than 1, the retail unit can consider investing in the solution",
+    decIpNeg: "the index being lower than 1, the project is not deemed profitable",
+
+    tbl: {
+      elements: "Items",
+      ca: "Revenue",
+      ch: "Annual expenses",
+      amort: "Depreciation",
+      ebt: "Pre-tax profit",
+      is: "Corporate income tax",
+      net: "Net profit",
+      fnt: "Net cash flows",
+      fnta: "Discounted cash flow"
+    },
+
+    context: function(P) { return `
+      The retail unit <strong>${P.company}</strong>, specialised in manufacturing machines for bars and restaurants, wishes to invest in new machine tools. The manager provides you with the following parameters for this forecast profitability study: acquisition of $${texI(P.i0)}$ euros excluding tax at the beginning of year $N$, straight-line depreciation over ${P.n} years, additional revenue of $${texI(P.ca_base)}$ euros in the first year with an annual growth of $${Math.round(P.g_ca*100)}\\,\\%$, annual expenses of $${texI(P.ch_base)}$ euros in the first year with an inflation of $${Math.round(P.g_ch*100)}\\,\\%$, zero residual value, tax rate of $${texR(P.taxRate)}\\,\\%$.
+    `; },
+
+    enonce: [
+      function(P) { return `<li>Draw up the table of the company's net cash flows from year $N$ to year $N+${P.n-1}$.</li>`; },
+      function(P) { return `<li>Complete the previous table by adding the cash flows discounted at a rate of $${Math.round(P.k1*100)}\\,\\%$.</li>`; },
+      function(P) { return `<li>Compute the net present value (NPV) of the project. Should the company invest?</li>`; },
+      function(P) { return `<li>Recover the result of the previous question using the profitability index (PI) criterion.</li>`; },
+      function(P) { return `<li>Compute the discounted payback period (DPP) on the invested capital. Comment.</li>`; },
+      function(P) { return `<li>Assume that, for a discount rate of $${Math.round(P.k2*100)}\\,\\%$, the NPV would amount to $${texM(P.van2)}$ euros. Propose an approximation of the internal rate of return (IRR) of the project.</li>`; }
+    ],
+
+    sol: [
+      function(P) { return `<li>Taking the data of the problem, we observe that revenue starts at $${texI(P.ca_base)}$ euros and grows by $${Math.round(P.g_ca*100)}\\,\\%$ per year. Expenses follow a similar logic with a growth of $${Math.round(P.g_ch*100)}\\,\\%$ from $${texI(P.ch_base)}$ euros. Straight-line depreciation is computed by dividing $${texI(P.i0)}$ euros by ${P.n}, that is $${texI(P.amort)}$ euros per year. The pre-tax operating profit equals cash receipts minus cash payments. For year $N$, this gives $${texI(P.ca[0])} - ${texI(P.ch[0])} - ${texI(P.amort)} = ${texI(P.ebt[0])}$ euros. Corporate income tax amounts to $${texI(P.ebt[0])} \\times ${texR(P.taxRate)}\\,\\% = ${texM(P.is[0])}$ euros. The net profit after tax is $${texI(P.ebt[0])} - ${texM(P.is[0])} = ${texM(P.net[0])}$ euros. We then add back depreciation, which is a non-cash expense, of $${texI(P.amort)}$ euros. The annual net cash flow for year $N$ is then $${texM(P.net[0])} + ${texI(P.amort)} = ${texM(P.fnt[0])}$ euros. The completed net cash flow (NCF) table reproduces these computations for each financial year from $N$ to $N+${P.n-1}$:
+    ${P.table0}</li>`; },
+      function(P) { return `<li>For each period $N+i$, the discounted cash flow is computed from the annual net cash flow using the formula $\\text{Discounted NCF} = \\text{Annual NCF} \\times (1 + \\text{rate})^{-(i+1)}$. Applying a discount rate of $${Math.round(P.k1*100)}\\,\\%$ and taking for instance the first-year NCF of $${texM(P.fnt[0])}$ euros, we obtain for period 1 (year $N$) the following computation: $${texM(P.fnt[0])} \\times (1 + ${texR(P.k1*100)}\\,\\%)^{-1} = ${texM(P.fnta[0])}$ euros. We proceed in the same way for each year in order to complete the row of discounted NCFs:
+    ${P.table1}</li>`; },
+      function(P) { return `<li>The net present value is determined by subtracting the amount of the investment from the sum of the discounted NCFs, that is $\\text{NPV} = \\sum \\text{Discounted NCF} - \\text{Investment}$. Adding the successive discounted NCFs ($${texM(P.fnta[0])}$ euros, $${texM(P.fnta[1])}$ euros, and so on), the sum reaches $${texM(P.van1 + P.i0)}$ euros. The NPV is therefore $${texM(P.van1 + P.i0)} - ${texI(P.i0)} = ${texM(P.van1)}$ euros. Consequently, ${P.decisionVan}.</li>`; },
+      function(P) { return `<li>The profitability index is the ratio of the sum of the discounted NCFs to the amount of the investment, that is $\\text{PI} = \\frac{\\sum \\text{Discounted NCF}}{\\text{Investment}}$. Taking the sum of $${texM(P.van1 + P.i0)}$ euros and an investment of $${texI(P.i0)}$ euros, we obtain $\\text{PI} = ${texM(P.van1 + P.i0)} \\div ${texI(P.i0)} = ${texM(P.ip)}$. Thus, ${P.decisionIp}.</li>`; },
+      function(P) { return `<li>The discounted payback period is obtained by cumulating the discounted NCFs year after year until the invested amount is reached or exceeded. For $N$ we carry over the discounted NCF of the year, then we add successively for the following years, for example $${texM(P.fnta[0])} + ${texM(P.fnta[1])} = ${texM(P.cumul[1])}$ euros for $N+1$, and we continue until we observe by simple reading that the cumulative total exceeds $${texI(P.i0)}$ euros (it reaches $${texM(P.cumulCurrent)}$ euros) by the end of year ${P.yearLabelCurrent}. To know the payback period precisely, we proceed by linear interpolation. On the last day of year ${P.yearLabelMinus1}, the cumulative total is $${texM(P.cumulMinus1)}$ euros; on the last day of year ${P.yearLabelCurrent}, it is $${texM(P.cumulCurrent)}$ euros. From when exactly has $${texI(P.i0)}$ euros been recovered? Over one year, the sum of the discounted NCFs grew by $${texM(P.cumulCurrent)} - ${texM(P.cumulMinus1)} = ${texM(P.fntaCurrent)}$ euros, that is roughly $${texM(P.fntaCurrent)} \\div 360 \\approx ${texM(P.dailyCurrent)}$ euros per day on average (recall that in financial analysis every month has 30 days). To go from $${texM(P.cumulMinus1)}$ to $${texI(P.i0)}$ euros, we need $${texM(P.drciDiff)}$ euros, that is $${texM(P.drciDiff)} \\div ${texM(P.dailyCurrent)} \\approx ${P.drciDays}$ days. It is therefore after ${P.drciDays} days, that is ${P.drciMonths} months and ${P.drciRemDays} days, following the end of year ${P.yearLabelMinus1} that the payback is reached. Thus, the payback period is ${P.drciYear} year(s), ${P.drciMonths} month(s) and ${P.drciRemDays} day(s). Since the payback period is shorter than the duration of the project (${P.n} years), the investment can be accepted.</li>`; },
+      function(P) { return `<li>The IRR is the rate that sets the NPV to zero and is derived by linear interpolation between two rates bracketing zero. We have two points: for a rate of $${P.k1_pct}\\,\\%$, the NPV is $${texM(P.van1)}$ euros; for a rate of $${P.k2_pct}\\,\\%$, it is $${texM(P.van2)}$ euros. We assume that $\\text{NPV} = a + b \\times \\text{Rate}$. We are therefore led to solve the following system, with two real unknowns $a$ and $b$:
+        <div class="math-formula">\\[(S):\\begin{cases}
+        ${texM(P.van1)} &= a + b \\times ${P.k1_pct}\\,\\% \\\\\\\\
+        ${texM(P.van2)} &= a + b \\times ${P.k2_pct}\\,\\%
+        \\end{cases}\\]</div>
+        Now we have:
+        <div class="math-formula">\\[\\begin{aligned}
+        (S)
+        &\\iff\\begin{cases}
+        ${texM(P.van1)} = a + b \\times ${P.k1_pct}\\,\\% \\\\\\\\
+        ${texM(P.van2)} - ${texM(P.van1)} = (a - a) + b \\times (${P.k2_pct}\\,\\% - ${P.k1_pct}\\,\\%)
+        \\end{cases} \\\\\\\\
+        &\\iff\\begin{cases}
+        ${texM(P.van1)} = a + b \\times ${P.k1_pct}\\,\\% \\\\\\\\
+        ${texM(P.deltaVan)} = b \\times ${P.deltaK_pct}\\,\\%
+        \\end{cases} \\\\\\\\
+        &\\iff\\begin{cases}
+        b = \\frac{${texM(P.deltaVan)}}{${P.deltaK_pct}\\,\\%} \\approx ${texM(P.b)} \\\\\\\\
+        a = ${texM(P.van1)} - (${texM(P.b)}) \\times ${P.k1_pct}\\,\\% \\approx ${texM(P.a)}
+        \\end{cases}
+        \\end{aligned}\\]</div>
+        We now look for the value IRR such that $a + b \\times \\text{IRR} = 0$, that is $\\text{IRR} = -\\frac{a}{b}$. We therefore find $\\text{IRR} \\approx \\frac{${texM(-P.a)}}{${texM(P.b)}} \\approx ${(P.tri*100).toFixed(2)}\\,\\%$.</li>`; }
+    ]
+  }
+};
+
+/* ============================================================
+   GESTION DE LA LANGUE  /  LANGUAGE HANDLING
+   ============================================================ */
+let LANG = 'fr';
+
+function detectLang() {
+    try {
+        const q = new URLSearchParams(window.location.search).get('lang');
+        if (q && I18N[q.toLowerCase()]) return q.toLowerCase();
+    } catch (e) {}
+    const h = (window.location.hash || '').replace('#', '').toLowerCase();
+    if (I18N[h]) return h;
+    return 'fr';
+}
+
+function setText(id, txt) {
+    const el = document.getElementById(id);
+    if (el) el.innerText = txt;
+}
+
+function applyLang() {
+    const D = I18N[LANG];
+    document.documentElement.lang = D.htmlLang;
+    document.title = D.title;
+
+    setText('lbl-badge', D.badge);
+    setText('lbl-h1', D.h1);
+    setText('lbl-subtitle', D.subtitle);
+    setText('lbl-seed', D.seedLabel);
+    setText('lbl-gen', D.btnGen);
+    setText('welcome', D.welcome);
+    setText('lbl-seed-active', D.seedActive);
+    setText('lbl-new', D.btnNew);
+    setText('lbl-pdf', D.btnPdf);
+    setText('lbl-doc', D.btnDoc);
+    setText('lbl-tag-enonce', D.tagEnonce);
+    setText('lbl-title-enonce', D.cardTitle);
+    setText('lbl-assignment', D.assignment);
+    setText('lbl-tag-sol', D.tagSol);
+    setText('lbl-title-sol', D.cardTitle);
+
+    const btn = document.getElementById('toggle-btn');
+    btn.innerText = document.getElementById('sol-card').classList.contains('visible') ? D.hideSol : D.showSol;
+
+    document.getElementById('flag-fr').classList.toggle('active', LANG === 'fr');
+    document.getElementById('flag-en').classList.toggle('active', LANG === 'en');
+}
+
+function setLang(lang) {
+    if (!I18N[lang] || lang === LANG) return;
+    LANG = lang;
+
+    /* La langue est memorisee dans l'URL (partage / rechargement) */
+    try {
+        const u = new URL(window.location.href);
+        u.searchParams.set('lang', lang);
+        history.replaceState(null, '', u.toString());
+    } catch (e) {}
+
+    applyLang();
+
+    /* Si un exercice est affiche, on le regenere a l'identique (meme seed) */
+    if (document.getElementById('ex-area').style.display !== 'none') {
+        const solWasVisible = document.getElementById('sol-card').classList.contains('visible');
+        generateExercise(false);
+        if (solWasVisible) toggleSol();
+    }
+}
+
 // --- PRNG (Mulberry32) ---
 let currentSeed = 0;
 function seedPRNG(seed) {
@@ -162,24 +430,24 @@ function seedPRNG(seed) {
 let random = Math.random;
 
 function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
-function formatMoney(num) { return num.toLocaleString('fr-FR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' €'; }
+function formatMoney(num) { return num.toLocaleString(I18N[LANG].locale, {minimumFractionDigits:2, maximumFractionDigits:2}) + ' €'; }
 
 // Fonctions de formatage strict pour le rendu LaTeX (MathJax)
 function texM(num) {
     let sign = num < 0 ? "-" : "";
     let absNum = Math.abs(num);
     let parts = absNum.toFixed(2).split('.');
-    let intPart = parts[0].replace(/\\B(?=(\\d{3})+(?!\\d))/g, "\\,");
-    return sign + intPart + "{.}" + parts[1];
+    let intPart = parts[0].replace(/\\B(?=(\\d{3})+(?!\\d))/g, I18N[LANG].thousands);
+    return sign + intPart + I18N[LANG].decimal + parts[1];
 }
 function texI(num) {
     let sign = num < 0 ? "-" : "";
     let absNum = Math.round(Math.abs(num));
-    return sign + absNum.toString().replace(/\\B(?=(\\d{3})+(?!\\d))/g, "\\,");
+    return sign + absNum.toString().replace(/\\B(?=(\\d{3})+(?!\\d))/g, I18N[LANG].thousands);
 }
 function texR(num) {
     // Pour les pourcentages avec potentiellement des décimales
-    return Number(Math.round(num+'e2')+'e-2').toString().replace('.', '{.}');
+    return Number(Math.round(num+'e2')+'e-2').toString().replace('.', I18N[LANG].decimal);
 }
 
 function generateExercise(forceNew = false) {
@@ -191,6 +459,8 @@ function generateExercise(forceNew = false) {
     document.getElementById('seed-disp').innerText = currentSeed;
     document.getElementById('seed-input').value = currentSeed;
     random = seedPRNG(currentSeed);
+
+    const DIC = I18N[LANG];
 
     // Context
     const companies = ["Café-Théâtre", "GastroPro", "FoodEquip", "RestoTech"];
@@ -290,21 +560,23 @@ function generateExercise(forceNew = false) {
     document.getElementById('welcome').style.display = 'none';
     document.getElementById('ex-area').style.display = 'block';
     document.getElementById('sol-card').classList.remove('visible');
-    document.getElementById('toggle-btn').innerText = "Afficher le corrigé";
+    document.getElementById('toggle-btn').innerText = DIC.showSol;
     document.getElementById('toggle-btn').classList.remove('shown');
 
-    document.getElementById('context-text').innerHTML = `
-      L'unité commerciale <strong>${company}</strong>, spécialisée dans la fabrication de machines pour les bars et restaurants, souhaite investir dans de nouvelles machines-outils. Le responsable vous informe des paramètres suivants pour cette étude de rentabilité prévisionnelle : acquisition de $${texI(i0)}$ euros HT au début de l'année $N$, amortissement linéaire sur ${n} ans, chiffre d'affaires supplémentaire de $${texI(ca_base)}$ euros la première année avec une croissance annuelle de $${Math.round(g_ca*100)}\\,\\%$, charges annuelles de $${texI(ch_base)}$ euros la première année avec une inflation de $${Math.round(g_ch*100)}\\,\\%$, valeur résiduelle nulle, taux d'impôt de $${texR(taxRate)}\\,\\%$.
-    `;
+    const P = {
+        company: company, i0: i0, n: n, ca_base: ca_base, ch_base: ch_base,
+        g_ca: g_ca, g_ch: g_ch, taxRate: taxRate, k1: k1, k2: k2,
+        van1: van1, van2: van2, ip: ip, amort: amort,
+        ca: ca, ch: ch, ebt: ebt, is: is, net: net, fnt: fnt, fnta: fnta, cumul: cumul,
+        drciYear: drciYear, drciDays: drciDays, drciMonths: drciMonths, drciRemDays: drciRemDays
+    };
+
+    document.getElementById('context-text').innerHTML = DIC.context(P);
 
     let htmlEnonce = "";
-
-    htmlEnonce += `<li>Etablir le tableau des flux nets de trésorerie de l'entreprise de l'année $N$ à l'année $N+${n-1}$.</li>`;
-    htmlEnonce += `<li>Compléter le tableau précédent en ajoutant les flux nets actualisés au taux de $${Math.round(k1*100)}\\,\\%$.</li>`;
-    htmlEnonce += `<li>Calculer la valeur actuelle nette (VAN) du projet. L'entreprise doit-elle investir ?</li>`;
-    htmlEnonce += `<li>Retrouver le résultat de la question précédente en utilisant le critère de l'indice de profitabilité (IP).</li>`;
-    htmlEnonce += `<li>Calculer le délai de récupération du capital investi (DRCI). Commenter.</li>`;
-    htmlEnonce += `<li>On suppose que, pour un taux d'actualisation de $${Math.round(k2*100)}\\,\\%$, la VAN s'établirait à $${texM(van2)}$ euros. Proposer une approximation du taux de rentabilité interne (TRI) du projet.</li>`;
+    for (let qi = 0; qi < DIC.enonce.length; qi++) {
+        htmlEnonce += DIC.enonce[qi](P);
+    }
 
     document.getElementById('events-list').innerHTML = htmlEnonce;
 
@@ -312,21 +584,21 @@ function generateExercise(forceNew = false) {
     let htmlSol = "";
 
     function generateFntTable(includeActualise) {
-        let thead = `<tr><th>Éléments</th>`;
+        let thead = `<tr><th>${DIC.tbl.elements}</th>`;
         for(let i=0; i<n; i++) {
             thead += `<th>N${i===0 ? '' : ' + '+i}</th>`;
         }
         thead += `</tr>`;
         
-        let rowCa = `<tr><td class="txt-left">Chiffre d'affaires</td>`;
-        let rowCh = `<tr><td class="txt-left">Charges annuelles</td>`;
-        let rowAm1 = `<tr><td class="txt-left">Amortissement</td>`;
-        let rowEbt = `<tr><td class="txt-left">Résultat avant IS</td>`;
-        let rowIs = `<tr><td class="txt-left">Impôt sur les sociétés</td>`;
-        let rowNet = `<tr><td class="txt-left">Résultat net</td>`;
-        let rowAm2 = `<tr><td class="txt-left">Amortissement</td>`;
-        let rowFnt = `<tr><td class="txt-left">Flux nets de trésorerie</td>`;
-        let rowFnta = includeActualise ? `<tr><td class="txt-left">Flux de trésorerie actualisé</td>` : "";
+        let rowCa = `<tr><td class="txt-left">${DIC.tbl.ca}</td>`;
+        let rowCh = `<tr><td class="txt-left">${DIC.tbl.ch}</td>`;
+        let rowAm1 = `<tr><td class="txt-left">${DIC.tbl.amort}</td>`;
+        let rowEbt = `<tr><td class="txt-left">${DIC.tbl.ebt}</td>`;
+        let rowIs = `<tr><td class="txt-left">${DIC.tbl.is}</td>`;
+        let rowNet = `<tr><td class="txt-left">${DIC.tbl.net}</td>`;
+        let rowAm2 = `<tr><td class="txt-left">${DIC.tbl.amort}</td>`;
+        let rowFnt = `<tr><td class="txt-left">${DIC.tbl.fnt}</td>`;
+        let rowFnta = includeActualise ? `<tr><td class="txt-left">${DIC.tbl.fnta}</td>` : "";
 
         for(let i=0; i<n; i++) {
             rowCa += `<td class="amt">${formatMoney(ca[i])}</td>`;
@@ -350,23 +622,10 @@ function generateExercise(forceNew = false) {
     htmlSol += `<div class="calc-box">`;
     htmlSol += `<ol class="question-list" style="margin-bottom:0;">`;
 
-    // Q1
-    htmlSol += `<li>En reprenant les données de l'énoncé, on constate que le chiffre d'affaires débute à $${texI(ca_base)}$ euros et croît de $${Math.round(g_ca*100)}\\,\\%$ par an. Les charges suivent une logique similaire avec une croissance de $${Math.round(g_ch*100)}\\,\\%$ à partir de $${texI(ch_base)}$ euros. L'amortissement linéaire se calcule en divisant $${texI(i0)}$ euros par ${n}, soit $${texI(amort)}$ euros par an. Le résultat courant avant impôt est égal aux encaissements moins les décaissements. Pour l'année $N$, cela donne $${texI(ca[0])} - ${texI(ch[0])} - ${texI(amort)} = ${texI(ebt[0])}$ euros. L'impôt sur les sociétés correspond à $${texI(ebt[0])} \\times ${texR(taxRate)}\\,\\% = ${texM(is[0])}$ euros. Le résultat net après impôt vaut $${texI(ebt[0])} - ${texM(is[0])} = ${texM(net[0])}$ euros. On réintègre ensuite l'amortissement, qui est une charge non décaissée, de $${texI(amort)}$ euros. Le flux net de trésorerie annuel pour l'année $N$ est alors de $${texM(net[0])} + ${texI(amort)} = ${texM(fnt[0])}$ euros. Le tableau des flux nets de trésorerie (FNT) rempli reprend ces calculs pour chaque exercice de $N$ à $N+${n-1}$ :
-    ${generateFntTable(false)}</li>`;
+    // Valeurs derivees pour le corrige
+    let decisionVan = van1 > 0 ? DIC.decVanPos : DIC.decVanNeg;
+    let decisionIp = ip > 1 ? DIC.decIpPos : DIC.decIpNeg;
 
-    // Q2
-    htmlSol += `<li>Pour chaque période $N+i$, le flux net actualisé se calcule à partir du flux net de trésorerie annuel à l'aide de la formule $\\text{FNT actualisé} = \\text{FNT annuel} \\times (1 + \\text{taux})^{-(i+1)}$. En appliquant un taux d'actualisation de $${Math.round(k1*100)}\\,\\%$ et en reprenant par exemple le FNT de la première année de $${texM(fnt[0])}$ euros, on obtient pour la période 1 (année $N$) le calcul suivant : $${texM(fnt[0])} \\times (1 + ${texR(k1*100)}\\,\\%)^{-1} = ${texM(fnta[0])}$ euros. On procède de la même manière pour chaque année afin de compléter la ligne des FNT actualisés :
-    ${generateFntTable(true)}</li>`;
-
-    // Q3
-    let decisionVan = van1 > 0 ? "la VAN étant positive, l'unité commerciale peut envisager l'investissement dans ces nouvelles machines" : "la VAN étant négative, le projet détruit de la valeur et doit être rejeté";
-    htmlSol += `<li>La valeur actuelle nette se détermine en retranchant le montant de l'investissement à la somme des FNT actualisés, soit $\\text{VAN} = \\sum \\text{FNT actualisés} - \\text{Investissement}$. En additionnant les FNT actualisés successifs ($${texM(fnta[0])}$ euros, $${texM(fnta[1])}$ euros, etc.), la somme atteint $${texM(van1 + i0)}$ euros. La VAN vaut donc $${texM(van1 + i0)} - ${texI(i0)} = ${texM(van1)}$ euros. Par conséquent, ${decisionVan}.</li>`;
-
-    // Q4
-    let decisionIp = ip > 1 ? "comme l'indice est supérieur à 1, l'unité commerciale peut envisager d'investir dans la solution" : "l'indice étant inférieur à 1, le projet n'est pas jugé rentable";
-    htmlSol += `<li>L'indice de profitabilité est égal au rapport entre la somme des FNT actualisés et le montant de l'investissement, soit $\\text{IP} = \\frac{\\sum \\text{FNT actualisés}}{\\text{Investissement}}$. En retenant la somme de $${texM(van1 + i0)}$ euros et un investissement de $${texI(i0)}$ euros, on obtient $\\text{IP} = ${texM(van1 + i0)} \\div ${texI(i0)} = ${texM(ip)}$. Ainsi, ${decisionIp}.</li>`;
-
-    // Q5
     let yearLabelMinus1 = drciYear === 0 ? "N-1" : (drciYear === 1 ? "N" : "N+" + (drciYear - 1));
     let yearLabelCurrent = drciYear === 0 ? "N" : "N+" + drciYear;
     let cumulMinus1 = drciYear === 0 ? 0 : cumul[drciYear - 1];
@@ -375,9 +634,6 @@ function generateExercise(forceNew = false) {
     let drciDiff = i0 - cumulMinus1;
     let dailyCurrent = fntaCurrent / 360;
 
-    htmlSol += `<li>Le DRCI s'obtient en cumulant les FNT actualisés année après année jusqu'à atteindre ou dépasser le montant investi. On reporte pour $N$ le FNT actualisé de l'année, puis on additionne successivement pour les années suivantes, par exemple $${texM(fnta[0])} + ${texM(fnta[1])} = ${texM(cumul[1])}$ euros pour $N+1$, et l'on poursuit jusqu'à constater par simple lecture que le cumul dépasse $${texI(i0)}$ euros (il atteint $${texM(cumulCurrent)}$ euros) dès la fin de l'année ${yearLabelCurrent}. Pour connaître précisément le DRCI, on procède par interpolation linéaire. Au dernier jour de l'année ${yearLabelMinus1}, on a $${texM(cumulMinus1)}$ euros cumulés, au dernier jour de l'année ${yearLabelCurrent}, on a $${texM(cumulCurrent)}$ euros cumulés. À partir de quand a-t-on récupéré $${texI(i0)}$ euros exactement ? En un an, la somme des FNT actualisés a crû de $${texM(cumulCurrent)} - ${texM(cumulMinus1)} = ${texM(fntaCurrent)}$ euros, soit environ $${texM(fntaCurrent)} \\div 360 \\approx ${texM(dailyCurrent)}$ euros par jour en moyenne (on rappelle qu'en analyse financière, tous les mois ont 30 jours). Pour aller de $${texM(cumulMinus1)}$ à $${texI(i0)}$ euros, on a besoin de $${texM(drciDiff)}$ euros, soit $${texM(drciDiff)} \\div ${texM(dailyCurrent)} \\approx ${drciDays}$ jours. C'est donc au bout de ${drciDays} jours, soit ${drciMonths} mois et ${drciRemDays} jours, après la fin de l'année ${yearLabelMinus1} que le DRCI est atteint. Ainsi, le DRCI est de ${drciYear} an(s), ${drciMonths} mois et ${drciRemDays} jour(s). Le délai de récupération étant inférieur à la durée du projet (${n} ans), l'investissement peut être retenu.</li>`;
-
-    // Q6 (TRI Interpolation)
     let k1_pct = Math.round(k1 * 100);
     let k2_pct = Math.round(k2 * 100);
     let deltaK_pct = k2_pct - k1_pct;
@@ -386,28 +642,28 @@ function generateExercise(forceNew = false) {
     let a = van1 - b * (k1_pct / 100);
     let tri = -a / b;
 
-    htmlSol += `<li>Le TRI est le taux qui annule la VAN et se déduit par interpolation linéaire entre deux taux encadrant le zéro. On a deux points : pour un taux de $${k1_pct}\\,\\%$, la VAN vaut $${texM(van1)}$ euros ; pour un taux de $${k2_pct}\\,\\%$, elle vaut $${texM(van2)}$ euros. On suppose qu'on a $\\text{VAN} = a + b \\times \\text{Taux}$. On est donc amené à résoudre le système suivant, à deux inconnues réelles $a$ et $b$ :
-        <div class="math-formula">\\[(S):\\begin{cases}
-        ${texM(van1)} &= a + b \\times ${k1_pct}\\,\\% \\\\\\\\
-        ${texM(van2)} &= a + b \\times ${k2_pct}\\,\\%
-        \\end{cases}\\]</div>
-        Or on a :
-        <div class="math-formula">\\[\\begin{aligned}
-        (S)
-        &\\iff\\begin{cases}
-        ${texM(van1)} = a + b \\times ${k1_pct}\\,\\% \\\\\\\\
-        ${texM(van2)} - ${texM(van1)} = (a - a) + b \\times (${k2_pct}\\,\\% - ${k1_pct}\\,\\%)
-        \\end{cases} \\\\\\\\
-        &\\iff\\begin{cases}
-        ${texM(van1)} = a + b \\times ${k1_pct}\\,\\% \\\\\\\\
-        ${texM(deltaVan)} = b \\times ${deltaK_pct}\\,\\%
-        \\end{cases} \\\\\\\\
-        &\\iff\\begin{cases}
-        b = \\frac{${texM(deltaVan)}}{${deltaK_pct}\\,\\%} \\approx ${texM(b)} \\\\\\\\
-        a = ${texM(van1)} - (${texM(b)}) \\times ${k1_pct}\\,\\% \\approx ${texM(a)}
-        \\end{cases}
-        \\end{aligned}\\]</div>
-        On cherche maintenant la valeur TRI telle que $a + b \\times \\text{TRI} = 0$, c'est-à-dire $\\text{TRI} = -\\frac{a}{b}$. On trouve donc $\\text{TRI} \\approx \\frac{${texM(-a)}}{${texM(b)}} \\approx ${(tri*100).toFixed(2)}\\,\\%$.</li>`;
+    P.decisionVan = decisionVan;
+    P.decisionIp = decisionIp;
+    P.yearLabelMinus1 = yearLabelMinus1;
+    P.yearLabelCurrent = yearLabelCurrent;
+    P.cumulMinus1 = cumulMinus1;
+    P.cumulCurrent = cumulCurrent;
+    P.fntaCurrent = fntaCurrent;
+    P.drciDiff = drciDiff;
+    P.dailyCurrent = dailyCurrent;
+    P.k1_pct = k1_pct;
+    P.k2_pct = k2_pct;
+    P.deltaK_pct = deltaK_pct;
+    P.deltaVan = deltaVan;
+    P.b = b;
+    P.a = a;
+    P.tri = tri;
+    P.table0 = generateFntTable(false);
+    P.table1 = generateFntTable(true);
+
+    for (let qi = 0; qi < DIC.sol.length; qi++) {
+        htmlSol += DIC.sol[qi](P);
+    }
 
     htmlSol += `</ol></div>`;
 
@@ -424,11 +680,11 @@ function toggleSol() {
     let btn = document.getElementById('toggle-btn');
     if(solCard.classList.contains('visible')) {
         solCard.classList.remove('visible');
-        btn.innerText = "Afficher le corrigé";
+        btn.innerText = I18N[LANG].showSol;
         btn.classList.remove('shown');
     } else {
         solCard.classList.add('visible');
-        btn.innerText = "Masquer le corrigé";
+        btn.innerText = I18N[LANG].hideSol;
         btn.classList.add('shown');
     }
 }
@@ -446,7 +702,7 @@ function exportWord() {
         <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
         <head>
             <meta charset='utf-8'>
-            <title>Exercice Finance</title>
+            <title>${I18N[LANG].docTitle}</title>
             <style>
                 body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5; text-align: justify; }
                 table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
@@ -470,12 +726,16 @@ function exportWord() {
     let url = URL.createObjectURL(blob);
     let link = document.createElement('a');
     link.href = url;
-    link.download = 'Exercice_Choix_Investissement.doc';
+    link.download = I18N[LANG].docFile;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 }
+
+/* Initialisation */
+LANG = detectLang();
+applyLang();
 </script>
 </body>
 </html>
