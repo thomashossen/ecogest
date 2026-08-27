@@ -94,22 +94,38 @@ main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
   .sol-card{display:block !important; border-top:2px solid var(--green);}
   #ex-area {display:block !important;}
 }
+
+/* --- Selecteur de langue / Language switch --- */
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem}
+.header-top .header-badge{margin-bottom:0}
+.lang-switch{display:flex;gap:.45rem;flex-shrink:0}
+.flag-btn{background:rgba(255,255,255,.06);border:1px solid rgba(201,149,42,.35);border-radius:3px;padding:3px;cursor:pointer;line-height:0;opacity:.5;transition:opacity .2s,border-color .2s,transform .15s}
+.flag-btn:hover{opacity:1;transform:translateY(-1px)}
+.flag-btn.active{opacity:1;border-color:var(--gold-light);box-shadow:0 0 0 1px rgba(232,184,75,.35)}
+.flag-btn svg{display:block;width:30px;height:20px;border-radius:1px}
+@media print{ .lang-switch{display:none !important;} }
 </style>
 </head>
 <body>
 
 <header>
 <div class="header-inner">
-  <div class="header-badge">MÉTHODE D'ÉVALUATION DES ACTIFS FINANCIERS</div>
-  <h1>Valorisation des actifs et stratégies de change</h1>
-  <p class="subtitle">© Thomas Hossen – Version du 7 mars 2026</p>
+  <div class="header-top">
+    <div class="header-badge" id="lbl-badge">MÉTHODE D'ÉVALUATION DES ACTIFS FINANCIERS</div>
+    <div class="lang-switch">
+      <button type="button" class="flag-btn active" id="flag-fr" onclick="setLang('fr')" title="Français" aria-label="Français"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="20" height="40" fill="#002654"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ED2939"/></svg></button>
+      <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
+    </div>
+  </div>
+  <h1 id="lbl-h1">Valorisation des actifs et stratégies de change</h1>
+  <p class="subtitle" id="lbl-subtitle">© Thomas Hossen – Version du 7 mars 2026</p>
   
   <div class="ctrls">
     <div class="ctrl-g">
-      <span class="ctrl-lbl">Seed (Optionnel)</span>
+      <span class="ctrl-lbl" id="lbl-seed">Seed (Optionnel)</span>
       <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999">
     </div>
-    <button class="btn-gen" onclick="generateExercise(false)">Générer l'exercice →</button>
+    <button class="btn-gen" id="lbl-gen" onclick="generateExercise(false)">Générer l'exercice →</button>
   </div>
 </div>
 </header>
@@ -121,16 +137,16 @@ main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
 
   <div id="ex-area" style="display:none">
     <div class="top-bar">
-      <div class="seed-badge">Seed active : <span id="seed-disp"></span></div>
+      <div class="seed-badge"><span id="lbl-seed-active">Seed active :</span> <span id="seed-disp"></span></div>
       <div class="top-actions">
-        <button class="btn-action" onclick="generateExercise(true)">↺ Nouvel énoncé</button>
-        <button class="btn-action" onclick="window.print()">⬇ Exporter PDF</button>
-        <button class="btn-action" onclick="exportWord()">⬇ Exporter DOC</button>
+        <button class="btn-action" id="lbl-new" onclick="generateExercise(true)">↺ Nouvel énoncé</button>
+        <button class="btn-action" id="lbl-pdf" onclick="window.print()">⬇ Exporter PDF</button>
+        <button class="btn-action" id="lbl-doc" onclick="exportWord()">⬇ Exporter DOC</button>
       </div>
     </div>
 
     <div class="card">
-      <div class="card-header"><span class="tag">Énoncé</span><h2>Évaluation et stratégie financière</h2></div>
+      <div class="card-header"><span class="tag" id="lbl-tag-enonce">Énoncé</span><h2 id="lbl-title-enonce">Évaluation et stratégie financière</h2></div>
       <div class="card-body">
         <div class="context-block" id="context-text"></div>
         <ul class="event-list" id="events-list"></ul>
@@ -142,13 +158,264 @@ main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
     </div>
 
     <div id="sol-card" class="card sol-card">
-      <div class="card-header"><span class="tag">Corrigé</span><h2>Évaluation et stratégie financière</h2></div>
+      <div class="card-header"><span class="tag" id="lbl-tag-sol">Corrigé</span><h2 id="lbl-title-sol">Évaluation et stratégie financière</h2></div>
       <div class="card-body" id="sol-content"></div>
     </div>
   </div>
 </main>
 
 <script>
+/* ============================================================
+   DICTIONNAIRE BILINGUE  /  BILINGUAL DICTIONARY
+   Tous les textes de la page sont regroupes ici.
+   ============================================================ */
+const I18N = {
+
+  fr: {
+    htmlLang: "fr",
+    title: "Simulateur Finance - Valorisation d'Actifs",
+    badge: "MÉTHODE D'ÉVALUATION DES ACTIFS FINANCIERS",
+    h1: "Valorisation des actifs et stratégies de change",
+    subtitle: "© Thomas Hossen – Version du 7 mars 2026",
+    seedLabel: "Seed (Optionnel)",
+    btnGen: "Générer l'exercice →",
+    welcome: "Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.",
+    seedActive: "Seed active :",
+    btnNew: "↺ Nouvel énoncé",
+    btnPdf: "⬇ Exporter PDF",
+    btnDoc: "⬇ Exporter DOC",
+    tagEnonce: "Énoncé",
+    cardTitle: "Évaluation et stratégie financière",
+    tagSol: "Corrigé",
+    showSol: "Afficher le corrigé",
+    hideSol: "Masquer le corrigé",
+    docTitle: "Exercice Finance",
+    docFile: "Exercice_Valorisation_Actifs.doc",
+    thousands: "\\,",
+    decimal: "{.}",
+
+    context: function(P) { return `
+      Vous intégrez le département d'analyse financière d'une société de gestion de portefeuille. Votre responsable vous demande d'évaluer théoriquement plusieurs actifs et stratégies d'investissement afin de décider de leur intégration dans le fonds de l'entreprise.
+    `; },
+
+    enonce: [
+      function(P) { return `<li><strong>Dossier 1 — Évaluation d'une obligation.</strong> Vous étudiez une obligation classique in fine d'une valeur nominale de $${texI(P.nominal)}$ euros. Son taux de coupon annuel est fixé à $${texM(P.c_rate_pct)}\\,\\%$ et sa maturité résiduelle est de ${P.n_obs} ans. Le taux d'intérêt exigé par le marché pour des obligations de risque équivalent s'établit aujourd'hui à $${texM(P.r_market_pct)}\\,\\%$. Déterminez le prix théorique de cette obligation. Calculez ensuite sa duration ainsi que sa sensibilité en interprétant précisément ces deux indicateurs.</li>`; },
+      function(P) { return `<li><strong>Dossier 2 — Valorisation d'une action.</strong> Vous analysez l'action d'une entreprise cotée. Le dernier dividende net versé par l'entreprise ($D_0$) s'élève à $${texM(P.d0)}$ euros. Les analystes estiment que ce dividende croîtra de manière perpétuelle et constante au taux annuel de $${texM(P.g_rate_pct)}\\,\\%$. Le taux de rentabilité exigé par les actionnaires pour ce niveau de risque est de $${texM(P.k_rate_pct)}\\,\\%$. En utilisant le modèle d'actualisation des dividendes de Gordon-Shapiro, déterminez la valeur théorique de cette action aujourd'hui.</li>`; },
+      function(P) { return `<li><strong>Dossier 3 — Modèle d'évaluation des actifs financiers (MEDAF).</strong> On se place sous les hypothèses du modèle d'évaluation des actifs financiers. Supposons que le portefeuille de marché soit composé de trois titres risqués, notés $A$, $B$ et $C$. Les valeurs (en milliards d'euros) de ces actifs dans le portefeuille du marché et les rendements espérés $\\mu_A$, $\\mu_B$ et $\\mu_C$ sont donnés par le tableau suivant :
+    <table class="exam-table" style="width: 80%; margin: 1rem auto;">
+        <tr><th>Actif</th><th>$A$</th><th>$B$</th><th>$C$</th></tr>
+        <tr><td class="txt-left">Capitalisation</td><td>$${texI(P.v_A)}$</td><td>$${texI(P.v_B)}$</td><td>$${texI(P.v_C)}$</td></tr>
+        <tr><td class="txt-left">Rendement espéré</td><td>$${texM(P.mu_A_pct)}\\,\\%$</td><td>$${texM(P.mu_B_pct)}\\,\\%$</td><td>$${texM(P.mu_C_pct)}\\,\\%$</td></tr>
+    </table>
+    Donner le vecteur poids du portefeuille de marché $M$ et en déduire sa rentabilité espérée. Calculer pour chaque actif son $\\beta$, sachant que le rendement sans risque est $r_f=${texM(P.rf_medaf_pct)}\\,\\%$. Par suite, considérons un portefeuille où l'on place (valeurs en milliers d'euros), ${P.amt_f} dans l'actif sans risque, ${P.amt_A} dans l'actif $A$, ${P.amt_B} dans l'actif $B$ et ${P.amt_C} dans l'actif $C$. Donner alors le $\\beta$ d'un tel portefeuille et son rendement attendu. Qu'en pensez-vous ?</li>`; },
+      function(P) { return `<li><strong>Dossier 4 — <em>Carry trade</em> EUR/JPY.</strong> Le taux directeur de la Banque centrale européenne (BCE) s'établit à $${texM(P.r_eur_pct)}\\,\\%$ l'an et le taux directeur de la Banque du Japon (BoJ) à $${texM(P.r_jpy_pct)}\\,\\%$ l'an. Un investisseur institutionnel décide de mettre en œuvre une stratégie de <em>carry trade</em> : il emprunte $${texI(P.ct_amt)}$ euros à $${texM(P.r_jpy_pct)}\\,\\%$ l'an (taux de financement yen, reflété dans le coût du <em>rollover overnight</em>) et place le produit en euros à $${texM(P.r_eur_pct)}\\,\\%$ l'an. Le taux de change EUR/JPY au comptant est de $${texM(P.ct_spot)}$ yens pour un euro le jour d'initiation de la position.
+    <ol class="sub-list">
+        <li>Calculez le gain de portage (<em>carry income</em>) quotidien net pour une position de $${texI(P.ct_amt)}$ euros, en appliquant la convention 360 jours.</li>
+        <li>Calculez le gain de portage cumulé sur une période de <em>holding</em> de ${P.ct_days} jours ouvrés consécutifs, en supposant une reconduction quotidienne de la position sans variation de taux directeurs.</li>
+        <li>Déterminez le niveau du taux de change EUR/JPY en dessous duquel la stratégie devient déficitaire au bout de ${P.ct_days} jours (seuil de <em>break-even</em>).</li>
+        <li>Calculez la variation relative du cours EUR/JPY (en pourcentage) correspondant à ce seuil de <em>break-even</em>. Commentez.</li>
+    </ol>
+    </li>`; }
+    ],
+
+    sol: [
+      function(P) { return `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Dossier 1 — Évaluation d'une obligation</span>
+        Le prix théorique d'une obligation correspond mathématiquement à la somme des valeurs actuelles de ses flux de trésorerie futurs (les coupons annuels et le remboursement du nominal in fine), actualisés au taux de rendement exigé par le marché. Le coupon annuel versé est de $${texI(P.nominal)} \\times ${texM(P.c_rate_pct)}\\,\\% = ${texI(P.coupon)}$ euros. Le calcul du prix $P$ s'établit ainsi :
+        <div class="math-formula">\\[${P.priceFormula}\\]</div>
+        La duration de Macaulay représente la durée de vie moyenne pondérée des flux financiers de l'obligation. Elle se calcule en pondérant chaque période par la valeur actuelle du flux correspondant, le tout rapporté au prix de l'obligation :
+        <div class="math-formula">\\[${P.durationFormula}\\]</div>
+        Cela signifie qu'à partir de $${texM(P.duration)}$ années, soit ${P.d_years} an(s), ${P.d_months} mois et ${P.d_days} jour(s) (convention d'une année financière durant 360 jours), le prix de l'obligation n'est plus impacté par une variation structurelle du taux d'intérêt du marché. La sensibilité $S$ de l'obligation mesure le risque de taux, c'est-à-dire l'évolution relative du prix de l'obligation pour une variation infinitésimale des taux. Elle s'établit à :
+        <div class="math-formula">\\[S = \\frac{D}{1+r} = \\frac{${texM(P.duration)}}{1+${texR(P.r_market)}} \\approx ${texM(P.sensitivity)}\\]</div>
+        En moyenne, lorsque les taux d'intérêt montent de $1\\,\\%$, alors le cours actuel de l'obligation chute proportionnellement de $${texM(P.sensitivity)}\\,\\%$.
+    </div>`; },
+      function(P) { return `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Dossier 2 — Valorisation d'une action</span>
+        Le modèle de Gordon-Shapiro repose sur le principe fondamental de l'actualisation des flux de trésorerie futurs à l'infini. Ce modèle postule que la valeur intrinsèque d'une action est égale à la somme de tous ses dividendes futurs actualisés, en supposant que ces dividendes croissent à un taux constant $g$. La formule d'évaluation de la valeur théorique $V_0$ s'écrit $V_0 = \\frac{D_1}{k - g}$, où $D_1$ est le dividende attendu à la fin de la première année, $k$ le taux de rentabilité exigé par l'investisseur, et $g$ le taux de croissance perpétuelle. On calcule en premier lieu le dividende futur attendu $D_1$ :
+        <div class="math-formula">\\[D_1 = D_0 \\times (1 + g) = ${texM(P.d0)} \\times (1 + ${texR(P.g_rate)}) = ${texM(P.d1)}\\text{ euros}\\]</div>
+        On applique ensuite la formule principale pour en déduire la valorisation théorique de l'action aujourd'hui :
+        <div class="math-formula">\\[V_0 = \\frac{${texM(P.d1)}}{${texR(P.k_rate)} - ${texR(P.g_rate)}} = \\frac{${texM(P.d1)}}{${texR(P.k_rate - P.g_rate)}} \\approx ${texM(P.v0)}\\text{ euros}\\]</div>
+        Si le cours actuel de l'action sur les marchés financiers est inférieur à $${texM(P.v0)}$ euros, le titre est considéré comme sous-évalué et constitue une opportunité d'achat pour la société de gestion.
+    </div>`; },
+      function(P) { return `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Dossier 3 — Modèle d'évaluation des actifs financiers (MEDAF)</span>
+        La capitalisation du marché est égale à la somme des capitalisations de chaque actif constitutif du marché, à savoir $${texI(P.v_A)} + ${texI(P.v_B)} + ${texI(P.v_C)} = ${texI(P.v_tot)}$ milliards d'euros. Sur ces $${texI(P.v_tot)}$ milliards d'euros, la part de l'actif $A$ est $\\frac{${texI(P.v_A)}}{${texI(P.v_tot)}} = ${texM(P.scen.pi[0]*100)}\\,\\%$, celle de l'actif $B$ est de $\\frac{${texI(P.v_B)}}{${texI(P.v_tot)}} = ${texM(P.scen.pi[1]*100)}\\,\\%$ et celle de l'actif $C$ est de $\\frac{${texI(P.v_C)}}{${texI(P.v_tot)}} = ${texM(P.scen.pi[2]*100)}\\,\\%$. Le vecteur poids du portefeuille de marché s'écrit donc $(\\pi_A,\\pi_B,\\pi_C)=(${texBeta(P.scen.pi[0])}, ${texBeta(P.scen.pi[1])}, ${texBeta(P.scen.pi[2])})$. Dès lors, le rendement espéré du portefeuille de marché $\\mu_M$ est la moyenne pondérée de chaque actif constitutif du marché, à savoir $\\mu_M=\\pi_A\\mu_A+\\pi_B\\mu_B+\\pi_C\\mu_C$, soit $\\mu_M=${texBeta(P.scen.pi[0])}\\times ${texM(P.mu_A_pct)}\\,\\% + ${texBeta(P.scen.pi[1])}\\times ${texM(P.mu_B_pct)}\\,\\% + ${texBeta(P.scen.pi[2])}\\times ${texM(P.mu_C_pct)}\\,\\% = ${texM(P.mu_M_pct)}\\,\\%$. On en déduit alors le $\\beta$ de chaque actif $i$ par la formule $\\beta_i=\\frac{\\mu_i-r_f}{\\mu_M-r_f}$. On a donc :
+        <ul style="list-style-type:none; padding-left:1rem; margin:0.8rem 0;">
+            <li>$\\star\\; \\beta_A=\\frac{${texM(P.mu_A_pct)}\\,\\% - ${texM(P.rf_medaf_pct)}\\,\\%}{${texM(P.mu_M_pct)}\\,\\% - ${texM(P.rf_medaf_pct)}\\,\\%} = ${texBeta(P.scen.beta[0])}$ : c'est un actif risqué qui rapporte autant qu'un actif sans risque : pas étonnant que son $\\beta$ soit nul.</li>
+            <li>$\\star\\; \\beta_B=\\frac{${texM(P.mu_B_pct)}\\,\\% - ${texM(P.rf_medaf_pct)}\\,\\%}{${texM(P.mu_M_pct)}\\,\\% - ${texM(P.rf_medaf_pct)}\\,\\%} = ${texBeta(P.scen.beta[1])}$ : un $\\beta$ négatif caractérise un actif de couverture ; il varie en sens contraire du marché, et naturellement son rendement attendu est inférieur au taux sans risque.</li>
+            <li>$\\star\\; \\beta_C=\\frac{${texM(P.mu_C_pct)}\\,\\% - ${texM(P.rf_medaf_pct)}\\,\\%}{${texM(P.mu_M_pct)}\\,\\% - ${texM(P.rf_medaf_pct)}\\,\\%} = ${texBeta(P.scen.beta[2])}$ : c'est un actif ultra offensif qui amplifie très fortement les fluctuations du marché, pour le meilleur et pour le pire.</li>
+        </ul>
+        Par suite, on considère un portefeuille où l'on place (valeurs en milliers d'euros), ${P.amt_f} dans l'actif sans risque, ${P.amt_A} dans l'actif $A$, ${P.amt_B} dans l'actif $B$ et ${P.amt_C} dans l'actif $C$. On a donc placé au total $${P.amt_f} + ${P.amt_A} + ${P.amt_B} + ${P.amt_C} = ${P.port_W}$ milliers d'euros. On peut alors calculer le rendement espéré de ce portefeuille $\\mu_P$ par $\\frac{${P.amt_f}}{${P.port_W}}\\times ${texM(P.rf_medaf_pct)}\\,\\% + \\frac{${P.amt_A}}{${P.port_W}}\\times ${texM(P.mu_A_pct)}\\,\\% + \\frac{${P.amt_B}}{${P.port_W}}\\times ${texM(P.mu_B_pct)}\\,\\% + \\frac{${P.amt_C}}{${P.port_W}}\\times ${texM(P.mu_C_pct)}\\,\\%$, soit $\\mu_P = ${texM(P.mu_P_pct)}\\,\\%$. On obtient donc pour le $\\beta$ de ce portefeuille la valeur $\\beta_P=\\frac{\\mu_P-r_f}{\\mu_M-r_f}$, c'est-à-dire $\\beta_P=\\frac{${texM(P.mu_P_pct)}\\,\\% - ${texM(P.rf_medaf_pct)}\\,\\%}{${texM(P.mu_M_pct)}\\,\\% - ${texM(P.rf_medaf_pct)}\\,\\%} = ${texM(P.beta_P)}$. Cette valeur étant comprise entre 0 et 1, on est sur un portefeuille plutôt défensif qui lisse les variations du marché (la prime de risque du portefeuille augmente lorsque celle du marché augmente, mais moins que cette dernière ; inversement, lorsque le marché dévisse, le portefeuille dévisse également mais moins que celui-ci).
+    </div>`; },
+      function(P) { return `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Dossier 4 — <em>Carry trade</em> EUR/JPY</span>
+        <ol class="sub-list">
+            <li>Le différentiel de taux d'intérêt annuel est $\\Delta r = ${texM(P.r_eur_pct)}\\,\\% - ${texM(P.r_jpy_pct)}\\,\\% = ${texM(P.diff_r_pct)}\\,\\%$ par an. En base 360 jours, le gain de portage quotidien pour une position de $${texI(P.ct_amt)}$ euros s'écrit donc $G_{\\text{jour}} = ${texI(P.ct_amt)} \\times \\frac{${texM(P.diff_r_pct)}\\,\\%}{360} \\approx ${texM(P.daily_gain_exact)}~\\text{euros par jour}$. Ce montant correspond au crédit <em>overnight</em> porté sur le compte de l'investisseur lors de chaque <em>rollover tomorrow-next</em>, en rémunération nette de la détention de la devise à haut rendement.</li>
+            <li>En supposant les taux directeurs inchangés et une reconduction quotidienne sans écart de cotation, le gain cumulé sur ${P.ct_days} jours ouvrés est alors : $G_{${P.ct_days}} = ${texM(P.daily_gain_exact)} \\times ${P.ct_days} \\approx ${texM(P.cumul_gain_exact)}~\\text{euros}$. Exprimé en pourcentage du montant de la position initiale, ce gain représente proportionnellement la part du rendement accumulée.</li>
+            <li>Le gain cumulé de $${texM(P.cumul_gain_exact)}$ euros correspond, au cours initial de $${texM(P.ct_spot)}$ yens par euro, à une contrepartie en yens de $${texM(P.cumul_gain_exact)} \\times ${texM(P.ct_spot)} = ${texM(P.gain_jpy_exact)}~\\text{yens}$. Or la position initiale de $${texI(P.ct_amt)}$ euros vaut $${texI(P.ct_amt * P.ct_spot)}~\\text{yens}$ au cours d'initiation. Pour que la stratégie soit à l'équilibre, la perte en capital due à une appréciation du yen doit donc être strictement inférieure au gain de portage cumulé de $${texM(P.gain_jpy_exact)}$ yens. En d'autres termes, il faut vérifier $${texI(P.ct_amt)} \\times (${texM(P.ct_spot)} - S) \\leq ${texM(P.gain_jpy_exact)}$, soit $${texM(P.ct_spot)} - S \\leq ${texM(P.drop_jpy_exact)}$ ou encore $S \\geq ${texM(P.ct_spot)} - ${texM(P.drop_jpy_exact)} = ${texM(P.s_be_exact)}~\\text{yens pour un euro}$. La stratégie devient donc déficitaire si le taux de change EUR/JPY passe en dessous du seuil de <em>break-even</em> de $S_{\\text{BE}} := ${texM(P.s_be_exact)}$.</li>
+            <li>La variation relative correspondant au seuil de <em>break-even</em> est donc de $\\frac{${texM(P.s_be_exact)} - ${texM(P.ct_spot)}}{${texM(P.ct_spot)}} \\approx ${texM(P.var_pct_exact)}\\,\\%$. Il suffit donc d'une appréciation du yen de seulement $${texM(Math.abs(P.var_pct_exact))}\\,\\%$ sur ${P.ct_days} jours pour anéantir l'intégralité du gain de portage accumulé. Ce calcul illustre précisément le profil de risque asymétrique décrit par Brunnermeier et al. (2009) : le gain est lent, progressif et plafonné à $${texM(P.diff_r_pct)}\\,\\%$ l'an, tandis que le risque de perte est en principe non-borné et peut se matérialiser brutalement. Un gain de portage accumulé sur plusieurs semaines peut ainsi être effacé en quelques minutes lors d'un épisode de liquidation forcée, conformément à la formule imagée « <em>going up by the stairs, coming down by the elevator</em> » : la stratégie offre des rendements réguliers qui induisent un faux sentiment de sécurité, masquant la probabilité faible mais non nulle d'une perte catastrophique et soudaine.</li>
+        </ol>
+    </div>`; }
+    ]
+  },
+
+  en: {
+    htmlLang: "en",
+    title: "Finance Simulator - Asset Valuation",
+    badge: "FINANCIAL ASSET VALUATION METHODS",
+    h1: "Asset Valuation and Currency Strategies",
+    subtitle: "© Thomas Hossen – March 7, 2026 Version",
+    seedLabel: "Seed (Optional)",
+    btnGen: "Generate Exercise →",
+    welcome: "Configure the parameters and click Generate to create a new exercise.",
+    seedActive: "Active Seed:",
+    btnNew: "↺ New Statement",
+    btnPdf: "⬇ Export PDF",
+    btnDoc: "⬇ Export DOC",
+    tagEnonce: "Problem",
+    cardTitle: "Valuation and Financial Strategy",
+    tagSol: "Solution",
+    showSol: "Show Solution",
+    hideSol: "Hide Solution",
+    docTitle: "Finance Exercise",
+    docFile: "Asset_Valuation_Exercise.doc",
+    thousands: ",",
+    decimal: ".",
+
+    context: function(P) { return `
+      You are joining the financial analysis department of a portfolio management company. Your manager asks you to value several assets and investment strategies theoretically, in order to decide whether to include them in the firm's fund.
+    `; },
+
+    enonce: [
+      function(P) { return `<li><strong>Case 1 — Valuation of a bond.</strong> You are studying a conventional bullet bond with a face value of $${texI(P.nominal)}$ euros. Its annual coupon rate is set at $${texM(P.c_rate_pct)}\\,\\%$ and its residual maturity is ${P.n_obs} years. The interest rate required by the market for bonds of equivalent risk currently stands at $${texM(P.r_market_pct)}\\,\\%$. Determine the theoretical price of this bond. Then compute its duration as well as its sensitivity, interpreting these two indicators precisely.</li>`; },
+      function(P) { return `<li><strong>Case 2 — Valuation of a share.</strong> You are analysing the share of a listed company. The last net dividend paid by the company ($D_0$) amounts to $${texM(P.d0)}$ euros. Analysts estimate that this dividend will grow perpetually and constantly at the annual rate of $${texM(P.g_rate_pct)}\\,\\%$. The rate of return required by shareholders for this level of risk is $${texM(P.k_rate_pct)}\\,\\%$. Using the Gordon-Shapiro dividend discount model, determine the theoretical value of this share today.</li>`; },
+      function(P) { return `<li><strong>Case 3 — Capital Asset Pricing Model (CAPM).</strong> We work under the assumptions of the capital asset pricing model. Suppose that the market portfolio is made up of three risky securities, denoted $A$, $B$ and $C$. The values (in billions of euros) of these assets in the market portfolio and the expected returns $\\mu_A$, $\\mu_B$ and $\\mu_C$ are given in the following table:
+    <table class="exam-table" style="width: 80%; margin: 1rem auto;">
+        <tr><th>Asset</th><th>$A$</th><th>$B$</th><th>$C$</th></tr>
+        <tr><td class="txt-left">Market capitalisation</td><td>$${texI(P.v_A)}$</td><td>$${texI(P.v_B)}$</td><td>$${texI(P.v_C)}$</td></tr>
+        <tr><td class="txt-left">Expected return</td><td>$${texM(P.mu_A_pct)}\\,\\%$</td><td>$${texM(P.mu_B_pct)}\\,\\%$</td><td>$${texM(P.mu_C_pct)}\\,\\%$</td></tr>
+    </table>
+    Give the weight vector of the market portfolio $M$ and deduce its expected return. Compute the $\\beta$ of each asset, knowing that the risk-free return is $r_f=${texM(P.rf_medaf_pct)}\\,\\%$. Then consider a portfolio in which the following amounts are invested (values in thousands of euros): ${P.amt_f} in the risk-free asset, ${P.amt_A} in asset $A$, ${P.amt_B} in asset $B$ and ${P.amt_C} in asset $C$. Give the $\\beta$ of such a portfolio and its expected return. What do you make of it?</li>`; },
+      function(P) { return `<li><strong>Case 4 — EUR/JPY <em>carry trade</em>.</strong> The policy rate of the European Central Bank (ECB) stands at $${texM(P.r_eur_pct)}\\,\\%$ per year and the policy rate of the Bank of Japan (BoJ) at $${texM(P.r_jpy_pct)}\\,\\%$ per year. An institutional investor decides to implement a <em>carry trade</em> strategy: he borrows $${texI(P.ct_amt)}$ euros at $${texM(P.r_jpy_pct)}\\,\\%$ per year (yen funding rate, reflected in the cost of the <em>overnight rollover</em>) and invests the proceeds in euros at $${texM(P.r_eur_pct)}\\,\\%$ per year. The spot EUR/JPY exchange rate is $${texM(P.ct_spot)}$ yen per euro on the day the position is opened.
+    <ol class="sub-list">
+        <li>Compute the net daily <em>carry income</em> for a position of $${texI(P.ct_amt)}$ euros, applying the 360-day convention.</li>
+        <li>Compute the cumulative carry income over a <em>holding</em> period of ${P.ct_days} consecutive business days, assuming the position is rolled over daily with no change in policy rates.</li>
+        <li>Determine the level of the EUR/JPY exchange rate below which the strategy becomes loss-making after ${P.ct_days} days (<em>break-even</em> threshold).</li>
+        <li>Compute the relative change in the EUR/JPY rate (as a percentage) corresponding to this <em>break-even</em> threshold. Comment.</li>
+    </ol>
+    </li>`; }
+    ],
+
+    sol: [
+      function(P) { return `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Case 1 — Valuation of a bond</span>
+        The theoretical price of a bond mathematically corresponds to the sum of the present values of its future cash flows (the annual coupons and the redemption of the face value at maturity), discounted at the rate of return required by the market. The annual coupon paid is $${texI(P.nominal)} \\times ${texM(P.c_rate_pct)}\\,\\% = ${texI(P.coupon)}$ euros. The computation of the price $P$ is therefore as follows:
+        <div class="math-formula">\\[${P.priceFormula}\\]</div>
+        The Macaulay duration represents the weighted average life of the bond's cash flows. It is computed by weighting each period by the present value of the corresponding flow, the whole being divided by the price of the bond:
+        <div class="math-formula">\\[${P.durationFormula}\\]</div>
+        This means that from $${texM(P.duration)}$ years onwards, that is ${P.d_years} year(s), ${P.d_months} month(s) and ${P.d_days} day(s) (under the convention of a 360-day financial year), the price of the bond is no longer affected by a structural change in the market interest rate. The sensitivity $S$ of the bond measures interest rate risk, that is the relative change in the price of the bond for an infinitesimal change in rates. It is given by:
+        <div class="math-formula">\\[S = \\frac{D}{1+r} = \\frac{${texM(P.duration)}}{1+${texR(P.r_market)}} \\approx ${texM(P.sensitivity)}\\]</div>
+        On average, when interest rates rise by $1\\,\\%$, the current price of the bond falls proportionally by $${texM(P.sensitivity)}\\,\\%$.
+    </div>`; },
+      function(P) { return `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Case 2 — Valuation of a share</span>
+        The Gordon-Shapiro model rests on the fundamental principle of discounting future cash flows to infinity. This model postulates that the intrinsic value of a share equals the sum of all its discounted future dividends, assuming that these dividends grow at a constant rate $g$. The valuation formula for the theoretical value $V_0$ is written $V_0 = \\frac{D_1}{k - g}$, where $D_1$ is the dividend expected at the end of the first year, $k$ the rate of return required by the investor, and $g$ the perpetual growth rate. We first compute the expected future dividend $D_1$:
+        <div class="math-formula">\\[D_1 = D_0 \\times (1 + g) = ${texM(P.d0)} \\times (1 + ${texR(P.g_rate)}) = ${texM(P.d1)}\\text{ euros}\\]</div>
+        We then apply the main formula to deduce the theoretical valuation of the share today:
+        <div class="math-formula">\\[V_0 = \\frac{${texM(P.d1)}}{${texR(P.k_rate)} - ${texR(P.g_rate)}} = \\frac{${texM(P.d1)}}{${texR(P.k_rate - P.g_rate)}} \\approx ${texM(P.v0)}\\text{ euros}\\]</div>
+        If the current price of the share on the financial markets is below $${texM(P.v0)}$ euros, the security is considered undervalued and constitutes a buying opportunity for the management company.
+    </div>`; },
+      function(P) { return `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Case 3 — Capital Asset Pricing Model (CAPM)</span>
+        The market capitalisation is equal to the sum of the capitalisations of each asset making up the market, namely $${texI(P.v_A)} + ${texI(P.v_B)} + ${texI(P.v_C)} = ${texI(P.v_tot)}$ billion euros. Out of these $${texI(P.v_tot)}$ billion euros, the share of asset $A$ is $\\frac{${texI(P.v_A)}}{${texI(P.v_tot)}} = ${texM(P.scen.pi[0]*100)}\\,\\%$, that of asset $B$ is $\\frac{${texI(P.v_B)}}{${texI(P.v_tot)}} = ${texM(P.scen.pi[1]*100)}\\,\\%$ and that of asset $C$ is $\\frac{${texI(P.v_C)}}{${texI(P.v_tot)}} = ${texM(P.scen.pi[2]*100)}\\,\\%$. The weight vector of the market portfolio is therefore written $(\\pi_A,\\pi_B,\\pi_C)=(${texBeta(P.scen.pi[0])}, ${texBeta(P.scen.pi[1])}, ${texBeta(P.scen.pi[2])})$. Consequently, the expected return of the market portfolio $\\mu_M$ is the weighted average of each asset making up the market, namely $\\mu_M=\\pi_A\\mu_A+\\pi_B\\mu_B+\\pi_C\\mu_C$, that is $\\mu_M=${texBeta(P.scen.pi[0])}\\times ${texM(P.mu_A_pct)}\\,\\% + ${texBeta(P.scen.pi[1])}\\times ${texM(P.mu_B_pct)}\\,\\% + ${texBeta(P.scen.pi[2])}\\times ${texM(P.mu_C_pct)}\\,\\% = ${texM(P.mu_M_pct)}\\,\\%$. We then deduce the $\\beta$ of each asset $i$ through the formula $\\beta_i=\\frac{\\mu_i-r_f}{\\mu_M-r_f}$. We therefore have:
+        <ul style="list-style-type:none; padding-left:1rem; margin:0.8rem 0;">
+            <li>$\\star\\; \\beta_A=\\frac{${texM(P.mu_A_pct)}\\,\\% - ${texM(P.rf_medaf_pct)}\\,\\%}{${texM(P.mu_M_pct)}\\,\\% - ${texM(P.rf_medaf_pct)}\\,\\%} = ${texBeta(P.scen.beta[0])}$: this is a risky asset which yields as much as a risk-free asset, so it is hardly surprising that its $\\beta$ should be zero.</li>
+            <li>$\\star\\; \\beta_B=\\frac{${texM(P.mu_B_pct)}\\,\\% - ${texM(P.rf_medaf_pct)}\\,\\%}{${texM(P.mu_M_pct)}\\,\\% - ${texM(P.rf_medaf_pct)}\\,\\%} = ${texBeta(P.scen.beta[1])}$: a negative $\\beta$ characterises a hedging asset; it moves in the opposite direction to the market, and naturally its expected return is below the risk-free rate.</li>
+            <li>$\\star\\; \\beta_C=\\frac{${texM(P.mu_C_pct)}\\,\\% - ${texM(P.rf_medaf_pct)}\\,\\%}{${texM(P.mu_M_pct)}\\,\\% - ${texM(P.rf_medaf_pct)}\\,\\%} = ${texBeta(P.scen.beta[2])}$: this is an ultra-aggressive asset which amplifies market fluctuations very strongly, for better and for worse.</li>
+        </ul>
+        Next, we consider a portfolio in which the following amounts are invested (values in thousands of euros): ${P.amt_f} in the risk-free asset, ${P.amt_A} in asset $A$, ${P.amt_B} in asset $B$ and ${P.amt_C} in asset $C$. We have therefore invested a total of $${P.amt_f} + ${P.amt_A} + ${P.amt_B} + ${P.amt_C} = ${P.port_W}$ thousand euros. We can then compute the expected return of this portfolio $\\mu_P$ as $\\frac{${P.amt_f}}{${P.port_W}}\\times ${texM(P.rf_medaf_pct)}\\,\\% + \\frac{${P.amt_A}}{${P.port_W}}\\times ${texM(P.mu_A_pct)}\\,\\% + \\frac{${P.amt_B}}{${P.port_W}}\\times ${texM(P.mu_B_pct)}\\,\\% + \\frac{${P.amt_C}}{${P.port_W}}\\times ${texM(P.mu_C_pct)}\\,\\%$, that is $\\mu_P = ${texM(P.mu_P_pct)}\\,\\%$. We thus obtain for the $\\beta$ of this portfolio the value $\\beta_P=\\frac{\\mu_P-r_f}{\\mu_M-r_f}$, that is $\\beta_P=\\frac{${texM(P.mu_P_pct)}\\,\\% - ${texM(P.rf_medaf_pct)}\\,\\%}{${texM(P.mu_M_pct)}\\,\\% - ${texM(P.rf_medaf_pct)}\\,\\%} = ${texM(P.beta_P)}$. Since this value lies between 0 and 1, we are dealing with a rather defensive portfolio which smooths market fluctuations (the risk premium of the portfolio rises when that of the market rises, but by less; conversely, when the market plunges, the portfolio plunges too, but by less).
+    </div>`; },
+      function(P) { return `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Case 4 — EUR/JPY <em>carry trade</em></span>
+        <ol class="sub-list">
+            <li>The annual interest rate differential is $\\Delta r = ${texM(P.r_eur_pct)}\\,\\% - ${texM(P.r_jpy_pct)}\\,\\% = ${texM(P.diff_r_pct)}\\,\\%$ per year. On a 360-day basis, the daily carry income for a position of $${texI(P.ct_amt)}$ euros is therefore written $G_{\\text{day}} = ${texI(P.ct_amt)} \\times \\frac{${texM(P.diff_r_pct)}\\,\\%}{360} \\approx ${texM(P.daily_gain_exact)}~\\text{euros per day}$. This amount corresponds to the <em>overnight</em> credit posted to the investor's account at each <em>tomorrow-next rollover</em>, as net remuneration for holding the high-yielding currency.</li>
+            <li>Assuming policy rates remain unchanged and the position is rolled over daily with no quotation gap, the cumulative gain over ${P.ct_days} business days is then: $G_{${P.ct_days}} = ${texM(P.daily_gain_exact)} \\times ${P.ct_days} \\approx ${texM(P.cumul_gain_exact)}~\\text{euros}$. Expressed as a percentage of the initial position, this gain proportionally represents the share of the return accumulated.</li>
+            <li>The cumulative gain of $${texM(P.cumul_gain_exact)}$ euros corresponds, at the initial rate of $${texM(P.ct_spot)}$ yen per euro, to a yen counter-value of $${texM(P.cumul_gain_exact)} \\times ${texM(P.ct_spot)} = ${texM(P.gain_jpy_exact)}~\\text{yen}$. Now the initial position of $${texI(P.ct_amt)}$ euros is worth $${texI(P.ct_amt * P.ct_spot)}~\\text{yen}$ at the opening rate. For the strategy to break even, the capital loss caused by an appreciation of the yen must therefore be strictly smaller than the cumulative carry income of $${texM(P.gain_jpy_exact)}$ yen. In other words, we need $${texI(P.ct_amt)} \\times (${texM(P.ct_spot)} - S) \\leq ${texM(P.gain_jpy_exact)}$, that is $${texM(P.ct_spot)} - S \\leq ${texM(P.drop_jpy_exact)}$ or again $S \\geq ${texM(P.ct_spot)} - ${texM(P.drop_jpy_exact)} = ${texM(P.s_be_exact)}~\\text{yen per euro}$. The strategy therefore becomes loss-making if the EUR/JPY exchange rate falls below the <em>break-even</em> threshold of $S_{\\text{BE}} := ${texM(P.s_be_exact)}$.</li>
+            <li>The relative change corresponding to the <em>break-even</em> threshold is therefore $\\frac{${texM(P.s_be_exact)} - ${texM(P.ct_spot)}}{${texM(P.ct_spot)}} \\approx ${texM(P.var_pct_exact)}\\,\\%$. An appreciation of the yen of only $${texM(Math.abs(P.var_pct_exact))}\\,\\%$ over ${P.ct_days} days is therefore enough to wipe out the entire accumulated carry income. This computation illustrates precisely the asymmetric risk profile described by Brunnermeier et al. (2009): the gain is slow, gradual and capped at $${texM(P.diff_r_pct)}\\,\\%$ per year, whereas the risk of loss is in principle unbounded and can materialise abruptly. Carry income accumulated over several weeks can thus be erased in a few minutes during an episode of forced liquidation, in line with the vivid phrase “<em>going up by the stairs, coming down by the elevator</em>”: the strategy offers regular returns which induce a false sense of security, masking the small but non-zero probability of a sudden and catastrophic loss.</li>
+        </ol>
+    </div>`; }
+    ]
+  }
+};
+
+/* ============================================================
+   GESTION DE LA LANGUE  /  LANGUAGE HANDLING
+   ============================================================ */
+let LANG = 'fr';
+
+function detectLang() {
+    try {
+        const q = new URLSearchParams(window.location.search).get('lang');
+        if (q && I18N[q.toLowerCase()]) return q.toLowerCase();
+    } catch (e) {}
+    const h = (window.location.hash || '').replace('#', '').toLowerCase();
+    if (I18N[h]) return h;
+    return 'fr';
+}
+
+function setText(id, txt) {
+    const el = document.getElementById(id);
+    if (el) el.innerText = txt;
+}
+
+function applyLang() {
+    const D = I18N[LANG];
+    document.documentElement.lang = D.htmlLang;
+    document.title = D.title;
+
+    setText('lbl-badge', D.badge);
+    setText('lbl-h1', D.h1);
+    setText('lbl-subtitle', D.subtitle);
+    setText('lbl-seed', D.seedLabel);
+    setText('lbl-gen', D.btnGen);
+    setText('welcome', D.welcome);
+    setText('lbl-seed-active', D.seedActive);
+    setText('lbl-new', D.btnNew);
+    setText('lbl-pdf', D.btnPdf);
+    setText('lbl-doc', D.btnDoc);
+    setText('lbl-tag-enonce', D.tagEnonce);
+    setText('lbl-title-enonce', D.cardTitle);
+    setText('lbl-tag-sol', D.tagSol);
+    setText('lbl-title-sol', D.cardTitle);
+
+    const btn = document.getElementById('toggle-btn');
+    btn.innerText = document.getElementById('sol-card').classList.contains('visible') ? D.hideSol : D.showSol;
+
+    document.getElementById('flag-fr').classList.toggle('active', LANG === 'fr');
+    document.getElementById('flag-en').classList.toggle('active', LANG === 'en');
+}
+
+function setLang(lang) {
+    if (!I18N[lang] || lang === LANG) return;
+    LANG = lang;
+
+    /* La langue est memorisee dans l'URL (partage / rechargement) */
+    try {
+        const u = new URL(window.location.href);
+        u.searchParams.set('lang', lang);
+        history.replaceState(null, '', u.toString());
+    } catch (e) {}
+
+    applyLang();
+
+    /* Si un exercice est affiche, on le regenere a l'identique (meme seed) */
+    if (document.getElementById('ex-area').style.display !== 'none') {
+        const solWasVisible = document.getElementById('sol-card').classList.contains('visible');
+        generateExercise(false);
+        if (solWasVisible) toggleSol();
+    }
+}
+
 // --- PRNG (Mulberry32) ---
 let currentSeed = 0;
 function seedPRNG(seed) {
@@ -169,25 +436,25 @@ function texM(num) {
     let absNum = Math.abs(num);
     absNum = Math.round(absNum * 100) / 100; // Force la précision stricte à 2 décimales
     let parts = absNum.toFixed(2).split('.');
-    let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, "\\,");
-    return sign + intPart + "{.}" + parts[1];
+    let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, I18N[LANG].thousands);
+    return sign + intPart + I18N[LANG].decimal + parts[1];
 }
 function texI(num) {
     let sign = num < 0 ? "-" : "";
     let absNum = Math.round(Math.abs(num));
-    return sign + absNum.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "\\,");
+    return sign + absNum.toString().replace(/\B(?=(\d{3})+(?!\d))/g, I18N[LANG].thousands);
 }
 function texBeta(num) {
     let sign = num < 0 ? "-" : "";
     let absNum = Math.abs(num);
     absNum = Math.round(absNum * 100) / 100;
     let parts = absNum.toString().split('.');
-    let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, "\\,");
-    if(parts.length > 1) return sign + intPart + "{.}" + parts[1];
+    let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, I18N[LANG].thousands);
+    if(parts.length > 1) return sign + intPart + I18N[LANG].decimal + parts[1];
     return sign + intPart;
 }
 function texR(num) {
-    return Number(Math.round(num+'e4')+'e-4').toString().replace('.', '{.}');
+    return Number(Math.round(num+'e4')+'e-4').toString().replace('.', I18N[LANG].decimal);
 }
 
 function generateExercise(forceNew = false) {
@@ -199,6 +466,8 @@ function generateExercise(forceNew = false) {
     document.getElementById('seed-disp').innerText = currentSeed;
     document.getElementById('seed-input').value = currentSeed;
     random = seedPRNG(currentSeed);
+
+    const DIC = I18N[LANG];
 
     // --- DOSSIER 1 : OBLIGATION ---
     let n_obs = randInt(3, 4); 
@@ -297,35 +566,33 @@ function generateExercise(forceNew = false) {
     document.getElementById('welcome').style.display = 'none';
     document.getElementById('ex-area').style.display = 'block';
     document.getElementById('sol-card').classList.remove('visible');
-    document.getElementById('toggle-btn').innerText = "Afficher le corrigé";
+    document.getElementById('toggle-btn').innerText = DIC.showSol;
     document.getElementById('toggle-btn').classList.remove('shown');
 
-    document.getElementById('context-text').innerHTML = `
-      Vous intégrez le département d'analyse financière d'une société de gestion de portefeuille. Votre responsable vous demande d'évaluer théoriquement plusieurs actifs et stratégies d'investissement afin de décider de leur intégration dans le fonds de l'entreprise.
-    `;
+    const P = {
+        n_obs: n_obs, nominal: nominal, c_rate_pct: c_rate_pct, c_rate: c_rate, coupon: coupon,
+        r_market_pct: r_market_pct, r_market: r_market, price: price, duration: duration,
+        d_years: d_years, d_months: d_months, d_days: d_days, sensitivity: sensitivity,
+        d0: d0, d1: d1, v0: v0, g_rate_pct: g_rate_pct, g_rate: g_rate,
+        k_rate_pct: k_rate_pct, k_rate: k_rate,
+        scen: scen, v_tot: v_tot, v_A: v_A, v_B: v_B, v_C: v_C,
+        rf_medaf_pct: rf_medaf_pct, premium_pct: premium_pct, mu_M_pct: mu_M_pct,
+        mu_A_pct: mu_A_pct, mu_B_pct: mu_B_pct, mu_C_pct: mu_C_pct,
+        port_W: port_W, amt_f: amt_f, amt_A: amt_A, amt_B: amt_B, amt_C: amt_C,
+        mu_P_pct: mu_P_pct, beta_P: beta_P,
+        r_eur_pct: r_eur_pct, r_jpy_pct: r_jpy_pct, diff_r_pct: diff_r_pct,
+        ct_amt: ct_amt, ct_spot: ct_spot, ct_days: ct_days,
+        daily_gain_exact: daily_gain_exact, cumul_gain_exact: cumul_gain_exact,
+        gain_jpy_exact: gain_jpy_exact, drop_jpy_exact: drop_jpy_exact,
+        s_be_exact: s_be_exact, var_pct_exact: var_pct_exact
+    };
+
+    document.getElementById('context-text').innerHTML = DIC.context(P);
 
     let htmlEnonce = "";
-
-    htmlEnonce += `<li><strong>Dossier 1 — Évaluation d'une obligation.</strong> Vous étudiez une obligation classique in fine d'une valeur nominale de $${texI(nominal)}$ euros. Son taux de coupon annuel est fixé à $${texM(c_rate_pct)}\\,\\%$ et sa maturité résiduelle est de ${n_obs} ans. Le taux d'intérêt exigé par le marché pour des obligations de risque équivalent s'établit aujourd'hui à $${texM(r_market_pct)}\\,\\%$. Déterminez le prix théorique de cette obligation. Calculez ensuite sa duration ainsi que sa sensibilité en interprétant précisément ces deux indicateurs.</li>`;
-    
-    htmlEnonce += `<li><strong>Dossier 2 — Valorisation d'une action.</strong> Vous analysez l'action d'une entreprise cotée. Le dernier dividende net versé par l'entreprise ($D_0$) s'élève à $${texM(d0)}$ euros. Les analystes estiment que ce dividende croîtra de manière perpétuelle et constante au taux annuel de $${texM(g_rate_pct)}\\,\\%$. Le taux de rentabilité exigé par les actionnaires pour ce niveau de risque est de $${texM(k_rate_pct)}\\,\\%$. En utilisant le modèle d'actualisation des dividendes de Gordon-Shapiro, déterminez la valeur théorique de cette action aujourd'hui.</li>`;
-
-    htmlEnonce += `<li><strong>Dossier 3 — Modèle d'évaluation des actifs financiers (MEDAF).</strong> On se place sous les hypothèses du modèle d'évaluation des actifs financiers. Supposons que le portefeuille de marché soit composé de trois titres risqués, notés $A$, $B$ et $C$. Les valeurs (en milliards d'euros) de ces actifs dans le portefeuille du marché et les rendements espérés $\\mu_A$, $\\mu_B$ et $\\mu_C$ sont donnés par le tableau suivant :
-    <table class="exam-table" style="width: 80%; margin: 1rem auto;">
-        <tr><th>Actif</th><th>$A$</th><th>$B$</th><th>$C$</th></tr>
-        <tr><td class="txt-left">Capitalisation</td><td>$${texI(v_A)}$</td><td>$${texI(v_B)}$</td><td>$${texI(v_C)}$</td></tr>
-        <tr><td class="txt-left">Rendement espéré</td><td>$${texM(mu_A_pct)}\\,\\%$</td><td>$${texM(mu_B_pct)}\\,\\%$</td><td>$${texM(mu_C_pct)}\\,\\%$</td></tr>
-    </table>
-    Donner le vecteur poids du portefeuille de marché $M$ et en déduire sa rentabilité espérée. Calculer pour chaque actif son $\\beta$, sachant que le rendement sans risque est $r_f=${texM(rf_medaf_pct)}\\,\\%$. Par suite, considérons un portefeuille où l'on place (valeurs en milliers d'euros), ${amt_f} dans l'actif sans risque, ${amt_A} dans l'actif $A$, ${amt_B} dans l'actif $B$ et ${amt_C} dans l'actif $C$. Donner alors le $\\beta$ d'un tel portefeuille et son rendement attendu. Qu'en pensez-vous ?</li>`;
-
-    htmlEnonce += `<li><strong>Dossier 4 — <em>Carry trade</em> EUR/JPY.</strong> Le taux directeur de la Banque centrale européenne (BCE) s'établit à $${texM(r_eur_pct)}\\,\\%$ l'an et le taux directeur de la Banque du Japon (BoJ) à $${texM(r_jpy_pct)}\\,\\%$ l'an. Un investisseur institutionnel décide de mettre en œuvre une stratégie de <em>carry trade</em> : il emprunte $${texI(ct_amt)}$ euros à $${texM(r_jpy_pct)}\\,\\%$ l'an (taux de financement yen, reflété dans le coût du <em>rollover overnight</em>) et place le produit en euros à $${texM(r_eur_pct)}\\,\\%$ l'an. Le taux de change EUR/JPY au comptant est de $${texM(ct_spot)}$ yens pour un euro le jour d'initiation de la position.
-    <ol class="sub-list">
-        <li>Calculez le gain de portage (<em>carry income</em>) quotidien net pour une position de $${texI(ct_amt)}$ euros, en appliquant la convention 360 jours.</li>
-        <li>Calculez le gain de portage cumulé sur une période de <em>holding</em> de ${ct_days} jours ouvrés consécutifs, en supposant une reconduction quotidienne de la position sans variation de taux directeurs.</li>
-        <li>Déterminez le niveau du taux de change EUR/JPY en dessous duquel la stratégie devient déficitaire au bout de ${ct_days} jours (seuil de <em>break-even</em>).</li>
-        <li>Calculez la variation relative du cours EUR/JPY (en pourcentage) correspondant à ce seuil de <em>break-even</em>. Commentez.</li>
-    </ol>
-    </li>`;
+    for (let qi = 0; qi < DIC.enonce.length; qi++) {
+        htmlEnonce += DIC.enonce[qi](P);
+    }
 
     document.getElementById('events-list').innerHTML = htmlEnonce;
 
@@ -345,49 +612,18 @@ function generateExercise(forceNew = false) {
     }
     durationFormula += `\\frac{${n_obs} \\times ${texI(nominal + coupon)}}{(1+${texR(r_market)})^{${n_obs}}} \\right) \\approx ${texM(duration)}`;
 
-    htmlSol += `<div class="calc-box">
-        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Dossier 1 — Évaluation d'une obligation</span>
-        Le prix théorique d'une obligation correspond mathématiquement à la somme des valeurs actuelles de ses flux de trésorerie futurs (les coupons annuels et le remboursement du nominal in fine), actualisés au taux de rendement exigé par le marché. Le coupon annuel versé est de $${texI(nominal)} \\times ${texM(c_rate_pct)}\\,\\% = ${texI(coupon)}$ euros. Le calcul du prix $P$ s'établit ainsi :
-        <div class="math-formula">\\[${priceFormula}\\]</div>
-        La duration de Macaulay représente la durée de vie moyenne pondérée des flux financiers de l'obligation. Elle se calcule en pondérant chaque période par la valeur actuelle du flux correspondant, le tout rapporté au prix de l'obligation :
-        <div class="math-formula">\\[${durationFormula}\\]</div>
-        Cela signifie qu'à partir de $${texM(duration)}$ années, soit ${d_years} an(s), ${d_months} mois et ${d_days} jour(s) (convention d'une année financière durant 360 jours), le prix de l'obligation n'est plus impacté par une variation structurelle du taux d'intérêt du marché. La sensibilité $S$ de l'obligation mesure le risque de taux, c'est-à-dire l'évolution relative du prix de l'obligation pour une variation infinitésimale des taux. Elle s'établit à :
-        <div class="math-formula">\\[S = \\frac{D}{1+r} = \\frac{${texM(duration)}}{1+${texR(r_market)}} \\approx ${texM(sensitivity)}\\]</div>
-        En moyenne, lorsque les taux d'intérêt montent de $1\\,\\%$, alors le cours actuel de l'obligation chute proportionnellement de $${texM(sensitivity)}\\,\\%$.
-    </div>`;
+    P.priceFormula = priceFormula;
+    P.durationFormula = durationFormula;
+    htmlSol += DIC.sol[0](P);
 
     // Corrigé Dossier 2
-    htmlSol += `<div class="calc-box">
-        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Dossier 2 — Valorisation d'une action</span>
-        Le modèle de Gordon-Shapiro repose sur le principe fondamental de l'actualisation des flux de trésorerie futurs à l'infini. Ce modèle postule que la valeur intrinsèque d'une action est égale à la somme de tous ses dividendes futurs actualisés, en supposant que ces dividendes croissent à un taux constant $g$. La formule d'évaluation de la valeur théorique $V_0$ s'écrit $V_0 = \\frac{D_1}{k - g}$, où $D_1$ est le dividende attendu à la fin de la première année, $k$ le taux de rentabilité exigé par l'investisseur, et $g$ le taux de croissance perpétuelle. On calcule en premier lieu le dividende futur attendu $D_1$ :
-        <div class="math-formula">\\[D_1 = D_0 \\times (1 + g) = ${texM(d0)} \\times (1 + ${texR(g_rate)}) = ${texM(d1)}\\text{ euros}\\]</div>
-        On applique ensuite la formule principale pour en déduire la valorisation théorique de l'action aujourd'hui :
-        <div class="math-formula">\\[V_0 = \\frac{${texM(d1)}}{${texR(k_rate)} - ${texR(g_rate)}} = \\frac{${texM(d1)}}{${texR(k_rate - g_rate)}} \\approx ${texM(v0)}\\text{ euros}\\]</div>
-        Si le cours actuel de l'action sur les marchés financiers est inférieur à $${texM(v0)}$ euros, le titre est considéré comme sous-évalué et constitue une opportunité d'achat pour la société de gestion.
-    </div>`;
+    htmlSol += DIC.sol[1](P);
 
     // Corrigé Dossier 3
-    htmlSol += `<div class="calc-box">
-        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Dossier 3 — Modèle d'évaluation des actifs financiers (MEDAF)</span>
-        La capitalisation du marché est égale à la somme des capitalisations de chaque actif constitutif du marché, à savoir $${texI(v_A)} + ${texI(v_B)} + ${texI(v_C)} = ${texI(v_tot)}$ milliards d'euros. Sur ces $${texI(v_tot)}$ milliards d'euros, la part de l'actif $A$ est $\\frac{${texI(v_A)}}{${texI(v_tot)}} = ${texM(scen.pi[0]*100)}\\,\\%$, celle de l'actif $B$ est de $\\frac{${texI(v_B)}}{${texI(v_tot)}} = ${texM(scen.pi[1]*100)}\\,\\%$ et celle de l'actif $C$ est de $\\frac{${texI(v_C)}}{${texI(v_tot)}} = ${texM(scen.pi[2]*100)}\\,\\%$. Le vecteur poids du portefeuille de marché s'écrit donc $(\\pi_A,\\pi_B,\\pi_C)=(${texBeta(scen.pi[0])}, ${texBeta(scen.pi[1])}, ${texBeta(scen.pi[2])})$. Dès lors, le rendement espéré du portefeuille de marché $\\mu_M$ est la moyenne pondérée de chaque actif constitutif du marché, à savoir $\\mu_M=\\pi_A\\mu_A+\\pi_B\\mu_B+\\pi_C\\mu_C$, soit $\\mu_M=${texBeta(scen.pi[0])}\\times ${texM(mu_A_pct)}\\,\\% + ${texBeta(scen.pi[1])}\\times ${texM(mu_B_pct)}\\,\\% + ${texBeta(scen.pi[2])}\\times ${texM(mu_C_pct)}\\,\\% = ${texM(mu_M_pct)}\\,\\%$. On en déduit alors le $\\beta$ de chaque actif $i$ par la formule $\\beta_i=\\frac{\\mu_i-r_f}{\\mu_M-r_f}$. On a donc :
-        <ul style="list-style-type:none; padding-left:1rem; margin:0.8rem 0;">
-            <li>$\\star\\; \\beta_A=\\frac{${texM(mu_A_pct)}\\,\\% - ${texM(rf_medaf_pct)}\\,\\%}{${texM(mu_M_pct)}\\,\\% - ${texM(rf_medaf_pct)}\\,\\%} = ${texBeta(scen.beta[0])}$ : c'est un actif risqué qui rapporte autant qu'un actif sans risque : pas étonnant que son $\\beta$ soit nul.</li>
-            <li>$\\star\\; \\beta_B=\\frac{${texM(mu_B_pct)}\\,\\% - ${texM(rf_medaf_pct)}\\,\\%}{${texM(mu_M_pct)}\\,\\% - ${texM(rf_medaf_pct)}\\,\\%} = ${texBeta(scen.beta[1])}$ : un $\\beta$ négatif caractérise un actif de couverture ; il varie en sens contraire du marché, et naturellement son rendement attendu est inférieur au taux sans risque.</li>
-            <li>$\\star\\; \\beta_C=\\frac{${texM(mu_C_pct)}\\,\\% - ${texM(rf_medaf_pct)}\\,\\%}{${texM(mu_M_pct)}\\,\\% - ${texM(rf_medaf_pct)}\\,\\%} = ${texBeta(scen.beta[2])}$ : c'est un actif ultra offensif qui amplifie très fortement les fluctuations du marché, pour le meilleur et pour le pire.</li>
-        </ul>
-        Par suite, on considère un portefeuille où l'on place (valeurs en milliers d'euros), ${amt_f} dans l'actif sans risque, ${amt_A} dans l'actif $A$, ${amt_B} dans l'actif $B$ et ${amt_C} dans l'actif $C$. On a donc placé au total $${amt_f} + ${amt_A} + ${amt_B} + ${amt_C} = ${port_W}$ milliers d'euros. On peut alors calculer le rendement espéré de ce portefeuille $\\mu_P$ par $\\frac{${amt_f}}{${port_W}}\\times ${texM(rf_medaf_pct)}\\,\\% + \\frac{${amt_A}}{${port_W}}\\times ${texM(mu_A_pct)}\\,\\% + \\frac{${amt_B}}{${port_W}}\\times ${texM(mu_B_pct)}\\,\\% + \\frac{${amt_C}}{${port_W}}\\times ${texM(mu_C_pct)}\\,\\%$, soit $\\mu_P = ${texM(mu_P_pct)}\\,\\%$. On obtient donc pour le $\\beta$ de ce portefeuille la valeur $\\beta_P=\\frac{\\mu_P-r_f}{\\mu_M-r_f}$, c'est-à-dire $\\beta_P=\\frac{${texM(mu_P_pct)}\\,\\% - ${texM(rf_medaf_pct)}\\,\\%}{${texM(mu_M_pct)}\\,\\% - ${texM(rf_medaf_pct)}\\,\\%} = ${texM(beta_P)}$. Cette valeur étant comprise entre 0 et 1, on est sur un portefeuille plutôt défensif qui lisse les variations du marché (la prime de risque du portefeuille augmente lorsque celle du marché augmente, mais moins que cette dernière ; inversement, lorsque le marché dévisse, le portefeuille dévisse également mais moins que celui-ci).
-    </div>`;
+    htmlSol += DIC.sol[2](P);
 
     // Corrigé Dossier 4
-    htmlSol += `<div class="calc-box">
-        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Dossier 4 — <em>Carry trade</em> EUR/JPY</span>
-        <ol class="sub-list">
-            <li>Le différentiel de taux d'intérêt annuel est $\\Delta r = ${texM(r_eur_pct)}\\,\\% - ${texM(r_jpy_pct)}\\,\\% = ${texM(diff_r_pct)}\\,\\%$ par an. En base 360 jours, le gain de portage quotidien pour une position de $${texI(ct_amt)}$ euros s'écrit donc $G_{\\text{jour}} = ${texI(ct_amt)} \\times \\frac{${texM(diff_r_pct)}\\,\\%}{360} \\approx ${texM(daily_gain_exact)}~\\text{euros par jour}$. Ce montant correspond au crédit <em>overnight</em> porté sur le compte de l'investisseur lors de chaque <em>rollover tomorrow-next</em>, en rémunération nette de la détention de la devise à haut rendement.</li>
-            <li>En supposant les taux directeurs inchangés et une reconduction quotidienne sans écart de cotation, le gain cumulé sur ${ct_days} jours ouvrés est alors : $G_{${ct_days}} = ${texM(daily_gain_exact)} \\times ${ct_days} \\approx ${texM(cumul_gain_exact)}~\\text{euros}$. Exprimé en pourcentage du montant de la position initiale, ce gain représente proportionnellement la part du rendement accumulée.</li>
-            <li>Le gain cumulé de $${texM(cumul_gain_exact)}$ euros correspond, au cours initial de $${texM(ct_spot)}$ yens par euro, à une contrepartie en yens de $${texM(cumul_gain_exact)} \\times ${texM(ct_spot)} = ${texM(gain_jpy_exact)}~\\text{yens}$. Or la position initiale de $${texI(ct_amt)}$ euros vaut $${texI(ct_amt * ct_spot)}~\\text{yens}$ au cours d'initiation. Pour que la stratégie soit à l'équilibre, la perte en capital due à une appréciation du yen doit donc être strictement inférieure au gain de portage cumulé de $${texM(gain_jpy_exact)}$ yens. En d'autres termes, il faut vérifier $${texI(ct_amt)} \\times (${texM(ct_spot)} - S) \\leq ${texM(gain_jpy_exact)}$, soit $${texM(ct_spot)} - S \\leq ${texM(drop_jpy_exact)}$ ou encore $S \\geq ${texM(ct_spot)} - ${texM(drop_jpy_exact)} = ${texM(s_be_exact)}~\\text{yens pour un euro}$. La stratégie devient donc déficitaire si le taux de change EUR/JPY passe en dessous du seuil de <em>break-even</em> de $S_{\\text{BE}} := ${texM(s_be_exact)}$.</li>
-            <li>La variation relative correspondant au seuil de <em>break-even</em> est donc de $\\frac{${texM(s_be_exact)} - ${texM(ct_spot)}}{${texM(ct_spot)}} \\approx ${texM(var_pct_exact)}\\,\\%$. Il suffit donc d'une appréciation du yen de seulement $${texM(Math.abs(var_pct_exact))}\\,\\%$ sur ${ct_days} jours pour anéantir l'intégralité du gain de portage accumulé. Ce calcul illustre précisément le profil de risque asymétrique décrit par Brunnermeier et al. (2009) : le gain est lent, progressif et plafonné à $${texM(diff_r_pct)}\\,\\%$ l'an, tandis que le risque de perte est en principe non-borné et peut se matérialiser brutalement. Un gain de portage accumulé sur plusieurs semaines peut ainsi être effacé en quelques minutes lors d'un épisode de liquidation forcée, conformément à la formule imagée « <em>going up by the stairs, coming down by the elevator</em> » : la stratégie offre des rendements réguliers qui induisent un faux sentiment de sécurité, masquant la probabilité faible mais non nulle d'une perte catastrophique et soudaine.</li>
-        </ol>
-    </div>`;
+    htmlSol += DIC.sol[3](P);
 
     document.getElementById('sol-content').innerHTML = htmlSol;
     
@@ -404,11 +640,11 @@ function toggleSol() {
     let btn = document.getElementById('toggle-btn');
     if(solCard.classList.contains('visible')) {
         solCard.classList.remove('visible');
-        btn.innerText = "Afficher le corrigé";
+        btn.innerText = I18N[LANG].showSol;
         btn.classList.remove('shown');
     } else {
         solCard.classList.add('visible');
-        btn.innerText = "Masquer le corrigé";
+        btn.innerText = I18N[LANG].hideSol;
         btn.classList.add('shown');
     }
 }
@@ -426,7 +662,7 @@ function exportWord() {
         <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
         <head>
             <meta charset='utf-8'>
-            <title>Exercice Finance</title>
+            <title>${I18N[LANG].docTitle}</title>
             <style>
                 body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5; text-align: justify; }
                 table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
@@ -450,12 +686,16 @@ function exportWord() {
     let url = URL.createObjectURL(blob);
     let link = document.createElement('a');
     link.href = url;
-    link.download = 'Exercice_Valorisation_Actifs.doc';
+    link.download = I18N[LANG].docFile;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 }
+
+/* Initialisation */
+LANG = detectLang();
+applyLang();
 </script>
 </body>
 </html>

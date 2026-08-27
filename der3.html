@@ -87,22 +87,38 @@ main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
   .sol-card{display:block !important; border-top:2px solid var(--green);}
   #ex-area {display:block !important;}
 }
+
+/* --- Selecteur de langue / Language switch --- */
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem}
+.header-top .header-badge{margin-bottom:0}
+.lang-switch{display:flex;gap:.45rem;flex-shrink:0}
+.flag-btn{background:rgba(255,255,255,.06);border:1px solid rgba(201,149,42,.35);border-radius:3px;padding:3px;cursor:pointer;line-height:0;opacity:.5;transition:opacity .2s,border-color .2s,transform .15s}
+.flag-btn:hover{opacity:1;transform:translateY(-1px)}
+.flag-btn.active{opacity:1;border-color:var(--gold-light);box-shadow:0 0 0 1px rgba(232,184,75,.35)}
+.flag-btn svg{display:block;width:30px;height:20px;border-radius:1px}
+@media print{ .lang-switch{display:none !important;} }
 </style>
 </head>
 <body>
 
 <header>
 <div class="header-inner">
-  <div class="header-badge">PRODUITS DÉRIVÉS ET STRATÉGIES DE COUVERTURE</div>
-  <h1>Modèle de Black et Scholes</h1>
-  <p class="subtitle">© Thomas Hossen – Version du 7 mars 2026</p>
+  <div class="header-top">
+    <div class="header-badge" id="lbl-badge">PRODUITS DÉRIVÉS ET STRATÉGIES DE COUVERTURE</div>
+    <div class="lang-switch">
+      <button type="button" class="flag-btn active" id="flag-fr" onclick="setLang('fr')" title="Français" aria-label="Français"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="20" height="40" fill="#002654"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ED2939"/></svg></button>
+      <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
+    </div>
+  </div>
+  <h1 id="lbl-h1">Modèle de Black et Scholes</h1>
+  <p class="subtitle" id="lbl-subtitle">© Thomas Hossen – Version du 7 mars 2026</p>
   
   <div class="ctrls">
     <div class="ctrl-g">
-      <span class="ctrl-lbl">Seed (Optionnel)</span>
+      <span class="ctrl-lbl" id="lbl-seed">Seed (Optionnel)</span>
       <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999">
     </div>
-    <button class="btn-gen" onclick="generateExercise(false)">Générer l'exercice →</button>
+    <button class="btn-gen" id="lbl-gen" onclick="generateExercise(false)">Générer l'exercice →</button>
   </div>
 </div>
 </header>
@@ -114,16 +130,16 @@ main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
 
   <div id="ex-area" style="display:none">
     <div class="top-bar">
-      <div class="seed-badge">Seed active : <span id="seed-disp"></span></div>
+      <div class="seed-badge"><span id="lbl-seed-active">Seed active :</span> <span id="seed-disp"></span></div>
       <div class="top-actions">
-        <button class="btn-action" onclick="generateExercise(true)">↺ Nouvel énoncé</button>
-        <button class="btn-action" onclick="window.print()">⬇ Exporter PDF</button>
-        <button class="btn-action" onclick="exportWord()">⬇ Exporter DOC</button>
+        <button class="btn-action" id="lbl-new" onclick="generateExercise(true)">↺ Nouvel énoncé</button>
+        <button class="btn-action" id="lbl-pdf" onclick="window.print()">⬇ Exporter PDF</button>
+        <button class="btn-action" id="lbl-doc" onclick="exportWord()">⬇ Exporter DOC</button>
       </div>
     </div>
 
     <div class="card">
-      <div class="card-header"><span class="tag">Énoncé</span><h2>Formule de Black et Scholes</h2></div>
+      <div class="card-header"><span class="tag" id="lbl-tag-enonce">Énoncé</span><h2 id="lbl-title-enonce">Formule de Black et Scholes</h2></div>
       <div class="card-body">
         <div class="context-block" id="context-text">
           Soit $\Phi$ la fonction de répartition d'une loi normale centrée et réduite.
@@ -137,13 +153,186 @@ main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
     </div>
 
     <div id="sol-card" class="card sol-card">
-      <div class="card-header"><span class="tag">Corrigé</span><h2>Formule de Black et Scholes</h2></div>
+      <div class="card-header"><span class="tag" id="lbl-tag-sol">Corrigé</span><h2 id="lbl-title-sol">Formule de Black et Scholes</h2></div>
       <div class="card-body" id="sol-content"></div>
     </div>
   </div>
 </main>
 
 <script>
+/* ============================================================
+   DICTIONNAIRE BILINGUE  /  BILINGUAL DICTIONARY
+   Tous les textes de la page sont regroupes ici.
+   ============================================================ */
+const I18N = {
+
+  fr: {
+    htmlLang: "fr",
+    title: "Simulateur Finance - Modèle de Black et Scholes",
+    badge: "PRODUITS DÉRIVÉS ET STRATÉGIES DE COUVERTURE",
+    h1: "Modèle de Black et Scholes",
+    subtitle: "© Thomas Hossen – Version du 7 mars 2026",
+    seedLabel: "Seed (Optionnel)",
+    btnGen: "Générer l'exercice →",
+    welcome: "Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice d'évaluation d'options.",
+    seedActive: "Seed active :",
+    btnNew: "↺ Nouvel énoncé",
+    btnPdf: "⬇ Exporter PDF",
+    btnDoc: "⬇ Exporter DOC",
+    tagEnonce: "Énoncé",
+    cardTitle: "Formule de Black et Scholes",
+    tagSol: "Corrigé",
+    showSol: "Afficher le corrigé",
+    hideSol: "Masquer le corrigé",
+    docTitle: "Exercice Black et Scholes",
+    docFile: "Exercice_Black_Scholes.doc",
+    thousands: "\\,",
+    decimal: "{.}",
+    context: "Soit $\\Phi$ la fonction de répartition d'une loi normale centrée et réduite.",
+
+    enonce: [
+      function(P) { return `<li>On considère un <em>call</em> européen sur une action dont le cours actuel est $S_0=${P.S0_C}$ euros au prix d'exercice $K=${P.K_C}$ euros, pour lequel le taux d'intérêt sans risque est $r=${P.r_C_pct}~\\%$ par an et la volatilité est de $\\sigma=${P.sigma_C_pct}~\\%$ par an. On suppose que ce <em>call</em> a une maturité de ${P.T_C_months} mois, soit $T=${P.T_C}$ année. Déterminer le prix de ce <em>call</em> en utilisant la formule de Black et Scholes. On prendra $\\Phi(d_1)\\approx ${texM3(P.Nd1_C)}$ et $\\Phi(d_2)\\approx ${texM3(P.Nd2_C)}$ après avoir défini et déterminé les valeurs de $d_1$ et $d_2$.</li>`; },
+      function(P) { return `<li>On considère un <em>put</em> européen sur une action dont le cours actuel est $S_0=${P.S0_P}$ euros au prix d'exercice $K=${P.K_P}$ euros, pour lequel le taux d'intérêt sans risque est $r=${P.r_P_pct}~\\%$ par an et la volatilité est de $\\sigma=${P.sigma_P_pct}~\\%$ par an. On suppose que ce <em>put</em> a une maturité de ${P.T_P_months} mois, soit $T=${texM(P.T_P)}$ année. Déterminer le prix de ce <em>put</em> en utilisant la formule de Black et Scholes. On prendra $\\Phi(d_1)\\approx ${texM3(P.Nd1_P)}$ et $\\Phi(d_2)\\approx ${texM3(P.Nd2_P)}$ après avoir défini et déterminé les valeurs de $d_1$ et $d_2$.</li>`; }
+    ],
+
+    sol: [
+      function(P) { return `<li><strong><em>Call</em> européen.</strong> Les paramètres intermédiaires se calculent de la manière suivante
+    <div class="math-formula">\\[\\begin{cases}
+    d_1 = \\frac{1}{\\sigma\\sqrt{T}}\\left(\\ln\\left(\\frac{S_0}{K}\\right) + \\left(r + \\frac{\\sigma^2}{2}\\right)T\\right) \\approx ${texM3(P.d1_C_rnd)} \\\\\\\\
+    d_2 = \\frac{1}{\\sigma\\sqrt{T}}\\left(\\ln\\left(\\frac{S_0}{K}\\right) + \\left(r - \\frac{\\sigma^2}{2}\\right)T\\right) \\approx ${texM3(P.d2_C_rnd)}
+    \\end{cases}\\]</div>
+    Alors on a $\\Phi(d_1) \\approx ${texM3(P.Nd1_C)}$ et $\\Phi(d_2) \\approx ${texM3(P.Nd2_C)}$. Dès lors, le prix $C_0$ du <em>call</em> à la date $t=0$ est, en vertu de la formule de Black et Scholes, $C_0 = S_0\\Phi(d_1) - K\\ee^{-rT}\\Phi(d_2) \\approx ${texM(P.Call_Price)}$ euros (au centime près du fait des arrondis et approximations).</li>`; },
+      function(P) { return `<li><strong><em>Put</em> européen.</strong> Les paramètres intermédiaires se calculent de la manière suivante
+    <div class="math-formula">\\[\\begin{cases}
+    d_1 = \\frac{1}{\\sigma\\sqrt{T}}\\left(\\ln\\left(\\frac{S_0}{K}\\right) + \\left(r + \\frac{\\sigma^2}{2}\\right)T\\right) \\approx ${texM3(P.d1_P_rnd)} \\\\\\\\
+    d_2 = \\frac{1}{\\sigma\\sqrt{T}}\\left(\\ln\\left(\\frac{S_0}{K}\\right) + \\left(r - \\frac{\\sigma^2}{2}\\right)T\\right) \\approx ${texM3(P.d2_P_rnd)}
+    \\end{cases}\\]</div>
+    Alors, par symétrie de la loi normale, on a $\\Phi(-d_1) = 1 - \\Phi(d_1) \\approx ${texM3(P.N_minus_d1_P)}$ et $\\Phi(-d_2) = 1 - \\Phi(d_2) \\approx ${texM3(P.N_minus_d2_P)}$. Dès lors, le prix $P_0$ du <em>put</em> à la date $t=0$ est, en vertu de la formule de Black et Scholes, $P_0 = -S_0\\Phi(-d_1) + K\\ee^{-rT}\\Phi(-d_2) \\approx ${texM(P.Put_Price)}$ euros (au centime près du fait des arrondis et approximations).</li>`; }
+    ]
+  },
+
+  en: {
+    htmlLang: "en",
+    title: "Finance Simulator - The Black-Scholes Model",
+    badge: "DERIVATIVES AND HEDGING STRATEGIES",
+    h1: "The Black-Scholes Model",
+    subtitle: "© Thomas Hossen – March 7, 2026 Version",
+    seedLabel: "Seed (Optional)",
+    btnGen: "Generate Exercise →",
+    welcome: "Configure the parameters and click Generate to create a new option pricing exercise.",
+    seedActive: "Active Seed:",
+    btnNew: "↺ New Statement",
+    btnPdf: "⬇ Export PDF",
+    btnDoc: "⬇ Export DOC",
+    tagEnonce: "Problem",
+    cardTitle: "The Black-Scholes Formula",
+    tagSol: "Solution",
+    showSol: "Show Solution",
+    hideSol: "Hide Solution",
+    docTitle: "Black-Scholes Exercise",
+    docFile: "Black_Scholes_Exercise.doc",
+    thousands: ",",
+    decimal: ".",
+    context: "Let $\\Phi$ be the cumulative distribution function of a standard normal distribution.",
+
+    enonce: [
+      function(P) { return `<li>We consider a European <em>call</em> on a share whose current price is $S_0=${P.S0_C}$ euros, with exercise price $K=${P.K_C}$ euros, for which the risk-free interest rate is $r=${P.r_C_pct}~\\%$ per year and the volatility is $\\sigma=${P.sigma_C_pct}~\\%$ per year. We assume that this <em>call</em> has a maturity of ${P.T_C_months} months, that is $T=${P.T_C}$ year(s). Determine the price of this <em>call</em> using the Black-Scholes formula. We shall take $\\Phi(d_1)\\approx ${texM3(P.Nd1_C)}$ and $\\Phi(d_2)\\approx ${texM3(P.Nd2_C)}$ after having defined and determined the values of $d_1$ and $d_2$.</li>`; },
+      function(P) { return `<li>We consider a European <em>put</em> on a share whose current price is $S_0=${P.S0_P}$ euros, with exercise price $K=${P.K_P}$ euros, for which the risk-free interest rate is $r=${P.r_P_pct}~\\%$ per year and the volatility is $\\sigma=${P.sigma_P_pct}~\\%$ per year. We assume that this <em>put</em> has a maturity of ${P.T_P_months} months, that is $T=${texM(P.T_P)}$ year(s). Determine the price of this <em>put</em> using the Black-Scholes formula. We shall take $\\Phi(d_1)\\approx ${texM3(P.Nd1_P)}$ and $\\Phi(d_2)\\approx ${texM3(P.Nd2_P)}$ after having defined and determined the values of $d_1$ and $d_2$.</li>`; }
+    ],
+
+    sol: [
+      function(P) { return `<li><strong>European <em>call</em>.</strong> The intermediate parameters are computed as follows
+    <div class="math-formula">\\[\\begin{cases}
+    d_1 = \\frac{1}{\\sigma\\sqrt{T}}\\left(\\ln\\left(\\frac{S_0}{K}\\right) + \\left(r + \\frac{\\sigma^2}{2}\\right)T\\right) \\approx ${texM3(P.d1_C_rnd)} \\\\\\\\
+    d_2 = \\frac{1}{\\sigma\\sqrt{T}}\\left(\\ln\\left(\\frac{S_0}{K}\\right) + \\left(r - \\frac{\\sigma^2}{2}\\right)T\\right) \\approx ${texM3(P.d2_C_rnd)}
+    \\end{cases}\\]</div>
+    We then have $\\Phi(d_1) \\approx ${texM3(P.Nd1_C)}$ and $\\Phi(d_2) \\approx ${texM3(P.Nd2_C)}$. Consequently, the price $C_0$ of the <em>call</em> at date $t=0$ is, by the Black-Scholes formula, $C_0 = S_0\\Phi(d_1) - K\\ee^{-rT}\\Phi(d_2) \\approx ${texM(P.Call_Price)}$ euros (to the nearest cent, because of the roundings and approximations).</li>`; },
+      function(P) { return `<li><strong>European <em>put</em>.</strong> The intermediate parameters are computed as follows
+    <div class="math-formula">\\[\\begin{cases}
+    d_1 = \\frac{1}{\\sigma\\sqrt{T}}\\left(\\ln\\left(\\frac{S_0}{K}\\right) + \\left(r + \\frac{\\sigma^2}{2}\\right)T\\right) \\approx ${texM3(P.d1_P_rnd)} \\\\\\\\
+    d_2 = \\frac{1}{\\sigma\\sqrt{T}}\\left(\\ln\\left(\\frac{S_0}{K}\\right) + \\left(r - \\frac{\\sigma^2}{2}\\right)T\\right) \\approx ${texM3(P.d2_P_rnd)}
+    \\end{cases}\\]</div>
+    Then, by the symmetry of the normal distribution, we have $\\Phi(-d_1) = 1 - \\Phi(d_1) \\approx ${texM3(P.N_minus_d1_P)}$ and $\\Phi(-d_2) = 1 - \\Phi(d_2) \\approx ${texM3(P.N_minus_d2_P)}$. Consequently, the price $P_0$ of the <em>put</em> at date $t=0$ is, by the Black-Scholes formula, $P_0 = -S_0\\Phi(-d_1) + K\\ee^{-rT}\\Phi(-d_2) \\approx ${texM(P.Put_Price)}$ euros (to the nearest cent, because of the roundings and approximations).</li>`; }
+    ]
+  }
+};
+
+/* ============================================================
+   GESTION DE LA LANGUE  /  LANGUAGE HANDLING
+   ============================================================ */
+let LANG = 'fr';
+
+function detectLang() {
+    try {
+        const q = new URLSearchParams(window.location.search).get('lang');
+        if (q && I18N[q.toLowerCase()]) return q.toLowerCase();
+    } catch (e) {}
+    const h = (window.location.hash || '').replace('#', '').toLowerCase();
+    if (I18N[h]) return h;
+    return 'fr';
+}
+
+function setText(id, txt) {
+    const el = document.getElementById(id);
+    if (el) el.innerText = txt;
+}
+
+function applyLang() {
+    const D = I18N[LANG];
+    document.documentElement.lang = D.htmlLang;
+    document.title = D.title;
+
+    setText('lbl-badge', D.badge);
+    setText('lbl-h1', D.h1);
+    setText('lbl-subtitle', D.subtitle);
+    setText('lbl-seed', D.seedLabel);
+    setText('lbl-gen', D.btnGen);
+    setText('welcome', D.welcome);
+    setText('lbl-seed-active', D.seedActive);
+    setText('lbl-new', D.btnNew);
+    setText('lbl-pdf', D.btnPdf);
+    setText('lbl-doc', D.btnDoc);
+    setText('lbl-tag-enonce', D.tagEnonce);
+    setText('lbl-title-enonce', D.cardTitle);
+    setText('lbl-tag-sol', D.tagSol);
+    setText('lbl-title-sol', D.cardTitle);
+
+    const ctx = document.getElementById('context-text');
+    if (ctx) ctx.innerHTML = D.context;
+
+    const btn = document.getElementById('toggle-btn');
+    btn.innerText = document.getElementById('sol-card').classList.contains('visible') ? D.hideSol : D.showSol;
+
+    document.getElementById('flag-fr').classList.toggle('active', LANG === 'fr');
+    document.getElementById('flag-en').classList.toggle('active', LANG === 'en');
+
+    /* Le contexte contient du LaTeX : on demande a MathJax de recomposer */
+    if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
+        MathJax.typesetPromise().catch(function (err) { console.error('MathJax :', err); });
+    }
+}
+
+function setLang(lang) {
+    if (!I18N[lang] || lang === LANG) return;
+    LANG = lang;
+
+    /* La langue est memorisee dans l'URL (partage / rechargement) */
+    try {
+        const u = new URL(window.location.href);
+        u.searchParams.set('lang', lang);
+        history.replaceState(null, '', u.toString());
+    } catch (e) {}
+
+    applyLang();
+
+    /* Si un exercice est affiche, on le regenere a l'identique (meme seed) */
+    if (document.getElementById('ex-area').style.display !== 'none') {
+        const solWasVisible = document.getElementById('sol-card').classList.contains('visible');
+        generateExercise(false);
+        if (solWasVisible) toggleSol();
+    }
+}
+
 let currentSeed = 0;
 function seedPRNG(seed) {
     return function() {
@@ -161,15 +350,15 @@ function texM(num) {
     let sign = num < 0 ? "-" : "";
     let absNum = Math.abs(num);
     let parts = absNum.toFixed(2).split('.');
-    let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, "\\,");
-    return sign + intPart + "{.}" + parts[1];
+    let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, I18N[LANG].thousands);
+    return sign + intPart + I18N[LANG].decimal + parts[1];
 }
 function texM3(num) {
     let sign = num < 0 ? "-" : "";
     let absNum = Math.abs(num);
     let parts = absNum.toFixed(3).split('.');
-    let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, "\\,");
-    return sign + intPart + "{.}" + parts[1];
+    let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, I18N[LANG].thousands);
+    return sign + intPart + I18N[LANG].decimal + parts[1];
 }
 
 // Approximation CDF Loi Normale standard (Abramowitz & Stegun)
@@ -197,6 +386,8 @@ function generateExercise(forceNew = false) {
     document.getElementById('seed-disp').innerText = currentSeed;
     document.getElementById('seed-input').value = currentSeed;
     random = seedPRNG(currentSeed);
+
+    const DIC = I18N[LANG];
 
     // --- Génération des paramètres CALL ---
     let S0_C = randInt(20, 80);
@@ -248,35 +439,35 @@ function generateExercise(forceNew = false) {
     document.getElementById('welcome').style.display = 'none';
     document.getElementById('ex-area').style.display = 'block';
     document.getElementById('sol-card').classList.remove('visible');
-    document.getElementById('toggle-btn').innerText = "Afficher le corrigé";
+    document.getElementById('toggle-btn').innerText = DIC.showSol;
     document.getElementById('toggle-btn').classList.remove('shown');
 
+    const P = {
+        S0_C: S0_C, K_C: K_C, r_C_pct: r_C_pct, r_C: r_C,
+        sigma_C_pct: sigma_C_pct, sigma_C: sigma_C, T_C_months: T_C_months, T_C: T_C,
+        d1_C_rnd: d1_C_rnd, d2_C_rnd: d2_C_rnd, Nd1_C: Nd1_C, Nd2_C: Nd2_C, Call_Price: Call_Price,
+        S0_P: S0_P, K_P: K_P, r_P_pct: r_P_pct, r_P: r_P,
+        sigma_P_pct: sigma_P_pct, sigma_P: sigma_P, T_P_months: T_P_months, T_P: T_P,
+        d1_P_rnd: d1_P_rnd, d2_P_rnd: d2_P_rnd, Nd1_P: Nd1_P, Nd2_P: Nd2_P,
+        N_minus_d1_P: N_minus_d1_P, N_minus_d2_P: N_minus_d2_P, Put_Price: Put_Price
+    };
+
+    document.getElementById('context-text').innerHTML = DIC.context;
+
     let htmlEnonce = "";
-    htmlEnonce += `<li>On considère un <em>call</em> européen sur une action dont le cours actuel est $S_0=${S0_C}$ euros au prix d'exercice $K=${K_C}$ euros, pour lequel le taux d'intérêt sans risque est $r=${r_C_pct}~\\%$ par an et la volatilité est de $\\sigma=${sigma_C_pct}~\\%$ par an. On suppose que ce <em>call</em> a une maturité de ${T_C_months} mois, soit $T=${T_C}$ année. Déterminer le prix de ce <em>call</em> en utilisant la formule de Black et Scholes. On prendra $\\Phi(d_1)\\approx ${texM3(Nd1_C)}$ et $\\Phi(d_2)\\approx ${texM3(Nd2_C)}$ après avoir défini et déterminé les valeurs de $d_1$ et $d_2$.</li>`;
-    
-    htmlEnonce += `<li>On considère un <em>put</em> européen sur une action dont le cours actuel est $S_0=${S0_P}$ euros au prix d'exercice $K=${K_P}$ euros, pour lequel le taux d'intérêt sans risque est $r=${r_P_pct}~\\%$ par an et la volatilité est de $\\sigma=${sigma_P_pct}~\\%$ par an. On suppose que ce <em>put</em> a une maturité de ${T_P_months} mois, soit $T=${texM(T_P)}$ année. Déterminer le prix de ce <em>put</em> en utilisant la formule de Black et Scholes. On prendra $\\Phi(d_1)\\approx ${texM3(Nd1_P)}$ et $\\Phi(d_2)\\approx ${texM3(Nd2_P)}$ après avoir défini et déterminé les valeurs de $d_1$ et $d_2$.</li>`;
+    for (let qi = 0; qi < DIC.enonce.length; qi++) {
+        htmlEnonce += DIC.enonce[qi](P);
+    }
 
     document.getElementById('events-list').innerHTML = htmlEnonce;
 
     // --- GÉNÉRATION CORRIGÉ ---
-    let htmlSol = `Soit $\\Phi$ la fonction de répartition d'une loi normale centrée et réduite.
+    let htmlSol = `${DIC.context}
     <ol class="enum-list">`;
 
-    // Corrigé Call
-    htmlSol += `<li><strong><em>Call</em> européen.</strong> Les paramètres intermédiaires se calculent de la manière suivante
-    <div class="math-formula">\\[\\begin{cases}
-    d_1 = \\frac{1}{\\sigma\\sqrt{T}}\\left(\\ln\\left(\\frac{S_0}{K}\\right) + \\left(r + \\frac{\\sigma^2}{2}\\right)T\\right) \\approx ${texM3(d1_C_rnd)} \\\\\\\\
-    d_2 = \\frac{1}{\\sigma\\sqrt{T}}\\left(\\ln\\left(\\frac{S_0}{K}\\right) + \\left(r - \\frac{\\sigma^2}{2}\\right)T\\right) \\approx ${texM3(d2_C_rnd)}
-    \\end{cases}\\]</div>
-    Alors on a $\\Phi(d_1) \\approx ${texM3(Nd1_C)}$ et $\\Phi(d_2) \\approx ${texM3(Nd2_C)}$. Dès lors, le prix $C_0$ du <em>call</em> à la date $t=0$ est, en vertu de la formule de Black et Scholes, $C_0 = S_0\\Phi(d_1) - K\\ee^{-rT}\\Phi(d_2) \\approx ${texM(Call_Price)}$ euros (au centime près du fait des arrondis et approximations).</li>`;
-
-    // Corrigé Put
-    htmlSol += `<li><strong><em>Put</em> européen.</strong> Les paramètres intermédiaires se calculent de la manière suivante
-    <div class="math-formula">\\[\\begin{cases}
-    d_1 = \\frac{1}{\\sigma\\sqrt{T}}\\left(\\ln\\left(\\frac{S_0}{K}\\right) + \\left(r + \\frac{\\sigma^2}{2}\\right)T\\right) \\approx ${texM3(d1_P_rnd)} \\\\\\\\
-    d_2 = \\frac{1}{\\sigma\\sqrt{T}}\\left(\\ln\\left(\\frac{S_0}{K}\\right) + \\left(r - \\frac{\\sigma^2}{2}\\right)T\\right) \\approx ${texM3(d2_P_rnd)}
-    \\end{cases}\\]</div>
-    Alors, par symétrie de la loi normale, on a $\\Phi(-d_1) = 1 - \\Phi(d_1) \\approx ${texM3(N_minus_d1_P)}$ et $\\Phi(-d_2) = 1 - \\Phi(d_2) \\approx ${texM3(N_minus_d2_P)}$. Dès lors, le prix $P_0$ du <em>put</em> à la date $t=0$ est, en vertu de la formule de Black et Scholes, $P_0 = -S_0\\Phi(-d_1) + K\\ee^{-rT}\\Phi(-d_2) \\approx ${texM(Put_Price)}$ euros (au centime près du fait des arrondis et approximations).</li>`;
+    for (let qi = 0; qi < DIC.sol.length; qi++) {
+        htmlSol += DIC.sol[qi](P);
+    }
 
     htmlSol += `</ol>`;
 
@@ -294,11 +485,11 @@ function toggleSol() {
     let btn = document.getElementById('toggle-btn');
     if(solCard.classList.contains('visible')) {
         solCard.classList.remove('visible');
-        btn.innerText = "Afficher le corrigé";
+        btn.innerText = I18N[LANG].showSol;
         btn.classList.remove('shown');
     } else {
         solCard.classList.add('visible');
-        btn.innerText = "Masquer le corrigé";
+        btn.innerText = I18N[LANG].hideSol;
         btn.classList.add('shown');
     }
 }
@@ -316,7 +507,7 @@ function exportWord() {
         <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
         <head>
             <meta charset='utf-8'>
-            <title>Exercice Black et Scholes</title>
+            <title>${I18N[LANG].docTitle}</title>
             <style>
                 body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5; text-align: justify; }
                 .calc-box { border: 1px solid #000; padding: 10px; margin-bottom: 15px; background-color: #f9f9f9; text-align: justify; }
@@ -335,12 +526,16 @@ function exportWord() {
     let url = URL.createObjectURL(blob);
     let link = document.createElement('a');
     link.href = url;
-    link.download = 'Exercice_Black_Scholes.doc';
+    link.download = I18N[LANG].docFile;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 }
+
+/* Initialisation */
+LANG = detectLang();
+applyLang();
 </script>
 </body>
 </html>
