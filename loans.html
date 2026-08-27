@@ -1,0 +1,1630 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur de prêts</title>
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['\\(','\\)']], displayMath: [['\\[','\\]']], packages: {'[+]': ['ams']} },
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] }
+};
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 0;border-bottom:3px solid var(--gold)}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+.btn-group{display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem}
+.btn-factor{background:transparent;border:1.5px solid rgba(201,149,42,.5);color:var(--cream);padding:.65rem 1.4rem;border-radius:4px;cursor:pointer;transition:all .2s;text-align:left;font-family:'Source Serif 4',serif}
+.btn-factor:hover{background:rgba(201,149,42,.15);border-color:var(--gold-light)}
+.btn-factor.active{background:var(--gold);border-color:var(--gold);color:var(--navy)}
+.btn-top{font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;opacity:.7;display:block;margin-bottom:2px}
+.btn-bottom{font-size:.95rem;font-weight:600;display:block}
+
+/* CONTROLS */
+#controls-bar{display:block;border-top:1px solid rgba(255,255,255,.08);padding:1.1rem 0 1.3rem}
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.5)}
+.ctrl-inp{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.38rem .65rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.82rem;width:100px;outline:none;transition:border-color .2s}
+.ctrl-inp:focus{border-color:var(--gold-light)}
+.ctrl-inp.w180{width:180px}
+.ctrl-vsep{width:1px;background:rgba(255,255,255,.1);align-self:stretch;margin:0 .2rem}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.3rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.9rem;font-weight:600;transition:background .18s;white-space:nowrap;align-self:flex-end}
+.btn-gen:hover{background:var(--gold-light)}
+.btn-outline{background:transparent; border:1px dashed rgba(201,149,42,.6); color:var(--gold-light); padding:.4rem .8rem; border-radius:4px; cursor:pointer; font-family:'Source Serif 4',serif; font-size:.85rem; transition:all .2s;}
+.btn-outline:hover{background:rgba(201,149,42,.1); border-color:var(--gold-light);}
+
+/* MAIN */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.welcome-msg{text-align:center;padding:5rem 2rem;color:var(--text-muted);font-style:italic;font-size:1.05rem}
+.welcome-msg .arrow{font-size:2rem;display:block;margin-bottom:1rem;opacity:.4}
+
+/* TOP BAR */
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.top-bar-left{display:flex;gap:.6rem;align-items:center}
+.btn-sm{background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:'JetBrains Mono',monospace;font-size:.67rem;letter-spacing:.08em;text-transform:uppercase;padding:.4rem 1rem;border-radius:3px;cursor:pointer;transition:all .18s;white-space:nowrap}
+.btn-sm:hover{background:var(--gold);color:var(--navy)}
+.btn-sm.pdf{border-color:#7bafd4;color:#7bafd4}
+.btn-sm.pdf:hover{background:#7bafd4;color:var(--navy)}
+
+/* CARDS */
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);margin-bottom:1.5rem;border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+
+/* KPIs */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:1.8rem}
+.kpi-box{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.2rem;border-radius:0 4px 4px 0}
+.kpi-lbl{font-family:'JetBrains Mono',monospace;font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:.3rem}
+.kpi-val{font-size:1.4rem;font-weight:700;color:var(--navy);font-family:'Playfair Display',serif}
+
+/* TABLE */
+.tw{overflow-x:auto;margin:1.2rem 0; max-height: 500px;}
+table.at{border-collapse:collapse;width:100%;font-size:.86rem}
+table.at th{background:var(--navy);color:var(--cream);padding:.6rem .85rem;text-align:right;font-family:'Source Serif 4',serif;font-weight:600;font-size:.8rem;border:1px solid var(--navy-mid); position:sticky; top:0; z-index:10;}
+table.at th:first-child{text-align:center}
+table.at td{padding:.5rem .85rem;border:1px solid var(--border);text-align:right;font-family:'JetBrains Mono',monospace}
+table.at td:first-child{text-align:center;font-weight:600;background:var(--cream-dark);font-family:'Source Serif 4',serif}
+table.at tr:nth-child(even) td{background:#fdfcf9}
+.cf{color:var(--green);font-weight:700}
+
+/* MATH BOX & BANNERS */
+.math-box{background:#f8f9fa; border:1px solid var(--border); padding:1rem; border-radius:4px; margin-bottom:1.5rem; font-size:0.9rem;}
+.info-banner{background:rgba(201,149,42,0.1); border-left:3px solid var(--gold); padding:0.8rem 1.2rem; margin-top:-0.5rem; margin-bottom:1.5rem; font-size:0.85rem; color:var(--text-muted); text-align:justify; font-family:'Source Serif 4',serif;}
+.info-banner strong{color:var(--navy);}
+
+/* DYNAMIC LOAN NAME INPUT */
+.loan-name-input{background:transparent; border:none; border-bottom:1px dashed rgba(201,149,42,.6); color:var(--gold-light); font-family:'Playfair Display',serif; font-size:1.05rem; font-weight:700; width:60%; min-width:200px; outline:none; transition:border-color 0.2s;}
+.loan-name-input:focus{border-bottom-color:var(--gold);}
+
+/* PDF MODAL */
+#pdf-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;backdrop-filter:blur(2px)}
+#pdf-modal{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:101;background:#fff;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.25);width:390px;max-width:95vw;border-top:4px solid #7bafd4;overflow:hidden}
+.mh{background:var(--navy);color:var(--cream);padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
+.mh h3{font-family:'Playfair Display',serif;font-size:1rem;font-weight:600}
+.mclose{background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:1.2rem;line-height:1;padding:2px 6px;border-radius:3px;transition:color .15s}
+.mclose:hover{color:#fff}
+.mb2{padding:1.5rem}
+.mactions{display:flex;gap:.6rem;margin-top:1.5rem}
+.btn-print{flex:1;background:var(--navy);color:var(--cream);border:none;padding:.7rem;border-radius:4px;font-family:'Source Serif 4',serif;font-size:.9rem;cursor:pointer;transition:background .2s}
+.btn-print:hover{background:var(--navy-mid)}
+.btn-cancel{background:transparent;border:1px solid var(--border);color:var(--text-muted);padding:.7rem 1rem;border-radius:4px;font-family:'Source Serif 4',serif;font-size:.9rem;cursor:pointer;transition:all .2s}
+.btn-cancel:hover{border-color:var(--text);color:var(--text)}
+
+/* PRINT */
+@media print{
+:root{--navy:#0d1b2a;--cream:#fff;--cream-dark:#f8f8f8;--gold:#c9952a;--green:#2d6b4a;--border:#ccc}
+body{background:#fff;font-size:10pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+header{padding:1rem 1.5rem .8rem}
+header .subtitle{display:block; margin-bottom:1rem;}
+.top-bar,#pdf-ov,#pdf-modal,.btn-group,.btn-gen,.btn-outline,.btn-sm{display:none!important}
+.card{box-shadow:none;border-radius:0;page-break-inside:avoid;margin-bottom:1rem}
+main{padding:1rem 1.5rem;max-width:100%}
+body.print-no-header header{display:none!important}
+.tw{overflow:visible; max-height:none;}
+table.at{font-size:8pt}
+table.at th{position:static;}
+}
+
+/* --- Selecteur de langue / Language switch --- */
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem}
+.header-top .header-badge{margin-bottom:0}
+.lang-switch{display:flex;gap:.45rem;flex-shrink:0}
+.flag-btn{background:rgba(255,255,255,.06);border:1px solid rgba(201,149,42,.35);border-radius:3px;padding:3px;cursor:pointer;line-height:0;opacity:.5;transition:opacity .2s,border-color .2s,transform .15s}
+.flag-btn:hover{opacity:1;transform:translateY(-1px)}
+.flag-btn.active{opacity:1;border-color:var(--gold-light);box-shadow:0 0 0 1px rgba(232,184,75,.35)}
+.flag-btn svg{display:block;width:30px;height:20px;border-radius:1px}
+@media print{ .lang-switch{display:none !important;} }
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-top">
+    <div class="header-badge" data-k="k-badge">MÉTHODE D'ÉVALUATION DES ACTIFS FINANCIERS</div>
+    <div class="lang-switch">
+      <button type="button" class="flag-btn active" id="flag-fr" onclick="setLang('fr')" title="Français" aria-label="Français"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="20" height="40" fill="#002654"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ED2939"/></svg></button>
+      <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
+    </div>
+  </div>
+  <h1 data-k="k-h1">Simulateur de prêts</h1>
+  <p class="subtitle" data-k="k-sub">© Thomas Hossen – Version du 7 mars 2026</p>
+  <div class="btn-group">
+    <button class="btn-factor active" id="btn1" onclick="selectType(1)">
+      <span class="btn-top" data-k="k-mode">Mode</span>
+      <span class="btn-bottom" data-k="k-btn1">Prêt classique</span>
+    </button>
+    <button class="btn-factor" id="btn2" onclick="selectType(2)">
+      <span class="btn-top" data-k="k-mode">Mode</span>
+      <span class="btn-bottom" data-k="k-btn2">Lissage de prêts</span>
+    </button>
+    <button class="btn-factor" id="btn3" onclick="selectType(3)">
+      <span class="btn-top" data-k="k-mode">Mode</span>
+      <span class="btn-bottom" data-k="k-btn3">Capacité d'emprunt</span>
+    </button>
+  </div>
+
+  <div id="controls-bar">
+    <div id="p1f" class="ctrls" style="display:flex;">
+      <div class="ctrl-g">
+        <span class="ctrl-lbl" data-k="k-p1-m">Montant emprunté (€)</span>
+        <input class="ctrl-inp" type="number" id="p1-montant" value="250000" min="1000">
+      </div>
+      <div class="ctrl-g">
+        <span class="ctrl-lbl" data-k="k-duree-tot">Durée totale (années)</span>
+        <input class="ctrl-inp" type="number" id="p1-duree" value="20" min="1">
+      </div>
+      <div class="ctrl-g">
+        <span class="ctrl-lbl" data-k="k-p1-t">Taux d'intérêt annuel (%)</span>
+        <input class="ctrl-inp" type="number" id="p1-taux" value="4.5" step="0.1" min="0">
+      </div>
+      <div class="ctrl-vsep"></div>
+      <div class="ctrl-g">
+        <span class="ctrl-lbl" data-k="k-p1-type">Type de remboursement</span>
+        <select class="ctrl-inp w180" id="p1-type">
+          <option value="annuites" data-k="k-opt-ann">Annuités constantes</option>
+          <option value="amortissement" data-k="k-opt-amo">Amortissement constant</option>
+        </select>
+      </div>
+      <div class="ctrl-vsep"></div>
+      <div class="ctrl-g">
+        <span class="ctrl-lbl" data-k="k-difftype">Type de différé</span>
+        <select class="ctrl-inp w180" id="p1-diff-type" onchange="toggleDiffere1()">
+          <option value="aucun" selected data-k="k-opt-aucun">Aucun</option>
+          <option value="partiel" data-k="k-opt-partiel">Partiel (paiement des intérêts)</option>
+          <option value="total" data-k="k-opt-total">Total (capitalisation)</option>
+        </select>
+      </div>
+      <div class="ctrl-g" id="p1-diff-duree-group" style="display:none;">
+        <span class="ctrl-lbl" data-k="k-p1-diffd">Durée différé (années)</span>
+        <input class="ctrl-inp" type="number" id="p1-diff-duree" value="1" min="1">
+      </div>
+      
+      <div class="ctrl-vsep" style="width:100%; height:1px; background:rgba(255,255,255,.1); margin: 0.2rem 0;"></div>
+      
+      <div style="display:flex; flex-wrap:wrap; gap:1.4rem; width:100%; align-items:flex-end;">
+        <div class="ctrl-g" style="padding-bottom:4px;">
+          <label style="display:flex; align-items:center; gap:6px; cursor:pointer; color:var(--cream); font-size:0.85rem; font-family:'Source Serif 4',serif;">
+            <input type="checkbox" id="p1-mensuel" onchange="toggleMensuel()" style="accent-color:var(--gold); width:16px; height:16px;">
+            <span data-k="k-showm">Afficher les mensualités</span>
+          </label>
+        </div>
+        <div class="ctrl-g" id="p1-taux-methode-group" style="display:none;">
+          <span class="ctrl-lbl" data-k="k-method">Méthode du taux mensuel</span>
+          <select class="ctrl-inp w180" id="p1-taux-methode">
+            <option value="prop" data-k="k-opt-prop">Taux proportionnel</option>
+            <option value="equiv" data-k="k-opt-equiv">Taux équivalent</option>
+          </select>
+        </div>
+        <button class="btn-gen" style="margin-left:auto;" onclick="generateSimulation()"><span data-k="k-gen1">Générer le tableau →</span></button>
+      </div>
+    </div>
+
+    <div id="p2f" style="display:none" class="ctrls">
+      <div style="display:flex; flex-wrap:wrap; gap:1.4rem; width:100%;">
+        <div class="ctrl-g">
+          <span class="ctrl-lbl" style="color:var(--gold-light)" data-k="k-p2-m">Prêt principal (€)</span>
+          <input class="ctrl-inp" type="number" id="p2-m1" value="200000" min="1000">
+        </div>
+        <div class="ctrl-g">
+          <span class="ctrl-lbl" data-k="k-duree-tot">Durée totale (années)</span>
+          <input class="ctrl-inp" type="number" id="p2-d1" value="25" min="1">
+        </div>
+        <div class="ctrl-g">
+          <span class="ctrl-lbl" data-k="k-p2-t">Taux annuel (%)</span>
+          <input class="ctrl-inp" type="number" id="p2-t1" value="4.0" step="0.1" min="0">
+        </div>
+      </div>
+      
+      <div class="ctrl-vsep" style="width:100%; height:1px; background:rgba(255,255,255,.1); margin: 0.2rem 0;"></div>
+      
+      <div id="secondary-loans-container" style="width:100%;"></div>
+
+      <div style="width:100%; margin-top:0.5rem;">
+        <button class="btn-outline" onclick="addSecondaryLoanUI()"><span data-k="k-addsec">+ Ajouter un prêt secondaire</span></button>
+      </div>
+
+      <div class="ctrl-vsep" style="width:100%; height:1px; background:rgba(255,255,255,.1); margin: 0.2rem 0;"></div>
+      
+      <div style="display:flex; flex-wrap:wrap; gap:1.4rem; width:100%; align-items:flex-end;">
+        <div class="ctrl-g" style="padding-bottom:4px;">
+          <label style="display:flex; align-items:center; gap:6px; cursor:pointer; color:var(--cream); font-size:0.85rem; font-family:'Source Serif 4',serif;">
+            <input type="checkbox" id="p2-mensuel" onchange="toggleMensuel2()" style="accent-color:var(--gold); width:16px; height:16px;">
+            <span data-k="k-showm">Afficher les mensualités</span>
+          </label>
+        </div>
+        <div class="ctrl-g" id="p2-taux-methode-group" style="display:none;">
+          <span class="ctrl-lbl" data-k="k-method">Méthode du taux mensuel</span>
+          <select class="ctrl-inp w180" id="p2-taux-methode">
+            <option value="prop" data-k="k-opt-prop">Taux proportionnel</option>
+            <option value="equiv" data-k="k-opt-equiv">Taux équivalent</option>
+          </select>
+        </div>
+        <button class="btn-gen" style="margin-left:auto;" onclick="generateSimulation()"><span data-k="k-gen2">Générer le lissage →</span></button>
+      </div>
+    </div>
+
+    <div id="p3f" style="display:none" class="ctrls">
+      <div style="display:flex; flex-wrap:wrap; gap:1.4rem; width:100%; align-items:flex-end;">
+        <div class="ctrl-g">
+          <span class="ctrl-lbl" data-k="k-p3-s1">Salaire annuel net (Emprunteur 1)</span>
+          <input class="ctrl-inp w180" type="number" id="p3-sal1" value="30000" min="0">
+        </div>
+        <div class="ctrl-g" style="padding-bottom:4px;">
+          <label style="display:flex; align-items:center; gap:6px; cursor:pointer; color:var(--cream); font-size:0.85rem; font-family:'Source Serif 4',serif;">
+            <input type="checkbox" id="p3-has-co" onchange="toggleCoBorrower()" style="accent-color:var(--gold); width:16px; height:16px;">
+            <span data-k="k-p3-co">Ajouter un co-emprunteur</span>
+          </label>
+        </div>
+        <div class="ctrl-g" id="p3-sal2-group" style="display:none;">
+          <span class="ctrl-lbl" data-k="k-p3-s2">Salaire annuel net (Emprunteur 2)</span>
+          <input class="ctrl-inp w180" type="number" id="p3-sal2" value="30000" min="0">
+        </div>
+      </div>
+      
+      <div class="ctrl-vsep" style="width:100%; height:1px; background:rgba(255,255,255,.1); margin: 0.2rem 0;"></div>
+      
+      <div style="display:flex; flex-wrap:wrap; gap:1.4rem; width:100%; align-items:flex-end;">
+        <div class="ctrl-g">
+          <span class="ctrl-lbl" data-k="k-p3-loc">Revenus locatifs mensuels (€)</span>
+          <input class="ctrl-inp" type="number" id="p3-loc" value="800" min="0">
+        </div>
+        <div class="ctrl-vsep"></div>
+        <div class="ctrl-g">
+          <span class="ctrl-lbl" data-k="k-p3-d">Durée (années)</span>
+          <input class="ctrl-inp" type="number" id="p3-duree" value="25" min="1">
+        </div>
+        <div class="ctrl-g">
+          <span class="ctrl-lbl" data-k="k-p3-t">Taux d'intérêt (%)</span>
+          <input class="ctrl-inp" type="number" id="p3-taux" value="2.5" step="0.1" min="0">
+        </div>
+        <div class="ctrl-g">
+          <span class="ctrl-lbl" data-k="k-p3-tm">Taux mensuel</span>
+          <select class="ctrl-inp w180" id="p3-taux-methode">
+            <option value="equiv" data-k="k-opt-equiv">Taux équivalent</option>
+            <option value="prop" data-k="k-opt-prop">Taux proportionnel</option>
+          </select>
+        </div>
+        <button class="btn-gen" style="margin-left:auto;" onclick="generateCapacite()"><span data-k="k-gen3">Calculer la capacité →</span></button>
+      </div>
+    </div>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" class="welcome-msg" data-k="k-welcome">Sélectionnez un mode de financement et cliquez sur Générer.</div>
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="top-bar-left">
+        <button class="btn-sm pdf" onclick="openPdfModal()"><span data-k="k-pdf">⬇ Exporter PDF</span></button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h2 id="card-title" data-k="k-cardtitle">Tableau d'amortissement</h2></div>
+      <div class="card-body" id="ex-content"></div>
+    </div>
+  </div>
+</main>
+
+<div id="pdf-ov" onclick="closePdfModal()"></div>
+<div id="pdf-modal">
+  <div class="mh">
+    <h3 data-k="k-modal">Exporter en PDF</h3>
+    <button class="mclose" onclick="closePdfModal()">✕</button>
+  </div>
+  <div class="mb2">
+    <label class="opt-row">
+      <input type="checkbox" id="opt-header" checked>
+      <div><span class="opt-lbl" data-k="k-opth">Inclure l'en-tête de page</span>
+           <span class="opt-desc" data-k="k-opthd">(titre et badge "MÉTHODE D'ÉVALUATION DES ACTIFS FINANCIERS")</span></div>
+    </label>
+    <div class="mactions">
+      <button class="btn-print" onclick="doPrint()"><span data-k="k-print">🖨&nbsp;Imprimer / Sauvegarder PDF</span></button>
+      <button class="btn-cancel" onclick="closePdfModal()"><span data-k="k-cancel">Annuler</span></button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   DICTIONNAIRE BILINGUE  /  BILINGUAL DICTIONARY
+   ============================================================ */
+const I18N = {
+
+  fr: {
+    "htmlLang": "fr",
+    "title": "Simulateur de prêts",
+    "locale": "fr-FR",
+    "k-badge": "MÉTHODE D'ÉVALUATION DES ACTIFS FINANCIERS",
+    "k-h1": "Simulateur de prêts",
+    "k-sub": "© Thomas Hossen – Version du 7 mars 2026",
+    "k-mode": "Mode",
+    "k-btn1": "Prêt classique",
+    "k-btn2": "Lissage de prêts",
+    "k-btn3": "Capacité d'emprunt",
+    "k-p1-m": "Montant emprunté (€)",
+    "k-duree-tot": "Durée totale (années)",
+    "k-p1-t": "Taux d'intérêt annuel (%)",
+    "k-p1-type": "Type de remboursement",
+    "k-opt-ann": "Annuités constantes",
+    "k-opt-amo": "Amortissement constant",
+    "k-difftype": "Type de différé",
+    "k-opt-aucun": "Aucun",
+    "k-opt-partiel": "Partiel (paiement des intérêts)",
+    "k-opt-total": "Total (capitalisation)",
+    "k-p1-diffd": "Durée différé (années)",
+    "k-showm": "Afficher les mensualités",
+    "k-method": "Méthode du taux mensuel",
+    "k-opt-prop": "Taux proportionnel",
+    "k-opt-equiv": "Taux équivalent",
+    "k-gen1": "Générer le tableau →",
+    "k-p2-m": "Prêt principal (€)",
+    "k-p2-t": "Taux annuel (%)",
+    "k-addsec": "+ Ajouter un prêt secondaire",
+    "k-gen2": "Générer le lissage →",
+    "k-p3-s1": "Salaire annuel net (Emprunteur 1)",
+    "k-p3-co": "Ajouter un co-emprunteur",
+    "k-p3-s2": "Salaire annuel net (Emprunteur 2)",
+    "k-p3-loc": "Revenus locatifs mensuels (€)",
+    "k-p3-d": "Durée (années)",
+    "k-p3-t": "Taux d'intérêt (%)",
+    "k-p3-tm": "Taux mensuel",
+    "k-gen3": "Calculer la capacité →",
+    "k-welcome": "Sélectionnez un mode de financement et cliquez sur Générer.",
+    "k-pdf": "⬇ Exporter PDF",
+    "k-cardtitle": "Tableau d'amortissement",
+    "k-modal": "Exporter en PDF",
+    "k-opth": "Inclure l'en-tête de page",
+    "k-opthd": "(titre et badge \"MÉTHODE D'ÉVALUATION DES ACTIFS FINANCIERS\")",
+    "k-print": "🖨&nbsp;Imprimer / Sauvegarder PDF",
+    "k-cancel": "Annuler",
+    "sec-m": "Montant (€)",
+    "sec-d": "Durée totale (ans)",
+    "sec-t": "Taux annuel (%)",
+    "sec-diff": "Différé (ans)",
+    "sec-diff-type": "Type de différé",
+    "opt-total2": "Total (capitalisation)",
+    "opt-partiel2": "Partiel (paiement intérêts)",
+    "delSec": "✕ Supprimer",
+    "cardCapacite": "Analyse de la capacité d'emprunt",
+    "alertDiff": "La durée du différé doit être strictement inférieure à la durée totale.",
+    secLoanName: function(k) { return `Prêt secondaire ${k}`; },
+    errSecDuree: function(name) { return `Le prêt "${name}" doit avoir une durée totale strictement inférieure au prêt principal.`; },
+    errSecDiff: function(name) { return `La durée du différé du prêt "${name}" doit être strictement inférieure à sa durée totale.`; },
+    secBlock: function(k) { return `
+    <div style="width:100%; display:flex; justify-content:space-between; align-items:center; margin-bottom:0.2rem;">
+      <input type="text" class="p2-sec-name loan-name-input" value="Prêt secondaire ${k}">
+      ${k > 1 ? `<button class="btn-sm btn-del-sec" style="border-color:var(--red); color:var(--red); padding:0.2rem 0.6rem; font-size:0.6rem;" onclick="removeSecondaryLoanUI(${k})">✕ Supprimer</button>` : ''}
+    </div>
+    <div class="ctrl-g"><span class="ctrl-lbl" data-k="sec-m">Montant (€)</span><input class="ctrl-inp p2-sec-m" type="number" value="50000" min="1000"></div>
+    <div class="ctrl-g"><span class="ctrl-lbl" data-k="sec-d">Durée totale (ans)</span><input class="ctrl-inp p2-sec-d" type="number" value="10" min="1"></div>
+    <div class="ctrl-g"><span class="ctrl-lbl" data-k="sec-t">Taux annuel (%)</span><input class="ctrl-inp p2-sec-t" type="number" value="0.0" step="0.1" min="0"></div>
+    <div class="ctrl-vsep"></div>
+    <div class="ctrl-g"><span class="ctrl-lbl" data-k="sec-diff">Différé (ans)</span><input class="ctrl-inp p2-sec-diff" type="number" value="0" min="0"></div>
+    <div class="ctrl-g"><span class="ctrl-lbl" data-k="sec-diff-type">Type de différé</span>
+      <select class="ctrl-inp w180 p2-sec-diff-type">
+        <option value="total" data-k="opt-total2">Total (capitalisation)</option>
+        <option value="partiel" data-k="opt-partiel2">Partiel (paiement intérêts)</option>
+      </select>
+    </div>
+  `; },
+    simClassique: function(P) {
+  const lblPeriode = P.isMensuel ? "Mois" : "Année";
+  const lblPaiement = P.isMensuel ? "Mensualité" : "Annuité";
+  const laPaiement = P.isMensuel ? "La mensualité" : "L'annuité";
+  const laPaiement_lower = P.isMensuel ? "la mensualité" : "l'annuité";
+  
+  document.getElementById('card-title').textContent = P.isMensuel ? "Simulation — prêt classique (mensuel)" : "Simulation — prêt classique (annuel)";
+
+  let baseAnnuiteLabel = P.typeAmort === 'annuites' ? lblPaiement + " (hors différé)" : "1ère " + lblPaiement.toLowerCase() + " (hors différé)";
+  let targetAnnuite = P.schedule[P.diffPeriodes] ? P.schedule[P.diffPeriodes].annuite : 0;
+
+  let infoBanner = P.isMensuel ? `
+    <div class="info-banner">
+      💡 <strong>Pourquoi le coût total diffère-t-il du mode annuel ?</strong> C'est mathématiquement normal ! En payant chaque mois, vous commencez à amortir le capital dès le premier mois. Les intérêts des mois suivants sont donc calculés sur un capital restant dû de plus en plus faible, ce qui réduit la facture totale des intérêts par rapport à un remboursement qui attendrait la toute fin de l'année.
+    </div>
+  ` : "";
+
+  let calcDetails = `<strong>1. Paramètres de calcul de la période :</strong>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem; margin-top: 0.5rem; line-height: 1.6;">`;
+  if (P.isMensuel) {
+      let form_i = P.methodeMensuelle === 'prop' 
+        ? `\\frac{${(P.tauxAnnuel*100).toFixed(2)}\\%}{12}` 
+        : `(1 + ${(P.tauxAnnuel*100).toFixed(2)}\\%)^{\\frac{1}{12}} - 1`;
+      calcDetails += `<li>Nombre de périodes (\\(n\\)) : ${P.dureeRemboursement / 12} années &times; 12 = ${P.dureeRemboursement} mois (hors différé).</li>`;
+      calcDetails += `<li>Taux par période (\\(i\\)) : \\( ${form_i} \\approx ${(P.tauxApplique*100).toFixed(4)}\\% \\) (${P.methodeMensuelle === 'prop' ? 'proportionnel' : 'équivalent'}).</li>`;
+  } else {
+      calcDetails += `<li>Nombre de périodes (\\(n\\)) : ${P.dureeRemboursement} années (hors différé).</li>`;
+      calcDetails += `<li>Taux par période (\\(i\\)) : ${(P.tauxApplique*100).toFixed(4)} %.</li>`;
+  }
+  calcDetails += `</ul>`;
+
+  let v0Details = "";
+  if (P.diffPeriodes > 0 && P.diffType === 'total') {
+       v0Details = `<strong>2. Calcul du capital à amortir (\\(V_0\\)) suite au différé total :</strong> pendant les ${P.diffPeriodes} périodes de différé, les intérêts ont été capitalisés sur le capital initial :
+       \\[ V_0 = ${P.montant.toFixed(2)} \\times (1 + ${(P.tauxApplique).toFixed(5)})^{${P.diffPeriodes}} \\approx ${P.balancePostDiffere.toFixed(2)} \\] `;
+  } else {
+       v0Details = `<strong>2. Capital à amortir (\\(V_0\\)) :</strong> ${fmtC(P.balancePostDiffere)} (aucun intérêt n'a été capitalisé).<br><br>`;
+  }
+
+  let formulaHtml = "";
+  let numAppI = (P.tauxApplique).toFixed(5);
+  let v0Str = P.balancePostDiffere.toFixed(2);
+  
+  if (P.tauxApplique === 0) {
+      if (P.typeAmort === 'annuites') {
+          formulaHtml = `<strong>3. Calcul de ${laPaiement_lower} constante (\\(a\\)) avec taux 0 % :</strong><br>
+          \\[ a = \\frac{V_0}{n} = \\frac{${v0Str}}{${P.dureeRemboursement}} \\approx ${targetAnnuite.toFixed(2)} \\]`;
+      } else {
+          formulaHtml = `<strong>3. Calcul de l'amortissement constant (\\(A\\)) avec taux 0 % :</strong><br>
+          \\[ A = \\frac{V_0}{n} = \\frac{${v0Str}}{${P.dureeRemboursement}} \\approx ${P.amortConstant.toFixed(2)} \\]
+          ${laPaiement} est égale à l'amortissement puisque les intérêts sont nuls.`;
+      }
+  } else {
+      if (P.typeAmort === 'annuites') {
+          formulaHtml = `<strong>3. Calcul de ${laPaiement_lower} constante (\\(a\\)) :</strong><br>
+          \\[ a = \\frac{V_0 \\times i}{1 - (1+i)^{-n}} = \\frac{${v0Str} \\times ${numAppI}}{1 - (1+${numAppI})^{-${P.dureeRemboursement}}} \\approx ${targetAnnuite.toFixed(2)} \\] `;
+      } else {
+          formulaHtml = `<strong>3. Calcul de l'amortissement constant (\\(A\\)) :</strong><br>
+          \\[ A = \\frac{V_0}{n} = \\frac{${v0Str}}{${P.dureeRemboursement}} \\approx ${P.amortConstant.toFixed(2)} \\]
+          ${laPaiement} est ensuite calculée chaque période par la somme amortissement + intérêts.`;
+      }
+  }
+
+  let diffNote = "";
+  if (P.diffPeriodes > 0) {
+    if (P.diffType === 'partiel') {
+      diffNote = `<li>Période de différé partiel : l'amortissement est nul et on ne paie que les intérêts (${lblPaiement.toLowerCase()} = intérêts).</li>`;
+    } else if (P.diffType === 'total') {
+      diffNote = `<li>Période de différé total : l'amortissement et ${laPaiement_lower} sont nuls ; les intérêts s'ajoutent au capital restant dû.</li>`;
+    }
+  }
+
+  let explainHtml = `
+    <div class="math-box">
+      ${calcDetails}
+      ${v0Details}
+      ${formulaHtml}
+      <hr style="border:0; border-top:1px solid var(--border); margin:1rem 0;">
+      <strong>Détail du calcul des cellules du tableau :</strong>
+      <ul style="padding-left: 1.5rem; margin-bottom: 0; margin-top: 0.5rem; line-height: 1.6;">
+        ${diffNote}
+        <li>Capital restant dû : correspond au capital restant dû à la fin de la période précédente.</li>
+        <li>Intérêts : capital restant dû &times; taux de la période (\\(i\\)).</li>
+        <li>Amortissement : part du capital remboursée calculée par la différence (${lblPaiement.toLowerCase()} &minus; intérêts) ou de manière constante selon le mode d'amortissement choisi.</li>
+        <li>${lblPaiement} : total décaissé sur la période, c'est-à-dire la somme (intérêts + amortissement).</li>
+        <li>Capital fin de période : différence (capital restant dû &minus; amortissement).</li>
+      </ul>
+    </div>
+  `;
+
+  let html = `
+    <div class="kpi-grid">
+      <div class="kpi-box"><span class="kpi-lbl">Montant financé</span><span class="kpi-val">${fmtC(P.montant)}</span></div>
+      <div class="kpi-box"><span class="kpi-lbl">Coût total du crédit</span><span class="kpi-val">${fmtC(P.totalInterest)}</span></div>
+      <div class="kpi-box"><span class="kpi-lbl">${baseAnnuiteLabel}</span><span class="kpi-val">${fmtC(targetAnnuite)}</span></div>
+    </div>
+    ${infoBanner}
+    ${explainHtml}
+    <div class="tw"><table class="at">
+      <thead><tr>
+        <th>${lblPeriode}</th>
+        <th>Capital restant dû</th>
+        <th>Intérêts</th>
+        <th>Amortissement</th>
+        <th>${lblPaiement}</th>
+        <th>Capital fin de période</th>
+      </tr></thead><tbody>
+  `;
+
+  P.schedule.forEach(r => {
+    let trStyle = r.annee <= P.diffPeriodes ? 'style="background:rgba(201,149,42,0.08)"' : '';
+    html += `<tr ${trStyle}>
+      <td>${r.annee}</td>
+      <td>${fmtN(r.capitalDebut)}</td>
+      <td>${fmtN(r.interet)}</td>
+      <td>${fmtN(r.amortissement)}</td>
+      <td class="cf">${fmtN(r.annuite)}</td>
+      <td>${fmtN(r.capitalFin)}</td>
+    </tr>`;
+  });
+
+  html += `</tbody></table></div>`;
+  return html;
+
+    },
+    simLissage: function(P) {
+  const lblPeriode = P.isMensuel ? "Mois" : "Année";
+  const lblPaiement = P.isMensuel ? "Mensualité" : "Annuité";
+  const laPaiement_lower = P.isMensuel ? "la mensualité" : "l'annuité";
+  
+  document.getElementById('card-title').textContent = P.isMensuel ? "Simulation — prêt lissé (mensuel)" : "Simulation — prêt lissé (annuel)";
+
+  // Encadré mathématique détaillé
+  let indExp = `<strong>1. Calcul détaillé de chaque ${laPaiement_lower} individuelle :</strong><br>
+  <ul style="padding-left: 1.5rem; margin-bottom: 1rem; margin-top: 0.5rem; line-height: 1.6;">`;
+
+  if (P.isMensuel) {
+      let methodStr = P.methodeMensuelle === 'prop' ? 'proportionnel' : 'équivalent';
+      indExp += `<li>Taux mensuels calculés en mode ${methodStr} : \\(i_0 \\approx ${(P.i0*100).toFixed(4)}\\%\\) pour le prêt principal`;
+      P.secLoans.forEach((l, idx) => {
+         indExp += `, \\(i_${idx+1} \\approx ${(l.ik*100).toFixed(4)}\\%\\) pour le prêt secondaire ${idx+1}`;
+      });
+      indExp += `.</li>`;
+  }
+
+  let a0_isolated = pmt(P.i0, P.n0, P.E0);
+  indExp += `<li>Prêt principal isolé : \\(a_0 = \\frac{${P.E0.toFixed(2)} \\times ${P.i0.toFixed(5)}}{1 - (1+${P.i0.toFixed(5)})^{-${P.n0}}} \\approx ${a0_isolated.toFixed(2)} \\) <strong>€</strong> (à titre indicatif, le lissage modifiera cette valeur).</li>`;
+
+  let sumTermHtml = "";
+  let sumTermVal = 0;
+
+  P.secLoans.forEach((loan, idx) => {
+    let v0Str = loan.realEk.toFixed(2);
+    let numAppIk = loan.ik.toFixed(5);
+    const displayK = idx + 1; // Used for sequential display index in math formula
+    
+    if (loan.ik === 0) {
+        indExp += `<li>${loan.name} : taux 0%, \\(a_${displayK} = \\frac{${v0Str}}{${loan.nk_remb}} \\approx ${loan.ak.toFixed(2)} \\text{ €}\\).</li>`;
+    } else {
+        indExp += `<li>${loan.name} : \\(a_${displayK} = \\frac{${v0Str} \\times ${numAppIk}}{1 - (1+${numAppIk})^{-${loan.nk_remb}}} \\approx ${loan.ak.toFixed(2)}\\).</li>`;
+    }
+
+    const currentTermVal = loan.ak * Math.pow(1 + P.i0, -loan.dk) * (1 - Math.pow(1 + P.i0, -loan.nk_remb));
+    sumTermVal += currentTermVal;
+
+    if (idx > 0) sumTermHtml += " \\\\ &\\quad + ";
+    sumTermHtml += `\\left[ ${loan.ak.toFixed(2)} (1+${P.i0.toFixed(5)})^{-${loan.dk}} \\left(1-(1+${P.i0.toFixed(5)})^{-${loan.nk_remb}}\\right) \\right]`;
+  });
+  
+  if (P.secLoans.length === 0) {
+      indExp += `<li>aucun prêt secondaire saisi.</li>`;
+      sumTermHtml = "0";
+  }
+  indExp += `</ul>`;
+
+  const factor = 1 / (1 - Math.pow(1 + P.i0, -P.n0));
+  const aStar = factor * (P.i0 * P.E0 + sumTermVal);
+
+let infoBanner = P.isMensuel ? `
+    <div class="info-banner">
+      💡 <strong>Mode mensuel activé :</strong> la formule de lissage est calculée sur \\(n_0 = ${P.n0}\\) périodes, en convertissant vos taux annuels en taux mensuels via la méthode mathématique choisie.
+    </div>
+  ` : "";
+
+  // 1. Pré-calcul du tableau pour obtenir le total des paiements
+  let scheduleRows = "";
+  let balPrincipal = P.E0;
+  let secBalances = P.secLoans.map(l => l.Ek);
+  let totalPayments = 0;
+  
+  // Le montant financé est la somme du prêt principal et des prêts secondaires
+  let montantFinance = P.E0 + P.secLoans.reduce((sum, l) => sum + l.Ek, 0);
+
+  for (let t = 1; t <= P.n0; t++) {
+    let current_ak_total = 0;
+    let balSecondaire_total = 0;
+
+    P.secLoans.forEach((loan, idx) => {
+      let current_ak = 0;
+      let intSec = 0;
+      let amortSec = 0;
+
+      if (t <= loan.dk) {
+          intSec = secBalances[idx] * loan.ik;
+          if (loan.diffType === 'partiel') {
+              current_ak = intSec;
+          } else {
+              amortSec = -intSec;
+              secBalances[idx] += intSec;
+          }
+      } else if (t <= loan.nk_total) {
+          current_ak = loan.ak;
+          intSec = secBalances[idx] * loan.ik;
+          amortSec = current_ak - intSec;
+          
+          if (t === loan.nk_total) {
+              amortSec = secBalances[idx];
+              current_ak = amortSec + intSec;
+          }
+          secBalances[idx] -= amortSec;
+      }
+      
+      current_ak_total += current_ak;
+      balSecondaire_total += secBalances[idx];
+    });
+
+    let payPrincipal = aStar - current_ak_total;
+    let intPrincipal = balPrincipal * P.i0;
+    let amortPrincipal = payPrincipal - intPrincipal;
+    
+    if (t === P.n0) {
+      amortPrincipal = balPrincipal;
+      payPrincipal = amortPrincipal + intPrincipal;
+    }
+    balPrincipal -= amortPrincipal;
+
+    let totalPeriodPayment = payPrincipal + current_ak_total;
+    totalPayments += totalPeriodPayment;
+
+    scheduleRows += `<tr>
+      <td>${t}</td>
+      <td>${fmtN(current_ak_total)}</td>
+      <td>${fmtN(payPrincipal)}</td>
+      <td class="cf">${fmtN(totalPeriodPayment)}</td>
+      <td>${fmtN(Math.max(0, balPrincipal) + Math.max(0, balSecondaire_total))}</td>
+    </tr>`;
+  }
+
+  // 2. Calcul des KPI et génération de l'en-tête
+  let totalInterest = totalPayments - montantFinance;
+  let kpiLabelPaiement = P.isMensuel ? "Mensualité lissée" : "Annuité lissée";
+
+  let kpiHtml = `
+    <div class="kpi-grid">
+      <div class="kpi-box"><span class="kpi-lbl">Montant financé</span><span class="kpi-val">${fmtC(montantFinance)}</span></div>
+      <div class="kpi-box"><span class="kpi-lbl">Coût total du crédit</span><span class="kpi-val">${fmtC(totalInterest)}</span></div>
+      <div class="kpi-box"><span class="kpi-lbl">${kpiLabelPaiement}</span><span class="kpi-val">${fmtC(aStar)}</span></div>
+    </div>
+  `;
+
+  // 3. Note explicative du CRD global
+  let noteCrdHtml = `
+    <div class="info-banner" style="margin-top: 1rem; margin-bottom: 0;">
+      💡 <strong>CRD global :</strong> le capital restant dû (CRD) affiché dans la dernière colonne représente la somme exacte du capital restant à rembourser sur le prêt principal ainsi que sur l'ensemble des prêts secondaires à la fin de chaque période ; celui-ci est fourni à titre indicatif.
+    </div>
+  `;
+
+  // 4. Assemblage final du HTML
+  let html = `
+    ${kpiHtml}
+    ${infoBanner}
+    <div class="math-box">
+      ${indExp}
+      <strong>2. Modèle de lissage appliqué :</strong><br>
+      \\[ a^* = \\frac{1}{1-(1+i_0)^{-n_0}} \\left( i_0 E_0 + \\sum_{k=1}^{N} a_k (1+i_0)^{-d_k} \\left(1-(1+i_0)^{-n_k}\\right) \\right) \\]
+      <ul style="padding-left: 1.5rem; margin-bottom: 1rem; margin-top: 0.5rem; line-height: 1.6; font-size: 0.85rem;">
+        <li>\\(E_0\\) : capital initial du prêt principal</li>
+        <li>\\(i_0\\) : taux de la période pour le prêt principal</li>
+        <li>\\(n_0\\) : nombre de périodes du prêt principal</li>
+        <li>\\(a_k\\) : ${laPaiement_lower} d'amortissement du prêt secondaire \\(k\\)</li>
+        <li>\\(d_k\\) : différé en périodes du prêt secondaire \\(k\\)</li>
+        <li>\\(n_k\\) : nombre de périodes de remboursement effectif du prêt secondaire \\(k\\)</li>
+      </ul>
+      <strong>3. Application numérique du lissage global :</strong><br>
+      \\[ \\begin{aligned} a^* &= \\frac{1}{1-(1+${P.i0.toFixed(5)})^{-${P.n0}}} \\Big( ${(P.i0*P.E0).toFixed(2)} \\\\ &\\quad + ${sumTermHtml} \\Big) \\\\ &= ${factor.toFixed(5)} \\times \\left( ${(P.i0*P.E0).toFixed(2)} + ${sumTermVal.toFixed(2)} \\right) \\approx {${aStar.toFixed(2)}\\ \\text{€}}\\end{aligned} \\]
+    </div>
+    
+    <div class="tw"><table class="at">
+      <thead><tr>
+        <th>${lblPeriode}</th>
+        <th>${lblPaiement} secondaire (\\(\\sum a_k\\))</th>
+        <th>${lblPaiement} principale</th>
+        <th>Total lissé (\\(a^*\\))</th>
+        <th>CRD global</th>
+      </tr></thead><tbody>
+      ${scheduleRows}
+      </tbody></table></div>
+      ${noteCrdHtml}
+  `;
+
+  return html;
+
+    },
+    capacite: function(P) { return `
+    <div class="kpi-grid">
+      <div class="kpi-box"><span class="kpi-lbl">Revenu mensuel retenu</span><span class="kpi-val">${fmtC(P.revMensuelTotal)}</span></div>
+      <div class="kpi-box"><span class="kpi-lbl">Mensualité max (35%)</span><span class="kpi-val">${fmtC(P.aMax)}</span></div>
+      <div class="kpi-box"><span class="kpi-lbl">Durée retenue</span><span class="kpi-val">${P.n} mois</span></div>
+    </div>
+
+    <div class="info-banner">
+      💡 <strong>Règle HCSF :</strong> la capacité d'emprunt d'un ménage se détermine conformément aux règles émises par le Haut conseil de stabilité financière, qui limite le taux d'effort à 35 % des revenus mensuels nets, en intégrant 70 % des loyers fonciers bruts estimés.
+    </div>
+
+    <div class="math-box">
+      <strong>1. Détermination de la capacité de remboursement mensuelle :</strong><br>
+      <ul style="padding-left: 1.5rem; margin-bottom: 1rem; margin-top: 0.5rem; line-height: 1.6;">
+<li>Salaires nets mensuels (\\(${P.sal1}${P.hasCo ? ' + ' + P.sal2 + ')' : ''} \\div 12\\)) : ${fmtC(P.salMensuelNet)}</li>
+        <li>Revenus locatifs pondérés (\\(70\\%\\)) : ${P.locMensuelle} € &times; 0.70 = ${fmtC(P.locPonderee)}</li>
+        <li>Mensualité maximale autorisée (\\(a_{\\max}\\)) : ${fmtC(P.revMensuelTotal)} &times; 0.35 = ${fmtC(P.aMax)}</li>
+      </ul>
+
+      <strong>2. Calcul des capacités d'emprunt maximales :</strong> le taux mensuel retenu est \\( i \\approx ${(P.i*100).toFixed(6)}\\% \\) (${P.methodeMensuelle === 'prop' ? 'proportionnel' : 'équivalent'}).
+      <br><br>
+      <em>A. Crédit à annuités constantes :</em>
+      \\[ E_{\\max}^{\\text{AC}} = a_{\\max} \\times \\frac{1 - (1+i)^{-n}}{i} \\approx ${P.capAnnuite.toFixed(2)} \\text{ €} \\]
+      <br>
+      <em>B. Crédit à amortissement constant :</em> la mensualité étant dégressive, la contrainte d'endettement maximale s'applique impérativement sur la première échéance (la plus élevée) :
+      \\[ a_{\\max} = \\frac{E_{\\max}^{\\text{AM}}}{n} + i \\times E_{\\max}^{\\text{AM}} \\implies E_{\\max}^{\\text{AM}} = \\frac{a_{\\max}}{i + 1/n} \\approx ${P.capAmort.toFixed(2)} \\text{ €} \\]
+    </div>
+
+    <div class="tw">
+      <table class="at">
+        <thead>
+          <tr>
+            <th style="text-align:left;">Type de prêt financé</th>
+            <th>Échéance maximale initiale</th>
+            <th>Capacité d'emprunt (\\(E_{\\max}\\))</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="text-align:left;">Prêt à annuités constantes</td>
+            <td>${fmtC(P.aMax)}</td>
+            <td class="cf" style="font-size:1.15rem;">${fmtC(P.capAnnuite)}</td>
+          </tr>
+          <tr>
+            <td style="text-align:left;">Prêt à amortissement constant</td>
+            <td>${fmtC(P.aMax)}</td>
+            <td class="cf" style="font-size:1.15rem;">${fmtC(P.capAmort)}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  `; }
+  },
+
+  en: {
+    "htmlLang": "en",
+    "title": "Loan simulator",
+    "locale": "en-GB",
+    "k-badge": "FINANCIAL ASSET VALUATION METHODS",
+    "k-h1": "Loan simulator",
+    "k-sub": "© Thomas Hossen – March 7, 2026 Version",
+    "k-mode": "Mode",
+    "k-btn1": "Conventional loan",
+    "k-btn2": "Loan smoothing",
+    "k-btn3": "Borrowing capacity",
+    "k-p1-m": "Amount borrowed (€)",
+    "k-duree-tot": "Total term (years)",
+    "k-p1-t": "Annual interest rate (%)",
+    "k-p1-type": "Repayment type",
+    "k-opt-ann": "Constant annuities",
+    "k-opt-amo": "Constant principal repayment",
+    "k-difftype": "Type of deferral",
+    "k-opt-aucun": "None",
+    "k-opt-partiel": "Partial (interest paid)",
+    "k-opt-total": "Full (capitalisation)",
+    "k-p1-diffd": "Deferral term (years)",
+    "k-showm": "Show monthly payments",
+    "k-method": "Monthly rate method",
+    "k-opt-prop": "Proportional rate",
+    "k-opt-equiv": "Equivalent rate",
+    "k-gen1": "Generate the schedule →",
+    "k-p2-m": "Main loan (€)",
+    "k-p2-t": "Annual rate (%)",
+    "k-addsec": "+ Add a secondary loan",
+    "k-gen2": "Generate the smoothing →",
+    "k-p3-s1": "Net annual salary (Borrower 1)",
+    "k-p3-co": "Add a co-borrower",
+    "k-p3-s2": "Net annual salary (Borrower 2)",
+    "k-p3-loc": "Monthly rental income (€)",
+    "k-p3-d": "Term (years)",
+    "k-p3-t": "Interest rate (%)",
+    "k-p3-tm": "Monthly rate",
+    "k-gen3": "Compute the capacity →",
+    "k-welcome": "Select a financing mode and click Generate.",
+    "k-pdf": "⬇ Export PDF",
+    "k-cardtitle": "Amortisation schedule",
+    "k-modal": "Export to PDF",
+    "k-opth": "Include the page header",
+    "k-opthd": "(title and \"FINANCIAL ASSET VALUATION METHODS\" badge)",
+    "k-print": "🖨&nbsp;Print / Save as PDF",
+    "k-cancel": "Cancel",
+    "sec-m": "Amount (€)",
+    "sec-d": "Total term (years)",
+    "sec-t": "Annual rate (%)",
+    "sec-diff": "Deferral (years)",
+    "sec-diff-type": "Type of deferral",
+    "opt-total2": "Full (capitalisation)",
+    "opt-partiel2": "Partial (interest paid)",
+    "delSec": "✕ Remove",
+    "cardCapacite": "Borrowing capacity analysis",
+    "alertDiff": "The deferral term must be strictly shorter than the total term.",
+    secLoanName: function(k) { return `Secondary loan ${k}`; },
+    errSecDuree: function(name) { return `The loan "${name}" must have a total term strictly shorter than the main loan.`; },
+    errSecDiff: function(name) { return `The deferral term of the loan "${name}" must be strictly shorter than its total term.`; },
+    secBlock: function(k) { return `
+    <div style="width:100%; display:flex; justify-content:space-between; align-items:center; margin-bottom:0.2rem;">
+      <input type="text" class="p2-sec-name loan-name-input" value="Secondary loan ${k}">
+      ${k > 1 ? `<button class="btn-sm btn-del-sec" style="border-color:var(--red); color:var(--red); padding:0.2rem 0.6rem; font-size:0.6rem;" onclick="removeSecondaryLoanUI(${k})">✕ Remove</button>` : ''}
+    </div>
+    <div class="ctrl-g"><span class="ctrl-lbl" data-k="sec-m">Amount (€)</span><input class="ctrl-inp p2-sec-m" type="number" value="50000" min="1000"></div>
+    <div class="ctrl-g"><span class="ctrl-lbl" data-k="sec-d">Total term (years)</span><input class="ctrl-inp p2-sec-d" type="number" value="10" min="1"></div>
+    <div class="ctrl-g"><span class="ctrl-lbl" data-k="sec-t">Annual rate (%)</span><input class="ctrl-inp p2-sec-t" type="number" value="0.0" step="0.1" min="0"></div>
+    <div class="ctrl-vsep"></div>
+    <div class="ctrl-g"><span class="ctrl-lbl" data-k="sec-diff">Deferral (years)</span><input class="ctrl-inp p2-sec-diff" type="number" value="0" min="0"></div>
+    <div class="ctrl-g"><span class="ctrl-lbl" data-k="sec-diff-type">Type of deferral</span>
+      <select class="ctrl-inp w180 p2-sec-diff-type">
+        <option value="total" data-k="opt-total2">Full (capitalisation)</option>
+        <option value="partiel" data-k="opt-partiel2">Partial (interest paid)</option>
+      </select>
+    </div>
+  `; },
+    simClassique: function(P) {
+
+  const lblPeriode = P.isMensuel ? "Month" : "Year";
+  const lblPaiement = P.isMensuel ? "Monthly payment" : "Annual payment";
+  const laPaiement = P.isMensuel ? "The monthly payment" : "The annual payment";
+  const laPaiement_lower = P.isMensuel ? "the monthly payment" : "the annual payment";
+
+  document.getElementById('card-title').textContent = P.isMensuel ? "Simulation — conventional loan (monthly)" : "Simulation — conventional loan (annual)";
+
+  let baseAnnuiteLabel = P.typeAmort === 'annuites' ? lblPaiement + " (excl. deferral)" : "1st " + lblPaiement.toLowerCase() + " (excl. deferral)";
+  let targetAnnuite = P.schedule[P.diffPeriodes] ? P.schedule[P.diffPeriodes].annuite : 0;
+
+  let infoBanner = P.isMensuel ? `
+    <div class="info-banner">
+      💡 <strong>Why does the total cost differ from the annual mode?</strong> This is mathematically normal! By paying every month, you start repaying the principal from the very first month. The interest of the following months is therefore computed on an ever smaller outstanding capital, which reduces the total interest bill compared with a repayment that would wait until the very end of the year.
+    </div>
+  ` : "";
+
+  let calcDetails = `<strong>1. Parameters used for the period:</strong>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem; margin-top: 0.5rem; line-height: 1.6;">`;
+  if (P.isMensuel) {
+      let form_i = P.methodeMensuelle === 'prop'
+        ? `\\frac{${(P.tauxAnnuel*100).toFixed(2)}\\%}{12}`
+        : `(1 + ${(P.tauxAnnuel*100).toFixed(2)}\\%)^{\\frac{1}{12}} - 1`;
+      calcDetails += `<li>Number of periods (\\(n\\)): ${P.dureeRemboursement / 12} years &times; 12 = ${P.dureeRemboursement} months (excluding the deferral).</li>`;
+      calcDetails += `<li>Rate per period (\\(i\\)): \\( ${form_i} \\approx ${(P.tauxApplique*100).toFixed(4)}\\% \\) (${P.methodeMensuelle === 'prop' ? 'proportional' : 'equivalent'}).</li>`;
+  } else {
+      calcDetails += `<li>Number of periods (\\(n\\)): ${P.dureeRemboursement} years (excluding the deferral).</li>`;
+      calcDetails += `<li>Rate per period (\\(i\\)): ${(P.tauxApplique*100).toFixed(4)} %.</li>`;
+  }
+  calcDetails += `</ul>`;
+
+  let v0Details = "";
+  if (P.diffPeriodes > 0 && P.diffType === 'total') {
+       v0Details = `<strong>2. Computing the capital to be amortised (\\(V_0\\)) after the full deferral:</strong> during the ${P.diffPeriodes} deferral periods, interest was capitalised on the initial capital:
+       \\[ V_0 = ${P.montant.toFixed(2)} \\times (1 + ${(P.tauxApplique).toFixed(5)})^{${P.diffPeriodes}} \\approx ${P.balancePostDiffere.toFixed(2)} \\] `;
+  } else {
+       v0Details = `<strong>2. Capital to be amortised (\\(V_0\\)):</strong> ${fmtC(P.balancePostDiffere)} (no interest was capitalised).<br><br>`;
+  }
+
+  let formulaHtml = "";
+  let numAppI = (P.tauxApplique).toFixed(5);
+  let v0Str = P.balancePostDiffere.toFixed(2);
+
+  if (P.tauxApplique === 0) {
+      if (P.typeAmort === 'annuites') {
+          formulaHtml = `<strong>3. Computing the constant ${lblPaiement.toLowerCase()} (\\(a\\)) at a 0 % rate:</strong><br>
+          \\[ a = \\frac{V_0}{n} = \\frac{${v0Str}}{${P.dureeRemboursement}} \\approx ${targetAnnuite.toFixed(2)} \\]`;
+      } else {
+          formulaHtml = `<strong>3. Computing the constant principal repayment (\\(A\\)) at a 0 % rate:</strong><br>
+          \\[ A = \\frac{V_0}{n} = \\frac{${v0Str}}{${P.dureeRemboursement}} \\approx ${P.amortConstant.toFixed(2)} \\]
+          ${laPaiement} equals the principal repaid since interest is zero.`;
+      }
+  } else {
+      if (P.typeAmort === 'annuites') {
+          formulaHtml = `<strong>3. Computing the constant ${lblPaiement.toLowerCase()} (\\(a\\)):</strong><br>
+          \\[ a = \\frac{V_0 \\times i}{1 - (1+i)^{-n}} = \\frac{${v0Str} \\times ${numAppI}}{1 - (1+${numAppI})^{-${P.dureeRemboursement}}} \\approx ${targetAnnuite.toFixed(2)} \\] `;
+      } else {
+          formulaHtml = `<strong>3. Computing the constant principal repayment (\\(A\\)):</strong><br>
+          \\[ A = \\frac{V_0}{n} = \\frac{${v0Str}}{${P.dureeRemboursement}} \\approx ${P.amortConstant.toFixed(2)} \\]
+          ${laPaiement} is then computed each period as the sum principal repaid + interest.`;
+      }
+  }
+
+  let diffNote = "";
+  if (P.diffPeriodes > 0) {
+    if (P.diffType === 'partiel') {
+      diffNote = `<li>Partial deferral period: the principal repaid is zero and only interest is paid (${lblPaiement.toLowerCase()} = interest).</li>`;
+    } else if (P.diffType === 'total') {
+      diffNote = `<li>Full deferral period: the principal repaid and ${laPaiement_lower} are zero; interest is added to the outstanding capital.</li>`;
+    }
+  }
+
+  let explainHtml = `
+    <div class="math-box">
+      ${calcDetails}
+      ${v0Details}
+      ${formulaHtml}
+      <hr style="border:0; border-top:1px solid var(--border); margin:1rem 0;">
+      <strong>How the cells of the table are computed:</strong>
+      <ul style="padding-left: 1.5rem; margin-bottom: 0; margin-top: 0.5rem; line-height: 1.6;">
+        ${diffNote}
+        <li>Outstanding capital: the capital still owed at the end of the previous period.</li>
+        <li>Interest: outstanding capital &times; rate of the period (\\(i\\)).</li>
+        <li>Principal repaid: share of the capital reimbursed, obtained by the difference (${lblPaiement.toLowerCase()} &minus; interest) or as a constant amount, depending on the amortisation mode chosen.</li>
+        <li>${lblPaiement}: total paid out over the period, that is the sum (interest + principal repaid).</li>
+        <li>Capital at end of period: difference (outstanding capital &minus; principal repaid).</li>
+      </ul>
+    </div>
+  `;
+
+  let html = `
+    <div class="kpi-grid">
+      <div class="kpi-box"><span class="kpi-lbl">Amount financed</span><span class="kpi-val">${fmtC(P.montant)}</span></div>
+      <div class="kpi-box"><span class="kpi-lbl">Total cost of credit</span><span class="kpi-val">${fmtC(P.totalInterest)}</span></div>
+      <div class="kpi-box"><span class="kpi-lbl">${baseAnnuiteLabel}</span><span class="kpi-val">${fmtC(targetAnnuite)}</span></div>
+    </div>
+    ${infoBanner}
+    ${explainHtml}
+    <div class="tw"><table class="at">
+      <thead><tr>
+        <th>${lblPeriode}</th>
+        <th>Outstanding capital</th>
+        <th>Interest</th>
+        <th>Principal repaid</th>
+        <th>${lblPaiement}</th>
+        <th>Capital at end of period</th>
+      </tr></thead><tbody>
+  `;
+
+  P.schedule.forEach(r => {
+    let trStyle = r.annee <= P.diffPeriodes ? 'style="background:rgba(201,149,42,0.08)"' : '';
+    html += `<tr ${trStyle}>
+      <td>${r.annee}</td>
+      <td>${fmtN(r.capitalDebut)}</td>
+      <td>${fmtN(r.interet)}</td>
+      <td>${fmtN(r.amortissement)}</td>
+      <td class="cf">${fmtN(r.annuite)}</td>
+      <td>${fmtN(r.capitalFin)}</td>
+    </tr>`;
+  });
+
+  html += `</tbody></table></div>`;
+  return html;
+
+    },
+    simLissage: function(P) {
+
+  const lblPeriode = P.isMensuel ? "Month" : "Year";
+  const lblPaiement = P.isMensuel ? "Monthly payment" : "Annual payment";
+  const laPaiement_lower = P.isMensuel ? "the monthly payment" : "the annual payment";
+
+  document.getElementById('card-title').textContent = P.isMensuel ? "Simulation — smoothed loan (monthly)" : "Simulation — smoothed loan (annual)";
+
+  // Encadre mathematique detaille
+  let indExp = `<strong>1. Detailed computation of each individual ${lblPaiement.toLowerCase()}:</strong><br>
+  <ul style="padding-left: 1.5rem; margin-bottom: 1rem; margin-top: 0.5rem; line-height: 1.6;">`;
+
+  if (P.isMensuel) {
+      let methodStr = P.methodeMensuelle === 'prop' ? 'proportional' : 'equivalent';
+      indExp += `<li>Monthly rates computed with the ${methodStr} method: \\(i_0 \\approx ${(P.i0*100).toFixed(4)}\\%\\) for the main loan`;
+      P.secLoans.forEach((l, idx) => {
+         indExp += `, \\(i_${idx+1} \\approx ${(l.ik*100).toFixed(4)}\\%\\) for secondary loan ${idx+1}`;
+      });
+      indExp += `.</li>`;
+  }
+
+  let a0_isolated = pmt(P.i0, P.n0, P.E0);
+  indExp += `<li>Main loan on its own: \\(a_0 = \\frac{${P.E0.toFixed(2)} \\times ${P.i0.toFixed(5)}}{1 - (1+${P.i0.toFixed(5)})^{-${P.n0}}} \\approx ${a0_isolated.toFixed(2)} \\) <strong>€</strong> (for information only; the smoothing will change this value).</li>`;
+
+  let sumTermHtml = "";
+  let sumTermVal = 0;
+
+  P.secLoans.forEach((loan, idx) => {
+    let v0Str = loan.realEk.toFixed(2);
+    let numAppIk = loan.ik.toFixed(5);
+    const displayK = idx + 1;
+
+    if (loan.ik === 0) {
+        indExp += `<li>${loan.name}: 0% rate, \\(a_${displayK} = \\frac{${v0Str}}{${loan.nk_remb}} \\approx ${loan.ak.toFixed(2)} \\text{ €}\\).</li>`;
+    } else {
+        indExp += `<li>${loan.name}: \\(a_${displayK} = \\frac{${v0Str} \\times ${numAppIk}}{1 - (1+${numAppIk})^{-${loan.nk_remb}}} \\approx ${loan.ak.toFixed(2)}\\).</li>`;
+    }
+
+    const currentTermVal = loan.ak * Math.pow(1 + P.i0, -loan.dk) * (1 - Math.pow(1 + P.i0, -loan.nk_remb));
+    sumTermVal += currentTermVal;
+
+    if (idx > 0) sumTermHtml += " \\\\ &\\quad + ";
+    sumTermHtml += `\\left[ ${loan.ak.toFixed(2)} (1+${P.i0.toFixed(5)})^{-${loan.dk}} \\left(1-(1+${P.i0.toFixed(5)})^{-${loan.nk_remb}}\\right) \\right]`;
+  });
+
+  if (P.secLoans.length === 0) {
+      indExp += `<li>no secondary loan entered.</li>`;
+      sumTermHtml = "0";
+  }
+  indExp += `</ul>`;
+
+  const factor = 1 / (1 - Math.pow(1 + P.i0, -P.n0));
+  const aStar = factor * (P.i0 * P.E0 + sumTermVal);
+
+let infoBanner = P.isMensuel ? `
+    <div class="info-banner">
+      💡 <strong>Monthly mode enabled:</strong> the smoothing formula is computed over \\(n_0 = ${P.n0}\\) periods, converting your annual rates into monthly rates using the mathematical method chosen.
+    </div>
+  ` : "";
+
+  // 1. Pre-calcul du tableau pour obtenir le total des paiements
+  let scheduleRows = "";
+  let balPrincipal = P.E0;
+  let secBalances = P.secLoans.map(l => l.Ek);
+  let totalPayments = 0;
+
+  let montantFinance = P.E0 + P.secLoans.reduce((sum, l) => sum + l.Ek, 0);
+
+  for (let t = 1; t <= P.n0; t++) {
+    let current_ak_total = 0;
+    let balSecondaire_total = 0;
+
+    P.secLoans.forEach((loan, idx) => {
+      let current_ak = 0;
+      let intSec = 0;
+      let amortSec = 0;
+
+      if (t <= loan.dk) {
+          intSec = secBalances[idx] * loan.ik;
+          if (loan.diffType === 'partiel') {
+              current_ak = intSec;
+          } else {
+              amortSec = -intSec;
+              secBalances[idx] += intSec;
+          }
+      } else if (t <= loan.nk_total) {
+          current_ak = loan.ak;
+          intSec = secBalances[idx] * loan.ik;
+          amortSec = current_ak - intSec;
+
+          if (t === loan.nk_total) {
+              amortSec = secBalances[idx];
+              current_ak = amortSec + intSec;
+          }
+          secBalances[idx] -= amortSec;
+      }
+
+      current_ak_total += current_ak;
+      balSecondaire_total += secBalances[idx];
+    });
+
+    let payPrincipal = aStar - current_ak_total;
+    let intPrincipal = balPrincipal * P.i0;
+    let amortPrincipal = payPrincipal - intPrincipal;
+
+    if (t === P.n0) {
+      amortPrincipal = balPrincipal;
+      payPrincipal = amortPrincipal + intPrincipal;
+    }
+    balPrincipal -= amortPrincipal;
+
+    let totalPeriodPayment = payPrincipal + current_ak_total;
+    totalPayments += totalPeriodPayment;
+
+    scheduleRows += `<tr>
+      <td>${t}</td>
+      <td>${fmtN(current_ak_total)}</td>
+      <td>${fmtN(payPrincipal)}</td>
+      <td class="cf">${fmtN(totalPeriodPayment)}</td>
+      <td>${fmtN(Math.max(0, balPrincipal) + Math.max(0, balSecondaire_total))}</td>
+    </tr>`;
+  }
+
+  // 2. KPI
+  let totalInterest = totalPayments - montantFinance;
+  let kpiLabelPaiement = P.isMensuel ? "Smoothed monthly payment" : "Smoothed annual payment";
+
+  let kpiHtml = `
+    <div class="kpi-grid">
+      <div class="kpi-box"><span class="kpi-lbl">Amount financed</span><span class="kpi-val">${fmtC(montantFinance)}</span></div>
+      <div class="kpi-box"><span class="kpi-lbl">Total cost of credit</span><span class="kpi-val">${fmtC(totalInterest)}</span></div>
+      <div class="kpi-box"><span class="kpi-lbl">${kpiLabelPaiement}</span><span class="kpi-val">${fmtC(aStar)}</span></div>
+    </div>
+  `;
+
+  // 3. Note explicative du CRD global
+  let noteCrdHtml = `
+    <div class="info-banner" style="margin-top: 1rem; margin-bottom: 0;">
+      💡 <strong>Overall outstanding capital:</strong> the outstanding capital shown in the last column is the exact sum of the capital still to be repaid on the main loan and on all the secondary loans at the end of each period; it is given for information only.
+    </div>
+  `;
+
+  // 4. Assemblage final du HTML
+  let html = `
+    ${kpiHtml}
+    ${infoBanner}
+    <div class="math-box">
+      ${indExp}
+      <strong>2. Smoothing model applied:</strong><br>
+      \\[ a^* = \\frac{1}{1-(1+i_0)^{-n_0}} \\left( i_0 E_0 + \\sum_{k=1}^{N} a_k (1+i_0)^{-d_k} \\left(1-(1+i_0)^{-n_k}\\right) \\right) \\]
+      <ul style="padding-left: 1.5rem; margin-bottom: 1rem; margin-top: 0.5rem; line-height: 1.6; font-size: 0.85rem;">
+        <li>\\(E_0\\): initial capital of the main loan</li>
+        <li>\\(i_0\\): rate of the period for the main loan</li>
+        <li>\\(n_0\\): number of periods of the main loan</li>
+        <li>\\(a_k\\): ${lblPaiement.toLowerCase()} for the amortisation of secondary loan \\(k\\)</li>
+        <li>\\(d_k\\): deferral, in periods, of secondary loan \\(k\\)</li>
+        <li>\\(n_k\\): number of effective repayment periods of secondary loan \\(k\\)</li>
+      </ul>
+      <strong>3. Numerical application of the overall smoothing:</strong><br>
+      \\[ \\begin{aligned} a^* &= \\frac{1}{1-(1+${P.i0.toFixed(5)})^{-${P.n0}}} \\Big( ${(P.i0*P.E0).toFixed(2)} \\\\ &\\quad + ${sumTermHtml} \\Big) \\\\ &= ${factor.toFixed(5)} \\times \\left( ${(P.i0*P.E0).toFixed(2)} + ${sumTermVal.toFixed(2)} \\right) \\approx {${aStar.toFixed(2)}\\ \\text{€}}\\end{aligned} \\]
+    </div>
+
+    <div class="tw"><table class="at">
+      <thead><tr>
+        <th>${lblPeriode}</th>
+        <th>Secondary ${lblPaiement.toLowerCase()} (\\(\\sum a_k\\))</th>
+        <th>Main ${lblPaiement.toLowerCase()}</th>
+        <th>Smoothed total (\\(a^*\\))</th>
+        <th>Overall outstanding capital</th>
+      </tr></thead><tbody>
+      ${scheduleRows}
+      </tbody></table></div>
+      ${noteCrdHtml}
+  `;
+  return html;
+
+    },
+    capacite: function(P) { return `
+    <div class="kpi-grid">
+      <div class="kpi-box"><span class="kpi-lbl">Monthly income retained</span><span class="kpi-val">${fmtC(P.revMensuelTotal)}</span></div>
+      <div class="kpi-box"><span class="kpi-lbl">Max. monthly payment (35%)</span><span class="kpi-val">${fmtC(P.aMax)}</span></div>
+      <div class="kpi-box"><span class="kpi-lbl">Term retained</span><span class="kpi-val">${P.n} months</span></div>
+    </div>
+
+    <div class="info-banner">
+      💡 <strong>HCSF rule:</strong> the borrowing capacity of a household is determined according to the rules issued by the French High Council for Financial Stability (HCSF), which caps the debt-service ratio at 35 % of net monthly income, counting 70 % of estimated gross rental income.
+    </div>
+
+    <div class="math-box">
+      <strong>1. Determining the monthly repayment capacity:</strong><br>
+      <ul style="padding-left: 1.5rem; margin-bottom: 1rem; margin-top: 0.5rem; line-height: 1.6;">
+<li>Net monthly salaries (\\(${P.sal1}${P.hasCo ? ' + ' + P.sal2 + ')' : ''} \\div 12\\)): ${fmtC(P.salMensuelNet)}</li>
+        <li>Weighted rental income (\\(70\\%\\)): ${P.locMensuelle} € &times; 0.70 = ${fmtC(P.locPonderee)}</li>
+        <li>Maximum monthly payment allowed (\\(a_{\\max}\\)): ${fmtC(P.revMensuelTotal)} &times; 0.35 = ${fmtC(P.aMax)}</li>
+      </ul>
+
+      <strong>2. Computing the maximum borrowing capacities:</strong> the monthly rate retained is \\( i \\approx ${(P.i*100).toFixed(6)}\\% \\) (${P.methodeMensuelle === 'prop' ? 'proportional' : 'equivalent'}).
+      <br><br>
+      <em>A. Loan with constant annuities:</em>
+      \\[ E_{\\max}^{\\text{AC}} = a_{\\max} \\times \\frac{1 - (1+i)^{-n}}{i} \\approx ${P.capAnnuite.toFixed(2)} \\text{ €} \\]
+      <br>
+      <em>B. Loan with constant principal repayment:</em> since the monthly payment decreases over time, the maximum debt constraint necessarily applies to the first instalment (the highest one):
+      \\[ a_{\\max} = \\frac{E_{\\max}^{\\text{AM}}}{n} + i \\times E_{\\max}^{\\text{AM}} \\implies E_{\\max}^{\\text{AM}} = \\frac{a_{\\max}}{i + 1/n} \\approx ${P.capAmort.toFixed(2)} \\text{ €} \\]
+    </div>
+
+    <div class="tw">
+      <table class="at">
+        <thead>
+          <tr>
+            <th style="text-align:left;">Type of loan financed</th>
+            <th>Maximum initial instalment</th>
+            <th>Borrowing capacity (\\(E_{\\max}\\))</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="text-align:left;">Loan with constant annuities</td>
+            <td>${fmtC(P.aMax)}</td>
+            <td class="cf" style="font-size:1.15rem;">${fmtC(P.capAnnuite)}</td>
+          </tr>
+          <tr>
+            <td style="text-align:left;">Loan with constant principal repayment</td>
+            <td>${fmtC(P.aMax)}</td>
+            <td class="cf" style="font-size:1.15rem;">${fmtC(P.capAmort)}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  `; }
+  }
+};
+
+/* ============================================================
+   GESTION DE LA LANGUE  /  LANGUAGE HANDLING
+   ============================================================ */
+let LANG = 'fr';
+
+function detectLang() {
+    try {
+        const q = new URLSearchParams(window.location.search).get('lang');
+        if (q && I18N[q.toLowerCase()]) return q.toLowerCase();
+    } catch (e) {}
+    const h = (window.location.hash || '').replace('#', '').toLowerCase();
+    if (I18N[h]) return h;
+    return 'fr';
+}
+
+function applyLang(prev) {
+    const D = I18N[LANG];
+    document.documentElement.lang = D.htmlLang;
+    document.title = D.title;
+
+    /* Tous les libelles statiques et ceux des blocs ajoutes dynamiquement */
+    document.querySelectorAll('[data-k]').forEach(function (el) {
+        const key = el.getAttribute('data-k');
+        if (D[key] !== undefined) el.innerHTML = D[key];
+    });
+
+    /* Boutons de suppression des prets secondaires */
+    document.querySelectorAll('.btn-del-sec').forEach(function (b) { b.textContent = D.delSec; });
+
+    /* Noms par defaut des prets secondaires (on respecte ceux saisis par l'utilisateur) */
+    if (prev) {
+        document.querySelectorAll('.p2-sec-name').forEach(function (inp, idx) {
+            if (inp.value === I18N[prev].secLoanName(idx + 1)) inp.value = D.secLoanName(idx + 1);
+        });
+    }
+
+    document.getElementById('flag-fr').classList.toggle('active', LANG === 'fr');
+    document.getElementById('flag-en').classList.toggle('active', LANG === 'en');
+}
+
+function setLang(lang) {
+    if (!I18N[lang] || lang === LANG) return;
+    const prev = LANG;
+    LANG = lang;
+
+    /* La langue est memorisee dans l'URL (partage / rechargement) */
+    try {
+        const u = new URL(window.location.href);
+        u.searchParams.set('lang', lang);
+        history.replaceState(null, '', u.toString());
+    } catch (e) {}
+
+    applyLang(prev);
+
+    /* Si un resultat est affiche, on le recalcule a l'identique */
+    if (_lastGen === 'sim') generateSimulation();
+    else if (_lastGen === 'cap') generateCapacite();
+}
+
+LANG = detectLang();
+
+// ════════════════════════════════════════
+// FORMATTING HELPERS
+// ════════════════════════════════════════
+const fmtC = (val) => new Intl.NumberFormat(I18N[LANG].locale, { style: 'currency', currency: 'EUR' }).format(val);
+const fmtN = (val) => new Intl.NumberFormat(I18N[LANG].locale, { maximumFractionDigits: 2, minimumFractionDigits: 2 }).format(val);
+
+// ════════════════════════════════════════
+// FINANCIAL MATH FUNCTIONS
+// ════════════════════════════════════════
+function pvaf(rate, n) {
+  if (rate === 0) return n;
+  return (1 - Math.pow(1 + rate, -n)) / rate;
+}
+
+function pmt(rate, n, presentValue) {
+  if (rate === 0) return presentValue / n;
+  return presentValue * (rate / (1 - Math.pow(1 + rate, -n)));
+}
+
+// ════════════════════════════════════════
+// UI TOGGLES
+// ════════════════════════════════════════
+let currentType = 1;
+function selectType(t){
+  currentType = t;
+  document.getElementById('btn1').classList.toggle('active', t===1);
+  document.getElementById('btn2').classList.toggle('active', t===2);
+  document.getElementById('btn3').classList.toggle('active', t===3);
+  
+  document.getElementById('p1f').style.display = t===1 ? 'flex' : 'none';
+  document.getElementById('p2f').style.display = t===2 ? 'block' : 'none';
+  document.getElementById('p3f').style.display = t===3 ? 'block' : 'none';
+}
+
+function toggleDiffere1() {
+  const type = document.getElementById('p1-diff-type').value;
+  document.getElementById('p1-diff-duree-group').style.display = (type !== 'aucun') ? 'flex' : 'none';
+}
+
+function toggleMensuel() {
+  const isChecked = document.getElementById('p1-mensuel').checked;
+  document.getElementById('p1-taux-methode-group').style.display = isChecked ? 'flex' : 'none';
+}
+
+function toggleMensuel2() {
+  const isChecked = document.getElementById('p2-mensuel').checked;
+  document.getElementById('p2-taux-methode-group').style.display = isChecked ? 'flex' : 'none';
+}
+
+function toggleCoBorrower() {
+  const isChecked = document.getElementById('p3-has-co').checked;
+  document.getElementById('p3-sal2-group').style.display = isChecked ? 'flex' : 'none';
+}
+
+// ════════════════════════════════════════
+// DYNAMIC LOAN BLOCKS (ONGLET 2)
+// ════════════════════════════════════════
+let secondaryLoanCount = 0;
+
+function addSecondaryLoanUI() {
+  secondaryLoanCount++;
+  const container = document.getElementById('secondary-loans-container');
+  const loanDiv = document.createElement('div');
+  loanDiv.className = 'secondary-loan-block';
+  loanDiv.id = `sec-loan-${secondaryLoanCount}`;
+  loanDiv.style.cssText = 'display:flex; flex-wrap:wrap; gap:1.4rem; width:100%; position:relative; background:rgba(255,255,255,0.03); padding:1.2rem; border:1px solid rgba(255,255,255,0.1); border-radius:4px; margin-bottom:1rem;';
+
+  loanDiv.innerHTML = I18N[LANG].secBlock(secondaryLoanCount);
+  container.appendChild(loanDiv);
+}
+
+function removeSecondaryLoanUI(id) {
+  const el = document.getElementById(`sec-loan-${id}`);
+  if (el) el.remove();
+}
+
+// ════════════════════════════════════════
+// GENERATION LOGIC
+// ════════════════════════════════════════
+let _lastGen = null;
+function generateSimulation() {
+  _lastGen = 'sim';
+  document.getElementById('welcome').style.display = 'none';
+  document.getElementById('ex-area').style.display = 'block';
+
+  if (currentType === 1) {
+    simClassique();
+  } else if (currentType === 2) {
+    simLissage();
+  }
+}
+
+function simClassique() {
+  const montant = parseFloat(document.getElementById('p1-montant').value);
+  const dureeAns = parseInt(document.getElementById('p1-duree').value);
+  const tauxAnnuel = parseFloat(document.getElementById('p1-taux').value) / 100;
+  const typeAmort = document.getElementById('p1-type').value;
+  
+  const diffType = document.getElementById('p1-diff-type').value;
+  const diffDureeAns = (diffType === 'aucun') ? 0 : (parseInt(document.getElementById('p1-diff-duree').value) || 0);
+  
+  const isMensuel = document.getElementById('p1-mensuel').checked;
+  const methodeMensuelle = document.getElementById('p1-taux-methode').value;
+
+  if (diffDureeAns >= dureeAns) {
+    alert(I18N[LANG].alertDiff);
+    return;
+  }
+
+  let periodesTotales = isMensuel ? dureeAns * 12 : dureeAns;
+  let diffPeriodes = isMensuel ? diffDureeAns * 12 : diffDureeAns;
+  let dureeRemboursement = periodesTotales - diffPeriodes;
+  
+  let tauxApplique;
+  if (isMensuel) {
+    tauxApplique = (methodeMensuelle === 'prop') ? (tauxAnnuel / 12) : (Math.pow(1 + tauxAnnuel, 1/12) - 1);
+  } else {
+    tauxApplique = tauxAnnuel;
+  }
+
+  let schedule = [];
+  let currentBalance = montant;
+  let totalInterest = 0;
+  
+  // Phase de différé
+  for (let t = 1; t <= diffPeriodes; t++) {
+    let interest = currentBalance * tauxApplique;
+    let payment = 0;
+    let amort = 0;
+
+    if (diffType === 'partiel') {
+      payment = interest;
+      totalInterest += interest;
+    } else if (diffType === 'total') {
+      currentBalance += interest; 
+      totalInterest += interest;
+    }
+    
+    schedule.push({
+      annee: t,
+      capitalDebut: currentBalance - (diffType==='total' ? interest : 0),
+      interet: interest,
+      amortissement: amort,
+      annuite: payment,
+      capitalFin: currentBalance
+    });
+  }
+
+  let balancePostDiffere = currentBalance;
+
+  // Phase de remboursement
+  let annuiteConstante = 0;
+  if (typeAmort === 'annuites') {
+    annuiteConstante = pmt(tauxApplique, dureeRemboursement, currentBalance);
+  }
+
+  const amortConstant = currentBalance / dureeRemboursement;
+
+  for (let t = 1; t <= dureeRemboursement; t++) {
+    let interest = currentBalance * tauxApplique;
+    let amort, payment;
+
+    if (typeAmort === 'annuites') {
+      payment = annuiteConstante;
+      amort = payment - interest;
+    } else {
+      amort = amortConstant;
+      payment = amort + interest;
+    }
+
+    if (t === dureeRemboursement) {
+      amort = currentBalance;
+      payment = amort + interest;
+    }
+
+    currentBalance -= amort;
+    totalInterest += interest;
+
+    schedule.push({
+      annee: diffPeriodes + t,
+      capitalDebut: currentBalance + amort,
+      interet: interest,
+      amortissement: amort,
+      annuite: payment,
+      capitalFin: Math.abs(currentBalance) < 0.01 ? 0 : currentBalance
+    });
+  }
+
+  document.getElementById('ex-content').innerHTML = I18N[LANG].simClassique({
+    isMensuel, methodeMensuelle, typeAmort, diffType, diffPeriodes, dureeRemboursement,
+    tauxAnnuel, tauxApplique, montant, balancePostDiffere, amortConstant, schedule, totalInterest
+  });
+  if(window.MathJax) MathJax.typeset();
+}
+
+function simLissage() {
+  const E0 = parseFloat(document.getElementById('p2-m1').value);
+  const d1_ans = parseInt(document.getElementById('p2-d1').value);
+  const t1_annuel = parseFloat(document.getElementById('p2-t1').value) / 100;
+
+  const isMensuel = document.getElementById('p2-mensuel').checked;
+  const methodeMensuelle = document.getElementById('p2-taux-methode').value;
+
+  const n0 = isMensuel ? d1_ans * 12 : d1_ans;
+  let i0 = t1_annuel;
+  if (isMensuel) {
+    i0 = (methodeMensuelle === 'prop') ? (t1_annuel / 12) : (Math.pow(1 + t1_annuel, 1/12) - 1);
+  }
+
+  // Extraction et consolidation des prêts secondaires
+  const secBlocks = document.querySelectorAll('.secondary-loan-block');
+  let secLoans = [];
+  let errorMsg = null;
+
+  secBlocks.forEach((block, index) => {
+    const k = index + 1;
+    const name = block.querySelector('.p2-sec-name').value || I18N[LANG].secLoanName(k);
+    const mInput = parseFloat(block.querySelector('.p2-sec-m').value);
+    const dInput = parseInt(block.querySelector('.p2-sec-d').value);
+    const tInput = parseFloat(block.querySelector('.p2-sec-t').value) / 100;
+    const diffInput = parseInt(block.querySelector('.p2-sec-diff').value) || 0;
+    const diffType = block.querySelector('.p2-sec-diff-type').value;
+
+    if (dInput >= d1_ans) {
+      errorMsg = I18N[LANG].errSecDuree(name);
+    }
+    if (diffInput >= dInput) {
+      errorMsg = I18N[LANG].errSecDiff(name);
+    }
+
+    const nk_total = isMensuel ? dInput * 12 : dInput;
+    const dk = isMensuel ? diffInput * 12 : diffInput;
+    let ik = tInput;
+    if (isMensuel) {
+      ik = (methodeMensuelle === 'prop') ? (tInput / 12) : (Math.pow(1 + tInput, 1/12) - 1);
+    }
+    const nk_remb = nk_total - dk;
+
+    let realEk = mInput;
+    if (diffInput > 0 && diffType === 'total') {
+        realEk = mInput * Math.pow(1 + ik, dk);
+    }
+    
+    const ak = pmt(ik, nk_remb, realEk);
+    
+    secLoans.push({
+      k, name, Ek: mInput, realEk, nk_total, dk, nk_remb, ik, ak, diffType
+    });
+  });
+
+  if (errorMsg) {
+    alert(errorMsg);
+    return;
+  }
+
+  document.getElementById('ex-content').innerHTML = I18N[LANG].simLissage({
+    isMensuel, methodeMensuelle, secLoans, E0, i0, n0
+  });
+  if(window.MathJax) MathJax.typeset();
+}
+
+function generateCapacite() {
+  _lastGen = 'cap';
+  document.getElementById('welcome').style.display = 'none';
+  document.getElementById('ex-area').style.display = 'block';
+  document.getElementById('card-title').textContent = I18N[LANG].cardCapacite;
+
+  // Récupération des données
+  const sal1 = parseFloat(document.getElementById('p3-sal1').value) || 0;
+  const hasCo = document.getElementById('p3-has-co').checked;
+  const sal2 = hasCo ? (parseFloat(document.getElementById('p3-sal2').value) || 0) : 0;
+  
+  const locMensuelle = parseFloat(document.getElementById('p3-loc').value) || 0;
+  const dureeAns = parseInt(document.getElementById('p3-duree').value) || 25;
+  const tauxAnnuel = parseFloat(document.getElementById('p3-taux').value) / 100;
+  const methodeMensuelle = document.getElementById('p3-taux-methode').value;
+
+  // Calculs HCSF
+  const salMensuelNet = (sal1 + sal2) / 12;
+  const locPonderee = locMensuelle * 0.70;
+  const revMensuelTotal = salMensuelNet + locPonderee;
+  
+  // Taux d'effort HCSF de 35%
+  const aMax = revMensuelTotal * 0.35;
+
+  // Calculs mathématiques pour la mensualité
+  const n = dureeAns * 12;
+  let i = tauxAnnuel;
+  
+  if (methodeMensuelle === 'prop') {
+    i = tauxAnnuel / 12;
+  } else {
+    // Taux équivalent utilisé dans l'exercice
+    i = Math.pow(1 + tauxAnnuel, 1/12) - 1;
+  }
+
+  // Calcul des deux capacités d'emprunt
+  let capAnnuite = 0;
+  let capAmort = 0;
+
+  if (i > 0) {
+    capAnnuite = aMax * (1 - Math.pow(1 + i, -n)) / i;
+    capAmort = aMax / (i + 1/n);
+  } else {
+    capAnnuite = aMax * n;
+    capAmort = aMax * n;
+  }
+
+  document.getElementById('ex-content').innerHTML = I18N[LANG].capacite({
+    sal1, sal2, hasCo, locMensuelle, salMensuelNet, locPonderee, revMensuelTotal,
+    aMax, n, i, methodeMensuelle, capAnnuite, capAmort
+  });
+  if(window.MathJax) MathJax.typeset();
+}
+
+function openPdfModal(){
+  document.getElementById('pdf-ov').style.display='block';
+  document.getElementById('pdf-modal').style.display='block';
+}
+function closePdfModal(){
+  document.getElementById('pdf-ov').style.display='none';
+  document.getElementById('pdf-modal').style.display='none';
+}
+function doPrint(){
+  const noHdr = !document.getElementById('opt-header').checked;
+  const body = document.body;
+  if(noHdr) body.classList.add('print-no-header');
+  
+  closePdfModal();
+  setTimeout(()=>{
+    window.print();
+    setTimeout(()=>{
+      body.classList.remove('print-no-header');
+    },600);
+  },200);
+}
+
+window.onload = () => {
+  applyLang(null);
+  selectType(1);
+  addSecondaryLoanUI(); // Load with 1 secondary loan by default
+  toggleDiffere1(); 
+}
+</script>
+
+</body>
+</html>
