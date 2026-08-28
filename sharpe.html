@@ -1,0 +1,3193 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analyseur de risque</title>
+
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['\\(','\\)']], displayMath: [['\\[','\\]']] }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<style>
+/* === DESIGN TOKENS (identiques aux autres simulateurs du site) === */
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+  /* alias conservés : le script génère des styles en ligne qui les utilisent */
+  --hf-navy:var(--navy); --hf-gold:var(--gold); --hf-gold-hover:var(--gold-light);
+  --bg-color:var(--cream); --text-main:var(--text); --card-bg:#fff; --border-color:var(--border);
+}
+
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+
+body {
+  font-family:'Source Serif 4',serif;
+  background:var(--cream);
+  color:var(--text);
+  min-height:100vh;
+  font-size:16px;
+  line-height:1.7;
+}
+
+h1,h2,h3,h4 { font-family:'Playfair Display',serif; color:var(--navy); }
+p { text-align:justify; margin-bottom:1rem; }
+
+/* === EN-TÊTE === */
+header {
+  background:var(--navy);
+  color:var(--cream);
+  padding:2rem 3rem 0;
+  border-bottom:3px solid var(--gold);
+}
+.header-inner { max-width:1100px; margin:0 auto; }
+.header-top { display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; margin-bottom:.5rem; }
+.header-badge {
+  display:inline-block; font-family:'JetBrains Mono',monospace; font-size:.68rem;
+  letter-spacing:.15em; text-transform:uppercase; color:var(--gold-light);
+  border:1px solid var(--gold); padding:3px 10px; border-radius:2px;
+}
+header h1 { font-size:1.85rem; font-weight:700; color:#fff; margin-bottom:.15rem; }
+header .subtitle { font-family:'Source Serif 4',serif; font-size:.85rem; color:rgba(250,247,240,.55); font-style:italic; margin-bottom:1.5rem; }
+
+/* === SÉLECTEUR DE LANGUE === */
+.lang-switch { display:flex; gap:.45rem; flex-shrink:0; }
+.flag-btn {
+  background:rgba(255,255,255,.06); border:1px solid rgba(201,149,42,.35); border-radius:3px;
+  padding:3px; cursor:pointer; line-height:0; opacity:.5;
+  transition:opacity .2s, border-color .2s, transform .15s;
+}
+.flag-btn:hover { opacity:1; transform:translateY(-1px); }
+.flag-btn.active { opacity:1; border-color:var(--gold-light); box-shadow:0 0 0 1px rgba(232,184,75,.35); }
+.flag-btn svg { display:block; width:30px; height:20px; border-radius:1px; }
+
+/* === ONGLETS === */
+.tabs { display:flex; gap:.4rem; }
+.tab {
+  background:rgba(255,255,255,.06);
+  color:rgba(250,247,240,.65);
+  font-family:'JetBrains Mono',monospace; font-size:.7rem;
+  letter-spacing:.1em; text-transform:uppercase;
+  padding:.7rem 1.4rem; cursor:pointer;
+  border:1px solid rgba(201,149,42,.25); border-bottom:none;
+  border-radius:4px 4px 0 0; transition:all .2s;
+}
+.tab:hover { background:rgba(255,255,255,.12); color:#fff; }
+.tab.active { background:var(--cream); color:var(--navy); font-weight:700; border-color:var(--gold); }
+
+/* === MISE EN PAGE === */
+.container { max-width:1100px; margin:0 auto; padding:2.5rem 1.5rem 4rem; }
+
+.card {
+  background:#fff;
+  border-radius:6px;
+  box-shadow:var(--shadow);
+  border-top:4px solid var(--navy);
+  border-left:none;
+  padding:1.8rem 2rem;
+  margin-bottom:1.8rem;
+}
+.card > h2:first-child {
+  font-size:1.15rem; font-weight:600; color:var(--navy);
+  border-bottom:1px solid var(--border); padding-bottom:.6rem; margin-bottom:1.2rem;
+}
+.card h3 { font-size:1rem; font-weight:600; margin:1.6rem 0 .6rem; color:var(--navy-mid); }
+
+/* === BOUTONS === */
+button {
+  background:var(--navy); color:var(--cream); border:none; border-radius:4px;
+  padding:.5rem 1.2rem; font-family:'Source Serif 4',serif; font-size:.95rem; font-weight:600;
+  cursor:pointer; transition:background .18s, transform .1s;
+  display:inline-flex; align-items:center; gap:8px;
+}
+button:hover { background:var(--gold); color:var(--navy); }
+button:active { transform:translateY(1px); }
+.btn-delete { background:#fff; color:var(--red); border:1px solid var(--border); padding:.35rem .6rem; font-size:1rem; }
+.btn-delete:hover { background:var(--cream-dark); color:var(--red); border-color:var(--red); }
+
+/* === TABLEAUX === */
+.premium-table { width:100%; border-collapse:collapse; margin:1.2rem 0; background:#fff; }
+.premium-table th {
+  background:var(--navy-mid); color:var(--cream);
+  font-family:'JetBrains Mono',monospace; font-size:.65rem;
+  letter-spacing:.1em; text-transform:uppercase; font-weight:500;
+  padding:.7rem .8rem; text-align:left; border-bottom:2px solid var(--gold);
+}
+.premium-table td { padding:.7rem .8rem; border-bottom:1px solid var(--border); vertical-align:middle; font-size:.92rem; }
+.premium-table tr:hover td { background:var(--cream); }
+
+table[border="1"] { width:100%; border-collapse:collapse; border:none; margin:1.2rem 0; }
+table[border="1"] th {
+  background:var(--navy-mid); color:var(--cream);
+  font-family:'JetBrains Mono',monospace; font-size:.65rem;
+  letter-spacing:.1em; text-transform:uppercase; font-weight:500;
+  padding:.7rem; border:1px solid var(--navy-mid); text-align:center;
+}
+table[border="1"] td { padding:.7rem; border:1px solid var(--border); text-align:center; font-size:.92rem; }
+
+/* === CHAMPS DE SAISIE === */
+.input-group { display:flex; align-items:center; gap:6px; }
+.input-group span { color:var(--text-muted); font-size:.85rem; }
+
+input[type="number"], select {
+  padding:.4rem .7rem; border:1px solid var(--border); border-radius:3px;
+  font-family:'JetBrains Mono',monospace; font-size:.85rem;
+  width:100px; background:#fff; color:var(--text); transition:border-color .2s;
+}
+select { width:120px; }
+input[type="number"]:focus, select:focus {
+  outline:none; border-color:var(--gold); box-shadow:0 0 0 3px rgba(201,149,42,.12);
+}
+input[type="number"]:disabled { background:var(--cream-dark); color:var(--text-muted); cursor:not-allowed; border-color:transparent; }
+.matrix-table input { width:70px; text-align:center; }
+
+/* === ACCORDÉONS === */
+details { border:1px solid var(--border); border-radius:4px; background:#fff; margin-top:1.5rem; }
+summary {
+  cursor:pointer; padding:.8rem 1.2rem; font-weight:600; color:var(--navy);
+  background:var(--cream-dark); list-style:none; border-radius:4px;
+  font-size:.92rem; transition:background .2s;
+}
+summary:hover { background:var(--cream); }
+summary::-webkit-details-marker { display:none; }
+details[open] summary { border-bottom:1px solid var(--border); border-radius:4px 4px 0 0; }
+.details-body { padding:1.4rem; background:#fff; overflow-x:auto; font-size:.9rem; }
+
+/* === RÉSULTATS === */
+#results, #monthly_results, #daily_results, #interval_results {
+  margin-top:1.5rem; padding-top:1.2rem; border-top:1px solid var(--border);
+}
+
+@media print {
+  body { background:#fff; }
+  header .tabs, .lang-switch, button { display:none !important; }
+  .card { box-shadow:none; border:1px solid var(--border); }
+  details { border:1px solid var(--border); }
+  details > .details-body { display:block !important; }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-top">
+    <div class="header-badge" data-k="k-badge">FINANCE QUANTITATIVE</div>
+    <div class="lang-switch">
+      <button type="button" class="flag-btn active" id="flag-fr" onclick="setLang('fr')" title="Français" aria-label="Français"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="20" height="40" fill="#002654"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ED2939"/></svg></button>
+      <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
+    </div>
+  </div>
+  <h1 data-k="k-h1">Analyseur de risques en finance quantitative</h1>
+  <p class="subtitle" data-k="k-sub">© Thomas Hossen — Version du 28 avril 2026</p>
+  <div class="tabs">
+    <div class="tab active" onclick="showTab(1)" data-k="k-tab1">Stratégies</div>
+    <div class="tab" onclick="showTab(2)" data-k="k-tab2">Mensuel</div>
+    <div class="tab" onclick="showTab(3)" data-k="k-tab3">Journalier</div>
+    <div class="tab" onclick="showTab(4)" data-k="k-tab4">Intervalle</div>
+  </div>
+</div>
+</header>
+
+<div class="container">
+
+<div id="tab1" class="tabcontent">
+  <div class="card">
+    <h2 data-k="k-t1-h2">Définition des stratégies</h2>
+    <div id="strategies"></div>
+    <div style="margin-top:10px; margin-bottom: 30px;">
+      <button onclick="addStrategy()"><span data-k="k-t1-add">+ Ajouter stratégie</span></button>
+    </div>
+
+    <h3 data-k="k-t1-h3">Matrice de corrélation</h3>
+    <div id="matrix"></div>
+
+    <div style="margin-top:20px;">
+      <button onclick="compute()" style="background: var(--hf-gold); color: white;"><span data-k="k-t1-run">Lancer le calcul du portefeuille</span></button>
+    </div>
+
+    <div id="results"></div>
+
+    <details>
+      <summary data-k="k-t1-sum">Détail complet des calculs mathématiques</summary>
+      <div class="details-body" id="details"></div>
+    </details>
+  </div>
+</div>
+
+<div id="tab2" class="tabcontent" style="display:none;">
+  <div class="card">
+    <h2 data-k="k-t2-h2">Mensualisation des stratégies</h2>
+    <button onclick="computeMonthly()" style="background: var(--hf-gold);"><span data-k="k-t2-run">Calculer l'horizon mensuel</span></button>
+    <div id="monthly_results"></div>
+    <details>
+      <summary data-k="k-t2-sum">Détail des calculs</summary>
+      <div class="details-body" id="monthly_details"></div>
+    </details>
+  </div>
+</div>
+
+<div id="tab3" class="tabcontent" style="display:none;">
+  <div class="card">
+    <h2 data-k="k-t3-h2">Risque journalier</h2>
+    <button onclick="computeDaily()" style="background: var(--hf-gold);"><span data-k="k-t3-run">Calculer l'horizon journalier</span></button>
+    <div id="daily_results"></div>
+    <details>
+      <summary data-k="k-t3-sum">Détail des calculs</summary>
+      <div class="details-body" id="daily_details"></div>
+    </details>
+  </div>
+</div>
+
+<div id="tab4" class="tabcontent" style="display:none">
+  <div class="card">
+    <h2 data-k="k-t4-h2">Intervalle de confiance du ratio de Sharpe</h2>
+    <p data-k="k-t4-p">Cet outil calcule l'intervalle de confiance asymptotique du ratio de Sharpe annualisé en utilisant la méthode delta sur les rendements journaliers.</p>
+    
+    <table class="premium-table" style="width: auto;">
+      <tbody>
+        <tr>
+          <td data-k="k-t4-l1"><strong>Sharpe annuel estimé (\(\widehat{S}\))</strong></td>
+          <td>
+            <input type="number" id="interval_sharpe" step="0.1" value="1.5">
+          </td>
+        </tr>
+        <tr>
+          <td data-k="k-t4-l2"><strong>Nombre de jours d'observations (\(T\))</strong></td>
+          <td>
+            <input type="number" id="interval_T" step="1" value="252">
+          </td>
+        </tr>
+        <tr>
+          <td data-k="k-t4-l3"><strong>Niveau de confiance attendu</strong></td>
+          <td>
+            <select id="interval_conf">
+              <option value="90">90 %</option>
+              <option value="95" selected>95 %</option>
+              <option value="99">99 %</option>
+            </select>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div style="margin-top:20px;">
+      <button onclick="computeInterval()" style="background: var(--hf-gold); color: white;"><span data-k="k-t4-run">Calculer l'intervalle</span></button>
+    </div>
+
+    <div id="interval_results"></div>
+
+    <details>
+      <summary data-k="k-t4-sum">Détail de la méthode delta</summary>
+      <div class="details-body" id="interval_details"></div>
+    </details>
+  </div>
+</div>
+
+</div>
+
+<script>
+/* ============================================================
+   DICTIONNAIRE BILINGUE  /  BILINGUAL DICTIONARY
+   UI  : libellés fixes de la page
+   TXT : textes du moteur, appelés par la fonction _L(i)
+   ============================================================ */
+const UI = {
+  fr: {
+    "k-badge": "FINANCE QUANTITATIVE",
+    "k-h1": "Analyseur de risques en finance quantitative",
+    "k-sub": "© Thomas Hossen — Version du 28 avril 2026",
+    "k-tab1": "Stratégies",
+    "k-tab2": "Mensuel",
+    "k-tab3": "Journalier",
+    "k-tab4": "Intervalle",
+    "k-t1-h2": "Définition des stratégies",
+    "k-t1-add": "+ Ajouter stratégie",
+    "k-t1-h3": "Matrice de corrélation",
+    "k-t1-run": "Lancer le calcul du portefeuille",
+    "k-t1-sum": "Détail complet des calculs mathématiques",
+    "k-t2-h2": "Mensualisation des stratégies",
+    "k-t2-run": "Calculer l'horizon mensuel",
+    "k-t2-sum": "Détail des calculs",
+    "k-t3-h2": "Risque journalier",
+    "k-t3-run": "Calculer l'horizon journalier",
+    "k-t3-sum": "Détail des calculs",
+    "k-t4-h2": "Intervalle de confiance du ratio de Sharpe",
+    "k-t4-p": "Cet outil calcule l'intervalle de confiance asymptotique du ratio de Sharpe annualisé en utilisant la méthode delta sur les rendements journaliers.",
+    "k-t4-l1": "<strong>Sharpe annuel estimé (\\(\\widehat{S}\\))</strong>",
+    "k-t4-l2": "<strong>Nombre de jours d'observations (\\(T\\))</strong>",
+    "k-t4-l3": "<strong>Niveau de confiance attendu</strong>",
+    "k-t4-run": "Calculer l'intervalle",
+    "k-t4-sum": "Détail de la méthode delta",
+    "k-title": "Analyseur de risque",
+  },
+  en: {
+    "k-badge": "QUANTITATIVE FINANCE",
+    "k-h1": "Risk Analyser in Quantitative Finance",
+    "k-sub": "© Thomas Hossen — Version of April 28, 2026",
+    "k-tab1": "Strategies",
+    "k-tab2": "Monthly",
+    "k-tab3": "Daily",
+    "k-tab4": "Interval",
+    "k-t1-h2": "Strategy Definition",
+    "k-t1-add": "+ Add strategy",
+    "k-t1-h3": "Correlation Matrix",
+    "k-t1-run": "Run portfolio computation",
+    "k-t1-sum": "Full mathematical computation details",
+    "k-t2-h2": "Monthly Breakdown of Strategies",
+    "k-t2-run": "Compute monthly horizon",
+    "k-t2-sum": "Computation details",
+    "k-t3-h2": "Daily Risk",
+    "k-t3-run": "Compute daily horizon",
+    "k-t3-sum": "Computation details",
+    "k-t4-h2": "Confidence Interval for the Sharpe Ratio",
+    "k-t4-p": "This tool computes the asymptotic confidence interval for the annualised Sharpe ratio using the delta method applied to daily returns.",
+    "k-t4-l1": "<strong>Estimated annual Sharpe ratio (\\(\\widehat{S}\\))</strong>",
+    "k-t4-l2": "<strong>Number of observation days (\\(T\\))</strong>",
+    "k-t4-l3": "<strong>Desired confidence level</strong>",
+    "k-t4-run": "Compute the interval",
+    "k-t4-sum": "Delta method details",
+    "k-title": "Risk Analyser",
+  },
+};
+
+const TXT = {
+  fr: [
+    "Erreur MathJax: ",
+    "Vous devez conserver au moins une stratégie.",
+    "        <th>Stratégie</th>",
+    "        <th>Espérance (μ)</th>",
+    "        <th>Volatilité (σ)</th>",
+    "        <th>Pondération (w)</th>",
+    "      <td><strong>Stratégie ",
+    "          <span>% / an</span>",
+    "          <span>% / an</span>",
+    ")\" title=\"Supprimer cette stratégie\">🗑️</button>",
+    "La somme des pondérations dépasse 100 %",
+    "<thead><tr><th>Corrélation</th>",
+    "<td><strong>Stratégie ",
+    "  <h3>Résultats du portefeuille</h3>",
+    "    <p style=\"margin:0; font-size:1.1rem;\">— <strong>Rendement espéré :</strong> <span style=\"color:var(--hf-gold); font-weight:bold;\">",
+    "    <p style=\"margin:8px 0 0 0; font-size:1.1rem;\">— <strong>Volatilité annuelle :</strong> <span style=\"font-weight:bold;\">",
+    "    <p style=\"margin:8px 0 0 0; font-size:1.1rem;\">— <strong>Probabilité d'année négative :</strong> <span style=\"color:#ef4444; font-weight:bold;\">",
+    "On considère un portefeuille \\(P\\) défini comme une combinaison linéaire de ",
+    " stratégies de trading, pondérées par des coefficients \\(w_i\\) tels que \\(\\sum_{i=1}^{",
+    "} w_i = 1\\). Chaque stratégie \\(A_i\\) est caractérisée par une espérance de rendement \\(\\mu_i\\) et une volatilité \\(\\sigma_i := \\sqrt{\\mathbf{Var}(A_i)}\\). On suppose que le vecteur des rendements suit une loi normale multivariée.",
+    "  <h4>1. Calcul de l'espérance du portefeuille</h4>",
+    "  Par linéarité de l'espérance, le rendement du portefeuille s'écrit :",
+    "  En utilisant la linéarité de l'espérance, on obtient :",
+    "  L'espérance de rendement annuel du portefeuille vérifie donc :",
+    "  <h4>2. Calcul de la variance du portefeuille</h4>",
+    "  La variance du portefeuille s'écrit \\(\\mathbf{Var}(P) = \\mathbf{Var}\\left( \\sum_{i=1}^{",
+    "} w_i A_i \\right)\\). En utilisant la bilinéarité de la variance, on obtient :",
+    "  Or, par définition de la covariance, on a \\(\\mathbf{Cov}(A_i, A_j) = \\sigma_i \\sigma_j \\rho_{ij}\\). On en déduit :",
+    "  La variance du rendement annuel du portefeuille vérifie ainsi :",
+    "  <h4>3. Probabilité que le portefeuille termine l'année dans le rouge</h4>",
+    "  Sous l'hypothèse que les rendements suivent une loi normale, le portefeuille suit également une loi normale, c'est-à-dire \\(",
+    "  P \\sim \\mathcal{N}(\\mu_P, \\sigma_P^2)\\). On cherche la probabilité \\(\\mathbb{P}(P < 0)\\). En centrant et réduisant, on obtient :",
+    "  Ce qui donne, en notant \\(\\Phi\\) la fonction de répartition d'une loi normale centrée réduite :",
+    "<h4>4. Probabilité que chaque stratégie termine l'année dans le rouge</h4>",
+    "<p>On s'intéresse désormais au comportement individuel de chaque stratégie. On suppose que chaque rendement \\(A_i\\) suit une loi normale, c'est-à-dire \\(A_i \\sim \\mathcal{N}(\\mu_i, \\sigma_i^2)\\). On cherche à calculer, pour chaque stratégie, la probabilité qu'elle termine l'année avec une performance négative, c'est-à-dire \\(\\mathbb{P}(A_i < 0)\\). En centrant et réduisant, on obtient :",
+    "On applique maintenant cette formule à chacune des stratégies.",
+    "<th>Stratégie</th>",
+    "<th>Rendement (%/an)</th>",
+    "<th>Volatilité (%/an)</th>",
+    "<th>Probabilité année négative</th>",
+    "  <td>Stratégie ",
+    "On observe que, prises individuellement, les stratégies présentent une probabilité de perte significativement plus élevée que celle du portefeuille agrégé. Ce phénomène illustre l'effet de diversification : en combinant plusieurs sources de rendement imparfaitement corrélées, il est possible de réduire le risque global sans dégrader l'espérance de performance.",
+    "    <h3>Résultats mensuels</h3>",
+    "      On travaille ici à l’échelle d’un mois. Le portefeuille est supposé résulter de l’agrégation pondérée des stratégies,",
+    "      et les corrélations entre stratégies sont conservées lors du passage de l’horizon annuel à l’horizon mensuel.",
+    "      Autrement dit, on ne mensualise pas chaque stratégie indépendamment du reste :",
+    "      on transmet au contraire la structure de covariance du portefeuille à la fréquence mensuelle.",
+    "      <p style=\"margin:0; font-size:1.1rem;\">— <strong>Espérance mensuelle du portefeuille :</strong> <span style=\"font-weight:bold; color:var(--hf-gold)\">",
+    "      <p style=\"margin:8px 0 0 0; font-size:1.1rem;\">— <strong>Volatilité mensuelle du portefeuille :</strong> <span style=\"font-weight:bold;\">",
+    "      <p style=\"margin:8px 0 0 0; font-size:1.1rem;\">— <strong>Probabilité qu’un mois quelconque soit négatif :</strong> <span style=\"color:#ef4444; font-weight:bold;\">",
+    "      <p style=\"margin:8px 0 0 0; font-size:1.1rem;\">— <strong>Probabilité d’avoir au moins un mois rouge dans l’année :</strong> <span style=\"font-weight:bold;\">",
+    "      Sous l’hypothèse d’indépendance des mois, le nombre de mois rouges au cours d’une année suit une loi binomiale",
+    "      de paramètres 12 et <em>p</em>. On en déduit notamment :",
+    "      <br>— <strong>Nombre moyen de mois rouges :</strong> ",
+    "      <br>— <strong>Variance du nombre de mois rouges :</strong> ",
+    "      <br>— <strong>Écart-type du nombre de mois rouges :</strong> ",
+    "      <br>— <strong>Probabilité de n’avoir aucun mois rouge :</strong> ",
+    "<h4>Nombre de mois rouges sur l’année</h4>",
+    "      Le tableau suivant donne, pour chaque valeur de X entre 1 et 12,",
+    "      la probabilité exacte que l’année contienne exactement X mois négatifs.",
+    "      Il s’agit donc d’une loi de probabilité discrète complète, hors cas X = 0 déjà commenté ci-dessus.",
+    "      <th>Probabilité d'observer exactement X mois rouges</th>",
+    "    <label for=\"monthly_count_x\"><strong>Sélectionner X pour le détail du calcul :</strong></label>",
+    "        Détail du calcul pour X = 1",
+    "<h4 style=\"margin-top:30px;\">Nombre de mois rouges consécutifs dans l'année</h4>",
+    "      Le tableau suivant ne donne pas une approximation locale du type <em>p<sup>X</sup></em>,",
+    "      mais la probabilité plus pertinente qu’il existe, au cours des 12 mois de l’année,",
+    "      au moins une séquence de X mois rouges consécutifs ou plus.",
+    "      Cette quantité est calculée exactement par récurrence dynamique sous l’hypothèse d’indépendance des mois.",
+    "      <th>Probabilité d’observer au moins X mois rouges consécutifs</th>",
+    "    <label for=\"monthly_run_x\"><strong>Sélectionner X pour le détail du calcul :</strong></label>",
+    "        Détail du calcul pour X = 1",
+    "Détail du calcul pour X = ",
+    "Détail du calcul pour X = ",
+    "Détail du calcul pour X = ",
+    "Détail du calcul pour X = ",
+    "      On souhaite désormais étudier la trajectoire intra-annuelle du portefeuille.",
+    "      La question n’est plus seulement de savoir si la performance agrégée sur douze mois sera positive ou négative,",
+    "      mais de comprendre à quoi peut ressembler le chemin suivi pendant l’année.",
+    "      C’est un point central dans un contexte de recrutement : une stratégie acceptable en niveau annuel",
+    "      peut rester difficilement tolérable si elle impose de traverser des séries répétées de mois rouges.",
+    "    <h4>1. Hypothèses retenues</h4>",
+    "      On suppose que les rendements mensuels sont stationnaires, de même loi d’un mois sur l’autre,",
+    "      et indépendants dans le temps.",
+    "      Cette hypothèse est simplificatrice : elle permet d’obtenir des ordres de grandeur propres et interprétables,",
+    "      tout en gardant à l’esprit qu’en pratique les rendements peuvent présenter de l’autocorrélation,",
+    "      des effets de volatilité conditionnelle, ou des ruptures de régime.",
+    "      En revanche, les corrélations entre stratégies sont bien prises en compte dans la construction",
+    "      de la variance mensuelle du portefeuille.",
+    "      Autrement dit, l’indépendance supposée concerne les mois successifs, et non les stratégies entre elles.",
+    "<h4>2. Passage de l’annuel au mensuel</h4>",
+    "  On cherche maintenant à décrire le portefeuille à l’échelle d’un mois.",
+    "  Pour cela, on note \\(R_{P,1}, \\dots, R_{P,12}\\) les rendements mensuels successifs du portefeuille,",
+    "  et \\(R_{P,a}\\) son rendement agrégé sur l’année.",
+    "  Sous l’hypothèse simplificatrice d’indépendance des mois et d’homogénéité de leur distribution,",
+    "  on écrit",
+    "  L’indépendance des mois intervient surtout dans le calcul de la variance.",
+    "  En effet, si les rendements mensuels sont indépendants, alors les covariances intertemporelles sont nulles,",
+    "  ce qui permet d’additionner les variances mois par mois.",
+    "  En revanche, les corrélations entre stratégies à l’intérieur d’un même mois sont bien conservées.",
+    "  Si tous les mois ont même espérance \\(\\mu_{P,m}\\), alors par linéarité de l’espérance :",
+    "  On en déduit immédiatement",
+    "  Pour la variance, on part de ",
+    "\\mathbf{Var}(R_{P,a}) = \\mathbf{Var}(R_{P,1} + \\cdots + R_{P,12}).",
+    "  Sous indépendance des mois, tous les termes de covariance entre deux mois distincts sont nuls,",
+    "  c’est-à-dire \\(\\mathbf{Cov}(R_{P,s},R_{P,t}) = 0\\) pour \\(s \\neq t\\).",
+    "  Par conséquent :",
+    "  D’où la relation \\(",
+    "  Numériquement, cela revient ici à passer :",
+    "  Plus précisément, pour chaque stratégie \\(i\\), on applique le même principe :",
+    "\\mu_{i,m} = \\frac{\\mu_i}{12}\\) et \\(",
+    "  Le rendement mensuel du portefeuille, en tant que combinaison linéaire des stratégies pondérées,",
+    "  s’écrit alors :",
+    "On obtient donc :",
+    "  La variance mensuelle du portefeuille n’est pas la simple somme des variances pondérées.",
+    "  Elle incorpore également tous les termes croisés de covariance,",
+    "  donc toute la structure de corrélation transversale entre stratégies.",
+    "  C’est cette étape qui permet de préserver l’effet de diversification au passage à l’horizon mensuel. ",
+    "  Or, par définition de la covariance en fonction de la corrélation, on a ",
+    "  Ainsi :",
+    "  On obtient donc :",
+    "  En prenant la racine carrée, on retrouve la volatilité mensuelle du portefeuille, soit ",
+    "    <h4>3. Probabilité qu’un mois soit négatif</h4>",
+    "      Sous l’hypothèse de normalité, le rendement mensuel du portefeuille suit une loi",
+    "      \\(\\mathcal{N}(\\mu_{P,m},\\sigma_{P,m}^2)\\).",
+    "      On cherche donc ",
+    "      En centrant puis en réduisant la variable aléatoire, on obtient :",
+    "      <p>On obtient ainsi :",
+    "      Cette quantité est la probabilité qu’un mois quelconque, pris isolément, soit perdant.",
+    "      Elle ne dit pas encore combien de mois rouges seront observés sur l’année ;",
+    "      elle fournit seulement la probabilité élémentaire d’un “succès” dans une modélisation de type Bernoulli,",
+    "      où l’on code “mois rouge” par 1 et “mois non rouge” par 0.",
+    "    <h4>4. Probabilité d’avoir au moins un mois rouge dans l’année</h4>",
+    "      Si chaque mois est rouge avec probabilité \\(p\\), et si les douze mois sont supposés indépendants,",
+    "      alors la seule manière de n’avoir aucun mois rouge consiste à obtenir douze mois successivement non négatifs.",
+    "      Cette probabilité vaut \\((1-p)^{12}\\).",
+    "    \\mathbb{P}(\\text{aucun mois rouge})",
+    "      On en déduit par complémentation :",
+    "    \\mathbb{P}(\\text{au moins un mois rouge})",
+    "      Ce résultat est souvent contre-intuitif.",
+    "      Une stratégie peut avoir une probabilité annuelle très faible de finir négative,",
+    "      tout en ayant une probabilité très élevée de connaître au moins un passage mensuel difficile.",
+    "      Il ne faut donc jamais confondre “faible risque de perte annuelle” et “parcours mensuel confortable”.",
+    "    <h4>5. Distribution du nombre de mois rouges</h4>",
+    "      Si l’on note \\(X\\) le nombre de mois rouges observés sur les douze mois de l’année,",
+    "      alors, sous l’hypothèse d’indépendance temporelle, on a ",
+    "      La probabilité d’obtenir exactement \\(k\\) mois rouges est donc :",
+    "      En particulier, l’espérance et la variance de \\(X\\) valent :",
+    "      Autrement dit, même lorsqu’une stratégie est structurellement rentable,",
+    "      il est parfaitement normal d’observer plusieurs mois rouges par an.",
+    "      Le bon benchmark n’est donc pas “éviter tout mois négatif”, mais vérifier si la fréquence observée",
+    "      reste cohérente avec la distribution théorique du portefeuille.",
+    "    <h4>6. Séquences de mois rouges consécutifs</h4>",
+    "      On s’intéresse maintenant à un évènement plus exigeant :",
+    "      non pas seulement le nombre total de mois rouges,",
+    "      mais l’existence d’une suite ininterrompue de mois négatifs.",
+    "      Cet indicateur est plus proche de la douleur effectivement ressentie par un risk manager ou un recruteur,",
+    "      car des pertes regroupées dans le temps sont souvent plus difficiles à tolérer que des pertes dispersées.",
+    "      Pour un entier \\(x \\in \\{1,\\dots,12\\}\\), notons \\(A_x\\) l’évènement :",
+    "      “il existe au moins une séquence de \\(x\\) mois rouges consécutifs au cours de l’année”.",
+    "      Contrairement à la loi binomiale, il n’existe pas ici de formule fermée élémentaire aussi simple.",
+    "      La bonne démarche consiste à raisonner par récurrence sur l’état courant de la séquence.",
+    "      On définit \\(q_t(r)\\) comme la probabilité qu’après \\(t\\) mois aucune séquence de longueur \\(x\\) n’ait encore été observée, sachant la série courante de mois rouges en fin de période exactement de longueur \\(r\\), avec \\(r \\in \\{0,1,\\dots,x-1\\}\\). ",
+    "      Les transitions vérifient alors :",
+    "      avec condition initiale \\(q_0(0)=1\\) et \\(q_0(r)=0\\) pour \\(r\\geq 1\\).",
+    "      La probabilité de ne jamais voir apparaître de séquence de longueur \\(x\\) au bout de 12 mois vaut alors",
+    "      et la probabilité cherchée est obtenue par complément :",
+    "      Les valeurs affichées dans le tableau des séries consécutives sont précisément calculées de cette manière.",
+    "      Elles sont donc plus rigoureuses qu’une approximation du type \\(p^x\\),",
+    "      laquelle ne mesure que la probabilité qu’une fenêtre donnée de \\(x\\) mois soit entièrement rouge,",
+    "      sans tenir compte du nombre de fenêtres possibles ni de leurs recouvrements.",
+    "        On note \\(X\\) le nombre total de mois rouges observés sur l’année.",
+    "        Sous l’hypothèse d’indépendance mensuelle, on a \\(X \\sim \\mathcal{B}(12,p)\\) et la probabilité d’avoir <strong>exactement ",
+    " mois rouges</strong> est alors donnée par :",
+    "        Le coefficient combinatoire \\(\\binom{12}{",
+    "}\\) compte le nombre de manières",
+    "        de placer ",
+    " mois rouges parmi les 12 mois de l’année, sans imposer d’ordre particulier. On a \\(\\binom{12}{",
+    ".\\) Numériquement, on obtient :",
+    "        À titre complémentaire, si l’on voulait non plus la probabilité d’avoir exactement ",
+    " mois rouges,",
+    "        mais la probabilité d’en avoir <strong>au moins ",
+    "        il faudrait sommer toutes les masses de probabilité à partir de ",
+    " :",
+    "        Cette distinction entre “exactement ",
+    "” et “au moins ",
+    "” est importante :",
+    "        la première décrit une fréquence précise, la seconde mesure un risque cumulé de dégradation.",
+    "        On note \\(A_",
+    "\\) l’évènement :",
+    "        <strong>“il existe au moins une séquence de ",
+    " mois rouges consécutifs au cours de l’année”</strong>.",
+    "        On ne cherche donc pas ici le nombre total de mois rouges,",
+    "        mais l’apparition d’un bloc de pertes contiguës.",
+    "        Cet évènement est plus subtil qu’un simple calcul binomial,",
+    "        car plusieurs séquences possibles peuvent se chevaucher.",
+    "        Par exemple, une année contenant 4 mois rouges d’affilée contient aussi une séquence de 2 mois rouges consécutifs,",
+    "        et plusieurs fenêtres temporelles se recoupent.",
+    "        Il ne faut donc pas raisonner par simple comptage indépendant des fenêtres.",
+    "        Le calcul exact est effectué par programmation dynamique.",
+    "        Pour chaque mois \\(t\\), on suit la longueur \\(r\\) de la série de mois rouges actuellement en cours,",
+    "        sous la contrainte qu’aucune séquence de longueur ",
+    " n’ait encore été observée.",
+    "        Les états possibles sont \\(r \\in \\{0,\\dots,",
+    "        À la fin des 12 mois, la probabilité de n’avoir observé aucune séquence de longueur ",
+    "        est la somme des probabilités de tous les états admissibles.",
+    "        La probabilité cherchée s’obtient ensuite par complément :",
+    "        Pour situer l’ordre de grandeur, une approximation naïve consisterait à écrire",
+    "}\\), c’est-à-dire la probabilité qu’une fenêtre donnée de ",
+    " mois soit entièrement rouge.",
+    "        Cela donnerait ",
+    "        Une autre approximation grossière serait de multiplier cette quantité par le nombre de fenêtres possibles,",
+    "        soit \\(13 - ",
+    "\\), ce qui conduirait à ",
+    "        Ces deux approximations peuvent être utiles pour l’intuition,",
+    "        mais elles ne sont pas exactes car elles négligent les recouvrements entre séquences possibles.",
+    "        La valeur affichée dans le tableau est donc la bonne quantité à retenir pour une lecture rigoureuse du risque de <em>streak</em>.",
+    "    <h3>Résultats journaliers</h3>",
+    "      On travaille ici à l’échelle d’un jour de trading. La construction est exactement parallèle à celle de l’onglet mensuel :",
+    "      on part d’abord du portefeuille mensuel, puis on suppose qu’un mois-type contient 21 jours de trading homogènes.",
+    "      Les corrélations entre stratégies restent prises en compte dans la variance du portefeuille, tandis que l’indépendance supposée concerne les jours successifs à l’intérieur du mois.",
+    "      <p style=\"margin:0; font-size:1.1rem;\">— <strong>Espérance journalière du portefeuille :</strong> <span style=\"font-weight:bold; color:var(--hf-gold)\">",
+    "      <p style=\"margin:8px 0 0 0; font-size:1.1rem;\">— <strong>Volatilité journalière du portefeuille :</strong> <span style=\"font-weight:bold;\">",
+    "      <p style=\"margin:8px 0 0 0; font-size:1.1rem;\">— <strong>Probabilité qu’un jour quelconque soit négatif :</strong> <span style=\"color:#ef4444; font-weight:bold;\">",
+    "      <p style=\"margin:8px 0 0 0; font-size:1.1rem;\">— <strong>Probabilité d’avoir au moins un jour rouge dans le mois :</strong> <span style=\"font-weight:bold;\">",
+    "      Sous l’hypothèse d’indépendance journalière, le nombre de jours rouges au cours d’un mois suit une loi binomiale",
+    "      de paramètres 21 et <em>p</em>. On en déduit notamment :",
+    "      <br>— <strong>Nombre moyen de jours rouges :</strong> ",
+    "      <br>— <strong>Variance du nombre de jours rouges :</strong> ",
+    "      <br>— <strong>Écart-type du nombre de jours rouges :</strong> ",
+    "      <br>— <strong>Probabilité de n’avoir aucun jour rouge :</strong> ",
+    "<h4>Nombre de jours rouges dans le mois</h4>",
+    "      Le tableau suivant donne, pour chaque valeur de X entre 1 et 21,",
+    "      la probabilité exacte que le mois contienne exactement X jours négatifs.",
+    "      Il s’agit donc d’une loi de probabilité discrète complète, hors cas X = 0 déjà commenté ci-dessus.",
+    "      <th>Probabilité d'observer exactement X jours rouges</th>",
+    "      <label for=\"daily_count_x\"><strong>Sélectionner X pour le détail du calcul :</strong></label>",
+    "          Détail du calcul pour X = 1",
+    "<h4 style=\"margin-top:30px;\">Nombre de jours rouges consécutifs dans le mois</h4>",
+    "      Le tableau suivant ne donne pas une approximation locale du type <em>p<sup>X</sup></em>,",
+    "      mais la probabilité plus pertinente qu’il existe, au cours des 21 jours de trading du mois,",
+    "      au moins une séquence de X jours rouges consécutifs ou plus.",
+    "      Cette quantité est calculée exactement par récurrence dynamique sous l’hypothèse d’indépendance des jours.",
+    "      <th>Probabilité d’observer au moins X jours rouges consécutifs</th>",
+    "      <label for=\"daily_run_x\"><strong>Sélectionner X pour le détail du calcul :</strong></label>",
+    "          Détail du calcul pour X = 1",
+    "Détail du calcul pour X = ",
+    "Détail du calcul pour X = ",
+    "Détail du calcul pour X = ",
+    "Détail du calcul pour X = ",
+    "      On souhaite maintenant zoomer à l’intérieur d’un mois type.",
+    "      La question n’est plus seulement de savoir combien de mois rouges peut connaître le portefeuille,",
+    "      mais d’évaluer la fréquence et la persistance potentielles des jours de perte.",
+    "      Dans un contexte de recrutement, ce niveau d’analyse est particulièrement utile car il renseigne sur la tolérabilité opérationnelle du profil de PnL.",
+    "    <h4>1. Hypothèses retenues</h4>",
+    "      On suppose qu’un mois de trading standard comporte 21 jours ouvrés exploitables.",
+    "      Les rendements journaliers sont supposés stationnaires, de même loi d’un jour à l’autre, et indépendants dans le temps à l’intérieur du mois.",
+    "      Cette hypothèse est simplificatrice, mais elle fournit une base propre pour quantifier le risque quotidien.",
+    "      Comme précédemment, l’indépendance temporelle porte sur les jours successifs, tandis que les corrélations entre stratégies restent intégralement prises en compte dans la construction de la variance du portefeuille.",
+    "    <h4>2. Passage du mensuel au journalier</h4>",
+    "      On note \\(R_{P,1}, \\dots, R_{P,21}\\) les rendements journaliers successifs du portefeuille sur un mois type,",
+    "      et \\(R_{P,m}\\) le rendement mensuel agrégé.",
+    "      Sous l’hypothèse d’indépendance des jours et d’homogénéité de leur distribution, on écrit",
+    "      L’indépendance journalière permet alors d’additionner les espérances et les variances, exactement comme dans le passage de l’annuel au mensuel.",
+    "      On en déduit immédiatement",
+    "      Pour la variance, on part de",
+    "      \\mathbf{Var}(R_{P,m}) = \\mathbf{Var}(R_{P,1} + \\cdots + R_{P,21}).",
+    "      Sous indépendance des jours, les covariances entre jours distincts sont nulles, d’où :",
+    "      Donc :",
+    "      Numériquement, cela revient ici à passer :",
+    "      Plus précisément, pour chaque stratégie \\(i\\), on applique le même principe :",
+    "      et",
+    "      Le rendement journalier du portefeuille, en tant que combinaison linéaire des stratégies pondérées, s’écrit alors :",
+    "      On obtient donc :",
+    "      La variance journalière du portefeuille incorpore, comme aux horizons supérieurs, tous les termes croisés de covariance.",
+    "      On ne perd donc pas l’effet de diversification en changeant d’horizon.",
+    "      Or",
+    "      Ainsi :",
+    "      On obtient donc :",
+    "      En prenant la racine carrée, on retrouve la volatilité journalière du portefeuille, soit",
+    "    <h4>3. Probabilité qu’un jour soit négatif</h4>",
+    "      Sous l’hypothèse de normalité, le rendement journalier du portefeuille suit une loi",
+    "      \\mathcal{N}(\\mu_{P,j},\\sigma_{P,j}^2).",
+    "On cherche donc",
+    "      En centrant puis en réduisant la variable aléatoire, on obtient :",
+    "      On obtient ainsi :",
+    "      Cette quantité est la probabilité qu’un jour de trading quelconque soit perdant.",
+    "      Elle constitue la probabilité élémentaire d’un “succès” dans une modélisation de type Bernoulli,",
+    "      où l’on code “jour rouge” par 1 et “jour non rouge” par 0.",
+    "    <h4>4. Probabilité d’avoir au moins un jour rouge dans le mois</h4>",
+    "      Si chaque jour est rouge avec probabilité \\(p\\), et si les 21 jours de trading du mois sont supposés indépendants,",
+    "      alors la seule manière de n’avoir aucun jour rouge consiste à obtenir 21 jours successivement non négatifs.",
+    "      Cette probabilité vaut \\((1-p)^{21}\\).",
+    "    \\mathbb{P}(\\text{aucun jour rouge})",
+    "      On en déduit par complémentation :",
+    "    \\mathbb{P}(\\text{au moins un jour rouge})",
+    "      Même lorsqu’un portefeuille présente une espérance journalière positive,",
+    "      il peut être extrêmement fréquent d’observer un ou plusieurs jours rouges dans le mois.",
+    "      Il faut donc distinguer soigneusement profitabilité moyenne et confort de trajectoire.",
+    "    <h4>5. Distribution du nombre de jours rouges</h4>",
+    "      Si l’on note \\(X\\) le nombre de jours rouges observés sur les 21 jours de trading du mois,",
+    "      alors, sous l’hypothèse d’indépendance temporelle, on a",
+    "      La probabilité d’obtenir exactement \\(k\\) jours rouges est donc :",
+    "      En particulier, l’espérance et la variance de \\(X\\) valent :",
+    "      Autrement dit, plusieurs jours rouges dans un mois peuvent être statistiquement normaux.",
+    "      Le bon point de comparaison n’est donc pas l’absence totale de pertes quotidiennes,",
+    "      mais la cohérence entre la fréquence observée et la distribution théorique implicite du portefeuille.",
+    "    <h4>6. Séquences de jours rouges consécutifs</h4>",
+    "      On s’intéresse maintenant à un évènement plus exigeant :",
+    "      non pas seulement le nombre total de jours rouges,",
+    "      mais l’existence d’une suite ininterrompue de jours négatifs.",
+    "      Pour un entier \\(x \\in \\{1,\\dots,21\\}\\), notons \\(A_x\\) l’évènement :",
+    "      “il existe au moins une séquence de \\(x\\) jours rouges consécutifs au cours du mois”.",
+    "      Comme pour les mois, il n’existe pas ici de formule fermée simple.",
+    "      Le calcul exact repose sur une récurrence dynamique sur la longueur de la série courante.",
+    "      avec condition initiale \\(q_0(0)=1\\) et \\(q_0(r)=0\\) pour \\(r\\geq 1\\).",
+    "      La probabilité de ne jamais observer de séquence de longueur \\(x\\) au bout de 21 jours vaut alors",
+    "      La probabilité cherchée est donc :",
+    "      Les valeurs affichées dans le tableau des séries consécutives sont calculées exactement de cette manière.",
+    "      Elles sont plus rigoureuses qu’une approximation locale du type \\(p^x\\),",
+    "      qui ne tient ni compte du nombre de fenêtres possibles, ni de leurs recouvrements.",
+    "        On note \\(X\\) le nombre total de jours rouges observés sur le mois.",
+    "        Sous l’hypothèse d’indépendance journalière, on a \\(X \\sim \\mathcal{B}(21,p)\\)",
+    "        et la probabilité d’avoir <strong>exactement ",
+    " jours rouges</strong> est donnée par :",
+    "        Le coefficient combinatoire \\(\\binom{21}{",
+    "}\\) compte le nombre de manières",
+    "        de placer ",
+    " jours rouges parmi les 21 jours de trading du mois, sans imposer d’ordre particulier.",
+    "        On a \\(\\binom{21}{",
+    "        Numériquement, on obtient :",
+    "        À titre complémentaire, si l’on voulait non plus la probabilité d’avoir exactement ",
+    " jours rouges,",
+    "        mais la probabilité d’en avoir <strong>au moins ",
+    "        il faudrait sommer toutes les masses de probabilité à partir de ",
+    " :",
+    "        Cette distinction entre “exactement ",
+    "” et “au moins ",
+    "” reste essentielle :",
+    "        la première décrit une fréquence précise, la seconde un risque cumulé de dégradation quotidienne.",
+    "        On note \\(A_",
+    "\\) l’évènement :",
+    "        <strong>“il existe au moins une séquence de ",
+    " jours rouges consécutifs au cours du mois”</strong>.",
+    "        On ne cherche donc pas ici le nombre total de jours rouges,",
+    "        mais l’apparition d’un bloc de pertes contiguës.",
+    "        Cet évènement est plus subtil qu’un simple calcul binomial,",
+    "        car plusieurs séquences possibles peuvent se chevaucher.",
+    "        Le calcul exact est effectué par programmation dynamique.",
+    "        Pour chaque jour \\(t\\), on suit la longueur \\(r\\) de la série de jours rouges actuellement en cours,",
+    "        sous la contrainte qu’aucune séquence de longueur ",
+    " n’ait encore été observée.",
+    "        Les états possibles sont \\(r \\in \\{0,\\dots,",
+    "        À la fin des 21 jours, la probabilité de n’avoir observé aucune séquence de longueur ",
+    "        est la somme des probabilités de tous les états admissibles.",
+    "        La probabilité cherchée s’obtient ensuite par complément :",
+    "        Pour fixer l’ordre de grandeur, une approximation naïve consisterait à écrire",
+    "}\\), soit la probabilité qu’une fenêtre donnée de ",
+    " jours soit entièrement rouge, c'est-à-dire ",
+    "        Une autre approximation grossière consisterait à multiplier cette quantité par le nombre de fenêtres possibles,",
+    "        soit \\(22 - ",
+    "\\), ce qui donnerait ",
+    "        Ces approximations peuvent aider l’intuition, mais elles ne sont pas exactes,",
+    "        car elles ignorent les recouvrements entre fenêtres.",
+    "    <h3>Résultat de l'intervalle</h3>",
+    "      <p style=\"margin:0; font-size:1.1rem;\">— <strong>Ratio de Sharpe estimé :</strong> <span style=\"font-weight:bold;\">",
+    "      <p style=\"margin:8px 0 0 0; font-size:1.1rem;\">— <strong>Intervalle de confiance asymptotique à ",
+    " % :</strong> <span style=\"color:var(--hf-gold); font-weight:bold;\">[ ",
+    "    <p>On dispose des \\(T\\) rendements journaliers \\(\\overline{P}_1, \\dots, \\overline{P}_T\\) supposés i.i.d. de loi \\(\\mathcal{N}(\\mu, \\sigma^2)\\) (hypothèse simplificatrice). On définit les estimateurs empiriques du rendement journalier et de la variance journalière :</p>",
+    "    \\[\\widehat{\\mu} := \\frac{1}{T}\\sum_{t=1}^{T} \\overline{P}_t \\qquad\\text{et}\\qquad",
+    "    <p>Le ratio de Sharpe journalier estimé vaut \\(\\widehat{S}_j := \\widehat{\\mu}\\big/\\sqrt{\\widehat{\\sigma^2}}\\), et le ratio de Sharpe annualisé est \\(\\widehat{S} := \\sqrt{252}\\,\\widehat{S}_j\\). On cherche à quantifier l'incertitude sur \\(\\widehat{S}\\) via la <strong>méthode delta</strong>. Posons \\(U_t := \\overline{P}_t - \\mu\\) et \\(V_t := \\left(\\overline{P}_t - {\\mu}\\right)^2 - \\sigma^2\\) pour tout entier \\(t\\) compris entre 1 et \\(T\\). Par le théorème de la limite centrée de Lindeberg-Lévy appliqué à la suite de vecteurs aléatoires \\(\\left(U_t\\quad V_t\\right)^T_{t\\in[\\![ 1,T ]\\!]}\\), on obtient la convergence en loi suivante :</p>",
+    "    <p>où l'on a posé \\(\\pmb{\\Sigma}\\) la matrice de variances-covariances du vecteur aléatoire \\((U_t\\quad V_t)^T\\). </p>",
+    "    <p>Travaillons la matrice \\(\\mathbf{Z}_T\\). On a :</p>",
+    "    <p>Or on a \\(\\overline{P}_t - \\mu = (\\overline{P}_t - \\widehat{\\mu})+ (\\widehat{\\mu}-\\mu)\\). Il vient donc : </p>",
+    "    &= \\underbrace{\\frac{1}{T}\\sum_{t=1}^{T}(\\overline{P}_t - \\widehat{\\mu})^2}_{=\\;\\widehat{\\sigma^2}}+ 2(\\widehat{\\mu}-\\mu)\\underbrace{\\frac{1}{T}\\sum_{t=1}^{T}(\\overline{P}_t - \\widehat{\\mu})}_{=\\;0 \\text{ par déf. de }\\widehat{\\mu}}+ (\\widehat{\\mu}-\\mu)^2\\\\",
+    "    <p>En réinjectant dans l'expression précédente, on obtient donc :</p>",
+    "    &=\\underbrace{\\sqrt{T}\\begin{pmatrix}\\widehat{\\mu} - \\mu\\\\\\widehat{\\sigma^2} - \\sigma^2\\end{pmatrix}}_{\\text{terme principal }\\mathbf{W}_T}+\\underbrace{\\begin{pmatrix} 0\\\\\\sqrt{T}\\,(\\widehat{\\mu}-\\mu)^2\\end{pmatrix}}_{\\text{terme résiduel }\\mathbf{R}_T}\\end{aligned}\\]",
+    "    <p>Puisque \\(\\sqrt{T}\\,(\\widehat{\\mu}-\\mu)^2\\) est positif, on peut lui appliquer directement l'<strong>inégalité de Markov</strong>: pour tout \\(\\varepsilon > 0\\), on a donc \\(\\mathbb{P}\\!\\left(\\left[\\sqrt{T}\\,(\\widehat{\\mu}-\\mu)^2> \\varepsilon\\right]\\right)\\leq \\frac{\\mathbb{E}\\left[\\sqrt{T}(\\widehat{\\mu}-\\mu)^2\\right]}{\\varepsilon}=\\frac{\\sqrt{T}\\mathbf{Var}(\\widehat{\\mu})}{\\varepsilon}\\). Or on a :</p>",
+    "    &= \\frac{1}{T^2}\\sum_{t=1}^T \\mathbf{Var}(\\overline{P}_t)\\quad\\text{car les } \\overline{P}_t \\text{ sont indépendants}\\\\",
+    "    &= \\frac{1}{T^2}\\times T\\mathbf{Var}(\\overline{P}_1)=\\frac{\\sigma^2}{T}\\quad\\text{car les } \\overline{P}_t \\text{ sont identiquement distribués}",
+    "    <p>On en déduit, pour tout \\(\\varepsilon>0\\), la relation \\(0\\leq \\mathbb{P}\\!\\left(\\left[\\sqrt{T}\\,(\\widehat{\\mu}-\\mu)^2> \\varepsilon\\right]\\right)\\leq \\frac{\\sqrt{T}}{\\varepsilon}\\times\\frac{\\sigma^2}{T}= \\frac{\\sigma^2}{\\varepsilon\\sqrt{T}}\\). Par encadrement, \\(\\sqrt{T}\\,(\\widehat{\\mu}-\\mu)^2\\) converge donc en probabilité vers 0 lorsque l'entier \\(T\\) tend vers \\(+\\infty\\). Ainsi, \\(\\mathbf{R}_T\\) converge en probabilité vers le vecteur nul. Sachant que \\(\\mathbf{Z}_T\\) converge en loi vers un vecteur normal de loi \\(\\mathcal{N}(\\mathbf{0},\\pmb{\\Sigma})\\), en vertu du théorème de Slutsky, il apparaît également que \\(\\mathbf{W}_T=\\mathbf{Z}_T-\\mathbf{R}_T\\) converge en loi vers un vecteur normal \\(\\mathcal{N}(\\mathbf{0},\\pmb{\\Sigma})\\). </p>",
+    "    <p>Par suite, calculons la matrice de variances-covariances \\(\\pmb{\\Sigma}\\). On a :</p>",
+    "    <p>On calcule chacun des trois termes. Tout d'abord, pour \\(\\mathbf{Var}(U_t)\\), on a :</p>",
+    "    &= \\mathbb{E}\\!\\left[(\\overline{P}_t - \\mu)^2\\right] - 0\\qquad \\text{car } \\mathbb{E}[U_t] = \\mathbb{E}[\\overline{P}_t] - \\mu = 0 \\\\",
+    "    <p>Puis, pour \\(\\mathbf{Var}(V_t)\\), en notant \\(\\mu_4\\) le kurtosis de \\(\\overline{P}_t\\), on trouve :</p>",
+    "    &= \\mathbb{E}\\!\\left[\\left((\\overline{P}_t - \\mu)^2 - \\sigma^2\\right)^2\\right]- 0\\qquad\\text{car } \\mathbb{E}[V_t]= \\mathbb{E}[(\\overline{P}_t{-}\\mu)^2] - \\sigma^2 =\\mathbf{Var}(\\overline{P}_t)-\\sigma^2= 0 \\\\",
+    "    <p>Enfin, pour \\(\\mathbf{Cov}(U_t, V_t)\\), en notant \\(\\mu_3\\) le coefficient d'asymétrie de \\(\\overline{P}_t\\), on trouve :</p>",
+    "    <p>Or, comme on a supposé que \\(\\overline{P}_t\\) suivait une loi normale \\(\\mathcal{N}(\\mu, \\sigma^2)\\), les moments centrés impairs sont nuls par symétrie et les moments centrés pairs vérifient \\(\\mathbb{E}[(X-\\mu)^{2k}] = (2k-1)\\times(2k-3)\\times\\cdots\\times 3\\times 1\\times\\sigma^{2k}\\) pour tout entier non nul \\(k\\). En particulier, on a donc \\(\\mu_3=0\\) et \\(\\mu_4=3\\sigma^4\\). La matrice \\(\\pmb{\\Sigma}\\) se simplifie donc en :</p>",
+    "    <p>Résumons, on a donc prouvé la convergence suivante :</p>",
+    "    \\[\\sqrt{T}\\begin{pmatrix}\\widehat{\\mu} - \\mu\\\\ \\widehat{\\sigma^2} - \\sigma^2\\end{pmatrix}\\xrightarrow[T\\to+\\infty]{\\;\\mathcal{L}\\;} \\mathcal{N}\\!\\left(\\mathbf{0},\\; \\pmb{\\Sigma}\\right)\\quad\\text{avec}\\quad\\pmb{\\Sigma}=\\begin{pmatrix}\\sigma^2 & 0 \\\\0 & 2\\sigma^4\\end{pmatrix}\\]",
+    "    <p>Par suite, le ratio de Sharpe (théorique) journalier s'écrit \\(S_j = g(\\mu,\\sigma^2)\\), tandis que le ratio de Sharpe (empirique) journalier vérifie \\(\\widehat{S}_j = g(\\widehat{\\mu},\\widehat{\\sigma^2})\\), avec \\(g: (\\mu,\\, \\sigma^2) \\mapsto \\frac{\\mu}{\\sqrt{\\sigma^2}}\\). La fonction \\(g\\) étant de classe \\(\\mathcal{C}^1\\) en tout point \\((\\mu, \\sigma^2)\\) avec \\(\\sigma > 0\\), on peut appliquer la méthode delta. Or le gradient de \\(g\\) vaut, pour tout point \\((\\mu, \\sigma^2)\\) avec \\(\\sigma > 0\\) :</p>",
+    "    <p>Si l'on pose \\(\\pmb{\\theta}:=(\\mu,\\sigma^2)\\) et \\(\\widehat{\\pmb{\\theta}}:=(\\widehat{\\mu},\\widehat{\\sigma^2})\\), sachant qu'on a \\(\\sqrt{T}(\\widehat{\\pmb{\\theta}} -\\pmb{\\theta})\\xrightarrow[T\\to+\\infty]{\\mathcal{L}}\\mathcal{N}(\\mathbf{0},\\pmb{\\Sigma})\\), on en déduit la convergence \\(\\sqrt{T}\\!\\left(g(\\widehat{\\pmb{\\theta}}) - g({\\pmb{\\theta}})\\right)=\\sqrt{T}\\!\\left(\\widehat{S}_j - S_j\\right)\\;\\xrightarrow[T\\to\\infty]{\\;\\mathcal{L}\\;}\\;\\mathcal{N}\\!\\left({0},\\;\\nabla g(\\mu,\\sigma^2)^T\\,\\pmb{\\Sigma}\\,\\nabla g(\\mu,\\sigma^2)\\right)\\). Or on a :</p>",
+    "    <p>Ainsi, on obtient la convergence \\(\\sqrt{T}\\!\\left(\\widehat{S}_j - S_j\\right)\\;\\xrightarrow[T\\to+\\infty]{\\;\\mathcal{L}\\;}\\;\\mathcal{N}\\!\\left(0,\\; 1 + \\frac{S_j^2}{2}\\right)\\). Passons du ratio de Sharpe journalier au ratio de Sharpe annuel. On a \\(\\widehat{S} = \\sqrt{252}\\,\\widehat{S}_j\\) et \\(S = \\sqrt{252}\\,S_j\\). On en déduit donc \\(\\sqrt{T}\\!\\left(\\widehat{S} - S\\right)= \\sqrt{252}{\\sqrt{T}\\!\\left(\\widehat{S}_j -S_j\\right)}\\). Comme \\(\\sqrt{252}\\) converge en probabilité vers la variable \\(\\lambda\\) constante égale à \\(\\sqrt{252}\\) et que \\({\\sqrt{T}\\!\\left(\\widehat{S}_j -S_j\\right)}\\) converge en probabilité vers la variable \\(U\\) de loi \\(\\mathcal{N}\\!\\left(0,\\; 1 + \\frac{S_j^2}{2}\\right)\\), en vertu du théorème de Slutsky, \\(\\sqrt{T}\\!\\left(\\widehat{S} - S\\right)\\) converge en loi vers \\(\\lambda U\\), c'est-à-dire une variable de loi normale d'espérance \\(0\\) et de variance \\(252\\mathbf{Var}(U)=252(1+{S_j^2}/{2})=252+S^2/2\\). On a ainsi établi la convergence \\(\\sqrt{T}\\!\\left(\\widehat{S} - S\\right)\\;\\xrightarrow[T\\to+\\infty]{\\;\\mathcal{L}\\;}\\;\\mathcal{N}\\!\\left(0,\\; V\\right)\\) avec \\(V := 252 + \\frac{S^2}{2}\\). En divisant par \\(\\sqrt{V}\\) (constante strictement positive), on obtient une statistique pivot de loi limite standard, à savoir \\(Z_T := \\frac{\\sqrt{T}\\left(\\widehat{S} - S\\right)}{\\sqrt{V}}\\;\\xrightarrow[T\\to+\\infty]{\\;\\mathcal{L}\\;}\\;\\mathcal{N}(0,1)\\).</p>",
+    "    <p>Montrons tout d'abord que \\(\\widehat{S}\\) converge en probabilité vers \\(S\\). En vertu de la loi faible des grands nombres, \\(\\widehat{\\mu}\\) converge en probabilité vers \\(\\mathbb{E}[\\overline{P}_t]=\\mu\\). Par suite, on rappelle la décomposition précédemment établie :</p>",
+    "    <p>D'une part, les variables \\((\\overline{P}_t - \\mu)^2\\) sont i.i.d. d'espérance \\(\\sigma^2\\) et de variance finie \\(\\mu_4 - \\sigma^4 < +\\infty\\); la loi faible des grands nombres donne alors :</p>",
+    "    <p>D'autre part, on a  \\((\\widehat{\\mu}-\\mu)^2 \\xrightarrow[T\\to+\\infty]{\\;\\mathbb{P}\\;} 0\\) car \\(\\widehat{\\mu} \\xrightarrow[T\\to+\\infty]{\\;\\mathbb{P}\\;} \\mu\\) et \\(x \\mapsto x^2\\) est continue. Par le <strong>théorème de Slutsky</strong> (stabilité des convergences en probabilité par somme), il vient :</p>",
+    "    <p>Par suite, la fonction \\((x,y) \\mapsto x/\\sqrt{y}\\) est continue sur \\(\\mathbb{R}\\times\\mathbb{R}_{+}^*\\), et on a \\(\\sigma=\\sqrt{\\sigma^2} > 0\\). Par continuité, on trouve donc \\(\\widehat{S}_j = \\frac{\\widehat{\\mu}}{\\sqrt{\\widehat{\\sigma^2}}}\\;\\xrightarrow[T\\to+\\infty]{\\;\\mathbb{P}\\;}\\; \\frac{\\mu}{\\sigma} = S_j\\). Par linéarité, il vient donc bien la convergence en probabilité cherchée : \\(\\widehat{S} = \\sqrt{252}\\,\\widehat{S}_j\\xrightarrow[T\\to+\\infty]{\\;\\mathbb{P}\\;} \\sqrt{252}\\,S_j = S\\).</p>",
+    "    <p>La variance \\(V = 252 + S^2/2\\) dépend du vrai paramètre \\(S\\), inconnu. On la remplace donc par l'estimateur \\(\\widehat{\\mathcal{V}} := 252 + \\frac{\\widehat{S}^2}{2}\\). Comme la fonction \\(h: x \\mapsto 252 + x^2/2\\) est continue, on trouve \\(\\widehat{\\mathcal{V}} = h(\\widehat{S})\\;\\xrightarrow[T\\to+\\infty]{\\;\\mathbb{P}\\;}\\;h(S) = V\\). Il vient alors \\(\\sqrt{\\widehat{\\mathcal{V}}} \\xrightarrow[T\\to+\\infty]{\\;\\mathbb{P}\\;} \\sqrt{V}\\) (par continuité de la racine carrée sur \\(\\mathbb{R}_{+}\\)) puis, par continuité de la fonction \\(x\\mapsto\\frac{\\sqrt{V}}{x}\\) sur \\(\\mathbb{R}_+^*\\), la convergence \\(\\frac{\\sqrt{V}}{\\sqrt{\\widehat{\\mathcal{V}}}}\\;\\xrightarrow[T\\to+\\infty]{\\;\\mathbb{P}\\;}\\; 1\\). Le <strong>théorème de Slutsky</strong> nous permet alors d'obtenir la convergence en loi suivante :</p>",
+    "    <p>On note alors \\(q_{",
+    "\\) le quantile d'ordre \\(",
+    "\\,\\%\\) de la loi \\(\\mathcal{N}(0,1)\\). On a donc, par définition de la convergence asymptotique en loi, \\(\\mathbb{P}\\!\\left(\\left[-",
+    "\\). Or on a :</p>",
+    "    <p>Ainsi, un <strong>intervalle de confiance asymptotique à ",
+    " %</strong> pour le ratio de Sharpe annuel est donné par :</p>",
+    "    \\[\\text{IC}_{",
+    "\\,\\sqrt{\\widehat{\\mathcal{V}}}}{\\sqrt{T}}\\right]\\quad\\text{avec}\\quad\\widehat{\\mathcal{V}} := 252 + \\frac{\\widehat{S}^2}{2}\\]"
+  ],
+  en: [
+    "MathJax error: ",
+    "You must keep at least one strategy.",
+    "        <th>Strategy</th>",
+    "        <th>Expected return (μ)</th>",
+    "        <th>Volatility (σ)</th>",
+    "        <th>Weight (w)</th>",
+    "      <td><strong>Strategy ",
+    "          <span>% / yr</span>",
+    "          <span>% / yr</span>",
+    ")\" title=\"Remove this strategy\">🗑️</button>",
+    "The sum of weights exceeds 100%",
+    "<thead><tr><th>Correlation</th>",
+    "<td><strong>Strategy ",
+    "  <h3>Portfolio Results</h3>",
+    "    <p style=\"margin:0; font-size:1.1rem;\">— <strong>Expected return:</strong> <span style=\"color:var(--hf-gold); font-weight:bold;\">",
+    "    <p style=\"margin:8px 0 0 0; font-size:1.1rem;\">— <strong>Annual volatility:</strong> <span style=\"font-weight:bold;\">",
+    "    <p style=\"margin:8px 0 0 0; font-size:1.1rem;\">— <strong>Probability of a negative year:</strong> <span style=\"color:#ef4444; font-weight:bold;\">",
+    "We consider a portfolio \\(P\\) defined as a linear combination of ",
+    " trading strategies, weighted by coefficients \\(w_i\\) such that \\(\\sum_{i=1}^{",
+    "} w_i = 1\\). Each strategy \\(A_i\\) is characterised by an expected return \\(\\mu_i\\) and a volatility \\(\\sigma_i := \\sqrt{\\mathbf{Var}(A_i)}\\). We assume that the return vector follows a multivariate normal distribution.",
+    "  <h4>1. Computing the portfolio expected return</h4>",
+    "  By linearity of expectation, the portfolio return is written:",
+    "  Applying linearity of expectation, we obtain:",
+    "  The annual expected return of the portfolio is therefore:",
+    "  <h4>2. Computing the portfolio variance</h4>",
+    "  The portfolio variance is written \\(\\mathbf{Var}(P) = \\mathbf{Var}\\left( \\sum_{i=1}^{",
+    "} w_i A_i \\right)\\). Using the bilinearity of variance, we obtain:",
+    "  By definition of covariance, \\(\\mathbf{Cov}(A_i, A_j) = \\sigma_i \\sigma_j \\rho_{ij}\\). We deduce:",
+    "  The annual variance of the portfolio return is thus:",
+    "  <h4>3. Probability that the portfolio ends the year in the red</h4>",
+    "  Under the normality assumption, the portfolio also follows a normal distribution, i.e. \\(",
+    "  P \\sim \\mathcal{N}(\\mu_P, \\sigma_P^2)\\). We seek the probability \\(\\mathbb{P}(P < 0)\\). Standardising, we obtain:",
+    "  Denoting by \\(\\Phi\\) the CDF of the standard normal distribution, this gives:",
+    "<h4>4. Probability that each strategy ends the year in the red</h4>",
+    "<p>We now examine the individual behaviour of each strategy. We assume that each return \\(A_i\\) follows a normal distribution, i.e. \\(A_i \\sim \\mathcal{N}(\\mu_i, \\sigma_i^2)\\). For each strategy, we compute the probability that it ends the year with a negative performance, i.e. \\(\\mathbb{P}(A_i < 0)\\). Standardising, we obtain:",
+    "We now apply this formula to each strategy.",
+    "<th>Strategy</th>",
+    "<th>Return (%/yr)</th>",
+    "<th>Volatility (%/yr)</th>",
+    "<th>Probability of a negative year</th>",
+    "  <td>Strategy ",
+    "We observe that, taken individually, the strategies exhibit a significantly higher probability of loss than the aggregated portfolio. This illustrates the diversification effect: by combining several imperfectly correlated return sources, it is possible to reduce overall risk without degrading the expected performance.",
+    "    <h3>Monthly Results</h3>",
+    "      We work here at the monthly scale. The portfolio is assumed to result from the weighted aggregation of strategies,",
+    "      and inter-strategy correlations are preserved when moving from the annual to the monthly horizon.",
+    "      In other words, we do not annualise each strategy independently:",
+    "      we transmit the covariance structure of the portfolio at the monthly frequency.",
+    "      <p style=\"margin:0; font-size:1.1rem;\">— <strong>Monthly expected return of the portfolio:</strong> <span style=\"font-weight:bold; color:var(--hf-gold)\">",
+    "      <p style=\"margin:8px 0 0 0; font-size:1.1rem;\">— <strong>Monthly volatility of the portfolio:</strong> <span style=\"font-weight:bold;\">",
+    "      <p style=\"margin:8px 0 0 0; font-size:1.1rem;\">— <strong>Probability that any given month is negative:</strong> <span style=\"color:#ef4444; font-weight:bold;\">",
+    "      <p style=\"margin:8px 0 0 0; font-size:1.1rem;\">— <strong>Probability of at least one negative month in the year:</strong> <span style=\"font-weight:bold;\">",
+    "      Under the independence assumption across months, the number of negative months in a year follows a binomial distribution",
+    "      with parameters 12 and <em>p</em>. In particular:",
+    "      <br>— <strong>Average number of negative months:</strong> ",
+    "      <br>— <strong>Variance of the number of negative months:</strong> ",
+    "      <br>— <strong>Standard deviation of the number of negative months:</strong> ",
+    "      <br>— <strong>Probability of no negative month:</strong> ",
+    "<h4>Number of negative months in the year</h4>",
+    "      The following table gives, for each value of X between 1 and 12,",
+    "      the exact probability that the year contains exactly X negative months.",
+    "      This is therefore a complete discrete probability distribution, excluding the case X = 0 already discussed above.",
+    "      <th>Probability of observing exactly X negative months</th>",
+    "    <label for=\"monthly_count_x\"><strong>Select X for computation details:</strong></label>",
+    "        Computation details for X = 1",
+    "<h4 style=\"margin-top:30px;\">Number of consecutive negative months in the year</h4>",
+    "      The following table does not give a local approximation of the type <em>p<sup>X</sup></em>,",
+    "      but rather the more relevant probability that there exists, over the 12 months of the year,",
+    "      at least one streak of X or more consecutive negative months.",
+    "      This quantity is computed exactly by dynamic recursion under the independence assumption.",
+    "      <th>Probability of observing at least X consecutive negative months</th>",
+    "    <label for=\"monthly_run_x\"><strong>Select X for computation details:</strong></label>",
+    "        Computation details for X = 1",
+    "Computation details for X = ",
+    "Computation details for X = ",
+    "Computation details for X = ",
+    "Computation details for X = ",
+    "      We now wish to study the intra-annual trajectory of the portfolio.",
+    "      The question is no longer merely whether the aggregate twelve-month performance will be positive or negative,",
+    "      but to understand what the path taken during the year may look like.",
+    "      This is a central point in a recruitment context: a strategy acceptable in annual terms",
+    "      may remain difficult to tolerate if it imposes repeated series of negative months.",
+    "    <h4>1. Assumptions</h4>",
+    "      We assume that monthly returns are stationary, with the same distribution from one month to the next,",
+    "      and independent over time.",
+    "      This assumption is simplifying: it allows clean and interpretable orders of magnitude to be obtained,",
+    "      while keeping in mind that in practice returns may exhibit autocorrelation,",
+    "      conditional volatility effects, or regime breaks.",
+    "      However, correlations between strategies are fully accounted for in the construction",
+    "      of the monthly portfolio variance.",
+    "      In other words, the assumed independence concerns successive months, not the strategies among themselves.",
+    "<h4>2. Moving from annual to monthly</h4>",
+    "  We now seek to describe the portfolio at the monthly scale.",
+    "  To this end, we denote by \\(R_{P,1}, \\dots, R_{P,12}\\) the successive monthly returns of the portfolio,",
+    "  and by \\(R_{P,a}\\) its aggregate annual return.",
+    "  Under the simplifying assumption of independence across months and homogeneity of their distribution,",
+    "  we write",
+    "  Independence across months is most relevant for the variance computation.",
+    "  Indeed, if monthly returns are independent, the inter-temporal covariances are zero,",
+    "  which allows variances to be summed month by month.",
+    "  However, inter-strategy correlations within a given month are preserved.",
+    "  If all months share the same expected value \\(\\mu_{P,m}\\), then by linearity of expectation:",
+    "  We immediately deduce",
+    "  For the variance, starting from ",
+    "\\mathbf{Var}(R_{P,a}) = \\mathbf{Var}(R_{P,1} + \\cdots + R_{P,12}),",
+    "  under independence across months, all cross-covariance terms between two distinct months are zero,",
+    "  i.e. \\(\\mathbf{Cov}(R_{P,s},R_{P,t}) = 0\\) for \\(s \\neq t\\).",
+    "  Therefore:",
+    "  Hence the relation \\(",
+    "  Numerically, this amounts here to:",
+    "  More precisely, for each strategy \\(i\\), the same principle applies:",
+    "\\mu_{i,m} = \\frac{\\mu_i}{12}\\) and \\(",
+    "  The monthly return of the portfolio, as a linear combination of weighted strategies,",
+    "  is then:",
+    "We thus obtain:",
+    "  The monthly portfolio variance is not the simple sum of weighted variances.",
+    "  It also incorporates all cross-covariance terms,",
+    "  hence the full transverse correlation structure between strategies.",
+    "  This step preserves the diversification effect when moving to the monthly horizon.",
+    "  By definition of covariance in terms of correlation:",
+    "  Thus:",
+    "  We thus obtain:",
+    "  Taking the square root, we recover the monthly portfolio volatility:",
+    "    <h4>3. Probability that a month is negative</h4>",
+    "      Under the normality assumption, the monthly portfolio return follows a",
+    "      \\(\\mathcal{N}(\\mu_{P,m},\\sigma_{P,m}^2)\\) distribution.",
+    "      We seek ",
+    "      Standardising the random variable, we obtain:",
+    "      <p>We obtain:",
+    "      This quantity is the probability that any given month, taken in isolation, is a losing month.",
+    "      It does not yet indicate how many negative months will be observed over the year;",
+    "      it only provides the elementary probability of a \"success\" in a Bernoulli-type model,",
+    "      where \"negative month\" is coded as 1 and \"non-negative month\" as 0.",
+    "    <h4>4. Probability of at least one negative month in the year</h4>",
+    "      If each month is negative with probability \\(p\\), and if the twelve months are assumed independent,",
+    "      then the only way to have no negative month is to obtain twelve successively non-negative months.",
+    "      This probability equals \\((1-p)^{12}\\).",
+    "    \\mathbb{P}(\\text{no negative month})",
+    "      We deduce by complementation:",
+    "    \\mathbb{P}(\\text{at least one negative month})",
+    "      This result is often counter-intuitive.",
+    "      A strategy may have a very low annual probability of finishing negative,",
+    "      while having a very high probability of experiencing at least one difficult monthly period.",
+    "      One must therefore never confuse \"low annual loss risk\" with \"comfortable monthly trajectory\".",
+    "    <h4>5. Distribution of the number of negative months</h4>",
+    "      Denoting by \\(X\\) the number of negative months observed over the twelve months of the year,",
+    "      under the assumption of temporal independence, we have",
+    "      The probability of obtaining exactly \\(k\\) negative months is:",
+    "      In particular, the expectation and variance of \\(X\\) are:",
+    "      In other words, even when a strategy is structurally profitable,",
+    "      it is perfectly normal to observe several negative months per year.",
+    "      The right benchmark is therefore not \"avoid any negative month\", but to verify whether the observed frequency",
+    "      remains consistent with the portfolio's theoretical distribution.",
+    "    <h4>6. Sequences of consecutive negative months</h4>",
+    "      We now focus on a more demanding event:",
+    "      not simply the total number of negative months,",
+    "      but the existence of an uninterrupted sequence of negative months.",
+    "      This indicator is closer to the pain effectively felt by a risk manager or recruiter,",
+    "      since losses clustered in time are often harder to tolerate than dispersed losses.",
+    "      For an integer \\(x \\in \\{1,\\dots,12\\}\\), let \\(A_x\\) denote the event:",
+    "      \"there exists at least one streak of \\(x\\) consecutive negative months during the year\".",
+    "      Unlike the binomial distribution, there is no simple closed-form formula here.",
+    "      The appropriate approach is to reason by recursion on the current state of the sequence.",
+    "      We define \\(q_t(r)\\) as the probability that after \\(t\\) months no streak of length \\(x\\) has yet been observed, given that the current streak of negative months at the end of the period is exactly of length \\(r\\), with \\(r \\in \\{0,1,\\dots,x-1\\}\\).",
+    "      The transitions satisfy:",
+    "      with initial condition \\(q_0(0)=1\\) and \\(q_0(r)=0\\) for \\(r\\geq 1\\).",
+    "      The probability of never observing a streak of length \\(x\\) after 12 months is then",
+    "      and the desired probability is obtained by complementation:",
+    "      The values displayed in the consecutive streaks table are computed exactly in this way.",
+    "      They are therefore more rigorous than an approximation of the type \\(p^x\\),",
+    "      which only measures the probability that a given window of \\(x\\) months is entirely negative,",
+    "      without accounting for the number of possible windows or their overlaps.",
+    "        Let \\(X\\) denote the total number of negative months observed over the year.",
+    "        Under the monthly independence assumption, \\(X \\sim \\mathcal{B}(12,p)\\) and the probability of having <strong>exactly ",
+    " negative months</strong> is given by:",
+    "        The binomial coefficient \\(\\binom{12}{",
+    "}\\) counts the number of ways",
+    "        to place ",
+    " negative months among the 12 months of the year, without imposing any particular order. We have \\(\\binom{12}{",
+    ".\\) Numerically:",
+    "        As a complement, if one wished not the probability of having exactly ",
+    " negative months,",
+    "        but the probability of having <strong>at least ",
+    "        all probability masses from ",
+    " onwards would need to be summed:",
+    "        This distinction between \"exactly ",
+    "\" and \"at least ",
+    "\" is important:",
+    "        the former describes a precise frequency, the latter measures a cumulative risk of deterioration.",
+    "        Let \\(A_",
+    "\\) denote the event:",
+    "        <strong>\"there exists at least one streak of ",
+    " consecutive negative months during the year\"</strong>.",
+    "        We are not looking for the total number of negative months here,",
+    "        but for the appearance of a contiguous block of losses.",
+    "        This event is more subtle than a simple binomial calculation,",
+    "        since multiple possible sequences may overlap.",
+    "        For example, a year containing 4 consecutive negative months also contains a streak of 2 consecutive negative months,",
+    "        and several overlapping time windows.",
+    "        One must therefore not reason by simple independent window counting.",
+    "        The exact computation is carried out by dynamic programming.",
+    "        For each month \\(t\\), we track the length \\(r\\) of the current streak of negative months,",
+    "        under the constraint that no streak of length ",
+    " has yet been observed.",
+    "        The possible states are \\(r \\in \\{0,\\dots,",
+    "        At the end of 12 months, the probability of having observed no streak of length ",
+    "        is the sum of the probabilities of all admissible states.",
+    "        The desired probability is then obtained by complementation:",
+    "        For order-of-magnitude reference, a naive approximation would write",
+    "}\\), i.e. the probability that a given window of ",
+    " months is entirely negative,",
+    "        yielding ",
+    "        A rough alternative approximation would multiply this quantity by the number of possible windows,",
+    "        namely \\(13 - ",
+    "\\), giving ",
+    "        Both approximations may be useful for intuition,",
+    "        but they are not exact since they neglect overlaps between possible sequences.",
+    "        The value shown in the table is therefore the correct quantity to retain for a rigorous reading of streak risk.",
+    "    <h3>Daily Results</h3>",
+    "      We work here at the trading day scale. The construction is exactly parallel to that of the monthly tab:",
+    "      we start from the monthly portfolio, then assume that a typical month contains 21 homogeneous trading days.",
+    "      Inter-strategy correlations remain accounted for in the portfolio variance, while the assumed independence concerns successive days within the month.",
+    "      <p style=\"margin:0; font-size:1.1rem;\">— <strong>Daily expected return of the portfolio:</strong> <span style=\"font-weight:bold; color:var(--hf-gold)\">",
+    "      <p style=\"margin:8px 0 0 0; font-size:1.1rem;\">— <strong>Daily volatility of the portfolio:</strong> <span style=\"font-weight:bold;\">",
+    "      <p style=\"margin:8px 0 0 0; font-size:1.1rem;\">— <strong>Probability that any given day is negative:</strong> <span style=\"color:#ef4444; font-weight:bold;\">",
+    "      <p style=\"margin:8px 0 0 0; font-size:1.1rem;\">— <strong>Probability of at least one negative day in the month:</strong> <span style=\"font-weight:bold;\">",
+    "      Under the daily independence assumption, the number of negative days in a month follows a binomial distribution",
+    "      with parameters 21 and <em>p</em>. In particular:",
+    "      <br>— <strong>Average number of negative days:</strong> ",
+    "      <br>— <strong>Variance of the number of negative days:</strong> ",
+    "      <br>— <strong>Standard deviation of the number of negative days:</strong> ",
+    "      <br>— <strong>Probability of no negative day:</strong> ",
+    "<h4>Number of negative days in the month</h4>",
+    "      The following table gives, for each value of X between 1 and 21,",
+    "      the exact probability that the month contains exactly X negative days.",
+    "      This is therefore a complete discrete probability distribution, excluding the case X = 0 already discussed above.",
+    "      <th>Probability of observing exactly X negative days</th>",
+    "      <label for=\"daily_count_x\"><strong>Select X for computation details:</strong></label>",
+    "          Computation details for X = 1",
+    "<h4 style=\"margin-top:30px;\">Number of consecutive negative days in the month</h4>",
+    "      The following table does not give a local approximation of the type <em>p<sup>X</sup></em>,",
+    "      but rather the more relevant probability that there exists, over the 21 trading days of the month,",
+    "      at least one streak of X or more consecutive negative days.",
+    "      This quantity is computed exactly by dynamic recursion under the daily independence assumption.",
+    "      <th>Probability of observing at least X consecutive negative days</th>",
+    "      <label for=\"daily_run_x\"><strong>Select X for computation details:</strong></label>",
+    "          Computation details for X = 1",
+    "Computation details for X = ",
+    "Computation details for X = ",
+    "Computation details for X = ",
+    "Computation details for X = ",
+    "      We now zoom inside a typical month.",
+    "      The question is no longer simply how many negative months the portfolio may experience,",
+    "      but to assess the frequency and potential persistence of days of loss.",
+    "      In a recruitment context, this level of analysis is particularly useful as it informs on the operational tolerability of the PnL profile.",
+    "    <h4>1. Assumptions</h4>",
+    "      We assume that a standard trading month comprises 21 usable business days.",
+    "      Daily returns are assumed stationary, with the same distribution from one day to the next, and independent over time within the month.",
+    "      This assumption is simplifying, but provides a clean basis for quantifying daily risk.",
+    "      As before, temporal independence applies to successive days, while inter-strategy correlations remain fully accounted for in the portfolio variance.",
+    "    <h4>2. Moving from monthly to daily</h4>",
+    "      We denote by \\(R_{P,1}, \\dots, R_{P,21}\\) the successive daily returns of the portfolio over a typical month,",
+    "      and by \\(R_{P,m}\\) the aggregated monthly return.",
+    "      Under the daily independence and distributional homogeneity assumptions, we write",
+    "      Daily independence allows expectations and variances to be summed, exactly as in the annual-to-monthly transition.",
+    "      We immediately deduce",
+    "      For the variance, starting from",
+    "      \\mathbf{Var}(R_{P,m}) = \\mathbf{Var}(R_{P,1} + \\cdots + R_{P,21}),",
+    "      under daily independence, covariances between distinct days are zero, so:",
+    "      Therefore:",
+    "      Numerically, this amounts to:",
+    "      More precisely, for each strategy \\(i\\):",
+    "      and",
+    "      The daily portfolio return, as a linear combination of weighted strategies, is then:",
+    "      We thus obtain:",
+    "      The daily portfolio variance incorporates, as at higher horizons, all cross-covariance terms.",
+    "      The diversification effect is therefore not lost when changing the horizon.",
+    "      Now",
+    "      Thus:",
+    "      We thus obtain:",
+    "      Taking the square root, we recover the daily portfolio volatility:",
+    "    <h4>3. Probability that a day is negative</h4>",
+    "      Under the normality assumption, the daily portfolio return follows a",
+    "      \\mathcal{N}(\\mu_{P,j},\\sigma_{P,j}^2)",
+    "distribution.\n      We seek",
+    "      Standardising the random variable, we obtain:",
+    "      We obtain:",
+    "      This quantity is the probability that any given trading day is a losing day.",
+    "      It constitutes the elementary probability of a \"success\" in a Bernoulli-type model,",
+    "      where \"negative day\" is coded as 1 and \"non-negative day\" as 0.",
+    "    <h4>4. Probability of at least one negative day in the month</h4>",
+    "      If each day is negative with probability \\(p\\), and if the 21 trading days of the month are assumed independent,",
+    "      then the only way to have no negative day is to obtain 21 successively non-negative days.",
+    "      This probability equals \\((1-p)^{21}\\).",
+    "    \\mathbb{P}(\\text{no negative day})",
+    "      We deduce by complementation:",
+    "    \\mathbb{P}(\\text{at least one negative day})",
+    "      Even when a portfolio has a positive daily expected return,",
+    "      it can be extremely common to observe one or more negative days in the month.",
+    "      Average profitability and trajectory comfort must therefore be carefully distinguished.",
+    "    <h4>5. Distribution of the number of negative days</h4>",
+    "      Denoting by \\(X\\) the number of negative days observed over the 21 trading days of the month,",
+    "      under temporal independence, we have",
+    "      The probability of obtaining exactly \\(k\\) negative days is:",
+    "      In particular, the expectation and variance of \\(X\\) are:",
+    "      In other words, several negative days in a month can be statistically normal.",
+    "      The right point of comparison is therefore not the total absence of daily losses,",
+    "      but the consistency between the observed frequency and the portfolio's theoretical implied distribution.",
+    "    <h4>6. Sequences of consecutive negative days</h4>",
+    "      We now focus on a more demanding event:",
+    "      not simply the total number of negative days,",
+    "      but the existence of an uninterrupted sequence of negative days.",
+    "      For an integer \\(x \\in \\{1,\\dots,21\\}\\), let \\(A_x\\) denote the event:",
+    "      \"there exists at least one streak of \\(x\\) consecutive negative days during the month\".",
+    "      As for months, there is no simple closed-form formula here.",
+    "      The exact computation relies on a dynamic recursion on the length of the current streak.",
+    "      with initial condition \\(q_0(0)=1\\) and \\(q_0(r)=0\\) for \\(r\\geq 1\\).",
+    "      The probability of never observing a streak of length \\(x\\) after 21 days is then",
+    "      The desired probability is therefore:",
+    "      The values displayed in the consecutive streaks table are computed exactly in this way.",
+    "      They are more rigorous than a local approximation of the type \\(p^x\\),",
+    "      which accounts neither for the number of possible windows, nor for their overlaps.",
+    "        Let \\(X\\) denote the total number of negative days observed over the month.",
+    "        Under the daily independence assumption, \\(X \\sim \\mathcal{B}(21,p)\\)",
+    "        and the probability of having <strong>exactly ",
+    " negative days</strong> is given by:",
+    "        The binomial coefficient \\(\\binom{21}{",
+    "}\\) counts the number of ways",
+    "        to place ",
+    " negative days among the 21 trading days of the month, without imposing any particular order.",
+    "        We have \\(\\binom{21}{",
+    "        Numerically:",
+    "        As a complement, if one wished not the probability of having exactly ",
+    " negative days,",
+    "        but the probability of having <strong>at least ",
+    "        all probability masses from ",
+    " onwards would need to be summed:",
+    "        This distinction between \"exactly ",
+    "\" and \"at least ",
+    "\" remains essential:",
+    "        the former describes a precise frequency, the latter a cumulative risk of daily deterioration.",
+    "        Let \\(A_",
+    "\\) denote the event:",
+    "        <strong>\"there exists at least one streak of ",
+    " consecutive negative days during the month\"</strong>.",
+    "        We are not looking for the total number of negative days here,",
+    "        but for the appearance of a contiguous block of losses.",
+    "        This event is more subtle than a simple binomial calculation,",
+    "        since multiple possible sequences may overlap.",
+    "        The exact computation is carried out by dynamic programming.",
+    "        For each day \\(t\\), we track the length \\(r\\) of the current streak of negative days,",
+    "        under the constraint that no streak of length ",
+    " has yet been observed.",
+    "        The possible states are \\(r \\in \\{0,\\dots,",
+    "        At the end of 21 days, the probability of having observed no streak of length ",
+    "        is the sum of the probabilities of all admissible states.",
+    "        The desired probability is then obtained by complementation:",
+    "        For order-of-magnitude reference, a naive approximation would write",
+    "}\\), i.e. the probability that a given window of ",
+    " days is entirely negative:",
+    "        Another rough approximation would multiply this quantity by the number of possible windows,",
+    "        namely \\(22 - ",
+    "\\), giving",
+    "        These approximations may help the intuition, but they are not exact,",
+    "        since they ignore overlaps between windows.",
+    "    <h3>Interval Result</h3>",
+    "      <p style=\"margin:0; font-size:1.1rem;\">— <strong>Estimated Sharpe ratio:</strong> <span style=\"font-weight:bold;\">",
+    "      <p style=\"margin:8px 0 0 0; font-size:1.1rem;\">— <strong>Asymptotic ",
+    "% confidence interval:</strong> <span style=\"color:var(--hf-gold); font-weight:bold;\">[ ",
+    "    <p>We have \\(T\\) daily returns \\(\\overline{P}_1, \\dots, \\overline{P}_T\\) assumed i.i.d. with distribution \\(\\mathcal{N}(\\mu, \\sigma^2)\\) (simplifying assumption). We define the empirical estimators of the daily return and the daily variance:</p>",
+    "    \\[\\widehat{\\mu} := \\frac{1}{T}\\sum_{t=1}^{T} \\overline{P}_t \\qquad\\text{and}\\qquad",
+    "    <p>The estimated daily Sharpe ratio is \\(\\widehat{S}_j := \\widehat{\\mu}\\big/\\sqrt{\\widehat{\\sigma^2}}\\), and the annualised Sharpe ratio is \\(\\widehat{S} := \\sqrt{252}\\,\\widehat{S}_j\\). We aim to quantify the uncertainty around \\(\\widehat{S}\\) via the <strong>delta method</strong>. Set \\(U_t := \\overline{P}_t - \\mu\\) and \\(V_t := \\left(\\overline{P}_t - {\\mu}\\right)^2 - \\sigma^2\\) for every integer \\(t\\) between 1 and \\(T\\). By the Lindeberg-Lévy central limit theorem applied to the sequence of random vectors \\(\\left(U_t\\quad V_t\\right)^T_{t\\in[\\![ 1,T ]\\!]}\\), we obtain the following convergence in distribution:</p>",
+    "    <p>where \\(\\pmb{\\Sigma}\\) denotes the variance-covariance matrix of the random vector \\((U_t\\quad V_t)^T\\). </p>",
+    "    <p>Let us first work on the matrix \\(\\mathbf{Z}_T\\). We have:</p>",
+    "    <p>Now \\(\\overline{P}_t - \\mu = (\\overline{P}_t - \\widehat{\\mu})+ (\\widehat{\\mu}-\\mu)\\). Therefore: </p>",
+    "    &= \\underbrace{\\frac{1}{T}\\sum_{t=1}^{T}(\\overline{P}_t - \\widehat{\\mu})^2}_{=\\;\\widehat{\\sigma^2}}+ 2(\\widehat{\\mu}-\\mu)\\underbrace{\\frac{1}{T}\\sum_{t=1}^{T}(\\overline{P}_t - \\widehat{\\mu})}_{=\\;0 \\text{ by def. of }\\widehat{\\mu}}+ (\\widehat{\\mu}-\\mu)^2\\\\",
+    "    <p>Substituting back into the previous expression, we obtain:</p>",
+    "    &=\\underbrace{\\sqrt{T}\\begin{pmatrix}\\widehat{\\mu} - \\mu\\\\\\widehat{\\sigma^2} - \\sigma^2\\end{pmatrix}}_{\\text{principal term }\\mathbf{W}_T}+\\underbrace{\\begin{pmatrix} 0\\\\\\sqrt{T}\\,(\\widehat{\\mu}-\\mu)^2\\end{pmatrix}}_{\\text{residual term }\\mathbf{R}_T}\\end{aligned}\\]",
+    "    <p>Since \\(\\sqrt{T}\\,(\\widehat{\\mu}-\\mu)^2\\) is non-negative, <strong>Markov's inequality</strong> can be applied directly: for any \\(\\varepsilon > 0\\), \\(\\mathbb{P}\\!\\left(\\left[\\sqrt{T}\\,(\\widehat{\\mu}-\\mu)^2> \\varepsilon\\right]\\right)\\leq \\frac{\\mathbb{E}\\left[\\sqrt{T}(\\widehat{\\mu}-\\mu)^2\\right]}{\\varepsilon}=\\frac{\\sqrt{T}\\mathbf{Var}(\\widehat{\\mu})}{\\varepsilon}\\). Now:</p>",
+    "    &= \\frac{1}{T^2}\\sum_{t=1}^T \\mathbf{Var}(\\overline{P}_t)\\quad\\text{since the } \\overline{P}_t \\text{ are independent}\\\\",
+    "    &= \\frac{1}{T^2}\\times T\\mathbf{Var}(\\overline{P}_1)=\\frac{\\sigma^2}{T}\\quad\\text{since the } \\overline{P}_t \\text{ are identically distributed}",
+    "    <p>We deduce that, for all \\(\\varepsilon>0\\), \\(0\\leq \\mathbb{P}\\!\\left(\\left[\\sqrt{T}\\,(\\widehat{\\mu}-\\mu)^2> \\varepsilon\\right]\\right)\\leq \\frac{\\sqrt{T}}{\\varepsilon}\\times\\frac{\\sigma^2}{T}= \\frac{\\sigma^2}{\\varepsilon\\sqrt{T}}\\). By the squeeze theorem, \\(\\sqrt{T}\\,(\\widehat{\\mu}-\\mu)^2\\) converges in probability to 0 as \\(T \\to +\\infty\\). Thus, \\(\\mathbf{R}_T\\) converges in probability to the zero vector. Since \\(\\mathbf{Z}_T\\) converges in distribution to a normal vector with law \\(\\mathcal{N}(\\mathbf{0},\\pmb{\\Sigma})\\), by Slutsky's theorem, \\(\\mathbf{W}_T=\\mathbf{Z}_T-\\mathbf{R}_T\\) also converges in distribution to \\(\\mathcal{N}(\\mathbf{0},\\pmb{\\Sigma})\\). </p>",
+    "    <p>Next, let us compute the variance-covariance matrix \\(\\pmb{\\Sigma}\\). We have:</p>",
+    "    <p>We compute each of the three terms. First, for \\(\\mathbf{Var}(U_t)\\):</p>",
+    "    &= \\mathbb{E}\\!\\left[(\\overline{P}_t - \\mu)^2\\right] - 0\\qquad \\text{since } \\mathbb{E}[U_t] = \\mathbb{E}[\\overline{P}_t] - \\mu = 0 \\\\",
+    "    <p>Then, for \\(\\mathbf{Var}(V_t)\\), denoting by \\(\\mu_4\\) the kurtosis of \\(\\overline{P}_t\\):</p>",
+    "    &= \\mathbb{E}\\!\\left[\\left((\\overline{P}_t - \\mu)^2 - \\sigma^2\\right)^2\\right]- 0\\qquad\\text{since } \\mathbb{E}[V_t]= \\mathbb{E}[(\\overline{P}_t{-}\\mu)^2] - \\sigma^2 =\\mathbf{Var}(\\overline{P}_t)-\\sigma^2= 0 \\\\",
+    "    <p>Finally, for \\(\\mathbf{Cov}(U_t, V_t)\\), denoting by \\(\\mu_3\\) the skewness of \\(\\overline{P}_t\\):</p>",
+    "    <p>Since \\(\\overline{P}_t\\) is assumed to follow a normal distribution \\(\\mathcal{N}(\\mu, \\sigma^2)\\), odd central moments vanish by symmetry and even central moments satisfy \\(\\mathbb{E}[(X-\\mu)^{2k}] = (2k-1)\\times(2k-3)\\times\\cdots\\times 3\\times 1\\times\\sigma^{2k}\\) for all positive integers \\(k\\). In particular, \\(\\mu_3=0\\) and \\(\\mu_4=3\\sigma^4\\). The matrix \\(\\pmb{\\Sigma}\\) therefore simplifies to:</p>",
+    "    <p>In summary, we have proved the following convergence:</p>",
+    "    \\[\\sqrt{T}\\begin{pmatrix}\\widehat{\\mu} - \\mu\\\\ \\widehat{\\sigma^2} - \\sigma^2\\end{pmatrix}\\xrightarrow[T\\to+\\infty]{\\;\\mathcal{L}\\;} \\mathcal{N}\\!\\left(\\mathbf{0},\\; \\pmb{\\Sigma}\\right)\\quad\\text{with}\\quad\\pmb{\\Sigma}=\\begin{pmatrix}\\sigma^2 & 0 \\\\0 & 2\\sigma^4\\end{pmatrix}\\]",
+    "    <p>The (theoretical) daily Sharpe ratio is \\(S_j = g(\\mu,\\sigma^2)\\), while the (empirical) daily Sharpe ratio satisfies \\(\\widehat{S}_j = g(\\widehat{\\mu},\\widehat{\\sigma^2})\\), with \\(g: (\\mu,\\, \\sigma^2) \\mapsto \\frac{\\mu}{\\sqrt{\\sigma^2}}\\). The function \\(g\\) is of class \\(\\mathcal{C}^1\\) at every point \\((\\mu, \\sigma^2)\\) with \\(\\sigma > 0\\), so the delta method applies. The gradient of \\(g\\) at any such point is:</p>",
+    "    <p>Setting \\(\\pmb{\\theta}:=(\\mu,\\sigma^2)\\) and \\(\\widehat{\\pmb{\\theta}}:=(\\widehat{\\mu},\\widehat{\\sigma^2})\\), since \\(\\sqrt{T}(\\widehat{\\pmb{\\theta}} -\\pmb{\\theta})\\xrightarrow[T\\to+\\infty]{\\mathcal{L}}\\mathcal{N}(\\mathbf{0},\\pmb{\\Sigma})\\), the delta method yields \\(\\sqrt{T}\\!\\left(g(\\widehat{\\pmb{\\theta}}) - g({\\pmb{\\theta}})\\right)=\\sqrt{T}\\!\\left(\\widehat{S}_j - S_j\\right)\\;\\xrightarrow[T\\to\\infty]{\\;\\mathcal{L}\\;}\\;\\mathcal{N}\\!\\left({0},\\;\\nabla g(\\mu,\\sigma^2)^T\\,\\pmb{\\Sigma}\\,\\nabla g(\\mu,\\sigma^2)\\right)\\). Now:</p>",
+    "    <p>Thus we obtain the convergence \\(\\sqrt{T}\\!\\left(\\widehat{S}_j - S_j\\right)\\;\\xrightarrow[T\\to+\\infty]{\\;\\mathcal{L}\\;}\\;\\mathcal{N}\\!\\left(0,\\; 1 + \\frac{S_j^2}{2}\\right)\\). Moving from the daily to the annual Sharpe ratio: \\(\\widehat{S} = \\sqrt{252}\\,\\widehat{S}_j\\) and \\(S = \\sqrt{252}\\,S_j\\). We deduce \\(\\sqrt{T}\\!\\left(\\widehat{S} - S\\right)= \\sqrt{252}{\\sqrt{T}\\!\\left(\\widehat{S}_j -S_j\\right)}\\). Since \\(\\sqrt{252}\\) converges in probability to the constant \\(\\lambda = \\sqrt{252}\\) and \\({\\sqrt{T}\\!\\left(\\widehat{S}_j -S_j\\right)}\\) converges in distribution to \\(U \\sim \\mathcal{N}\\!\\left(0,\\; 1 + \\frac{S_j^2}{2}\\right)\\), Slutsky's theorem gives that \\(\\sqrt{T}\\!\\left(\\widehat{S} - S\\right)\\) converges in distribution to \\(\\lambda U\\), which follows a normal distribution with mean \\(0\\) and variance \\(252\\mathbf{Var}(U)=252(1+{S_j^2}/{2})=252+S^2/2\\). We have thus established \\(\\sqrt{T}\\!\\left(\\widehat{S} - S\\right)\\;\\xrightarrow[T\\to+\\infty]{\\;\\mathcal{L}\\;}\\;\\mathcal{N}\\!\\left(0,\\; V\\right)\\) with \\(V := 252 + \\frac{S^2}{2}\\). Dividing by \\(\\sqrt{V}\\) (strictly positive constant), we obtain a pivot statistic with standard limit law: \\(Z_T := \\frac{\\sqrt{T}\\left(\\widehat{S} - S\\right)}{\\sqrt{V}}\\;\\xrightarrow[T\\to+\\infty]{\\;\\mathcal{L}\\;}\\;\\mathcal{N}(0,1)\\).</p>",
+    "    <p>Let us first show that \\(\\widehat{S}\\) converges in probability to \\(S\\). By the weak law of large numbers, \\(\\widehat{\\mu}\\) converges in probability to \\(\\mathbb{E}[\\overline{P}_t]=\\mu\\). Recall the decomposition established above:</p>",
+    "    <p>On the one hand, the variables \\((\\overline{P}_t - \\mu)^2\\) are i.i.d. with expectation \\(\\sigma^2\\) and finite variance \\(\\mu_4 - \\sigma^4 < +\\infty\\); the weak law of large numbers gives:</p>",
+    "    <p>On the other hand, \\((\\widehat{\\mu}-\\mu)^2 \\xrightarrow[T\\to+\\infty]{\\;\\mathbb{P}\\;} 0\\) since \\(\\widehat{\\mu} \\xrightarrow[T\\to+\\infty]{\\;\\mathbb{P}\\;} \\mu\\) and \\(x \\mapsto x^2\\) is continuous. By <strong>Slutsky's theorem</strong> (stability of convergences in probability under addition):</p>",
+    "    <p>The function \\((x,y) \\mapsto x/\\sqrt{y}\\) is continuous on \\(\\mathbb{R}\\times\\mathbb{R}_{+}^*\\), and \\(\\sigma=\\sqrt{\\sigma^2} > 0\\). By continuity, \\(\\widehat{S}_j = \\frac{\\widehat{\\mu}}{\\sqrt{\\widehat{\\sigma^2}}}\\;\\xrightarrow[T\\to+\\infty]{\\;\\mathbb{P}\\;}\\; \\frac{\\mu}{\\sigma} = S_j\\). By linearity, the desired convergence in probability follows: \\(\\widehat{S} = \\sqrt{252}\\,\\widehat{S}_j\\xrightarrow[T\\to+\\infty]{\\;\\mathbb{P}\\;} \\sqrt{252}\\,S_j = S\\).</p>",
+    "    <p>The variance \\(V = 252 + S^2/2\\) depends on the unknown true parameter \\(S\\). We therefore replace it with the estimator \\(\\widehat{\\mathcal{V}} := 252 + \\frac{\\widehat{S}^2}{2}\\). Since the function \\(h: x \\mapsto 252 + x^2/2\\) is continuous, \\(\\widehat{\\mathcal{V}} = h(\\widehat{S})\\;\\xrightarrow[T\\to+\\infty]{\\;\\mathbb{P}\\;}\\;h(S) = V\\). Then \\(\\sqrt{\\widehat{\\mathcal{V}}} \\xrightarrow[T\\to+\\infty]{\\;\\mathbb{P}\\;} \\sqrt{V}\\) (by continuity of the square root on \\(\\mathbb{R}_{+}\\)) and, by continuity of \\(x\\mapsto\\frac{\\sqrt{V}}{x}\\) on \\(\\mathbb{R}_+^*\\), \\(\\frac{\\sqrt{V}}{\\sqrt{\\widehat{\\mathcal{V}}}}\\;\\xrightarrow[T\\to+\\infty]{\\;\\mathbb{P}\\;}\\; 1\\). <strong>Slutsky's theorem</strong> then yields the following convergence in distribution:</p>",
+    "    <p>Denoting by \\(q_{",
+    "\\) the quantile of order \\(",
+    "\\,\\%\\) of \\(\\mathcal{N}(0,1)\\), we have by definition of asymptotic distributional convergence, \\(\\mathbb{P}\\!\\left(\\left[-",
+    "\\). Now:</p>",
+    "    <p>Thus, an <strong>asymptotic ",
+    "% confidence interval</strong> for the annual Sharpe ratio is given by:</p>",
+    "    \\[\\text{CI}_{",
+    "\\,\\sqrt{\\widehat{\\mathcal{V}}}}{\\sqrt{T}}\\right]\\quad\\text{with}\\quad\\widehat{\\mathcal{V}} := 252 + \\frac{\\widehat{S}^2}{2}\\]"
+  ]
+};
+
+/* ============================================================
+   GESTION DE LA LANGUE  /  LANGUAGE HANDLING
+   ============================================================ */
+let LANG = (function () {
+    try {
+        const q = new URLSearchParams(window.location.search).get('lang');
+        if (q && (q.toLowerCase() === 'fr' || q.toLowerCase() === 'en')) return q.toLowerCase();
+    } catch (e) {}
+    const h = (window.location.hash || '').replace('#', '').toLowerCase();
+    if (h === 'fr' || h === 'en') return h;
+    return 'fr';
+})();
+
+/* Renvoie la chaîne n° i dans la langue courante (utilisé partout dans le moteur) */
+function _L(i) { return TXT[LANG][i]; }
+
+function applyLang() {
+    const U = UI[LANG];
+    document.documentElement.lang = LANG;
+    document.title = U['k-title'];
+
+    document.querySelectorAll('[data-k]').forEach(function (el) {
+        const key = el.getAttribute('data-k');
+        if (U[key] !== undefined) el.innerHTML = U[key];
+    });
+
+    document.getElementById('flag-fr').classList.toggle('active', LANG === 'fr');
+    document.getElementById('flag-en').classList.toggle('active', LANG === 'en');
+}
+
+function setLang(lang) {
+    if ((lang !== 'fr' && lang !== 'en') || lang === LANG) return;
+    LANG = lang;
+
+    /* La langue est mémorisée dans l'URL (partage / rechargement) */
+    try {
+        const u = new URL(window.location.href);
+        u.searchParams.set('lang', lang);
+        history.replaceState(null, '', u.toString());
+    } catch (e) {}
+
+    applyLang();
+
+    /* On regénère l'interface et les résultats déjà affichés, à données inchangées */
+    renderStrategies();
+    drawMatrix();
+    if (document.getElementById('results').innerHTML.trim() !== '') compute();
+    if (document.getElementById('monthly_results').innerHTML.trim() !== '') computeMonthly();
+    if (document.getElementById('daily_results').innerHTML.trim() !== '') computeDaily();
+    if (document.getElementById('interval_results').innerHTML.trim() !== '') computeInterval();
+
+    refreshMathJax();
+}
+
+applyLang();
+
+// ==========================================
+// OUTIL ROBUSTE DE RENDU MATHJAX GLOBAL
+// ==========================================
+function refreshMathJax() {
+  // On s'assure que MathJax est bien chargé
+  if (window.MathJax && window.MathJax.typesetPromise) {
+    // 1. On vide entièrement le cache global de MathJax (efface la mémoire des anciennes équations)
+    if (window.MathJax.typesetClear) {
+      window.MathJax.typesetClear();
+    }
+    // 2. On relance un scan complet et asynchrone de la page entière
+    window.MathJax.typesetPromise().catch(function (err) {
+      console.error("" + _L(0) + "", err.message);
+    });
+  }
+}
+
+// ==========================================
+// NAVIGATION (ONGLETS)
+// ==========================================
+function showTab(n) {
+  let contents = document.getElementsByClassName("tabcontent");
+  for (let i = 0; i < contents.length; i++) {
+    contents[i].style.display = "none";
+  }
+  let tabs = document.getElementsByClassName("tab");
+  for (let i = 0; i < tabs.length; i++) {
+    tabs[i].classList.remove("active");
+  }
+  document.getElementById("tab" + n).style.display = "block";
+  tabs[n - 1].classList.add("active");
+
+  // ASTUCE : On force le rendu LaTeX à l'ouverture de l'onglet au cas où l'onglet 
+  // était masqué quand ses formules ont été générées.
+  refreshMathJax();
+}
+
+// ==========================================
+// LOGIQUE MÉTIER ET VARIABLES
+// ==========================================
+let strategies = []
+
+function addStrategy(){
+  strategies.push({mu:10, sigma:20, w:0})
+  normalizeWeights()
+  renderStrategies()
+}
+
+function removeStrategy(index){
+  if(strategies.length <= 1) {
+    alert("" + _L(1) + "");
+    return;
+  }
+  strategies.splice(index, 1);
+  normalizeWeights();
+  renderStrategies();
+}
+
+function normalizeWeights(){
+  let n = strategies.length
+  let base = Math.floor(100/n)
+
+  for(let i=0;i<n-1;i++){
+    strategies[i].w = base
+  }
+
+  let sum = base*(n-1)
+  strategies[n-1].w = 100 - sum
+}
+
+function renderStrategies(){
+  let html = `<table class="premium-table">
+    <thead>
+      <tr>
+${_L(2)}
+${_L(3)}
+${_L(4)}
+${_L(5)}
+        <th style="text-align:center">Action</th>
+      </tr>
+    </thead>
+    <tbody>`;
+
+  strategies.forEach((s,i)=>{
+    let disabled = (i === strategies.length-1) ? "disabled" : ""
+
+    html += `
+    <tr>
+${_L(6)}${i+1}</strong></td>
+      <td>
+        <div class="input-group">
+          <input type="number" step="0.1" value="${s.mu}" onchange="strategies[${i}].mu=parseFloat(this.value)">
+${_L(7)}
+        </div>
+      </td>
+      <td>
+        <div class="input-group">
+          <input type="number" step="0.1" value="${s.sigma}" onchange="strategies[${i}].sigma=parseFloat(this.value)">
+${_L(8)}
+        </div>
+      </td>
+      <td>
+        <div class="input-group">
+          <input type="number" step="0.1" value="${s.w}" ${disabled} onchange="updateWeight(${i}, this.value)">
+          <span>%</span>
+        </div>
+      </td>
+      <td style="text-align:center">
+        <button class="btn-delete" onclick="removeStrategy(${i}${_L(9)}
+      </td>
+    </tr>`
+  })
+
+  html += `</tbody></table>`
+  document.getElementById("strategies").innerHTML = html
+  renderMatrix()
+}
+
+function updateWeight(i,val){
+  strategies[i].w = parseFloat(val)
+  let sum = 0
+  for(let j=0;j<strategies.length-1;j++){
+    sum += strategies[j].w
+  }
+
+  if(sum > 100){
+    alert("" + _L(10) + "")
+    normalizeWeights()
+  } else {
+    strategies[strategies.length-1].w = 100 - sum
+  }
+  renderStrategies()
+}
+
+let corrMatrix = []
+
+function renderMatrix(){
+  let n = strategies.length
+  corrMatrix = Array.from({length:n}, (_,i)=>
+    Array.from({length:n}, (_,j)=> i===j ? 1 : 0)
+  )
+  drawMatrix()
+}
+
+function drawMatrix(){
+  let n = strategies.length
+  let html = `<table class="premium-table matrix-table">`
+  
+  html += `${_L(11)}`;
+  for(let i=0; i<n; i++) html += `<th style="text-align:center">S ${i+1}</th>`;
+  html += `</tr></thead><tbody>`;
+
+  for(let i=0;i<n;i++){
+    html += `<tr>`
+    html += `${_L(12)}${i+1}</strong></td>`
+
+    for(let j=0;j<n;j++){
+      if(i===j){
+        html += `<td align="center"><input value="1" disabled></td>`
+      }
+      else if(i>j){
+        html += `<td align="center"><input value="${corrMatrix[i][j]}" disabled></td>`
+      }
+      else{
+        html += `<td align="center"><input value="${corrMatrix[i][j]}" onchange="updateCorr(${i},${j}, this.value)"></td>`
+      }
+    }
+    html += "</tr>"
+  }
+
+  html += "</tbody></table>"
+  document.getElementById("matrix").innerHTML = html
+}
+
+function updateCorr(i,j,val){
+  val = parseFloat(val)
+  corrMatrix[i][j] = val
+  corrMatrix[j][i] = val
+  drawMatrix()
+}
+
+function compute(){
+  let n = strategies.length
+  let mu = 0
+  let variance = 0
+
+  for(let i=0;i<n;i++){
+    mu += (strategies[i].w/100)*(strategies[i].mu/100)
+  }
+
+  let varianceLines = []
+
+  for(let i=0;i<n;i++){
+    for(let j=0;j<n;j++){
+      let corr = corrMatrix[i][j]
+      let term =
+      (strategies[i].w/100)*(strategies[j].w/100)*
+      (strategies[i].sigma/100)*(strategies[j].sigma/100)*corr
+
+      variance += term
+    }
+  }
+
+  let sigma = Math.sqrt(variance)
+  let prob = normalCDF(-mu/sigma)
+
+  document.getElementById("results").innerHTML = `
+${_L(13)}
+  <div style="background:#f8fafc; padding:20px; border-radius:8px; border: 1px solid #e2e8f0; margin-bottom:20px;">
+${_L(14)}${(mu*100).toFixed(2)} %</span></p>
+${_L(15)}${(sigma*100).toFixed(2)} %</span></p>
+${_L(16)}${(prob*100).toFixed(2)} %</span></p>
+  </div>
+  `
+
+  generateLatex(mu, sigma, variance, prob)
+}
+
+function generateLatex(mu, sigma, variance, prob){
+
+  let n = strategies.length
+
+  let intro = `
+  <p>
+${_L(17)}${n}${_L(18)}${n}${_L(19)}
+  </p>
+  `
+
+  let expectation = `
+${_L(20)}
+
+  <p>
+${_L(21)}
+  </p>
+
+  \\[
+  \\mu_P = \\mathbb{E}[P] = \\mathbb{E}\\left[ \\sum_{i=1}^{${n}} w_i A_i \\right]
+  \\]
+
+  <p>
+${_L(22)}
+  </p>
+
+  \\[
+  \\mu_P = \\sum_{i=1}^{${n}} w_i \\mathbb{E}[A_i] = \\sum_{i=1}^{${n}} w_i \\mu_i
+  \\]
+
+  <p>
+${_L(23)}
+  </p>
+
+  \\[
+  \\mu_P = ${strategies.map(s=>`(${(s.w/100).toFixed(2)} \\times ${(s.mu/100).toFixed(4)})`).join(" + ")}
+  = ${mu.toFixed(4)}
+  \\]
+  `
+
+  let varianceBlock = `
+${_L(24)}
+
+  <p>
+${_L(25)}${n}${_L(26)}
+  </p>
+
+  \\[
+  \\mathbf{Var}(P) = \\sum_{i=1}^{${n}} \\sum_{j=1}^{${n}} w_i w_j \\, \\mathbf{Cov}(A_i, A_j)
+  \\]
+
+  <p>
+${_L(27)}
+  </p>
+
+  \\[
+  \\mathbf{Var}(P) = \\sum_{i=1}^{${n}} \\sum_{j=1}^{${n}} w_i w_j \\sigma_i \\sigma_j \\rho_{ij}
+  \\]
+
+  <p>
+${_L(28)}
+  </p>
+  `
+
+  let lines = []
+  let current = []
+
+  for(let i=0;i<n;i++){
+    for(let j=0;j<n;j++){
+      let rho = corrMatrix[i][j]
+      let term = `(${(strategies[i].w/100).toFixed(2)} \\times ${(strategies[j].w/100).toFixed(2)} \\times ${(strategies[i].sigma/100).toFixed(4)} \\times ${(strategies[j].sigma/100).toFixed(4)} \\times ${rho})`
+      current.push(term)
+      if(current.length === 3){
+        lines.push(current.join(" + "))
+        current = []
+      }
+    }
+  }
+
+  if(current.length > 0) lines.push(current.join(" + "))
+
+let varianceLatex = `
+\\[
+\\begin{aligned}
+\\mathbf{Var}(P)
+&= ${lines.join(" \\\\ &+ ")} \\\\
+&= ${variance.toFixed(6)}
+\\end{aligned}
+\\]
+`
+
+  let probBlock = `
+${_L(29)}
+
+  <p>
+${_L(30)}
+${_L(31)}
+  </p>
+
+  \\[
+  \\mathbb{P}(P < 0)
+  = \\mathbb{P}\\left(
+  \\frac{P - \\mu_P}{\\sigma_P} < \\frac{0 - \\mu_P}{\\sigma_P}
+  \\right)
+  \\]
+
+  <p>
+${_L(32)}
+  </p>
+
+  \\[
+  \\mathbb{P}(P < 0)
+  = \\Phi\\left( \\frac{-${mu.toFixed(4)}}{${sigma.toFixed(4)}} \\right)
+  = ${prob.toFixed(4)}
+  \\]
+  `
+
+let indivBlock = `
+${_L(33)}
+
+${_L(34)}
+</p>
+
+\\[
+\\mathbb{P}(A_i < 0)
+= \\mathbb{P}\\left(
+\\frac{A_i - \\mu_i}{\\sigma_i}
+<
+\\frac{0 - \\mu_i}{\\sigma_i}
+\\right)
+= \\Phi\\left( -\\frac{\\mu_i}{\\sigma_i} \\right)
+\\]
+
+<p>
+${_L(35)}
+</p>
+
+<table border="1" style="border-collapse:collapse; margin-top:10px;">
+<tr>
+${_L(36)}
+${_L(37)}
+${_L(38)}
+${_L(39)}
+</tr>
+`
+
+strategies.forEach((s,i)=>{
+  let mu = s.mu/100
+  let sigma = s.sigma/100
+  let p = normalCDF(-mu/sigma)
+
+  indivBlock += `
+  <tr>
+${_L(40)}${i+1}</td>
+  <td>${s.mu.toFixed(2)} %</td>
+  <td>${s.sigma.toFixed(2)} %</td>
+  <td>${(p*100).toFixed(2)} %</td>
+  </tr>
+  `
+})
+
+indivBlock += `</table>
+
+<p>
+${_L(41)}
+</p>
+`
+
+  document.getElementById("details").innerHTML =
+    intro + expectation + varianceBlock + varianceLatex + probBlock + indivBlock;
+
+  // Lancement global de la mise à jour
+  refreshMathJax();
+}
+
+function normalCDF(x){
+  return (1 + erf(x/Math.sqrt(2))) / 2
+}
+
+function erf(x){
+  let sign = (x>=0)?1:-1
+  x = Math.abs(x)
+  let a1=0.254829592,a2=-0.284496736,a3=1.421413741
+  let a4=-1.453152027,a5=1.061405429,p=0.3275911
+  let t=1/(1+p*x)
+  let y=1-(((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t*Math.exp(-x*x)
+  return sign*y
+}
+
+
+// ==========================================
+// CALCULS MENSUELS
+// ==========================================
+function computeMonthly(){
+
+  const n = strategies.length
+
+  let mu = 0
+  let variance = 0
+
+  for(let i = 0; i < n; i++){
+    mu += (strategies[i].w / 100) * (strategies[i].mu / 100) / 12
+  }
+
+  for(let i = 0; i < n; i++){
+    for(let j = 0; j < n; j++){
+      const corr = corrMatrix[i][j]
+      const sigma_i = (strategies[i].sigma / 100) / Math.sqrt(12)
+      const sigma_j = (strategies[j].sigma / 100) / Math.sqrt(12)
+
+      variance += (strategies[i].w / 100) * (strategies[j].w / 100) * sigma_i * sigma_j * corr
+    }
+  }
+
+  const sigma = Math.sqrt(Math.max(variance, 0))
+
+  let p = 0
+  if(sigma === 0){
+    p = mu < 0 ? 1 : 0
+  }else{
+    p = normalCDF(-mu / sigma)
+  }
+
+  const p_at_least_one = 1 - Math.pow(1 - p, 12)
+
+  const countProbs = []
+  for(let k = 0; k <= 12; k++){
+    countProbs.push(binomial(12, k) * Math.pow(p, k) * Math.pow(1 - p, 12 - k))
+  }
+
+  const runProbs = []
+  for(let k = 1; k <= 12; k++){
+    runProbs.push(probAtLeastOneRun(12, p, k))
+  }
+
+  generateMonthly(mu, sigma, p, p_at_least_one, countProbs, runProbs)
+}
+
+function generateMonthly(mu, sigma, p, p_at_least_one, countProbs, runProbs){
+
+  const expectedMonths = 12 * p
+  const varianceMonths = 12 * p * (1 - p)
+  const stdMonths = Math.sqrt(varianceMonths)
+
+  let html = `
+${_L(42)}
+
+    <p>
+${_L(43)}
+${_L(44)}
+${_L(45)}
+${_L(46)}
+    </p>
+
+    <div style="background:#f8fafc; padding:20px; border-radius:8px; border: 1px solid #e2e8f0; margin:20px 0;">
+${_L(47)}${(mu * 100).toFixed(3)} %</span></p>
+${_L(48)}${(sigma * 100).toFixed(3)} %</span></p>
+${_L(49)}${(p * 100).toFixed(2)} %</span></p>
+${_L(50)}${(p_at_least_one * 100).toFixed(2)} %</span></p>
+    </div>
+
+    <p>
+${_L(51)}
+${_L(52)}
+${_L(53)}${expectedMonths.toFixed(3)}
+${_L(54)}${varianceMonths.toFixed(3)}
+${_L(55)}${stdMonths.toFixed(3)}
+${_L(56)}${(countProbs[0] * 100).toFixed(2)} %
+    </p>
+  `
+
+  html += `${_L(57)}`
+  html += `
+    <p>
+${_L(58)}
+${_L(59)}
+${_L(60)}
+    </p>
+  `
+
+  html += `<table border="1">
+    <tr>
+      <th>X</th>
+${_L(61)}
+    </tr>`
+
+  for(let k = 1; k <= 12; k++){
+    html += `
+      <tr>
+        <td>${k}</td>
+        <td>${(countProbs[k] * 100).toFixed(2)} %</td>
+      </tr>
+    `
+  }
+
+  html += `</table>`
+
+html += `
+  <div style="margin-top:20px; background: #fff; padding: 15px; border: 1px solid #e2e8f0; border-radius: 8px;">
+${_L(62)}
+    <select id="monthly_count_x" style="margin-left:8px; padding: 6px; border-radius:4px; border: 1px solid #ccc;">
+      ${Array.from({length:12}, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join("")}
+    </select>
+
+    <details id="monthly_count_accordion" style="margin-top:12px; border:none; box-shadow:none;">
+      <summary id="monthly_count_summary" style="background: #f1f5f9; border-radius: 6px;">
+${_L(63)}
+      </summary>
+      <div id="monthly_count_detail" class="details-body" style="padding-top:16px;"></div>
+    </details>
+  </div>
+`
+
+  html += `${_L(64)}`
+  html += `
+    <p>
+${_L(65)}
+${_L(66)}
+${_L(67)}
+${_L(68)}
+    </p>
+  `
+
+  html += `<table border="1">
+    <tr>
+      <th>X</th>
+${_L(69)}
+    </tr>`
+
+  for(let k = 1; k <= 12; k++){
+    html += `
+      <tr>
+        <td>${k}</td>
+        <td>${(runProbs[k - 1] * 100).toFixed(2)} %</td>
+      </tr>
+    `
+  }
+
+  html += `</table>`
+
+html += `
+  <div style="margin-top:20px; background: #fff; padding: 15px; border: 1px solid #e2e8f0; border-radius: 8px;">
+${_L(70)}
+    <select id="monthly_run_x" style="margin-left:8px; padding: 6px; border-radius:4px; border: 1px solid #ccc;">
+      ${Array.from({length:12}, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join("")}
+    </select>
+
+    <details id="monthly_run_accordion" style="margin-top:12px; border:none; box-shadow:none;">
+      <summary id="monthly_run_summary" style="background: #f1f5f9; border-radius: 6px;">
+${_L(71)}
+      </summary>
+      <div id="monthly_run_detail" class="details-body" style="padding-top:16px;"></div>
+    </details>
+  </div>
+`
+
+  document.getElementById("monthly_results").innerHTML = html
+
+const countSelect = document.getElementById("monthly_count_x")
+const runSelect = document.getElementById("monthly_run_x")
+
+countSelect.addEventListener("change", () => {
+  const x = parseInt(countSelect.value, 10)
+  document.getElementById("monthly_count_summary").innerHTML = `${_L(72)}${x}`
+  document.getElementById("monthly_count_accordion").open = true
+  renderMonthlyCountDetail(p, countProbs, x)
+})
+
+runSelect.addEventListener("change", () => {
+  const x = parseInt(runSelect.value, 10)
+  document.getElementById("monthly_run_summary").innerHTML = `${_L(73)}${x}`
+  document.getElementById("monthly_run_accordion").open = true
+  renderMonthlyRunDetail(p, runProbs, x)
+})
+
+document.getElementById("monthly_count_summary").innerHTML =
+  `${_L(74)}${parseInt(countSelect.value, 10)}`
+document.getElementById("monthly_run_summary").innerHTML =
+  `${_L(75)}${parseInt(runSelect.value, 10)}`
+
+renderMonthlyCountDetail(p, countProbs, parseInt(countSelect.value, 10))
+renderMonthlyRunDetail(p, runProbs, parseInt(runSelect.value, 10))
+
+  generateMonthlyLatex(mu, sigma, p, p_at_least_one, countProbs, runProbs)
+}
+
+function generateMonthlyLatex(mu, sigma, p, p_at_least_one, countProbs, runProbs){
+
+  const muAnnual = 12 * mu
+  const sigmaAnnual = sigma * Math.sqrt(12)
+
+  const monthlyMuTerms = strategies.map(s => {
+    return `\\left(\\frac{${(s.w / 100).toFixed(4)} \\times ${(s.mu / 100).toFixed(4)}}{12}\\right)`
+  }).join(" + ")
+
+  const varianceTerms = []
+  for(let i = 0; i < strategies.length; i++){
+    for(let j = 0; j < strategies.length; j++){
+      const wi = (strategies[i].w / 100).toFixed(4)
+      const wj = (strategies[j].w / 100).toFixed(4)
+      const si = ((strategies[i].sigma / 100) / Math.sqrt(12)).toFixed(4)
+      const sj = ((strategies[j].sigma / 100) / Math.sqrt(12)).toFixed(4)
+      const rho = Number(corrMatrix[i][j]).toFixed(4)
+      varianceTerms.push(`${wi}\\times${wj}\\times${si}\\times${sj}\\times${rho}`)
+    }
+  }
+
+  const expectedMonths = 12 * p
+  const varianceMonths = 12 * p * (1 - p)
+  const zeroRed = Math.pow(1 - p, 12)
+const monthlyMuLines = strategies.map((s, idx) => {
+  const term = `\\left(${(s.w/100).toFixed(4)} \\times \\frac{${(s.mu).toFixed(3)}\\%}{12}\\right)`
+  return idx === 0 ? `&= ${term}` : `&\\quad + ${term}`
+}).join(" \\\\\n")
+const varianceLines = varianceTerms.map((term, idx) => {
+  return idx === 0 ? `&= ${term}` : `&\\quad + ${term}`
+}).join(" \\\\\n")
+  const details = `
+    <p>
+${_L(76)}
+${_L(77)}
+${_L(78)}
+${_L(79)}
+${_L(80)}
+    </p>
+
+${_L(81)}
+
+    <p>
+${_L(82)}
+${_L(83)}
+${_L(84)}
+${_L(85)}
+${_L(86)}
+${_L(87)}
+${_L(88)}
+${_L(89)}
+    </p>
+
+${_L(90)}
+
+<p>
+${_L(91)}
+${_L(92)}
+${_L(93)}
+${_L(94)}
+${_L(95)}
+\\(
+R_{P,a} = R_{P,1} + R_{P,2} + \\cdots + R_{P,12}.
+\\) 
+${_L(96)}
+${_L(97)}
+${_L(98)}
+${_L(99)}
+${_L(100)}
+</p>
+\\[
+\\mu_{P,a}
+= \\mathbb{E}[R_{P,a}] \\\\
+= \\mathbb{E}[R_{P,1} + \\cdots + R_{P,12}] \\\\
+= \\sum_{t=1}^{12} \\mathbb{E}[R_{P,t}] \\\\
+= 12\\mu_{P,m}
+\\]
+
+<p>
+${_L(101)}
+\\(
+\\mu_{P,m} = \\frac{\\mu_{P,a}}{12}.
+\\)
+${_L(102)}
+\\(
+${_L(103)}
+\\)
+${_L(104)}
+${_L(105)}
+${_L(106)}
+</p>
+
+\\[
+\\sigma_{P,a}^2
+= \\mathbf{Var}(R_{P,a}) \\\\
+= \\sum_{t=1}^{12} \\mathbf{Var}(R_{P,t}) \\\\
+= 12\\sigma_{P,m}^2
+\\]
+
+<p>
+${_L(107)}
+\\sigma_{P,m} = \\frac{\\sigma_{P,a}}{\\sqrt{12}}.
+\\)
+${_L(108)}
+</p>
+
+\\[
+\\begin{aligned}
+\\mu_{P,a} &= ${(muAnnual * 100).toFixed(3)}\\%,
+&\\qquad
+\\mu_{P,m} &= \\frac{${(muAnnual * 100).toFixed(3)}\\%}{12}
+= ${(mu * 100).toFixed(3)}\\%, \\\\
+\\sigma_{P,a} &= ${(sigmaAnnual * 100).toFixed(3)}\\%,
+&\\qquad
+\\sigma_{P,m} &= \\frac{${(sigmaAnnual * 100).toFixed(3)}\\%}{\\sqrt{12}}
+= ${(sigma * 100).toFixed(3)}\\%.
+\\end{aligned}
+\\]
+
+<p>
+${_L(109)}
+\\(
+${_L(110)}
+\\sigma_{i,m} = \\frac{\\sigma_i}{\\sqrt{12}}.
+\\)
+${_L(111)}
+${_L(112)}
+</p>
+
+\\[
+\\mu_{P,m}
+=
+\\sum_{i=1}^{n} w_i\\mu_{i,m}
+=
+\\sum_{i=1}^{n} w_i\\frac{\\mu_i}{12}
+\\]
+
+<p>
+${_L(113)}
+</p>
+
+\\[
+\\begin{aligned}
+\\mu_{P,m}
+&= ${strategies.map(s =>
+  `\\left(${(s.w/100).toFixed(4)} \\times \\frac{${(s.mu).toFixed(3)}\\%}{12}\\right)`
+).join(" + ")} \\\\
+&= ${(mu * 100).toFixed(3)}\\%
+\\end{aligned}
+\\]
+
+<p>
+${_L(114)}
+${_L(115)}
+${_L(116)}
+${_L(117)}
+</p>
+
+\\[
+\\mathbf{Var}(R_{P,m})
+=
+\\sum_{i=1}^{n}\\sum_{j=1}^{n}
+w_i w_j \\, \\mathbf{Cov}(R_{i,m},R_{j,m})
+\\]
+
+<p>
+${_L(118)}
+\\(
+\\mathbf{Cov}(R_{i,m},R_{j,m})
+=
+\\sigma_{i,m}\\sigma_{j,m}\\rho_{ij}.
+\\)
+${_L(119)}
+</p>
+
+\\[
+\\mathbf{Var}(R_{P,m})
+=
+\\sum_{i=1}^{n}\\sum_{j=1}^{n}
+w_i w_j \\, \\sigma_{i,m}\\sigma_{j,m}\\rho_{ij}
+\\]
+
+<p>
+${_L(120)}
+</p>
+
+\\[
+\\begin{aligned}
+\\mathbf{Var}(R_{P,m})
+${varianceLines} \\\\
+&= ${Math.pow(sigma,2).toFixed(6)}
+\\end{aligned}
+\\]
+
+<p>
+${_L(121)}
+\\(
+\\sigma_{P,m} = \\sqrt{${Math.pow(sigma,2).toFixed(6)}} = ${(sigma * 100).toFixed(3)}\\%.
+\\)
+
+${_L(122)}
+
+    <p>
+${_L(123)}
+${_L(124)}
+${_L(125)}
+    \\(
+    \\mathbb{P}(R_{P,m} < 0).
+    \\)
+${_L(126)}
+    </p>
+
+    \\[
+    \\mathbb{P}(R_{P,m} < 0)
+    =
+    \\mathbb{P}\\left(
+      \\frac{R_{P,m} - \\mu_{P,m}}{\\sigma_{P,m}}
+      <
+      \\frac{-\\mu_{P,m}}{\\sigma_{P,m}}
+    \\right)
+    =
+    \\Phi\\left(
+      -\\frac{\\mu_{P,m}}{\\sigma_{P,m}}
+    \\right)
+    \\]
+${_L(127)}
+    </p>
+    \\[
+    \\mathbb{P}(R_{P,m} < 0)
+    =
+    \\Phi\\left(
+      -\\frac{${mu.toFixed(6)}}{${sigma.toFixed(6)}}
+    \\right)
+    =
+    ${p.toFixed(6)}
+    \\]
+
+    <p>
+${_L(128)}
+${_L(129)}
+${_L(130)}
+${_L(131)}
+    </p>
+
+${_L(132)}
+
+    <p>
+${_L(133)}
+${_L(134)}
+${_L(135)}
+    </p>
+
+    \\[
+${_L(136)}
+    = (1-p)^{12}
+    = (1-${p.toFixed(6)})^{12}
+    = ${zeroRed.toFixed(6)}
+    \\]
+
+    <p>
+${_L(137)}
+    </p>
+
+    \\[
+${_L(138)}
+    = 1 - (1-p)^{12}
+    = 1 - (1-${p.toFixed(6)})^{12}
+    = ${p_at_least_one.toFixed(6)}
+    \\]
+
+    <p>
+${_L(139)}
+${_L(140)}
+${_L(141)}
+${_L(142)}
+    </p>
+
+${_L(143)}
+
+    <p>
+${_L(144)}
+${_L(145)}
+    \\(
+    X \\sim \\mathcal{B}(12,p).
+    \\)
+${_L(146)}
+    </p>
+
+    \\[
+    \\mathbb{P}(X = k)
+    = \\binom{12}{k} p^k (1-p)^{12-k}
+    \\]
+
+    <p>
+${_L(147)}
+    </p>
+
+    \\[
+    \\mathbb{E}[X] = 12p = ${(expectedMonths).toFixed(6)},
+    \\qquad
+    \\mathbf{Var}(X) = 12p(1-p) = ${varianceMonths.toFixed(6)}
+    \\]
+
+    <p>
+${_L(148)}
+${_L(149)}
+${_L(150)}
+${_L(151)}
+    </p>
+
+${_L(152)}
+
+    <p>
+${_L(153)}
+${_L(154)}
+${_L(155)}
+${_L(156)}
+${_L(157)}
+${_L(158)}
+${_L(159)}
+${_L(160)}
+${_L(161)}
+${_L(162)}
+${_L(163)}
+    </p>
+
+    \\[
+    q_{t+1}(0) = (1-p) \\sum_{r=0}^{x-1} q_t(r),
+    \\]
+
+    \\[
+    q_{t+1}(r) = p\\, q_t(r-1),
+    \\qquad r=1,\\dots,x-1
+    \\]
+
+    <p>
+${_L(164)}
+${_L(165)}
+      \\(\\sum_{r=0}^{x-1} q_{12}(r)\\),
+${_L(166)}
+    </p>
+
+    \\[
+    \\mathbb{P}(A_x)
+    = 1 - \\sum_{r=0}^{x-1} q_{12}(r)
+    \\]
+
+    <p>
+${_L(167)}
+${_L(168)}
+${_L(169)}
+${_L(170)}
+    </p>
+  `
+
+  document.getElementById("monthly_details").innerHTML = details;
+  refreshMathJax();
+}
+
+function renderMonthlyCountDetail(p, countProbs, x){
+
+  const exact = countProbs[x]
+  let cumulativeAtLeast = 0
+  for(let k = x; k <= 12; k++){
+    cumulativeAtLeast += countProbs[k]
+  }
+
+  const choose = binomial(12, x)
+  const detail = `
+    <div style="padding:12px; border:0px solid #ddd; margin-top:-20px;">
+      <p>
+${_L(171)}
+${_L(172)}${x}${_L(173)}
+      </p>
+
+      \\[
+      \\mathbb{P}(X = ${x})
+      = \\binom{12}{${x}} p^{${x}} (1-p)^{${12 - x}}
+      \\]
+
+      <p>
+${_L(174)}${x}${_L(175)}
+${_L(176)}${x}${_L(177)}${x}} = ${choose}${_L(178)}
+      </p>
+
+      \\[
+      \\mathbb{P}(X = ${x})
+      = ${choose} \\times ${p.toFixed(6)}^{${x}} \\times (1-${p.toFixed(6)})^{${12 - x}}
+      = ${exact.toFixed(6)}
+      \\]
+
+      <p>
+${_L(179)}${x}${_L(180)}
+${_L(181)}${x}</strong>,
+${_L(182)}${x}${_L(183)}
+      </p>
+
+      \\[
+      \\mathbb{P}(X \\ge ${x})
+      = \\sum_{k=${x}}^{12} \\binom{12}{k} p^k (1-p)^{12-k}
+      = ${cumulativeAtLeast.toFixed(6)}
+      \\]
+
+      <p>
+${_L(184)}${x}${_L(185)}${x}${_L(186)}
+${_L(187)}
+      </p>
+    </div>
+  `
+
+  document.getElementById("monthly_count_detail").innerHTML = detail;
+  refreshMathJax();
+}
+
+function renderMonthlyRunDetail(p, runProbs, x){
+
+  const exact = runProbs[x - 1]
+  const localApprox = Math.pow(p, x)
+  const windowApprox = Math.min(1, (13 - x) * Math.pow(p, x))
+
+  const detail = `
+    <div style="padding:12px; border:0px solid #ddd; margin-top:-20px;">
+      <p>
+${_L(188)}${x}${_L(189)}
+${_L(190)}${x}${_L(191)}
+${_L(192)}
+${_L(193)}
+${_L(194)}
+${_L(195)}
+${_L(196)}
+${_L(197)}
+${_L(198)}
+${_L(199)}
+${_L(200)}
+${_L(201)}${x}${_L(202)}
+${_L(203)}${x - 1}\\}\\).
+      </p>
+
+      \\[
+      q_{t+1}(0) = (1-p)\\sum_{r=0}^{${x - 1}} q_t(r),
+      \\qquad
+      q_{t+1}(r) = p\\,q_t(r-1), \\; r=1,\\dots,${x - 1}
+      \\]
+
+      <p>
+${_L(204)}${x}
+${_L(205)}
+${_L(206)}
+      </p>
+
+      \\[
+      \\mathbb{P}(A_${x})
+      = 1 - \\sum_{r=0}^{${x - 1}} q_{12}(r)
+      = ${exact.toFixed(6)}
+      \\]
+
+      <p>
+${_L(207)}
+        \\(p^{${x}${_L(208)}${x}${_L(209)}
+${_L(210)}
+
+
+      \\(
+      p^{${x}} = ${localApprox.toFixed(6)}.
+      \\)
+
+${_L(211)}
+${_L(212)}${x}${_L(213)}
+
+      \\(
+      (13-${x})p^{${x}} = ${windowApprox.toFixed(6)}.
+      \\)
+
+${_L(214)}
+${_L(215)}
+${_L(216)}
+      </p>
+    </div>
+  `
+
+  document.getElementById("monthly_run_detail").innerHTML = detail;
+  refreshMathJax();
+}
+
+// ==========================================
+// CALCULS JOURNALIERS
+// ==========================================
+function computeDaily(){
+
+  const n = strategies.length
+
+  let muMonthly = 0
+  let varianceMonthly = 0
+
+  for(let i = 0; i < n; i++){
+    muMonthly += (strategies[i].w / 100) * (strategies[i].mu / 100) / 12
+  }
+
+  for(let i = 0; i < n; i++){
+    for(let j = 0; j < n; j++){
+      const corr = corrMatrix[i][j]
+      const sigma_i_m = (strategies[i].sigma / 100) / Math.sqrt(12)
+      const sigma_j_m = (strategies[j].sigma / 100) / Math.sqrt(12)
+
+      varianceMonthly +=
+        (strategies[i].w / 100) *
+        (strategies[j].w / 100) *
+        sigma_i_m *
+        sigma_j_m *
+        corr
+    }
+  }
+
+  const sigmaMonthly = Math.sqrt(Math.max(varianceMonthly, 0))
+
+  const mu = muMonthly / 21
+  const sigma = sigmaMonthly / Math.sqrt(21)
+  const variance = sigma * sigma
+
+  let p = 0
+  if(sigma === 0){
+    p = mu < 0 ? 1 : 0
+  }else{
+    p = normalCDF(-mu / sigma)
+  }
+
+  const p_at_least_one = 1 - Math.pow(1 - p, 21)
+
+  const countProbs = []
+  for(let k = 0; k <= 21; k++){
+    countProbs.push(binomial(21, k) * Math.pow(p, k) * Math.pow(1 - p, 21 - k))
+  }
+
+  const runProbs = []
+  for(let k = 1; k <= 21; k++){
+    runProbs.push(probAtLeastOneRun(21, p, k))
+  }
+
+  generateDaily(mu, sigma, p, p_at_least_one, countProbs, runProbs)
+}
+
+function generateDaily(mu, sigma, p, p_at_least_one, countProbs, runProbs){
+
+  const expectedDays = 21 * p
+  const varianceDays = 21 * p * (1 - p)
+  const stdDays = Math.sqrt(varianceDays)
+
+  let html = `
+${_L(217)}
+
+    <p>
+${_L(218)}
+${_L(219)}
+${_L(220)}
+    </p>
+
+    <div style="background:#f8fafc; padding:20px; border-radius:8px; border: 1px solid #e2e8f0; margin:20px 0;">
+${_L(221)}${(mu * 100).toFixed(3)} %</span></p>
+${_L(222)}${(sigma * 100).toFixed(3)} %</span></p>
+${_L(223)}${(p * 100).toFixed(2)} %</span></p>
+${_L(224)}${(p_at_least_one * 100).toFixed(2)} %</span></p>
+    </div>
+
+    <p>
+${_L(225)}
+${_L(226)}
+${_L(227)}${expectedDays.toFixed(3)}
+${_L(228)}${varianceDays.toFixed(3)}
+${_L(229)}${stdDays.toFixed(3)}
+${_L(230)}${(countProbs[0] * 100).toFixed(2)} %
+    </p>
+  `
+
+  html += `${_L(231)}`
+  html += `
+    <p>
+${_L(232)}
+${_L(233)}
+${_L(234)}
+    </p>
+  `
+
+  html += `<table border="1">
+    <tr>
+      <th>X</th>
+${_L(235)}
+    </tr>`
+
+  for(let k = 1; k <= 21; k++){
+    html += `
+      <tr>
+        <td>${k}</td>
+        <td>${(countProbs[k] * 100).toFixed(2)} %</td>
+      </tr>
+    `
+  }
+
+  html += `</table>`
+
+  html += `
+    <div style="margin-top:20px; background: #fff; padding: 15px; border: 1px solid #e2e8f0; border-radius: 8px;">
+${_L(236)}
+      <select id="daily_count_x" style="margin-left:8px; padding: 6px; border-radius:4px; border: 1px solid #ccc;">
+        ${Array.from({length:21}, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join("")}
+      </select>
+
+      <details id="daily_count_accordion" style="margin-top:12px; border:none; box-shadow:none;">
+        <summary id="daily_count_summary" style="background: #f1f5f9; border-radius: 6px;">
+${_L(237)}
+        </summary>
+        <div id="daily_count_detail" class="details-body" style="padding-top:16px;"></div>
+      </details>
+    </div>
+  `
+
+  html += `${_L(238)}`
+  html += `
+    <p>
+${_L(239)}
+${_L(240)}
+${_L(241)}
+${_L(242)}
+    </p>
+  `
+
+  html += `<table border="1">
+    <tr>
+      <th>X</th>
+${_L(243)}
+    </tr>`
+
+  for(let k = 1; k <= 21; k++){
+    html += `
+      <tr>
+        <td>${k}</td>
+        <td>${(runProbs[k - 1] * 100).toFixed(2)} %</td>
+      </tr>
+    `
+  }
+
+  html += `</table>`
+
+  html += `
+    <div style="margin-top:20px; background: #fff; padding: 15px; border: 1px solid #e2e8f0; border-radius: 8px;">
+${_L(244)}
+      <select id="daily_run_x" style="margin-left:8px; padding: 6px; border-radius:4px; border: 1px solid #ccc;">
+        ${Array.from({length:21}, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join("")}
+      </select>
+
+      <details id="daily_run_accordion" style="margin-top:12px; border:none; box-shadow:none;">
+        <summary id="daily_run_summary" style="background: #f1f5f9; border-radius: 6px;">
+${_L(245)}
+        </summary>
+        <div id="daily_run_detail" class="details-body" style="padding-top:16px;"></div>
+      </details>
+    </div>
+  `
+
+  document.getElementById("daily_results").innerHTML = html
+
+  const countSelect = document.getElementById("daily_count_x")
+  const runSelect = document.getElementById("daily_run_x")
+
+  countSelect.addEventListener("change", () => {
+    const x = parseInt(countSelect.value, 10)
+    document.getElementById("daily_count_summary").innerHTML = `${_L(246)}${x}`
+    document.getElementById("daily_count_accordion").open = true
+    renderDailyCountDetail(p, countProbs, x)
+  })
+
+  runSelect.addEventListener("change", () => {
+    const x = parseInt(runSelect.value, 10)
+    document.getElementById("daily_run_summary").innerHTML = `${_L(247)}${x}`
+    document.getElementById("daily_run_accordion").open = true
+    renderDailyRunDetail(p, runProbs, x)
+  })
+
+  document.getElementById("daily_count_summary").innerHTML =
+    `${_L(248)}${parseInt(countSelect.value, 10)}`
+  document.getElementById("daily_run_summary").innerHTML =
+    `${_L(249)}${parseInt(runSelect.value, 10)}`
+
+  renderDailyCountDetail(p, countProbs, parseInt(countSelect.value, 10))
+  renderDailyRunDetail(p, runProbs, parseInt(runSelect.value, 10))
+
+  generateDailyLatex(mu, sigma, p, p_at_least_one, countProbs, runProbs)
+}
+
+function generateDailyLatex(mu, sigma, p, p_at_least_one, countProbs, runProbs){
+
+  const muMonthly = 21 * mu
+  const sigmaMonthly = sigma * Math.sqrt(21)
+
+  const varianceTerms = []
+  for(let i = 0; i < strategies.length; i++){
+    for(let j = 0; j < strategies.length; j++){
+      const wi = (strategies[i].w / 100).toFixed(4)
+      const wj = (strategies[j].w / 100).toFixed(4)
+      const si = (((strategies[i].sigma / 100) / Math.sqrt(12)) / Math.sqrt(21)).toFixed(6)
+      const sj = (((strategies[j].sigma / 100) / Math.sqrt(12)) / Math.sqrt(21)).toFixed(6)
+      const rho = Number(corrMatrix[i][j]).toFixed(4)
+      varianceTerms.push(`${wi}\\times${wj}\\times${si}\\times${sj}\\times${rho}`)
+    }
+  }
+
+  const expectedDays = 21 * p
+  const varianceDays = 21 * p * (1 - p)
+  const zeroRed = Math.pow(1 - p, 21)
+
+  const dailyMuLines = strategies.map((s, idx) => {
+    const monthlyMuPct = s.mu / 12
+    const term = `\\left(${(s.w/100).toFixed(4)} \\times \\frac{${monthlyMuPct.toFixed(3)}\\%}{21}\\right)`
+    return idx === 0 ? `&= ${term}` : `&\\quad + ${term}`
+  }).join(" \\\\\n")
+
+  const varianceLines = varianceTerms.map((term, idx) => {
+    return idx === 0 ? `&= ${term}` : `&\\quad + ${term}`
+  }).join(" \\\\\n")
+
+  const details = `
+    <p>
+${_L(250)}
+${_L(251)}
+${_L(252)}
+${_L(253)}
+    </p>
+
+${_L(254)}
+
+    <p>
+${_L(255)}
+${_L(256)}
+${_L(257)}
+${_L(258)}
+    </p>
+
+${_L(259)}
+
+    <p>
+${_L(260)}
+${_L(261)}
+${_L(262)}
+      \\(
+      R_{P,m} = R_{P,1} + R_{P,2} + \\cdots + R_{P,21}.
+      \\)
+${_L(263)}
+    </p>
+
+    \\[
+    \\mu_{P,m}
+    = \\mathbb{E}[R_{P,m}] \\\\
+    = \\mathbb{E}[R_{P,1} + \\cdots + R_{P,21}] \\\\
+    = \\sum_{d=1}^{21} \\mathbb{E}[R_{P,d}] \\\\
+    = 21\\mu_{P,j}
+    \\]
+
+    <p>
+${_L(264)}
+      \\(
+      \\mu_{P,j} = \\frac{\\mu_{P,m}}{21}.
+      \\)
+${_L(265)}
+      \\(
+${_L(266)}
+      \\)
+${_L(267)}
+    </p>
+
+    \\[
+    \\sigma_{P,m}^2
+    = \\mathbf{Var}(R_{P,m}) \\\\
+    = \\sum_{d=1}^{21} \\mathbf{Var}(R_{P,d}) \\\\
+    = 21\\sigma_{P,j}^2
+    \\]
+
+    <p>
+${_L(268)}
+      \\(
+      \\sigma_{P,j} = \\frac{\\sigma_{P,m}}{\\sqrt{21}}.
+      \\)
+${_L(269)}
+    </p>
+
+    \\[
+    \\begin{aligned}
+    \\mu_{P,m} &= ${(muMonthly * 100).toFixed(3)}\\%,
+    &\\qquad
+    \\mu_{P,j} &= \\frac{${(muMonthly * 100).toFixed(3)}\\%}{21}
+    = ${(mu * 100).toFixed(3)}\\%, \\\\
+    \\sigma_{P,m} &= ${(sigmaMonthly * 100).toFixed(3)}\\%,
+    &\\qquad
+    \\sigma_{P,j} &= \\frac{${(sigmaMonthly * 100).toFixed(3)}\\%}{\\sqrt{21}}
+    = ${(sigma * 100).toFixed(3)}\\%.
+    \\end{aligned}
+    \\]
+
+    <p>
+${_L(270)}
+      \\(
+      \\mu_{i,j} = \\frac{\\mu_{i,m}}{21}
+      \\)
+${_L(271)}
+      \\(
+      \\sigma_{i,j} = \\frac{\\sigma_{i,m}}{\\sqrt{21}}.
+      \\)
+${_L(272)}
+    </p>
+
+    \\[
+    \\mu_{P,j}
+    =
+    \\sum_{i=1}^{n} w_i\\mu_{i,j}
+    =
+    \\sum_{i=1}^{n} w_i\\frac{\\mu_{i,m}}{21}
+    \\]
+
+    <p>
+${_L(273)}
+    </p>
+
+    \\[
+    \\begin{aligned}
+    \\mu_{P,j}
+    ${dailyMuLines} \\\\
+    &= ${(mu * 100).toFixed(3)}\\%
+    \\end{aligned}
+    \\]
+
+    <p>
+${_L(274)}
+${_L(275)}
+    </p>
+
+    \\[
+    \\mathbf{Var}(R_{P,j})
+    =
+    \\sum_{i=1}^{n}\\sum_{j=1}^{n}
+    w_i w_j \\, \\mathbf{Cov}(R_{i,j},R_{j,j})
+    \\]
+
+    <p>
+${_L(276)}
+      \\(
+      \\mathbf{Cov}(R_{i,j},R_{j,j})
+      =
+      \\sigma_{i,j}\\sigma_{j,j}\\rho_{ij}.
+      \\)
+${_L(277)}
+    </p>
+
+    \\[
+    \\mathbf{Var}(R_{P,j})
+    =
+    \\sum_{i=1}^{n}\\sum_{j=1}^{n}
+    w_i w_j \\, \\sigma_{i,j}\\sigma_{j,j}\\rho_{ij}
+    \\]
+
+    <p>
+${_L(278)}
+    </p>
+
+    \\[
+    \\begin{aligned}
+    \\mathbf{Var}(R_{P,j})
+    ${varianceLines} \\\\
+    &= ${Math.pow(sigma,2).toFixed(8)}
+    \\end{aligned}
+    \\]
+
+    <p>
+${_L(279)}
+      \\(
+      \\sigma_{P,j} = \\sqrt{${Math.pow(sigma,2).toFixed(8)}} = ${(sigma * 100).toFixed(3)}\\%.
+      \\)
+    </p>
+
+${_L(280)}
+
+    <p>
+${_L(281)}
+      \\(
+${_L(282)}
+      \\)
+      ${_L(283)}
+      \\(
+      \\mathbb{P}(R_{P,j} < 0).
+      \\)
+${_L(284)}
+    </p>
+
+    \\[
+    \\mathbb{P}(R_{P,j} < 0)
+    =
+    \\mathbb{P}\\left(
+      \\frac{R_{P,j} - \\mu_{P,j}}{\\sigma_{P,j}}
+      <
+      \\frac{-\\mu_{P,j}}{\\sigma_{P,j}}
+    \\right)
+    =
+    \\Phi\\left(
+      -\\frac{\\mu_{P,j}}{\\sigma_{P,j}}
+    \\right)
+    \\]
+
+    <p>
+${_L(285)}
+    </p>
+
+    \\[
+    \\mathbb{P}(R_{P,j} < 0)
+    =
+    \\Phi\\left(
+      -\\frac{${mu.toFixed(8)}}{${sigma.toFixed(8)}}
+    \\right)
+    =
+    ${p.toFixed(6)}
+    \\]
+
+    <p>
+${_L(286)}
+${_L(287)}
+${_L(288)}
+    </p>
+
+${_L(289)}
+
+    <p>
+${_L(290)}
+${_L(291)}
+${_L(292)}
+    </p>
+
+    \\[
+${_L(293)}
+    = (1-p)^{21}
+    = (1-${p.toFixed(6)})^{21}
+    = ${zeroRed.toFixed(6)}
+    \\]
+
+    <p>
+${_L(294)}
+    </p>
+
+    \\[
+${_L(295)}
+    = 1 - (1-p)^{21}
+    = 1 - (1-${p.toFixed(6)})^{21}
+    = ${p_at_least_one.toFixed(6)}
+    \\]
+
+    <p>
+${_L(296)}
+${_L(297)}
+${_L(298)}
+    </p>
+
+${_L(299)}
+
+    <p>
+${_L(300)}
+${_L(301)}
+      \\(
+      X \\sim \\mathcal{B}(21,p).
+      \\)
+${_L(302)}
+    </p>
+
+    \\[
+    \\mathbb{P}(X = k)
+    = \\binom{21}{k} p^k (1-p)^{21-k}
+    \\]
+
+    <p>
+${_L(303)}
+    </p>
+
+    \\[
+    \\mathbb{E}[X] = 21p = ${expectedDays.toFixed(6)},
+    \\qquad
+    \\mathbf{Var}(X) = 21p(1-p) = ${varianceDays.toFixed(6)}
+    \\]
+
+    <p>
+${_L(304)}
+${_L(305)}
+${_L(306)}
+    </p>
+
+${_L(307)}
+
+    <p>
+${_L(308)}
+${_L(309)}
+${_L(310)}
+${_L(311)}
+${_L(312)}
+${_L(313)}
+${_L(314)}
+    </p>
+
+    \\[
+    q_{t+1}(0) = (1-p) \\sum_{r=0}^{x-1} q_t(r),
+    \\]
+
+    \\[
+    q_{t+1}(r) = p\\, q_t(r-1),
+    \\qquad r=1,\\dots,x-1
+    \\]
+
+    <p>
+${_L(315)}
+${_L(316)}
+      \\(
+      \\sum_{r=0}^{x-1} q_{21}(r).
+      \\)
+${_L(317)}
+    </p>
+
+    \\[
+    \\mathbb{P}(A_x)
+    = 1 - \\sum_{r=0}^{x-1} q_{21}(r)
+    \\]
+
+    <p>
+${_L(318)}
+${_L(319)}
+${_L(320)}
+    </p>
+  `
+
+  document.getElementById("daily_details").innerHTML = details;
+  refreshMathJax();
+}
+
+function renderDailyCountDetail(p, countProbs, x){
+
+  const exact = countProbs[x]
+  let cumulativeAtLeast = 0
+  for(let k = x; k <= 21; k++){
+    cumulativeAtLeast += countProbs[k]
+  }
+
+  const choose = binomial(21, x)
+  const detail = `
+    <div style="padding:12px; border:0px solid #ddd; margin-top:-20px;">
+      <p>
+${_L(321)}
+${_L(322)}
+${_L(323)}${x}${_L(324)}
+      </p>
+
+      \\[
+      \\mathbb{P}(X = ${x})
+      = \\binom{21}{${x}} p^{${x}} (1-p)^{${21 - x}}
+      \\]
+
+      <p>
+${_L(325)}${x}${_L(326)}
+${_L(327)}${x}${_L(328)}
+${_L(329)}${x}} = ${choose}\\).
+${_L(330)}
+      </p>
+
+      \\[
+      \\mathbb{P}(X = ${x})
+      = ${choose} \\times ${p.toFixed(6)}^{${x}} \\times (1-${p.toFixed(6)})^{${21 - x}}
+      = ${exact.toFixed(6)}
+      \\]
+
+      <p>
+${_L(331)}${x}${_L(332)}
+${_L(333)}${x}</strong>,
+${_L(334)}${x}${_L(335)}
+      </p>
+
+      \\[
+      \\mathbb{P}(X \\ge ${x})
+      = \\sum_{k=${x}}^{21} \\binom{21}{k} p^k (1-p)^{21-k}
+      = ${cumulativeAtLeast.toFixed(6)}
+      \\]
+
+      <p>
+${_L(336)}${x}${_L(337)}${x}${_L(338)}
+${_L(339)}
+      </p>
+    </div>
+  `
+
+  document.getElementById("daily_count_detail").innerHTML = detail;
+  refreshMathJax();
+}
+
+function renderDailyRunDetail(p, runProbs, x){
+
+  const exact = runProbs[x - 1]
+  const localApprox = Math.pow(p, x)
+  const windowApprox = Math.min(1, (22 - x) * Math.pow(p, x))
+
+  const detail = `
+    <div style="padding:12px; border:0px solid #ddd; margin-top:-20px;">
+      <p>
+${_L(340)}${x}${_L(341)}
+${_L(342)}${x}${_L(343)}
+${_L(344)}
+${_L(345)}
+${_L(346)}
+${_L(347)}
+${_L(348)}
+${_L(349)}
+${_L(350)}${x}${_L(351)}
+${_L(352)}${x - 1}\\}\\).
+      </p>
+
+      \\[
+      q_{t+1}(0) = (1-p)\\sum_{r=0}^{${x - 1}} q_t(r),
+      \\qquad
+      q_{t+1}(r) = p\\,q_t(r-1), \\; r=1,\\dots,${x - 1}
+      \\]
+
+      <p>
+${_L(353)}${x}
+${_L(354)}
+${_L(355)}
+      </p>
+
+      \\[
+      \\mathbb{P}(A_${x})
+      = 1 - \\sum_{r=0}^{${x - 1}} q_{21}(r)
+      = ${exact.toFixed(6)}
+      \\]
+
+      <p>
+${_L(356)}
+        \\(p^{${x}${_L(357)}${x}${_L(358)}
+        \\(
+        p^{${x}} = ${localApprox.toFixed(6)}.
+        \\)
+${_L(359)}
+${_L(360)}${x}${_L(361)}
+        \\(
+        (22-${x})p^{${x}} = ${windowApprox.toFixed(6)}.
+        \\)
+${_L(362)}
+${_L(363)}
+      </p>
+    </div>
+  `
+
+  document.getElementById("daily_run_detail").innerHTML = detail;
+  refreshMathJax();
+}
+
+// ==========================================
+// CALCULS INTERVALLE DE CONFIANCE (SHARPE)
+// ==========================================
+function computeInterval() {
+  let T = parseFloat(document.getElementById("interval_T").value);
+  let sharpe = parseFloat(document.getElementById("interval_sharpe").value);
+  let confLevel = document.getElementById("interval_conf").value;
+
+  let q_val, q_sub, q_pct, conf_val, conf_pct;
+  if (confLevel === "90") {
+    q_val = "1.645"; q_sub = "0.95"; q_pct = "95"; conf_val = "0.90"; conf_pct = "90";
+  } else if (confLevel === "99") {
+    q_val = "2.576"; q_sub = "0.995"; q_pct = "99.5"; conf_val = "0.99"; conf_pct = "99";
+  } else {
+    q_val = "1.96"; q_sub = "0.975"; q_pct = "97.5"; conf_val = "0.95"; conf_pct = "95";
+  }
+
+  let V_hat = 252 + (sharpe * sharpe) / 2;
+  let margin = parseFloat(q_val) * Math.sqrt(V_hat) / Math.sqrt(T);
+
+  let lower = sharpe - margin;
+  let upper = sharpe + margin;
+
+  let resHtml = `
+${_L(364)}
+    <div style="background:#f8fafc; padding:20px; border-radius:8px; border: 1px solid #e2e8f0; margin-bottom:20px;">
+${_L(365)}${sharpe.toFixed(3)}</span></p>
+${_L(366)}${conf_pct}${_L(367)}${lower.toFixed(3)} ; ${upper.toFixed(3)} ]</span></p>
+    </div>
+  `;
+  document.getElementById("interval_results").innerHTML = resHtml;
+
+  let detailsHtml = `
+${_L(368)}
+${_L(369)}
+    \\widehat{\\sigma^2}:= \\frac{1}{T}\\sum_{t=1}^{T} \\left(\\overline{P}_t -
+    \\widehat{\\mu}\\right)^2\\]
+${_L(370)}
+    \\[\\underbrace{\\sqrt{T}\\begin{pmatrix}\\dfrac{1}{T}\\sum_{t=1}^{T}U_t-\\mathbb{E}[U_t]\\\\\\dfrac{1}{T}\\sum_{t=1}^{T}V_t-\\mathbb{E}[V_t]\\end{pmatrix}}_{=:\\mathbf{Z}_T}\\xrightarrow[T\\to+\\infty]{\\;\\mathcal{L}\\;} \\mathcal{N}\\!\\left(\\mathbf{0},\\; \\pmb{\\Sigma}\\right)\\]
+${_L(371)}
+    <ul>
+    <li>
+${_L(372)}
+    \\[\\begin{aligned}
+    \\sqrt{T}\\begin{pmatrix}\\dfrac{1}{T}\\sum_{t=1}^{T}U_t-\\mathbb{E}[U_t]\\\\\\dfrac{1}{T}\\sum_{t=1}^{T}V_t-\\mathbb{E}[V_t]\\end{pmatrix}
+    &=\\sqrt{T}\\begin{pmatrix}\\dfrac{1}{T}\\sum_{t=1}^{T}\\left(\\overline{P}_t - \\mu\\right)- \\underbrace{\\mathbb{E}\\!\\left[\\overline{P}_t - \\mu\\right]}_{=\\mathbb{E}[\\overline{P}_t]-\\mu=0}\\\\\\dfrac{1}{T}\\sum_{t=1}^{T}\\left(\\overline{P}_t - \\mu\\right)^2 - \\sigma^2  - \\underbrace{\\mathbb{E}\\!\\left[\\left(\\overline{P}_t - \\mu\\right)^2- \\sigma^2\\right]}_{=\\mathbf{Var}(\\overline{P}_t)-\\sigma^2 =0}\\end{pmatrix}\\\\
+    &=\\sqrt{T}\\begin{pmatrix} \\widehat{\\mu} - \\mu\\\\\\dfrac{1}{T}\\sum_{t=1}^{T}\\left(\\overline{P}_t - \\mu\\right)^2 - \\sigma^2
+    \\end{pmatrix}
+    \\end{aligned}\\]
+${_L(373)}
+    \\[\\begin{aligned}
+    \\frac{1}{T}\\sum_{t=1}^{T}(\\overline{P}_t - \\mu)^2
+    &= \\frac{1}{T}\\sum_{t=1}^{T}\\Bigl[(\\overline{P}_t - \\widehat{\\mu}) + (\\widehat{\\mu}-\\mu) \\Bigr]^2\\\\
+${_L(374)}
+    &= \\widehat{\\sigma^2} + (\\widehat{\\mu}-\\mu)^2
+    \\end{aligned}\\]
+${_L(375)}
+    \\[\\begin{aligned}
+    \\sqrt{T}\\begin{pmatrix}\\widehat{\\mu} - \\mu\\\\\\dfrac{1}{T}\\sum_{t=1}^{T}\\left(\\overline{P}_t - \\mu\\right)^2 - \\sigma^2\\end{pmatrix}
+    &=\\sqrt{T}\\begin{pmatrix}\\widehat{\\mu} - \\mu\\\\\\widehat{\\sigma^2} - \\sigma^2 + (\\widehat{\\mu}-\\mu)^2
+    \\end{pmatrix}\\\\
+${_L(376)}
+${_L(377)}
+    \\[\\begin{aligned}
+    \\mathbf{Var}(\\widehat{\\mu})
+    &= \\mathbf{Var}\\left(\\frac{1}{T}\\sum_{t=1}^T \\overline{P}_t\\right)\\\\
+${_L(378)}
+${_L(379)}
+    \\end{aligned}\\]
+${_L(380)}
+    </li>
+    <li>
+${_L(381)}
+    \\[\\pmb{\\Sigma} := \\begin{pmatrix}\\mathbf{Var}(U_t) & \\mathbf{Cov}(U_t, V_t) \\\\[6pt]\\mathbf{Cov}(U_t, V_t) & \\mathbf{Var}(V_t)\\end{pmatrix}\\]
+${_L(382)}
+    \\[\\begin{aligned}
+    \\mathbf{Var}(U_t)
+    &= \\mathbb{E}\\!\\left[U_t^2\\right] - \\mathbb{E}\\!\\left[U_t\\right]^2 \\\\
+${_L(383)}
+    &= \\mathbf{Var}(\\overline{P}_t)= \\sigma^2
+    \\end{aligned}\\]
+${_L(384)}
+    \\[\\begin{aligned}
+    \\mathbf{Var}(V_t)
+    &= \\mathbb{E}\\!\\left[V_t^2\\right] - \\mathbb{E}\\!\\left[V_t\\right]^2 \\\\
+${_L(385)}
+    &= \\mathbb{E}\\!\\left[(\\overline{P}_t - \\mu)^4- 2\\sigma^2(\\overline{P}_t - \\mu)^2+ \\sigma^4\\right] \\\\
+    &= \\mathbb{E}\\!\\left[(\\overline{P}_t - \\mu)^4\\right]- 2\\sigma^2\\,\\mathbb{E}\\!\\left[(\\overline{P}_t - \\mu)^2\\right]+ \\sigma^4 \\\\
+    &= \\mu_4 - 2\\sigma^2 \\times \\sigma^2 + \\sigma^4 = \\mu_4 - \\sigma^4
+    \\end{aligned}\\]
+${_L(386)}
+    \\[\\begin{aligned}
+    \\mathbf{Cov}(U_t, V_t)
+    &= \\mathbb{E}\\!\\left[U_t\\,V_t\\right]- \\overbrace{\\mathbb{E}[U_t]}^{=\\,0}\\times\\overbrace{\\mathbb{E}[V_t]}^{=\\,0}= \\mathbb{E}\\!\\left[U_t\\,V_t\\right] \\\\
+    &= \\mathbb{E}\\!\\left[(\\overline{P}_t - \\mu)\\left((\\overline{P}_t - \\mu)^2 - \\sigma^2\\right)\\right] \\\\
+    &= \\mathbb{E}\\!\\left[(\\overline{P}_t - \\mu)^3\\right]- \\sigma^2\\,\\underbrace{\\mathbb{E}\\!\\left[\\overline{P}_t - \\mu\\right]}_{=\\,0}=\\mu_3
+    \\end{aligned}\\]
+${_L(387)}
+    \\[\\pmb{\\Sigma}=\\begin{pmatrix}\\sigma^2 & 0 \\\\0 & 2\\sigma^4\\end{pmatrix}\\]
+    </li>
+    </ul>
+${_L(388)}
+${_L(389)}
+${_L(390)}
+    \\[\\nabla g(\\mu, \\sigma^2)=\\begin{pmatrix}\\dfrac{\\partial g}{\\partial \\mu}\\\\[12pt]\\dfrac{\\partial g}{\\partial(\\sigma^2)}\\end{pmatrix}=\\begin{pmatrix}\\dfrac{1}{\\sigma}\\\\-\\dfrac{\\mu}{2\\sigma^3}\\end{pmatrix}\\]
+${_L(391)}
+    \\[\\begin{aligned}
+    V_j
+    &:= g(\\mu,\\sigma^2)^T\\,\\pmb{\\Sigma}\\,\\nabla g(\\mu,\\sigma^2)\\\\
+    &= \\begin{pmatrix}\\dfrac{1}{\\sigma} &-\\dfrac{\\mu}{2\\sigma^3}\\end{pmatrix}\\begin{pmatrix}\\sigma^2 & 0\\\\ 0 & 2\\sigma^4\\end{pmatrix}\\begin{pmatrix}\\dfrac{1}{\\sigma}\\\\[8pt]-\\dfrac{\\mu}{2\\sigma^3}\\end{pmatrix}\\\\
+    &= \\frac{1}{\\sigma}\\times\\sigma^2\\times\\frac{1}{\\sigma}\\;+\\;\\left(-\\frac{\\mu}{2\\sigma^3}\\right)\\times 2\\sigma^4\\times\\left(-\\frac{\\mu}{2\\sigma^3}\\right)\\\\
+    &= 1 + \\frac{\\mu^2}{4\\sigma^6}\\times 2\\sigma^4\\;=\\;1 + \\frac{\\mu^2}{2\\sigma^2}\\;=\\;{1 + \\frac{S_j^2}{2}}
+    \\end{aligned}\\]
+${_L(392)}
+    <ul>
+    <li>
+${_L(393)}
+    \\[\\widehat{\\sigma^2} = \\frac{1}{T}\\sum_{t=1}^T (\\overline{P}_t- \\mu)^2 - (\\widehat{\\mu}-\\mu)^2\\]
+${_L(394)}
+    \\[\\frac{1}{T}\\sum_{t=1}^T (\\overline{P}_t - \\mu)^2\\;\\xrightarrow[T\\to+\\infty]{\\;\\mathbb{P}\\;}\\; \\sigma^2\\]
+${_L(395)}
+    \\[\\widehat{\\sigma^2}= \\underbrace{\\frac{1}{T}\\sum_{t=1}^T (\\overline{P}_t - \\mu)^2}_{\\xrightarrow[T\\to+\\infty]{\\;\\mathbb{P}\\;}\\;\\sigma^2}\\;-\\;\\underbrace{(\\widehat{\\mu}-\\mu)^2}_{\\xrightarrow[T\\to+\\infty]{\\;\\mathbb{P}\\;}\\;0}\\;\\xrightarrow[T\\to+\\infty]{\\;\\mathbb{P}\\;}\\; \\sigma^2\\]
+${_L(396)}
+    </li>
+    <li>
+${_L(397)}
+    \\[\\widehat{Z}_T:= \\frac{\\sqrt{T}\\!\\left(\\widehat{S} - S\\right)}{\\sqrt{\\widehat{\\mathcal{V}}}}= \\underbrace{\\frac{\\sqrt{T}\\!\\left(\\widehat{S} - S\\right)}{\\sqrt{V}}}_{\\xrightarrow[T\\to+\\infty]{\\;\\mathcal{L}\\;}\\;\\mathcal{N}(0,1)}\\times\\underbrace{\\frac{\\sqrt{V}}{\\sqrt{\\widehat{\\mathcal{V}}}}}_{\\xrightarrow[T\\to+\\infty]{\\;\\mathbb{P}\\;}\\;1}\\;\\xrightarrow[T\\to+\\infty]{\\;\\mathcal{L}\\;}\\;\\mathcal{N}(0,1)\\]
+    </li>
+    </ul>
+${_L(398)}${q_sub}} = ${q_val}${_L(399)}${q_pct}${_L(400)}${q_val} \\leq \\widehat{Z}_T \\leq ${q_val}\\right]\\right)\\;\\xrightarrow[T\\to+\\infty]{}\\; ${conf_val}${_L(401)}
+    \\[\\begin{aligned}
+    \\mathbb{P}\\!\\left(\\left[-${q_val} \\leq \\widehat{Z}_T \\leq ${q_val}\\right]\\right)
+    &=\\mathbb{P}\\!\\left(\\left[-${q_val} \\leq\\frac{\\sqrt{T}\\!\\left(\\widehat{S} - S\\right)}{\\sqrt{\\widehat{\\mathcal{V}}}}\\leq ${q_val}\\right]\\right)\\\\
+    &=\\mathbb{P}\\!\\left(\\left[-\\frac{${q_val}{\\sqrt{\\widehat{\\mathcal{V}}}}}{\\sqrt{T}} \\leq{\\widehat{S} - S}\\leq \\frac{${q_val}{\\sqrt{\\widehat{\\mathcal{V}}}}}{\\sqrt{T}}\\right]\\right)\\\\
+    &=\\mathbb{P}\\!\\left(\\left[\\frac{${q_val}{\\sqrt{\\widehat{\\mathcal{V}}}}}{\\sqrt{T}} \\geq{S-\\widehat{S}}\\geq -\\frac{${q_val}{\\sqrt{\\widehat{\\mathcal{V}}}}}{\\sqrt{T}}\\right]\\right)\\\\
+    &=\\mathbb{P}\\!\\left(\\left[\\widehat{S}+\\frac{${q_val}{\\sqrt{\\widehat{\\mathcal{V}}}}}{\\sqrt{T}} \\geq{S}\\geq \\widehat{S}-\\frac{${q_val}{\\sqrt{\\widehat{\\mathcal{V}}}}}{\\sqrt{T}}\\right]\\right)\\\\
+    \\end{aligned}\\]
+${_L(402)}${conf_pct}${_L(403)}
+${_L(404)}${conf_pct}\\,\\%}(S)= \\left[\\widehat{S} - \\frac{${q_val}\\,\\sqrt{\\widehat{\\mathcal{V}}}}{\\sqrt{T}},\\quad\\widehat{S} + \\frac{${q_val}${_L(405)}
+  `;
+
+  document.getElementById("interval_details").innerHTML = detailsHtml;
+  refreshMathJax();
+}
+
+// ==========================================
+// OUTILS MATHÉMATIQUES
+// ==========================================
+function binomial(n, k){
+  if(k < 0 || k > n) return 0
+  if(k === 0 || k === n) return 1
+  k = Math.min(k, n - k)
+
+  let res = 1
+  for(let i = 1; i <= k; i++){
+    res *= (n - k + i) / i
+  }
+  return res
+}
+
+function probAtLeastOneRun(n, p, runLength){
+  if(runLength <= 0) return 1
+  if(runLength > n) return 0
+
+  let states = new Array(runLength).fill(0)
+  states[0] = 1
+
+  for(let t = 1; t <= n; t++){
+    const next = new Array(runLength).fill(0)
+
+    let totalNoRunYet = 0
+    for(let r = 0; r < runLength; r++){
+      totalNoRunYet += states[r]
+    }
+
+    next[0] += (1 - p) * totalNoRunYet
+
+    for(let r = 0; r < runLength - 1; r++){
+      next[r + 1] += p * states[r]
+    }
+
+    states = next
+  }
+
+  let probNoRun = 0
+  for(let r = 0; r < runLength; r++){
+    probNoRun += states[r]
+  }
+
+  return 1 - probNoRun
+}
+
+// Initialisation au chargement de la page
+addStrategy();
+compute();
+computeInterval();
+
+</script>
+
+</body>
+</html>
