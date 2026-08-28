@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Analyse Financière - Bilan Fonctionnel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['\\[', '\\]']]
+    }
+  };
+</script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7;text-align:justify;}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 1.5rem;border-bottom:3px solid var(--gold);text-align:left;}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end;background:rgba(255,255,255,.03);padding:1rem 1.5rem;border-radius:6px;border:1px solid rgba(255,255,255,.1)}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.6)}
+.ctrl-inp, .ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.4rem .7rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none;transition:border-color .2s}
+.ctrl-inp:focus, .ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.5rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;transition:background .18s;margin-left:auto}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN & CARDS */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:700}
+
+.top-actions{display:flex;gap:.5rem;}
+.btn-action{background:#fff;border:1px solid var(--border);color:var(--navy);padding:.4rem .8rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.85rem;font-weight:600;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.btn-action:hover{border-color:var(--navy);background:var(--cream-dark);}
+
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem;text-align:left;}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+.event-list{list-style:none;}
+.event-list > li{margin-bottom:1.5rem;padding-left:1.5rem;position:relative;font-size:.95rem;text-align:justify}
+.event-list > li::before{content:"•";position:absolute;left:0;color:var(--gold);font-size:1.5rem;line-height:1}
+
+.sub-list { list-style-type: none; padding-left: 1rem; margin-top: 0.8rem; text-align:justify;}
+.sub-list li { margin-bottom: 0.5rem; }
+
+/* EXAM TABLE */
+.exam-table-wrap { overflow-x: auto; margin: 1.5rem 0; }
+.exam-table{width:100%;border-collapse:collapse;font-size:.85rem;font-family:'Source Serif 4',serif; margin: 0;}
+.exam-table th, .exam-table td{border:1px solid var(--border);padding:.6rem;text-align:center;vertical-align:middle;}
+.exam-table th{background:var(--navy);color:var(--cream);font-weight:600;}
+.exam-table .txt-left{text-align:left;font-weight:600;color:var(--navy);}
+.exam-table .amt{font-family:'JetBrains Mono',monospace;text-align:right;white-space:nowrap;}
+
+.two-col-table { width: 100%; display: flex; gap: 2rem; margin: 1.5rem 0; }
+.col-half { flex: 1; }
+
+/* SOLUTION TOGGLE */
+.sol-toggle-wrap{text-align:left; margin: 1.5rem 0 0 0;}
+.btn-toggle{background:transparent;border:2px solid var(--green);border-bottom:none;color:var(--green);font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;padding:.5rem 1.5rem;border-radius:4px 4px 0 0;cursor:pointer;transition:all .2s; position:relative; z-index:2; top:2px;}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--green);color:var(--cream)}
+.sol-card{border-top:2px solid var(--green);display:none; border-radius: 0 6px 6px 6px; position:relative; z-index:1;}
+.sol-card.visible{display:block;animation:fi .4s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+
+.calc-box{background:#f9fcf9;border:1px solid #c8e6c9;padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.9rem;color:var(--text);line-height:1.6;text-align:justify;}
+
+@media print{
+  body{background:#fff;}
+  header, .ctrls, .sol-toggle-wrap, .top-actions {display:none !important;}
+  .card{box-shadow:none; border:1px solid var(--border); margin-bottom:2rem;}
+  .sol-card{display:block !important; border-top:2px solid var(--green);}
+  #ex-area {display:block !important;}
+}
+
+/* --- Selecteur de langue / Language switch --- */
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem}
+.header-top .header-badge{margin-bottom:0}
+.lang-switch{display:flex;gap:.45rem;flex-shrink:0}
+.flag-btn{background:rgba(255,255,255,.06);border:1px solid rgba(201,149,42,.35);border-radius:3px;padding:3px;cursor:pointer;line-height:0;opacity:.5;transition:opacity .2s,border-color .2s,transform .15s}
+.flag-btn:hover{opacity:1;transform:translateY(-1px)}
+.flag-btn.active{opacity:1;border-color:var(--gold-light);box-shadow:0 0 0 1px rgba(232,184,75,.35)}
+.flag-btn svg{display:block;width:30px;height:20px;border-radius:1px}
+@media print{ .lang-switch{display:none !important;} }
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-top">
+    <div class="header-badge" data-k="k-badge">INFORMATION COMPTABLE ET FINANCIÈRE</div>
+    <div class="lang-switch">
+      <button type="button" class="flag-btn active" id="flag-fr" onclick="setLang('fr')" title="Français" aria-label="Français"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="20" height="40" fill="#002654"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ED2939"/></svg></button>
+      <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
+    </div>
+  </div>
+  <h1 data-k="k-h1">Capacité d'emprunt et arbitrage immobilier</h1>
+  <p class="subtitle" data-k="k-sub">© Thomas Hossen – Version du 7 mars 2026</p>
+  
+  <div class="ctrls">
+    <div class="ctrl-g">
+      <span class="ctrl-lbl" data-k="k-seed">Seed (Optionnel)</span>
+      <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999">
+    </div>
+    <button class="btn-gen" onclick="generateExercise(false)"><span data-k="k-gen">Générer l'exercice →</span></button>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" style="text-align:center; padding:4rem; color:var(--text-muted); font-style:italic;">
+    <span data-k="k-welcome">Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.</span>
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="seed-badge"><span data-k="k-seedbadge">Seed active :</span> <span id="seed-disp"></span></div>
+      <div class="top-actions">
+        <button class="btn-action" onclick="generateExercise(true)"><span data-k="k-new">↺ Nouvel énoncé</span></button>
+        <button class="btn-action" onclick="window.print()"><span data-k="k-pdf">⬇ Exporter PDF</span></button>
+        <button class="btn-action" onclick="exportWord()"><span data-k="k-doc">⬇ Exporter DOC</span></button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="tag" data-k="k-tag-ex">Énoncé</span><h2 data-k="k-cardtitle">Financer un projet immobilier</h2></div>
+      <div class="card-body">
+        <div class="context-block" id="context-text"></div>
+        <div id="enonce-table-container"></div>
+        <div class="context-block" id="additional-info" style="margin-top:1.5rem; background:#fff; border-left:3px solid var(--navy); border-radius:0;"></div>
+        
+        <p style="margin-bottom:1rem; font-weight:600; color:var(--red); text-align:left;" data-k="k-work">Travail à faire</p>
+        <ul class="event-list" id="events-list"></ul>
+      </div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag" data-k="k-tag-sol">Corrigé</span><h2 data-k="k-cardtitle2">Financer un projet immobilier</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+/* ============================================================
+   DICTIONNAIRE BILINGUE  /  BILINGUAL DICTIONARY
+   ============================================================ */
+const I18N = {
+
+  fr: {
+    "htmlLang": "fr",
+    "title": "Simulateur Analyse Financière - Capacité d'Emprunt",
+    "locale": "fr-FR",
+    "k-badge": "INFORMATION COMPTABLE ET FINANCIÈRE",
+    "k-h1": "Capacité d'emprunt et arbitrage immobilier",
+    "k-sub": "© Thomas Hossen – Version du 7 mars 2026",
+    "k-seed": "Seed (Optionnel)",
+    "k-gen": "Générer l'exercice →",
+    "k-welcome": "Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.",
+    "k-seedbadge": "Seed active :",
+    "k-new": "↺ Nouvel énoncé",
+    "k-pdf": "⬇ Exporter PDF",
+    "k-doc": "⬇ Exporter DOC",
+    "k-tag-ex": "Énoncé",
+    "k-cardtitle": "Financer un projet immobilier",
+    "k-tag-sol": "Corrigé",
+    "k-work": "Travail à faire",
+    "showSol": "Afficher le corrigé",
+    "hideSol": "Masquer le corrigé",
+    "docTitle": "Exercice Capacité d'Emprunt",
+    "docFile": "Exercice_Capacite_Emprunt.doc",
+    "k-cardtitle2": "Financer un projet immobilier",
+    thousands: "\\,",
+    decimal: "{,}",
+    geos: [{"residence": "Mairie de Saint-Ouen (ligne 14)", "residenceShort": "Saint-Ouen", "location": "Alésia (XIVe arrondissement)", "invest": "Montrouge", "typos": ["deux pièces", "trois pièces", "quatre pièces"], "typoInv": "Grand studio transformable en deux pièces"}, {"residence": "Bagnolet (ligne 3)", "residenceShort": "Bagnolet", "location": "Pernety (XIVe arrondissement)", "invest": "Ivry-sur-Seine", "typos": ["deux pièces", "trois pièces", "quatre pièces"], "typoInv": "Petit deux pièces à rénover"}, {"residence": "Les Lilas (ligne 11)", "residenceShort": "Les Lilas", "location": "Plaisance (XIVe arrondissement)", "invest": "Villejuif", "typos": ["deux pièces", "trois pièces", "quatre pièces"], "typoInv": "Studio à cloisonner en deux pièces"}, {"residence": "Aubervilliers (ligne 12)", "residenceShort": "Aubervilliers", "location": "Tolbiac (XIIIe arrondissement)", "invest": "Malakoff", "typos": ["deux pièces", "trois pièces", "quatre pièces"], "typoInv": "Grand studio à cloisonner"}],
+
+    context: function(D) {
+      const {nbEnfants, parts, salaire, apport, tauxPct, taux, duree, n, i, geo, surfP1, prixP1, surfLoc, loyerPaye, surfInv, prixInv, travaux, loyerPercu, salaireMensuel, loyerPondere, revP1Solo, revP1Couple, revP2Solo, revP2Couple, aP1Solo, aP1Couple, aP2Solo, aP2Couple, facteurAnn, facteurAmo, capP1SoloAnn, capP1SoloAmo, capP1CoupleAnn, capP1CoupleAmo, capP2SoloAnn, capP2SoloAmo, capP2CoupleAnn, capP2CoupleAmo, coutP1, empruntP1, coutP2, empruntP2, salaires2, RI1, q1, det1, impot1, loyersAn, loyersImp, RI2, q2, det2, impot2, diffImpot, annuiteP1, annuiteP2, chargesAn, cf1, cf2, deltaCF, meilleur, netLocatif, loyer9} = D;
+      return `
+      Vous disposez de ${formatMoney(apport)} de liquidités sur un compte courant à la suite d'une donation. Vous venez de commencer votre carrière professionnelle et votre salaire annuel net avant impôt est de ${formatMoney(salaire)} (poste de cadre en CDI dans une entreprise du CAC 40). Vous hésitez entre investir en votre nom propre ou avec votre partenaire en 2026, dont on supposera qu'il gagne le même salaire avec les mêmes perspectives d'évolution. ${nbEnfants === 0 ? `Vous n'avez pas d'enfant et n'en prévoyez pas dans l'immédiat.` : (nbEnfants === 1 ? `Vous élevez un enfant, ce qui porte le foyer fiscal à ${fmtNb(parts, 1)} parts.` : `Vous élevez deux enfants, ce qui porte le foyer fiscal à ${fmtNb(parts, 0)} parts.`)} Deux types de projets se présentent à vous.
+    `;
+    },
+    table: function(D) {
+      const {nbEnfants, parts, salaire, apport, tauxPct, taux, duree, n, i, geo, surfP1, prixP1, surfLoc, loyerPaye, surfInv, prixInv, travaux, loyerPercu, salaireMensuel, loyerPondere, revP1Solo, revP1Couple, revP2Solo, revP2Couple, aP1Solo, aP1Couple, aP2Solo, aP2Couple, facteurAnn, facteurAmo, capP1SoloAnn, capP1SoloAmo, capP1CoupleAnn, capP1CoupleAmo, capP2SoloAnn, capP2SoloAmo, capP2CoupleAnn, capP2CoupleAmo, coutP1, empruntP1, coutP2, empruntP2, salaires2, RI1, q1, det1, impot1, loyersAn, loyersImp, RI2, q2, det2, impot2, diffImpot, annuiteP1, annuiteP2, chargesAn, cf1, cf2, deltaCF, meilleur, netLocatif, loyer9} = D;
+      return `<div class="exam-table-wrap">
+        <table class="exam-table">
+            <tr>
+                <th style="width:26%;"></th>
+                <th style="width:37%;">Projet 1 — achat de la résidence principale</th>
+                <th style="width:37%;">Projet 2 — investissement locatif</th>
+            </tr>
+            <tr>
+                <td class="txt-left">Bien acquis</td>
+                <td>Appartement récent de ${geo.typos[nbEnfants]} à ${geo.residence}</td>
+                <td>${geo.typoInv} à ${geo.invest}</td>
+            </tr>
+            <tr>
+                <td class="txt-left">Surface</td>
+                <td>${surfP1} m²</td>
+                <td>${surfInv} m²</td>
+            </tr>
+            <tr>
+                <td class="txt-left">Prix d'acquisition (hors frais)</td>
+                <td class="amt">${formatMoney(prixP1)}</td>
+                <td class="amt">${formatMoney(prixInv)}</td>
+            </tr>
+            <tr>
+                <td class="txt-left">Travaux et ameublement</td>
+                <td>—</td>
+                <td class="amt">${formatMoney(travaux)}</td>
+            </tr>
+            <tr>
+                <td class="txt-left">Loyer perçu (LMNP, hors charges)</td>
+                <td>—</td>
+                <td class="amt">${formatMoney(loyerPercu)} / mois</td>
+            </tr>
+            <tr>
+                <td class="txt-left">Loyer payé pour votre résidence principale</td>
+                <td>—</td>
+                <td class="amt">${formatMoney(loyerPaye)} / mois — ${surfLoc} m² à ${geo.location}</td>
+            </tr>
+        </table>
+    </div>`;
+    },
+    info: function(D) {
+      const {nbEnfants, parts, salaire, apport, tauxPct, taux, duree, n, i, geo, surfP1, prixP1, surfLoc, loyerPaye, surfInv, prixInv, travaux, loyerPercu, salaireMensuel, loyerPondere, revP1Solo, revP1Couple, revP2Solo, revP2Couple, aP1Solo, aP1Couple, aP2Solo, aP2Couple, facteurAnn, facteurAmo, capP1SoloAnn, capP1SoloAmo, capP1CoupleAnn, capP1CoupleAmo, capP2SoloAnn, capP2SoloAmo, capP2CoupleAnn, capP2CoupleAmo, coutP1, empruntP1, coutP2, empruntP2, salaires2, RI1, q1, det1, impot1, loyersAn, loyersImp, RI2, q2, det2, impot2, diffImpot, annuiteP1, annuiteP2, chargesAn, cf1, cf2, deltaCF, meilleur, netLocatif, loyer9} = D;
+      return `
+        <strong>Hypothèses de travail.</strong> Le taux d'intérêt négocié est de ${fmtNb(tauxPct, 2)} % annuels sur ${duree} ans (assurance incluse) et les frais notariés s'élèvent à 10 %. La banque tiendra compte de 70 % des revenus locatifs estimés. L'abattement forfaitaire sur les salaires est de 10 % (pour simplifier, on assimilera les salaires nets avant impôt aux salaires imposables), l'abattement des loyers en location meublée non professionnelle (LMNP) est de 50 %, et les deux personnes ne disposent pas d'autres revenus que leurs salaires et leur éventuel investissement locatif. On supposera le couple pacsé ou marié. Enfin, pour l'analyse de long terme, on retiendra une progression des loyers de 4 % par an.<br><br>
+        <strong>Barème de l'impôt sur le revenu 2026</strong> (applicable aux revenus de 2025, loi de finances pour 2026), par part de quotient familial :
+        <div class="exam-table-wrap">
+            <table class="exam-table" style="width:75%; margin:1rem auto 0;">
+                <tr><th style="width:60%;">Tranches de revenus annuels</th><th style="width:40%;">Taux d'imposition de la tranche</th></tr>
+                <tr><td class="txt-left">Jusqu'à 11 600 euros</td><td>0 %</td></tr>
+                <tr><td class="txt-left">De 11 601 euros à 29 579 euros</td><td>11 %</td></tr>
+                <tr><td class="txt-left">De 29 580 euros à 84 577 euros</td><td>30 %</td></tr>
+                <tr><td class="txt-left">De 84 578 euros à 181 917 euros</td><td>41 %</td></tr>
+                <tr><td class="txt-left">Plus de 181 917 euros</td><td>45 %</td></tr>
+            </table>
+        </div>
+    `;
+    },
+    enonce: function(D) {
+      const {nbEnfants, parts, salaire, apport, tauxPct, taux, duree, n, i, geo, surfP1, prixP1, surfLoc, loyerPaye, surfInv, prixInv, travaux, loyerPercu, salaireMensuel, loyerPondere, revP1Solo, revP1Couple, revP2Solo, revP2Couple, aP1Solo, aP1Couple, aP2Solo, aP2Couple, facteurAnn, facteurAmo, capP1SoloAnn, capP1SoloAmo, capP1CoupleAnn, capP1CoupleAmo, capP2SoloAnn, capP2SoloAmo, capP2CoupleAnn, capP2CoupleAmo, coutP1, empruntP1, coutP2, empruntP2, salaires2, RI1, q1, det1, impot1, loyersAn, loyersImp, RI2, q2, det2, impot2, diffImpot, annuiteP1, annuiteP2, chargesAn, cf1, cf2, deltaCF, meilleur, netLocatif, loyer9} = D;
+    let htmlEnonce = "";
+    htmlEnonce += `<li><strong>1. Capacité d'emprunt.</strong> Ces projets sont-ils finançables à vous seul ? Calculez votre capacité d'emprunt maximale, pour un crédit à annuités constantes et pour un crédit à amortissement constant. Les projets sont-ils finançables en ajoutant votre partenaire ?</li>`;
+    htmlEnonce += `<li><strong>2. Comparaison fiscale et financière.</strong> Comparez fiscalement et financièrement les deux projets pour un investissement en couple la première année.</li>`;
+    htmlEnonce += `<li><strong>3. Arbitrage de long terme.</strong> À long terme, pour quel projet pencheriez-vous pour un investissement en couple ? Donnez ici quelques intuitions sans vous perdre dans des calculs délicats : il n'y a pas de bonne ou de mauvaise réponse <em>a priori</em>.</li>`;
+
+      return htmlEnonce;
+    },
+    sol: function(D) {
+      const {nbEnfants, parts, salaire, apport, tauxPct, taux, duree, n, i, geo, surfP1, prixP1, surfLoc, loyerPaye, surfInv, prixInv, travaux, loyerPercu, salaireMensuel, loyerPondere, revP1Solo, revP1Couple, revP2Solo, revP2Couple, aP1Solo, aP1Couple, aP2Solo, aP2Couple, facteurAnn, facteurAmo, capP1SoloAnn, capP1SoloAmo, capP1CoupleAnn, capP1CoupleAmo, capP2SoloAnn, capP2SoloAmo, capP2CoupleAnn, capP2CoupleAmo, coutP1, empruntP1, coutP2, empruntP2, salaires2, RI1, q1, det1, impot1, loyersAn, loyersImp, RI2, q2, det2, impot2, diffImpot, annuiteP1, annuiteP2, chargesAn, cf1, cf2, deltaCF, meilleur, netLocatif, loyer9} = D;
+
+    const iPct = fmtNb(i * 100, 6);
+    const iDec = fmtNb(i, 8);
+    const eur = (x) => formatMoney(Math.round(x));
+
+    function verdict(capAnn, capAmo, besoin) {
+        if (capAnn >= besoin && capAmo >= besoin) return `est finançable dans les deux cas`;
+        if (capAnn >= besoin) return `n'est finançable qu'en annuités constantes`;
+        if (capAmo >= besoin) return `n'est finançable qu'en amortissement constant`;
+        return `n'est finançable ni en annuités constantes ni en amortissement constant`;
+    }
+    function detailImpot(det, quotient) {
+        return det.lignes.map(function (l) {
+            return `(${texI(Math.min(quotient, l.haut))} - ${texI(l.bas)}) \\times ${texRate(l.taux)}`;
+        }).join(' + ');
+    }
+
+    let htmlSol = "";
+
+    // ---------- 1. Capacité d'emprunt ----------
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">1. Capacité d'emprunt</span>
+        La capacité d'emprunt d'un ménage se détermine conformément aux règles émises par le Haut conseil de stabilité financière, qui limite le taux d'effort à 35 % des revenus mensuels nets, en intégrant 70 % des loyers fonciers bruts estimés. Dans le cas présent, le salaire mensuel net s'élève à ${eur(salaireMensuel)} pour l'emprunteur solitaire, soit un effort maximal autorisé de $${texI(salaireMensuel)} \\times 0{,}35 = ${texI(aP1Solo)}$ euros mensuels pour le projet de résidence principale ; avec le partenaire aux revenus identiques, ce plafond double à $2 \\times ${texI(salaireMensuel)} \\times 0{,}35 = ${texI(aP1Couple)}$ euros mensuels. Pour l'investissement locatif, les revenus locatifs pris en compte ajoutent $${texI(loyerPercu)} \\times 0{,}70 = ${texI(loyerPondere)}$ euros mensuels, portant le revenu effectif à $${texI(salaireMensuel)} + ${texI(loyerPondere)} = ${texI(revP2Solo)}$ euros et l'effort maximal à $${texI(aP2Solo)}$ euros seul, ou $${texI(aP2Couple)}$ euros à deux avec les salaires doublés.<br><br>
+        Par suite, la formule de l'annuité constante $a$, intégrant le taux mensuel équivalent $i = (1+${fmtNb(taux, 4)})^{1/12}-1 \\approx ${iPct}~\\%$ sur $n = ${n}$ mois, s'écrit $a_{\\max} = \\frac{i E_{\\max}}{1-(1+i)^{-n}}$, d'où la capacité maximale $E_{\\max} = a_{\\max} \\times \\frac{1 - (1+i)^{-n}}{i}$. Pour le crédit à <strong>amortissement constant</strong>, l'échéance initiale la plus élevée $a_{\\max} = \\frac{E_{\\max}}{${n}} + i E_{\\max}$ contraint la capacité via $E_{\\max} = \\frac{a_{\\max}}{i + 1/${n}}$. Ainsi, les capacités maximales d'emprunt s'établissent aux valeurs suivantes, exprimées en euros et arrondies à l'euro près :
+        <div class="exam-table-wrap">
+            <table class="exam-table" style="font-size:0.82rem;">
+                <tr>
+                    <th rowspan="2" style="width:10%;"></th>
+                    <th colspan="2">Financement individuel</th>
+                    <th colspan="2">Financement à deux</th>
+                </tr>
+                <tr>
+                    <th>Annuités constantes</th><th>Amortissement constant</th>
+                    <th>Annuités constantes</th><th>Amortissement constant</th>
+                </tr>
+                <tr>
+                    <td class="txt-left"><strong>Projet 1</strong></td>
+                    <td class="amt">$${texI(aP1Solo)}\\frac{1-(1+${iDec})^{-${n}}}{${iDec}}\\approx ${texI(capP1SoloAnn)}$</td>
+                    <td class="amt">$\\frac{${texI(aP1Solo)}}{${iDec}+1/${n}}\\approx ${texI(capP1SoloAmo)}$</td>
+                    <td class="amt">$${texI(aP1Couple)}\\frac{1-(1+${iDec})^{-${n}}}{${iDec}}\\approx ${texI(capP1CoupleAnn)}$</td>
+                    <td class="amt">$\\frac{${texI(aP1Couple)}}{${iDec}+1/${n}}\\approx ${texI(capP1CoupleAmo)}$</td>
+                </tr>
+                <tr>
+                    <td class="txt-left"><strong>Projet 2</strong></td>
+                    <td class="amt">$${texI(aP2Solo)}\\frac{1-(1+${iDec})^{-${n}}}{${iDec}}\\approx ${texI(capP2SoloAnn)}$</td>
+                    <td class="amt">$\\frac{${texI(aP2Solo)}}{${iDec}+1/${n}}\\approx ${texI(capP2SoloAmo)}$</td>
+                    <td class="amt">$${texI(aP2Couple)}\\frac{1-(1+${iDec})^{-${n}}}{${iDec}}\\approx ${texI(capP2CoupleAnn)}$</td>
+                    <td class="amt">$\\frac{${texI(aP2Couple)}}{${iDec}+1/${n}}\\approx ${texI(capP2CoupleAmo)}$</td>
+                </tr>
+            </table>
+        </div>
+        Les frais notariés de 10 % portent le coût total du projet 1 à ${eur(coutP1)} (${formatMoney(prixP1)} de prix hors frais), nécessitant un emprunt de ${eur(empruntP1)} après apport de ${formatMoney(apport)} ; pour le projet 2, l'acquisition de ${formatMoney(prixInv)} (plus ${formatMoney(travaux)} de travaux et ameublement) totalise $${texI(prixInv)} \\times 1{,}10 + ${texI(travaux)} = ${texI(coutP2)}$ euros avec frais, soit un emprunt requis de ${eur(empruntP2)}. Seul, le projet 1 ${verdict(capP1SoloAnn, capP1SoloAmo, empruntP1)}, tandis que le projet 2 ${verdict(capP2SoloAnn, capP2SoloAmo, empruntP2)}. À deux, le projet 1 ${verdict(capP1CoupleAnn, capP1CoupleAmo, empruntP1)} et le projet 2 ${verdict(capP2CoupleAnn, capP2CoupleAmo, empruntP2)}.
+    </div>`;
+
+    // ---------- 2. Comparaison fiscale et financière ----------
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">2. Comparaison fiscale et financière (première année, en couple)</span>
+        La comparaison fiscale entre les deux projets repose sur le barème progressif de l'impôt sur le revenu applicable aux revenus de 2025, qui distingue cinq tranches marginales par part de quotient familial. Pour le couple pacsé soumis à imposition commune, les salaires annuels nets avant impôt totalisent ${eur(salaires2)}, soit $${texI(salaires2)} \\times (1-0{,}10) = ${texI(RI1)}$ euros imposables après abattement forfaitaire de 10 % ; le quotient familial de ${fmtNb(parts, parts % 1 === 0 ? 0 : 1)} parts fixe le revenu par part à $${texI(RI1)}/${fmtNb(parts, parts % 1 === 0 ? 0 : 1)} = ${texI(q1)}$ euros pour le projet 1, générant un impôt de $${detailImpot(det1, q1)} = ${texI(det1.total)}$ euros par part, soit ${eur(impot1)} au total.<br><br>
+        Au contraire, le projet 2 intègre $${texI(loyerPercu)} \\times 12 = ${texI(loyersAn)}$ euros de loyers bruts annuels, réduits à $${texI(loyersAn)} \\times 0{,}5 = ${texI(loyersImp)}$ euros imposables après abattement de 50 % pour location meublée non professionnelle, portant le revenu imposable à $${texI(RI1)} + ${texI(loyersImp)} = ${texI(RI2)}$ euros, soit $${texI(q2)}$ euros par part, ce qui donne un impôt sur le revenu de $${detailImpot(det2, q2)} = ${texI(det2.total)}$ euros par part, soit ${eur(impot2)} au total : l'investissement locatif accroît donc la charge fiscale de $${texI(impot2)} - ${texI(impot1)} = ${texI(diffImpot)}$ euros annuels la première année.<br><br>
+        Financièrement, les flux nets de trésorerie intègrent les coûts locatifs du logement principal pour le projet 2, où les $${texI(loyersAn)} - ${texI(diffImpot)} = ${texI(loyersAn - diffImpot)}$ euros de recettes nettes après impôts sont contrebalancés par $${texI(loyerPaye)} \\times 12 = ${texI(chargesAn)}$ euros de dépenses locatives à ${geo.location}, générant un ${netLocatif < 0 ? `déficit` : `excédent`} net de ${eur(Math.abs(netLocatif))} annuels. Par ailleurs, l'annuité annuelle du projet 1 vaut $\\frac{${fmtNb(taux, 4)} \\times ${texI(empruntP1)}}{1-(1+${fmtNb(taux, 4)})^{-${duree}}} \\approx ${texI(annuiteP1)}$ euros, tandis que celle du projet 2 s'élève à ${eur(annuiteP2)}. Il demeure donc un avantage en termes de <em>cash-flow</em> net en faveur du projet ${meilleur} de ${eur(deltaCF)}, comme le montre le résumé suivant :
+        <div class="exam-table-wrap">
+            <table class="exam-table" style="width:70%; margin:1rem auto 0;">
+                <tr><th style="width:40%;"></th><th style="width:30%;">Projet 1</th><th style="width:30%;">Projet 2</th></tr>
+                <tr><td class="txt-left">Revenus du travail</td><td class="amt">${eur(salaires2)}</td><td class="amt">${eur(salaires2)}</td></tr>
+                <tr><td class="txt-left">Emprunt immobilier</td><td class="amt">${eur(-annuiteP1)}</td><td class="amt">${eur(-annuiteP2)}</td></tr>
+                <tr><td class="txt-left">Revenus immobiliers</td><td class="amt">${eur(0)}</td><td class="amt">${eur(loyersAn)}</td></tr>
+                <tr><td class="txt-left">Charges locatives</td><td class="amt">${eur(0)}</td><td class="amt">${eur(-chargesAn)}</td></tr>
+                <tr><td class="txt-left">Impôts</td><td class="amt">${eur(-impot1)}</td><td class="amt">${eur(-impot2)}</td></tr>
+                <tr style="background:var(--cream-dark); border-top:2px solid var(--navy);">
+                    <td class="txt-left"><strong>Revenus nets totaux</strong></td>
+                    <td class="amt"><strong>${eur(cf1)}</strong></td>
+                    <td class="amt"><strong>${eur(cf2)}</strong></td>
+                </tr>
+            </table>
+        </div>
+    </div>`;
+
+    // ---------- 3. Arbitrage de long terme ----------
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">3. Arbitrage de long terme</span>
+        ${meilleur === 1 ? `À long terme, le projet 1 s'impose également pour un investissement en couple, car` : `Si le projet 2 dégage un léger avantage de trésorerie la première année, le projet 1 reprend l'ascendant à long terme pour un investissement en couple, car`} les annuités de remboursement demeurent fixes contrairement aux loyers, qui ont vocation à augmenter chaque année : en supposant une hausse des loyers de 4 % par an, la charge locative initiale du projet 2, soit ${formatMoney(loyerPaye)} mensuels, grimpe ainsi à environ $${texI(loyerPaye)} \\times (1+0{,}04)^{9} \\approx ${texI(loyer9)}$ euros après neuf ans, aggravant le besoin en <em>cash-flow</em> pour financer le projet 2 malgré l'indexation annuelle des tranches du barème sur l'inflation. En outre, la localisation de l'actif à ${geo.invest} — marché tendu mais moins dynamique que ${geo.residenceShort} — et les risques opérationnels locatifs (vacance, impayés) rendent le choix conservateur du projet 1 prépondérant pour un horizon de ${duree} ans.${nbEnfants > 0 ? ` Avec ${nbEnfants === 1 ? `un enfant` : `deux enfants`} à charge, la stabilité résidentielle et la carte scolaire pèsent d'ailleurs dans le même sens.` : ``} Il n'empêche que le projet 2 offre une meilleure stabilité patrimoniale en cas de rupture conjugale, en évitant la contrainte de revente forcée d'un bien commun.
+    </div>`;
+
+      return htmlSol;
+    }
+  },
+
+  en: {
+    "htmlLang": "en",
+    "title": "Financial Analysis Simulator - Borrowing Capacity",
+    "locale": "en-GB",
+    "k-badge": "ACCOUNTING AND FINANCIAL INFORMATION",
+    "k-h1": "Borrowing Capacity and Property Trade-offs",
+    "k-sub": "© Thomas Hossen – March 7, 2026 Version",
+    "k-seed": "Seed (Optional)",
+    "k-gen": "Generate Exercise →",
+    "k-welcome": "Configure the parameters and click Generate to create a new exercise.",
+    "k-seedbadge": "Active Seed:",
+    "k-new": "↺ New Statement",
+    "k-pdf": "⬇ Export PDF",
+    "k-doc": "⬇ Export DOC",
+    "k-tag-ex": "Problem",
+    "k-cardtitle": "Financing a property project",
+    "k-tag-sol": "Solution",
+    "k-work": "Assignment",
+    "showSol": "Show the solution",
+    "hideSol": "Hide the solution",
+    "docTitle": "Borrowing Capacity Exercise",
+    "docFile": "Borrowing_Capacity_Exercise.doc",
+    "k-cardtitle2": "Financing a property project",
+    thousands: ",",
+    decimal: ".",
+    geos: [{"residence": "Mairie de Saint-Ouen (line 14)", "residenceShort": "Saint-Ouen", "location": "Alésia (14th arrondissement)", "invest": "Montrouge", "typos": ["two-room", "three-room", "four-room"], "typoInv": "Large studio convertible into a two-room flat"}, {"residence": "Bagnolet (line 3)", "residenceShort": "Bagnolet", "location": "Pernety (14th arrondissement)", "invest": "Ivry-sur-Seine", "typos": ["two-room", "three-room", "four-room"], "typoInv": "Small two-room flat to renovate"}, {"residence": "Les Lilas (line 11)", "residenceShort": "Les Lilas", "location": "Plaisance (14th arrondissement)", "invest": "Villejuif", "typos": ["two-room", "three-room", "four-room"], "typoInv": "Studio convertible into a two-room flat"}, {"residence": "Aubervilliers (line 12)", "residenceShort": "Aubervilliers", "location": "Tolbiac (13th arrondissement)", "invest": "Malakoff", "typos": ["two-room", "three-room", "four-room"], "typoInv": "Large studio to be partitioned"}],
+
+    context: function(D) {
+      const {nbEnfants, parts, salaire, apport, tauxPct, taux, duree, n, i, geo, surfP1, prixP1, surfLoc, loyerPaye, surfInv, prixInv, travaux, loyerPercu, salaireMensuel, loyerPondere, revP1Solo, revP1Couple, revP2Solo, revP2Couple, aP1Solo, aP1Couple, aP2Solo, aP2Couple, facteurAnn, facteurAmo, capP1SoloAnn, capP1SoloAmo, capP1CoupleAnn, capP1CoupleAmo, capP2SoloAnn, capP2SoloAmo, capP2CoupleAnn, capP2CoupleAmo, coutP1, empruntP1, coutP2, empruntP2, salaires2, RI1, q1, det1, impot1, loyersAn, loyersImp, RI2, q2, det2, impot2, diffImpot, annuiteP1, annuiteP2, chargesAn, cf1, cf2, deltaCF, meilleur, netLocatif, loyer9} = D;
+      return `
+      You have ${formatMoney(apport)} of cash in a current account following a gift. You have just started your professional career and your net annual salary before tax is ${formatMoney(salaire)} (a permanent management position in a CAC 40 company). You are hesitating between investing in your own name or with your partner in 2026, whom we shall assume earns the same salary with the same career prospects. ${nbEnfants === 0 ? `You have no children and do not plan to have any in the near future.` : (nbEnfants === 1 ? `You are raising one child, which brings the tax household to ${fmtNb(parts, 1)} shares.` : `You are raising two children, which brings the tax household to ${fmtNb(parts, 0)} shares.`)} Two types of project are open to you.
+    `;
+    },
+    table: function(D) {
+      const {nbEnfants, parts, salaire, apport, tauxPct, taux, duree, n, i, geo, surfP1, prixP1, surfLoc, loyerPaye, surfInv, prixInv, travaux, loyerPercu, salaireMensuel, loyerPondere, revP1Solo, revP1Couple, revP2Solo, revP2Couple, aP1Solo, aP1Couple, aP2Solo, aP2Couple, facteurAnn, facteurAmo, capP1SoloAnn, capP1SoloAmo, capP1CoupleAnn, capP1CoupleAmo, capP2SoloAnn, capP2SoloAmo, capP2CoupleAnn, capP2CoupleAmo, coutP1, empruntP1, coutP2, empruntP2, salaires2, RI1, q1, det1, impot1, loyersAn, loyersImp, RI2, q2, det2, impot2, diffImpot, annuiteP1, annuiteP2, chargesAn, cf1, cf2, deltaCF, meilleur, netLocatif, loyer9} = D;
+      return `<div class="exam-table-wrap">
+        <table class="exam-table">
+            <tr>
+                <th style="width:26%;"></th>
+                <th style="width:37%;">Project 1 — buying your main residence</th>
+                <th style="width:37%;">Project 2 — buy-to-let investment</th>
+            </tr>
+            <tr>
+                <td class="txt-left">Property acquired</td>
+                <td>Recently built ${geo.typos[nbEnfants]} flat in ${geo.residence}</td>
+                <td>${geo.typoInv} in ${geo.invest}</td>
+            </tr>
+            <tr>
+                <td class="txt-left">Floor area</td>
+                <td>${surfP1} m²</td>
+                <td>${surfInv} m²</td>
+            </tr>
+            <tr>
+                <td class="txt-left">Purchase price (excl. fees)</td>
+                <td class="amt">${formatMoney(prixP1)}</td>
+                <td class="amt">${formatMoney(prixInv)}</td>
+            </tr>
+            <tr>
+                <td class="txt-left">Refurbishment and furnishing</td>
+                <td>—</td>
+                <td class="amt">${formatMoney(travaux)}</td>
+            </tr>
+            <tr>
+                <td class="txt-left">Rent received (furnished letting, excl. charges)</td>
+                <td>—</td>
+                <td class="amt">${formatMoney(loyerPercu)} / month</td>
+            </tr>
+            <tr>
+                <td class="txt-left">Rent paid for your own main residence</td>
+                <td>—</td>
+                <td class="amt">${formatMoney(loyerPaye)} / month — ${surfLoc} m² in ${geo.location}</td>
+            </tr>
+        </table>
+    </div>`;
+    },
+    info: function(D) {
+      const {nbEnfants, parts, salaire, apport, tauxPct, taux, duree, n, i, geo, surfP1, prixP1, surfLoc, loyerPaye, surfInv, prixInv, travaux, loyerPercu, salaireMensuel, loyerPondere, revP1Solo, revP1Couple, revP2Solo, revP2Couple, aP1Solo, aP1Couple, aP2Solo, aP2Couple, facteurAnn, facteurAmo, capP1SoloAnn, capP1SoloAmo, capP1CoupleAnn, capP1CoupleAmo, capP2SoloAnn, capP2SoloAmo, capP2CoupleAnn, capP2CoupleAmo, coutP1, empruntP1, coutP2, empruntP2, salaires2, RI1, q1, det1, impot1, loyersAn, loyersImp, RI2, q2, det2, impot2, diffImpot, annuiteP1, annuiteP2, chargesAn, cf1, cf2, deltaCF, meilleur, netLocatif, loyer9} = D;
+      return `
+        <strong>Working assumptions.</strong> The negotiated interest rate is ${fmtNb(tauxPct, 2)}% per year over ${duree} years (insurance included) and notary fees amount to 10%. The bank will take 70% of the estimated rental income into account. The standard allowance on salaries is 10% (for simplicity, net salaries before tax are treated as taxable salaries), the allowance on rents under the non-professional furnished letting regime (LMNP) is 50%, and neither person has any income other than their salary and the possible buy-to-let investment. The couple is assumed to be in a civil partnership or married. Finally, for the long-term analysis, rents are assumed to rise by 4% per year.<br><br>
+        <strong>2026 income tax schedule</strong> (applicable to 2025 income, French Finance Act for 2026), per share of the family quotient:
+        <div class="exam-table-wrap">
+            <table class="exam-table" style="width:75%; margin:1rem auto 0;">
+                <tr><th style="width:60%;">Annual income brackets</th><th style="width:40%;">Tax rate on the bracket</th></tr>
+                <tr><td class="txt-left">Up to 11,600 euros</td><td>0%</td></tr>
+                <tr><td class="txt-left">From 11,601 to 29,579 euros</td><td>11%</td></tr>
+                <tr><td class="txt-left">From 29,580 to 84,577 euros</td><td>30%</td></tr>
+                <tr><td class="txt-left">From 84,578 to 181,917 euros</td><td>41%</td></tr>
+                <tr><td class="txt-left">Above 181,917 euros</td><td>45%</td></tr>
+            </table>
+        </div>
+    `;
+    },
+    enonce: function(D) {
+      const {nbEnfants, parts, salaire, apport, tauxPct, taux, duree, n, i, geo, surfP1, prixP1, surfLoc, loyerPaye, surfInv, prixInv, travaux, loyerPercu, salaireMensuel, loyerPondere, revP1Solo, revP1Couple, revP2Solo, revP2Couple, aP1Solo, aP1Couple, aP2Solo, aP2Couple, facteurAnn, facteurAmo, capP1SoloAnn, capP1SoloAmo, capP1CoupleAnn, capP1CoupleAmo, capP2SoloAnn, capP2SoloAmo, capP2CoupleAnn, capP2CoupleAmo, coutP1, empruntP1, coutP2, empruntP2, salaires2, RI1, q1, det1, impot1, loyersAn, loyersImp, RI2, q2, det2, impot2, diffImpot, annuiteP1, annuiteP2, chargesAn, cf1, cf2, deltaCF, meilleur, netLocatif, loyer9} = D;
+    let htmlEnonce = "";
+    htmlEnonce += `<li><strong>1. Borrowing capacity.</strong> Can these projects be financed by you alone? Compute your maximum borrowing capacity, both for a constant-annuity loan and for a constant-principal-repayment loan. Can the projects be financed once your partner is added?</li>`;
+    htmlEnonce += `<li><strong>2. Tax and financial comparison.</strong> Compare the two projects from a tax and a financial standpoint for an investment made as a couple in the first year.</li>`;
+    htmlEnonce += `<li><strong>3. Long-term trade-off.</strong> In the long run, which project would you favour for an investment made as a couple? Give a few intuitions here without getting lost in delicate computations: there is no right or wrong answer <em>a priori</em>.</li>`;
+
+      return htmlEnonce;
+    },
+    sol: function(D) {
+      const {nbEnfants, parts, salaire, apport, tauxPct, taux, duree, n, i, geo, surfP1, prixP1, surfLoc, loyerPaye, surfInv, prixInv, travaux, loyerPercu, salaireMensuel, loyerPondere, revP1Solo, revP1Couple, revP2Solo, revP2Couple, aP1Solo, aP1Couple, aP2Solo, aP2Couple, facteurAnn, facteurAmo, capP1SoloAnn, capP1SoloAmo, capP1CoupleAnn, capP1CoupleAmo, capP2SoloAnn, capP2SoloAmo, capP2CoupleAnn, capP2CoupleAmo, coutP1, empruntP1, coutP2, empruntP2, salaires2, RI1, q1, det1, impot1, loyersAn, loyersImp, RI2, q2, det2, impot2, diffImpot, annuiteP1, annuiteP2, chargesAn, cf1, cf2, deltaCF, meilleur, netLocatif, loyer9} = D;
+
+    const iPct = fmtNb(i * 100, 6);
+    const iDec = fmtNb(i, 8);
+    const eur = (x) => formatMoney(Math.round(x));
+
+    function verdict(capAnn, capAmo, besoin) {
+        if (capAnn >= besoin && capAmo >= besoin) return `can be financed in both cases`;
+        if (capAnn >= besoin) return `can only be financed with constant annuities`;
+        if (capAmo >= besoin) return `can only be financed with constant principal repayment`;
+        return `cannot be financed, neither with constant annuities nor with constant principal repayment`;
+    }
+    function detailImpot(det, quotient) {
+        return det.lignes.map(function (l) {
+            return `(${texI(Math.min(quotient, l.haut))} - ${texI(l.bas)}) \\times ${texRate(l.taux)}`;
+        }).join(' + ');
+    }
+
+    let htmlSol = "";
+
+    // ---------- 1 ----------
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">1. Borrowing capacity</span>
+        The borrowing capacity of a household is determined according to the rules issued by the French High Council for Financial Stability (HCSF), which caps the debt-service ratio at 35% of net monthly income, counting 70% of estimated gross rental income. In the present case, the net monthly salary is ${eur(salaireMensuel)} for the single borrower, that is a maximum authorised effort of $${texI(salaireMensuel)} \\times 0.35 = ${texI(aP1Solo)}$ euros per month for the main-residence project; with a partner earning the same income, this ceiling doubles to $2 \\times ${texI(salaireMensuel)} \\times 0.35 = ${texI(aP1Couple)}$ euros per month. For the buy-to-let investment, the rental income taken into account adds $${texI(loyerPercu)} \\times 0.70 = ${texI(loyerPondere)}$ euros per month, bringing effective income to $${texI(salaireMensuel)} + ${texI(loyerPondere)} = ${texI(revP2Solo)}$ euros and the maximum effort to $${texI(aP2Solo)}$ euros alone, or $${texI(aP2Couple)}$ euros as a couple with both salaries.<br><br>
+        Consequently, the constant-annuity formula $a$, incorporating the equivalent monthly rate $i = (1+${fmtNb(taux, 4)})^{1/12}-1 \\approx ${iPct}~\\%$ over $n = ${n}$ months, is written $a_{\\max} = \\frac{i E_{\\max}}{1-(1+i)^{-n}}$, from which the maximum capacity follows as $E_{\\max} = a_{\\max} \\times \\frac{1 - (1+i)^{-n}}{i}$. For the <strong>constant principal repayment</strong> loan, the highest instalment, namely the first one, $a_{\\max} = \\frac{E_{\\max}}{${n}} + i E_{\\max}$, constrains the capacity through $E_{\\max} = \\frac{a_{\\max}}{i + 1/${n}}$. The maximum borrowing capacities therefore stand at the following values, expressed in euros and rounded to the nearest euro:
+        <div class="exam-table-wrap">
+            <table class="exam-table" style="font-size:0.82rem;">
+                <tr>
+                    <th rowspan="2" style="width:10%;"></th>
+                    <th colspan="2">Financing alone</th>
+                    <th colspan="2">Financing as a couple</th>
+                </tr>
+                <tr>
+                    <th>Constant annuities</th><th>Constant principal</th>
+                    <th>Constant annuities</th><th>Constant principal</th>
+                </tr>
+                <tr>
+                    <td class="txt-left"><strong>Project 1</strong></td>
+                    <td class="amt">$${texI(aP1Solo)}\\frac{1-(1+${iDec})^{-${n}}}{${iDec}}\\approx ${texI(capP1SoloAnn)}$</td>
+                    <td class="amt">$\\frac{${texI(aP1Solo)}}{${iDec}+1/${n}}\\approx ${texI(capP1SoloAmo)}$</td>
+                    <td class="amt">$${texI(aP1Couple)}\\frac{1-(1+${iDec})^{-${n}}}{${iDec}}\\approx ${texI(capP1CoupleAnn)}$</td>
+                    <td class="amt">$\\frac{${texI(aP1Couple)}}{${iDec}+1/${n}}\\approx ${texI(capP1CoupleAmo)}$</td>
+                </tr>
+                <tr>
+                    <td class="txt-left"><strong>Project 2</strong></td>
+                    <td class="amt">$${texI(aP2Solo)}\\frac{1-(1+${iDec})^{-${n}}}{${iDec}}\\approx ${texI(capP2SoloAnn)}$</td>
+                    <td class="amt">$\\frac{${texI(aP2Solo)}}{${iDec}+1/${n}}\\approx ${texI(capP2SoloAmo)}$</td>
+                    <td class="amt">$${texI(aP2Couple)}\\frac{1-(1+${iDec})^{-${n}}}{${iDec}}\\approx ${texI(capP2CoupleAnn)}$</td>
+                    <td class="amt">$\\frac{${texI(aP2Couple)}}{${iDec}+1/${n}}\\approx ${texI(capP2CoupleAmo)}$</td>
+                </tr>
+            </table>
+        </div>
+        The 10% notary fees bring the total cost of project 1 to ${eur(coutP1)} (${formatMoney(prixP1)} of price excluding fees), requiring a loan of ${eur(empruntP1)} after the ${formatMoney(apport)} down payment; for project 2, the ${formatMoney(prixInv)} acquisition (plus ${formatMoney(travaux)} of refurbishment and furnishing) totals $${texI(prixInv)} \\times 1.10 + ${texI(travaux)} = ${texI(coutP2)}$ euros including fees, that is a required loan of ${eur(empruntP2)}. Alone, project 1 ${verdict(capP1SoloAnn, capP1SoloAmo, empruntP1)}, whereas project 2 ${verdict(capP2SoloAnn, capP2SoloAmo, empruntP2)}. As a couple, project 1 ${verdict(capP1CoupleAnn, capP1CoupleAmo, empruntP1)} and project 2 ${verdict(capP2CoupleAnn, capP2CoupleAmo, empruntP2)}.
+    </div>`;
+
+    // ---------- 2 ----------
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">2. Tax and financial comparison (first year, as a couple)</span>
+        The tax comparison between the two projects rests on the progressive income tax schedule applicable to 2025 income, which distinguishes five marginal brackets per share of the family quotient. For the couple filing jointly, annual net salaries before tax total ${eur(salaires2)}, that is $${texI(salaires2)} \\times (1-0.10) = ${texI(RI1)}$ euros of taxable income after the 10% standard allowance; the family quotient of ${fmtNb(parts, parts % 1 === 0 ? 0 : 1)} shares sets income per share at $${texI(RI1)}/${fmtNb(parts, parts % 1 === 0 ? 0 : 1)} = ${texI(q1)}$ euros for project 1, generating a tax of $${detailImpot(det1, q1)} = ${texI(det1.total)}$ euros per share, that is ${eur(impot1)} in total.<br><br>
+        Project 2, by contrast, includes $${texI(loyerPercu)} \\times 12 = ${texI(loyersAn)}$ euros of gross annual rents, reduced to $${texI(loyersAn)} \\times 0.5 = ${texI(loyersImp)}$ euros of taxable income after the 50% allowance for non-professional furnished letting, bringing taxable income to $${texI(RI1)} + ${texI(loyersImp)} = ${texI(RI2)}$ euros, that is $${texI(q2)}$ euros per share, which gives an income tax of $${detailImpot(det2, q2)} = ${texI(det2.total)}$ euros per share, that is ${eur(impot2)} in total: the buy-to-let investment therefore increases the tax burden by $${texI(impot2)} - ${texI(impot1)} = ${texI(diffImpot)}$ euros per year in the first year.<br><br>
+        Financially, the net cash flows incorporate the rental cost of the main residence for project 2, where the $${texI(loyersAn)} - ${texI(diffImpot)} = ${texI(loyersAn - diffImpot)}$ euros of net receipts after tax are offset by $${texI(loyerPaye)} \\times 12 = ${texI(chargesAn)}$ euros of rental expenditure in ${geo.location}, generating a net ${netLocatif < 0 ? `deficit` : `surplus`} of ${eur(Math.abs(netLocatif))} per year. Moreover, the annual instalment of project 1 is $\\frac{${fmtNb(taux, 4)} \\times ${texI(empruntP1)}}{1-(1+${fmtNb(taux, 4)})^{-${duree}}} \\approx ${texI(annuiteP1)}$ euros, whereas that of project 2 amounts to ${eur(annuiteP2)}. A net <em>cash-flow</em> advantage of ${eur(deltaCF)} therefore remains in favour of project ${meilleur}, as the following summary shows:
+        <div class="exam-table-wrap">
+            <table class="exam-table" style="width:70%; margin:1rem auto 0;">
+                <tr><th style="width:40%;"></th><th style="width:30%;">Project 1</th><th style="width:30%;">Project 2</th></tr>
+                <tr><td class="txt-left">Earned income</td><td class="amt">${eur(salaires2)}</td><td class="amt">${eur(salaires2)}</td></tr>
+                <tr><td class="txt-left">Property loan</td><td class="amt">${eur(-annuiteP1)}</td><td class="amt">${eur(-annuiteP2)}</td></tr>
+                <tr><td class="txt-left">Rental income</td><td class="amt">${eur(0)}</td><td class="amt">${eur(loyersAn)}</td></tr>
+                <tr><td class="txt-left">Rental expenditure</td><td class="amt">${eur(0)}</td><td class="amt">${eur(-chargesAn)}</td></tr>
+                <tr><td class="txt-left">Income tax</td><td class="amt">${eur(-impot1)}</td><td class="amt">${eur(-impot2)}</td></tr>
+                <tr style="background:var(--cream-dark); border-top:2px solid var(--navy);">
+                    <td class="txt-left"><strong>Total net income</strong></td>
+                    <td class="amt"><strong>${eur(cf1)}</strong></td>
+                    <td class="amt"><strong>${eur(cf2)}</strong></td>
+                </tr>
+            </table>
+        </div>
+    </div>`;
+
+    // ---------- 3 ----------
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">3. Long-term trade-off</span>
+        ${meilleur === 1 ? `In the long run, project 1 also prevails for an investment made as a couple, since` : `Although project 2 shows a slight cash-flow advantage in the first year, project 1 regains the upper hand in the long run for an investment made as a couple, since`} the loan instalments remain fixed whereas rents are bound to rise every year: assuming rents rise by 4% per year, the initial rental charge of project 2, namely ${formatMoney(loyerPaye)} per month, climbs to roughly $${texI(loyerPaye)} \\times (1+0.04)^{9} \\approx ${texI(loyer9)}$ euros after nine years, worsening the <em>cash-flow</em> requirement needed to finance project 2 despite the annual indexation of the tax brackets on inflation. Furthermore, the location of the asset in ${geo.invest} — a tight but less dynamic market than ${geo.residenceShort} — and the operational letting risks (vacancy, unpaid rents) make the conservative choice of project 1 the dominant one over a ${duree}-year horizon.${nbEnfants > 0 ? ` With ${nbEnfants === 1 ? `one child` : `two children`} to support, residential stability and school catchment areas moreover point in the same direction.` : ``} That said, project 2 offers better wealth stability in the event of a break-up, as it avoids the constraint of a forced sale of a jointly owned property.
+    </div>`;
+
+      return htmlSol;
+    }
+  }
+};
+/* ============================================================
+   GESTION DE LA LANGUE  /  LANGUAGE HANDLING
+   ============================================================ */
+let LANG = 'fr';
+
+function detectLang() {
+    try {
+        const q = new URLSearchParams(window.location.search).get('lang');
+        if (q && I18N[q.toLowerCase()]) return q.toLowerCase();
+    } catch (e) {}
+    const h = (window.location.hash || '').replace('#', '').toLowerCase();
+    if (I18N[h]) return h;
+    return 'fr';
+}
+
+function applyLang() {
+    const D = I18N[LANG];
+    document.documentElement.lang = D.htmlLang;
+    document.title = D.title;
+
+    document.querySelectorAll('[data-k]').forEach(function (el) {
+        const key = el.getAttribute('data-k');
+        if (D[key] !== undefined) el.innerHTML = D[key];
+    });
+
+    const btn = document.getElementById('toggle-btn');
+    if (btn) btn.innerText = document.getElementById('sol-card').classList.contains('visible') ? D.hideSol : D.showSol;
+
+    document.getElementById('flag-fr').classList.toggle('active', LANG === 'fr');
+    document.getElementById('flag-en').classList.toggle('active', LANG === 'en');
+}
+
+function setLang(lang) {
+    if (!I18N[lang] || lang === LANG) return;
+    LANG = lang;
+
+    /* La langue est memorisee dans l'URL (partage / rechargement) */
+    try {
+        const u = new URL(window.location.href);
+        u.searchParams.set('lang', lang);
+        history.replaceState(null, '', u.toString());
+    } catch (e) {}
+
+    applyLang();
+
+    /* Si un exercice est affiche, on le regenere a l'identique (meme seed) */
+    if (document.getElementById('ex-area').style.display !== 'none') {
+        const solWasVisible = document.getElementById('sol-card').classList.contains('visible');
+        generateExercise(false);
+        if (solWasVisible) toggleSol();
+    }
+}
+
+// --- PRNG (Mulberry32) ---
+let currentSeed = 0;
+function seedPRNG(seed) {
+    return function() {
+      let t = seed += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+let random = Math.random;
+
+function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
+
+function texI(num) {
+    let sign = num < 0 ? "-" : "";
+    let absNum = Math.round(Math.abs(num));
+    return sign + absNum.toString().replace(/\B(?=(\d{3})+(?!\d))/g, I18N[LANG].thousands);
+}
+function formatMoney(num) {
+    return num.toLocaleString(I18N[LANG].locale) + ' €';
+}
+
+
+function texRate(taux) {
+    // 0,11 / 0.11 avec le meme separateur decimal que le reste des formules
+    return "0" + I18N[LANG].decimal + String(Math.round(taux * 100)).padStart(2, '0');
+}
+
+function fmtNb(num, dec) {
+    return num.toLocaleString(I18N[LANG].locale, {minimumFractionDigits: dec, maximumFractionDigits: dec});
+}
+
+function generateExercise(forceNew = false) {
+    if(forceNew) {
+        document.getElementById('seed-input').value = "";
+    }
+    let seedVal = document.getElementById('seed-input').value;
+    currentSeed = seedVal ? parseInt(seedVal) : Math.floor(Math.random() * 99999999);
+    document.getElementById('seed-disp').innerText = currentSeed;
+    document.getElementById('seed-input').value = currentSeed;
+    random = seedPRNG(currentSeed);
+
+    const DIC = I18N[LANG];
+
+    // --- Situation familiale : 0, 1 ou 2 enfants -> 2 / 2,5 / 3 parts fiscales
+    let nbEnfants = randInt(0, 2);
+    let parts = 2 + 0.5 * nbEnfants;
+
+    // --- Revenus et apport
+    let salaire = randInt(28, 40) * 1000;
+    let apport = randInt(8, 15) * 10000;
+
+    // --- Conditions de financement
+    let tauxPct = randInt(25, 40) / 10;
+    let taux = tauxPct / 100;
+    let duree = [20, 25][randInt(0, 1)];
+    let n = duree * 12;
+    let i = Math.pow(1 + taux, 1/12) - 1;
+
+    // --- Géographie (triplets cohérents : résidence / location / investissement)
+    let geo = DIC.geos[randInt(0, DIC.geos.length - 1)];
+
+    // --- Le bien de résidence principale suit la taille de la famille
+    let typoIdx = nbEnfants;                       // 0 -> T2, 1 -> T3, 2 -> T4
+    let surfP1 = [randInt(42, 48), randInt(62, 70), randInt(82, 92)][typoIdx];
+    let prixM2 = randInt(6300, 7200);
+    let prixP1 = Math.round(surfP1 * prixM2 / 5000) * 5000;
+
+    // --- Projet 2 : on loue un bien equivalent et on achete plus petit, moins cher
+    let surfLoc = surfP1 - randInt(2, 6);
+    let loyerPaye = Math.round(surfLoc * randInt(24, 28) / 10) * 10;
+
+    // le bien locatif reste un petit lot (studio / deux pieces), independamment de la famille
+    let surfInv = randInt(26, 40);
+    let prixM2Inv = Math.round(prixM2 * randInt(78, 88) / 100);
+    let prixInv = Math.round(surfInv * prixM2Inv / 5000) * 5000;
+    let travaux = randInt(25, 40) * 1000;
+    let loyerPercu = Math.round(surfInv * randInt(20, 24) / 10) * 10;
+
+    // --- Capacité d'emprunt (règle HCSF : 35 % du revenu, 70 % des loyers)
+    let salaireMensuel = salaire / 12;
+    let loyerPondere = loyerPercu * 0.70;
+
+    let revP1Solo   = salaireMensuel;
+    let revP1Couple = 2 * salaireMensuel;
+    let revP2Solo   = salaireMensuel + loyerPondere;
+    let revP2Couple = 2 * salaireMensuel + loyerPondere;
+
+    let aP1Solo   = revP1Solo   * 0.35;
+    let aP1Couple = revP1Couple * 0.35;
+    let aP2Solo   = revP2Solo   * 0.35;
+    let aP2Couple = revP2Couple * 0.35;
+
+    let facteurAnn = (1 - Math.pow(1 + i, -n)) / i;      // annuités constantes
+    let facteurAmo = 1 / (i + 1/n);                      // amortissement constant
+
+    let capP1SoloAnn   = aP1Solo   * facteurAnn;
+    let capP1SoloAmo   = aP1Solo   * facteurAmo;
+    let capP1CoupleAnn = aP1Couple * facteurAnn;
+    let capP1CoupleAmo = aP1Couple * facteurAmo;
+    let capP2SoloAnn   = aP2Solo   * facteurAnn;
+    let capP2SoloAmo   = aP2Solo   * facteurAmo;
+    let capP2CoupleAnn = aP2Couple * facteurAnn;
+    let capP2CoupleAmo = aP2Couple * facteurAmo;
+
+    // --- Besoins de financement (frais notariés de 10 %)
+    let coutP1 = prixP1 * 1.10;
+    let empruntP1 = coutP1 - apport;
+    let coutP2 = prixInv * 1.10 + travaux;
+    let empruntP2 = coutP2 - apport;
+
+    // --- Fiscalité : barème 2026 (revenus 2025), loi de finances 2026
+    const BAREME = [
+        {plafond: 11600,  taux: 0.00},
+        {plafond: 29579,  taux: 0.11},
+        {plafond: 84577,  taux: 0.30},
+        {plafond: 181917, taux: 0.41},
+        {plafond: Infinity, taux: 0.45}
+    ];
+    function trancheDetail(quotient) {
+        let bas = 0, lignes = [], total = 0;
+        for (let k = 0; k < BAREME.length; k++) {
+            let haut = Math.min(quotient, BAREME[k].plafond);
+            if (haut > bas && BAREME[k].taux > 0) {
+                let montant = (haut - bas) * BAREME[k].taux;
+                lignes.push({bas: bas, haut: haut, taux: BAREME[k].taux, montant: montant});
+                total += montant;
+            }
+            if (quotient <= BAREME[k].plafond) break;
+            bas = BAREME[k].plafond;
+        }
+        return {lignes: lignes, total: total};
+    }
+
+    let salaires2 = 2 * salaire;
+    let RI1 = salaires2 * 0.90;
+    let q1 = RI1 / parts;
+    let det1 = trancheDetail(q1);
+    let impot1 = Math.round(det1.total * parts);
+
+    let loyersAn = loyerPercu * 12;
+    let loyersImp = loyersAn * 0.50;
+    let RI2 = RI1 + loyersImp;
+    let q2 = RI2 / parts;
+    let det2 = trancheDetail(q2);
+    let impot2 = Math.round(det2.total * parts);
+    let diffImpot = impot2 - impot1;
+
+    // --- Flux de trésorerie annuels du couple (annuité annuelle, taux annuel)
+    let facteurAnnuel = taux / (1 - Math.pow(1 + taux, -duree));
+    let annuiteP1 = empruntP1 * facteurAnnuel;
+    let annuiteP2 = empruntP2 * facteurAnnuel;
+    let chargesAn = loyerPaye * 12;
+
+    let cf1 = salaires2 - annuiteP1 - impot1;
+    let cf2 = salaires2 - annuiteP2 + loyersAn - chargesAn - impot2;
+    let deltaCF = Math.abs(Math.round(cf1) - Math.round(cf2));
+    let meilleur = cf1 >= cf2 ? 1 : 2;
+    let netLocatif = loyersAn - diffImpot - chargesAn;
+
+    // --- Projection du loyer payé (indexation de 4 % par an sur neuf ans)
+    let loyer9 = loyerPaye * Math.pow(1.04, 9);
+
+    const D = {
+        nbEnfants, parts, salaire, apport, tauxPct, taux, duree, n, i, geo,
+        surfP1, prixP1, surfLoc, loyerPaye, surfInv, prixInv, travaux, loyerPercu,
+        salaireMensuel, loyerPondere, revP1Solo, revP1Couple, revP2Solo, revP2Couple,
+        aP1Solo, aP1Couple, aP2Solo, aP2Couple, facteurAnn, facteurAmo,
+        capP1SoloAnn, capP1SoloAmo, capP1CoupleAnn, capP1CoupleAmo,
+        capP2SoloAnn, capP2SoloAmo, capP2CoupleAnn, capP2CoupleAmo,
+        coutP1, empruntP1, coutP2, empruntP2,
+        salaires2, RI1, q1, det1, impot1, loyersAn, loyersImp, RI2, q2, det2, impot2, diffImpot,
+        annuiteP1, annuiteP2, chargesAn, cf1, cf2, deltaCF, meilleur, netLocatif, loyer9,
+        BAREME
+    };
+
+    // --- Affichage
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('ex-area').style.display = 'block';
+    document.getElementById('sol-card').classList.remove('visible');
+    document.getElementById('toggle-btn').innerText = DIC.showSol;
+    document.getElementById('toggle-btn').classList.remove('shown');
+
+    document.getElementById('context-text').innerHTML = DIC.context(D);
+    document.getElementById('enonce-table-container').innerHTML = DIC.table(D);
+    document.getElementById('additional-info').innerHTML = DIC.info(D);
+    document.getElementById('events-list').innerHTML = DIC.enonce(D);
+    document.getElementById('sol-content').innerHTML = DIC.sol(D);
+
+    if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
+        MathJax.typesetPromise().catch(function (err) { console.error('MathJax :', err); });
+    }
+}
+
+function toggleSol() {
+    let solCard = document.getElementById('sol-card');
+    let btn = document.getElementById('toggle-btn');
+    if(solCard.classList.contains('visible')) {
+        solCard.classList.remove('visible');
+        btn.innerText = I18N[LANG].showSol;
+        btn.classList.remove('shown');
+    } else {
+        solCard.classList.add('visible');
+        btn.innerText = I18N[LANG].hideSol;
+        btn.classList.add('shown');
+    }
+}
+
+function exportWord() {
+    let content = document.getElementById('ex-area').cloneNode(true);
+    let actions = content.querySelector('.top-actions');
+    if(actions) actions.parentNode.removeChild(actions);
+    let toggle = content.querySelector('.sol-toggle-wrap');
+    if(toggle) toggle.parentNode.removeChild(toggle);
+    let solCard = content.querySelector('#sol-card');
+    if(solCard) solCard.style.display = 'block';
+
+    let html = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <meta charset='utf-8'>
+            <title>${I18N[LANG].docTitle}</title>
+            <style>
+                body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5; text-align: justify; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 10pt; }
+                th, td { border: 1px solid #000; padding: 4px; }
+                th { background-color: #f2f2f2; text-align: center; font-weight: bold; }
+                .txt-left { text-align: left; font-weight: bold; }
+                .amt { text-align: right; white-space: nowrap; }
+                .two-col-table { width: 100%; }
+                .col-half { width: 48%; display: inline-block; vertical-align: top; margin-right: 2%; }
+                .calc-box { border: 1px solid #000; padding: 10px; margin-bottom: 15px; background-color: #f9f9f9; text-align: justify; }
+                .math-formula { text-align: center; font-style: italic; margin: 10px 0; }
+                ul { text-align: justify; }
+                li { margin-bottom: 5px; }
+            </style>
+        </head>
+        <body>
+            ${content.innerHTML}
+        </body>
+        </html>
+    `;
+    
+    let blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    let url = URL.createObjectURL(blob);
+    let link = document.createElement('a');
+    link.href = url;
+    link.download = I18N[LANG].docFile;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+/* Initialisation */
+LANG = detectLang();
+applyLang();
+</script>
+</body>
+</html>
