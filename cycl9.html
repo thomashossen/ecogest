@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Macroéconomie - Le modèle AS/AD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['\\[', '\\]']]
+    }
+  };
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7;text-align:justify;}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 1.5rem;border-bottom:3px solid var(--gold);text-align:left;}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end;background:rgba(255,255,255,.03);padding:1rem 1.5rem;border-radius:6px;border:1px solid rgba(255,255,255,.1)}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.6)}
+.ctrl-inp, .ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.4rem .7rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none;transition:border-color .2s}
+.ctrl-inp:focus, .ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.ctrl-sel option{background:var(--navy);color:var(--cream)}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.5rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;transition:background .18s;margin-left:auto}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN & CARDS */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:700}
+
+.top-actions{display:flex;gap:.5rem;}
+.btn-action{background:#fff;border:1px solid var(--border);color:var(--navy);padding:.4rem .8rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.85rem;font-weight:600;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.btn-action:hover{border-color:var(--navy);background:var(--cream-dark);}
+
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem;text-align:left;}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+.event-list{list-style:none;counter-reset:q}
+.event-list > li{margin-bottom:1.5rem;padding-left:1.8rem;position:relative;font-size:.95rem;text-align:justify}
+.event-list > li::before{counter-increment:q;content:counter(q) ".";position:absolute;left:0;color:var(--gold);font-weight:700}
+
+.q-head{font-variant:small-caps;font-weight:600;color:var(--navy);letter-spacing:.02em;}
+
+.lvl-a{list-style:none;counter-reset:la;padding-left:.4rem;margin:.7rem 0 0}
+.lvl-a > li{counter-increment:la;position:relative;padding-left:1.9rem;margin-bottom:.75rem;text-align:justify}
+.lvl-a > li::before{content:"(" counter(la, lower-alpha) ")";position:absolute;left:0;color:var(--navy);font-weight:600}
+.lvl-i{list-style:none;counter-reset:li2;padding-left:.3rem;margin:.6rem 0 0}
+.lvl-i > li{counter-increment:li2;position:relative;padding-left:2rem;margin-bottom:.55rem;text-align:justify}
+.lvl-i > li::before{content:counter(li2, lower-roman) ".";position:absolute;left:0;color:var(--text-muted);font-weight:600}
+
+.sub-list { list-style-type: none; padding-left: 1rem; margin-top: 0.8rem; text-align:justify;}
+.sub-list li { margin-bottom: 0.5rem; }
+
+/* EXAM TABLE */
+.exam-table-wrap { overflow-x: auto; margin: 1.5rem 0; }
+.exam-table{width:100%;border-collapse:collapse;font-size:.8rem;font-family:'Source Serif 4',serif; margin: 0;}
+.exam-table th, .exam-table td{border:1px solid var(--border);padding:.5rem .4rem;text-align:center;vertical-align:middle;}
+.exam-table th{background:var(--navy);color:var(--cream);font-weight:600;}
+.exam-table .txt-left{text-align:left;font-weight:600;color:var(--navy);font-size:.78rem;line-height:1.35;}
+.exam-table .amt{font-family:'JetBrains Mono',monospace;text-align:right;white-space:nowrap;}
+.exam-table tr.hi-row td{background:#f2f7f2;}
+.table-caption{font-size:.78rem;color:var(--text-muted);font-style:italic;text-align:center;margin-top:.6rem;line-height:1.5}
+
+.two-col-table { width: 100%; display: flex; gap: 1.5rem; margin: 1.2rem 0; align-items:flex-start;}
+.col-half { flex: 1; min-width:0; }
+
+/* GRAPHIQUE */
+.chart-wrap{margin:1.4rem 0;text-align:center}
+.chart-wrap svg{max-width:100%;height:auto}
+
+/* SOLUTION TOGGLE */
+.sol-toggle-wrap{text-align:left; margin: 1.5rem 0 0 0;}
+.btn-toggle{background:transparent;border:2px solid var(--green);border-bottom:none;color:var(--green);font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;padding:.5rem 1.5rem;border-radius:4px 4px 0 0;cursor:pointer;transition:all .2s; position:relative; z-index:2; top:2px;}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--green);color:var(--cream)}
+.sol-card{border-top:2px solid var(--green);display:none; border-radius: 0 6px 6px 6px; position:relative; z-index:1;}
+.sol-card.visible{display:block;animation:fi .4s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+
+.calc-box{background:#f9fcf9;border:1px solid #c8e6c9;padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.9rem;color:var(--text);line-height:1.6;text-align:justify;}
+.method-box{background:#fdfaf2;border:1px solid #e3d3a8;border-left:3px solid var(--gold);padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.9rem;line-height:1.6;text-align:justify;}
+.persp-box{background:#f7f9fc;border:1px solid #ccd8e6;border-left:3px solid var(--navy-mid);padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.88rem;line-height:1.6;text-align:justify;}
+.sol-sub{color:var(--navy);font-weight:600;display:block;margin:1.1rem 0 .5rem;}
+.sol-sub:first-child{margin-top:0;}
+
+@media print{
+  body{background:#fff;}
+  header, .ctrls, .sol-toggle-wrap, .top-actions {display:none !important;}
+  .card{box-shadow:none; border:1px solid var(--border); margin-bottom:2rem;}
+  .sol-card{display:block !important; border-top:2px solid var(--green);}
+  #ex-area {display:block !important;}
+}
+
+/* --- Selecteur de langue / Language switch --- */
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem}
+.header-top .header-badge{margin-bottom:0}
+.lang-switch{display:flex;gap:.45rem;flex-shrink:0}
+.flag-btn{background:rgba(255,255,255,.06);border:1px solid rgba(201,149,42,.35);border-radius:3px;padding:3px;cursor:pointer;line-height:0;opacity:.5;transition:opacity .2s,border-color .2s,transform .15s}
+.flag-btn:hover{opacity:1;transform:translateY(-1px)}
+.flag-btn.active{opacity:1;border-color:var(--gold-light);box-shadow:0 0 0 1px rgba(232,184,75,.35)}
+.flag-btn svg{display:block;width:30px;height:20px;border-radius:1px}
+@media print{ .lang-switch{display:none !important;} }
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-top">
+    <div class="header-badge" data-k="k-badge">CROISSANCE ET CYCLES ÉCONOMIQUES</div>
+    <div class="lang-switch">
+      <button type="button" class="flag-btn active" id="flag-fr" onclick="setLang('fr')" title="Français" aria-label="Français"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="20" height="40" fill="#002654"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ED2939"/></svg></button>
+      <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
+    </div>
+  </div>
+  <h1 data-k="k-h1">Le modèle AS/AD</h1>
+  <p class="subtitle" data-k="k-sub">© Thomas Hossen – Version du 7 mars 2026</p>
+
+  <div class="ctrls">
+    <div class="ctrl-g">
+      <span class="ctrl-lbl" data-k="k-seed">Seed (Optionnel)</span>
+      <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999">
+    </div>
+    <div class="ctrl-g">
+      <span class="ctrl-lbl" data-k="k-conso">Propension à consommer</span>
+      <select class="ctrl-sel" id="c-input">
+        <option value="auto" data-k="k-auto">Aléatoire</option>
+        <option value="low" data-k="k-c-low">Faible (1/2 – 3/5)</option>
+        <option value="mid" data-k="k-c-mid">Intermédiaire (2/3)</option>
+        <option value="high" data-k="k-c-high">Élevée (3/4 – 4/5)</option>
+      </select>
+    </div>
+    <div class="ctrl-g">
+      <span class="ctrl-lbl" data-k="k-shock">Ampleur du choc</span>
+      <select class="ctrl-sel" id="shock-input">
+        <option value="auto" data-k="k-auto2">Aléatoire</option>
+        <option value="small" data-k="k-s-small">Faible</option>
+        <option value="large" data-k="k-s-large">Marquée</option>
+      </select>
+    </div>
+    <button class="btn-gen" onclick="generateExercise(false)"><span data-k="k-gen">Générer l'exercice →</span></button>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" style="text-align:center; padding:4rem; color:var(--text-muted); font-style:italic;">
+    <span data-k="k-welcome">Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.</span>
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="seed-badge"><span data-k="k-seedbadge">Seed active :</span> <span id="seed-disp"></span></div>
+      <div class="top-actions">
+        <button class="btn-action" onclick="generateExercise(true)"><span data-k="k-new">↺ Nouvel énoncé</span></button>
+        <button class="btn-action" onclick="window.print()"><span data-k="k-pdf">⬇ Exporter PDF</span></button>
+        <button class="btn-action" onclick="exportWord()"><span data-k="k-doc">⬇ Exporter DOC</span></button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="tag" data-k="k-tag-ex">Énoncé</span><h2 data-k="k-cardtitle">Étude d'un choc de policy mix</h2></div>
+      <div class="card-body">
+        <div class="context-block" id="context-text"></div>
+        <div id="enonce-table-container"></div>
+        <div class="context-block" id="additional-info" style="margin-top:1.5rem; background:#fff; border-left:none; border-radius:0;"></div>
+
+        <p style="margin-bottom:1rem; font-weight:600; color:var(--red); text-align:left;" data-k="k-work">Travail à faire</p>
+        <ul class="event-list" id="events-list"></ul>
+      </div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag" data-k="k-tag-sol">Corrigé</span><h2 data-k="k-cardtitle2">Étude d'un choc de policy mix</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+/* ============================================================
+   DICTIONNAIRE BILINGUE  /  BILINGUAL DICTIONARY
+   ============================================================ */
+const I18N = {
+
+  fr: {
+    "htmlLang": "fr",
+    "title": "Simulateur Macroéconomie - Le modèle AS/AD",
+    "locale": "fr-FR",
+    "k-badge": "CROISSANCE ET CYCLES ÉCONOMIQUES",
+    "k-h1": "Le modèle AS/AD",
+    "k-sub": "© Thomas Hossen – Version du 7 mars 2026",
+    "k-seed": "Seed (Optionnel)",
+    "k-conso": "Propension à consommer",
+    "k-auto": "Aléatoire",
+    "k-auto2": "Aléatoire",
+    "k-c-low": "Faible (1/2 – 3/5)",
+    "k-c-mid": "Intermédiaire (2/3)",
+    "k-c-high": "Élevée (3/4 – 4/5)",
+    "k-shock": "Ampleur du choc",
+    "k-s-small": "Faible",
+    "k-s-large": "Marquée",
+    "k-gen": "Générer l'exercice →",
+    "k-welcome": "Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.",
+    "k-seedbadge": "Seed active :",
+    "k-new": "↺ Nouvel énoncé",
+    "k-pdf": "⬇ Exporter PDF",
+    "k-doc": "⬇ Exporter DOC",
+    "k-tag-ex": "Énoncé",
+    "k-cardtitle": "Étude d'un choc de policy mix",
+    "k-tag-sol": "Corrigé",
+    "k-cardtitle2": "Étude d'un choc de policy mix",
+    "k-work": "Travail à faire",
+    "showSol": "Afficher le corrigé",
+    "hideSol": "Masquer le corrigé",
+    "docTitle": "Exercice Modèle AS/AD",
+    "docFile": "Exercice_Modele_AS_AD.doc",
+    thousands: "\\,",
+    decimal: "{,}",
+
+    chart: {
+      xlabel: "Production Y",
+      ylabel: "Niveau des prix P",
+      ad0: "AD initiale",
+      ad1: "AD après le choc",
+      asct: "AS de court terme",
+      asmt: "AS de moyen terme",
+      aslt: "AS de long terme",
+      caption: "Ajustement de l'économie du court terme au long terme après le choc de policy mix"
+    },
+    rowH: "Horizon",
+    rowCT: "Court terme",
+    rowMT: "Moyen terme",
+    rowLT: "Long terme",
+
+    context: function(D) {
+      const T = D.tex;
+      return `
+      On considère une économie fermée dont les équations structurelles sont les suivantes : $C = ${T.c}(Y - T)$ (où $T$ est exogène), $I = \\frac{1}{${T.k}(r - \\pi)}$, $\\frac{M^D}{P} = ${T.lam}Y + \\frac{1}{${T.k}r}$, $Y = \\sqrt{${T.theta}N}$ (où $N$ désigne le niveau de travail en heures), $P = \\frac{(2+2m)WY}{${T.theta}}$ (avec $m = ${T.m}$), $W = \\frac{P}{${T.om}}$ (où $W$ est le salaire) et $N^s = ${T.Ns}$ (offre de travail). On note $M$ l'offre nominale de monnaie (exogène) et $G$ le niveau des dépenses publiques (exogène).
+    `;
+    },
+
+    table: function(D) { return ""; },
+
+    enonce: function(D) {
+      const T = D.tex;
+      let h = "";
+
+      h += `<li><span class="q-head">Équilibre de long terme.</span> On suppose l'inflation nulle : $\\pi = 0$.
+        <ol class="lvl-a">
+          <li>Quelles sont les variables d'ajustement à long terme ? Qu'entend-on par absence de rigidité nominale ?</li>
+          <li>Écrivez le système d'équations caractérisant l'équilibre de long terme.</li>
+          <li>Déterminez les valeurs numériques du taux d'intérêt $r^*$, du revenu $Y^*$, de la demande d'emploi $N^*$, du niveau des prix $P^*$ et du salaire $W^*$ à l'équilibre de long terme, en supposant $m = ${T.m}$, $T = ${T.T}$, $G = ${T.G}$ et $M = ${T.M}$. Calculez également le niveau de chômage.</li>
+          <li>Commentez la présence de chômage involontaire dans cette économie. Quelle en est la source ?</li>
+        </ol></li>`;
+
+      h += `<li><span class="q-head">Un choc de policy mix.</span> On suppose que le gouvernement met en place une politique de relance par la dépense publique ($\\mathrm{d}G > 0$) et que la Banque centrale décide d'accompagner cette mesure d'une politique monétaire expansionniste ($\\mathrm{d}M > 0$).
+        <ol class="lvl-a">
+          <li><em>Équilibre de court terme de la mesure.</em>
+            <ol class="lvl-i">
+              <li>Quelles sont les variables d'ajustement à court terme ? Comment l'offre réagit-elle à la demande ?</li>
+              <li>Déterminez l'équation de la demande globale $Y^D$ en fonction des paramètres du modèle. Calculez l'impact total $\\mathrm{d}Y$ d'une variation de $\\mathrm{d}G$ et de $\\mathrm{d}M$ sur le revenu à court terme. Commentez le résultat : qu'observe-t-on en termes d'effet multiplicateur ?</li>
+              <li>Analysez l'effet des deux politiques sur le niveau d'emploi $N = \\frac{Y^2}{${T.theta}}$. Calculez $\\mathrm{d}N$ en fonction de $\\mathrm{d}G$ et $\\mathrm{d}M$.</li>
+              <li>Commentez les mécanismes à l'œuvre suite à ce double choc de demande positif. Quel est l'impact sur le taux d'intérêt ?</li>
+            </ol>
+          </li>
+          <li><em>Équilibre de moyen terme de la mesure.</em>
+            <ol class="lvl-i">
+              <li>Quelles sont les variables d'ajustement à moyen terme ? Que reste-t-il comme rigidité ?</li>
+              <li>Déterminez l'impact $\\mathrm{d}P$ sur le prix initial d'équilibre résultant d'un accroissement $\\mathrm{d}G$ des dépenses publiques et d'un accroissement $\\mathrm{d}M$ de l'offre de monnaie. Déduisez-en l'impact sur la production $\\mathrm{d}Y$ et sur l'emploi $\\mathrm{d}N$.</li>
+              <li>Commentez l'ajustement qui s'opère entre le court terme et le moyen terme. Pourquoi l'effet expansionniste se réduit-il ?</li>
+            </ol>
+          </li>
+          <li><em>Équilibre de long terme de la mesure.</em>
+            <ol class="lvl-i">
+              <li>Quelles sont les variables d'ajustement à long terme ?</li>
+              <li>Déterminez la variation des prix $\\mathrm{d}P$, des salaires nominaux $\\mathrm{d}W$ et de l'emploi $\\mathrm{d}N$ à long terme, sachant que le salaire réel doit revenir à son niveau initial (condition : $\\mathrm{d}\\left(\\frac{W}{P}\\right) = 0$). Commentez les résultats.</li>
+            </ol>
+          </li>
+          <li><em>Application numérique.</em> On suppose désormais $\\mathrm{d}G = ${T.dG}$ et $\\mathrm{d}M = ${T.dM}$. Chiffrez les variations de la production, de l'emploi, des prix et du salaire nominal aux trois horizons, et représentez graphiquement l'ajustement dans le plan $(Y, P)$.</li>
+        </ol></li>`;
+
+      h += `<li><span class="q-head">Conclusion.</span> Commentez la structure de l'exercice : que vous a-t-il appris ?</li>`;
+      return h;
+    },
+
+    sol: function(D) {
+      const P = I18N['fr'];
+      const T = D.tex;
+      let s = "";
+
+      /* ---------- 1 (a) et (b) ---------- */
+      s += `<div class="calc-box">
+        <span class="sol-sub">1 (a) Les variables d'ajustement de long terme</span>
+        À long terme, aucune des variables de contrôle n'est fixée : le revenu $Y$ et le taux d'intérêt $r$ s'ajustent (ce qui était déjà le cas à court terme), mais également le niveau des prix $P$ (qui s'ajuste dès le moyen terme) et le niveau des salaires $W$. On dit qu'il n'y a plus de rigidité nominale à long terme : taux d'intérêt, prix et salaires deviennent tous flexibles. L'absence de rigidité nominale signifie qu'aucune variable exprimée en unités monétaires n'est bloquée par un contrat, un coût d'ajustement ou une convention : chacune peut se déplacer librement jusqu'à ce que tous les marchés soient soldés.
+
+        <span class="sol-sub">1 (b) Le système caractérisant l'équilibre de long terme</span>
+        L'équilibre est déterminé par les courbes IS et LM, dont on déduira ensuite $P$ et $W$ :
+        <div class="math-formula">\\[ (S) : \\begin{cases}
+        Y = C + I + G & \\text{(IS)} \\\\
+        \\frac{M^D}{P} = ${T.lam}Y + \\frac{1}{${T.k}r} & \\text{(LM)} \\\\
+        Y = \\sqrt{${T.theta}N} \\\\
+        P = \\frac{(2+2m)WY}{${T.theta}} \\\\
+        W = \\frac{P}{${T.om}}
+        \\end{cases} \\]</div>
+        <p>En reportant $C = ${T.c}(Y - T)$ et $I = \\frac{1}{${T.k}(r-\\pi)} = \\frac{1}{${T.k}r}$ (puisque $\\pi = 0$) dans la relation IS, il vient $Y = ${T.c}(Y - \\overline{T}) + \\frac{1}{${T.k}r} + \\overline{G}$, c'est-à-dire $${T.oneMinusC}Y + ${T.c}\\overline{T} - \\overline{G} = \\frac{1}{${T.k}r}$. De même, l'équilibre du marché de la monnaie impose $M^D = \\overline{M}$, d'où $\\frac{\\overline{M}}{P} - ${T.lam}Y = \\frac{1}{${T.k}r}$. Le système se ramène donc à :</p>
+        <div class="math-formula">\\[ (S) \\iff \\begin{cases}
+        r = \\frac{1}{${T.k}\\left(${T.oneMinusC}Y + ${T.c}\\overline{T} - \\overline{G}\\right)} & \\text{(IS)}\\\\[8pt]
+        r = \\frac{1}{${T.k}\\left(\\frac{\\overline{M}}{P} - ${T.lam}Y\\right)} & \\text{(LM)}\\\\[8pt]
+        Y = \\sqrt{${T.theta}N}, \\quad P = \\frac{(2+2m)WY}{${T.theta}}, \\quad W = \\frac{P}{${T.om}}
+        \\end{cases} \\]</div>
+      </div>`;
+
+      /* ---------- 1 (c) ---------- */
+      s += `<div class="calc-box">
+        <span class="sol-sub">1 (c) Résolution numérique</span>
+        On fixe $m = ${T.m}$, $\\overline{T} = ${T.T}$, $\\overline{G} = ${T.G}$ et $\\overline{M} = ${T.M}$. La résolution se fait par étapes, en commençant par le bloc d'offre, qui détermine seul le revenu d'équilibre.
+        <p style="margin-top:.8rem;">Première étape : le revenu $Y^*$. En combinant les deux dernières équations du système :</p>
+        <div class="math-formula">\\[ \\begin{cases} P = \\frac{(2+2m)WY}{${T.theta}} \\\\ W = \\frac{P}{${T.om}} \\end{cases}
+        \\iff \\begin{cases} P = ${T.om}W \\\\ ${T.om}W = \\frac{(2+2m)WY}{${T.theta}} \\end{cases}
+        \\iff \\begin{cases} P = ${T.om}W \\\\ ${T.om} = \\frac{(2+2m)Y}{${T.theta}} \\end{cases}
+        \\iff \\begin{cases} P = ${T.om}W \\\\ Y = \\frac{${T.om}\\times ${T.theta}}{2+2m} = ${T.Ystar} \\end{cases} \\]</div>
+        <p>la simplification par $W$ étant licite puisque le salaire est non nul. On a donc $Y^* = ${T.Ystar}$. Ce point est central : le revenu de long terme ne dépend que de la technologie, du taux de marge et de la règle de fixation des salaires, jamais de la demande.</p>
+        <p style="margin-top:.8rem;">Deuxième étape : l'emploi $N^*$. La fonction de production donne $Y^* = \\sqrt{${T.theta}N^*}$, c'est-à-dire $N^* = \\frac{(Y^*)^2}{${T.theta}} = ${T.Nstar}$. Or l'offre de travail s'élève à $N^s = ${T.Ns}$. Comme $N^s > N^*$, il existe du chômage dans cette économie, à hauteur de $${T.Ns} - ${T.Nstar} = ${T.chom}$ heures.</p>
+        <p style="margin-top:.8rem;">Troisième étape : le taux d'intérêt $r^*$, obtenu par la courbe IS :</p>
+        <div class="math-formula">\\[ r^* = \\frac{1}{${T.k}\\left(${T.oneMinusC}\\times ${T.Ystar} + ${T.c}\\times ${T.T} - ${T.G}\\right)} = \\frac{1}{${T.k}\\times ${T.X}} = ${T.rstar} \\]</div>
+        <p>Le taux d'intérêt d'équilibre de long terme s'établit donc à $r^* = ${T.rpct}\\,\\%$.</p>
+        <p style="margin-top:.8rem;">Quatrième étape : le niveau des prix $P^*$, obtenu par la courbe LM. On a $r^* = \\frac{1}{${T.k}\\left(\\frac{\\overline{M}}{P} - ${T.lam}Y^*\\right)}$, soit $\\frac{1}{${T.k}\\times ${T.rstar}} = \\frac{${T.M}}{P} - ${T.lam}\\times ${T.Ystar}$, c'est-à-dire $${T.X} = \\frac{${T.M}}{P} - ${T.lamY}$, d'où $P^* = 1$. On en déduit enfin le salaire d'équilibre $W^* = \\frac{P^*}{${T.om}} = ${T.Wstar}$.</p>
+
+        <span class="sol-sub">1 (d) La nature du chômage</span>
+        En concurrence pure et parfaite, il n'y aurait aucune friction sur les marchés et le salaire s'ajusterait jusqu'à égaliser offre et demande de travail. Or on constate ici que l'offre de travail diffère de la demande de travail : le chômage observé est donc involontaire, et il résulte de rigidités sur le marché du travail. Ces rigidités se matérialisent par l'écart entre le salaire désiré par les agents (ici $W = \\frac{P}{${T.om}}$, soit un salaire réel cible de $${T.Wstar}$) et le salaire « juste » du point de vue des entreprises, qui tarifent à la productivité marginale du travail augmentée du taux de marge $m$. Il existe en effet deux sources de rigidité : le marché du travail lui-même (écart entre le salaire revendiqué et la productivité marginale) et l'inflation (mauvaises anticipations des agents, qui peuvent résulter d'annonces ambiguës de la banque centrale par exemple).
+      </div>`;
+
+      /* ---------- 2 (a) ---------- */
+      s += `<div class="calc-box">
+        <span class="sol-sub">2 (a) i. Les variables d'ajustement de court terme</span>
+        L'équilibre de court terme est caractérisé par la rigidité des prix et des salaires : ni $P$ ni $W$ ne peuvent servir de variable d'ajustement. L'ajustement se réalise donc sur les quantités, c'est-à-dire sur la production et l'emploi. Les entreprises se trouvent contraintes — elles ne peuvent ni baisser les salaires ni ajuster leurs prix — et doivent ajuster leur production à la demande globale. Autrement dit, à court terme, l'offre s'ajuste à la demande.
+
+        <span class="sol-sub">2 (a) ii. La demande globale et l'effet multiplicateur</span>
+        L'offre est déterminée par l'équation du prix désiré : $Y^S = \\frac{${T.theta}P}{(2+2m)W}$. La demande globale, elle, résulte de l'intersection de IS et de LM. En égalisant les deux expressions de $\\frac{1}{${T.k}r}$ obtenues à la question 1 (b) :
+        <div class="math-formula">\\[ \\begin{aligned}
+        ${T.oneMinusC}Y^D + ${T.c}\\overline{T} - \\overline{G} = \\frac{\\overline{M}}{P} - ${T.lam}Y^D
+        &\\iff ${T.s}Y^D = \\frac{\\overline{M}}{P} - ${T.c}\\overline{T} + \\overline{G} \\\\
+        &\\iff Y^D = ${T.invS}\\left(\\frac{\\overline{M}}{P} - ${T.c}\\overline{T} + \\overline{G}\\right)
+        \\end{aligned} \\]</div>
+        <p>À court terme, l'offre s'ajuste à cette quantité demandée. L'impact total d'une variation conjointe de $\\overline{G}$ et de $\\overline{M}$ s'obtient par différentiation totale :</p>
+        <div class="math-formula">\\[ \\begin{aligned}
+        \\mathrm{d}Y &= \\frac{\\partial Y}{\\partial \\overline{G}}\\,\\mathrm{d}\\overline{G} + \\frac{\\partial Y}{\\partial \\overline{M}}\\,\\mathrm{d}\\overline{M}
+        = ${T.invS}\\,\\mathrm{d}\\overline{G} + \\frac{${T.invS}}{P}\\,\\mathrm{d}\\overline{M} \\\\
+        &= ${T.invS}\\left(\\mathrm{d}\\overline{G} + \\mathrm{d}\\overline{M}\\right) > 0 \\quad\\text{car } P^* = 1 \\text{ à l'équilibre initial}
+        \\end{aligned} \\]</div>
+        <p>Le revenu s'améliore donc à la suite de ces deux politiques expansionnistes. Plus précisément, si l'on accroît les dépenses publiques d'une unité et l'offre de monnaie d'une unité, le revenu s'accroît de $${T.invS} + ${T.invS} = ${T.mult}$, soit davantage que les deux unités engagées : c'est l'effet multiplicateur. Le multiplicateur vaut ici $${T.invS} \\approx ${T.multNum}$, et il est d'autant plus élevé que la propension à consommer $${T.c}$ est forte et que la demande de monnaie est peu sensible au revenu.</p>
+
+        <span class="sol-sub">2 (a) iii. L'effet sur l'emploi</span>
+        Il suffit d'exprimer l'emploi en fonction des variables exogènes :
+        <div class="math-formula">\\[ N = \\frac{(Y^D)^2}{${T.theta}} = ${T.coefN}\\left(\\frac{\\overline{M}}{P} - ${T.c}\\overline{T} + \\overline{G}\\right)^2 \\]</div>
+        <p>puis de différentier totalement, en se plaçant à l'équilibre initial où $\\frac{\\overline{M}}{P} - ${T.c}\\overline{T} + \\overline{G} = ${T.s}Y^* = ${T.sY}$ :</p>
+        <div class="math-formula">\\[ \\mathrm{d}N = \\frac{2Y^*}{${T.theta}}\\,\\mathrm{d}Y = \\frac{2\\times ${T.Ystar}}{${T.theta}}\\times ${T.invS}\\left(\\mathrm{d}\\overline{G} + \\mathrm{d}\\overline{M}\\right) = ${T.dNct}\\left(\\mathrm{d}\\overline{G} + \\mathrm{d}\\overline{M}\\right) > 0 \\]</div>
+        <p>L'emploi progresse donc plus que proportionnellement au revenu, puisque les rendements décroissants de la fonction de production imposent d'embaucher davantage d'heures pour produire une unité supplémentaire.</p>
+
+        <span class="sol-sub">2 (a) iv. Les mécanismes à l'œuvre</span>
+        Il s'agit d'un double choc de demande positif. La hausse des dépenses publiques suscite initialement un excès de demande de biens et un excès de demande de fonds prêtables : le taux d'intérêt, c'est-à-dire le coût de l'argent, tend donc à augmenter. La hausse de l'offre de monnaie implique au contraire un excès d'offre de monnaie et un excès d'offre de fonds prêtables : le taux d'intérêt tend alors à diminuer. L'effet sur la production est certain — production, revenu et emploi augmentent — mais les deux chocs jouent en sens contraire sur le marché des fonds prêtables, si bien que l'impact sur le taux d'intérêt est <em>a priori</em> indéterminé. Les deux effets peuvent se neutraliser exactement, ou l'un peut l'emporter sur l'autre : cela dépend des caractéristiques de l'économie et de l'ampleur relative des deux chocs.
+      </div>`;
+
+      /* ---------- 2 (b) ---------- */
+      s += `<div class="calc-box">
+        <span class="sol-sub">2 (b) i. Les variables d'ajustement de moyen terme</span>
+        À moyen terme, les prix deviennent à leur tour une variable d'ajustement, tandis que les salaires nominaux demeurent rigides — ils sont fixés par des contrats qui n'ont pas encore été renégociés. Il faut donc déterminer le nouveau prix d'équilibre consécutif à la mesure.
+
+        <span class="sol-sub">2 (b) ii. Le nouveau prix d'équilibre</span>
+        L'ajustement des prix doit être tel qu'il rétablisse <em>in fine</em> l'égalité de l'offre et de la demande. Le choc engendre une variation $\\mathrm{d}Y^S$ de la quasi-offre globale et une variation $\\mathrm{d}Y^D$ de la quasi-demande globale ; comme $Y^S = Y^D$ à l'équilibre initial, la condition d'équilibre s'écrit simplement $\\mathrm{d}Y^S = \\mathrm{d}Y^D$. Or, en différentiant totalement l'offre :
+        <div class="math-formula">\\[ \\begin{aligned}
+        \\mathrm{d}Y^S &= \\frac{\\partial Y^S}{\\partial P}\\,\\mathrm{d}P + \\frac{\\partial Y^S}{\\partial W}\\,\\mathrm{d}W
+        = \\frac{${T.theta}}{(2+2m)W}\\,\\mathrm{d}P \\quad\\text{car } \\mathrm{d}W = 0 \\\\
+        &= \\frac{${T.theta}\\times ${T.om}}{2+2m}\\,\\mathrm{d}P = ${T.Ystar}\\,\\mathrm{d}P \\quad\\text{car } W^* = ${T.Wstar}
+        \\end{aligned} \\]</div>
+        <p>et, en différentiant totalement la demande (avec $\\mathrm{d}\\overline{T} = 0$, faute de politique fiscale) :</p>
+        <div class="math-formula">\\[ \\begin{aligned}
+        \\mathrm{d}Y^D &= \\frac{\\partial Y^D}{\\partial P}\\,\\mathrm{d}P + \\frac{\\partial Y^D}{\\partial \\overline{M}}\\,\\mathrm{d}\\overline{M} + \\frac{\\partial Y^D}{\\partial \\overline{G}}\\,\\mathrm{d}\\overline{G} \\\\
+        &= -\\frac{${T.invS}\\,\\overline{M}}{P^2}\\,\\mathrm{d}P + \\frac{${T.invS}}{P}\\,\\mathrm{d}\\overline{M} + ${T.invS}\\,\\mathrm{d}\\overline{G}
+        = ${T.invS}\\left(-${T.M}\\,\\mathrm{d}P + \\mathrm{d}\\overline{M} + \\mathrm{d}\\overline{G}\\right)
+        \\end{aligned} \\]</div>
+        <p>car $\\overline{M} = ${T.M}$ et $P^* = 1$ à l'équilibre initial. En égalisant les deux expressions :</p>
+        <div class="math-formula">\\[ \\begin{aligned}
+        ${T.Ystar}\\,\\mathrm{d}P = ${T.invS}\\left(-${T.M}\\,\\mathrm{d}P + \\mathrm{d}\\overline{M} + \\mathrm{d}\\overline{G}\\right)
+        &\\iff \\left(${T.sY} + ${T.M}\\right)\\mathrm{d}P = \\mathrm{d}\\overline{M} + \\mathrm{d}\\overline{G} \\\\
+        &\\iff \\mathrm{d}P = ${T.dPmt}\\left(\\mathrm{d}\\overline{M} + \\mathrm{d}\\overline{G}\\right)
+        \\end{aligned} \\]</div>
+        <p>On en déduit immédiatement l'impact sur la production, puisque $\\mathrm{d}Y = ${T.Ystar}\\,\\mathrm{d}P$, soit $\\mathrm{d}Y = ${T.dYmt}\\left(\\mathrm{d}\\overline{M} + \\mathrm{d}\\overline{G}\\right)$, puis sur l'emploi, avec $\\mathrm{d}N = \\frac{2Y^*}{${T.theta}}\\mathrm{d}Y = ${T.dNmt}\\left(\\mathrm{d}\\overline{M} + \\mathrm{d}\\overline{G}\\right)$.</p>
+
+        <span class="sol-sub">2 (b) iii. Du court terme au moyen terme</span>
+        L'équilibre de court terme n'était assurément pas un équilibre walrassien : il dissimulait un excès de demande de biens. Celui-ci provoque une tension sur les prix, qui se résout par une hausse du niveau général des prix à moyen terme, les entreprises pouvant désormais s'ajuster en prix et non plus seulement en quantités. Cette hausse des prix rétablit l'égalité entre offre et demande par deux canaux. D'une part, la demande baisse : l'encaisse réelle $\\frac{M}{P}$ diminue, ce qui élève le taux d'intérêt et comprime l'investissement. D'autre part, l'offre augmente : le salaire réel $\\frac{W}{P}$ diminue puisque $W$ est encore rigide, ce qui améliore la rentabilité des firmes et les incite à produire davantage. La production d'équilibre est donc plus faible qu'à court terme — $${T.dYmt}$ contre $${T.invS}$ par unité de choc — tout en restant supérieure à son niveau initial, et il en va de même pour l'emploi. L'effet expansionniste du <em>policy mix</em> se trouve ainsi considérablement réduit : c'est l'élévation des prix, puis du taux d'intérêt, qui en absorbe une part croissante.
+      </div>`;
+
+      /* ---------- 2 (c) ---------- */
+      s += `<div class="calc-box">
+        <span class="sol-sub">2 (c) i. Les variables d'ajustement de long terme</span>
+        À long terme, toutes les variables peuvent s'ajuster. En particulier, les salaires nominaux $W$ deviennent parfaitement flexibles, à l'instar du revenu $Y$, du taux d'intérêt $r$, de la demande d'emploi $N$ et des prix $P$.
+
+        <span class="sol-sub">2 (c) ii. L'ajustement final</span>
+        À long terme, l'économie doit retrouver le salaire réel négocié initial, ce qui s'écrit $\\mathrm{d}\\left(\\frac{W}{P}\\right) = 0$. Or :
+        <div class="math-formula">\\[ \\mathrm{d}\\left(\\frac{W}{P}\\right) = 0 \\iff \\frac{P\\,\\mathrm{d}W - W\\,\\mathrm{d}P}{P^2} = 0 \\iff \\frac{\\mathrm{d}W}{P} = \\frac{W}{P^2}\\,\\mathrm{d}P \\iff \\mathrm{d}W = \\frac{W}{P}\\,\\mathrm{d}P \\]</div>
+        <p>Le coût réel du travail revenant à son niveau initial et la technologie étant inchangée, la production doit elle aussi revenir à son point de départ : une nouvelle condition apparaît, $\\mathrm{d}Y^S = \\mathrm{d}Y^D = 0$. En reprenant l'expression de $\\mathrm{d}Y^D$ établie à la question 2 (b) ii :</p>
+        <div class="math-formula">\\[ \\mathrm{d}Y^D = 0 \\iff ${T.invS}\\left(-${T.M}\\,\\mathrm{d}P + \\mathrm{d}\\overline{M} + \\mathrm{d}\\overline{G}\\right) = 0 \\iff \\mathrm{d}P = ${T.dPlt}\\left(\\mathrm{d}\\overline{M} + \\mathrm{d}\\overline{G}\\right) \\]</div>
+        <p>On en déduit la variation du salaire nominal :</p>
+        <div class="math-formula">\\[ \\mathrm{d}W = \\frac{W^*}{P^*}\\,\\mathrm{d}P = ${T.Wstar}\\,\\mathrm{d}P = ${T.dWlt}\\left(\\mathrm{d}\\overline{M} + \\mathrm{d}\\overline{G}\\right) \\]</div>
+        <p>Enfin, comme $N = \\frac{Y^2}{${T.theta}}$, on a $\\mathrm{d}N = \\frac{2Y}{${T.theta}}\\mathrm{d}Y$, et $\\mathrm{d}Y = 0$ à long terme entraîne $\\mathrm{d}N = 0$. Le <em>policy mix</em> n'a donc aucun effet réel à long terme : il n'agit que sur les grandeurs nominales, prix et salaires, qui augmentent tous deux dans la même proportion. C'est la neutralité de la monnaie, à laquelle s'ajoute ici l'éviction complète de la dépense publique. Le chômage involontaire de la question 1 (d), lui, demeure inchangé : il ne relève pas de la demande, mais de la structure du marché du travail.</p>
+      </div>`;
+
+      /* ---------- 2 (d) ---------- */
+      s += `<div class="calc-box">
+        <span class="sol-sub">2 (d) Application numérique</span>
+        On applique les formules précédentes à $\\mathrm{d}\\overline{G} = ${T.dG}$ et $\\mathrm{d}\\overline{M} = ${T.dM}$, soit un choc total de $${T.dSum}$ unité${D.dSumNum >= 2 ? 's' : ''}.
+        ${D.tableNum}
+        <p>La production gagne d'abord $${T.dYctNum}$ à court terme, ne conserve que $${T.dYmtNum}$ à moyen terme — soit $${T.pctKept}\\,%$ du gain initial — puis revient exactement à son niveau de départ $Y^* = ${T.Ystar}$. Symétriquement, les prix, qui n'avaient pas bougé à court terme, progressent de $${T.dPmtNum}$ à moyen terme puis de $${T.dPltNum}$ à long terme, tandis que le salaire nominal ne s'ajuste qu'en toute fin de parcours, de $${T.dWltNum}$, exactement ce qu'il faut pour rétablir le salaire réel initial.</p>
+        <div class="chart-wrap">${D.svg}<div class="table-caption">${P.chart.caption}</div></div>
+        <p>Le graphique lit cet enchaînement d'un seul tenant. Le choc déplace la courbe de demande globale vers la droite, de AD à AD′. À court terme, l'offre est horizontale au prix rigide $P^* = 1$ : l'économie glisse de $E_0$ à $E_1$, tout l'ajustement se faisant en quantités. À moyen terme, l'offre devient croissante — les prix s'ajustent, mais le salaire nominal reste bloqué, donc le salaire réel baisse et les firmes acceptent de produire davantage : l'économie remonte le long de cette droite jusqu'en $E_2$. À long terme enfin, les salaires rattrapent les prix, l'offre redevient verticale en $Y^*$ et l'économie s'établit en $E_3$, à la même production qu'en $E_0$ mais à un niveau de prix strictement supérieur.</p>
+      </div>`;
+
+      /* ---------- 3 ---------- */
+      s += `<div class="calc-box">
+        <span class="sol-sub">3. Conclusion : la structure de l'exercice</span>
+        On part d'un équilibre de long terme supposé atteint (question 1). Le gouvernement et la banque centrale souhaitent alors décentraliser cet équilibre en proposant un <em>policy mix</em> : une politique budgétaire expansionniste couplée à une politique monétaire expansionniste (question 2). À court terme, salaires et prix sont rigides ; la quasi-offre s'ajuste donc nécessairement à la quasi-demande, et le choc génère une création de richesse qui permet aux ménages d'acheter davantage. Mais les entreprises ne sont pas satisfaites : elles voudraient ajuster leurs prix pour répondre à cet excès de demande. C'est précisément ce qui se produit à moyen terme, où l'on cherche le $\\mathrm{d}P$ tel que $\\mathrm{d}Y^S = \\mathrm{d}Y^D$. Les prix montent, ce qui érode le salaire réel $\\frac{W}{P}$. Les salariés sont alors mécontents à leur tour et exigent une revalorisation afin de ne pas perdre en pouvoir d'achat, ce que traduit la condition $\\mathrm{d}\\left(\\frac{W}{P}\\right) = 0$. Le salaire réel, donc le coût du travail, revient à sa valeur initiale ; la technologie n'ayant pas changé, la production retrouve son niveau de départ. Tous les ajustements sont alors réalisés et l'économie atteint son nouvel équilibre de long terme.
+        <p style="margin-top:.8rem;">L'exercice enseigne ainsi une chose simple et profonde : ce n'est pas la nature du choc qui détermine ses effets réels, mais la vitesse à laquelle chaque prix nominal peut se déplacer. Le même choc est intégralement réel à court terme, partiellement réel à moyen terme, et purement nominal à long terme. Toute la macroéconomie de la demande tient dans cette hiérarchie des rigidités.</p>
+      </div>`;
+
+      /* ---------- Perspective ---------- */
+      s += `<div class="persp-box">
+        <span class="sol-sub">Pour aller plus loin</span>
+        Trois remarques méritent d'être faites. D'abord, les résultats obtenus par différentiation totale sont des approximations du premier ordre, valables pour des chocs de faible ampleur ; le graphique, lui, trace les courbes exactes, si bien que les intersections lues sur la figure s'écartent légèrement des $\\mathrm{d}Y$ calculés. Plus le choc est grand, plus cet écart se creuse — c'est le prix de la linéarisation.
+        <p style="margin-top:.8rem;">Ensuite, la neutralité de long terme repose entièrement sur la condition $\\mathrm{d}\\left(\\frac{W}{P}\\right) = 0$, c'est-à-dire sur l'idée que les salariés récupèrent intégralement leur pouvoir d'achat. Si la renégociation salariale était incomplète — parce que le chômage pèse sur le rapport de force, par exemple —, une partie de l'effet réel subsisterait durablement, et la production resterait au-dessus de $Y^*$. C'est exactement le mécanisme que formalise la courbe de Phillips.</p>
+        <p style="margin-top:.8rem;">Enfin, le chômage de la question 1 (d) n'est pas un chômage keynésien de demande insuffisante : il est structurel, engendré par le coin entre le salaire revendiqué $\\frac{P}{${T.om}}$ et la productivité marginale tarifée avec un taux de marge $m = ${T.m}$. Aucune politique de demande ne peut le réduire durablement ; seules des mesures agissant sur $m$ (concurrence sur les marchés de biens) ou sur la norme salariale y parviendraient. On mesure ici pourquoi le diagnostic sur la nature du chômage précède toujours le choix de l'instrument.</p>
+      </div>`;
+
+      return s;
+    }
+  },
+
+  en: {
+    "htmlLang": "en",
+    "title": "Macroeconomics Simulator - The AS/AD model",
+    "locale": "en-GB",
+    "k-badge": "GROWTH AND BUSINESS CYCLES",
+    "k-h1": "The AS/AD model",
+    "k-sub": "© Thomas Hossen – March 7, 2026 Version",
+    "k-seed": "Seed (Optional)",
+    "k-conso": "Propensity to consume",
+    "k-auto": "Random",
+    "k-auto2": "Random",
+    "k-c-low": "Low (1/2 – 3/5)",
+    "k-c-mid": "Intermediate (2/3)",
+    "k-c-high": "High (3/4 – 4/5)",
+    "k-shock": "Size of the shock",
+    "k-s-small": "Small",
+    "k-s-large": "Large",
+    "k-gen": "Generate Exercise →",
+    "k-welcome": "Configure the parameters and click Generate to create a new exercise.",
+    "k-seedbadge": "Active Seed:",
+    "k-new": "↺ New Statement",
+    "k-pdf": "⬇ Export PDF",
+    "k-doc": "⬇ Export DOC",
+    "k-tag-ex": "Problem",
+    "k-cardtitle": "A policy-mix shock",
+    "k-tag-sol": "Solution",
+    "k-cardtitle2": "A policy-mix shock",
+    "k-work": "Assignment",
+    "showSol": "Show the solution",
+    "hideSol": "Hide the solution",
+    "docTitle": "AS/AD Model Exercise",
+    "docFile": "AS_AD_Model_Exercise.doc",
+    thousands: ",",
+    decimal: ".",
+
+    chart: {
+      xlabel: "Output Y",
+      ylabel: "Price level P",
+      ad0: "Initial AD",
+      ad1: "AD after the shock",
+      asct: "Short-run AS",
+      asmt: "Medium-run AS",
+      aslt: "Long-run AS",
+      caption: "Adjustment of the economy from the short run to the long run after the policy-mix shock"
+    },
+    rowH: "Horizon",
+    rowCT: "Short run",
+    rowMT: "Medium run",
+    rowLT: "Long run",
+
+    context: function(D) {
+      const T = D.tex;
+      return `
+      Consider a closed economy with the following structural equations: $C = ${T.c}(Y - T)$ (where $T$ is exogenous), $I = \\frac{1}{${T.k}(r - \\pi)}$, $\\frac{M^D}{P} = ${T.lam}Y + \\frac{1}{${T.k}r}$, $Y = \\sqrt{${T.theta}N}$ (where $N$ denotes labour in hours), $P = \\frac{(2+2m)WY}{${T.theta}}$ (with $m = ${T.m}$), $W = \\frac{P}{${T.om}}$ (where $W$ is the wage) and $N^s = ${T.Ns}$ (labour supply). $M$ denotes the exogenous nominal money supply and $G$ the exogenous level of public spending.
+    `;
+    },
+
+    table: function(D) { return ""; },
+
+    enonce: function(D) {
+      const T = D.tex;
+      let h = "";
+
+      h += `<li><span class="q-head">The long-run equilibrium.</span> Assume zero inflation: $\\pi = 0$.
+        <ol class="lvl-a">
+          <li>Which variables adjust in the long run? What is meant by the absence of nominal rigidity?</li>
+          <li>Write down the system of equations characterising the long-run equilibrium.</li>
+          <li>Compute the numerical values of the interest rate $r^*$, income $Y^*$, labour demand $N^*$, the price level $P^*$ and the wage $W^*$ in the long-run equilibrium, assuming $m = ${T.m}$, $T = ${T.T}$, $G = ${T.G}$ and $M = ${T.M}$. Also compute the level of unemployment.</li>
+          <li>Comment on the presence of involuntary unemployment in this economy. What is its source?</li>
+        </ol></li>`;
+
+      h += `<li><span class="q-head">A policy-mix shock.</span> Suppose the government launches a fiscal stimulus ($\\mathrm{d}G > 0$) and that the central bank accompanies it with an expansionary monetary policy ($\\mathrm{d}M > 0$).
+        <ol class="lvl-a">
+          <li><em>Short-run equilibrium.</em>
+            <ol class="lvl-i">
+              <li>Which variables adjust in the short run? How does supply respond to demand?</li>
+              <li>Derive the aggregate demand equation $Y^D$ in terms of the parameters of the model. Compute the total impact $\\mathrm{d}Y$ of changes $\\mathrm{d}G$ and $\\mathrm{d}M$ on short-run income. Comment: what do we observe in terms of the multiplier effect?</li>
+              <li>Analyse the effect of both policies on employment $N = \\frac{Y^2}{${T.theta}}$. Compute $\\mathrm{d}N$ as a function of $\\mathrm{d}G$ and $\\mathrm{d}M$.</li>
+              <li>Comment on the mechanisms triggered by this twin positive demand shock. What is the impact on the interest rate?</li>
+            </ol>
+          </li>
+          <li><em>Medium-run equilibrium.</em>
+            <ol class="lvl-i">
+              <li>Which variables adjust in the medium run? Which rigidity remains?</li>
+              <li>Determine the impact $\\mathrm{d}P$ on the initial equilibrium price resulting from an increase $\\mathrm{d}G$ in public spending and an increase $\\mathrm{d}M$ in the money supply. Deduce the impact on output $\\mathrm{d}Y$ and on employment $\\mathrm{d}N$.</li>
+              <li>Comment on the adjustment taking place between the short run and the medium run. Why does the expansionary effect shrink?</li>
+            </ol>
+          </li>
+          <li><em>Long-run equilibrium.</em>
+            <ol class="lvl-i">
+              <li>Which variables adjust in the long run?</li>
+              <li>Determine the change in prices $\\mathrm{d}P$, in nominal wages $\\mathrm{d}W$ and in employment $\\mathrm{d}N$ in the long run, knowing that the real wage must return to its initial level (condition: $\\mathrm{d}\\left(\\frac{W}{P}\\right) = 0$). Comment on the results.</li>
+            </ol>
+          </li>
+          <li><em>Numerical application.</em> Now assume $\\mathrm{d}G = ${T.dG}$ and $\\mathrm{d}M = ${T.dM}$. Quantify the changes in output, employment, prices and the nominal wage at the three horizons, and represent the adjustment graphically in the $(Y, P)$ plane.</li>
+        </ol></li>`;
+
+      h += `<li><span class="q-head">Conclusion.</span> Comment on the structure of the exercise: what has it taught you?</li>`;
+      return h;
+    },
+
+    sol: function(D) {
+      const P = I18N['en'];
+      const T = D.tex;
+      let s = "";
+
+      s += `<div class="calc-box">
+        <span class="sol-sub">1 (a) Which variables adjust in the long run</span>
+        In the long run none of the control variables is fixed: income $Y$ and the interest rate $r$ adjust (as they already did in the short run), but so does the price level $P$ (which already adjusts in the medium run) and the wage level $W$. We say that nominal rigidity has disappeared in the long run: interest rate, prices and wages all become flexible. The absence of nominal rigidity means that no variable expressed in money units is locked in by a contract, an adjustment cost or a convention: each can move freely until all markets clear.
+
+        <span class="sol-sub">1 (b) The system characterising the long-run equilibrium</span>
+        The equilibrium is determined by the IS and LM curves, from which $P$ and $W$ then follow:
+        <div class="math-formula">\\[ (S) : \\begin{cases}
+        Y = C + I + G & \\text{(IS)} \\\\
+        \\frac{M^D}{P} = ${T.lam}Y + \\frac{1}{${T.k}r} & \\text{(LM)} \\\\
+        Y = \\sqrt{${T.theta}N} \\\\
+        P = \\frac{(2+2m)WY}{${T.theta}} \\\\
+        W = \\frac{P}{${T.om}}
+        \\end{cases} \\]</div>
+        <p>Substituting $C = ${T.c}(Y - T)$ and $I = \\frac{1}{${T.k}(r-\\pi)} = \\frac{1}{${T.k}r}$ (since $\\pi = 0$) into the IS relationship gives $Y = ${T.c}(Y - \\overline{T}) + \\frac{1}{${T.k}r} + \\overline{G}$, that is $${T.oneMinusC}Y + ${T.c}\\overline{T} - \\overline{G} = \\frac{1}{${T.k}r}$. Likewise, equilibrium on the money market imposes $M^D = \\overline{M}$, hence $\\frac{\\overline{M}}{P} - ${T.lam}Y = \\frac{1}{${T.k}r}$. The system therefore reduces to:</p>
+        <div class="math-formula">\\[ (S) \\iff \\begin{cases}
+        r = \\frac{1}{${T.k}\\left(${T.oneMinusC}Y + ${T.c}\\overline{T} - \\overline{G}\\right)} & \\text{(IS)}\\\\[8pt]
+        r = \\frac{1}{${T.k}\\left(\\frac{\\overline{M}}{P} - ${T.lam}Y\\right)} & \\text{(LM)}\\\\[8pt]
+        Y = \\sqrt{${T.theta}N}, \\quad P = \\frac{(2+2m)WY}{${T.theta}}, \\quad W = \\frac{P}{${T.om}}
+        \\end{cases} \\]</div>
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span class="sol-sub">1 (c) Numerical solution</span>
+        Set $m = ${T.m}$, $\\overline{T} = ${T.T}$, $\\overline{G} = ${T.G}$ and $\\overline{M} = ${T.M}$. We solve step by step, starting with the supply block, which alone pins down equilibrium income.
+        <p style="margin-top:.8rem;">Step one: income $Y^*$. Combining the last two equations of the system:</p>
+        <div class="math-formula">\\[ \\begin{cases} P = \\frac{(2+2m)WY}{${T.theta}} \\\\ W = \\frac{P}{${T.om}} \\end{cases}
+        \\iff \\begin{cases} P = ${T.om}W \\\\ ${T.om}W = \\frac{(2+2m)WY}{${T.theta}} \\end{cases}
+        \\iff \\begin{cases} P = ${T.om}W \\\\ ${T.om} = \\frac{(2+2m)Y}{${T.theta}} \\end{cases}
+        \\iff \\begin{cases} P = ${T.om}W \\\\ Y = \\frac{${T.om}\\times ${T.theta}}{2+2m} = ${T.Ystar} \\end{cases} \\]</div>
+        <p>dividing through by $W$ being legitimate since the wage is non-zero. Hence $Y^* = ${T.Ystar}$. This point is central: long-run income depends only on technology, the mark-up and the wage-setting rule, never on demand.</p>
+        <p style="margin-top:.8rem;">Step two: employment $N^*$. The production function gives $Y^* = \\sqrt{${T.theta}N^*}$, that is $N^* = \\frac{(Y^*)^2}{${T.theta}} = ${T.Nstar}$. Labour supply, however, equals $N^s = ${T.Ns}$. Since $N^s > N^*$, this economy features unemployment, amounting to $${T.Ns} - ${T.Nstar} = ${T.chom}$ hours.</p>
+        <p style="margin-top:.8rem;">Step three: the interest rate $r^*$, from the IS curve:</p>
+        <div class="math-formula">\\[ r^* = \\frac{1}{${T.k}\\left(${T.oneMinusC}\\times ${T.Ystar} + ${T.c}\\times ${T.T} - ${T.G}\\right)} = \\frac{1}{${T.k}\\times ${T.X}} = ${T.rstar} \\]</div>
+        <p>The long-run equilibrium interest rate therefore stands at $r^* = ${T.rpct}\\%$.</p>
+        <p style="margin-top:.8rem;">Step four: the price level $P^*$, from the LM curve. We have $r^* = \\frac{1}{${T.k}\\left(\\frac{\\overline{M}}{P} - ${T.lam}Y^*\\right)}$, so $\\frac{1}{${T.k}\\times ${T.rstar}} = \\frac{${T.M}}{P} - ${T.lam}\\times ${T.Ystar}$, that is $${T.X} = \\frac{${T.M}}{P} - ${T.lamY}$, hence $P^* = 1$. The equilibrium wage follows: $W^* = \\frac{P^*}{${T.om}} = ${T.Wstar}$.</p>
+
+        <span class="sol-sub">1 (d) The nature of unemployment</span>
+        Under perfect competition there would be no friction on markets and the wage would adjust until labour supply equalled labour demand. Here labour supply differs from labour demand: the unemployment observed is therefore involuntary, and it stems from rigidities on the labour market. These rigidities materialise as the gap between the wage desired by workers (here $W = \\frac{P}{${T.om}}$, that is a target real wage of $${T.Wstar}$) and the wage firms regard as "fair", since they price at the marginal product of labour augmented by the mark-up $m$. There are indeed two sources of rigidity: the labour market itself (the gap between the claimed wage and marginal productivity) and inflation (mistaken expectations, which may follow from ambiguous central-bank announcements).
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span class="sol-sub">2 (a) i. Which variables adjust in the short run</span>
+        The short-run equilibrium is characterised by rigid prices and wages: neither $P$ nor $W$ can serve as an adjustment variable. Adjustment therefore falls on quantities, that is on output and employment. Firms are constrained — they can neither cut wages nor reset prices — and must adjust production to aggregate demand. In short: supply adjusts to demand.
+
+        <span class="sol-sub">2 (a) ii. Aggregate demand and the multiplier</span>
+        Supply is given by the desired-price equation: $Y^S = \\frac{${T.theta}P}{(2+2m)W}$. Aggregate demand follows from the intersection of IS and LM. Equating the two expressions for $\\frac{1}{${T.k}r}$ obtained in question 1 (b):
+        <div class="math-formula">\\[ \\begin{aligned}
+        ${T.oneMinusC}Y^D + ${T.c}\\overline{T} - \\overline{G} = \\frac{\\overline{M}}{P} - ${T.lam}Y^D
+        &\\iff ${T.s}Y^D = \\frac{\\overline{M}}{P} - ${T.c}\\overline{T} + \\overline{G} \\\\
+        &\\iff Y^D = ${T.invS}\\left(\\frac{\\overline{M}}{P} - ${T.c}\\overline{T} + \\overline{G}\\right)
+        \\end{aligned} \\]</div>
+        <p>In the short run supply adjusts to this quantity demanded. The total impact of a joint change in $\\overline{G}$ and $\\overline{M}$ follows from total differentiation:</p>
+        <div class="math-formula">\\[ \\begin{aligned}
+        \\mathrm{d}Y &= \\frac{\\partial Y}{\\partial \\overline{G}}\\,\\mathrm{d}\\overline{G} + \\frac{\\partial Y}{\\partial \\overline{M}}\\,\\mathrm{d}\\overline{M}
+        = ${T.invS}\\,\\mathrm{d}\\overline{G} + \\frac{${T.invS}}{P}\\,\\mathrm{d}\\overline{M} \\\\
+        &= ${T.invS}\\left(\\mathrm{d}\\overline{G} + \\mathrm{d}\\overline{M}\\right) > 0 \\quad\\text{since } P^* = 1 \\text{ at the initial equilibrium}
+        \\end{aligned} \\]</div>
+        <p>Income therefore rises following these two expansionary policies. More precisely, raising public spending by one unit and the money supply by one unit raises income by $${T.invS} + ${T.invS} = ${T.mult}$, that is by more than the two units committed: this is the multiplier effect. The multiplier equals $${T.invS} \\approx ${T.multNum}$ here, and it is all the larger as the propensity to consume $${T.c}$ is high and money demand is little sensitive to income.</p>
+
+        <span class="sol-sub">2 (a) iii. The effect on employment</span>
+        It suffices to express employment in terms of the exogenous variables:
+        <div class="math-formula">\\[ N = \\frac{(Y^D)^2}{${T.theta}} = ${T.coefN}\\left(\\frac{\\overline{M}}{P} - ${T.c}\\overline{T} + \\overline{G}\\right)^2 \\]</div>
+        <p>and then to differentiate totally at the initial equilibrium, where $\\frac{\\overline{M}}{P} - ${T.c}\\overline{T} + \\overline{G} = ${T.s}Y^* = ${T.sY}$:</p>
+        <div class="math-formula">\\[ \\mathrm{d}N = \\frac{2Y^*}{${T.theta}}\\,\\mathrm{d}Y = \\frac{2\\times ${T.Ystar}}{${T.theta}}\\times ${T.invS}\\left(\\mathrm{d}\\overline{G} + \\mathrm{d}\\overline{M}\\right) = ${T.dNct}\\left(\\mathrm{d}\\overline{G} + \\mathrm{d}\\overline{M}\\right) > 0 \\]</div>
+        <p>Employment therefore rises more than proportionally to income, since the decreasing returns of the production function require ever more hours to produce an additional unit.</p>
+
+        <span class="sol-sub">2 (a) iv. The mechanisms at work</span>
+        This is a twin positive demand shock. Higher public spending initially generates excess demand for goods and excess demand for loanable funds: the interest rate — the cost of money — therefore tends to rise. The increase in the money supply, by contrast, implies excess supply of money and excess supply of loanable funds: the interest rate tends to fall. The effect on output is unambiguous — output, income and employment all rise — but the two shocks pull in opposite directions on the loanable-funds market, so the impact on the interest rate is <em>a priori</em> indeterminate. The two effects may cancel exactly, or one may dominate: it depends on the characteristics of the economy and on the relative size of the two shocks.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span class="sol-sub">2 (b) i. Which variables adjust in the medium run</span>
+        In the medium run prices become an adjustment variable in their turn, while nominal wages remain rigid — they are set by contracts that have not yet been renegotiated. We must therefore find the new equilibrium price following the measure.
+
+        <span class="sol-sub">2 (b) ii. The new equilibrium price</span>
+        The price adjustment must be such that it ultimately restores equality between supply and demand. The shock generates a change $\\mathrm{d}Y^S$ in quasi-aggregate supply and a change $\\mathrm{d}Y^D$ in quasi-aggregate demand; since $Y^S = Y^D$ at the initial equilibrium, the equilibrium condition is simply $\\mathrm{d}Y^S = \\mathrm{d}Y^D$. Differentiating supply totally:
+        <div class="math-formula">\\[ \\begin{aligned}
+        \\mathrm{d}Y^S &= \\frac{\\partial Y^S}{\\partial P}\\,\\mathrm{d}P + \\frac{\\partial Y^S}{\\partial W}\\,\\mathrm{d}W
+        = \\frac{${T.theta}}{(2+2m)W}\\,\\mathrm{d}P \\quad\\text{since } \\mathrm{d}W = 0 \\\\
+        &= \\frac{${T.theta}\\times ${T.om}}{2+2m}\\,\\mathrm{d}P = ${T.Ystar}\\,\\mathrm{d}P \\quad\\text{since } W^* = ${T.Wstar}
+        \\end{aligned} \\]</div>
+        <p>and differentiating demand totally (with $\\mathrm{d}\\overline{T} = 0$, since there is no tax policy):</p>
+        <div class="math-formula">\\[ \\begin{aligned}
+        \\mathrm{d}Y^D &= \\frac{\\partial Y^D}{\\partial P}\\,\\mathrm{d}P + \\frac{\\partial Y^D}{\\partial \\overline{M}}\\,\\mathrm{d}\\overline{M} + \\frac{\\partial Y^D}{\\partial \\overline{G}}\\,\\mathrm{d}\\overline{G} \\\\
+        &= -\\frac{${T.invS}\\,\\overline{M}}{P^2}\\,\\mathrm{d}P + \\frac{${T.invS}}{P}\\,\\mathrm{d}\\overline{M} + ${T.invS}\\,\\mathrm{d}\\overline{G}
+        = ${T.invS}\\left(-${T.M}\\,\\mathrm{d}P + \\mathrm{d}\\overline{M} + \\mathrm{d}\\overline{G}\\right)
+        \\end{aligned} \\]</div>
+        <p>since $\\overline{M} = ${T.M}$ and $P^* = 1$ at the initial equilibrium. Equating the two expressions:</p>
+        <div class="math-formula">\\[ \\begin{aligned}
+        ${T.Ystar}\\,\\mathrm{d}P = ${T.invS}\\left(-${T.M}\\,\\mathrm{d}P + \\mathrm{d}\\overline{M} + \\mathrm{d}\\overline{G}\\right)
+        &\\iff \\left(${T.sY} + ${T.M}\\right)\\mathrm{d}P = \\mathrm{d}\\overline{M} + \\mathrm{d}\\overline{G} \\\\
+        &\\iff \\mathrm{d}P = ${T.dPmt}\\left(\\mathrm{d}\\overline{M} + \\mathrm{d}\\overline{G}\\right)
+        \\end{aligned} \\]</div>
+        <p>The impact on output follows immediately, since $\\mathrm{d}Y = ${T.Ystar}\\,\\mathrm{d}P$, that is $\\mathrm{d}Y = ${T.dYmt}\\left(\\mathrm{d}\\overline{M} + \\mathrm{d}\\overline{G}\\right)$, and then on employment, with $\\mathrm{d}N = \\frac{2Y^*}{${T.theta}}\\mathrm{d}Y = ${T.dNmt}\\left(\\mathrm{d}\\overline{M} + \\mathrm{d}\\overline{G}\\right)$.</p>
+
+        <span class="sol-sub">2 (b) iii. From the short run to the medium run</span>
+        The short-run equilibrium was certainly not a Walrasian one: it concealed excess demand for goods. That excess puts pressure on prices, which resolves into a rise in the general price level in the medium run, firms now being able to adjust prices and not only quantities. This price increase restores equality between supply and demand through two channels. On the one hand demand falls: real balances $\\frac{M}{P}$ shrink, which raises the interest rate and squeezes investment. On the other hand supply rises: the real wage $\\frac{W}{P}$ falls since $W$ is still rigid, which improves firms' profitability and induces them to produce more. Equilibrium output is therefore lower than in the short run — $${T.dYmt}$ against $${T.invS}$ per unit of shock — while remaining above its initial level, and the same holds for employment. The expansionary effect of the policy mix is thus considerably reduced: the rise in prices, and then in the interest rate, absorbs a growing share of it.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span class="sol-sub">2 (c) i. Which variables adjust in the long run</span>
+        In the long run every variable can adjust. In particular nominal wages $W$ become perfectly flexible, alongside income $Y$, the interest rate $r$, labour demand $N$ and prices $P$.
+
+        <span class="sol-sub">2 (c) ii. The final adjustment</span>
+        In the long run the economy must recover the initially bargained real wage, which is written $\\mathrm{d}\\left(\\frac{W}{P}\\right) = 0$. Now:
+        <div class="math-formula">\\[ \\mathrm{d}\\left(\\frac{W}{P}\\right) = 0 \\iff \\frac{P\\,\\mathrm{d}W - W\\,\\mathrm{d}P}{P^2} = 0 \\iff \\frac{\\mathrm{d}W}{P} = \\frac{W}{P^2}\\,\\mathrm{d}P \\iff \\mathrm{d}W = \\frac{W}{P}\\,\\mathrm{d}P \\]</div>
+        <p>With the real cost of labour back at its initial level and technology unchanged, output must also return to its starting point: a new condition appears, $\\mathrm{d}Y^S = \\mathrm{d}Y^D = 0$. Using the expression for $\\mathrm{d}Y^D$ established in question 2 (b) ii:</p>
+        <div class="math-formula">\\[ \\mathrm{d}Y^D = 0 \\iff ${T.invS}\\left(-${T.M}\\,\\mathrm{d}P + \\mathrm{d}\\overline{M} + \\mathrm{d}\\overline{G}\\right) = 0 \\iff \\mathrm{d}P = ${T.dPlt}\\left(\\mathrm{d}\\overline{M} + \\mathrm{d}\\overline{G}\\right) \\]</div>
+        <p>The change in the nominal wage follows:</p>
+        <div class="math-formula">\\[ \\mathrm{d}W = \\frac{W^*}{P^*}\\,\\mathrm{d}P = ${T.Wstar}\\,\\mathrm{d}P = ${T.dWlt}\\left(\\mathrm{d}\\overline{M} + \\mathrm{d}\\overline{G}\\right) \\]</div>
+        <p>Finally, since $N = \\frac{Y^2}{${T.theta}}$, we have $\\mathrm{d}N = \\frac{2Y}{${T.theta}}\\mathrm{d}Y$, and $\\mathrm{d}Y = 0$ in the long run implies $\\mathrm{d}N = 0$. The policy mix therefore has no real effect in the long run: it moves only nominal magnitudes, prices and wages, both of which rise in the same proportion. This is the neutrality of money, compounded here by the complete crowding-out of public spending. The involuntary unemployment of question 1 (d) is left untouched: it is not a matter of demand, but of the structure of the labour market.</p>
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span class="sol-sub">2 (d) Numerical application</span>
+        Applying the previous formulas to $\\mathrm{d}\\overline{G} = ${T.dG}$ and $\\mathrm{d}\\overline{M} = ${T.dM}$, that is a total shock of $${T.dSum}$ unit${D.dSumNum !== 1 ? 's' : ''}.
+        ${D.tableNum}
+        <p>Output first gains $${T.dYctNum}$ in the short run, retains only $${T.dYmtNum}$ in the medium run — that is ${T.pctKept}% of the initial gain — and then returns exactly to its starting level $Y^* = ${T.Ystar}$. Symmetrically, prices, which had not moved at all in the short run, rise by $${T.dPmtNum}$ in the medium run and by $${T.dPltNum}$ in the long run, while the nominal wage only adjusts at the very end, by $${T.dWltNum}$, exactly what is needed to restore the initial real wage.</p>
+        <div class="chart-wrap">${D.svg}<div class="table-caption">${P.chart.caption}</div></div>
+        <p>The chart reads this sequence in one go. The shock shifts aggregate demand to the right, from AD to AD′. In the short run supply is horizontal at the rigid price $P^* = 1$: the economy slides from $E_0$ to $E_1$, with all the adjustment falling on quantities. In the medium run supply becomes upward-sloping — prices adjust, but the nominal wage is still stuck, so the real wage falls and firms agree to produce more: the economy climbs along that line up to $E_2$. In the long run, finally, wages catch up with prices, supply becomes vertical at $Y^*$ again, and the economy settles at $E_3$, at the same output as $E_0$ but at a strictly higher price level.</p>
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span class="sol-sub">3. Conclusion: the structure of the exercise</span>
+        We start from a long-run equilibrium assumed to have been reached (question 1). The government and the central bank then wish to move away from it by proposing a policy mix: an expansionary fiscal policy coupled with an expansionary monetary policy (question 2). In the short run wages and prices are rigid; quasi-supply therefore necessarily adjusts to quasi-demand, and the shock generates additional income allowing households to buy more. But firms are not satisfied: they would like to reset their prices to face this excess demand. That is precisely what happens in the medium run, where we look for the $\\mathrm{d}P$ such that $\\mathrm{d}Y^S = \\mathrm{d}Y^D$. Prices rise, which erodes the real wage $\\frac{W}{P}$. Workers are then dissatisfied in their turn and demand a raise so as not to lose purchasing power, which the condition $\\mathrm{d}\\left(\\frac{W}{P}\\right) = 0$ captures. The real wage, hence the cost of labour, returns to its initial value; since technology has not changed, output returns to its starting level. All adjustments have then taken place and the economy reaches its new long-run equilibrium.
+        <p style="margin-top:.8rem;">The exercise thus teaches something simple and deep: it is not the nature of the shock that determines its real effects, but the speed at which each nominal price can move. The same shock is entirely real in the short run, partly real in the medium run and purely nominal in the long run. All of demand-side macroeconomics lies in that hierarchy of rigidities.</p>
+      </div>`;
+
+      s += `<div class="persp-box">
+        <span class="sol-sub">Going further</span>
+        Three remarks are worth making. First, the results obtained by total differentiation are first-order approximations, valid for small shocks; the chart, by contrast, plots the exact curves, so the intersections read off the figure depart slightly from the computed $\\mathrm{d}Y$. The larger the shock, the wider that gap — such is the price of linearisation.
+        <p style="margin-top:.8rem;">Second, long-run neutrality rests entirely on the condition $\\mathrm{d}\\left(\\frac{W}{P}\\right) = 0$, that is on the idea that workers fully recover their purchasing power. Were wage renegotiation incomplete — because unemployment weakens their bargaining position, for instance — part of the real effect would survive durably and output would remain above $Y^*$. This is exactly the mechanism formalised by the Phillips curve.</p>
+        <p style="margin-top:.8rem;">Third, the unemployment of question 1 (d) is not Keynesian unemployment caused by deficient demand: it is structural, generated by the wedge between the claimed wage $\\frac{P}{${T.om}}$ and marginal productivity priced with a mark-up $m = ${T.m}$. No demand policy can durably reduce it; only measures acting on $m$ (competition in goods markets) or on the wage norm could. One sees here why a diagnosis of the nature of unemployment always precedes the choice of instrument.</p>
+      </div>`;
+
+      return s;
+    }
+  }
+};
+
+/* ============================================================
+   GESTION DE LA LANGUE  /  LANGUAGE HANDLING
+   ============================================================ */
+let LANG = 'fr';
+
+function detectLang() {
+    try {
+        const q = new URLSearchParams(window.location.search).get('lang');
+        if (q && I18N[q.toLowerCase()]) return q.toLowerCase();
+    } catch (e) {}
+    const h = (window.location.hash || '').replace('#', '').toLowerCase();
+    if (I18N[h]) return h;
+    return 'fr';
+}
+
+function applyLang() {
+    const D = I18N[LANG];
+    document.documentElement.lang = D.htmlLang;
+    document.title = D.title;
+
+    document.querySelectorAll('[data-k]').forEach(function (el) {
+        const key = el.getAttribute('data-k');
+        if (D[key] !== undefined) el.innerHTML = D[key];
+    });
+
+    const btn = document.getElementById('toggle-btn');
+    if (btn) btn.innerText = document.getElementById('sol-card').classList.contains('visible') ? D.hideSol : D.showSol;
+
+    document.getElementById('flag-fr').classList.toggle('active', LANG === 'fr');
+    document.getElementById('flag-en').classList.toggle('active', LANG === 'en');
+}
+
+function setLang(lang) {
+    if (!I18N[lang] || lang === LANG) return;
+    LANG = lang;
+
+    try {
+        const u = new URL(window.location.href);
+        u.searchParams.set('lang', lang);
+        history.replaceState(null, '', u.toString());
+    } catch (e) {}
+
+    applyLang();
+
+    if (document.getElementById('ex-area').style.display !== 'none') {
+        const solWasVisible = document.getElementById('sol-card').classList.contains('visible');
+        generateExercise(false);
+        if (solWasVisible) toggleSol();
+    }
+}
+
+// --- PRNG (Mulberry32) ---
+let currentSeed = 0;
+function seedPRNG(seed) {
+    return function() {
+      let t = seed += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+let random = Math.random;
+
+function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
+function pick(arr) { return arr[randInt(0, arr.length - 1)]; }
+
+function texM(num, dec) {
+    let sign = num < 0 ? "-" : "";
+    let parts = Math.abs(num).toFixed(dec).split('.');
+    let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, I18N[LANG].thousands);
+    return sign + intPart + (dec > 0 ? I18N[LANG].decimal + parts[1] : "");
+}
+function fmtD(num, dec) {
+    return num.toLocaleString(I18N[LANG].locale, {minimumFractionDigits: dec, maximumFractionDigits: dec});
+}
+function sh(x)  { return (Math.round(x * 100) % 100 === 0) ? fmtD(x, 0) : ((Math.round(x * 100) % 10 === 0) ? fmtD(x, 1) : fmtD(x, 2)); }
+function sh2(x) { return fmtD(x, 2); }
+/* Nombre destine a un environnement mathematique */
+function texN(x) {
+    const d = (Math.round(x * 1000) % 1000 === 0) ? 0 : ((Math.round(x * 1000) % 100 === 0) ? 1 : ((Math.round(x * 1000) % 10 === 0) ? 2 : 3));
+    return texM(x, d);
+}
+
+/* ============================================================
+   FRACTIONS EXACTES  /  EXACT FRACTIONS
+   ============================================================ */
+function gcd(a, b) { return b ? gcd(b, a % b) : Math.abs(a); }
+function Fr(n, d) {
+    if (d < 0) { n = -n; d = -d; }
+    const g = gcd(Math.abs(n), d) || 1;
+    return { n: n / g, d: d / g };
+}
+const fAdd = (a, b) => Fr(a.n * b.d + b.n * a.d, a.d * b.d);
+const fSub = (a, b) => Fr(a.n * b.d - b.n * a.d, a.d * b.d);
+const fMul = (a, b) => Fr(a.n * b.n, a.d * b.d);
+const fDiv = (a, b) => Fr(a.n * b.d, a.d * b.n);
+const fVal = f => f.n / f.d;
+const dec2f = x => Fr(Math.round(x * 1000), 1000);
+/* Rendu LaTeX d'une fraction */
+function tf(f) {
+    if (f.d === 1) return String(f.n);
+    return (f.n < 0 ? "-" : "") + `\\frac{${Math.abs(f.n)}}{${f.d}}`;
+}
+/* Rendu exact : decimal si la fraction est decimale, fraction sinon */
+function tfe(f) { return (1000 % f.d === 0) ? texN(fVal(f)) : tf(f); }
+
+/* ============================================================
+   DIAGRAMME AS/AD (SVG)
+   ============================================================ */
+function asadSVG(p, L) {
+    const Ys = p.Ystar, s = p.s, A = p.A, M = p.M, dG = p.dG, dM = p.dM;
+
+    /* points d'equilibre exacts */
+    const Yct = (M + dM + dG - A) / s;
+    const disc = Math.pow(A - dG, 2) + 4 * s * Ys * (M + dM);
+    const Ymt = (-(A - dG) + Math.sqrt(disc)) / (2 * s);
+    const Pmt = Ymt / Ys;
+    const Plt = (M + dM) / (M - dG);
+
+    const X0 = 74, X1 = 566, Y0 = 30, Y1 = 372;
+    const Ymax = Math.max(Yct, Ymt, Ys) * 1.30;
+    const Pmax = Math.max(1, Plt, Pmt) * 1.42;
+    const px = y => X0 + (y / Ymax) * (X1 - X0);
+    const py = v => Y1 - (v / Pmax) * (Y1 - Y0);
+
+    let g = "";
+    g += `<defs><marker id="axA" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#0d1b2a"/></marker></defs>`;
+
+    /* courbe AD : P = Mc / (sY + Ac), tracee la ou elle est dans le cadre */
+    function adPath(Mc, Ac, col, dash) {
+        let pts = [], started = false, out = "";
+        for (let i = 0; i <= 320; i++) {
+            const y = (i / 320) * Ymax;
+            const den = s * y + Ac;
+            if (den <= 1e-6) { continue; }
+            const v = Mc / den;
+            if (v > Pmax || v < 0) { if (started) { out += `<polyline points="${pts.join(' ')}" fill="none" stroke="${col}" stroke-width="2.1"${dash}/>`; pts = []; started = false; } continue; }
+            pts.push(`${px(y).toFixed(1)},${py(v).toFixed(1)}`);
+            started = true;
+        }
+        if (pts.length > 1) out += `<polyline points="${pts.join(' ')}" fill="none" stroke="${col}" stroke-width="2.1"${dash}/>`;
+        return out;
+    }
+
+    /* grille legere */
+    for (let i = 1; i <= 4; i++) {
+        const v = (i / 4) * Pmax;
+        g += `<line x1="${X0}" y1="${py(v).toFixed(1)}" x2="${X1}" y2="${py(v).toFixed(1)}" stroke="#eeeae0" stroke-width="1"/>`;
+    }
+
+    /* AS de long terme (verticale) et de moyen terme (droite issue de l'origine) */
+    g += `<line x1="${px(Ys).toFixed(1)}" y1="${Y0}" x2="${px(Ys).toFixed(1)}" y2="${Y1}" stroke="#0d1b2a" stroke-width="2.1"/>`;
+    const yEndMT = Math.min(Ymax, Ys * Pmax);
+    g += `<line x1="${px(0)}" y1="${py(0)}" x2="${px(yEndMT).toFixed(1)}" y2="${py(yEndMT / Ys).toFixed(1)}" stroke="#2d6b4a" stroke-width="2.1"/>`;
+    /* AS de court terme (horizontale au prix rigide) */
+    g += `<line x1="${X0}" y1="${py(1).toFixed(1)}" x2="${X1}" y2="${py(1).toFixed(1)}" stroke="#1a4f8a" stroke-width="2.1"/>`;
+
+    /* courbes AD */
+    g += adPath(M, A, "#b94040", "");
+    g += adPath(M + dM, A - dG, "#b94040", ' stroke-dasharray="8 5"');
+
+    /* axes */
+    g += `<line x1="${X0}" y1="${Y1}" x2="${X1 + 8}" y2="${Y1}" stroke="#0d1b2a" stroke-width="1.6" marker-end="url(#axA)"/>`;
+    g += `<line x1="${X0}" y1="${Y1}" x2="${X0}" y2="${Y0 - 8}" stroke="#0d1b2a" stroke-width="1.6" marker-end="url(#axA)"/>`;
+    g += `<text x="${X1 + 4}" y="${Y1 + 24}" text-anchor="end" font-family="'Source Serif 4',serif" font-size="13" font-weight="600" fill="#0d1b2a">${L.xlabel}</text>`;
+    g += `<text x="22" y="${((Y0 + Y1) / 2).toFixed(1)}" text-anchor="middle" font-family="'Source Serif 4',serif" font-size="13" font-weight="600" fill="#0d1b2a" transform="rotate(-90 22 ${((Y0 + Y1) / 2).toFixed(1)})">${L.ylabel}</text>`;
+
+    /* reperes des axes */
+    g += `<text x="${px(Ys).toFixed(1)}" y="${Y1 + 18}" text-anchor="middle" font-family="'Source Serif 4',serif" font-style="italic" font-size="12.5" fill="#1e1e1e">Y*</text>`;
+    g += `<text x="${(X0 - 8)}" y="${(py(1) + 4).toFixed(1)}" text-anchor="end" font-family="'Source Serif 4',serif" font-style="italic" font-size="12.5" fill="#1e1e1e">P*</text>`;
+
+    /* equilibres */
+    const eq = [
+        { y: Ys, v: 1, lab: "E\u2080", dx: -12, dy: -10 },
+        { y: Yct, v: 1, lab: "E\u2081", dx: 8, dy: -9 },
+        { y: Ymt, v: Pmt, lab: "E\u2082", dx: 9, dy: -8 },
+        { y: Ys, v: Plt, lab: "E\u2083", dx: -11, dy: -10 }
+    ];
+    g += `<line x1="${px(Ys).toFixed(1)}" y1="${py(Plt).toFixed(1)}" x2="${X0}" y2="${py(Plt).toFixed(1)}" stroke="#9a9a9a" stroke-width="1" stroke-dasharray="4 4"/>`;
+    g += `<line x1="${px(Yct).toFixed(1)}" y1="${py(1).toFixed(1)}" x2="${px(Yct).toFixed(1)}" y2="${Y1}" stroke="#9a9a9a" stroke-width="1" stroke-dasharray="4 4"/>`;
+    eq.forEach(e => {
+        g += `<circle cx="${px(e.y).toFixed(1)}" cy="${py(e.v).toFixed(1)}" r="4.2" fill="#0d1b2a"/>`;
+        g += `<text x="${(px(e.y) + e.dx).toFixed(1)}" y="${(py(e.v) + e.dy).toFixed(1)}" text-anchor="middle" font-family="'Source Serif 4',serif" font-size="13" font-weight="600" fill="#0d1b2a">${e.lab}</text>`;
+    });
+
+    /* legende */
+    const lx = X0 + 18, ly = Y0 + 16;
+    g += `<rect x="${lx - 10}" y="${ly - 15}" width="196" height="96" fill="#ffffff" fill-opacity="0.92" stroke="#d4cfc4" stroke-width="1" rx="3"/>`;
+    const items = [
+        { c: "#b94040", d: "", t: L.ad0 },
+        { c: "#b94040", d: ' stroke-dasharray="8 5"', t: L.ad1 },
+        { c: "#1a4f8a", d: "", t: L.asct },
+        { c: "#2d6b4a", d: "", t: L.asmt },
+        { c: "#0d1b2a", d: "", t: L.aslt }
+    ];
+    items.forEach((it, i) => {
+        const y = ly + i * 17;
+        g += `<line x1="${lx}" y1="${y}" x2="${lx + 24}" y2="${y}" stroke="${it.c}" stroke-width="2.1"${it.d}/>`;
+        g += `<text x="${lx + 32}" y="${y + 4}" font-family="'Source Serif 4',serif" font-size="11.5" fill="#1e1e1e">${it.t}</text>`;
+    });
+
+    return `<svg viewBox="0 0 600 405" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${L.caption}">${g}</svg>`;
+}
+
+/* ============================================================
+   GENERATION DE L'EXERCICE  /  EXERCISE GENERATION
+   ============================================================ */
+const CS = [[1,2],[3,5],[2,3],[3,4],[4,5]];
+const LAMS = [[1,4],[1,3],[1,2]];
+const THETAS = [2,3,4,5,6];
+const MKS = [[1,4],[1,2],[1,1]];
+const OMS = [3,4,5];
+const XS = [0.5,0.75,1,1.25,1.5,2,2.5];
+const KS = [5,10,20];
+const TS = [0.5,1,1.5,2,2.5,3];
+const DS = [0.1,0.2,0.25,0.3,0.4,0.5];
+
+function generateExercise(forceNew = false) {
+    if (forceNew) { document.getElementById('seed-input').value = ""; }
+    let seedVal = document.getElementById('seed-input').value;
+    currentSeed = seedVal ? parseInt(seedVal) : Math.floor(Math.random() * 99999999);
+    document.getElementById('seed-disp').innerText = currentSeed;
+    document.getElementById('seed-input').value = currentSeed;
+    random = seedPRNG(currentSeed);
+
+    const DIC = I18N[LANG];
+    const cSel = document.getElementById('c-input').value;
+    const shSel = document.getElementById('shock-input').value;
+
+    const mult4 = x => Math.abs(x * 4 - Math.round(x * 4)) < 1e-9;
+    const mult2 = x => Math.abs(x * 2 - Math.round(x * 2)) < 1e-9;
+    const smallDen = (x, D) => { for (let d = 1; d <= D; d++) if (Math.abs(x * d - Math.round(x * d)) < 1e-9) return true; return false; };
+
+    let cn, cd, ln, ld, theta, mn, md, om, k, X, T, G, M, Ns, dG, dM;
+    let c, lam, s, m, Ystar, Nstar, rstar, chom;
+    let ok = false, guard = 0;
+
+    do {
+        guard++; ok = true;
+
+        let cPool = CS;
+        if (cSel === 'low')  cPool = [[1,2],[3,5]];
+        if (cSel === 'mid')  cPool = [[2,3]];
+        if (cSel === 'high') cPool = [[3,4],[4,5]];
+        const cc = pick(cPool); cn = cc[0]; cd = cc[1]; c = cn / cd;
+        const ll = pick(LAMS); ln = ll[0]; ld = ll[1]; lam = ln / ld;
+        if (lam >= c) { ok = false; continue; }
+        s = 1 - c + lam;
+
+        theta = pick(THETAS);
+        const mm = pick(MKS); mn = mm[0]; md = mm[1]; m = mn / md;
+        om = pick(OMS);
+
+        Ystar = om * theta / (2 + 2 * m);
+        if (!mult2(Ystar) || Ystar < 2 || Ystar > 8) { ok = false; continue; }
+        Nstar = Ystar * Ystar / theta;
+        if (!smallDen(Nstar, 6) || Nstar < 1 || Nstar > 10) { ok = false; continue; }
+
+        X = pick(XS); k = pick(KS);
+        rstar = 1 / (k * X);
+        if (rstar < 0.03 || rstar > 0.25) { ok = false; continue; }
+        if (Math.abs(rstar * 200 - Math.round(rstar * 200)) > 1e-9) { ok = false; continue; }
+
+        M = lam * Ystar + X;
+        if (!mult4(M) || M < 1 || M > 8) { ok = false; continue; }
+
+        T = pick(TS);
+        G = (1 - c) * Ystar + c * T - X;
+        if (!mult4(G) || G < 0.25 || G > 5) { ok = false; continue; }
+
+        /* offre de travail : chomage franc mais credible */
+        Ns = Math.round((Nstar + 1 + random() * 2.6) * 2) / 2;
+        chom = Ns - Nstar;
+        if (chom < 0.8 || chom > 4.2) { ok = false; continue; }
+
+        /* ampleur du choc */
+        let dPool = DS;
+        if (shSel === 'small') dPool = [0.1,0.2,0.25];
+        if (shSel === 'large') dPool = [0.3,0.4,0.5];
+        dG = pick(dPool); dM = pick(dPool);
+        if (dG + dM > 0.28 * M) { ok = false; continue; }
+        if (dG + dM < 0.05 * M) { ok = false; continue; }
+    } while (!ok && guard < 4000);
+
+    /* --- grandeurs exactes --- */
+    const fc = Fr(cn, cd), f1c = Fr(cd - cn, cd), fLam = Fr(ln, ld);
+    const fS = fAdd(f1c, fLam);
+    const fInvS = fDiv(Fr(1,1), fS);
+    const fY = dec2f(Ystar), fN = Fr(Math.round(Ystar * Ystar * 100), 100 * theta);
+    const fNs = dec2f(Ns), fChom = fSub(fNs, fN);
+    const fX = dec2f(X), fT = dec2f(T), fG = dec2f(G), fM = dec2f(M);
+    const fW = Fr(1, om), fLamY = fMul(fLam, fY), fSY = fMul(fS, fY);
+    const fdG = dec2f(dG), fdM = dec2f(dM), fSum = fAdd(fdG, fdM);
+    const fCoefN = fMul(Fr(1, theta), fMul(fInvS, fInvS));
+
+    /* court terme */
+    const fDYct = fMul(fInvS, fSum);
+    const fCoefNct = fMul(fMul(Fr(2, theta), fY), fInvS);
+    const fDNct = fMul(fCoefNct, fSum);
+    /* moyen terme */
+    const fDen = fAdd(fSY, fM);
+    const fCoefPmt = fDiv(Fr(1,1), fDen);
+    const fDPmt = fMul(fCoefPmt, fSum);
+    const fCoefYmt = fMul(fY, fCoefPmt);
+    const fDYmt = fMul(fCoefYmt, fSum);
+    const fCoefNmt = fMul(fMul(Fr(2, theta), fY), fCoefYmt);
+    const fDNmt = fMul(fCoefNmt, fSum);
+    /* long terme */
+    const fCoefPlt = fDiv(Fr(1,1), fM);
+    const fDPlt = fMul(fCoefPlt, fSum);
+    const fCoefWlt = fMul(fW, fCoefPlt);
+    const fDWlt = fMul(fCoefWlt, fSum);
+
+    const pctKept = 100 * fVal(fDYmt) / fVal(fDYct);
+
+    const tex = {
+        c: tf(fc), oneMinusC: tf(f1c), lam: tf(fLam), s: tf(fS), invS: tf(fInvS),
+        k: String(k), theta: String(theta), om: String(om), m: texN(m),
+        T: tfe(fT), G: tfe(fG), M: tfe(fM), Ns: tfe(fNs), X: tfe(fX),
+        Ystar: tfe(fY), Nstar: tfe(fN), chom: tfe(fChom),
+        rstar: texN(rstar), rpct: texN(rstar * 100),
+        Wstar: tf(fW), lamY: tfe(fLamY), sY: tfe(fSY), coefN: tf(fCoefN),
+        dNct: tfe(fCoefNct), dPmt: tf(fCoefPmt), dYmt: tfe(fCoefYmt), dNmt: tfe(fCoefNmt),
+        dPlt: tf(fCoefPlt), dWlt: tf(fCoefWlt),
+        mult: tfe(fMul(fInvS, Fr(2,1))), multNum: texM(fVal(fInvS), 2),
+        dG: tfe(fdG), dM: tfe(fdM), dSum: tfe(fSum),
+        dYctNum: tfe(fDYct), dNctNum: tfe(fDNct),
+        dPmtNum: texM(fVal(fDPmt), 3), dYmtNum: texM(fVal(fDYmt), 3), dNmtNum: texM(fVal(fDNmt), 3),
+        dPltNum: texM(fVal(fDPlt), 3), dWltNum: texM(fVal(fDWlt), 3),
+        pctKept: texM(pctKept, 1)
+    };
+
+    /* --- tableau de synthese --- */
+    const nb = (f, dec) => texM(fVal(f), dec);
+    let head = `<tr><th style="width:26%;">${DIC.rowH}</th><th>$\\mathrm{d}Y$</th><th>$\\mathrm{d}N$</th><th>$\\mathrm{d}P$</th><th>$\\mathrm{d}W$</th></tr>`;
+    let r1 = `<tr><td class="txt-left">${DIC.rowCT}</td><td class="amt">$${nb(fDYct,3)}$</td><td class="amt">$${nb(fDNct,3)}$</td><td class="amt">$0$</td><td class="amt">$0$</td></tr>`;
+    let r2 = `<tr><td class="txt-left">${DIC.rowMT}</td><td class="amt">$${nb(fDYmt,3)}$</td><td class="amt">$${nb(fDNmt,3)}$</td><td class="amt">$${nb(fDPmt,3)}$</td><td class="amt">$0$</td></tr>`;
+    let r3 = `<tr class="hi-row"><td class="txt-left">${DIC.rowLT}</td><td class="amt">$0$</td><td class="amt">$0$</td><td class="amt">$${nb(fDPlt,3)}$</td><td class="amt">$${nb(fDWlt,3)}$</td></tr>`;
+    const tableNum = `<div class="exam-table-wrap"><table class="exam-table">${head}${r1}${r2}${r3}</table></div>`;
+
+    const D = {
+        c: c, lam: lam, s: s, theta: theta, m: m, om: om, k: k,
+        T: T, G: G, M: M, Ns: Ns, X: X, Ystar: Ystar, Nstar: Nstar, rstar: rstar,
+        dG: dG, dM: dM, dSumNum: dG + dM,
+        tex: tex, tableNum: tableNum,
+        svg: asadSVG({ Ystar: Ystar, s: s, A: c * T - G, M: M, dG: dG, dM: dM }, DIC.chart)
+    };
+
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('ex-area').style.display = 'block';
+    document.getElementById('sol-card').classList.remove('visible');
+    document.getElementById('toggle-btn').innerText = DIC.showSol;
+    document.getElementById('toggle-btn').classList.remove('shown');
+
+    document.getElementById('context-text').innerHTML = DIC.context(D);
+    document.getElementById('enonce-table-container').innerHTML = DIC.table(D);
+    document.getElementById('additional-info').innerHTML = "";
+    document.getElementById('events-list').innerHTML = DIC.enonce(D);
+    document.getElementById('sol-content').innerHTML = DIC.sol(D);
+
+    if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
+        MathJax.typesetPromise().catch(function (err) { console.error('MathJax :', err); });
+    }
+}
+
+function toggleSol() {
+    let solCard = document.getElementById('sol-card');
+    let btn = document.getElementById('toggle-btn');
+    if (solCard.classList.contains('visible')) {
+        solCard.classList.remove('visible');
+        btn.innerText = I18N[LANG].showSol;
+        btn.classList.remove('shown');
+    } else {
+        solCard.classList.add('visible');
+        btn.innerText = I18N[LANG].hideSol;
+        btn.classList.add('shown');
+    }
+}
+
+function exportWord() {
+    let content = document.getElementById('ex-area').cloneNode(true);
+    let actions = content.querySelector('.top-actions');
+    if (actions) actions.parentNode.removeChild(actions);
+    let toggle = content.querySelector('.sol-toggle-wrap');
+    if (toggle) toggle.parentNode.removeChild(toggle);
+    let solCard = content.querySelector('#sol-card');
+    if (solCard) solCard.style.display = 'block';
+
+    let html = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <meta charset='utf-8'>
+            <title>${I18N[LANG].docTitle}</title>
+            <style>
+                body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5; text-align: justify; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 9pt; }
+                th, td { border: 1px solid #000; padding: 3px; }
+                th { background-color: #f2f2f2; text-align: center; font-weight: bold; }
+                .txt-left { text-align: left; font-weight: bold; }
+                .amt { text-align: right; white-space: nowrap; }
+                .calc-box, .method-box, .persp-box { border: 1px solid #000; padding: 10px; margin-bottom: 15px; background-color: #f9f9f9; text-align: justify; }
+                .math-formula { text-align: center; font-style: italic; margin: 10px 0; }
+                .chart-wrap { text-align: center; margin: 15px 0; }
+                .table-caption { font-size: 9pt; font-style: italic; text-align: center; }
+                ul, ol { text-align: justify; }
+                li { margin-bottom: 5px; }
+            </style>
+        </head>
+        <body>
+            ${content.innerHTML}
+        </body>
+        </html>
+    `;
+
+    let blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    let url = URL.createObjectURL(blob);
+    let link = document.createElement('a');
+    link.href = url;
+    link.download = I18N[LANG].docFile;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+/* Initialisation */
+LANG = detectLang();
+applyLang();
+</script>
+</body>
+</html>

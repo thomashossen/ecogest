@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Macroéconomie - Arbitrage entre inflation et chômage</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['\\[', '\\]']]
+    }
+  };
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7;text-align:justify;}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 1.5rem;border-bottom:3px solid var(--gold);text-align:left;}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end;background:rgba(255,255,255,.03);padding:1rem 1.5rem;border-radius:6px;border:1px solid rgba(255,255,255,.1)}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.6)}
+.ctrl-inp, .ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.4rem .7rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none;transition:border-color .2s}
+.ctrl-inp:focus, .ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.ctrl-sel option{background:var(--navy);color:var(--cream)}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.5rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;transition:background .18s;margin-left:auto}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN & CARDS */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:700}
+
+.top-actions{display:flex;gap:.5rem;}
+.btn-action{background:#fff;border:1px solid var(--border);color:var(--navy);padding:.4rem .8rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.85rem;font-weight:600;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.btn-action:hover{border-color:var(--navy);background:var(--cream-dark);}
+
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem;text-align:left;}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+.event-list{list-style:none;counter-reset:q}
+.event-list > li{margin-bottom:1.5rem;padding-left:1.8rem;position:relative;font-size:.95rem;text-align:justify}
+.event-list > li::before{counter-increment:q;content:counter(q) ".";position:absolute;left:0;color:var(--gold);font-weight:700}
+
+.sub-list { list-style-type: none; padding-left: 1rem; margin-top: 0.8rem; text-align:justify;}
+.sub-list li { margin-bottom: 0.5rem; }
+
+/* EXAM TABLE */
+.exam-table-wrap { overflow-x: auto; margin: 1.5rem 0; }
+.exam-table{width:100%;border-collapse:collapse;font-size:.8rem;font-family:'Source Serif 4',serif; margin: 0;}
+.exam-table th, .exam-table td{border:1px solid var(--border);padding:.5rem .4rem;text-align:center;vertical-align:middle;}
+.exam-table th{background:var(--navy);color:var(--cream);font-weight:600;}
+.exam-table .txt-left{text-align:left;font-weight:600;color:var(--navy);font-size:.78rem;line-height:1.35;}
+.exam-table .amt{font-family:'JetBrains Mono',monospace;text-align:right;white-space:nowrap;}
+.exam-table tr.hi-row td{background:#f2f7f2;}
+.table-caption{font-size:.78rem;color:var(--text-muted);font-style:italic;text-align:center;margin-top:.6rem;line-height:1.5}
+
+.two-col-table { width: 100%; display: flex; gap: 1.5rem; margin: 1.2rem 0; align-items:flex-start;}
+.col-half { flex: 1; min-width:0; }
+
+/* GRAPHIQUE */
+.chart-wrap{margin:1.4rem 0;text-align:center}
+.chart-wrap svg{max-width:100%;height:auto}
+
+/* SOLUTION TOGGLE */
+.sol-toggle-wrap{text-align:left; margin: 1.5rem 0 0 0;}
+.btn-toggle{background:transparent;border:2px solid var(--green);border-bottom:none;color:var(--green);font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;padding:.5rem 1.5rem;border-radius:4px 4px 0 0;cursor:pointer;transition:all .2s; position:relative; z-index:2; top:2px;}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--green);color:var(--cream)}
+.sol-card{border-top:2px solid var(--green);display:none; border-radius: 0 6px 6px 6px; position:relative; z-index:1;}
+.sol-card.visible{display:block;animation:fi .4s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+
+.calc-box{background:#f9fcf9;border:1px solid #c8e6c9;padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.9rem;color:var(--text);line-height:1.6;text-align:justify;}
+.method-box{background:#fdfaf2;border:1px solid #e3d3a8;border-left:3px solid var(--gold);padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.9rem;line-height:1.6;text-align:justify;}
+.persp-box{background:#f7f9fc;border:1px solid #ccd8e6;border-left:3px solid var(--navy-mid);padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.88rem;line-height:1.6;text-align:justify;}
+.sol-sub{color:var(--navy);font-weight:600;display:block;margin:1.1rem 0 .5rem;}
+.sol-sub:first-child{margin-top:0;}
+
+@media print{
+  body{background:#fff;}
+  header, .ctrls, .sol-toggle-wrap, .top-actions {display:none !important;}
+  .card{box-shadow:none; border:1px solid var(--border); margin-bottom:2rem;}
+  .sol-card{display:block !important; border-top:2px solid var(--green);}
+  #ex-area {display:block !important;}
+}
+
+/* --- Selecteur de langue / Language switch --- */
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem}
+.header-top .header-badge{margin-bottom:0}
+.lang-switch{display:flex;gap:.45rem;flex-shrink:0}
+.flag-btn{background:rgba(255,255,255,.06);border:1px solid rgba(201,149,42,.35);border-radius:3px;padding:3px;cursor:pointer;line-height:0;opacity:.5;transition:opacity .2s,border-color .2s,transform .15s}
+.flag-btn:hover{opacity:1;transform:translateY(-1px)}
+.flag-btn.active{opacity:1;border-color:var(--gold-light);box-shadow:0 0 0 1px rgba(232,184,75,.35)}
+.flag-btn svg{display:block;width:30px;height:20px;border-radius:1px}
+@media print{ .lang-switch{display:none !important;} }
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-top">
+    <div class="header-badge" data-k="k-badge">CROISSANCE ET CYCLES ÉCONOMIQUES</div>
+    <div class="lang-switch">
+      <button type="button" class="flag-btn active" id="flag-fr" onclick="setLang('fr')" title="Français" aria-label="Français"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="20" height="40" fill="#002654"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ED2939"/></svg></button>
+      <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
+    </div>
+  </div>
+  <h1 data-k="k-h1">Arbitrage entre inflation et chômage</h1>
+  <p class="subtitle" data-k="k-sub">© Thomas Hossen – Version du 7 mars 2026</p>
+
+  <div class="ctrls">
+    <div class="ctrl-g">
+      <span class="ctrl-lbl" data-k="k-seed">Seed (Optionnel)</span>
+      <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999">
+    </div>
+    <div class="ctrl-g">
+      <span class="ctrl-lbl" data-k="k-alpha">Rendement de la production</span>
+      <select class="ctrl-sel" id="alpha-input">
+        <option value="auto" data-k="k-auto">Aléatoire</option>
+        <option value="2" data-k="k-alpha2">Racine carrée (1/2)</option>
+        <option value="3" data-k="k-alpha3">Racine cubique (1/3)</option>
+        <option value="4" data-k="k-alpha4">Racine quatrième (1/4)</option>
+      </select>
+    </div>
+    <div class="ctrl-g">
+      <span class="ctrl-lbl" data-k="k-beta">Sensibilité des salaires</span>
+      <select class="ctrl-sel" id="beta-input">
+        <option value="auto" data-k="k-auto2">Aléatoire</option>
+        <option value="low" data-k="k-beta-low">Faible</option>
+        <option value="mid" data-k="k-beta-mid">Intermédiaire</option>
+        <option value="high" data-k="k-beta-high">Élevée</option>
+      </select>
+    </div>
+    <button class="btn-gen" onclick="generateExercise(false)"><span data-k="k-gen">Générer l'exercice →</span></button>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" style="text-align:center; padding:4rem; color:var(--text-muted); font-style:italic;">
+    <span data-k="k-welcome">Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.</span>
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="seed-badge"><span data-k="k-seedbadge">Seed active :</span> <span id="seed-disp"></span></div>
+      <div class="top-actions">
+        <button class="btn-action" onclick="generateExercise(true)"><span data-k="k-new">↺ Nouvel énoncé</span></button>
+        <button class="btn-action" onclick="window.print()"><span data-k="k-pdf">⬇ Exporter PDF</span></button>
+        <button class="btn-action" onclick="exportWord()"><span data-k="k-doc">⬇ Exporter DOC</span></button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="tag" data-k="k-tag-ex">Énoncé</span><h2 data-k="k-cardtitle">Arbitrage entre inflation et chômage</h2></div>
+      <div class="card-body">
+        <div class="context-block" id="context-text"></div>
+        <div id="enonce-table-container"></div>
+        <div class="context-block" id="additional-info" style="margin-top:1.5rem; background:#fff; border-left:none; border-radius:0;"></div>
+
+        <p style="margin-bottom:1rem; font-weight:600; color:var(--red); text-align:left;" data-k="k-work">Travail à faire</p>
+        <ul class="event-list" id="events-list"></ul>
+      </div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag" data-k="k-tag-sol">Corrigé</span><h2 data-k="k-cardtitle2">Arbitrage entre inflation et chômage</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+/* ============================================================
+   DICTIONNAIRE BILINGUE  /  BILINGUAL DICTIONARY
+   ============================================================ */
+const I18N = {
+
+  fr: {
+    "htmlLang": "fr",
+    "title": "Simulateur Macroéconomie - Arbitrage entre inflation et chômage",
+    "locale": "fr-FR",
+    "k-badge": "CROISSANCE ET CYCLES ÉCONOMIQUES",
+    "k-h1": "Arbitrage entre inflation et chômage",
+    "k-sub": "© Thomas Hossen – Version du 7 mars 2026",
+    "k-seed": "Seed (Optionnel)",
+    "k-alpha": "Rendement de la production",
+    "k-auto": "Aléatoire",
+    "k-auto2": "Aléatoire",
+    "k-alpha2": "Racine carrée (1/2)",
+    "k-alpha3": "Racine cubique (1/3)",
+    "k-alpha4": "Racine quatrième (1/4)",
+    "k-beta": "Sensibilité des salaires",
+    "k-beta-low": "Faible",
+    "k-beta-mid": "Intermédiaire",
+    "k-beta-high": "Élevée",
+    "k-gen": "Générer l'exercice →",
+    "k-welcome": "Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.",
+    "k-seedbadge": "Seed active :",
+    "k-new": "↺ Nouvel énoncé",
+    "k-pdf": "⬇ Exporter PDF",
+    "k-doc": "⬇ Exporter DOC",
+    "k-tag-ex": "Énoncé",
+    "k-cardtitle": "Dynamique jointe de l'inflation et du chômage",
+    "k-tag-sol": "Corrigé",
+    "k-cardtitle2": "Dynamique jointe de l'inflation et du chômage",
+    "k-work": "Travail à faire",
+    "showSol": "Afficher le corrigé",
+    "hideSol": "Masquer le corrigé",
+    "docTitle": "Exercice Arbitrage entre inflation et chômage",
+    "docFile": "Exercice_Inflation_Chomage.doc",
+    thousands: "\\,",
+    decimal: "{,}",
+    pct: v => `${v}&nbsp;%`,
+
+    phase: {
+      xlabel: "Taux de chômage",
+      ylabel: "Taux d'inflation",
+      iso1: "Δu = 0",
+      iso2: "Δπ = 0",
+      start: "point initial",
+      caption: "Diagramme des phases dans le plan (u, π) : spirale amortie vers l'état stationnaire"
+    },
+    path: {
+      xlabel: "Trimestres",
+      ylabel: "En pourcentage",
+      su: "Taux de chômage",
+      spi: "Taux d'inflation",
+      lu: "u*",
+      lpi: "π*",
+      caption: "Trajectoire simulée du chômage et de l'inflation sur seize trimestres"
+    },
+    rowT: "Trimestre",
+    rowU: "Taux de chômage (%)",
+    rowPI: "Taux d'inflation (%)",
+    rowGap: "Écart au chômage stationnaire (points)",
+
+    context: function(D) {
+      return `
+      À chaque trimestre $t$, le niveau de production $Y_t$ d'une économie, fonction de la quantité de travail utilisée $N_t$, est donné par $Y_t = F(N_t) = ${D.tex.prod}$, où $A_t$ mesure la productivité du travail, croissant au taux $g$ : $g = a_{t+1} - a_t$ avec $a_t = \\log(A_t)$. La demande globale est égale aux encaisses réelles disponibles dans l'économie, soit $Y^d_t = M_t/P_t$, où $M_t$ dénote la quantité de monnaie en circulation et $P_t$ le niveau des prix. Le niveau des salaires est noté $W_t$. On note en minuscule le logarithme des variables en niveau.
+    `;
+    },
+
+    table: function(D) { return ""; },
+
+    enonce: function(D) {
+      const T = D.tex;
+      let h = "";
+      h += `<li>Déterminez le niveau des prix (en log) $p_t$ et du produit (en log) $y_t$ qui correspondent à l'équilibre du modèle AS/AD en considérant $w_t$, $a_t$ et $m_t$ comme étant fixés. Discutez l'impact d'une augmentation de $a_t$ sur le prix et le produit d'équilibre.</li>`;
+      h += `<li>Supposons que la masse monétaire croisse à un taux constant noté $\\mu$ ($m_{t+1} - m_t = \\mu$) et que les salaires nominaux évoluent selon la dynamique discrète $w_{t+1} - w_t = \\pi_t - ${T.beta}(u_t - \\overline{u})$ avec $\\overline{u} > ${T.uCond}$, $u_t$ dénotant le taux de chômage à la période $t$, $\\overline{u}$ le taux de chômage naturel et $\\pi_t$ l'inflation entre $t-1$ et $t$. Interprétez cette expression.</li>`;
+      h += `<li>Exprimez le taux de croissance de l'économie et le taux d'inflation entre les dates $t$ et $t+1$ en fonction de $u_t$, $\\pi_t$, $g$ et $\\mu$. Interprétez l'effet de $\\pi_t$ sur $\\pi_{t+1}$.</li>`;
+      h += `<li>En partant de la fonction de production et en utilisant l'approximation $u_t \\approx n^s - n_t$, proposez une relation entre le taux de croissance de l'économie ($y_{t+1} - y_t$) et l'évolution du taux de chômage ($u_{t+1} - u_t$).</li>`;
+      h += `<li>En utilisant les résultats obtenus aux troisième et quatrième questions, exprimez $u_{t+1}$ en fonction de $u_t$ et $\\pi_t$. En déduire le système dynamique qui régit l'évolution de l'économie.</li>`;
+      h += `<li>Calculez les valeurs $\\pi^*$ et $u^*$ qui correspondent à l'équilibre stationnaire. Interprétez.</li>`;
+      h += `<li>Étudiez la stabilité des lieux de stationnarité de $u_t$ et $\\pi_t$.</li>`;
+      h += `<li>Représentez le diagramme des phases associé à l'évolution de l'économie.</li>`;
+      h += `<li>Supposons désormais que $\\overline{u} = ${T.ubar}$&nbsp;%, $\\mu = ${T.mu}$&nbsp;% et $g = ${T.g}$&nbsp;% par trimestre. L'économie est initialement caractérisée par $u_0 = ${T.u0}$&nbsp;% et $\\pi_0 = ${T.pi0}$&nbsp;%. Décrivez comment évolue le taux de chômage à partir de cette situation initiale.</li>`;
+      return h;
+    },
+
+    sol: function(D) {
+      const P = I18N['fr'];
+      const T = D.tex;
+      let s = "";
+
+      /* ---------- Q1 ---------- */
+      s += `<div class="calc-box">
+        <span class="sol-sub">1. Équilibre AS/AD</span>
+        On part des deux relations du modèle AS/AD. La fonction de production est $Y_t = F(N_t) = ${T.prodPow}$, tandis que la demande globale est $Y^d_t = M_t/P_t$. On note en minuscules les logarithmes des variables en niveau : $y_t = \\log(Y_t)$, $n_t = \\log(N_t)$, $a_t = \\log(A_t)$, $m_t = \\log(M_t)$, $p_t = \\log(P_t)$. La fonction de production passée au logarithme fournit $y_t = ${T.logCplus}${T.alpha}(a_t + n_t)$.
+        <p style="margin-top:.8rem;">Pour dériver la courbe d'offre globale, une firme concurrentielle maximise son profit $\\Pi_t = P_tY_t - W_tN_t$, dont la condition du premier ordre est $P_tF'(N_t) = W_t$. Or $F'(N_t) = ${T.dprod}$, d'où $P_t = ${T.priceFOC}$. En prenant le logarithme des deux membres, il vient $p_t = w_t - ${T.alpha}a_t + ${T.oneMinusAlpha}n_t + \\log\\left(${T.kOverC}\\right)$. Or la fonction de production implique $n_t = ${D.k}${T.yMinusLogC} - a_t$ : on obtient donc la relation d'offre globale</p>
+        <div class="math-formula">\\[ p_t = w_t - a_t + ${T.kMinus1}y_t + ${T.lambdaTex} \\]</div>
+        <p>En combinant cette expression avec la demande globale $y_t = m_t - p_t$, il vient $p_t = w_t - a_t + ${T.kMinus1}(m_t - p_t) + ${T.lambdaTex}$, c'est-à-dire $${D.k}p_t = w_t - a_t + ${T.kMinus1}m_t + ${T.lambdaTex}$, soit :</p>
+        <div class="math-formula">\\[ p_t = \\frac{w_t - a_t + ${T.kMinus1}m_t + ${T.lambdaTex}}{${D.k}} \\qquad\\text{et}\\qquad y_t = m_t - p_t = \\frac{m_t - w_t + a_t - ${T.lambdaTex}}{${D.k}} \\]</div>
+        <p>Autrement dit, une augmentation de $a_t$ d'une unité réduit $p_t$ de $${T.alpha}$ et augmente $y_t$ de $${T.alpha}$ : un gain de productivité déplace la courbe d'offre globale vers la droite, ce qui abaisse les prix d'équilibre et accroît simultanément le produit d'équilibre.</p>
+      </div>`;
+
+      /* ---------- Q2 ---------- */
+      s += `<div class="calc-box">
+        <span class="sol-sub">2. Lecture de la règle de formation des salaires</span>
+        La règle de formation des salaires nominaux est $w_{t+1} - w_t = \\pi_t - ${T.beta}(u_t - \\overline{u})$. Cette expression comporte deux termes aux interprétations distinctes. Le premier terme, $\\pi_t = p_t - p_{t-1}$, traduit une indexation complète des salaires nominaux sur l'inflation courante : les travailleurs exigent une compensation intégrale de la hausse des prix pour maintenir leur pouvoir d'achat. Le second terme, $-${T.beta}(u_t - \\overline{u})$, est une composante de courbe de Phillips :
+        <ul class="sub-list">
+          <li>— Si $u_t > \\overline{u}$ : le marché du travail est en excès d'offre, ce qui exerce une pression à la baisse sur les salaires réels ($w_{t+1} - w_t < \\pi_t$).</li>
+          <li>— Si $u_t < \\overline{u}$ : le marché du travail est en excès de demande, ce qui exerce une pression à la hausse sur les salaires réels ($w_{t+1} - w_t > \\pi_t$).</li>
+          <li>— Si $u_t = \\overline{u}$ : les salaires nominaux croissent exactement au rythme de l'inflation et les salaires réels sont stables.</li>
+        </ul>
+        <p style="margin-top:.8rem;">Le coefficient $${T.beta}$ mesure la sensibilité des salaires à la tension du marché du travail : plus il est élevé, plus le rappel vers le chômage naturel est vif. La condition $\\overline{u} > ${T.uCond}$ imposée par l'énoncé garantira que l'état stationnaire du chômage soit strictement positif, comme on le démontrera <em>infra</em>.</p>
+      </div>`;
+
+      /* ---------- Q3 ---------- */
+      s += `<div class="calc-box">
+        <span class="sol-sub">3. Inflation et croissance entre $t$ et $t+1$</span>
+        On dérive les deux grandeurs à partir de l'expression d'équilibre du niveau des prix. En prenant la différence entre $t+1$ et $t$, il vient :
+        <div class="math-formula">\\[\\begin{aligned}
+        \\pi_{t+1} = p_{t+1} - p_t &= \\frac{(w_{t+1} - w_t) - (a_{t+1} - a_t) + ${T.kMinus1}(m_{t+1} - m_t)}{${D.k}} \\\\
+        &= \\frac{\\left[\\pi_t - ${T.beta}(u_t - \\overline{u})\\right] - g + ${T.kMinus1}\\mu}{${D.k}}
+        \\end{aligned}\\]</div>
+        <p>En utilisant la relation d'équilibre $y_t = m_t - p_t$, le taux de croissance de l'économie est défini par $y_{t+1} - y_t = (m_{t+1} - m_t) - (p_{t+1} - p_t) = \\mu - \\pi_{t+1}$, d'où :</p>
+        <div class="math-formula">\\[ y_{t+1} - y_t = \\mu - \\frac{\\pi_t - ${T.beta}(u_t - \\overline{u}) - g + ${T.kMinus1}\\mu}{${D.k}} = \\frac{\\mu + g - \\pi_t + ${T.beta}(u_t - \\overline{u})}{${D.k}} \\]</div>
+        <p>L'effet de $\\pi_t$ sur $\\pi_{t+1}$ est capté par le coefficient $${T.alpha}$ : une inflation courante plus élevée se transmet à l'inflation future via l'indexation salariale, mais seulement partiellement, car l'offre globale absorbe une fraction du choc salarial sous forme de production supplémentaire. C'est ce coefficient inférieur à l'unité qui empêche l'économie de basculer dans une spirale prix-salaires explosive.</p>
+      </div>`;
+
+      /* ---------- Q4 ---------- */
+      s += `<div class="calc-box">
+        <span class="sol-sub">4. Une loi d'Okun augmentée de la productivité</span>
+        La fonction de production log-linéarisée est $y_t = ${T.logCplus}${T.alpha}(a_t + n_t)$. En différenciant entre $t+1$ et $t$, il vient $y_{t+1} - y_t = ${T.alpha}\\bigl[(a_{t+1} - a_t) + (n_{t+1} - n_t)\\bigr] = \\frac{g + (n_{t+1} - n_t)}{${D.k}}$. On utilise alors l'approximation $u_t \\approx n^s - n_t$, où $n^s$ est l'offre de travail (constante). On considère donc $n_t = n^s - u_t$, ce qui implique $n_{t+1} - n_t = -(u_{t+1} - u_t)$. En substituant :
+        <div class="math-formula">\\[ y_{t+1} - y_t = \\frac{g - (u_{t+1} - u_t)}{${D.k}} \\]</div>
+        <p>Cette relation est la loi d'Okun augmentée de la productivité : une baisse du chômage est associée à une hausse du produit, mais la croissance de la productivité $g$ contribue également à la croissance du produit indépendamment de l'évolution de l'emploi. Le coefficient $${T.alpha}$ indique de combien le produit réagit à un point de chômage en moins.</p>
+      </div>`;
+
+      /* ---------- Q5 ---------- */
+      s += `<div class="calc-box">
+        <span class="sol-sub">5. Le système dynamique</span>
+        On cherche à exprimer $u_{t+1}$ en fonction de $u_t$ et $\\pi_t$. En égalisant les deux expressions du taux de croissance obtenues aux troisième et quatrième questions, il vient $\\frac{g - (u_{t+1} - u_t)}{${D.k}} = \\frac{\\mu + g - \\pi_t + ${T.beta}(u_t - \\overline{u})}{${D.k}}$. En multipliant les deux membres par $${D.k}$, on obtient $g - (u_{t+1} - u_t) = \\mu + g - \\pi_t + ${T.beta}(u_t - \\overline{u})$, c'est-à-dire $u_{t+1} - u_t = \\pi_t - \\mu - ${T.beta}(u_t - \\overline{u})$. On obtient donc $u_{t+1} = ${T.oneMinusBeta}u_t + ${T.beta}\\overline{u} + \\pi_t - \\mu$.
+        <p style="margin-top:.8rem;">Par suite, le système dynamique qui régit l'évolution de l'économie est formé de deux équations couplant $u_t$ et $\\pi_t$. En rassemblant les résultats des troisième et cinquième questions :</p>
+        <div class="math-formula">\\[ (S) : \\begin{cases}
+        u_{t+1} = ${T.oneMinusBeta}u_t + \\pi_t + ${T.beta}\\overline{u} - \\mu \\\\[4pt]
+        \\pi_{t+1} = -${T.alphaBeta}(u_t - \\overline{u}) + ${T.alpha}\\pi_t + \\dfrac{${T.kMinus1}\\mu - g}{${D.k}}
+        \\end{cases} \\]</div>
+        <p>Ce système est linéaire et autonome : l'évolution future du couple $(u_t, \\pi_t)$ est entièrement déterminée par sa valeur courante.</p>
+      </div>`;
+
+      /* ---------- Q6 ---------- */
+      s += `<div class="calc-box">
+        <span class="sol-sub">6. L'état stationnaire</span>
+        L'état stationnaire $(u^*, \\pi^*)$ est défini par $u_{t+1} = u_t = u^*$ et $\\pi_{t+1} = \\pi_t = \\pi^*$. En substituant dans la première équation du système, on obtient $u^* = ${T.oneMinusBeta}u^* + \\pi^* + ${T.beta}\\overline{u} - \\mu$, c'est-à-dire $${T.beta}u^* = ${T.beta}\\overline{u} + \\pi^* - \\mu$, soit encore $u^* = \\overline{u} + \\frac{\\pi^* - \\mu}{${T.betaPlain}}$ (équation 1). De même, en substituant dans la seconde équation puis en multipliant par $${D.k}$, on obtient $${T.kMinus1}\\pi^* = -${T.betaPlain}(u^* - \\overline{u}) + ${T.kMinus1}\\mu - g$ (équation 2).
+        <p style="margin-top:.8rem;">L'équation 1 fournit $${T.betaPlain}(u^* - \\overline{u}) = \\pi^* - \\mu$. En reportant dans l'équation 2, il vient $${T.kMinus1}\\pi^* = -(\\pi^* - \\mu) + ${T.kMinus1}\\mu - g$, c'est-à-dire $${D.k}\\pi^* = ${D.k}\\mu - g$. On en déduit les deux valeurs stationnaires :</p>
+        <div class="math-formula">\\[ \\pi^* = \\mu - ${T.alpha}g \\qquad\\text{et}\\qquad u^* = \\overline{u} - ${T.uCoef}g \\]</div>
+        <p>Notons que la condition $\\overline{u} > ${T.uCond}$ garantit bien $u^* > 0$. L'interprétation est double. D'une part, on a $\\pi^* < \\mu$ : l'inflation stationnaire est inférieure au taux de croissance monétaire, car la hausse de la productivité augmente l'offre de biens et absorbe une partie de la création monétaire. D'autre part, on a $u^* < \\overline{u}$ : la croissance de la productivité maintient durablement l'emploi au-dessus de son niveau naturel, ce qui abaisse le chômage en dessous de $\\overline{u}$. On notera que $u^*$ ne dépend pas de $\\mu$ : la politique monétaire est neutre sur le chômage de long terme et ne détermine que le niveau de l'inflation. L'arbitrage entre inflation et chômage n'existe donc qu'en dynamique, jamais à l'état stationnaire.</p>
+      </div>`;
+
+      /* ---------- Q7 ---------- */
+      s += `<div class="calc-box">
+        <span class="sol-sub">7. Lieux de stationnarité et stabilité</span>
+        On étudie les lieux de stationnarité des deux variables d'état dans le plan $(u_t, \\pi_t)$.
+        <p style="margin-top:.8rem;">Lieu de stationnarité de $u_t$. C'est l'ensemble des points vérifiant $u_{t+1} = u_t$. D'après la première équation du système, $u_{t+1} - u_t = -${T.beta}(u_t - \\overline{u}) + \\pi_t - \\mu = 0$, soit $\\pi_t = \\mu + ${T.beta}(u_t - \\overline{u})$. C'est une droite de pente $+${T.beta}$ : au-dessus de ce lieu, on a $u_{t+1} - u_t > 0$ et le chômage augmente ; en dessous, il diminue.</p>
+        <p>Lieu de stationnarité de $\\pi_t$. C'est l'ensemble des points vérifiant $\\pi_{t+1} = \\pi_t$. D'après la seconde équation, $\\pi_{t+1} - \\pi_t = -${T.oneMinusAlpha}\\pi_t - ${T.alphaBeta}(u_t - \\overline{u}) + \\frac{${T.kMinus1}\\mu - g}{${D.k}} = 0$, soit $\\pi_t = \\mu - \\frac{g + ${T.betaPlain}(u_t - \\overline{u})}{${T.kMinus1plain}}$. C'est une droite de pente $${T.slope2}$. De plus, $\\pi_{t+1} - \\pi_t = -${T.oneMinusAlpha}\\left[\\pi_t - \\left(\\mu - \\frac{g + ${T.betaPlain}(u_t - \\overline{u})}{${T.kMinus1plain}}\\right)\\right]$ : au-dessus du lieu de stationnarité, l'inflation diminue ; en dessous, elle augmente. Ce lieu est donc stable, les trajectoires convergeant vers lui dans la direction verticale.</p>
+        <p>Les deux droites se croisent évidemment en $(u^*, \\pi^*)$, l'état stationnaire calculé à la question précédente. Pour étudier la stabilité globale du système, on linéarise autour de l'état stationnaire en posant $\\widetilde{u}_t = u_t - u^*$ et $\\widetilde{\\pi}_t = \\pi_t - \\pi^*$. Le système se réécrit :</p>
+        <div class="math-formula">\\[ \\begin{cases}
+        \\widetilde{u}_{t+1} = ${T.oneMinusBeta}\\widetilde{u}_t + \\widetilde{\\pi}_t \\\\[4pt]
+        \\widetilde{\\pi}_{t+1} = -${T.alphaBeta}\\widetilde{u}_t + ${T.alpha}\\widetilde{\\pi}_t
+        \\end{cases}
+        \\iff X_{t+1} = \\underbrace{\\begin{pmatrix} ${T.oneMinusBeta} & 1 \\\\ -${T.alphaBeta} & ${T.alpha} \\end{pmatrix}}_{=:J} X_t
+        \\quad\\text{avec } X_t = \\begin{pmatrix}\\widetilde{u}_t \\\\ \\widetilde{\\pi}_t\\end{pmatrix} \\]</div>
+        <p>La matrice jacobienne $J$ admet pour trace $\\mathrm{Tr}(J) = ${T.oneMinusBeta} + ${T.alpha} = ${T.trace}$ et pour déterminant $\\det(J) = ${T.oneMinusBeta}\\times${T.alpha} - 1\\times\\left(-${T.alphaBeta}\\right) = ${T.alpha}$. Les valeurs propres sont racines du polynôme caractéristique $\\lambda^2 - ${T.trace}\\lambda + ${T.alpha} = 0$, dont le discriminant vaut $\\Delta = ${T.discr} < 0$. Les valeurs propres sont donc complexes conjuguées :</p>
+        <div class="math-formula">\\[ \\lambda = ${T.halfTrace} \\pm \\frac{\\sqrt{${T.absDiscr}}}{2}\\,\\mathrm{i} \\approx ${T.reLam} \\pm ${T.imLam}\\,\\mathrm{i}, \\qquad |\\lambda| = \\sqrt{\\det(J)} = ${T.modLam} \\approx ${T.modLamNum} \\]</div>
+        <p>Comme le module des valeurs propres est strictement inférieur à 1, l'état stationnaire est globalement stable : toute trajectoire issue d'une condition initiale $(u_0, \\pi_0)$ converge vers $(u^*, \\pi^*)$ en décrivant une spirale amortie.</p>
+      </div>`;
+
+      s += `<div class="method-box">
+        <span class="sol-sub">Rédaction simplifiée pour ceux qui n'ont pas étudié les nombres complexes</span>
+        « Comme le discriminant est négatif, les deux racines du polynôme caractéristique sont complexes conjuguées ; on vérifie que leur module est inférieur à 1. » La raison repose sur la notion de diagonalisation. Comme $J$ est $\\mathbb{C}$-diagonalisable, il existe une matrice inversible $P$ de taille $2\\times 2$ vérifiant $J = PDP^{-1}$, où $D$ est la matrice diagonale des deux valeurs propres. On montre par récurrence que $X_t = J^tX_0$, puis que $J^t = PD^tP^{-1}$, d'où $X_t = PD^tP^{-1}X_0$. Comme $D$ est diagonale, $D^t$ est la matrice diagonale des $\\lambda^t$. Le fait que les valeurs propres soient de module strictement inférieur à 1 implique la convergence de $\\lambda^t$ vers 0, donc celle de $X_t$ vers le vecteur nul. Cela implique bien la convergence de $u_t$ vers $u^*$ et celle de $\\pi_t$ vers $\\pi^*$.
+      </div>`;
+
+      /* ---------- Q8 ---------- */
+      s += `<div class="calc-box">
+        <span class="sol-sub">8. Le diagramme des phases</span>
+        Le diagramme des phases associé à l'évolution de l'économie a l'allure suivante. La droite bleue, de pente $+${T.beta}$, est le lieu où le chômage est stationnaire ; la droite rouge, de pente $${T.slope2}$, est le lieu où l'inflation est stationnaire. Elles se coupent en $(u^*, \\pi^*)$ et découpent le plan en quatre régions.
+        <div class="chart-wrap">${D.svgPhase}<div class="table-caption">${P.phase.caption}</div></div>
+        <p>Dans la région nord, le chômage augmente et l'inflation diminue ; à l'ouest, les deux variables augmentent ; au sud, le chômage diminue et l'inflation augmente ; à l'est, les deux variables diminuent. L'enchaînement de ces quatre régions se fait dans le sens horaire, ce qui traduit exactement le mouvement de spirale mis en évidence par les valeurs propres complexes : l'économie ne rejoint pas son état stationnaire en ligne droite, mais en alternant des phases de désinflation avec chômage croissant et des phases de reprise inflationniste avec chômage décroissant. C'est la représentation dynamique de l'arbitrage de Phillips, dont l'amplitude s'amortit d'un facteur $${T.modLam}$ à chaque trimestre.</p>
+      </div>`;
+
+      /* ---------- Q9 ---------- */
+      s += `<div class="calc-box">
+        <span class="sol-sub">9. Application numérique</span>
+        On applique les formules de la sixième question aux valeurs proposées, en raisonnant directement en points de pourcentage (le système étant linéaire et homogène en taux, cette convention est sans conséquence sur les résultats) :
+        <div class="math-formula">\\[ \\pi^* = \\mu - ${T.alpha}g = ${T.mu} - ${T.alpha}\\times ${T.g} = ${T.pistar}\\,\\% \\qquad u^* = \\overline{u} - ${T.uCoef}g = ${T.ubar} - ${T.uCoef}\\times${T.g} = ${T.ustar}\\,\\% \\]</div>
+        <p>L'économie part donc d'un chômage ${D.u0 > D.ustar ? `supérieur` : `inférieur`} de ${sh(Math.abs(D.u0 - D.ustar))} point${Math.abs(D.u0-D.ustar) >= 2 ? 's' : ''} à sa valeur de long terme, et d'une inflation ${Math.abs(D.pi0 - D.pistar) < 1e-9 ? `déjà égale à sa valeur stationnaire` : (D.pi0 > D.pistar ? `supérieure de ${sh(D.pi0-D.pistar)} point${(D.pi0-D.pistar)>=2?'s':''} à $\\pi^*$` : `inférieure de ${sh(D.pistar-D.pi0)} point${(D.pistar-D.pi0)>=2?'s':''} à $\\pi^*$`)}. On itère alors le système $(S)$ trimestre après trimestre, en partant de $u_0 = ${T.u0}$ et $\\pi_0 = ${T.pi0}$ :</p>
+        <div class="math-formula">\\[ u_{t+1} = ${T.oneMinusBeta}u_t + \\pi_t ${T.cstU} \\qquad \\pi_{t+1} = ${T.alpha}\\pi_t - ${T.alphaBeta}u_t ${T.cstPi} \\]</div>
+        ${D.tableNum}
+        <div class="chart-wrap">${D.svgPath}<div class="table-caption">${P.path.caption}</div></div>
+        <p>La lecture est la suivante. ${D.narrative}</p>
+        <p style="margin-top:.8rem;">Le mécanisme est celui décrit par le diagramme des phases : l'écart initial au chômage stationnaire se transmet aux salaires, donc aux prix, et l'inflation ainsi engendrée modifie à son tour la demande réelle et l'emploi. Comme le module des valeurs propres vaut $${T.modLam} \\approx ${T.modLamNum}$, l'amplitude des écarts est divisée par deux tous les ${T.halfLife} trimestres environ : au bout de ${D.tConv} trimestres, l'écart au chômage stationnaire est déjà inférieur à un dixième de point. La convergence est donc rapide, mais non monotone — c'est là tout l'intérêt du modèle, qui montre qu'une économie peut dépasser sa cible avant d'y revenir.</p>
+      </div>`;
+
+      /* ---------- Perspective ---------- */
+      s += `<div class="persp-box">
+        <span class="sol-sub">Pour aller plus loin</span>
+        Ce modèle illustre la thèse accélérationniste de Friedman et Phelps : l'indexation complète des salaires sur l'inflation courante fait disparaître tout arbitrage durable entre inflation et chômage. À l'état stationnaire, le chômage est ancré par des facteurs réels — le chômage naturel $\\overline{u}$ et la croissance de la productivité $g$ — tandis que la croissance monétaire $\\mu$ ne détermine que le taux d'inflation. La courbe de Phillips de long terme est donc verticale, et seule la dynamique de court terme laisse apparaître une relation décroissante entre les deux variables.
+        <p style="margin-top:.8rem;">Deux prolongements méritent réflexion. D'abord, l'hypothèse d'indexation intégrale sur $\\pi_t$ revient à supposer des anticipations adaptatives naïves : sous anticipations rationnelles, les agents intégreraient directement $\\mu$ dans leurs revendications, et l'ajustement serait immédiat plutôt qu'oscillant. Ensuite, la vitesse d'amortissement dépend entièrement de paramètres structurels — ici le rendement de la fonction de production et la sensibilité $${T.betaPlain}$ des salaires au chômage. Une économie où les salaires réagissent peu à la tension du marché du travail met beaucoup plus longtemps à revenir à son équilibre, ce qui fournit un argument classique en faveur des réformes du marché du travail, mais aussi une mise en garde : ce sont les mêmes rigidités qui protègent les salaires réels lors des récessions.</p>
+      </div>`;
+
+      return s;
+    }
+  },
+
+  en: {
+    "htmlLang": "en",
+    "title": "Macroeconomics Simulator - The inflation-unemployment trade-off",
+    "locale": "en-GB",
+    "k-badge": "GROWTH AND BUSINESS CYCLES",
+    "k-h1": "The inflation-unemployment trade-off",
+    "k-sub": "© Thomas Hossen – March 7, 2026 Version",
+    "k-seed": "Seed (Optional)",
+    "k-alpha": "Returns to production",
+    "k-auto": "Random",
+    "k-auto2": "Random",
+    "k-alpha2": "Square root (1/2)",
+    "k-alpha3": "Cube root (1/3)",
+    "k-alpha4": "Fourth root (1/4)",
+    "k-beta": "Wage sensitivity",
+    "k-beta-low": "Low",
+    "k-beta-mid": "Intermediate",
+    "k-beta-high": "High",
+    "k-gen": "Generate Exercise →",
+    "k-welcome": "Configure the parameters and click Generate to create a new exercise.",
+    "k-seedbadge": "Active Seed:",
+    "k-new": "↺ New Statement",
+    "k-pdf": "⬇ Export PDF",
+    "k-doc": "⬇ Export DOC",
+    "k-tag-ex": "Problem",
+    "k-cardtitle": "Joint dynamics of inflation and unemployment",
+    "k-tag-sol": "Solution",
+    "k-cardtitle2": "Joint dynamics of inflation and unemployment",
+    "k-work": "Assignment",
+    "showSol": "Show the solution",
+    "hideSol": "Hide the solution",
+    "docTitle": "Inflation and Unemployment Exercise",
+    "docFile": "Inflation_Unemployment_Exercise.doc",
+    thousands: ",",
+    decimal: ".",
+    pct: v => `${v}%`,
+
+    phase: {
+      xlabel: "Unemployment rate",
+      ylabel: "Inflation rate",
+      iso1: "Δu = 0",
+      iso2: "Δπ = 0",
+      start: "initial point",
+      caption: "Phase diagram in the (u, π) plane: a damped spiral towards the steady state"
+    },
+    path: {
+      xlabel: "Quarters",
+      ylabel: "Percent",
+      su: "Unemployment rate",
+      spi: "Inflation rate",
+      lu: "u*",
+      lpi: "π*",
+      caption: "Simulated path of unemployment and inflation over sixteen quarters"
+    },
+    rowT: "Quarter",
+    rowU: "Unemployment rate (%)",
+    rowPI: "Inflation rate (%)",
+    rowGap: "Gap to steady-state unemployment (points)",
+
+    context: function(D) {
+      return `
+      In each quarter $t$, output $Y_t$ in an economy, as a function of the amount of labour used $N_t$, is given by $Y_t = F(N_t) = ${D.tex.prod}$, where $A_t$ measures labour productivity, growing at rate $g$: $g = a_{t+1} - a_t$ with $a_t = \\log(A_t)$. Aggregate demand equals the real money balances available in the economy, that is $Y^d_t = M_t/P_t$, where $M_t$ denotes the money supply and $P_t$ the price level. The wage level is denoted $W_t$. Lower-case letters denote the logarithms of the variables in levels.
+    `;
+    },
+
+    table: function(D) { return ""; },
+
+    enonce: function(D) {
+      const T = D.tex;
+      let h = "";
+      h += `<li>Determine the (log) price level $p_t$ and the (log) output level $y_t$ corresponding to the AS/AD equilibrium, taking $w_t$, $a_t$ and $m_t$ as given. Discuss the impact of an increase in $a_t$ on equilibrium prices and output.</li>`;
+      h += `<li>Suppose the money supply grows at a constant rate $\\mu$ ($m_{t+1} - m_t = \\mu$) and that nominal wages evolve according to the discrete dynamics $w_{t+1} - w_t = \\pi_t - ${T.beta}(u_t - \\overline{u})$ with $\\overline{u} > ${T.uCond}$, where $u_t$ denotes the unemployment rate at date $t$, $\\overline{u}$ the natural rate of unemployment and $\\pi_t$ inflation between $t-1$ and $t$. Interpret this expression.</li>`;
+      h += `<li>Express the growth rate of the economy and the inflation rate between dates $t$ and $t+1$ as functions of $u_t$, $\\pi_t$, $g$ and $\\mu$. Interpret the effect of $\\pi_t$ on $\\pi_{t+1}$.</li>`;
+      h += `<li>Starting from the production function and using the approximation $u_t \\approx n^s - n_t$, derive a relationship between the growth rate of the economy ($y_{t+1} - y_t$) and the change in unemployment ($u_{t+1} - u_t$).</li>`;
+      h += `<li>Using the results of the third and fourth questions, express $u_{t+1}$ as a function of $u_t$ and $\\pi_t$. Deduce the dynamic system governing the evolution of the economy.</li>`;
+      h += `<li>Compute the values $\\pi^*$ and $u^*$ corresponding to the steady state. Interpret.</li>`;
+      h += `<li>Study the stability of the loci along which $u_t$ and $\\pi_t$ are stationary.</li>`;
+      h += `<li>Draw the phase diagram associated with the evolution of the economy.</li>`;
+      h += `<li>Now suppose that $\\overline{u} = ${T.ubar}$%, $\\mu = ${T.mu}$% and $g = ${T.g}$% per quarter. The economy starts from $u_0 = ${T.u0}$% and $\\pi_0 = ${T.pi0}$%. Describe how the unemployment rate evolves from this initial situation.</li>`;
+      return h;
+    },
+
+    sol: function(D) {
+      const P = I18N['en'];
+      const T = D.tex;
+      let s = "";
+
+      /* ---------- Q1 ---------- */
+      s += `<div class="calc-box">
+        <span class="sol-sub">1. The AS/AD equilibrium</span>
+        We start from the two relationships of the AS/AD model. The production function is $Y_t = F(N_t) = ${T.prodPow}$, while aggregate demand is $Y^d_t = M_t/P_t$. Lower-case letters denote logarithms: $y_t = \\log(Y_t)$, $n_t = \\log(N_t)$, $a_t = \\log(A_t)$, $m_t = \\log(M_t)$, $p_t = \\log(P_t)$. Taking logs of the production function yields $y_t = ${T.logCplus}${T.alpha}(a_t + n_t)$.
+        <p style="margin-top:.8rem;">To derive the aggregate supply curve, a competitive firm maximises profit $\\Pi_t = P_tY_t - W_tN_t$, whose first-order condition is $P_tF'(N_t) = W_t$. Since $F'(N_t) = ${T.dprod}$, we get $P_t = ${T.priceFOC}$. Taking logs of both sides gives $p_t = w_t - ${T.alpha}a_t + ${T.oneMinusAlpha}n_t + \\log\\left(${T.kOverC}\\right)$. The production function implies $n_t = ${D.k}${T.yMinusLogC} - a_t$, so the aggregate supply relationship reads:</p>
+        <div class="math-formula">\\[ p_t = w_t - a_t + ${T.kMinus1}y_t + ${T.lambdaTex} \\]</div>
+        <p>Combining this with aggregate demand $y_t = m_t - p_t$ gives $p_t = w_t - a_t + ${T.kMinus1}(m_t - p_t) + ${T.lambdaTex}$, that is $${D.k}p_t = w_t - a_t + ${T.kMinus1}m_t + ${T.lambdaTex}$, hence:</p>
+        <div class="math-formula">\\[ p_t = \\frac{w_t - a_t + ${T.kMinus1}m_t + ${T.lambdaTex}}{${D.k}} \\qquad\\text{and}\\qquad y_t = m_t - p_t = \\frac{m_t - w_t + a_t - ${T.lambdaTex}}{${D.k}} \\]</div>
+        <p>In other words, a one-unit increase in $a_t$ lowers $p_t$ by $${T.alpha}$ and raises $y_t$ by $${T.alpha}$: a productivity gain shifts the aggregate supply curve to the right, lowering equilibrium prices while simultaneously raising equilibrium output.</p>
+      </div>`;
+
+      /* ---------- Q2 ---------- */
+      s += `<div class="calc-box">
+        <span class="sol-sub">2. Reading the wage-setting rule</span>
+        The nominal wage rule is $w_{t+1} - w_t = \\pi_t - ${T.beta}(u_t - \\overline{u})$. It contains two terms with distinct interpretations. The first, $\\pi_t = p_t - p_{t-1}$, reflects full indexation of nominal wages to current inflation: workers demand complete compensation for price increases in order to preserve their purchasing power. The second, $-${T.beta}(u_t - \\overline{u})$, is a Phillips-curve component:
+        <ul class="sub-list">
+          <li>— If $u_t > \\overline{u}$: the labour market is in excess supply, which puts downward pressure on real wages ($w_{t+1} - w_t < \\pi_t$).</li>
+          <li>— If $u_t < \\overline{u}$: the labour market is in excess demand, which puts upward pressure on real wages ($w_{t+1} - w_t > \\pi_t$).</li>
+          <li>— If $u_t = \\overline{u}$: nominal wages grow exactly at the rate of inflation and real wages are stable.</li>
+        </ul>
+        <p style="margin-top:.8rem;">The coefficient $${T.beta}$ measures how sensitive wages are to labour-market tightness: the larger it is, the sharper the pull back towards the natural rate. The condition $\\overline{u} > ${T.uCond}$ imposed in the statement guarantees a strictly positive steady-state unemployment rate, as shown below.</p>
+      </div>`;
+
+      /* ---------- Q3 ---------- */
+      s += `<div class="calc-box">
+        <span class="sol-sub">3. Inflation and growth between $t$ and $t+1$</span>
+        Both quantities follow from the equilibrium expression for the price level. Taking first differences between $t+1$ and $t$:
+        <div class="math-formula">\\[\\begin{aligned}
+        \\pi_{t+1} = p_{t+1} - p_t &= \\frac{(w_{t+1} - w_t) - (a_{t+1} - a_t) + ${T.kMinus1}(m_{t+1} - m_t)}{${D.k}} \\\\
+        &= \\frac{\\left[\\pi_t - ${T.beta}(u_t - \\overline{u})\\right] - g + ${T.kMinus1}\\mu}{${D.k}}
+        \\end{aligned}\\]</div>
+        <p>Using the equilibrium relationship $y_t = m_t - p_t$, the growth rate of the economy is $y_{t+1} - y_t = (m_{t+1} - m_t) - (p_{t+1} - p_t) = \\mu - \\pi_{t+1}$, hence:</p>
+        <div class="math-formula">\\[ y_{t+1} - y_t = \\mu - \\frac{\\pi_t - ${T.beta}(u_t - \\overline{u}) - g + ${T.kMinus1}\\mu}{${D.k}} = \\frac{\\mu + g - \\pi_t + ${T.beta}(u_t - \\overline{u})}{${D.k}} \\]</div>
+        <p>The effect of $\\pi_t$ on $\\pi_{t+1}$ is captured by the coefficient $${T.alpha}$: higher current inflation passes through to future inflation via wage indexation, but only partially, since aggregate supply absorbs part of the wage shock in the form of additional output. It is precisely this coefficient below unity that prevents the economy from spiralling into an explosive wage-price dynamic.</p>
+      </div>`;
+
+      /* ---------- Q4 ---------- */
+      s += `<div class="calc-box">
+        <span class="sol-sub">4. A productivity-augmented Okun's law</span>
+        The log-linearised production function is $y_t = ${T.logCplus}${T.alpha}(a_t + n_t)$. Differencing between $t+1$ and $t$ gives $y_{t+1} - y_t = ${T.alpha}\\bigl[(a_{t+1} - a_t) + (n_{t+1} - n_t)\\bigr] = \\frac{g + (n_{t+1} - n_t)}{${D.k}}$. Using the approximation $u_t \\approx n^s - n_t$, where $n^s$ is the (constant) labour supply, we have $n_t = n^s - u_t$, so that $n_{t+1} - n_t = -(u_{t+1} - u_t)$. Substituting:
+        <div class="math-formula">\\[ y_{t+1} - y_t = \\frac{g - (u_{t+1} - u_t)}{${D.k}} \\]</div>
+        <p>This is a productivity-augmented Okun's law: falling unemployment is associated with rising output, but productivity growth $g$ also contributes to output growth independently of employment. The coefficient $${T.alpha}$ tells us how strongly output responds to one point less unemployment.</p>
+      </div>`;
+
+      /* ---------- Q5 ---------- */
+      s += `<div class="calc-box">
+        <span class="sol-sub">5. The dynamic system</span>
+        We seek $u_{t+1}$ as a function of $u_t$ and $\\pi_t$. Equating the two growth-rate expressions obtained in questions three and four gives $\\frac{g - (u_{t+1} - u_t)}{${D.k}} = \\frac{\\mu + g - \\pi_t + ${T.beta}(u_t - \\overline{u})}{${D.k}}$. Multiplying both sides by $${D.k}$ yields $g - (u_{t+1} - u_t) = \\mu + g - \\pi_t + ${T.beta}(u_t - \\overline{u})$, that is $u_{t+1} - u_t = \\pi_t - \\mu - ${T.beta}(u_t - \\overline{u})$, hence $u_{t+1} = ${T.oneMinusBeta}u_t + ${T.beta}\\overline{u} + \\pi_t - \\mu$.
+        <p style="margin-top:.8rem;">The dynamic system governing the economy therefore consists of two equations coupling $u_t$ and $\\pi_t$. Collecting the results of questions three and five:</p>
+        <div class="math-formula">\\[ (S) : \\begin{cases}
+        u_{t+1} = ${T.oneMinusBeta}u_t + \\pi_t + ${T.beta}\\overline{u} - \\mu \\\\[4pt]
+        \\pi_{t+1} = -${T.alphaBeta}(u_t - \\overline{u}) + ${T.alpha}\\pi_t + \\dfrac{${T.kMinus1}\\mu - g}{${D.k}}
+        \\end{cases} \\]</div>
+        <p>The system is linear and autonomous: the future path of the pair $(u_t, \\pi_t)$ is entirely determined by its current value.</p>
+      </div>`;
+
+      /* ---------- Q6 ---------- */
+      s += `<div class="calc-box">
+        <span class="sol-sub">6. The steady state</span>
+        The steady state $(u^*, \\pi^*)$ is defined by $u_{t+1} = u_t = u^*$ and $\\pi_{t+1} = \\pi_t = \\pi^*$. Substituting into the first equation gives $u^* = ${T.oneMinusBeta}u^* + \\pi^* + ${T.beta}\\overline{u} - \\mu$, that is $${T.beta}u^* = ${T.beta}\\overline{u} + \\pi^* - \\mu$, hence $u^* = \\overline{u} + \\frac{\\pi^* - \\mu}{${T.betaPlain}}$ (equation 1). Substituting into the second equation and multiplying by $${D.k}$ gives $${T.kMinus1}\\pi^* = -${T.betaPlain}(u^* - \\overline{u}) + ${T.kMinus1}\\mu - g$ (equation 2).
+        <p style="margin-top:.8rem;">Equation 1 yields $${T.betaPlain}(u^* - \\overline{u}) = \\pi^* - \\mu$. Substituting into equation 2 gives $${T.kMinus1}\\pi^* = -(\\pi^* - \\mu) + ${T.kMinus1}\\mu - g$, that is $${D.k}\\pi^* = ${D.k}\\mu - g$. The two steady-state values follow:</p>
+        <div class="math-formula">\\[ \\pi^* = \\mu - ${T.alpha}g \\qquad\\text{and}\\qquad u^* = \\overline{u} - ${T.uCoef}g \\]</div>
+        <p>Note that the condition $\\overline{u} > ${T.uCond}$ does guarantee $u^* > 0$. The interpretation is twofold. First, $\\pi^* < \\mu$: steady-state inflation falls short of money growth, because rising productivity increases the supply of goods and absorbs part of the monetary expansion. Second, $u^* < \\overline{u}$: productivity growth keeps employment durably above its natural level, pushing unemployment below $\\overline{u}$. Note also that $u^*$ does not depend on $\\mu$: monetary policy is neutral for long-run unemployment and pins down only the inflation rate. The trade-off between inflation and unemployment therefore exists only in the transition, never in the steady state.</p>
+      </div>`;
+
+      /* ---------- Q7 ---------- */
+      s += `<div class="calc-box">
+        <span class="sol-sub">7. Stationarity loci and stability</span>
+        We study the stationarity loci of the two state variables in the $(u_t, \\pi_t)$ plane.
+        <p style="margin-top:.8rem;">Stationarity locus of $u_t$. This is the set of points satisfying $u_{t+1} = u_t$. From the first equation, $u_{t+1} - u_t = -${T.beta}(u_t - \\overline{u}) + \\pi_t - \\mu = 0$, that is $\\pi_t = \\mu + ${T.beta}(u_t - \\overline{u})$. This is a line with slope $+${T.beta}$: above it, $u_{t+1} - u_t > 0$ and unemployment rises; below it, unemployment falls.</p>
+        <p>Stationarity locus of $\\pi_t$. This is the set of points satisfying $\\pi_{t+1} = \\pi_t$. From the second equation, $\\pi_{t+1} - \\pi_t = -${T.oneMinusAlpha}\\pi_t - ${T.alphaBeta}(u_t - \\overline{u}) + \\frac{${T.kMinus1}\\mu - g}{${D.k}} = 0$, that is $\\pi_t = \\mu - \\frac{g + ${T.betaPlain}(u_t - \\overline{u})}{${T.kMinus1plain}}$, a line with slope $${T.slope2}$. Moreover $\\pi_{t+1} - \\pi_t = -${T.oneMinusAlpha}\\left[\\pi_t - \\left(\\mu - \\frac{g + ${T.betaPlain}(u_t - \\overline{u})}{${T.kMinus1plain}}\\right)\\right]$: above the locus inflation falls, below it inflation rises. The locus is therefore stable, trajectories converging towards it vertically.</p>
+        <p>The two lines naturally intersect at $(u^*, \\pi^*)$, the steady state computed above. To study global stability we linearise around the steady state, setting $\\widetilde{u}_t = u_t - u^*$ and $\\widetilde{\\pi}_t = \\pi_t - \\pi^*$. The system becomes:</p>
+        <div class="math-formula">\\[ \\begin{cases}
+        \\widetilde{u}_{t+1} = ${T.oneMinusBeta}\\widetilde{u}_t + \\widetilde{\\pi}_t \\\\[4pt]
+        \\widetilde{\\pi}_{t+1} = -${T.alphaBeta}\\widetilde{u}_t + ${T.alpha}\\widetilde{\\pi}_t
+        \\end{cases}
+        \\iff X_{t+1} = \\underbrace{\\begin{pmatrix} ${T.oneMinusBeta} & 1 \\\\ -${T.alphaBeta} & ${T.alpha} \\end{pmatrix}}_{=:J} X_t
+        \\quad\\text{with } X_t = \\begin{pmatrix}\\widetilde{u}_t \\\\ \\widetilde{\\pi}_t\\end{pmatrix} \\]</div>
+        <p>The Jacobian matrix $J$ has trace $\\mathrm{Tr}(J) = ${T.oneMinusBeta} + ${T.alpha} = ${T.trace}$ and determinant $\\det(J) = ${T.oneMinusBeta}\\times${T.alpha} - 1\\times\\left(-${T.alphaBeta}\\right) = ${T.alpha}$. The eigenvalues solve the characteristic polynomial $\\lambda^2 - ${T.trace}\\lambda + ${T.alpha} = 0$, whose discriminant is $\\Delta = ${T.discr} < 0$. The eigenvalues are therefore complex conjugates:</p>
+        <div class="math-formula">\\[ \\lambda = ${T.halfTrace} \\pm \\frac{\\sqrt{${T.absDiscr}}}{2}\\,\\mathrm{i} \\approx ${T.reLam} \\pm ${T.imLam}\\,\\mathrm{i}, \\qquad |\\lambda| = \\sqrt{\\det(J)} = ${T.modLam} \\approx ${T.modLamNum} \\]</div>
+        <p>Since the modulus of the eigenvalues is strictly below 1, the steady state is globally stable: any trajectory starting from an initial condition $(u_0, \\pi_0)$ converges to $(u^*, \\pi^*)$ along a damped spiral.</p>
+      </div>`;
+
+      s += `<div class="method-box">
+        <span class="sol-sub">A simplified write-up for those who have not studied complex numbers</span>
+        "Since the discriminant is negative, the two roots of the characteristic polynomial are complex conjugates; one checks that their modulus is below 1." The underlying reason rests on diagonalisation. Since $J$ is diagonalisable over $\\mathbb{C}$, there exists an invertible $2\\times 2$ matrix $P$ such that $J = PDP^{-1}$, where $D$ is the diagonal matrix of the two eigenvalues. One shows by induction that $X_t = J^tX_0$, and then that $J^t = PD^tP^{-1}$, hence $X_t = PD^tP^{-1}X_0$. Since $D$ is diagonal, $D^t$ is the diagonal matrix of the $\\lambda^t$. Because the eigenvalues have modulus strictly below 1, $\\lambda^t$ converges to 0, so $X_t$ converges to the zero vector. This establishes the convergence of $u_t$ to $u^*$ and of $\\pi_t$ to $\\pi^*$.
+      </div>`;
+
+      /* ---------- Q8 ---------- */
+      s += `<div class="calc-box">
+        <span class="sol-sub">8. The phase diagram</span>
+        The phase diagram associated with the evolution of the economy looks as follows. The blue line, with slope $+${T.beta}$, is the locus along which unemployment is stationary; the red line, with slope $${T.slope2}$, is the locus along which inflation is stationary. They intersect at $(u^*, \\pi^*)$ and split the plane into four regions.
+        <div class="chart-wrap">${D.svgPhase}<div class="table-caption">${P.phase.caption}</div></div>
+        <p>In the northern region unemployment rises while inflation falls; in the west both variables rise; in the south unemployment falls while inflation rises; in the east both fall. The four regions succeed one another clockwise, which is precisely the spiral motion implied by the complex eigenvalues: the economy does not return to its steady state in a straight line, but alternates between disinflation with rising unemployment and inflationary recoveries with falling unemployment. This is the dynamic representation of the Phillips trade-off, whose amplitude is damped by a factor $${T.modLam}$ each quarter.</p>
+      </div>`;
+
+      /* ---------- Q9 ---------- */
+      s += `<div class="calc-box">
+        <span class="sol-sub">9. Numerical application</span>
+        We apply the formulas of question six to the proposed values, working directly in percentage points (since the system is linear and homogeneous in rates, this convention has no bearing on the results):
+        <div class="math-formula">\\[ \\pi^* = \\mu - ${T.alpha}g = ${T.mu} - ${T.alpha}\\times ${T.g} = ${T.pistar}\\% \\qquad u^* = \\overline{u} - ${T.uCoef}g = ${T.ubar} - ${T.uCoef}\\times${T.g} = ${T.ustar}\\% \\]</div>
+        <p>The economy therefore starts with unemployment ${D.u0 > D.ustar ? `${sh(D.u0 - D.ustar)} point${(D.u0-D.ustar) !== 1 ? 's' : ''} above` : `${sh(D.ustar - D.u0)} point${(D.ustar-D.u0) !== 1 ? 's' : ''} below`} its long-run value, and with inflation ${Math.abs(D.pi0 - D.pistar) < 1e-9 ? `already at its steady-state value` : (D.pi0 > D.pistar ? `${sh(D.pi0-D.pistar)} point${(D.pi0-D.pistar)!==1?'s':''} above $\\pi^*$` : `${sh(D.pistar-D.pi0)} point${(D.pistar-D.pi0)!==1?'s':''} below $\\pi^*$`)}. We iterate system $(S)$ quarter by quarter, starting from $u_0 = ${T.u0}$ and $\\pi_0 = ${T.pi0}$:</p>
+        <div class="math-formula">\\[ u_{t+1} = ${T.oneMinusBeta}u_t + \\pi_t ${T.cstU} \\qquad \\pi_{t+1} = ${T.alpha}\\pi_t - ${T.alphaBeta}u_t ${T.cstPi} \\]</div>
+        ${D.tableNum}
+        <div class="chart-wrap">${D.svgPath}<div class="table-caption">${P.path.caption}</div></div>
+        <p>The path reads as follows. ${D.narrative}</p>
+        <p style="margin-top:.8rem;">The mechanism is the one described by the phase diagram: the initial unemployment gap feeds into wages, hence into prices, and the resulting inflation in turn alters real demand and employment. Since the modulus of the eigenvalues equals $${T.modLam} \\approx ${T.modLamNum}$, the amplitude of the gaps is halved roughly every ${T.halfLife} quarters: after ${D.tConv} quarters the unemployment gap is already below one tenth of a point. Convergence is therefore fast, but not monotone — which is the whole point of the model, showing that an economy may overshoot its target before settling on it.</p>
+      </div>`;
+
+      /* ---------- Perspective ---------- */
+      s += `<div class="persp-box">
+        <span class="sol-sub">Going further</span>
+        This model illustrates the accelerationist thesis of Friedman and Phelps: full indexation of wages to current inflation eliminates any lasting trade-off between inflation and unemployment. In the steady state, unemployment is anchored by real factors — the natural rate $\\overline{u}$ and productivity growth $g$ — while money growth $\\mu$ determines only the inflation rate. The long-run Phillips curve is therefore vertical, and only short-run dynamics display a downward-sloping relationship between the two variables.
+        <p style="margin-top:.8rem;">Two extensions deserve thought. First, full indexation to $\\pi_t$ amounts to assuming naive adaptive expectations: under rational expectations, agents would build $\\mu$ directly into their wage claims, and adjustment would be immediate rather than oscillatory. Second, the speed of damping depends entirely on structural parameters — here the returns of the production function and the sensitivity $${T.betaPlain}$ of wages to unemployment. An economy in which wages respond weakly to labour-market tightness takes far longer to return to equilibrium, which provides a classic argument for labour-market reform, but also a warning: those same rigidities are what shield real wages during recessions.</p>
+      </div>`;
+
+      return s;
+    }
+  }
+};
+
+/* ============================================================
+   GESTION DE LA LANGUE  /  LANGUAGE HANDLING
+   ============================================================ */
+let LANG = 'fr';
+
+function detectLang() {
+    try {
+        const q = new URLSearchParams(window.location.search).get('lang');
+        if (q && I18N[q.toLowerCase()]) return q.toLowerCase();
+    } catch (e) {}
+    const h = (window.location.hash || '').replace('#', '').toLowerCase();
+    if (I18N[h]) return h;
+    return 'fr';
+}
+
+function applyLang() {
+    const D = I18N[LANG];
+    document.documentElement.lang = D.htmlLang;
+    document.title = D.title;
+
+    document.querySelectorAll('[data-k]').forEach(function (el) {
+        const key = el.getAttribute('data-k');
+        if (D[key] !== undefined) el.innerHTML = D[key];
+    });
+
+    const btn = document.getElementById('toggle-btn');
+    if (btn) btn.innerText = document.getElementById('sol-card').classList.contains('visible') ? D.hideSol : D.showSol;
+
+    document.getElementById('flag-fr').classList.toggle('active', LANG === 'fr');
+    document.getElementById('flag-en').classList.toggle('active', LANG === 'en');
+}
+
+function setLang(lang) {
+    if (!I18N[lang] || lang === LANG) return;
+    LANG = lang;
+
+    try {
+        const u = new URL(window.location.href);
+        u.searchParams.set('lang', lang);
+        history.replaceState(null, '', u.toString());
+    } catch (e) {}
+
+    applyLang();
+
+    if (document.getElementById('ex-area').style.display !== 'none') {
+        const solWasVisible = document.getElementById('sol-card').classList.contains('visible');
+        generateExercise(false);
+        if (solWasVisible) toggleSol();
+    }
+}
+
+// --- PRNG (Mulberry32) ---
+let currentSeed = 0;
+function seedPRNG(seed) {
+    return function() {
+      let t = seed += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+let random = Math.random;
+
+function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
+function pick(arr) { return arr[randInt(0, arr.length - 1)]; }
+const rnd  = (a, b) => a + random() * (b - a);
+const r2   = x => Math.round(x * 100) / 100;
+
+function texM(num, dec) {
+    let sign = num < 0 ? "-" : "";
+    let parts = Math.abs(num).toFixed(dec).split('.');
+    let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, I18N[LANG].thousands);
+    return sign + intPart + (dec > 0 ? I18N[LANG].decimal + parts[1] : "");
+}
+function fmtD(num, dec) {
+    return num.toLocaleString(I18N[LANG].locale, {minimumFractionDigits: dec, maximumFractionDigits: dec});
+}
+/* Affichage court : decimales seulement si utiles */
+function sh(x)  { return (Math.round(x * 100) % 100 === 0) ? fmtD(x, 0) : ((Math.round(x * 100) % 10 === 0) ? fmtD(x, 1) : fmtD(x, 2)); }
+function sh2(x) { return fmtD(x, 2); }
+function sh3(x) { return fmtD(x, 3); }
+/* Nombre destine a un environnement mathematique (separateur decimal TeX) */
+function texN(x) {
+    const d = (Math.round(x * 1000) % 1000 === 0) ? 0 : ((Math.round(x * 1000) % 100 === 0) ? 1 : ((Math.round(x*1000) % 10 === 0) ? 2 : 3));
+    return texM(x, d);
+}
+
+/* ============================================================
+   FRACTIONS EXACTES  /  EXACT FRACTIONS
+   ============================================================ */
+function gcd(a, b) { return b ? gcd(b, a % b) : Math.abs(a); }
+function Fr(n, d) {
+    if (d < 0) { n = -n; d = -d; }
+    const g = gcd(Math.abs(n), d) || 1;
+    return { n: n / g, d: d / g };
+}
+const fAdd = (a, b) => Fr(a.n * b.d + b.n * a.d, a.d * b.d);
+const fSub = (a, b) => Fr(a.n * b.d - b.n * a.d, a.d * b.d);
+const fMul = (a, b) => Fr(a.n * b.n, a.d * b.d);
+const fVal = f => f.n / f.d;
+/* Rendu LaTeX d'une fraction (le signe sort de la fraction) */
+function tf(f) {
+    if (f.d === 1) return String(f.n);
+    return (f.n < 0 ? "-" : "") + `\\frac{${Math.abs(f.n)}}{${f.d}}`;
+}
+/* Rendu LaTeX entre parentheses si le coefficient est negatif */
+function tfp(f) { return f.n < 0 ? `\\left(${tf(f)}\\right)` : tf(f); }
+/* Rendu d'un coefficient multiplicatif : on omet le facteur 1 */
+function tfc(f) { return (f.n === 1 && f.d === 1) ? "" : tf(f); }
+/* Rendu exact : decimal si la fraction est decimale, fraction sinon */
+function tfe(f) { return (100 % f.d === 0) ? texN(f.n / f.d) : tf(f); }
+/* Terme signe pret a etre concatene dans une somme */
+function tfs(f) { const a = Fr(Math.abs(f.n), f.d); return (f.n < 0 ? "- " : "+ ") + tfe(a); }
+/* Conversion d'un decimal (2 decimales au plus) en fraction exacte */
+function dec2f(x) { return Fr(Math.round(x * 100), 100); }
+
+/* ============================================================
+   DIAGRAMME DES PHASES (SVG)
+   ============================================================ */
+function phaseSVG(k, beta, L) {
+    const X0 = 66, X1 = 588, Y0 = 26, Y1 = 392;
+    const HX = 3.5;
+    const sc = (X1 - X0) / (2 * HX);
+    const cx = (X0 + X1) / 2, cy = (Y0 + Y1) / 2;
+    const HY = (Y1 - Y0) / (2 * sc);
+    const px = x => cx + x * sc, py = y => cy - y * sc;
+
+    const m1 = beta;              /* pente du lieu Delta u = 0 */
+    const m2 = -beta / (k - 1);   /* pente du lieu Delta pi = 0 */
+
+    /* bornes d'une droite passant par l'origine, clippee dans le cadre */
+    function seg(m) {
+        let x1 = -HX + 0.06, x2 = HX - 0.06;
+        if (Math.abs(m) > 1e-9) {
+            const xa = (HY - 0.08) / m, xb = -(HY - 0.08) / m;
+            const lo = Math.min(xa, xb), hi = Math.max(xa, xb);
+            x1 = Math.max(x1, lo); x2 = Math.min(x2, hi);
+        }
+        return [x1, x2];
+    }
+
+    let g = "";
+    g += `<defs><marker id="arP" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#1e1e1e"/></marker>`;
+    g += `<marker id="axP" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#0d1b2a"/></marker>`;
+    g += `<marker id="orP" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#d2711a"/></marker></defs>`;
+
+    /* axes */
+    g += `<line x1="${X0}" y1="${Y1}" x2="${X1 + 6}" y2="${Y1}" stroke="#0d1b2a" stroke-width="1.6" marker-end="url(#axP)"/>`;
+    g += `<line x1="${X0}" y1="${Y1}" x2="${X0}" y2="${Y0 - 6}" stroke="#0d1b2a" stroke-width="1.6" marker-end="url(#axP)"/>`;
+    g += `<text x="${X1 + 2}" y="${Y1 + 22}" text-anchor="end" font-family="'Source Serif 4',serif" font-size="13" font-weight="600" fill="#0d1b2a">${L.xlabel}</text>`;
+    g += `<text x="20" y="${((Y0 + Y1) / 2).toFixed(1)}" text-anchor="middle" font-family="'Source Serif 4',serif" font-size="13" font-weight="600" fill="#0d1b2a" transform="rotate(-90 20 ${((Y0 + Y1) / 2).toFixed(1)})">${L.ylabel}</text>`;
+
+    /* reperes vers l'etat stationnaire */
+    g += `<line x1="${px(0).toFixed(1)}" y1="${Y1}" x2="${px(0).toFixed(1)}" y2="${py(0).toFixed(1)}" stroke="#9a9a9a" stroke-width="1" stroke-dasharray="4 4"/>`;
+    g += `<line x1="${X0}" y1="${py(0).toFixed(1)}" x2="${px(0).toFixed(1)}" y2="${py(0).toFixed(1)}" stroke="#9a9a9a" stroke-width="1" stroke-dasharray="4 4"/>`;
+    g += `<text x="${px(0).toFixed(1)}" y="${Y1 + 18}" text-anchor="middle" font-family="'Source Serif 4',serif" font-style="italic" font-size="13" fill="#1e1e1e">u*</text>`;
+    g += `<text x="${X0 - 8}" y="${(py(0) + 4).toFixed(1)}" text-anchor="end" font-family="'Source Serif 4',serif" font-style="italic" font-size="13" fill="#1e1e1e">&#960;*</text>`;
+
+    /* isoclines */
+    const s1 = seg(m1), s2 = seg(m2);
+    g += `<line x1="${px(s1[0]).toFixed(1)}" y1="${py(m1 * s1[0]).toFixed(1)}" x2="${px(s1[1]).toFixed(1)}" y2="${py(m1 * s1[1]).toFixed(1)}" stroke="#1a4f8a" stroke-width="2.1"/>`;
+    g += `<line x1="${px(s2[0]).toFixed(1)}" y1="${py(m2 * s2[0]).toFixed(1)}" x2="${px(s2[1]).toFixed(1)}" y2="${py(m2 * s2[1]).toFixed(1)}" stroke="#b94040" stroke-width="2.1"/>`;
+    g += `<text x="${(px(s1[1]) - 6).toFixed(1)}" y="${(py(m1 * s1[1]) - 8).toFixed(1)}" text-anchor="end" font-family="'Source Serif 4',serif" font-size="12.5" fill="#1a4f8a">${L.iso1}</text>`;
+    g += `<text x="${(px(s2[1]) - 6).toFixed(1)}" y="${(py(m2 * s2[1]) + 18).toFixed(1)}" text-anchor="end" font-family="'Source Serif 4',serif" font-size="12.5" fill="#b94040">${L.iso2}</text>`;
+
+    /* fleches directionnelles dans les quatre regions */
+    const arrows = [
+        { x: -0.35, y: 1.85, dx: 0.55, dy: -0.45, lx: -0.1, ly: 2.35, t1: "u \u2191", t2: "\u03C0 \u2193" },   /* nord */
+        { x: -2.55, y: -0.30, dx: 0.55, dy: 0.45, lx: -2.35, ly: -0.95, t1: "u \u2191", t2: "\u03C0 \u2191" }, /* ouest */
+        { x: 2.55, y: 0.35, dx: -0.55, dy: -0.45, lx: 2.4, ly: 1.05, t1: "u \u2193", t2: "\u03C0 \u2193" },     /* est */
+        { x: 0.35, y: -1.85, dx: -0.55, dy: 0.45, lx: 0.1, ly: -2.5, t1: "u \u2193", t2: "\u03C0 \u2191" }      /* sud */
+    ];
+    arrows.forEach(a => {
+        g += `<line x1="${px(a.x).toFixed(1)}" y1="${py(a.y).toFixed(1)}" x2="${px(a.x + a.dx).toFixed(1)}" y2="${py(a.y + a.dy).toFixed(1)}" stroke="#1e1e1e" stroke-width="2" marker-end="url(#arP)"/>`;
+        g += `<text x="${px(a.lx).toFixed(1)}" y="${py(a.ly).toFixed(1)}" text-anchor="middle" font-family="'Source Serif 4',serif" font-size="12.5" fill="#1e1e1e">${a.t1}<tspan x="${px(a.lx).toFixed(1)}" dy="15">${a.t2}</tspan></text>`;
+    });
+
+    /* trajectoire : interpolation continue exacte de X_{t+1} = J X_t */
+    const T = 1 + 1 / k - beta;
+    const a = T / 2, b = Math.sqrt(4 / k - T * T) / 2;
+    const r = Math.sqrt(1 / k), th = Math.atan2(b, a);
+    const p21 = a - 1 + beta;                 /* P = [[1,0],[p21,b]] */
+    const R0 = 2.15;                          /* ecart initial (unites) */
+    /* X0 = (R0,0) ; Y0v = P^{-1} X0 = (R0, -p21*R0/b) */
+    const q1 = R0, q2 = -p21 * R0 / b;
+    let pts = [];
+    const sMax = Math.log(0.035) / Math.log(r);
+    for (let s = 0; s <= sMax; s += 0.03) {
+        const rr = Math.pow(r, s), c = Math.cos(s * th), si = Math.sin(s * th);
+        const z1 = rr * (c * q1 + si * q2);
+        const z2 = rr * (-si * q1 + c * q2);
+        pts.push(`${px(z1).toFixed(1)},${py(p21 * z1 + b * z2).toFixed(1)}`);
+    }
+    g += `<polyline points="${pts.join(' ')}" fill="none" stroke="#d2711a" stroke-width="1.9" stroke-linejoin="round" marker-end="url(#orP)"/>`;
+    g += `<circle cx="${px(R0).toFixed(1)}" cy="${py(0).toFixed(1)}" r="3.4" fill="#d2711a"/>`;
+    g += `<text x="${(px(R0) - 6).toFixed(1)}" y="${(py(0) - 10).toFixed(1)}" text-anchor="end" font-family="'Source Serif 4',serif" font-size="12" fill="#d2711a">(u&#8320;, &#960;&#8320;)</text>`;
+
+    /* etat stationnaire */
+    g += `<circle cx="${px(0).toFixed(1)}" cy="${py(0).toFixed(1)}" r="4" fill="#0d1b2a"/>`;
+    g += `<text x="${(px(0) + 9).toFixed(1)}" y="${(py(0) - 9).toFixed(1)}" font-family="'Source Serif 4',serif" font-style="italic" font-size="13" fill="#0d1b2a">(u*, &#960;*)</text>`;
+
+    return `<svg viewBox="0 0 600 420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${L.caption}">${g}</svg>`;
+}
+
+/* ============================================================
+   TRAJECTOIRE TEMPORELLE (SVG)
+   ============================================================ */
+function pathSVG(us, pis, ustar, pistar, L) {
+    const N = us.length - 1;
+    const X0 = 62, X1 = 578, Y0 = 26, Y1 = 356;
+    let lo = Math.min(...us, ...pis, ustar, pistar);
+    let hi = Math.max(...us, ...pis, ustar, pistar);
+    const pad = Math.max(0.6, (hi - lo) * 0.16);
+    lo = Math.floor((lo - pad) * 2) / 2; hi = Math.ceil((hi + pad) * 2) / 2;
+    const px = t => X0 + (t / N) * (X1 - X0);
+    const py = v => Y1 - ((v - lo) / (hi - lo)) * (Y1 - Y0);
+
+    /* pas de graduation vertical */
+    let step = 0.5;
+    const span = hi - lo;
+    if (span > 4) step = 1;
+    if (span > 9) step = 2;
+
+    let g = "";
+    for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) {
+        g += `<line x1="${X0}" y1="${py(v).toFixed(1)}" x2="${X1}" y2="${py(v).toFixed(1)}" stroke="#e2ddd2" stroke-width="1" stroke-dasharray="3 3"/>`;
+        g += `<text x="${X0 - 9}" y="${(py(v) + 4).toFixed(1)}" text-anchor="end" font-family="'Source Serif 4',serif" font-size="11.5" fill="#1e1e1e">${sh(v)}</text>`;
+    }
+    for (let t = 0; t <= N; t += 2) {
+        g += `<line x1="${px(t).toFixed(1)}" y1="${Y0}" x2="${px(t).toFixed(1)}" y2="${Y1}" stroke="#eeeae0" stroke-width="1"/>`;
+        g += `<text x="${px(t).toFixed(1)}" y="${Y1 + 17}" text-anchor="middle" font-family="'Source Serif 4',serif" font-size="11.5" fill="#1e1e1e">${t}</text>`;
+    }
+
+    /* axes */
+    g += `<line x1="${X0}" y1="${Y1}" x2="${X1}" y2="${Y1}" stroke="#0d1b2a" stroke-width="1.6"/>`;
+    g += `<line x1="${X0}" y1="${Y0}" x2="${X0}" y2="${Y1}" stroke="#0d1b2a" stroke-width="1.6"/>`;
+
+    /* niveaux stationnaires */
+    g += `<line x1="${X0}" y1="${py(ustar).toFixed(1)}" x2="${X1}" y2="${py(ustar).toFixed(1)}" stroke="#1a4f8a" stroke-width="1.2" stroke-dasharray="7 5"/>`;
+    g += `<text x="${X1 - 4}" y="${(py(ustar) - 6).toFixed(1)}" text-anchor="end" font-family="'Source Serif 4',serif" font-style="italic" font-size="12" fill="#1a4f8a">${L.lu}</text>`;
+    g += `<line x1="${X0}" y1="${py(pistar).toFixed(1)}" x2="${X1}" y2="${py(pistar).toFixed(1)}" stroke="#b94040" stroke-width="1.2" stroke-dasharray="7 5"/>`;
+    g += `<text x="${X1 - 4}" y="${(py(pistar) - 6).toFixed(1)}" text-anchor="end" font-family="'Source Serif 4',serif" font-style="italic" font-size="12" fill="#b94040">${L.lpi}</text>`;
+
+    /* series */
+    const poly = (arr, col) => {
+        let p = arr.map((v, t) => `${px(t).toFixed(1)},${py(v).toFixed(1)}`).join(' ');
+        let o = `<polyline points="${p}" fill="none" stroke="${col}" stroke-width="2.2" stroke-linejoin="round"/>`;
+        arr.forEach((v, t) => { o += `<circle cx="${px(t).toFixed(1)}" cy="${py(v).toFixed(1)}" r="2.7" fill="${col}"/>`; });
+        return o;
+    };
+    g += poly(pis, "#b94040");
+    g += poly(us, "#1a4f8a");
+
+    /* titres d'axes */
+    g += `<text x="${((X0 + X1) / 2).toFixed(1)}" y="${Y1 + 40}" text-anchor="middle" font-family="'Source Serif 4',serif" font-size="13" font-weight="600" fill="#0d1b2a">${L.xlabel}</text>`;
+    g += `<text x="18" y="${((Y0 + Y1) / 2).toFixed(1)}" text-anchor="middle" font-family="'Source Serif 4',serif" font-size="13" font-weight="600" fill="#0d1b2a" transform="rotate(-90 18 ${((Y0 + Y1) / 2).toFixed(1)})">${L.ylabel}</text>`;
+
+    /* legende */
+    const lx = X0 + 24, ly = Y0 + 18;
+    g += `<rect x="${lx - 12}" y="${ly - 16}" width="215" height="46" fill="#ffffff" fill-opacity="0.9" stroke="#d4cfc4" stroke-width="1" rx="3"/>`;
+    g += `<line x1="${lx}" y1="${ly}" x2="${lx + 26}" y2="${ly}" stroke="#1a4f8a" stroke-width="2.2"/><circle cx="${lx + 13}" cy="${ly}" r="2.7" fill="#1a4f8a"/>`;
+    g += `<text x="${lx + 34}" y="${ly + 4}" font-family="'Source Serif 4',serif" font-size="12" fill="#1e1e1e">${L.su}</text>`;
+    g += `<line x1="${lx}" y1="${ly + 19}" x2="${lx + 26}" y2="${ly + 19}" stroke="#b94040" stroke-width="2.2"/><circle cx="${lx + 13}" cy="${ly + 19}" r="2.7" fill="#b94040"/>`;
+    g += `<text x="${lx + 34}" y="${ly + 23}" font-family="'Source Serif 4',serif" font-size="12" fill="#1e1e1e">${L.spi}</text>`;
+
+    return `<svg viewBox="0 0 600 405" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${L.caption}">${g}</svg>`;
+}
+
+/* ============================================================
+   GENERATION DE L'EXERCICE  /  EXERCISE GENERATION
+   ============================================================ */
+const BETAS = [[1,4],[1,3],[1,2],[2,3],[3,4]];
+
+function generateExercise(forceNew = false) {
+    if (forceNew) {
+        document.getElementById('seed-input').value = "";
+    }
+    let seedVal = document.getElementById('seed-input').value;
+    currentSeed = seedVal ? parseInt(seedVal) : Math.floor(Math.random() * 99999999);
+    document.getElementById('seed-disp').innerText = currentSeed;
+    document.getElementById('seed-input').value = currentSeed;
+    random = seedPRNG(currentSeed);
+
+    const DIC = I18N[LANG];
+    const aSel = document.getElementById('alpha-input').value;
+    const bSel = document.getElementById('beta-input').value;
+
+    let k, c, bn, bd, beta, g, mu, ubar, ustar, pistar, u0, pi0;
+    let us = [], pis = [];
+    const N = 16, NSIM = 26;
+    let ok = false, guard = 0;
+
+    do {
+        guard++;
+        ok = true;
+
+        /* --- exposant de la fonction de production : alpha = 1/k --- */
+        k = (aSel === 'auto') ? pick([2, 3, 4]) : parseInt(aSel);
+        c = pick([1, 2, 2, 3, 4]);
+
+        /* --- sensibilite des salaires au chomage --- */
+        let pool = BETAS;
+        if (bSel === 'low')  pool = [[1,4],[1,3]];
+        if (bSel === 'mid')  pool = [[1,3],[1,2]];
+        if (bSel === 'high') pool = [[2,3],[3,4]];
+        const bb = pick(pool);
+        bn = bb[0]; bd = bb[1]; beta = bn / bd;
+
+        /* discriminant strictement negatif : trajectoire en spirale */
+        const Tr = 1 + 1 / k - beta;
+        if (Tr * Tr - 4 / k > -0.04) { ok = false; continue; }
+
+        /* --- valeurs numeriques de la derniere question --- */
+        g = pick([1, 1.5, 2, 2.5, 3]);
+        const gk = g / k, gkb = g / (k * beta);
+        if (Math.abs(gk * 4 - Math.round(gk * 4)) > 1e-9) { ok = false; continue; }
+        if (Math.abs(gkb * 4 - Math.round(gkb * 4)) > 1e-9) { ok = false; continue; }
+
+        mu = pick([3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7]);
+        pistar = r2(mu - gk);
+        if (pistar < 1.4 || pistar > 6.5) { ok = false; continue; }
+
+        ubar = pick([5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10]);
+        ustar = r2(ubar - gkb);
+        if (ustar < 2.5 || ustar > 8.5) { ok = false; continue; }
+
+        u0 = r2(ustar + pick([-3, -2.5, -2, -1.5, 1.5, 2, 2.5, 3]));
+        pi0 = r2(pistar + pick([-1.5, -1, 0, 1, 1.5, 2]));
+        if (u0 < 2 || u0 > 13 || pi0 < 0.4) { ok = false; continue; }
+
+        /* --- simulation et controle de plausibilite de la trajectoire --- */
+        us = [u0]; pis = [pi0];
+        for (let t = 0; t < NSIM; t++) {
+            const uu = us[t], pp = pis[t];
+            us.push((1 - beta) * uu + pp + beta * ubar - mu);
+            pis.push((1 / k) * pp - (beta / k) * (uu - ubar) + ((k - 1) * mu - g) / k);
+        }
+        if (Math.min.apply(null, us) < 1.5 || Math.max.apply(null, us) > 15) { ok = false; continue; }
+        if (Math.min.apply(null, pis) < -1.5 || Math.max.apply(null, pis) > 12) { ok = false; continue; }
+        /* on exige un depassement de u* net et visible dans le tableau */
+        let cross = 0, over = 0;
+        for (let t = 1; t <= 6; t++) if (!cross && (us[t] - ustar) * (u0 - ustar) < 0) cross = t;
+        if (!cross) { ok = false; continue; }
+        for (let t = cross; t <= N; t++) over = Math.max(over, Math.abs(us[t] - ustar));
+        if (over < 0.2) { ok = false; continue; }
+    } while (!ok && guard < 1200);
+
+    /* --- coefficients exacts --- */
+    const fAlpha = Fr(1, k), fBeta = Fr(bn, bd);
+    const fOneMinusAlpha = Fr(k - 1, k), fOneMinusBeta = fSub(Fr(1,1), fBeta);
+    const fAlphaBeta = fMul(fAlpha, fBeta);
+    const fTrace = fAdd(fOneMinusBeta, fAlpha);
+    const fDiscr = fSub(fMul(fTrace, fTrace), Fr(4, k));
+    const fAbsDiscr = Fr(-fDiscr.n, fDiscr.d);
+    const fHalfTrace = fMul(fTrace, Fr(1, 2));
+    const fSlope2 = Fr(-bn, bd * (k - 1));
+    const fUcoef = Fr(bd, k * bn);
+    const reLam = fVal(fHalfTrace), imLam = Math.sqrt(fVal(fAbsDiscr)) / 2;
+    const modLam = Math.sqrt(1 / k);
+    const halfLife = Math.log(0.5) / Math.log(modLam);
+
+    /* premier trimestre ou l'ecart au chomage stationnaire passe sous 0,1 point */
+    let tConv = 1;
+    for (let t = 1; t < us.length; t++) { if (Math.abs(us[t] - ustar) < 0.1) { tConv = t; break; } }
+    /* premier depassement de u* (changement de signe de l'ecart) */
+    let tCross = -1;
+    for (let t = 1; t <= N; t++) {
+        if ((us[t] - ustar) * (u0 - ustar) < 0) { tCross = t; break; }
+    }
+    let tExtr = tCross;
+    for (let t = tCross; t <= N; t++) { if (Math.abs(us[t] - ustar) > Math.abs(us[tExtr] - ustar)) tExtr = t; }
+
+    /* --- rendus TeX --- */
+    const radic = k === 2 ? `\\sqrt{A_tN_t}` : `\\sqrt[${k}]{A_tN_t}`;
+    const cPref = c === 1 ? "" : String(c);
+    const tex = {
+        prod: `${cPref}${radic}`,
+        prodPow: `${cPref}\\left(A_tN_t\\right)^{${tf(fAlpha)}}`,
+        dprod: `${tfc(Fr(c, k))}A_t^{${tf(fAlpha)}}N_t^{${tf(Fr(1 - k, k))}}`,
+        priceFOC: `${tfc(Fr(k, c))}W_tA_t^{-${tf(fAlpha)}}N_t^{${tf(fOneMinusAlpha)}}`,
+        kOverC: c === 1 ? String(k) : `\\frac{${k}}{${c}}`,
+        logCplus: c === 1 ? "" : `\\log(${c}) + `,
+        yMinusLogC: c === 1 ? `y_t` : `\\bigl(y_t - \\log(${c})\\bigr)`,
+        lambdaTex: c === 1 ? `\\log(${k})` : `\\log\\left(\\frac{${k}}{${Math.pow(c, k)}}\\right)`,
+        alpha: tf(fAlpha),
+        beta: tf(fBeta),
+        betaPlain: tf(fBeta),
+        oneMinusAlpha: tf(fOneMinusAlpha),
+        oneMinusBeta: tf(fOneMinusBeta),
+        alphaBeta: tf(fAlphaBeta),
+        kMinus1: k === 2 ? "" : String(k - 1),
+        kMinus1plain: String(k - 1),
+        trace: tf(fTrace),
+        halfTrace: tf(fHalfTrace),
+        discr: tf(fDiscr),
+        absDiscr: tf(fAbsDiscr),
+        slope2: tf(fSlope2),
+        uCoef: tf(fUcoef),
+        uCond: `${tf(fUcoef) === "1" ? "" : tf(fUcoef)}g`,
+        reLam: texN(r2(reLam)),
+        imLam: texN(r2(imLam)),
+        modLam: `\\frac{1}{\\sqrt{${k}}}`,
+        modLamNum: texM(modLam, 3),
+        halfLife: sh(Math.round(halfLife * 10) / 10),
+        ubar: texN(ubar), mu: texN(mu), g: texN(g),
+        ustar: texN(ustar), pistar: texN(pistar),
+        u0: texN(u0), pi0: texN(pi0),
+        cstU: tfs(fSub(fMul(fBeta, dec2f(ubar)), dec2f(mu))),
+        cstPi: tfs(fAdd(fMul(Fr(1, k), fSub(fMul(Fr(k - 1, 1), dec2f(mu)), dec2f(g))), fMul(fAlphaBeta, dec2f(ubar))))
+    };
+
+    /* --- tableau d'iterations --- */
+    const NT = 8;
+    let head = `<tr><th style="width:34%;">${DIC.rowT}</th>`;
+    for (let t = 0; t <= NT; t++) head += `<th>${t}</th>`;
+    head += `</tr>`;
+    let rU = `<tr><td class="txt-left">${DIC.rowU}</td>`;
+    let rP = `<tr><td class="txt-left">${DIC.rowPI}</td>`;
+    let rG = `<tr class="hi-row"><td class="txt-left">${DIC.rowGap}</td>`;
+    for (let t = 0; t <= NT; t++) {
+        rU += `<td class="amt">${sh2(us[t])}</td>`;
+        rP += `<td class="amt">${sh2(pis[t])}</td>`;
+        rG += `<td class="amt">${sh2(us[t] - ustar)}</td>`;
+    }
+    rU += `</tr>`; rP += `</tr>`; rG += `</tr>`;
+    const tableNum = `<div class="exam-table-wrap"><table class="exam-table">${head}${rU}${rP}${rG}</table></div>`;
+
+    /* --- commentaire de la trajectoire --- */
+    const above = u0 > ustar;
+    const tPre = Math.max(1, tCross - 1);
+    let narrative;
+    if (LANG === 'fr') {
+        narrative = tCross === 1
+            ? `Le chômage franchit sa valeur stationnaire dès le premier trimestre, en passant de ${sh2(u0)}&nbsp;% à ${sh2(us[1])}&nbsp;%. `
+            : `Le chômage ${above ? `reflue` : `progresse`} d'abord régulièrement, passant de ${sh2(u0)}&nbsp;% à ${sh2(us[tPre])}&nbsp;% en ${tPre} trimestre${tPre > 1 ? 's' : ''}, puis franchit sa valeur stationnaire au trimestre ${tCross}. `;
+        narrative += `L'ajustement dépasse donc la cible : le chômage ${above ? `descend jusqu'à` : `monte jusqu'à`} ${sh2(us[tExtr])}&nbsp;% au trimestre ${tExtr}, avant de revenir vers $u^*$. `;
+        narrative += `L'inflation suit un mouvement décalé d'un quart de cycle : elle ${pis[1] > pi0 ? `commence par s'accélérer` : `commence par ralentir`}, atteint ${sh2(pis[tExtr])}&nbsp;% au trimestre ${tExtr}, puis converge vers $\\pi^* = ${texN(pistar)}$&nbsp;%. Au trimestre ${NT}, le couple $(u_t, \\pi_t)$ vaut déjà $(${texM(us[NT], 2)}\\,;\\ ${texM(pis[NT], 2)})$, à comparer à $(${texN(ustar)}\\,;\\ ${texN(pistar)})$.`;
+    } else {
+        narrative = tCross === 1
+            ? `Unemployment crosses its steady-state value as early as the first quarter, moving from ${sh2(u0)}% to ${sh2(us[1])}%. `
+            : `Unemployment first ${above ? `declines` : `rises`} steadily, moving from ${sh2(u0)}% to ${sh2(us[tPre])}% over ${tPre} quarter${tPre > 1 ? 's' : ''}, then crosses its steady-state value in quarter ${tCross}. `;
+        narrative += `The adjustment therefore overshoots: unemployment ${above ? `falls to` : `climbs to`} ${sh2(us[tExtr])}% in quarter ${tExtr} before drifting back towards $u^*$. `;
+        narrative += `Inflation follows one quarter-cycle behind: it ${pis[1] > pi0 ? `first accelerates` : `first slows down`}, reaching ${sh2(pis[tExtr])}% in quarter ${tExtr}, then converges to $\\pi^* = ${texN(pistar)}$%. By quarter ${NT} the pair $(u_t, \\pi_t)$ already stands at $(${texM(us[NT], 2)};\\ ${texM(pis[NT], 2)})$, to be compared with $(${texN(ustar)};\\ ${texN(pistar)})$.`;
+    }
+
+    const D = {
+        k: k, c: c, beta: beta, bn: bn, bd: bd,
+        g: g, mu: mu, ubar: ubar, ustar: ustar, pistar: pistar,
+        u0: u0, pi0: pi0, tConv: tConv, tCross: tCross,
+        tex: tex, tableNum: tableNum, narrative: narrative,
+        svgPhase: phaseSVG(k, beta, DIC.phase),
+        svgPath: pathSVG(us.slice(0, N + 1), pis.slice(0, N + 1), ustar, pistar, DIC.path)
+    };
+
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('ex-area').style.display = 'block';
+    document.getElementById('sol-card').classList.remove('visible');
+    document.getElementById('toggle-btn').innerText = DIC.showSol;
+    document.getElementById('toggle-btn').classList.remove('shown');
+
+    document.getElementById('context-text').innerHTML = DIC.context(D);
+    document.getElementById('enonce-table-container').innerHTML = DIC.table(D);
+    document.getElementById('additional-info').innerHTML = "";
+    document.getElementById('events-list').innerHTML = DIC.enonce(D);
+    document.getElementById('sol-content').innerHTML = DIC.sol(D);
+
+    if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
+        MathJax.typesetPromise().catch(function (err) { console.error('MathJax :', err); });
+    }
+}
+
+function toggleSol() {
+    let solCard = document.getElementById('sol-card');
+    let btn = document.getElementById('toggle-btn');
+    if (solCard.classList.contains('visible')) {
+        solCard.classList.remove('visible');
+        btn.innerText = I18N[LANG].showSol;
+        btn.classList.remove('shown');
+    } else {
+        solCard.classList.add('visible');
+        btn.innerText = I18N[LANG].hideSol;
+        btn.classList.add('shown');
+    }
+}
+
+function exportWord() {
+    let content = document.getElementById('ex-area').cloneNode(true);
+    let actions = content.querySelector('.top-actions');
+    if (actions) actions.parentNode.removeChild(actions);
+    let toggle = content.querySelector('.sol-toggle-wrap');
+    if (toggle) toggle.parentNode.removeChild(toggle);
+    let solCard = content.querySelector('#sol-card');
+    if (solCard) solCard.style.display = 'block';
+
+    let html = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <meta charset='utf-8'>
+            <title>${I18N[LANG].docTitle}</title>
+            <style>
+                body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5; text-align: justify; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 9pt; }
+                th, td { border: 1px solid #000; padding: 3px; }
+                th { background-color: #f2f2f2; text-align: center; font-weight: bold; }
+                .txt-left { text-align: left; font-weight: bold; }
+                .amt { text-align: right; white-space: nowrap; }
+                .two-col-table { width: 100%; }
+                .col-half { width: 48%; display: inline-block; vertical-align: top; margin-right: 2%; }
+                .calc-box, .method-box, .persp-box { border: 1px solid #000; padding: 10px; margin-bottom: 15px; background-color: #f9f9f9; text-align: justify; }
+                .math-formula { text-align: center; font-style: italic; margin: 10px 0; }
+                .chart-wrap { text-align: center; margin: 15px 0; }
+                .table-caption { font-size: 9pt; font-style: italic; text-align: center; }
+                ul, ol { text-align: justify; }
+                li { margin-bottom: 5px; }
+            </style>
+        </head>
+        <body>
+            ${content.innerHTML}
+        </body>
+        </html>
+    `;
+
+    let blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    let url = URL.createObjectURL(blob);
+    let link = document.createElement('a');
+    link.href = url;
+    link.download = I18N[LANG].docFile;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+/* Initialisation */
+LANG = detectLang();
+applyLang();
+</script>
+</body>
+</html>
