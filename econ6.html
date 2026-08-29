@@ -1,0 +1,1525 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Générateur d'exercices - Économétrie</title>
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['\\(','\\)']],
+    displayMath: [['\\[','\\]']],
+    packages: {'[+]': ['ams']},
+    macros: {
+      Var: ['\\textbf{Var}\\left(#1\\right)', 1],
+      Cov: ['\\textbf{Cov}\\left(#1\\right)', 1],
+      E: ['\\mathds{E}\\left(#1\\right)', 1]
+    }
+  },
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] }
+};
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 0;border-bottom:3px solid var(--gold)}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+#controls-bar{border-top:1px solid rgba(255,255,255,.08);padding:1.1rem 0 1.3rem}
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.5)}
+.ctrl-inp,.ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.38rem .65rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.82rem;width:88px;outline:none;transition:border-color .2s}
+.ctrl-inp:focus,.ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.ctrl-sel{width:auto;min-width:150px}
+.ctrl-sel option{background:var(--navy);color:var(--cream)}
+.ctrl-tip{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:rgba(250,247,240,.33);margin-top:2px}
+.seed-row{display:flex;align-items:flex-end;gap:.45rem}
+.btn-copy-seed{background:transparent;border:1px solid rgba(201,149,42,.4);color:rgba(250,247,240,.55);padding:.38rem .55rem;border-radius:3px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:.65rem;transition:all .18s;white-space:nowrap}
+.btn-copy-seed:hover{border-color:var(--gold-light);color:var(--gold-light)}
+.ctrl-vsep{width:1px;background:rgba(255,255,255,.1);align-self:stretch;margin:0 .2rem}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.3rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.9rem;font-weight:600;transition:background .18s;white-space:nowrap;align-self:flex-end}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.welcome-msg{text-align:center;padding:5rem 2rem;color:var(--text-muted);font-style:italic;font-size:1.05rem}
+.welcome-msg .arrow{font-size:2rem;display:block;margin-bottom:1rem;opacity:.4}
+
+/* TOP BAR */
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.top-bar-left{display:flex;gap:.6rem;align-items:center}
+.btn-sm{background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:'JetBrains Mono',monospace;font-size:.67rem;letter-spacing:.08em;text-transform:uppercase;padding:.4rem 1rem;border-radius:3px;cursor:pointer;transition:all .18s;white-space:nowrap}
+.btn-sm:hover{background:var(--gold);color:var(--navy)}
+.btn-sm.pdf{border-color:#7bafd4;color:#7bafd4}
+.btn-sm.pdf:hover{background:#7bafd4;color:var(--navy)}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.67rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:500}
+
+/* CARDS */
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);margin-bottom:1.5rem;border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+.info-block{background:rgba(0,0,0,0.03);border-left:3px solid var(--text-muted);padding:1rem 1.2rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.85rem;font-style:italic}
+
+/* VARIABLE LIST */
+.varlist{list-style:none;margin:0 0 1.6rem;font-size:.9rem}
+.varlist li{margin-bottom:.45rem;padding-left:1.4rem;position:relative;text-align:justify}
+.varlist li::before{content:"▸";position:absolute;left:0;color:var(--gold)}
+.vcode{font-family:'JetBrains Mono',monospace;font-size:.82rem;font-weight:500;background:var(--cream-dark);padding:1px 6px;border-radius:3px;color:var(--navy)}
+
+/* REGRESSION OUTPUT TABLE */
+.rtable-wrap{overflow-x:auto;margin:1.2rem 0 .6rem}
+.rtable{width:100%;border-collapse:collapse;font-size:.82rem;font-family:'Source Serif 4',serif}
+.rtable th,.rtable td{border:1px solid var(--border);padding:.42rem .55rem;text-align:center;vertical-align:middle}
+.rtable th{background:var(--navy);color:var(--cream);font-weight:600;font-size:.76rem}
+.rtable td.vname{font-family:'JetBrains Mono',monospace;font-size:.8rem;text-align:left;font-weight:500;color:var(--navy);white-space:nowrap}
+.rtable td.num{font-family:'JetBrains Mono',monospace;font-size:.79rem;white-space:nowrap}
+.rtable tr:nth-child(even) td{background:#fbf9f4}
+.rtable tfoot td{font-weight:600;background:var(--cream-dark);font-family:'JetBrains Mono',monospace;font-size:.78rem}
+.rtable caption{caption-side:bottom;font-size:.76rem;color:var(--text-muted);font-style:italic;padding-top:.55rem;text-align:justify}
+.rstats{font-family:'JetBrains Mono',monospace;font-size:.78rem;background:var(--cream-dark);border:1px solid var(--border);border-radius:4px;padding:.7rem .9rem;margin:.2rem 0 1.4rem;line-height:1.9}
+.rstats b{color:var(--navy);font-weight:600}
+
+/* QUESTIONS */
+.questions ol{counter-reset:q;list-style:none}
+.questions ol>li{counter-increment:q;margin-bottom:1.4rem;display:flex;gap:1rem;align-items:flex-start}
+.questions ol>li::before{content:counter(q);min-width:28px;height:28px;background:var(--navy);color:var(--cream);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:500;flex-shrink:0;margin-top:.15rem}
+.questions ol>li .q-text{flex:1;font-size:.93rem;text-align:justify}
+
+/* SOLUTION */
+.sol-toggle-wrap{text-align:center;margin:1rem 0 0}
+.btn-toggle{background:transparent;border:2px solid var(--navy);color:var(--navy);font-family:'Source Serif 4',serif;font-size:.9rem;padding:.6rem 2rem;border-radius:4px;cursor:pointer;transition:all .2s}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--navy);color:var(--cream)}
+.sol-card{border-top:4px solid var(--green);display:none}
+.sol-card.visible{display:block;animation:fi .3s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+.st{font-size:.92rem;line-height:1.75;text-align:justify}
+.st p{margin-bottom:.7rem}
+.st ol{counter-reset:sq;list-style:none}
+.st>ol>li{counter-increment:sq;margin-bottom:1.6rem;display:flex;gap:1rem;align-items:flex-start}
+.st>ol>li::before{content:counter(sq);min-width:24px;height:24px;background:var(--green);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.68rem;flex-shrink:0;margin-top:.15rem}
+.st ul{list-style:disc;padding-left:1.5rem;margin-bottom:.7rem}
+.st ul li{margin-bottom:.9rem}
+.st .q-content{flex:1}
+.hyp-name{font-variant:small-caps;font-weight:600;color:var(--navy)}
+.verdict{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.72rem;letter-spacing:.05em;padding:1px 7px;border-radius:3px;white-space:nowrap}
+.verdict.yes{background:#e6f2ea;color:var(--green);border:1px solid #b6d9c3}
+.verdict.no{background:#f7e9e9;color:var(--red);border:1px solid #e0bcbc}
+
+/* PDF MODAL */
+#pdf-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;backdrop-filter:blur(2px)}
+#pdf-modal{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:101;background:#fff;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.25);width:390px;max-width:95vw;border-top:4px solid #7bafd4;overflow:hidden}
+.mh{background:var(--navy);color:var(--cream);padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
+.mh h3{font-family:'Playfair Display',serif;font-size:1rem;font-weight:600}
+.mclose{background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:1.2rem;line-height:1;padding:2px 6px;border-radius:3px;transition:color .15s}
+.mclose:hover{color:#fff}
+.mb2{padding:1.5rem}
+.opt-row{display:flex;align-items:flex-start;gap:.75rem;margin-bottom:1rem;cursor:pointer}
+.opt-row input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--navy);flex-shrink:0;margin-top:3px}
+.opt-lbl{font-size:.93rem}
+.opt-desc{font-size:.75rem;color:var(--text-muted);display:block}
+.seed-note{font-family:'JetBrains Mono',monospace;font-size:.7rem;background:var(--cream-dark);border:1px solid var(--border);padding:.55rem .85rem;border-radius:3px;color:var(--text-muted);margin-bottom:1.2rem;line-height:1.5}
+.seed-note strong{color:var(--navy)}
+.mactions{display:flex;gap:.6rem}
+.btn-print{flex:1;background:var(--navy);color:var(--cream);border:none;padding:.7rem;border-radius:4px;font-family:'Source Serif 4',serif;font-size:.9rem;cursor:pointer;transition:background .2s}
+.btn-print:hover{background:var(--navy-mid)}
+.btn-cancel{background:transparent;border:1px solid var(--border);color:var(--text-muted);padding:.7rem 1rem;border-radius:4px;font-family:'Source Serif 4',serif;font-size:.9rem;cursor:pointer;transition:all .2s}
+.btn-cancel:hover{border-color:var(--text);color:var(--text)}
+
+/* PRINT */
+@media print{
+:root{--navy:#0d1b2a;--cream:#fff;--cream-dark:#f8f8f8;--gold:#c9952a;--green:#2d6b4a;--border:#ccc}
+body{background:#fff;font-size:11pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+header{padding:1rem 1.5rem .8rem}
+header .subtitle{display:none}
+#controls-bar,.top-bar,.sol-toggle-wrap,#pdf-ov,#pdf-modal{display:none!important}
+.card{box-shadow:none;border-radius:0;page-break-inside:avoid;margin-bottom:1rem}
+main{padding:1rem 1.5rem;max-width:100%}
+body.print-no-header header{display:none!important}
+body.print-no-solution .sol-card{display:none!important}
+body.print-force-solution .sol-card{display:block!important}
+}
+
+/* --- Selecteur de langue / Language switch --- */
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem}
+.header-top .header-badge{margin-bottom:0}
+.lang-switch{display:flex;gap:.45rem;flex-shrink:0}
+.flag-btn{background:rgba(255,255,255,.06);border:1px solid rgba(201,149,42,.35);border-radius:3px;padding:3px;cursor:pointer;line-height:0;opacity:.5;transition:opacity .2s,border-color .2s,transform .15s}
+.flag-btn:hover{opacity:1;transform:translateY(-1px)}
+.flag-btn.active{opacity:1;border-color:var(--gold-light);box-shadow:0 0 0 1px rgba(232,184,75,.35)}
+.flag-btn svg{display:block;width:30px;height:20px;border-radius:1px}
+@media print{ .lang-switch{display:none !important;} }
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-top">
+    <div class="header-badge" data-k="k-badge">ÉCONOMÉTRIE</div>
+    <div class="lang-switch">
+      <button type="button" class="flag-btn active" id="flag-fr" onclick="setLang('fr')" title="Français" aria-label="Français"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="20" height="40" fill="#002654"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ED2939"/></svg></button>
+      <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
+    </div>
+  </div>
+  <h1 data-k="k-h1">Commenter une table de régression</h1>
+  <p class="subtitle" data-k="k-sub">© Thomas Hossen – Version du 7 mars 2026</p>
+
+  <div id="controls-bar">
+    <div class="ctrls">
+      <div class="ctrl-g">
+        <span class="ctrl-lbl" data-k="k-seed">Seed de reproductibilité</span>
+        <div class="seed-row">
+          <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="0" max="99999999">
+          <button class="btn-copy-seed" id="btn-copy" onclick="copySeed()" title="Copier la seed active">⧉ Copier</button>
+        </div>
+        <span class="ctrl-tip" data-k="k-seedtip">Vide = aléatoire à chaque génération</span>
+      </div>
+      <div class="ctrl-vsep"></div>
+      <div class="ctrl-g">
+        <span class="ctrl-lbl" data-k="k-n">Observations <em>(n)</em></span>
+        <input class="ctrl-inp" type="number" id="param-n" min="30" max="9999" placeholder="défaut">
+        <span class="ctrl-tip" data-k="k-ntip">30 – 9999, auto si vide</span>
+      </div>
+      <div class="ctrl-vsep"></div>
+      <div class="ctrl-g">
+        <span class="ctrl-lbl" data-k="k-form">Forme fonctionnelle</span>
+        <select class="ctrl-sel" id="param-form">
+          <option value="auto" data-k="k-form-auto">Aléatoire</option>
+          <option value="loglog" data-k="k-form-loglog">Log-log</option>
+          <option value="logniv" data-k="k-form-logniv">Log-niveau</option>
+          <option value="nivlog" data-k="k-form-nivlog">Niveau-log</option>
+          <option value="nivniv" data-k="k-form-nivniv">Niveau-niveau</option>
+          <option value="mixte" data-k="k-form-mixte">Mixte</option>
+        </select>
+        <span class="ctrl-tip" data-k="k-formtip">Transformation de Y et des X</span>
+      </div>
+      <div class="ctrl-vsep"></div>
+      <div class="ctrl-g">
+        <span class="ctrl-lbl" data-k="k-extra">Termes non linéaires</span>
+        <select class="ctrl-sel" id="param-extra">
+          <option value="auto" data-k="k-ex-auto">Aléatoire</option>
+          <option value="none" data-k="k-ex-none">Aucun</option>
+          <option value="quad" data-k="k-ex-quad">Terme quadratique</option>
+          <option value="inter" data-k="k-ex-inter">Terme d'interaction</option>
+          <option value="both" data-k="k-ex-both">Les deux</option>
+        </select>
+        <span class="ctrl-tip" data-k="k-extratip">Carré et/ou interaction</span>
+      </div>
+      <div class="ctrl-vsep"></div>
+      <button class="btn-gen" onclick="generateFromControls()"><span data-k="k-gen">Générer →</span></button>
+    </div>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" class="welcome-msg">
+    <span class="arrow">↑</span>
+    <span data-k="k-welcome">Configurez les paramètres (ou laissez vide pour de l'aléatoire), puis cliquez sur Générer.</span>
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="top-bar-left">
+        <button class="btn-sm" onclick="regen()"><span data-k="k-new">↺ Nouvel énoncé</span></button>
+        <button class="btn-sm pdf" onclick="openPdfModal()"><span data-k="k-pdf">⬇ Exporter PDF</span></button>
+      </div>
+      <div class="seed-badge"><span data-k="k-seedbadge">Seed&nbsp;:</span> <span id="seed-disp">—</span></div>
+    </div>
+
+    <div id="ex-card" class="card">
+      <div class="card-header"><span class="tag" data-k="k-tag-ex">Énoncé</span><h2 id="card-title" data-k="k-cardtitle">Interprétation d'une table de régression</h2></div>
+      <div class="card-body" id="ex-content"></div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag" data-k="k-tag-sol">Corrigé</span><h2 data-k="k-cardtitle2">Interprétation d'une table de régression</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+
+  </div>
+</main>
+
+<div id="pdf-ov" onclick="closePdfModal()"></div>
+<div id="pdf-modal">
+  <div class="mh">
+    <h3 data-k="k-modal">Exporter en PDF</h3>
+    <button class="mclose" onclick="closePdfModal()">✕</button>
+  </div>
+  <div class="mb2">
+    <div class="seed-note"><span data-k="k-mseed-pre">Seed&nbsp;:</span> <strong id="modal-seed">—</strong> <span data-k="k-mseed-post">— notez cette valeur pour reproduire exactement cet exercice.</span></div>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-header" checked>
+      <div><span class="opt-lbl" data-k="k-opth">Inclure l'en-tête de page</span>
+           <span class="opt-desc" data-k="k-opthd">Titre, badge « ÉCONOMÉTRIE » et intitulé de l'exercice</span></div>
+    </label>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-sol">
+      <div><span class="opt-lbl" data-k="k-opts">Inclure le corrigé complet</span>
+           <span class="opt-desc" data-k="k-optsd">Hypothèses de Gauss-Markov, tests de Student et de Fisher</span></div>
+    </label>
+    <div class="mactions">
+      <button class="btn-print" onclick="doPrint()"><span data-k="k-print">🖨&nbsp;Imprimer / Sauvegarder PDF</span></button>
+      <button class="btn-cancel" onclick="closePdfModal()"><span data-k="k-cancel">Annuler</span></button>
+    </div>
+  </div>
+</div>
+
+<script>
+let solVisible = false;
+
+/* ============================================================
+   OUTILS STATISTIQUES  /  STATISTICAL TOOLS
+   Lois de Student et de Fisher via la fonction beta incomplete
+   ============================================================ */
+function gammaln(x){
+  const c=[76.18009172947146,-86.50532032941677,24.01409824083091,
+           -1.231739572450155,0.1208650973866179e-2,-0.5395239384953e-5];
+  let y=x, tmp=x+5.5; tmp-=(x+0.5)*Math.log(tmp);
+  let ser=1.000000000190015;
+  for(let j=0;j<6;j++) ser+=c[j]/++y;
+  return -tmp+Math.log(2.5066282746310005*ser/x);
+}
+function betacf(a,b,x){
+  const MAXIT=300, EPS=3e-14, FPMIN=1e-300;
+  let qab=a+b, qap=a+1, qam=a-1;
+  let c=1, d=1-qab*x/qap;
+  if(Math.abs(d)<FPMIN) d=FPMIN;
+  d=1/d; let h=d;
+  for(let m=1;m<=MAXIT;m++){
+    const m2=2*m;
+    let aa=m*(b-m)*x/((qam+m2)*(a+m2));
+    d=1+aa*d; if(Math.abs(d)<FPMIN)d=FPMIN;
+    c=1+aa/c; if(Math.abs(c)<FPMIN)c=FPMIN;
+    d=1/d; h*=d*c;
+    aa=-(a+m)*(qab+m)*x/((a+m2)*(qap+m2));
+    d=1+aa*d; if(Math.abs(d)<FPMIN)d=FPMIN;
+    c=1+aa/c; if(Math.abs(c)<FPMIN)c=FPMIN;
+    d=1/d;
+    const del=d*c; h*=del;
+    if(Math.abs(del-1)<EPS) break;
+  }
+  return h;
+}
+function betai(a,b,x){
+  if(x<=0) return 0;
+  if(x>=1) return 1;
+  const bt=Math.exp(gammaln(a+b)-gammaln(a)-gammaln(b)+a*Math.log(x)+b*Math.log(1-x));
+  if(x < (a+1)/(a+b+2)) return bt*betacf(a,b,x)/a;
+  return 1-bt*betacf(b,a,1-x)/b;
+}
+/* p-value bilaterale d'un test de Student */
+function tPval2(t,df){ return betai(df/2, 0.5, df/(df+t*t)); }
+/* quantile a 97.5 % d'une loi de Student (bilateral a 5 %) */
+function tCrit975(df){
+  let lo=0, hi=200;
+  for(let i=0;i<200;i++){
+    const mid=(lo+hi)/2;
+    if(tPval2(mid,df) > 0.05) lo=mid; else hi=mid;
+  }
+  return (lo+hi)/2;
+}
+/* p-value (queue superieure) d'un test de Fisher */
+function fPvalUpper(f,d1,d2){
+  if(f<=0) return 1;
+  return betai(d2/2, d1/2, d2/(d2+d1*f));
+}
+/* quantile a 95 % d'une loi de Fisher */
+function fCrit95(d1,d2){
+  let lo=0, hi=2000;
+  for(let i=0;i<200;i++){
+    const mid=(lo+hi)/2;
+    if(fPvalUpper(mid,d1,d2) > 0.05) lo=mid; else hi=mid;
+  }
+  return (lo+hi)/2;
+}
+
+/* ============================================================
+   PRNG (mulberry32)
+   ============================================================ */
+let _rand, _activeSeed = 0;
+function initRand(seed){
+  _activeSeed = seed >>> 0;
+  let s = _activeSeed;
+  _rand = () => {
+    s = (s + 0x6D2B79F5) >>> 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const rI = (a,b) => Math.floor(_rand()*(b-a+1))+a;
+const rU = (a,b) => a + _rand()*(b-a);
+const rA = arr => arr[Math.floor(_rand()*arr.length)];
+
+/* ============================================================
+   FORMATAGE  (point decimal dans les deux langues, comme Stata/R)
+   ============================================================ */
+/* Nombre de decimales garantissant au moins quatre chiffres significatifs.
+   Indispensable pour les coefficients tres petits (termes quadratiques sur
+   des regresseurs a grande echelle) : sans cela, les bornes de l'intervalle
+   de confiance s'arrondiraient a zero. */
+function decFor(x){
+  const a=Math.abs(x);
+  if(a===0) return 4;
+  const d = 4 - Math.floor(Math.log10(a));
+  return Math.max(2, Math.min(10, d));
+}
+function roundTo(x,d){ const p=Math.pow(10,d); return Math.round(x*p)/p; }
+function nb(x,d){ if(Math.abs(x)<5e-12) x=0; return x.toFixed(d); }
+function pv(p){ return p<0.001 ? "&lt;0.001" : p.toFixed(3); }
+function pvPlain(p){ return p<0.001 ? "&lt;0.001" : p.toFixed(3); }
+/* nombre "lisible" pour les valeurs monetaires / physiques reconstituees */
+function nice(x){
+  const a=Math.abs(x);
+  if(a>=10000) return x.toFixed(0);
+  if(a>=100)   return x.toFixed(1);
+  if(a>=1)     return x.toFixed(2);
+  return x.toFixed(3);
+}
+
+/* ============================================================
+   SCENARIOS  (structure : codes et echelles, textes dans I18N)
+   ============================================================ */
+/* Le champ "sign" porte le signe economiquement attendu de l'effet ; il est
+   respecte dans la grande majorite des tirages, mais pas systematiquement,
+   afin que l'etudiant rencontre aussi des resultats contre-intuitifs. */
+const SCENARIOS = [
+  { id:'wage', nMin:600, nMax:2200, yScale:16,
+    vars:[
+      {code:'educ',   kind:'cont',  scale:12,   canQuad:true , sign: 1},
+      {code:'exper',  kind:'cont',  scale:16,   canQuad:true , sign: 1},
+      {code:'anciennete', kind:'cont', scale:7, canQuad:false, sign: 1},
+      {code:'homme',  kind:'dummy', sign: 1},
+      {code:'urbain', kind:'dummy', sign: 1}
+    ]},
+  { id:'depdep', nMin:90, nMax:101, yScale:920,
+    vars:[
+      {code:'revenu', kind:'cont', scale:22000, canQuad:false, sign: 1},
+      {code:'densite',kind:'cont', scale:170,   canQuad:false, sign:-1},
+      {code:'superficie',kind:'cont', scale:6000, canQuad:false, sign: 1},
+      {code:'popagee',kind:'cont', scale:21,    canQuad:false, sign: 1},
+      {code:'gauche', kind:'dummy', sign: 1}
+    ]},
+  { id:'prod', nMin:250, nMax:420, yScale:62000,
+    vars:[
+      {code:'emploi', kind:'cont', scale:26000,  canQuad:false, sign:-1},
+      {code:'capital',kind:'cont', scale:480000, canQuad:false, sign: 1},
+      {code:'rd',     kind:'cont', scale:9000,   canQuad:true , sign: 1},
+      {code:'pole',   kind:'dummy', sign: 1}
+    ]},
+  { id:'immo', nMin:350, nMax:1500, yScale:265000,
+    vars:[
+      {code:'surface',kind:'cont', scale:78, canQuad:true , sign: 1},
+      {code:'distance',kind:'cont',scale:9,  canQuad:true , sign:-1},
+      {code:'agelog', kind:'cont', scale:32, canQuad:true , sign:-1},
+      {code:'garage', kind:'dummy', sign: 1},
+      {code:'neuf',   kind:'dummy', sign: 1}
+    ]},
+  { id:'energie', nMin:400, nMax:1700, yScale:14500,
+    vars:[
+      {code:'revenu', kind:'cont', scale:34000, canQuad:false, sign: 1},
+      {code:'surface',kind:'cont', scale:95,    canQuad:true , sign: 1},
+      {code:'nbpers', kind:'cont', scale:2.6,   canQuad:false, sign: 1},
+      {code:'isole',  kind:'dummy', sign:-1},
+      {code:'maison', kind:'dummy', sign: 1}
+    ]},
+  { id:'agri', nMin:150, nMax:520, yScale:75,
+    vars:[
+      {code:'engrais', kind:'cont', scale:180, canQuad:true , sign: 1},
+      {code:'pluie',   kind:'cont', scale:640, canQuad:true , sign: 1},
+      {code:'parcelle',kind:'cont', scale:45,  canQuad:false, sign: 1},
+      {code:'irrigation', kind:'dummy', sign: 1},
+      {code:'bio',     kind:'dummy', sign:-1}
+    ]}
+];
+
+/* ============================================================
+   GENERATION DES DONNEES  /  DATA GENERATION
+   ============================================================ */
+function drawCoefMagnitude(yLog, tf){
+  if(yLog){
+    if(tf==='log')   return rU(0.06,0.90);          // elasticite
+    if(tf==='dummy') return rU(0.035,0.35);         // ecart relatif
+    return rU(0.02,0.25);                           // effet total sur 0.25*echelle
+  } else {
+    if(tf==='log')   return rU(0.05,0.60);          // * yScale
+    if(tf==='dummy') return rU(0.035,0.30);         // * yScale
+    return rU(0.02,0.25);                           // * yScale sur 0.25*echelle
+  }
+}
+function makeCoef(yLog, tf, yScale, xScale){
+  const m = drawCoefMagnitude(yLog, tf);
+  if(yLog){
+    if(tf==='log' || tf==='dummy') return m;
+    return m/(0.25*xScale);
+  } else {
+    if(tf==='log' || tf==='dummy') return m*yScale;
+    return m*yScale/(0.25*xScale);
+  }
+}
+
+function buildData(opts){
+  let guard=0;
+  while(guard++ < 500){
+    const D = tryBuild(opts);
+    if(D) return D;
+  }
+  return null;
+}
+
+function tryBuild(opts){
+  const sc = rA(SCENARIOS);
+
+  /* ---- n ---- */
+  let n = opts.n ? opts.n : rI(sc.nMin, sc.nMax);
+  if(n<30) n=30; if(n>9999) n=9999;
+
+  /* ---- forme fonctionnelle ---- */
+  let form = opts.form;
+  if(form==='auto') form = rA(['loglog','logniv','nivlog','nivniv','mixte','mixte']);
+  const yLog = (form==='loglog' || form==='logniv' || (form==='mixte' && _rand()<0.65));
+
+  /* ---- choix des regresseurs ---- */
+  const conts  = sc.vars.filter(v=>v.kind==='cont');
+  const dummies= sc.vars.filter(v=>v.kind==='dummy');
+  const nCont  = Math.min(conts.length, rI(2,3));
+  const nDum   = Math.min(dummies.length, (form==='loglog'||form==='nivlog') ? rI(0,1) : rI(1,1));
+
+  const pickedC = shuffle(conts.slice()).slice(0,nCont);
+  const pickedD = shuffle(dummies.slice()).slice(0,nDum);
+
+  /* transformation de chaque regresseur continu */
+  const base = [];
+  for(const v of pickedC){
+    let tf;
+    if(form==='loglog' || form==='nivlog') tf='log';
+    else if(form==='logniv' || form==='nivniv') tf='level';
+    else tf = _rand()<0.5 ? 'log' : 'level';
+    base.push({v, tf});
+  }
+  for(const v of pickedD) base.push({v, tf:'dummy'});
+
+  if(base.length<3) return null;
+
+  /* ---- termes non lineaires ---- */
+  let extra = opts.extra;
+  if(extra==='auto'){
+    const r=_rand();
+    extra = r<0.30 ? 'none' : (r<0.62 ? 'quad' : (r<0.88 ? 'inter' : 'both'));
+  }
+  const wantQuad  = (extra==='quad'  || extra==='both');
+  const wantInter = (extra==='inter' || extra==='both');
+
+  /* variable quadratique : un continu eligible */
+  let quadIdx = null;
+  if(wantQuad){
+    const cand = base.map((b,i)=>({b,i})).filter(o=>o.b.tf!=='dummy' && o.b.v.canQuad);
+    if(cand.length===0) return null;
+    quadIdx = rA(cand).i;
+  }
+  /* interaction : deux termes non impliques dans le carre */
+  let interIdx = null;
+  if(wantInter){
+    const idx = base.map((b,i)=>i).filter(i=>i!==quadIdx);
+    if(idx.length<2) return null;
+    /* on privilegie continu x indicatrice */
+    const contIdx = idx.filter(i=>base[i].tf!=='dummy');
+    const dumIdx  = idx.filter(i=>base[i].tf==='dummy');
+    if(contIdx.length>=1 && dumIdx.length>=1 && _rand()<0.75){
+      interIdx = [rA(contIdx), rA(dumIdx)];
+    } else if(contIdx.length>=2){
+      const sh = shuffle(contIdx.slice());
+      interIdx = [sh[0], sh[1]];
+    } else return null;
+  }
+
+  /* ---- coefficients, erreurs-types, statistiques ---- */
+  const k = base.length + (quadIdx!==null?1:0) + (interIdx!==null?1:0);
+  const df = n - (k+1);
+  if(df < 10) return null;
+  const tcrit = tCrit975(df);
+
+  /* combien de coefficients non significatifs ? au moins un significatif */
+  const nInsig = Math.min(k-1, (_rand()<0.45 ? (_rand()<0.75?1:2) : 0));
+  const insigSet = new Set(shuffle([...Array(k).keys()]).slice(0,nInsig));
+
+  const terms = [];
+
+  /* constante */
+  let b0;
+  if(yLog) b0 = Math.log(sc.yScale*rU(0.30,1.15));
+  else     b0 = sc.yScale*rU(0.25,0.90);
+  const d0 = decFor(b0);
+  b0 = roundTo(b0,d0);
+  if(b0===0) return null;
+  let se0 = roundTo(Math.abs(b0)/rU(6,25), d0);
+  if(se0<=0) se0 = Math.pow(10,-d0);
+  terms.push(makeTerm('const', null, b0, se0, d0, df, tcrit));
+
+  /* termes de base */
+  let ti = 0;
+  for(let i=0;i<base.length;i++){
+    const {v,tf} = base[i];
+    /* On suit le signe economiquement attendu la plupart du temps, en
+       laissant une minorite de cas contre-intuitifs a commenter. */
+    let c = makeCoef(yLog, tf, sc.yScale, v.scale) * ((_rand()<0.86) ? v.sign : -v.sign);
+    const d = decFor(c);
+    c = roundTo(c,d);
+    if(c===0) return null;
+    const target = insigSet.has(ti) ? rU(0.15,1.80) : rU(2.20,13.0);
+    let se = roundTo(Math.abs(c)/target, d);
+    if(se<=0) se = Math.pow(10,-d);
+    terms.push(makeTerm('main', {v,tf}, c, se, d, df, tcrit));
+    ti++;
+  }
+
+  /* terme quadratique */
+  let quadInfo = null;
+  if(quadIdx!==null){
+    const {v,tf} = base[quadIdx];
+    const bMain = terms[1+quadIdx].coef;
+    const sMain = bMain>=0 ? 1 : -1;
+    /* "turning" : le carre est de signe oppose au terme de premier ordre, si
+       bien que l'effet marginal s'annule en un point x* > 0 (effet de seuil).
+       Sinon le carre est de meme signe et l'effet marginal s'amplifie.        */
+    const turning = _rand()<0.65;
+    const xRef = (tf==='log') ? Math.log(v.scale) : v.scale;
+    const star = turning ? xRef*rU(0.75,2.0) : xRef*rU(1.8,4.2);
+    let c = (turning ? -sMain : sMain) * Math.abs(bMain)/(2*star);
+    const d = decFor(c);
+    c = roundTo(c,d);
+    if(c===0) return null;
+    /* le signe doit avoir survecu a l'arrondi */
+    if(turning && (c*bMain)>=0) return null;
+    if(!turning && (c*bMain)<=0) return null;
+    const target = insigSet.has(ti) ? rU(0.15,1.80) : rU(2.20,13.0);
+    let se = roundTo(Math.abs(c)/target, d);
+    if(se<=0) se = Math.pow(10,-d);
+    terms.push(makeTerm('quad', {v,tf}, c, se, d, df, tcrit));
+    quadInfo = { termIndex: terms.length-1, mainIndex: 1+quadIdx, v, tf, turning };
+    ti++;
+  }
+
+  /* terme d'interaction */
+  let interInfo = null;
+  if(interIdx!==null){
+    const A = base[interIdx[0]], B = base[interIdx[1]];
+    const bMainA = terms[1+interIdx[0]].coef;
+    let c = bMainA * rU(0.25,0.85) * (_rand()<0.5 ? -1 : 1);
+    const d = decFor(c);
+    c = roundTo(c,d);
+    if(c===0) return null;
+    const target = insigSet.has(ti) ? rU(0.15,1.80) : rU(2.20,13.0);
+    let se = roundTo(Math.abs(c)/target, d);
+    if(se<=0) se = Math.pow(10,-d);
+    terms.push(makeTerm('inter', {A,B}, c, se, d, df, tcrit));
+    interInfo = { termIndex: terms.length-1, mainAIndex: 1+interIdx[0], mainBIndex: 1+interIdx[1], A, B };
+    ti++;
+  }
+
+  /* au moins un regresseur significatif */
+  if(!terms.slice(1).some(t=>t.sig)) return null;
+
+  /* Coherence d'affichage : un coefficient significatif doit avoir un
+     intervalle de confiance affiche qui exclut effectivement zero, et
+     aucun coefficient ne doit s'afficher comme nul. */
+  for(const t of terms){
+    if(roundTo(t.coef,t.dec)===0) return null;
+    const excl = (t.ciLo>0 && t.ciHi>0) || (t.ciLo<0 && t.ciHi<0);
+    if(t.sig !== excl) return null;
+    if(t.sig !== (t.p < 0.05)) return null;
+  }
+
+  /* ---- qualite d'ajustement ---- */
+  const R2   = roundTo(rU(0.34,0.86), 4);
+  const adjR2= roundTo(1-(1-R2)*(n-1)/(n-k-1), 4);
+  const F    = (R2/(1-R2))*((n-k-1)/k);
+  const Fp   = fPvalUpper(F, k, n-k-1);
+  const Fcrit= fCrit95(k, n-k-1);
+
+  /* terme mis en avant pour l'intervalle de confiance detaille */
+  const focusCand = terms.slice(1).filter(t=>t.sig);
+  const focus = rA(focusCand.length?focusCand:terms.slice(1));
+
+  return {
+    scId: sc.id, n, k, df, yLog, form, terms, quadInfo, interInfo,
+    R2, adjR2, F: roundTo(F,3), Fp, Fcrit: roundTo(Fcrit,3),
+    tcrit: roundTo(tcrit,3), focusKey: focus.key, yScale: sc.yScale,
+    hasQuad: quadInfo!==null, hasInter: interInfo!==null,
+    base, quadIdx, interIdx
+  };
+}
+
+function makeTerm(type, ref, coef, se, dec, df, tcrit){
+  const t  = coef/se;
+  const p  = tPval2(t, df);
+  const lo = coef - tcrit*se;
+  const hi = coef + tcrit*se;
+  let key;
+  if(type==='const') key='_const';
+  else if(type==='inter') key = ref.A.v.code+'_x_'+ref.B.v.code;
+  else key = (type==='quad' ? 'q_' : '') + ref.v.code;
+  return { type, ref, key, coef, se, dec, t: roundTo(t,3), p, ciLo: roundTo(lo,dec), ciHi: roundTo(hi,dec),
+           sig: Math.abs(t) > tcrit };
+}
+
+function shuffle(a){
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(_rand()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+
+/* ---- nom affiche d'un terme dans la table de regression ---- */
+function termCode(t){
+  if(t.type==='const') return '_cons';
+  if(t.type==='inter'){
+    return varCode(t.ref.A) + '×' + varCode(t.ref.B);
+  }
+  const c = varCode(t.ref);
+  return t.type==='quad' ? c+'²' : c;
+}
+function varCode(b){
+  return (b.tf==='log') ? 'l'+b.v.code : b.v.code;
+}
+/* ---- ecriture LaTeX d'un terme ---- */
+function varLatex(b){
+  const c = '\\text{'+b.v.code+'}_i';
+  return (b.tf==='log') ? '\\ln('+c+')' : c;
+}
+function termLatex(t){
+  if(t.type==='inter') return varLatex(t.ref.A)+'\\,'+varLatex(t.ref.B);
+  if(t.type==='quad')  return '\\left('+varLatex(t.ref)+'\\right)^2';
+  return varLatex(t.ref);
+}
+
+/* ============================================================
+   DICTIONNAIRE BILINGUE  /  BILINGUAL DICTIONARY
+   ============================================================ */
+const I18N = {
+
+  fr: {
+    "htmlLang":"fr",
+    "title":"Générateur d'exercices - Commenter une table de régression",
+    "k-badge":"ÉCONOMÉTRIE",
+    "k-h1":"Commenter une table de régression",
+    "k-sub":"© Thomas Hossen – Version du 7 mars 2026",
+    "k-seed":"Seed de reproductibilité",
+    "k-seedtip":"Vide = aléatoire à chaque génération",
+    "k-n":"Observations <em>(n)</em>",
+    "k-ntip":"30 – 9999, auto si vide",
+    "k-form":"Forme fonctionnelle",
+    "k-formtip":"Transformation de Y et des X",
+    "k-extra":"Termes non linéaires",
+    "k-extratip":"Carré et/ou interaction",
+    "k-gen":"Générer →",
+    "k-welcome":"Configurez les paramètres (ou laissez vide pour de l'aléatoire), puis cliquez sur Générer.",
+    "k-new":"↺ Nouvel énoncé",
+    "k-pdf":"⬇ Exporter PDF",
+    "k-seedbadge":"Seed&nbsp;:",
+    "k-tag-ex":"Énoncé",
+    "k-cardtitle":"Interprétation d'une table de régression",
+    "k-tag-sol":"Corrigé",
+    "k-cardtitle2":"Interprétation d'une table de régression",
+    "k-modal":"Exporter en PDF",
+    "k-mseed-pre":"Seed&nbsp;:",
+    "k-mseed-post":"— notez cette valeur pour reproduire exactement cet exercice.",
+    "k-opth":"Inclure l'en-tête de page",
+    "k-opthd":"Titre, badge « ÉCONOMÉTRIE » et intitulé de l'exercice",
+    "k-opts":"Inclure le corrigé complet",
+    "k-optsd":"Hypothèses de Gauss-Markov, tests de Student et de Fisher",
+    "k-print":"🖨&nbsp;Imprimer / Sauvegarder PDF",
+    "k-cancel":"Annuler",
+    "copy":"⧉ Copier","copyTitle":"Copier la seed active","copied":"✓ Copié",
+    "phSeed":"auto","phN":"défaut",
+    "showSol":"Afficher le corrigé","hideSol":"Masquer le corrigé",
+    formOpts:{ "k-form-auto":"Aléatoire","k-form-loglog":"Log-log","k-form-logniv":"Log-niveau",
+               "k-form-nivlog":"Niveau-log","k-form-nivniv":"Niveau-niveau","k-form-mixte":"Mixte",
+               "k-ex-auto":"Aléatoire","k-ex-none":"Aucun","k-ex-quad":"Terme quadratique",
+               "k-ex-inter":"Terme d'interaction","k-ex-both":"Les deux" },
+
+    thVar:"Variable", thCoef:"Coefficient", thSe:"Erreur-type", thT:"t de Student",
+    thP:"p-value", thCI:"IC à 95 %",
+    capTable:"Sortie d'estimation par les moindres carrés ordinaires.",
+    lblN:"Observations", lblR2:"R²", lblAdj:"R² ajusté", lblF:"F", lblFp:"Prob > F", lblDf:"Degrés de liberté",
+    yesSig:"significatif", noSig:"non significatif",
+
+    SC:{
+      wage:{ ctx:"On étudie une fonction de gains estimée sur une coupe transversale de salariés du secteur privé.",
+             y:"le salaire horaire", yUnit:"euros par heure", yShort:"le salaire horaire", unitObs:"salarié",
+             vars:{ educ:{d:"le nombre d'années d'éducation",u:"année"},
+                    exper:{d:"l'expérience professionnelle en années",u:"année"},
+                    anciennete:{d:"l'ancienneté dans l'entreprise en années",u:"année"},
+                    homme:{d:"une variable indicatrice valant 1 si, et seulement si, le salarié est un homme",g:"les hommes",r:"les femmes"},
+                    urbain:{d:"une variable indicatrice valant 1 si, et seulement si, le salarié travaille en zone urbaine",g:"les salariés en zone urbaine",r:"les salariés hors zone urbaine"} } },
+      depdep:{ ctx:"Un économètre cherche à expliquer les dépenses des Conseils départementaux à partir de données en coupe sur les départements de France métropolitaine.",
+             y:"la dépense départementale par habitant", yUnit:"euros par habitant", yShort:"la dépense par habitant", unitObs:"département",
+             vars:{ revenu:{d:"le revenu fiscal moyen par habitant",u:"euro"},
+                    densite:{d:"la densité de population",u:"habitant par km²"},
+                    superficie:{d:"la superficie du département",u:"km²"},
+                    popagee:{d:"la part de la population âgée de plus de 65 ans",u:"point de pourcentage"},
+                    gauche:{d:"une variable indicatrice valant 1 si, et seulement si, la majorité départementale est de gauche",g:"les départements à majorité de gauche",r:"les départements à majorité de droite"} } },
+      prod:{ ctx:"Un économètre teste les déterminants de la productivité du travail sur les bassins d'emploi métropolitains.",
+             y:"la productivité du travail", yUnit:"euros de valeur ajoutée par emploi", yShort:"la productivité", unitObs:"bassin d'emploi",
+             vars:{ emploi:{d:"le niveau d'emploi du bassin",u:"emploi"},
+                    capital:{d:"le stock de capital du bassin",u:"millier d'euros"},
+                    rd:{d:"les dépenses de recherche et développement",u:"millier d'euros"},
+                    pole:{d:"une variable indicatrice valant 1 si, et seulement si, le bassin abrite un pôle de compétitivité",g:"les bassins dotés d'un pôle de compétitivité",r:"les autres bassins"} } },
+      immo:{ ctx:"Un cabinet d'expertise immobilière estime une fonction de prix hédonique sur un ensemble de transactions résidentielles.",
+             y:"le prix de vente du logement", yUnit:"euros", yShort:"le prix de vente", unitObs:"logement",
+             vars:{ surface:{d:"la surface habitable",u:"m²"},
+                    distance:{d:"la distance au centre-ville",u:"km"},
+                    agelog:{d:"l'âge du logement en années",u:"année"},
+                    garage:{d:"une variable indicatrice valant 1 si, et seulement si, le logement dispose d'un garage",g:"les logements avec garage",r:"les logements sans garage"},
+                    neuf:{d:"une variable indicatrice valant 1 si, et seulement si, le logement a moins de cinq ans",g:"les logements neufs",r:"les logements anciens"} } },
+      energie:{ ctx:"Une agence de l'énergie analyse la consommation énergétique annuelle d'un panel de ménages résidentiels.",
+             y:"la consommation énergétique annuelle du ménage", yUnit:"kWh par an", yShort:"la consommation annuelle", unitObs:"ménage",
+             vars:{ revenu:{d:"le revenu annuel du ménage",u:"euro"},
+                    surface:{d:"la surface du logement",u:"m²"},
+                    nbpers:{d:"le nombre de personnes composant le ménage",u:"personne"},
+                    isole:{d:"une variable indicatrice valant 1 si, et seulement si, le logement a fait l'objet d'une rénovation thermique",g:"les logements rénovés thermiquement",r:"les logements non rénovés"},
+                    maison:{d:"une variable indicatrice valant 1 si, et seulement si, le logement est une maison individuelle",g:"les maisons individuelles",r:"les appartements"} } },
+      agri:{ ctx:"Un institut agronomique étudie les déterminants du rendement céréalier sur un ensemble d'exploitations.",
+             y:"le rendement céréalier", yUnit:"quintaux par hectare", yShort:"le rendement", unitObs:"exploitation",
+             vars:{ engrais:{d:"la quantité d'engrais azoté épandue",u:"kg par hectare"},
+                    pluie:{d:"la pluviométrie cumulée sur la campagne",u:"mm"},
+                    parcelle:{d:"la taille moyenne des parcelles",u:"hectare"},
+                    irrigation:{d:"une variable indicatrice valant 1 si, et seulement si, la parcelle est irriguée",g:"les parcelles irriguées",r:"les parcelles non irriguées"},
+                    bio:{d:"une variable indicatrice valant 1 si, et seulement si, l'exploitation est en agriculture biologique",g:"les exploitations biologiques",r:"les exploitations conventionnelles"} } }
+    },
+
+    ex: function(D){ return buildEx(D, this); },
+    sol: function(D){ return buildSol(D, this); },
+
+    /* --- fragments de phrases --- */
+    lead:"On dispose, pour chaque",
+    obsOf:"de l'échantillon, des variables suivantes",
+    modelIntro:"On retient le modèle de régression suivant, où",
+    isErr:"est un terme d'erreur",
+    estimIntro:"L'estimation par les moindres carrés ordinaires fournit les résultats suivants.",
+    qGM:"Rappeler les hypothèses du cadre de Gauss-Markov étendu et préciser leur signification dans le contexte du présent exercice.",
+    qFit:"Commenter la qualité globale de l'ajustement (coefficient de détermination, R² ajusté) et tester la significativité globale de la régression.",
+    qCoef:function(f){ return "Interpréter économiquement chacun des coefficients estimés et tester leur significativité individuelle au seuil de 5 %. On donnera par ailleurs, en le justifiant, un intervalle de confiance à 95 % pour le coefficient associé à <span class=\"vcode\">"+f+"</span>."; },
+    qQuad:function(c){ return "Étudier l'effet marginal de la variable <span class=\"vcode\">"+c+"</span> sur la variable expliquée. Cet effet est-il constant ? Existe-t-il un effet de seuil ?"; },
+    qInter:function(a,b){ return "Commenter le terme d'interaction entre <span class=\"vcode\">"+a+"</span> et <span class=\"vcode\">"+b+"</span>. Que devient l'effet marginal de <span class=\"vcode\">"+a+"</span> ?"; }
+  },
+
+  en: {
+    "htmlLang":"en",
+    "title":"Exercise generator - Commenting a regression table",
+    "k-badge":"ECONOMETRICS",
+    "k-h1":"Commenting a regression table",
+    "k-sub":"© Thomas Hossen – Version of 7 March 2026",
+    "k-seed":"Reproducibility seed",
+    "k-seedtip":"Blank = random at each generation",
+    "k-n":"Observations <em>(n)</em>",
+    "k-ntip":"30 – 9999, auto if blank",
+    "k-form":"Functional form",
+    "k-formtip":"Transformation of Y and the Xs",
+    "k-extra":"Non-linear terms",
+    "k-extratip":"Square and/or interaction",
+    "k-gen":"Generate →",
+    "k-welcome":"Set the parameters (or leave blank for random values), then click Generate.",
+    "k-new":"↺ New exercise",
+    "k-pdf":"⬇ Export PDF",
+    "k-seedbadge":"Seed:",
+    "k-tag-ex":"Problem",
+    "k-cardtitle":"Interpreting a regression table",
+    "k-tag-sol":"Solution",
+    "k-cardtitle2":"Interpreting a regression table",
+    "k-modal":"Export as PDF",
+    "k-mseed-pre":"Seed:",
+    "k-mseed-post":"— write this value down to reproduce this exercise exactly.",
+    "k-opth":"Include the page header",
+    "k-opthd":"Title, “ECONOMETRICS” badge and exercise heading",
+    "k-opts":"Include the full solution",
+    "k-optsd":"Gauss-Markov assumptions, Student and Fisher tests",
+    "k-print":"🖨&nbsp;Print / Save as PDF",
+    "k-cancel":"Cancel",
+    "copy":"⧉ Copy","copyTitle":"Copy the active seed","copied":"✓ Copied",
+    "phSeed":"auto","phN":"default",
+    "showSol":"Show solution","hideSol":"Hide solution",
+    formOpts:{ "k-form-auto":"Random","k-form-loglog":"Log-log","k-form-logniv":"Log-level",
+               "k-form-nivlog":"Level-log","k-form-nivniv":"Level-level","k-form-mixte":"Mixed",
+               "k-ex-auto":"Random","k-ex-none":"None","k-ex-quad":"Quadratic term",
+               "k-ex-inter":"Interaction term","k-ex-both":"Both" },
+
+    thVar:"Variable", thCoef:"Coefficient", thSe:"Std. error", thT:"t statistic",
+    thP:"p-value", thCI:"95% CI",
+    capTable:"Ordinary least squares estimation output.",
+    lblN:"Observations", lblR2:"R²", lblAdj:"Adjusted R²", lblF:"F", lblFp:"Prob > F", lblDf:"Degrees of freedom",
+    yesSig:"significant", noSig:"not significant",
+
+    SC:{
+      wage:{ ctx:"We study an earnings function estimated on a cross-section of private-sector employees.",
+             y:"the hourly wage", yUnit:"euros per hour", yShort:"hourly wage", unitObs:"employee",
+             vars:{ educ:{d:"the number of years of education",u:"year"},
+                    exper:{d:"work experience in years",u:"year"},
+                    anciennete:{d:"tenure with the current employer, in years",u:"year"},
+                    homme:{d:"a dummy variable equal to 1 if, and only if, the employee is a man",g:"men",r:"women"},
+                    urbain:{d:"a dummy variable equal to 1 if, and only if, the employee works in an urban area",g:"employees in urban areas",r:"employees outside urban areas"} } },
+      depdep:{ ctx:"An econometrician seeks to explain the spending of French departmental councils using cross-sectional data on metropolitan departments.",
+             y:"departmental spending per inhabitant", yUnit:"euros per inhabitant", yShort:"spending per inhabitant", unitObs:"department",
+             vars:{ revenu:{d:"average taxable income per inhabitant",u:"euro"},
+                    densite:{d:"population density",u:"inhabitant per km²"},
+                    superficie:{d:"the area of the department",u:"km²"},
+                    popagee:{d:"the share of the population aged over 65",u:"percentage point"},
+                    gauche:{d:"a dummy variable equal to 1 if, and only if, the departmental majority is left-wing",g:"departments with a left-wing majority",r:"departments with a right-wing majority"} } },
+      prod:{ ctx:"An econometrician tests the determinants of labour productivity across metropolitan employment areas.",
+             y:"labour productivity", yUnit:"euros of value added per job", yShort:"productivity", unitObs:"employment area",
+             vars:{ emploi:{d:"the level of employment in the area",u:"job"},
+                    capital:{d:"the capital stock of the area",u:"thousand euros"},
+                    rd:{d:"research and development spending",u:"thousand euros"},
+                    pole:{d:"a dummy variable equal to 1 if, and only if, the area hosts a competitiveness cluster",g:"areas with a competitiveness cluster",r:"other areas"} } },
+      immo:{ ctx:"A property valuation firm estimates a hedonic price function on a set of residential transactions.",
+             y:"the sale price of the dwelling", yUnit:"euros", yShort:"sale price", unitObs:"dwelling",
+             vars:{ surface:{d:"the living area",u:"m²"},
+                    distance:{d:"the distance to the city centre",u:"km"},
+                    agelog:{d:"the age of the dwelling in years",u:"year"},
+                    garage:{d:"a dummy variable equal to 1 if, and only if, the dwelling has a garage",g:"dwellings with a garage",r:"dwellings without a garage"},
+                    neuf:{d:"a dummy variable equal to 1 if, and only if, the dwelling is less than five years old",g:"new dwellings",r:"older dwellings"} } },
+      energie:{ ctx:"An energy agency analyses the annual energy consumption of a panel of residential households.",
+             y:"the household's annual energy consumption", yUnit:"kWh per year", yShort:"annual consumption", unitObs:"household",
+             vars:{ revenu:{d:"the household's annual income",u:"euro"},
+                    surface:{d:"the floor area of the dwelling",u:"m²"},
+                    nbpers:{d:"the number of people in the household",u:"person"},
+                    isole:{d:"a dummy variable equal to 1 if, and only if, the dwelling has undergone thermal renovation",g:"thermally renovated dwellings",r:"non-renovated dwellings"},
+                    maison:{d:"a dummy variable equal to 1 if, and only if, the dwelling is a detached house",g:"detached houses",r:"flats"} } },
+      agri:{ ctx:"An agronomic institute studies the determinants of cereal yields across a set of farms.",
+             y:"the cereal yield", yUnit:"quintals per hectare", yShort:"yield", unitObs:"farm",
+             vars:{ engrais:{d:"the quantity of nitrogen fertiliser applied",u:"kg per hectare"},
+                    pluie:{d:"cumulative rainfall over the growing season",u:"mm"},
+                    parcelle:{d:"the average plot size",u:"hectare"},
+                    irrigation:{d:"a dummy variable equal to 1 if, and only if, the plot is irrigated",g:"irrigated plots",r:"non-irrigated plots"},
+                    bio:{d:"a dummy variable equal to 1 if, and only if, the farm is certified organic",g:"organic farms",r:"conventional farms"} } }
+    },
+
+    ex: function(D){ return buildEx(D, this); },
+    sol: function(D){ return buildSol(D, this); },
+
+    lead:"For each",
+    obsOf:"in the sample, the following variables are available",
+    modelIntro:"The following regression model is adopted, where",
+    isErr:"is an error term",
+    estimIntro:"Ordinary least squares estimation yields the following results.",
+    qGM:"State the assumptions of the extended Gauss-Markov framework and explain their meaning in the context of this exercise.",
+    qFit:"Comment on the overall goodness of fit (coefficient of determination, adjusted R²) and test the overall significance of the regression.",
+    qCoef:function(f){ return "Interpret each estimated coefficient economically and test its individual significance at the 5% level. Also derive, with justification, a 95% confidence interval for the coefficient on <span class=\"vcode\">"+f+"</span>."; },
+    qQuad:function(c){ return "Study the marginal effect of <span class=\"vcode\">"+c+"</span> on the dependent variable. Is this effect constant? Is there a threshold effect?"; },
+    qInter:function(a,b){ return "Comment on the interaction term between <span class=\"vcode\">"+a+"</span> and <span class=\"vcode\">"+b+"</span>. What does the marginal effect of <span class=\"vcode\">"+a+"</span> become?"; }
+  }
+};
+
+/* ============================================================
+   TEXTES : phrases dependant de la langue mais pilotees par D
+   ============================================================ */
+function S(D,L){ return L.SC[D.scId]; }
+function vDesc(D,L,code){ return S(D,L).vars[code]; }
+
+/* Contraction francaise de la preposition "de" avec l'article defini.
+   Toutes les descriptions du dictionnaire francais commencent par
+   le / la / l' / les : la contraction est donc entierement determinee. */
+function aFR(s){
+  if(s.slice(0,3)==='le ')  return 'au '+s.slice(3);
+  if(s.slice(0,4)==='les ') return 'aux '+s.slice(4);
+  if(s.slice(0,3)==='la ')  return 'à la '+s.slice(3);
+  if(s.slice(0,2)==="l'")   return "à l'"+s.slice(2);
+  return 'à '+s;
+}
+function deFR(s){
+  if(s.slice(0,3)==='le ')  return 'du '+s.slice(3);
+  if(s.slice(0,4)==='les ') return 'des '+s.slice(4);
+  if(s.slice(0,3)==='la ')  return 'de la '+s.slice(3);
+  if(s.slice(0,2)==="l'")   return "de l'"+s.slice(2);
+  return 'de '+s;
+}
+/* Variable expliquee, avec son eventuelle transformation logarithmique */
+function yFullFR(D,L){
+  const sc=S(D,L);
+  return D.yLog ? ('le logarithme '+deFR(sc.y)) : sc.y;
+}
+
+/* Ecriture LaTeX complete du modele */
+function modelLatex(D){
+  const yc = D.yLog ? '\\ln(\\text{Y}_i)' : '\\text{Y}_i';
+  let s = yc + ' = b_0';
+  let j=1;
+  for(let i=1;i<D.terms.length;i++){
+    s += ' + b_{'+j+'}\\,' + termLatex(D.terms[i]);
+    j++;
+  }
+  s += ' + u_i';
+  return s;
+}
+function yLatexReal(D,L){
+  return D.yLog ? '\\ln(\\text{'+ (D.scId) +'})' : '\\text{'+ (D.scId) +'}';
+}
+
+/* ---------- ENONCE ---------- */
+function buildEx(D,L){
+  const FR = (L===I18N.fr);
+  const sc = S(D,L);
+  const logSuffix = FR ? ', en logarithme népérien' : ', in natural logarithms';
+
+  let h = '<div class="context-block">'+sc.ctx+' '+
+          (FR ? 'L\'échantillon comporte <b>'+D.n+'</b> observations.'
+              : 'The sample contains <b>'+D.n+'</b> observations.')+'</div>';
+
+  h += '<p style="margin-bottom:.7rem">'+L.lead+' <em>'+sc.unitObs+'</em> '+L.obsOf+(FR?' :':':')+'</p>';
+  h += '<ul class="varlist">';
+  h += '<li><span class="vcode">'+(D.yLog?'l':'')+D.scId+'</span> — '+
+       sc.y+' ('+sc.yUnit+')'+(D.yLog?logSuffix:'')+'</li>';
+  for(const b of D.base){
+    const vd = vDesc(D,L,b.v.code);
+    const code = varCode(b);
+    h += '<li><span class="vcode">'+code+'</span> — '+vd.d+(vd.u?' ('+vd.u+')':'')+
+         (b.tf==='log'?logSuffix:'')+'</li>';
+  }
+  h += '</ul>';
+
+  h += '<p style="margin-bottom:.4rem">'+L.modelIntro+' \\(u_i\\) '+L.isErr+' :</p>';
+  h += '<p>\\['+modelLatexReal(D)+'\\]</p>';
+
+  h += '<p style="margin:1.2rem 0 .3rem">'+L.estimIntro+'</p>';
+  h += regTable(D,L);
+  h += statsBlock(D,L);
+
+  h += '<div class="questions"><ol>';
+  h += '<li><div class="q-text">'+L.qGM+'</div></li>';
+  h += '<li><div class="q-text">'+L.qFit+'</div></li>';
+  const focus = D.terms.find(t=>t.key===D.focusKey);
+  h += '<li><div class="q-text">'+L.qCoef(termCode(focus))+'</div></li>';
+  if(D.hasQuad){
+    const qi = D.quadInfo;
+    h += '<li><div class="q-text">'+L.qQuad(varCode({v:qi.v,tf:qi.tf}))+'</div></li>';
+  }
+  if(D.hasInter){
+    const ii = D.interInfo;
+    h += '<li><div class="q-text">'+L.qInter(varCode(ii.A), varCode(ii.B))+'</div></li>';
+  }
+  h += '</ol></div>';
+  return h;
+}
+
+/* modele ecrit avec les vrais noms de variables */
+function modelLatexReal(D){
+  const yc = D.yLog ? '\\ln(\\text{'+D.scId+'}_i)' : '\\text{'+D.scId+'}_i';
+  let s = yc + ' = b_0';
+  for(let i=1;i<D.terms.length;i++){
+    s += ' + b_{'+i+'}\\,' + termLatex(D.terms[i]);
+  }
+  return s + ' + u_i';
+}
+
+function regTable(D,L){
+  let h = '<div class="rtable-wrap"><table class="rtable">';
+  h += '<thead><tr><th>'+L.thVar+'</th><th>'+L.thCoef+'</th><th>'+L.thSe+'</th><th>'+L.thT+'</th><th>'+L.thP+'</th><th>'+L.thCI+'</th></tr></thead><tbody>';
+  for(const t of D.terms){
+    h += '<tr><td class="vname">'+termCode(t)+'</td>'+
+         '<td class="num">'+nb(t.coef,t.dec)+'</td>'+
+         '<td class="num">'+nb(t.se,t.dec)+'</td>'+
+         '<td class="num">'+nb(t.t,3)+'</td>'+
+         '<td class="num">'+pv(t.p)+'</td>'+
+         '<td class="num">['+nb(t.ciLo,t.dec)+' ; '+nb(t.ciHi,t.dec)+']</td></tr>';
+  }
+  h += '</tbody><caption>'+L.capTable+'</caption></table></div>';
+  return h;
+}
+
+function statsBlock(D,L){
+  return '<div class="rstats">'+
+    '<b>'+L.lblN+'</b> = '+D.n+' &nbsp;·&nbsp; '+
+    '<b>'+L.lblDf+'</b> = '+D.df+' &nbsp;·&nbsp; '+
+    '<b>'+L.lblR2+'</b> = '+D.R2.toFixed(4)+' &nbsp;·&nbsp; '+
+    '<b>'+L.lblAdj+'</b> = '+D.adjR2.toFixed(4)+'<br>'+
+    '<b>'+L.lblF+'</b>('+D.k+', '+(D.n-D.k-1)+') = '+D.F.toFixed(3)+' &nbsp;·&nbsp; '+
+    '<b>'+L.lblFp+'</b> = '+pv(D.Fp)+
+    '</div>';
+}
+
+/* ---------- CORRIGE ---------- */
+function buildSol(D,L){
+  const FR = (L===I18N.fr);
+  let h = '<div class="st"><ol>';
+
+  /* 1. Gauss-Markov */
+  h += '<li><div class="q-content">'+gmSection(D,L,FR)+'</div></li>';
+
+  /* 2. Ajustement global */
+  h += '<li><div class="q-content">'+fitSection(D,L,FR)+'</div></li>';
+
+  /* 3. Coefficients */
+  h += '<li><div class="q-content">'+coefSection(D,L,FR)+'</div></li>';
+
+  /* 4. Quadratique */
+  if(D.hasQuad) h += '<li><div class="q-content">'+quadSection(D,L,FR)+'</div></li>';
+
+  /* 5. Interaction */
+  if(D.hasInter) h += '<li><div class="q-content">'+interSection(D,L,FR)+'</div></li>';
+
+  h += '</ol></div>';
+  return h;
+}
+
+function listCodes(D){
+  return D.terms.slice(1).map(t=>'<span class="vcode">'+termCode(t)+'</span>').join(', ');
+}
+
+function gmSection(D,L,FR){
+  const sc = S(D,L);
+  const yTxt = FR ? deFR(yFullFR(D,L))
+                  : ((D.yLog?'the logarithm of ':'')+sc.y);
+  const regs = listCodes(D);
+  let h='';
+  if(FR){
+    h += '<p>Plusieurs hypothèses doivent être faites pour estimer ce modèle par la méthode des moindres carrés ordinaires (MCO).</p><ul>';
+    h += '<li><span class="hyp-name">Absence de multicolinéarité :</span> au sein de l\'échantillon, il n\'existe pas de relation linéaire entre les valeurs prises par les variables '+regs+', variables qui ne doivent par ailleurs pas être constantes dans l\'échantillon. Cette hypothèse permet l\'identification des coefficients, c\'est-à-dire qu\'elle garantit que \\(b_0,\\ldots,b_{'+D.k+'}\\) pourront bien être estimés par les MCO.</li>';
+    h += '<li><span class="hyp-name">Absence d\'erreur en moyenne :</span> pour tout '+sc.unitObs+' \\(i\\), on a \\(\\mathbb{E}(u_i)=0\\). Cette hypothèse permet de bien spécifier le modèle et d\'interpréter le paramètre constant \\(b_0\\) comme la valeur moyenne '+yTxt+' lorsque toutes les variables explicatives sont nulles.</li>';
+    h += '<li><span class="hyp-name">Absence de corrélation entre les erreurs :</span> pour tous '+sc.unitObs+'s \\(i\\) et \\(j\\) distincts, \\(\\mathbb{E}(u_iu_j)=0\\). Combinée à l\'hypothèse précédente, elle implique \\(\\text{Cov}(u_i,u_j)=0\\) : l\'erreur commise sur '+sc.yShort+' d\'un '+sc.unitObs+' n\'influence pas celle commise sur un autre '+sc.unitObs+'.</li>';
+    h += '<li><span class="hyp-name">Homoscédasticité des erreurs :</span> il existe un réel strictement positif \\(\\sigma\\) tel que, pour tout '+sc.unitObs+' \\(i\\), \\(\\text{Var}(u_i)=\\sigma^2\\). Cela signifie que la dispersion '+deFR(sc.yShort)+' est la même quelles que soient les valeurs prises par les variables explicatives.</li>';
+    h += '<li><span class="hyp-name">Normalité des erreurs :</span> pour tout '+sc.unitObs+' \\(i\\), \\(u_i\\) suit une loi normale. Combinée aux deux hypothèses précédentes, cela signifie que \\(u_i\\) suit une loi normale centrée de variance \\(\\sigma^2\\). Cette hypothèse est nécessaire pour réaliser les tests statistiques (significativité des paramètres, significativité globale du modèle).</li>';
+    h += '</ul>';
+  } else {
+    h += '<p>Several assumptions are required to estimate this model by ordinary least squares (OLS).</p><ul>';
+    h += '<li><span class="hyp-name">No multicollinearity:</span> within the sample there is no linear relationship between the values taken by '+regs+', and none of these variables is constant in the sample. This assumption ensures identification of the coefficients, that is, it guarantees that \\(b_0,\\ldots,b_{'+D.k+'}\\) can indeed be estimated by OLS.</li>';
+    h += '<li><span class="hyp-name">Zero conditional mean of the error:</span> for every '+sc.unitObs+' \\(i\\), \\(\\mathbb{E}(u_i)=0\\). This assumption ensures the model is correctly specified and allows the intercept \\(b_0\\) to be read as the average value of '+yTxt+' when all explanatory variables are zero.</li>';
+    h += '<li><span class="hyp-name">No correlation between errors:</span> for any two distinct '+sc.unitObs+'s \\(i\\) and \\(j\\), \\(\\mathbb{E}(u_iu_j)=0\\). Combined with the previous assumption this implies \\(\\text{Cov}(u_i,u_j)=0\\): the error made on one '+sc.unitObs+'\'s '+sc.yShort+' does not influence the error made on another.</li>';
+    h += '<li><span class="hyp-name">Homoscedasticity of the errors:</span> there exists a strictly positive real \\(\\sigma\\) such that, for every '+sc.unitObs+' \\(i\\), \\(\\text{Var}(u_i)=\\sigma^2\\). The dispersion of '+sc.yShort+' is therefore the same whatever the values taken by the explanatory variables.</li>';
+    h += '<li><span class="hyp-name">Normality of the errors:</span> for every '+sc.unitObs+' \\(i\\), \\(u_i\\) is normally distributed. Combined with the two previous assumptions, \\(u_i\\) follows a normal distribution with zero mean and variance \\(\\sigma^2\\). This assumption is required to carry out statistical tests (significance of individual parameters, overall significance of the model).</li>';
+    h += '</ul>';
+  }
+  return h;
+}
+
+function fitSection(D,L,FR){
+  const sc=S(D,L);
+  const R2p=(D.R2*100).toFixed(2), adjp=(D.adjR2*100).toFixed(2);
+  const yTxt = FR ? deFR(yFullFR(D,L)) : ((D.yLog?'of the logarithm of ':'of ')+sc.y);
+  const dfr=D.n-D.k-1;
+  const rej = D.F > D.Fcrit;
+  let h='';
+  if(FR){
+    h += '<p>Le coefficient de détermination vaut \\(R^2='+D.R2.toFixed(4)+'\\) : les variations des variables explicatives rendent compte de <b>'+R2p+' %</b> de la variabilité observée '+yTxt+' au sein de l\'échantillon. Le \\(R^2\\) ajusté, qui pénalise le \\(R^2\\) d\'autant plus que le nombre de régresseurs est élevé, vaut quant à lui '+D.adjR2.toFixed(4)+' (soit '+adjp+' %) ; on vérifie bien la relation \\(\\bar{R}^2=1-(1-R^2)\\dfrac{n-1}{n-k-1}=1-(1-'+D.R2.toFixed(4)+')\\times\\dfrac{'+(D.n-1)+'}{'+dfr+'}\\approx '+D.adjR2.toFixed(4)+'\\). C\'est ce second critère qu\'il faudrait retenir pour comparer ce modèle à un modèle comportant un nombre différent de régresseurs, puisque le \\(R^2\\) augmente mécaniquement avec l\'ajout de variables.</p>';
+    h += '<p>On teste ensuite l\'hypothèse nulle \\((H_0):b_1=\\cdots=b_{'+D.k+'}=0\\) (aucun régresseur n\'a d\'impact sur la formation de la variable expliquée : le modèle est globalement non significatif) contre l\'hypothèse alternative \\((H_1)\\) selon laquelle au moins un de ces coefficients est non nul. Sous \\((H_0)\\), la statistique \\(\\widehat{F}:=\\dfrac{R^2}{1-R^2}\\times\\dfrac{n-(k+1)}{k}\\) suit une loi de Fisher à \\(k='+D.k+'\\) et \\(n-(k+1)='+D.n+'-('+D.k+'+1)='+dfr+'\\) degrés de liberté.</p>';
+    h += '<p>\\[\\widehat{F}=\\dfrac{'+D.R2.toFixed(4)+'}{1-'+D.R2.toFixed(4)+'}\\times\\dfrac{'+dfr+'}{'+D.k+'}\\approx '+D.F.toFixed(3)+'\\]</p>';
+    h += '<p>La valeur critique à 5 % d\'une loi de Fisher à '+D.k+' et '+dfr+' degrés de liberté vaut \\(q\\approx '+D.Fcrit.toFixed(3)+'\\). '+
+         (rej ? 'On a donc \\(\\widehat{F}>q\\) : on rejette \\((H_0)\\) au seuil de confiance de 95 %. La régression est <b>globalement significative</b> : au moins un des régresseurs a un impact significatif sur la formation '+yTxt+'.'
+              : 'On a donc \\(\\widehat{F}&lt;q\\) : on ne peut pas rejeter \\((H_0)\\) au seuil de confiance de 95 %. La régression n\'est pas globalement significative.')+
+         ' Ce résultat est cohérent avec la <i>p</i>-value du test ('+pvPlain(D.Fp)+'), '+(rej?'inférieure':'supérieure')+' à 0.05.</p>';
+  } else {
+    h += '<p>The coefficient of determination is \\(R^2='+D.R2.toFixed(4)+'\\): variation in the explanatory variables accounts for <b>'+R2p+'%</b> of the observed variability '+yTxt+' within the sample. The adjusted \\(R^2\\), which penalises the \\(R^2\\) the more regressors the model contains, equals '+D.adjR2.toFixed(4)+' ('+adjp+'%); the relation \\(\\bar{R}^2=1-(1-R^2)\\dfrac{n-1}{n-k-1}=1-(1-'+D.R2.toFixed(4)+')\\times\\dfrac{'+(D.n-1)+'}{'+dfr+'}\\approx '+D.adjR2.toFixed(4)+'\\) is indeed satisfied. It is this second criterion that should be used to compare this model with one containing a different number of regressors, since the \\(R^2\\) increases mechanically as variables are added.</p>';
+    h += '<p>We then test the null hypothesis \\((H_0):b_1=\\cdots=b_{'+D.k+'}=0\\) (no regressor affects the dependent variable: the model is not globally significant) against the alternative \\((H_1)\\) that at least one of these coefficients is non-zero. Under \\((H_0)\\), the statistic \\(\\widehat{F}:=\\dfrac{R^2}{1-R^2}\\times\\dfrac{n-(k+1)}{k}\\) follows a Fisher distribution with \\(k='+D.k+'\\) and \\(n-(k+1)='+D.n+'-('+D.k+'+1)='+dfr+'\\) degrees of freedom.</p>';
+    h += '<p>\\[\\widehat{F}=\\dfrac{'+D.R2.toFixed(4)+'}{1-'+D.R2.toFixed(4)+'}\\times\\dfrac{'+dfr+'}{'+D.k+'}\\approx '+D.F.toFixed(3)+'\\]</p>';
+    h += '<p>The 5% critical value of a Fisher distribution with '+D.k+' and '+dfr+' degrees of freedom is \\(q\\approx '+D.Fcrit.toFixed(3)+'\\). '+
+         (rej ? 'Hence \\(\\widehat{F}>q\\): \\((H_0)\\) is rejected at the 95% confidence level. The regression is <b>globally significant</b>: at least one regressor has a significant effect on the dependent variable.'
+              : 'Hence \\(\\widehat{F}&lt;q\\): \\((H_0)\\) cannot be rejected at the 95% confidence level. The regression is not globally significant.')+
+         ' This is consistent with the p-value of the test ('+pvPlain(D.Fp)+'), which is '+(rej?'below':'above')+' 0.05.</p>';
+  }
+  return h;
+}
+
+/* --- interpretation d'un terme de base --- */
+function interpMain(D,L,FR,t,idx){
+  const sc=S(D,L);
+  const b=t.ref, vd=vDesc(D,L,b.v.code);
+  const c=t.coef, cAbs=Math.abs(c);
+  const up = c>0;
+  let s='';
+  const bhat='\\(\\widehat{b}_{'+idx+'}='+nb(c,t.dec)+'\\)';
+
+  if(D.yLog && b.tf==='log'){
+    const e=nb(cAbs,4);
+    if(FR){
+      s = 'L\'estimation '+bhat+' s\'interprète comme une <b>élasticité</b> (modèle log-log) : une augmentation de 1 % '+deFR(vd.d)+', toutes choses égales par ailleurs, est associée à une '+(up?'hausse':'baisse')+' moyenne de <b>'+e+' %</b> '+deFR(sc.y)+'. '+
+          (cAbs<1 ? 'Comme cette élasticité est inférieure à 1 en valeur absolue, '+sc.yShort+' est <i>inélastique</i> à cette variable.' : 'Comme cette élasticité est supérieure à 1 en valeur absolue, '+sc.yShort+' est <i>élastique</i> à cette variable.');
+    } else {
+      s = 'The estimate '+bhat+' is an <b>elasticity</b> (log-log model): a 1% increase in '+vd.d+', all else equal, is associated with an average '+(up?'increase':'decrease')+' of <b>'+e+'%</b> in '+sc.y+'. '+
+          (cAbs<1 ? 'Since this elasticity is below 1 in absolute value, '+sc.yShort+' is <i>inelastic</i> with respect to this variable.' : 'Since this elasticity exceeds 1 in absolute value, '+sc.yShort+' is <i>elastic</i> with respect to this variable.');
+    }
+  }
+  else if(D.yLog && b.tf==='level'){
+    const pct=nb(cAbs*100,3);
+    if(FR) s = 'L\'estimation '+bhat+' s\'interprète comme une <b>semi-élasticité</b> (modèle log-niveau) : une augmentation d\'une unité ('+vd.u+') '+deFR(vd.d)+', toutes choses égales par ailleurs, est associée à une '+(up?'hausse':'baisse')+' moyenne de \\(100\\times '+nb(cAbs,t.dec)+'=\\) <b>'+pct+' %</b> '+deFR(sc.y)+'.';
+    else   s = 'The estimate '+bhat+' is a <b>semi-elasticity</b> (log-level model): a one-unit increase (one '+vd.u+') in '+vd.d+', all else equal, is associated with an average '+(up?'increase':'decrease')+' of \\(100\\times '+nb(cAbs,t.dec)+'=\\) <b>'+pct+'%</b> in '+sc.y+'.';
+  }
+  else if(D.yLog && b.tf==='dummy'){
+    const pct=nb(cAbs*100,2);
+    const exact=nb(Math.abs(Math.exp(c)-1)*100,2);
+    if(FR) s = 'L\'estimation '+bhat+' est associée à une <b>variable indicatrice</b> : '+sc.y+' est en moyenne <b>'+pct+' % '+(up?'plus élevé':'plus faible')+'</b> pour '+vd.g+' que pour '+vd.r+', toutes choses égales par ailleurs. Précisons que \\(100\\,\\widehat{b}\\) n\'est qu\'une approximation ; l\'écart exact vaut \\(100\\left(e^{'+nb(c,t.dec)+'}-1\\right)\\approx '+(up?'':'-')+exact+'\\) %.';
+    else   s = 'The estimate '+bhat+' is attached to a <b>dummy variable</b>: '+sc.y+' is on average <b>'+pct+'% '+(up?'higher':'lower')+'</b> for '+vd.g+' than for '+vd.r+', all else equal. Note that \\(100\\,\\widehat{b}\\) is only an approximation; the exact differential is \\(100\\left(e^{'+nb(c,t.dec)+'}-1\\right)\\approx '+(up?'':'-')+exact+'\\)%.';
+  }
+  else if(!D.yLog && b.tf==='log'){
+    const per=nb(cAbs/100,Math.min(10,t.dec+2));
+    if(FR) s = 'L\'estimation '+bhat+' relève d\'un modèle <b>niveau-log</b> : une augmentation de 1 % '+deFR(vd.d)+', toutes choses égales par ailleurs, est associée à une '+(up?'hausse':'baisse')+' moyenne de \\(\\widehat{b}/100='+per+'\\) '+sc.yUnit+' '+deFR(sc.y)+'.';
+    else   s = 'The estimate '+bhat+' comes from a <b>level-log</b> model: a 1% increase in '+vd.d+', all else equal, is associated with an average '+(up?'increase':'decrease')+' of \\(\\widehat{b}/100='+per+'\\) '+sc.yUnit+' in '+sc.y+'.';
+  }
+  else if(!D.yLog && b.tf==='level'){
+    if(FR) s = 'L\'estimation '+bhat+' relève d\'un modèle <b>niveau-niveau</b> : une augmentation d\'une unité ('+vd.u+') '+deFR(vd.d)+', toutes choses égales par ailleurs, est associée à une '+(up?'hausse':'baisse')+' moyenne de <b>'+nb(cAbs,t.dec)+' '+sc.yUnit+'</b> '+deFR(sc.y)+'.';
+    else   s = 'The estimate '+bhat+' comes from a <b>level-level</b> model: a one-unit increase (one '+vd.u+') in '+vd.d+', all else equal, is associated with an average '+(up?'increase':'decrease')+' of <b>'+nb(cAbs,t.dec)+' '+sc.yUnit+'</b> in '+sc.y+'.';
+  }
+  else { /* niveau + indicatrice */
+    if(FR) s = 'L\'estimation '+bhat+' est associée à une <b>variable indicatrice</b> : '+sc.y+' est en moyenne <b>'+(up?'supérieur':'inférieur')+' de '+nb(cAbs,t.dec)+' '+sc.yUnit+'</b> pour '+vd.g+' par rapport '+aFR(vd.r)+', toutes choses égales par ailleurs.';
+    else   s = 'The estimate '+bhat+' is attached to a <b>dummy variable</b>: '+sc.y+' is on average <b>'+nb(cAbs,t.dec)+' '+sc.yUnit+' '+(up?'higher':'lower')+'</b> for '+vd.g+' than for '+vd.r+', all else equal.';
+  }
+  return s;
+}
+
+function interpConst(D,L,FR,t){
+  const sc=S(D,L);
+  const conds = D.base.map(b=>{
+    const c=varCode(b);
+    if(b.tf==='dummy') return '<span class="vcode">'+b.v.code+'</span> = 0';
+    if(b.tf==='log')   return '<span class="vcode">'+b.v.code+'</span> = 1 '+(FR?'(donc ':'(hence ')+'<span class="vcode">'+c+'</span> = 0)';
+    return '<span class="vcode">'+b.v.code+'</span> = 0';
+  }).join(FR?', ':', ');
+  const bhat='\\(\\widehat{b}_0='+nb(t.coef,t.dec)+'\\)';
+  if(D.yLog){
+    const val=nice(Math.exp(t.coef));
+    const lo=nice(Math.exp(t.ciLo)), hi=nice(Math.exp(t.ciHi));
+    if(FR) return 'L\'estimation de la constante est '+bhat+'. Comme la variable expliquée est en logarithme, cela signifie que la valeur moyenne '+deFR(sc.y)+' s\'établit à \\(e^{'+nb(t.coef,t.dec)+'}\\approx '+val+'\\) '+sc.yUnit+' pour un '+sc.unitObs+' tel que '+conds+'. Un intervalle de confiance à 95 % pour cette valeur de référence est \\(\\left[e^{'+nb(t.ciLo,t.dec)+'},e^{'+nb(t.ciHi,t.dec)+'}\\right]\\approx['+lo+'\\,;\\,'+hi+']\\).';
+    return 'The intercept is estimated at '+bhat+'. Since the dependent variable is in logarithms, this means that average '+sc.y+' equals \\(e^{'+nb(t.coef,t.dec)+'}\\approx '+val+'\\) '+sc.yUnit+' for a '+sc.unitObs+' such that '+conds+'. A 95% confidence interval for this reference value is \\(\\left[e^{'+nb(t.ciLo,t.dec)+'},e^{'+nb(t.ciHi,t.dec)+'}\\right]\\approx['+lo+'\\,;\\,'+hi+']\\).';
+  }
+  if(FR) return 'L\'estimation de la constante est '+bhat+'. Cela signifie que la valeur moyenne '+deFR(sc.y)+' s\'établit à '+nb(t.coef,t.dec)+' '+sc.yUnit+' pour un '+sc.unitObs+' tel que '+conds+'.';
+  return 'The intercept is estimated at '+bhat+'. This means that average '+sc.y+' equals '+nb(t.coef,t.dec)+' '+sc.yUnit+' for a '+sc.unitObs+' such that '+conds+'.';
+}
+
+function sigSentence(D,L,FR,t,idx){
+  const lbl=(idx===0)?'0':String(idx);
+  const abs=Math.abs(t.t).toFixed(3);
+  const ok=t.sig;
+  const badge='<span class="verdict '+(ok?'yes':'no')+'">'+(ok?L.yesSig:L.noSig)+'</span>';
+  if(FR){
+    return 'On teste \\((H_0):b_{'+lbl+'}=0\\) contre \\((H_1):b_{'+lbl+'}\\ne 0\\). Sous \\((H_0)\\), \\(\\widehat{t}=\\widehat{b}_{'+lbl+'}/s_{'+lbl+'}\\) suit une loi de Student à \\(n-(k+1)='+D.df+'\\) degrés de liberté. Ici \\(\\widehat{t}='+nb(t.coef,t.dec)+'/'+nb(t.se,t.dec)+'\\approx '+nb(t.t,3)+'\\), soit \\(|\\widehat{t}|='+abs+'\\) '+(ok?'&gt;':'&lt;')+' \\(q_{97{,}5\\%}\\approx '+D.tcrit.toFixed(3)+'\\) : le coefficient est '+badge+' au seuil de 5 % (<i>p</i>-value '+pvPlain(t.p)+'). '+
+      (ok ? 'On remarque d\'ailleurs que l\'intervalle de confiance à 95 % \\(['+nb(t.ciLo,t.dec)+'\\,;\\,'+nb(t.ciHi,t.dec)+']\\) ne contient pas 0, ce qui est équivalent au rejet de \\((H_0)\\).'
+          : 'L\'intervalle de confiance à 95 % \\(['+nb(t.ciLo,t.dec)+'\\,;\\,'+nb(t.ciHi,t.dec)+']\\) contient bien 0, ce qui est équivalent au non-rejet de \\((H_0)\\) : on ne peut pas conclure que cette variable influence la variable expliquée.');
+  }
+  return 'We test \\((H_0):b_{'+lbl+'}=0\\) against \\((H_1):b_{'+lbl+'}\\ne 0\\). Under \\((H_0)\\), \\(\\widehat{t}=\\widehat{b}_{'+lbl+'}/s_{'+lbl+'}\\) follows a Student distribution with \\(n-(k+1)='+D.df+'\\) degrees of freedom. Here \\(\\widehat{t}='+nb(t.coef,t.dec)+'/'+nb(t.se,t.dec)+'\\approx '+nb(t.t,3)+'\\), so \\(|\\widehat{t}|='+abs+'\\) '+(ok?'&gt;':'&lt;')+' \\(q_{97.5\\%}\\approx '+D.tcrit.toFixed(3)+'\\): the coefficient is '+badge+' at the 5% level (p-value '+pvPlain(t.p)+'). '+
+    (ok ? 'Note that the 95% confidence interval \\(['+nb(t.ciLo,t.dec)+'\\,;\\,'+nb(t.ciHi,t.dec)+']\\) does not contain 0, which is equivalent to rejecting \\((H_0)\\).'
+        : 'The 95% confidence interval \\(['+nb(t.ciLo,t.dec)+'\\,;\\,'+nb(t.ciHi,t.dec)+']\\) does contain 0, which is equivalent to not rejecting \\((H_0)\\): we cannot conclude that this variable influences the dependent variable.');
+}
+
+function coefSection(D,L,FR){
+  let h='<ul>';
+  for(let i=0;i<D.terms.length;i++){
+    const t=D.terms[i];
+    let intro;
+    if(t.type==='const') intro=interpConst(D,L,FR,t);
+    else if(t.type==='quad') intro=(FR?'Le coefficient \\(\\widehat{b}_{'+i+'}='+nb(t.coef,t.dec)+'\\) porte sur le <b>terme quadratique</b> ; son interprétation est indissociable de celle du terme de premier ordre et fait l\'objet de la question suivante.'
+                                      :'The coefficient \\(\\widehat{b}_{'+i+'}='+nb(t.coef,t.dec)+'\\) is attached to the <b>quadratic term</b>; its interpretation cannot be separated from that of the first-order term and is dealt with in the next question.');
+    else if(t.type==='inter') intro=(FR?'Le coefficient \\(\\widehat{b}_{'+i+'}='+nb(t.coef,t.dec)+'\\) porte sur le <b>terme d\'interaction</b> ; il est commenté à la question suivante.'
+                                      :'The coefficient \\(\\widehat{b}_{'+i+'}='+nb(t.coef,t.dec)+'\\) is attached to the <b>interaction term</b>; it is discussed in the next question.');
+    else intro=interpMain(D,L,FR,t,i);
+    h += '<li><b>'+termCode(t)+'.</b> '+intro+' '+sigSentence(D,L,FR,t,i)+'</li>';
+  }
+  h+='</ul>';
+
+  /* derivation detaillee de l'IC pour le terme mis en avant */
+  const f=D.terms.find(t=>t.key===D.focusKey);
+  const fi=D.terms.indexOf(f);
+  if(FR){
+    h += '<p>Détaillons enfin la construction de l\'intervalle de confiance à 95 % pour \\(b_{'+fi+'}\\), le coefficient associé à <span class="vcode">'+termCode(f)+'</span>. Sous les hypothèses de Gauss-Markov étendues, \\(\\left(\\widehat{b}_{'+fi+'}-b_{'+fi+'}\\right)/s_{'+fi+'}\\) suit une loi de Student à \\(n-(k+1)='+D.df+'\\) degrés de liberté. En notant \\(q\\approx '+D.tcrit.toFixed(3)+'\\) le quantile à 97,5 % de cette loi, on a :</p>';
+    h += '<p>\\[\\mathbb{P}\\left(-q\\leq\\dfrac{\\widehat{b}_{'+fi+'}-b_{'+fi+'}}{s_{'+fi+'}}\\leq q\\right)=0{,}95\\iff\\mathbb{P}\\left(\\widehat{b}_{'+fi+'}-q\\,s_{'+fi+'}\\leq b_{'+fi+'}\\leq\\widehat{b}_{'+fi+'}+q\\,s_{'+fi+'}\\right)=0{,}95\\]</p>';
+    h += '<p>D\'où l\'intervalle \\(\\left[\\widehat{b}_{'+fi+'}-q\\,s_{'+fi+'},\\ \\widehat{b}_{'+fi+'}+q\\,s_{'+fi+'}\\right]=\\left['+nb(f.coef,f.dec)+'-'+D.tcrit.toFixed(3)+'\\times '+nb(f.se,f.dec)+',\\ '+nb(f.coef,f.dec)+'+'+D.tcrit.toFixed(3)+'\\times '+nb(f.se,f.dec)+'\\right]\\approx\\left['+nb(f.ciLo,f.dec)+'\\,;\\,'+nb(f.ciHi,f.dec)+'\\right]\\), ce qui correspond bien à la dernière colonne de la table.</p>';
+  } else {
+    h += '<p>Finally, let us derive the 95% confidence interval for \\(b_{'+fi+'}\\), the coefficient on <span class="vcode">'+termCode(f)+'</span>. Under the extended Gauss-Markov assumptions, \\(\\left(\\widehat{b}_{'+fi+'}-b_{'+fi+'}\\right)/s_{'+fi+'}\\) follows a Student distribution with \\(n-(k+1)='+D.df+'\\) degrees of freedom. Writing \\(q\\approx '+D.tcrit.toFixed(3)+'\\) for the 97.5% quantile of that distribution:</p>';
+    h += '<p>\\[\\mathbb{P}\\left(-q\\leq\\dfrac{\\widehat{b}_{'+fi+'}-b_{'+fi+'}}{s_{'+fi+'}}\\leq q\\right)=0.95\\iff\\mathbb{P}\\left(\\widehat{b}_{'+fi+'}-q\\,s_{'+fi+'}\\leq b_{'+fi+'}\\leq\\widehat{b}_{'+fi+'}+q\\,s_{'+fi+'}\\right)=0.95\\]</p>';
+    h += '<p>Hence the interval \\(\\left[\\widehat{b}_{'+fi+'}-q\\,s_{'+fi+'},\\ \\widehat{b}_{'+fi+'}+q\\,s_{'+fi+'}\\right]=\\left['+nb(f.coef,f.dec)+'-'+D.tcrit.toFixed(3)+'\\times '+nb(f.se,f.dec)+',\\ '+nb(f.coef,f.dec)+'+'+D.tcrit.toFixed(3)+'\\times '+nb(f.se,f.dec)+'\\right]\\approx\\left['+nb(f.ciLo,f.dec)+'\\,;\\,'+nb(f.ciHi,f.dec)+'\\right]\\), which matches the last column of the table.</p>';
+  }
+  return h;
+}
+
+function quadSection(D,L,FR){
+  const sc=S(D,L), qi=D.quadInfo;
+  const tm=D.terms[qi.mainIndex], tq=D.terms[qi.termIndex];
+  const iM=qi.mainIndex, iQ=qi.termIndex;
+  const vd=vDesc(D,L,qi.v.code);
+  const isLog=(qi.tf==='log');
+  const code=varCode({v:qi.v,tf:qi.tf});
+  const xName='\\text{'+qi.v.code+'}';
+  /* Point d'annulation de l'effet marginal. Il n'est positif que si le terme
+     quadratique est de signe oppose au terme de premier ordre.               */
+  const turning = qi.turning;
+  const starT = -tm.coef/(2*tq.coef);          // en unite de la variable transformee
+  const starX = isLog ? Math.exp(starT) : starT;
+  const posFirst = tm.coef>0;                  // signe de l'effet avant le seuil
+  let h='';
+
+  if(FR){
+    h += '<p>Le modèle contient à la fois <span class="vcode">'+code+'</span> et son carré : l\'effet de cette variable n\'est donc <b>pas constant</b>. Pour l\'obtenir, on différencie le modèle en fixant les autres variables explicatives et en éludant le terme d\'erreur.</p>';
+    if(isLog && D.yLog){
+      h += '<p>\\[\\dfrac{\\mathrm{d}\\,'+xName+'^{\\,\\text{eff}}}{}\\quad\\Longrightarrow\\quad \\dfrac{\\mathrm{d}\\,\\text{'+D.scId+'}}{\\text{'+D.scId+'}}=\\left(b_{'+iM+'}+2b_{'+iQ+'}\\ln('+xName+')\\right)\\dfrac{\\mathrm{d}\\,'+xName+'}{'+xName+'}\\]</p>';
+      h += '<p>Autrement dit, une variation de 1 % '+deFR(vd.d)+' est associée à une variation moyenne de \\(\\left('+nb(tm.coef,tm.dec)+'+2\\times '+nb(tq.coef,tq.dec)+'\\ln('+xName+')\\right)\\) % '+deFR(sc.y)+' : l\'élasticité dépend elle-même du niveau de la variable.</p>';
+    } else if(isLog && !D.yLog){
+      h += '<p>\\[\\mathrm{d}\\,\\text{'+D.scId+'}=\\left(b_{'+iM+'}+2b_{'+iQ+'}\\ln('+xName+')\\right)\\dfrac{\\mathrm{d}\\,'+xName+'}{'+xName+'}\\]</p>';
+      h += '<p>Une variation de 1 % '+deFR(vd.d)+' est donc associée à une variation moyenne de \\(\\left('+nb(tm.coef,tm.dec)+'+2\\times '+nb(tq.coef,tq.dec)+'\\ln('+xName+')\\right)/100\\) '+sc.yUnit+' '+deFR(sc.y)+'.</p>';
+    } else if(!isLog && D.yLog){
+      h += '<p>\\[\\dfrac{\\partial\\ln(\\text{'+D.scId+'})}{\\partial '+xName+'}=b_{'+iM+'}+2b_{'+iQ+'}'+xName+'='+nb(tm.coef,tm.dec)+'+2\\times '+nb(tq.coef,tq.dec)+'\\,'+xName+'\\]</p>';
+      h += '<p>Une unité supplémentaire ('+vd.u+') '+deFR(vd.d)+' est donc associée à une variation moyenne de \\(100\\left('+nb(tm.coef,tm.dec)+'+2\\times '+nb(tq.coef,tq.dec)+'\\,'+xName+'\\right)\\) % '+deFR(sc.y)+' : l\'effet marginal dépend du niveau déjà atteint par la variable.</p>';
+    } else {
+      h += '<p>\\[\\dfrac{\\partial\\,\\text{'+D.scId+'}}{\\partial '+xName+'}=b_{'+iM+'}+2b_{'+iQ+'}'+xName+'='+nb(tm.coef,tm.dec)+'+2\\times '+nb(tq.coef,tq.dec)+'\\,'+xName+'\\]</p>';
+      h += '<p>Une unité supplémentaire ('+vd.u+') '+deFR(vd.d)+' est donc associée à une variation moyenne de \\('+nb(tm.coef,tm.dec)+'+2\\times '+nb(tq.coef,tq.dec)+'\\,'+xName+'\\) '+sc.yUnit+' '+deFR(sc.y)+'.</p>';
+    }
+    if(turning){
+      const signWord = posFirst ? 'positif' : 'négatif';
+      const afterWord = posFirst ? 'négatif' : 'positif';
+      h += '<p>Le terme quadratique \\(\\widehat{b}_{'+iQ+'}='+nb(tq.coef,tq.dec)+'\\) est de <b>signe opposé</b> à celui du terme de premier ordre \\(\\widehat{b}_{'+iM+'}='+nb(tm.coef,tm.dec)+'\\) : l\'effet marginal décroît donc en valeur absolue à mesure que la variable augmente, jusqu\'à s\'annuler. Il existe bien un <b>effet de seuil</b>, atteint lorsque l\'effet marginal est nul, soit ';
+      if(isLog){
+        h += '\\(\\ln('+xName+')^*=-\\dfrac{\\widehat{b}_{'+iM+'}}{2\\widehat{b}_{'+iQ+'}}=-\\dfrac{'+nb(tm.coef,tm.dec)+'}{2\\times '+nb(tq.coef,tq.dec)+'}\\approx '+starT.toFixed(4)+'\\), c\'est-à-dire \\('+xName+'^*=e^{'+starT.toFixed(4)+'}\\approx '+nice(starX)+'\\) '+(vd.u||'')+'. ';
+      } else {
+        h += '\\('+xName+'^*=-\\dfrac{\\widehat{b}_{'+iM+'}}{2\\widehat{b}_{'+iQ+'}}=-\\dfrac{'+nb(tm.coef,tm.dec)+'}{2\\times '+nb(tq.coef,tq.dec)+'}\\approx '+nice(starX)+'\\) '+(vd.u||'')+'. ';
+      }
+      h += 'En deçà de ce seuil, l\'effet '+deFR(vd.d)+' sur '+sc.yShort+' est '+signWord+' ; au-delà, il devient '+afterWord+'.</p>';
+    } else {
+      h += '<p>Le terme quadratique \\(\\widehat{b}_{'+iQ+'}='+nb(tq.coef,tq.dec)+'\\) est de <b>même signe</b> que le terme de premier ordre \\(\\widehat{b}_{'+iM+'}='+nb(tm.coef,tm.dec)+'\\) : l\'effet marginal s\'accroît en valeur absolue avec le niveau de la variable. Il n\'y a donc <b>pas d\'effet de seuil</b> sur la plage des valeurs observées, mais un effet <i>amplifié</i> — plus '+vd.d+' est élevé, plus son effet sur '+sc.yShort+' est marqué. Le point d\'annulation \\(-\\widehat{b}_{'+iM+'}/(2\\widehat{b}_{'+iQ+'})\\approx '+starT.toFixed(4)+'\\) est ici négatif, donc hors du domaine économiquement pertinent.</p>';
+    }
+    h += '<p>Notons enfin que le terme quadratique est '+(tq.sig?'<b>significatif</b>':'<b>non significatif</b>')+' au seuil de 5 % (\\(|\\widehat{t}|='+Math.abs(tq.t).toFixed(3)+'\\), <i>p</i>-value '+pvPlain(tq.p)+')'+
+         (tq.sig?', ce qui justifie de conserver la spécification non linéaire.':' : les données ne permettent pas de rejeter l\'hypothèse d\'un effet linéaire, et une spécification sans le terme au carré serait ici défendable.')+'</p>';
+  } else {
+    h += '<p>The model contains both <span class="vcode">'+code+'</span> and its square: the effect of this variable is therefore <b>not constant</b>. To obtain it we differentiate the model, holding the other explanatory variables fixed and ignoring the error term.</p>';
+    if(isLog && D.yLog){
+      h += '<p>\\[\\dfrac{\\mathrm{d}\\,\\text{'+D.scId+'}}{\\text{'+D.scId+'}}=\\left(b_{'+iM+'}+2b_{'+iQ+'}\\ln('+xName+')\\right)\\dfrac{\\mathrm{d}\\,'+xName+'}{'+xName+'}\\]</p>';
+      h += '<p>In other words, a 1% change in '+vd.d+' is associated with an average change of \\(\\left('+nb(tm.coef,tm.dec)+'+2\\times '+nb(tq.coef,tq.dec)+'\\ln('+xName+')\\right)\\)% in '+sc.y+': the elasticity itself depends on the level of the variable.</p>';
+    } else if(isLog && !D.yLog){
+      h += '<p>\\[\\mathrm{d}\\,\\text{'+D.scId+'}=\\left(b_{'+iM+'}+2b_{'+iQ+'}\\ln('+xName+')\\right)\\dfrac{\\mathrm{d}\\,'+xName+'}{'+xName+'}\\]</p>';
+      h += '<p>A 1% change in '+vd.d+' is therefore associated with an average change of \\(\\left('+nb(tm.coef,tm.dec)+'+2\\times '+nb(tq.coef,tq.dec)+'\\ln('+xName+')\\right)/100\\) '+sc.yUnit+' in '+sc.y+'.</p>';
+    } else if(!isLog && D.yLog){
+      h += '<p>\\[\\dfrac{\\partial\\ln(\\text{'+D.scId+'})}{\\partial '+xName+'}=b_{'+iM+'}+2b_{'+iQ+'}'+xName+'='+nb(tm.coef,tm.dec)+'+2\\times '+nb(tq.coef,tq.dec)+'\\,'+xName+'\\]</p>';
+      h += '<p>One additional unit (one '+vd.u+') of '+vd.d+' is therefore associated with an average change of \\(100\\left('+nb(tm.coef,tm.dec)+'+2\\times '+nb(tq.coef,tq.dec)+'\\,'+xName+'\\right)\\)% in '+sc.y+': the marginal effect depends on the level already reached by the variable.</p>';
+    } else {
+      h += '<p>\\[\\dfrac{\\partial\\,\\text{'+D.scId+'}}{\\partial '+xName+'}=b_{'+iM+'}+2b_{'+iQ+'}'+xName+'='+nb(tm.coef,tm.dec)+'+2\\times '+nb(tq.coef,tq.dec)+'\\,'+xName+'\\]</p>';
+      h += '<p>One additional unit (one '+vd.u+') of '+vd.d+' is therefore associated with an average change of \\('+nb(tm.coef,tm.dec)+'+2\\times '+nb(tq.coef,tq.dec)+'\\,'+xName+'\\) '+sc.yUnit+' in '+sc.y+'.</p>';
+    }
+    if(turning){
+      const signWord = posFirst ? 'positive' : 'negative';
+      const afterWord = posFirst ? 'negative' : 'positive';
+      h += '<p>The quadratic term \\(\\widehat{b}_{'+iQ+'}='+nb(tq.coef,tq.dec)+'\\) has the <b>opposite sign</b> to the first-order term \\(\\widehat{b}_{'+iM+'}='+nb(tm.coef,tm.dec)+'\\): the marginal effect therefore shrinks in absolute value as the variable rises, until it vanishes. There is indeed a <b>threshold effect</b>, reached where the marginal effect is zero, that is ';
+      if(isLog){
+        h += '\\(\\ln('+xName+')^*=-\\dfrac{\\widehat{b}_{'+iM+'}}{2\\widehat{b}_{'+iQ+'}}=-\\dfrac{'+nb(tm.coef,tm.dec)+'}{2\\times '+nb(tq.coef,tq.dec)+'}\\approx '+starT.toFixed(4)+'\\), i.e. \\('+xName+'^*=e^{'+starT.toFixed(4)+'}\\approx '+nice(starX)+'\\) '+(vd.u||'')+'. ';
+      } else {
+        h += '\\('+xName+'^*=-\\dfrac{\\widehat{b}_{'+iM+'}}{2\\widehat{b}_{'+iQ+'}}=-\\dfrac{'+nb(tm.coef,tm.dec)+'}{2\\times '+nb(tq.coef,tq.dec)+'}\\approx '+nice(starX)+'\\) '+(vd.u||'')+'. ';
+      }
+      h += 'Below that threshold the effect of '+vd.d+' on '+sc.yShort+' is '+signWord+'; beyond it, the effect turns '+afterWord+'.</p>';
+    } else {
+      h += '<p>The quadratic term \\(\\widehat{b}_{'+iQ+'}='+nb(tq.coef,tq.dec)+'\\) has the <b>same sign</b> as the first-order term \\(\\widehat{b}_{'+iM+'}='+nb(tm.coef,tm.dec)+'\\): the marginal effect grows in absolute value with the level of the variable. There is therefore <b>no threshold effect</b> over the observed range but an <i>amplified</i> effect — the higher '+vd.d+', the stronger its effect on '+sc.yShort+'. The turning point \\(-\\widehat{b}_{'+iM+'}/(2\\widehat{b}_{'+iQ+'})\\approx '+starT.toFixed(4)+'\\) is negative here and thus outside the economically relevant range.</p>';
+    }
+    h += '<p>Note finally that the quadratic term is '+(tq.sig?'<b>significant</b>':'<b>not significant</b>')+' at the 5% level (\\(|\\widehat{t}|='+Math.abs(tq.t).toFixed(3)+'\\), p-value '+pvPlain(tq.p)+')'+
+         (tq.sig?', which justifies keeping the non-linear specification.':': the data do not allow us to reject a purely linear effect, and a specification without the squared term would be defensible here.')+'</p>';
+  }
+  return h;
+}
+
+function interSection(D,L,FR){
+  const sc=S(D,L), ii=D.interInfo;
+  const tA=D.terms[ii.mainAIndex], tB=D.terms[ii.mainBIndex], tI=D.terms[ii.termIndex];
+  const iA=ii.mainAIndex, iB=ii.mainBIndex, iI=ii.termIndex;
+  const vdA=vDesc(D,L,ii.A.v.code), vdB=vDesc(D,L,ii.B.v.code);
+  const cA=varCode(ii.A), cB=varCode(ii.B);
+  const xA='\\text{'+ii.A.v.code+'}', xB='\\text{'+ii.B.v.code+'}';
+  const lA=(ii.A.tf==='log')?'\\ln('+xA+')':xA;
+  const lB=(ii.B.tf==='log')?'\\ln('+xB+')':xB;
+  const bIsDummy=(ii.B.tf==='dummy');
+  const eff0=tA.coef, eff1=tA.coef+tI.coef;
+  let h='';
+
+  if(FR){
+    h += '<p>Le modèle comporte le produit \\('+lA+'\\times '+lB+'\\) : l\'effet de <span class="vcode">'+cA+'</span> n\'est donc plus indépendant du niveau de <span class="vcode">'+cB+'</span>. En dérivant par rapport à \\('+lA+'\\) :</p>';
+    h += '<p>\\[\\dfrac{\\partial}{\\partial '+lA+'}=b_{'+iA+'}+b_{'+iI+'}\\,'+lB+'='+nb(tA.coef,tA.dec)+'+'+nb(tI.coef,tI.dec)+'\\times '+lB+'\\]</p>';
+    if(bIsDummy){
+      h += '<p>Comme <span class="vcode">'+cB+'</span> est une variable indicatrice, cet effet ne prend que deux valeurs :</p><ul>';
+      h += '<li>pour '+vdB.r+' (\\('+xB+'=0\\)) : l\'effet vaut \\(\\widehat{b}_{'+iA+'}='+nb(eff0,tA.dec)+'\\) ;</li>';
+      h += '<li>pour '+vdB.g+' (\\('+xB+'=1\\)) : l\'effet vaut \\(\\widehat{b}_{'+iA+'}+\\widehat{b}_{'+iI+'}='+nb(tA.coef,tA.dec)+(tI.coef>=0?'+':'')+nb(tI.coef,tI.dec)+'\\approx '+nb(eff1,Math.max(tA.dec,tI.dec))+'\\).</li>';
+      h += '</ul>';
+      h += '<p>Autrement dit, l\'effet '+deFR(vdA.d)+' sur '+sc.y+' est '+(tI.coef>0?'<b>plus fort</b>':'<b>plus faible</b>')+' pour '+vdB.g+' que pour '+vdB.r+'.</p>';
+    } else {
+      h += '<p>L\'effet marginal de <span class="vcode">'+cA+'</span> est donc une fonction affine de <span class="vcode">'+cB+'</span> : il '+(tI.coef>0?'augmente':'diminue')+' avec le niveau '+deFR(vdB.d)+'. Les deux facteurs sont '+(tI.coef>0?'<b>complémentaires</b>':'<b>substituables</b>')+' dans la formation '+deFR(sc.yShort)+'.</p>';
+    }
+    h += '<p>Le terme d\'interaction est '+(tI.sig?'<b>significatif</b>':'<b>non significatif</b>')+' au seuil de 5 % (\\(\\widehat{t}='+nb(tI.t,3)+'\\), <i>p</i>-value '+pvPlain(tI.p)+')'+
+         (tI.sig?'. On ne peut donc pas interpréter \\(\\widehat{b}_{'+iA+'}\\) isolément : cette valeur ne mesure l\'effet de <span class="vcode">'+cA+'</span> que dans le cas particulier où '+(bIsDummy?'\\('+xB+'=0\\)':'\\('+lB+'=0\\)')+'.'
+                :'. Les données ne permettent pas de rejeter l\'hypothèse d\'un effet de <span class="vcode">'+cA+'</span> indépendant de <span class="vcode">'+cB+'</span> ; une spécification sans terme d\'interaction serait ici défendable.')+'</p>';
+  } else {
+    h += '<p>The model includes the product \\('+lA+'\\times '+lB+'\\): the effect of <span class="vcode">'+cA+'</span> is therefore no longer independent of the level of <span class="vcode">'+cB+'</span>. Differentiating with respect to \\('+lA+'\\):</p>';
+    h += '<p>\\[\\dfrac{\\partial}{\\partial '+lA+'}=b_{'+iA+'}+b_{'+iI+'}\\,'+lB+'='+nb(tA.coef,tA.dec)+'+'+nb(tI.coef,tI.dec)+'\\times '+lB+'\\]</p>';
+    if(bIsDummy){
+      h += '<p>Since <span class="vcode">'+cB+'</span> is a dummy variable, this effect takes only two values:</p><ul>';
+      h += '<li>for '+vdB.r+' (\\('+xB+'=0\\)): the effect equals \\(\\widehat{b}_{'+iA+'}='+nb(eff0,tA.dec)+'\\);</li>';
+      h += '<li>for '+vdB.g+' (\\('+xB+'=1\\)): the effect equals \\(\\widehat{b}_{'+iA+'}+\\widehat{b}_{'+iI+'}='+nb(tA.coef,tA.dec)+(tI.coef>=0?'+':'')+nb(tI.coef,tI.dec)+'\\approx '+nb(eff1,Math.max(tA.dec,tI.dec))+'\\).</li>';
+      h += '</ul>';
+      h += '<p>In other words, the effect of '+vdA.d+' on '+sc.y+' is '+(tI.coef>0?'<b>stronger</b>':'<b>weaker</b>')+' for '+vdB.g+' than for '+vdB.r+'.</p>';
+    } else {
+      h += '<p>The marginal effect of <span class="vcode">'+cA+'</span> is thus an affine function of <span class="vcode">'+cB+'</span>: it '+(tI.coef>0?'increases':'decreases')+' with the level of '+vdB.d+'. The two factors are '+(tI.coef>0?'<b>complements</b>':'<b>substitutes</b>')+' in the determination of '+sc.yShort+'.</p>';
+    }
+    h += '<p>The interaction term is '+(tI.sig?'<b>significant</b>':'<b>not significant</b>')+' at the 5% level (\\(\\widehat{t}='+nb(tI.t,3)+'\\), p-value '+pvPlain(tI.p)+')'+
+         (tI.sig?'. Consequently \\(\\widehat{b}_{'+iA+'}\\) cannot be interpreted in isolation: it measures the effect of <span class="vcode">'+cA+'</span> only in the special case where '+(bIsDummy?'\\('+xB+'=0\\)':'\\('+lB+'=0\\)')+'.'
+                :'. The data do not allow us to reject the hypothesis that the effect of <span class="vcode">'+cA+'</span> is independent of <span class="vcode">'+cB+'</span>; a specification without the interaction term would be defensible here.')+'</p>';
+  }
+  return h;
+}
+
+/* ============================================================
+   GENERATION / UI
+   ============================================================ */
+let _lastD = null;
+
+function regen(){
+  document.getElementById('seed-input').value='';
+  generateFromControls();
+}
+
+function generateFromControls(){
+  const seedInp=document.getElementById('seed-input').value;
+  const seed = seedInp ? parseInt(seedInp) : Math.floor(Math.random()*10000000);
+  initRand(seed);
+  document.getElementById('seed-disp').textContent=seed;
+  document.getElementById('modal-seed').textContent=seed;
+
+  const nInp=document.getElementById('param-n').value;
+  const opts={
+    n: nInp ? parseInt(nInp) : null,
+    form: document.getElementById('param-form').value,
+    extra: document.getElementById('param-extra').value
+  };
+
+  const D=buildData(opts);
+  if(!D) return;
+  _lastD=D;
+
+  document.getElementById('ex-content').innerHTML=I18N[LANG].ex(D);
+  document.getElementById('sol-content').innerHTML=I18N[LANG].sol(D);
+
+  document.getElementById('welcome').style.display='none';
+  document.getElementById('ex-area').style.display='block';
+  solVisible=false;
+  const solC=document.getElementById('sol-card'), btn=document.getElementById('toggle-btn');
+  solC.classList.remove('visible'); btn.classList.remove('shown'); btn.textContent=I18N[LANG].showSol;
+
+  if(window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise();
+}
+
+/* ============================================================
+   LANGUE / UI / EXPORT PDF
+   ============================================================ */
+let LANG='fr';
+
+function detectLang(){
+  try{
+    const q=new URLSearchParams(window.location.search).get('lang');
+    if(q && I18N[q.toLowerCase()]) return q.toLowerCase();
+  }catch(e){}
+  const h=(window.location.hash||'').replace('#','').toLowerCase();
+  if(I18N[h]) return h;
+  return 'fr';
+}
+
+function applyLang(){
+  const D=I18N[LANG];
+  document.documentElement.lang=D.htmlLang;
+  document.title=D.title;
+
+  document.querySelectorAll('[data-k]').forEach(function(el){
+    const key=el.getAttribute('data-k');
+    if(D[key]!==undefined) el.innerHTML=D[key];
+    else if(D.formOpts && D.formOpts[key]!==undefined) el.textContent=D.formOpts[key];
+  });
+
+  const cp=document.getElementById('btn-copy');
+  if(cp){ cp.textContent=D.copy; cp.title=D.copyTitle; }
+  const si=document.getElementById('seed-input'); if(si) si.placeholder=D.phSeed;
+  const ni=document.getElementById('param-n');   if(ni) ni.placeholder=D.phN;
+
+  const tb=document.getElementById('toggle-btn');
+  if(tb) tb.textContent = solVisible ? D.hideSol : D.showSol;
+
+  document.getElementById('flag-fr').classList.toggle('active', LANG==='fr');
+  document.getElementById('flag-en').classList.toggle('active', LANG==='en');
+}
+
+function setLang(lang){
+  if(!I18N[lang] || lang===LANG) return;
+  LANG=lang;
+  try{
+    const u=new URL(window.location.href);
+    u.searchParams.set('lang',lang);
+    history.replaceState(null,'',u.toString());
+  }catch(e){}
+  applyLang();
+  if(document.getElementById('ex-area').style.display!=='none'){
+    const wasVis=solVisible;
+    document.getElementById('seed-input').value=_activeSeed;
+    generateFromControls();
+    if(wasVis) toggleSol();
+  }
+}
+
+function toggleSol(){
+  solVisible=!solVisible;
+  const sol=document.getElementById('sol-card'), btn=document.getElementById('toggle-btn');
+  if(solVisible){sol.classList.add('visible'); btn.classList.add('shown'); btn.textContent=I18N[LANG].hideSol;}
+  else{sol.classList.remove('visible'); btn.classList.remove('shown'); btn.textContent=I18N[LANG].showSol;}
+}
+
+function copySeed(){
+  const s=document.getElementById('seed-disp').textContent;
+  if(s && s!=='—'){
+    navigator.clipboard.writeText(s).then(()=>{
+      const b=event.target, o=b.textContent;
+      b.textContent=I18N[LANG].copied; setTimeout(()=>b.textContent=o,1500);
+    });
+  }
+}
+
+function openPdfModal(){
+  document.getElementById('pdf-ov').style.display='block';
+  document.getElementById('pdf-modal').style.display='block';
+  document.getElementById('opt-sol').checked=solVisible;
+}
+function closePdfModal(){
+  document.getElementById('pdf-ov').style.display='none';
+  document.getElementById('pdf-modal').style.display='none';
+}
+function doPrint(){
+  const noHdr=!document.getElementById('opt-header').checked;
+  const inclSol=document.getElementById('opt-sol').checked;
+  const body=document.body;
+  if(noHdr) body.classList.add('print-no-header');
+  if(inclSol){body.classList.add('print-force-solution');body.classList.remove('print-no-solution');}
+  else{body.classList.add('print-no-solution');body.classList.remove('print-force-solution');}
+  closePdfModal();
+  setTimeout(()=>{
+    window.print();
+    setTimeout(()=>{ body.classList.remove('print-no-header','print-force-solution','print-no-solution'); },500);
+  },100);
+}
+
+/* Initialisation */
+LANG=detectLang();
+applyLang();
+</script>
+
+</body>
+</html>

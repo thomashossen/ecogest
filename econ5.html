@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Générateur d'exercices - Modèle chain ladder</title>
+<script>
+window.MathJax = {
+  tex: { 
+    inlineMath: [['\\(','\\)']], 
+    displayMath: [['\\[','\\]']], 
+    packages: {'[+]': ['ams']},
+    macros: {
+      Var: ['\\textbf{Var}\\left(#1\\right)', 1],
+      Cov: ['\\textbf{Cov}\\left(#1\\right)', 1]
+    }
+  },
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] }
+};
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 0;border-bottom:3px solid var(--gold)}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+#controls-bar{border-top:1px solid rgba(255,255,255,.08);padding:1.1rem 0 1.3rem}
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.5)}
+.ctrl-inp{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.38rem .65rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.82rem;width:88px;outline:none;transition:border-color .2s}
+.ctrl-inp:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.ctrl-tip{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:rgba(250,247,240,.33);margin-top:2px}
+.seed-row{display:flex;align-items:flex-end;gap:.45rem}
+.btn-copy-seed{background:transparent;border:1px solid rgba(201,149,42,.4);color:rgba(250,247,240,.55);padding:.38rem .55rem;border-radius:3px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:.65rem;transition:all .18s;white-space:nowrap}
+.btn-copy-seed:hover{border-color:var(--gold-light);color:var(--gold-light)}
+.ctrl-vsep{width:1px;background:rgba(255,255,255,.1);align-self:stretch;margin:0 .2rem}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.3rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.9rem;font-weight:600;transition:background .18s;white-space:nowrap;align-self:flex-end}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.welcome-msg{text-align:center;padding:5rem 2rem;color:var(--text-muted);font-style:italic;font-size:1.05rem}
+.welcome-msg .arrow{font-size:2rem;display:block;margin-bottom:1rem;opacity:.4}
+
+/* TOP BAR */
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.top-bar-left{display:flex;gap:.6rem;align-items:center}
+.btn-sm{background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:'JetBrains Mono',monospace;font-size:.67rem;letter-spacing:.08em;text-transform:uppercase;padding:.4rem 1rem;border-radius:3px;cursor:pointer;transition:all .18s;white-space:nowrap}
+.btn-sm:hover{background:var(--gold);color:var(--navy)}
+.btn-sm.pdf{border-color:#7bafd4;color:#7bafd4}
+.btn-sm.pdf:hover{background:#7bafd4;color:var(--navy)}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.67rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:500}
+
+/* CARDS */
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);margin-bottom:1.5rem;border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+
+/* QUESTIONS */
+.questions ol{counter-reset:q;list-style:none}
+.questions ol>li{counter-increment:q;margin-bottom:1.4rem;display:flex;gap:1rem;align-items:flex-start}
+.questions ol>li::before{content:counter(q);min-width:28px;height:28px;background:var(--navy);color:var(--cream);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:500;flex-shrink:0;margin-top:.15rem}
+.questions ol>li .q-text{flex:1;font-size:.93rem;text-align:justify}
+
+/* SOLUTION */
+.sol-toggle-wrap{text-align:center;margin:1rem 0 0}
+.btn-toggle{background:transparent;border:2px solid var(--navy);color:var(--navy);font-family:'Source Serif 4',serif;font-size:.9rem;padding:.6rem 2rem;border-radius:4px;cursor:pointer;transition:all .2s}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--navy);color:var(--cream)}
+.sol-card{border-top:4px solid var(--green);display:none}
+.sol-card.visible{display:block;animation:fi .3s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+.st{font-size:.92rem;line-height:1.75;text-align:justify}
+.st p{margin-bottom:.7rem}
+.st ol{counter-reset:sq;list-style:none}
+.st>ol>li{counter-increment:sq;margin-bottom:1.6rem;display:flex;gap:1rem;align-items:flex-start}
+.st>ol>li::before{content:counter(sq);min-width:24px;height:24px;background:var(--green);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.68rem;flex-shrink:0;margin-top:.15rem}
+.st ul{list-style:disc;padding-left:1.5rem;margin-bottom:.7rem}
+.st ul li{margin-bottom:1rem}
+
+/* PDF MODAL */
+#pdf-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;backdrop-filter:blur(2px)}
+#pdf-modal{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:101;background:#fff;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.25);width:390px;max-width:95vw;border-top:4px solid #7bafd4;overflow:hidden}
+.mh{background:var(--navy);color:var(--cream);padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
+.mh h3{font-family:'Playfair Display',serif;font-size:1rem;font-weight:600}
+.mclose{background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:1.2rem;line-height:1;padding:2px 6px;border-radius:3px;transition:color .15s}
+.mclose:hover{color:#fff}
+.mb2{padding:1.5rem}
+.opt-row{display:flex;align-items:flex-start;gap:.75rem;margin-bottom:1rem;cursor:pointer}
+.opt-row input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--navy);flex-shrink:0;margin-top:3px}
+.opt-lbl{font-size:.93rem}
+.opt-desc{font-size:.75rem;color:var(--text-muted);display:block}
+.seed-note{font-family:'JetBrains Mono',monospace;font-size:.7rem;background:var(--cream-dark);border:1px solid var(--border);padding:.55rem .85rem;border-radius:3px;color:var(--text-muted);margin-bottom:1.2rem;line-height:1.5}
+.seed-note strong{color:var(--navy)}
+.mactions{display:flex;gap:.6rem}
+.btn-print{flex:1;background:var(--navy);color:var(--cream);border:none;padding:.7rem;border-radius:4px;font-family:'Source Serif 4',serif;font-size:.9rem;cursor:pointer;transition:background .2s}
+.btn-print:hover{background:var(--navy-mid)}
+.btn-cancel{background:transparent;border:1px solid var(--border);color:var(--text-muted);padding:.7rem 1rem;border-radius:4px;font-family:'Source Serif 4',serif;font-size:.9rem;cursor:pointer;transition:all .2s}
+.btn-cancel:hover{border-color:var(--text);color:var(--text)}
+
+/* PRINT */
+@media print{
+:root{--navy:#0d1b2a;--cream:#fff;--cream-dark:#f8f8f8;--gold:#c9952a;--green:#2d6b4a;--border:#ccc}
+body{background:#fff;font-size:11pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+header{padding:1rem 1.5rem .8rem}
+header .subtitle{display:none}
+#controls-bar,.top-bar,.sol-toggle-wrap,#pdf-ov,#pdf-modal{display:none!important}
+.card{box-shadow:none;border-radius:0;page-break-inside:avoid;margin-bottom:1rem}
+main{padding:1rem 1.5rem;max-width:100%}
+body.print-no-header header{display:none!important}
+body.print-no-solution .sol-card{display:none!important}
+body.print-force-solution .sol-card{display:block!important}
+}
+
+/* TABLEAUX DE DONNEES */
+.dtable-wrap{overflow-x:auto;margin:1.1rem 0}
+.dtable{width:100%;border-collapse:collapse;font-size:.82rem;font-family:'Source Serif 4',serif}
+.dtable th,.dtable td{border:1px solid var(--border);padding:.4rem .5rem;text-align:center;vertical-align:middle}
+.dtable th{background:var(--navy);color:var(--cream);font-weight:600;font-size:.78rem}
+.dtable tr:nth-child(even) td{background:#fbf9f4}
+.dtable td.num{font-family:'JetBrains Mono',monospace;font-size:.78rem;white-space:nowrap}
+.dtable tfoot td{font-weight:700;background:var(--cream-dark)}
+.dtable caption{caption-side:bottom;font-size:.76rem;color:var(--text-muted);font-style:italic;padding-top:.5rem;text-align:justify}
+
+/* ENCADRE AIDE AU CALCUL */
+.aide{background:#f7faf7;border:1px solid #c8e6c9;border-left:3px solid var(--green);padding:.9rem 1.2rem;border-radius:0 4px 4px 0;margin:1.2rem 0;font-size:.87rem;line-height:1.7;text-align:justify}
+.aide .aide-t{display:block;font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--green);margin-bottom:.45rem}
+.aide ul{list-style:disc;padding-left:1.4rem;margin:.4rem 0 0}
+.aide ul li{margin-bottom:.3rem}
+
+/* FIGURES */
+.fig-wrap{margin:1.2rem 0 .3rem;text-align:center;overflow-x:auto}
+.fig-wrap svg{width:100%;max-width:640px;height:auto;background:#fff;border:1px solid var(--border);border-radius:4px}
+.fig-cap{font-size:.78rem;color:var(--text-muted);font-style:italic;text-align:justify;margin-bottom:1rem;line-height:1.5}
+
+/* MISE EN AVANT D'UN RESULTAT */
+.res{background:var(--cream-dark);border:1px solid var(--border);border-radius:4px;padding:.6rem .9rem;margin:.8rem 0;font-size:.9rem;text-align:center}
+
+/* SOUS-QUESTIONS (a, b, c) */
+.questions ol ol{list-style:lower-alpha;padding-left:1.5rem;margin-top:.7rem;counter-reset:none}
+.questions ol ol>li{display:list-item;counter-increment:none;margin-bottom:.8rem;gap:0}
+.questions ol ol>li::before{content:none;display:none}
+.st ol.sub-ol{list-style:lower-alpha;padding-left:1.5rem;margin:.7rem 0 .3rem;counter-reset:none}
+.st ol.sub-ol>li{display:list-item;counter-increment:none;margin-bottom:1.3rem;gap:0}
+.st ol.sub-ol>li::before{content:none;display:none}
+.dtable td.est{font-style:italic;color:var(--red)}
+.dtable td.vide{background:#f4f2ec}
+.dtable th.rowh{background:var(--navy-mid);text-align:left;padding-left:.7rem}
+
+/* --- Selecteur de langue / Language switch --- */
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem}
+.header-top .header-badge{margin-bottom:0}
+.lang-switch{display:flex;gap:.45rem;flex-shrink:0}
+.flag-btn{background:rgba(255,255,255,.06);border:1px solid rgba(201,149,42,.35);border-radius:3px;padding:3px;cursor:pointer;line-height:0;opacity:.5;transition:opacity .2s,border-color .2s,transform .15s}
+.flag-btn:hover{opacity:1;transform:translateY(-1px)}
+.flag-btn.active{opacity:1;border-color:var(--gold-light);box-shadow:0 0 0 1px rgba(232,184,75,.35)}
+.flag-btn svg{display:block;width:30px;height:20px;border-radius:1px}
+@media print{ .lang-switch{display:none !important;} }
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-top">
+    <div class="header-badge" data-k="k-badge">ÉCONOMÉTRIE</div>
+    <div class="lang-switch">
+      <button type="button" class="flag-btn active" id="flag-fr" onclick="setLang('fr')" title="Français" aria-label="Français"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="20" height="40" fill="#002654"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ED2939"/></svg></button>
+      <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
+    </div>
+  </div>
+  <h1 data-k="k-h1">Le modèle chain ladder</h1>
+  <p class="subtitle" data-k="k-sub">© Thomas Hossen – Version du 29 août 2026</p>
+
+  <div id="controls-bar">
+    <div class="ctrls">
+      <div class="ctrl-g">
+        <span class="ctrl-lbl" data-k="k-seed">Seed de reproductibilité</span>
+        <div class="seed-row">
+          <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="0" max="99999999">
+          <button class="btn-copy-seed" id="btn-copy" onclick="copySeed()" title="Copier la seed active">⧉ Copier</button>
+        </div>
+        <span class="ctrl-tip" data-k="k-seedtip">Vide = aléatoire à chaque génération</span>
+      </div>
+      <div class="ctrl-vsep"></div>
+      <div class="ctrl-g">
+        <span class="ctrl-lbl" data-k="k-n">Années de survenance</span>
+        <input class="ctrl-inp" type="number" id="param-n" min="4" max="5" placeholder="défaut">
+        <span class="ctrl-tip" data-k="k-ntip">4 ou 5, auto si vide</span>
+      </div>
+      <div class="ctrl-vsep"></div>
+      <button class="btn-gen" onclick="generateFromControls()"><span data-k="k-gen">Générer →</span></button>
+    </div>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" class="welcome-msg">
+    <span class="arrow">↑</span>
+    <span data-k="k-welcome">Configurez les paramètres (ou laissez vide pour de l'aléatoire), puis cliquez sur Générer.</span>
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="top-bar-left">
+        <button class="btn-sm" onclick="regen()"><span data-k="k-new">↺ Nouvel énoncé</span></button>
+        <button class="btn-sm pdf" onclick="openPdfModal()"><span data-k="k-pdf">⬇ Exporter PDF</span></button>
+      </div>
+      <div class="seed-badge"><span data-k="k-seedbadge">Seed&nbsp;:</span> <span id="seed-disp">—</span></div>
+    </div>
+
+    <div id="ex-card" class="card">
+      <div class="card-header"><span class="tag" data-k="k-tag-ex">Énoncé</span><h2 id="card-title" data-k="k-cardtitle">Modèle chain ladder en assurance non-vie</h2></div>
+      <div class="card-body" id="ex-content"></div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag" data-k="k-tag-sol">Corrigé</span><h2 data-k="k-cardtitle2">Modèle chain ladder en assurance non-vie</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+
+  </div>
+</main>
+
+<div id="pdf-ov" onclick="closePdfModal()"></div>
+<div id="pdf-modal">
+  <div class="mh">
+    <h3 data-k="k-modal">Exporter en PDF</h3>
+    <button class="mclose" onclick="closePdfModal()">✕</button>
+  </div>
+  <div class="mb2">
+    <div class="seed-note"><span data-k="k-mseed-pre">Seed&nbsp;:</span> <strong id="modal-seed">—</strong> <span data-k="k-mseed-post">— notez cette valeur pour reproduire exactement cet exercice.</span></div>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-header" checked>
+      <div><span class="opt-lbl" data-k="k-opth">Inclure l'en-tête de page</span>
+           <span class="opt-desc" data-k="k-opthd">Titre, badge « ÉCONOMÉTRIE » et intitulé de l'exercice</span></div>
+    </label>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-sol">
+      <div><span class="opt-lbl" data-k="k-opts">Inclure le corrigé complet</span>
+           <span class="opt-desc" data-k="k-optsd">Démonstrations matricielles, intervalles de confiance et application chiffrée</span></div>
+    </label>
+    <div class="mactions">
+      <button class="btn-print" onclick="doPrint()"><span data-k="k-print">🖨&nbsp;Imprimer / Sauvegarder PDF</span></button>
+      <button class="btn-cancel" onclick="closePdfModal()"><span data-k="k-cancel">Annuler</span></button>
+    </div>
+  </div>
+</div>
+
+<script>
+let solVisible = false;
+
+/* ============================================================
+   DICTIONNAIRE BILINGUE  /  BILINGUAL DICTIONARY
+   ============================================================ */
+const I18N = {
+
+  fr: {
+    "htmlLang": "fr",
+    "title": "Générateur d'exercices - Modèle chain ladder",
+    "k-badge": "ÉCONOMÉTRIE",
+    "k-h1": "Le modèle chain ladder",
+    "k-sub": "© Thomas Hossen – Version du 29 août 2026",
+    "k-seed": "Seed de reproductibilité",
+    "k-seedtip": "Vide = aléatoire à chaque génération",
+    "k-n": "Années de survenance",
+    "k-ntip": "4 ou 5, auto si vide",
+    "k-gen": "Générer →",
+    "k-welcome": "Configurez les paramètres (ou laissez vide pour de l'aléatoire), puis cliquez sur Générer.",
+    "k-new": "↺ Nouvel énoncé",
+    "k-pdf": "⬇ Exporter PDF",
+    "k-seedbadge": "Seed&nbsp;:",
+    "k-tag-ex": "Énoncé",
+    "k-cardtitle": "Modèle chain ladder en assurance non-vie",
+    "k-tag-sol": "Corrigé",
+    "k-cardtitle2": "Modèle chain ladder en assurance non-vie",
+    "k-modal": "Exporter en PDF",
+    "k-mseed-pre": "Seed&nbsp;:",
+    "k-mseed-post": "— notez cette valeur pour reproduire exactement cet exercice.",
+    "k-opth": "Inclure l'en-tête de page",
+    "k-opthd": "Titre, badge « ÉCONOMÉTRIE » et intitulé de l'exercice",
+    "k-opts": "Inclure le corrigé complet",
+    "k-optsd": "Démonstrations matricielles, intervalles de confiance et application chiffrée",
+    "k-print": "🖨&nbsp;Imprimer / Sauvegarder PDF",
+    "k-cancel": "Annuler",
+    "copy": "⧉ Copier",
+    "copyTitle": "Copier la seed active",
+    "copied": "✓ Copié",
+    "phSeed": "auto",
+    "phN": "défaut",
+    "showSol": "Afficher le corrigé",
+    "hideSol": "Masquer le corrigé",
+
+    lbl: {
+      incr: "Triangle des flux",
+      cum: "Triangle cumulé",
+      full: "Triangle complété",
+      fac: "Facteurs de dév.",
+      year: "Année",
+      provYear: "Année de survenance \\(i\\)",
+      provLast: "Dernier cumulé observé \\(C_{i,n-i}\\)",
+      provFinal: "Cumulé final estimé \\(\\widetilde{C}_{i,n}\\)",
+      provR: "Provision \\(\\widetilde{R}_i\\)",
+      total: "Total",
+      capIncr: function(D){ return `Triangle des flux de paiements (incréments) \\(Z_{i,j}\\) de ${D.insurer} au titre de ses sinistres « ${D.claim} », en ${D.unit}.`; },
+      capCum: "Triangle des paiements cumulés \\(C_{i,j}\\) reconstitué à partir des incréments.",
+      capFull: "Triangle complété par la méthode chain ladder. En italique rouge : les paiements cumulés estimés.",
+      capProv: function(D){ return `Provision estimée par année de survenance, en ${D.unit}.`; }
+    },
+
+    ex: function(D) {
+      return `
+      <div class="context-block">
+        Pour un assureur, des dommages à indemniser surviennent chaque année. Considérons l'ensemble des dommages survenant à une année \\(i\\) (par exemple, divers accidents du travail). En général, l'assureur devra non seulement indemniser les assurés à hauteur d'un montant \\(Z_{i,0}\\) l'année \\(i\\) (où \\(i\\) est un entier naturel), mais également les années suivantes (s'il s'agit par exemple de maladies longue durée, l'assureur versera également des indemnités, appelées <em>incréments</em>, \\(Z_{i,1}\\), \\(Z_{i,2}\\), etc. lors des années \\(i+1\\), \\(i+2\\), etc.). Finalement, à l'issue de \\(j\\) années, l'assureur aura versé, pour un sinistre survenu à l'année \\(i\\), un montant total \\(C_{i,j}:=Z_{i,0}+Z_{i,1}+\\cdots+Z_{i,j}\\) : on parle alors de « paiement cumulé pour l'année de survenance \\(i\\) après \\(j\\) années de développement ». Bien évidemment, au bout d'un certain nombre d'années, les paiements s'arrêtent : on note généralement \\(n\\) le nombre d'années correspondant à l'horizon d'indemnisation d'un sinistre (en général, trois à cinq ans) ; \\(n\\) est donc la valeur maximale prise par l'indice \\(j\\). Considérons l'ensemble des sinistres qu'indemnise et a indemnisé l'assureur au cours des \\(n\\) dernières années. Les sinistres les plus récents vont donc générer de nouveaux <em>développements</em>, c'est-à-dire de nouvelles indemnisations, au cours des années à venir. Peut-on anticiper ces développements ? La réponse à cette question permet à l'assureur de provisionner les montants supplémentaires à verser, afin d'éviter de se retrouver en situation de cessation de paiement.
+        <br><br>
+        Formalisons cette problématique. Soit \\(n\\) un entier naturel. Pour tous entiers \\(i\\) et \\(j\\) compris entre 0 et \\(n\\), on note \\(C_{i,j}\\) le paiement cumulé « final » pour l'année de survenance \\(i\\) après \\(j+1\\) années de développement et \\(Z_{i,j}\\) les paiements non cumulés (incréments) pour la \\(j\\)-ème année de développement des sinistres survenus l'année \\(i\\). Pour tous entiers naturels \\(i\\) et \\(j\\), on a donc \\(C_{i,j+1}=C_{i,j}+Z_{i,j+1}\\) et \\(C_{i,0}=Z_{i,0}\\). On présente ce résultat sous la forme d'un <em>triangle des paiements cumulés</em> :
+        \\[\\begin{array}{c|ccccc}
+        i\\,\\backslash\\,j & 0 & \\cdots & j & \\cdots & n\\\\\\hline
+        0 & C_{0,0} & \\cdots & C_{0,j} & \\cdots & C_{0,n}\\\\
+        \\vdots & \\vdots & & \\vdots & & \\\\
+        i & C_{i,0} & \\cdots & C_{i,j} & & \\\\
+        \\vdots & \\vdots & & & & \\\\
+        n & C_{n,0} & & & &
+        \\end{array}\\]
+        Ces triangles peuvent se lire de trois manières différentes : les lignes correspondent aux années de survenance \\(i\\) des sinistres, les colonnes aux années de développement \\(j\\), et les diagonales aux années calendaires \\(i+j\\). On suppose alors que, pour tout entier \\(j\\) compris entre 0 et \\(n-1\\), il existe un <em>facteur de développement</em> \\(f_j\\) vérifiant, pour tout entier \\(i\\) compris entre 0 et \\(n-(j+1)\\), \\(C_{i,j+1}=f_jC_{i,j}+u_{i,j}\\), où \\(u_{i,j}\\) est une variable aléatoire. Notons \\(\\widetilde{f}_j\\) un estimateur de \\(f_j\\). Les facteurs de développement permettent alors de compléter la partie inférieure du triangle des paiements cumulés en posant \\(\\widetilde{C}_{i,j+1}=\\widetilde{f}_j\\widetilde{C}_{i,j}=\\widetilde{f}_{n-i}\\times\\cdots\\times\\widetilde{f}_{j}\\times C_{i,n-i}\\) pour tous entiers naturels \\(i\\) et \\(j\\) vérifiant \\(i+j>n\\) : c'est la méthode <em>chain ladder</em>. Dès lors, la <em>provision</em> de l'année de survenance \\(i\\) s'estime par la relation \\(\\widetilde{R}_i:=\\widetilde{C}_{i,n}-C_{i,n-i}\\) pour tout entier \\(i\\) compris entre 1 et \\(n\\). L'estimation du montant total de la provision est alors obtenue en sommant les provisions de chaque année de survenance, soit \\(\\widetilde{R}:=\\widetilde{R}_1+\\cdots+\\widetilde{R}_n\\).
+      </div>
+      <div class="questions"><ol>
+
+        <li><div class="q-text"><strong>Méthode des moindres carrés ordinaires.</strong> Soit \\(j\\) un entier naturel au plus égal à \\(n-1\\). On considère toujours le modèle tel que, pour tout entier \\(i\\) compris entre 0 et \\(n-(j+1)\\), on ait \\(C_{i,j+1}=f_jC_{i,j}+u_{i,j}\\). On suppose que les variables aléatoires \\(u_{0,j},\\ldots,u_{n-(j+1),j}\\) satisfont les hypothèses de Gauss-Markov, c'est-à-dire que (i) pour tout entier naturel \\(i\\) au plus égal à \\(n-(j+1)\\), on a \\(\\mathbb{E}[u_{i,j}]=0\\) (absence d'erreur en moyenne), (ii) pour tous entiers naturels \\(i\\) et \\(i'\\) distincts au plus égaux à \\(n-(j+1)\\), on a \\(\\mathbb{E}[u_{i,j}u_{i',j}]=0\\) (absence de corrélation entre les erreurs) et (iii) il existe un réel strictement positif \\(\\sigma_j\\) vérifiant, pour tout entier naturel \\(i\\) au plus égal à \\(n-(j+1)\\), \\(\\Var{u_{i,j}}=\\sigma_j^2\\) (homoscédasticité).
+          <ol>
+            <li>Rappeler sans démonstration quelle est la valeur de \\(\\widehat{f}_j\\), l'estimateur de \\(f_j\\) selon la méthode des moindres carrés ordinaires, ainsi que la valeur de l'espérance et de la variance (théorique) de \\(\\widehat{f}_j\\). On admet que \\(\\widehat{f}_j\\) est un estimateur linéaire de \\(f_j\\).</li>
+            <li>Pour tout entier \\(i\\) compris entre 0 et \\(n-(j+1)\\), on note \\(\\widehat{u}_{i,j}:=C_{i,j+1}-\\widehat{f}_jC_{i,j}\\) le résidu de la \\(i\\)-ème observation du modèle. Montrer alors qu'un estimateur sans biais de \\(\\sigma_j^2\\) est donné par \\(\\widehat{\\sigma_j^2}:=\\dfrac{1}{n-j-1}\\left(\\widehat{u}_{0,j}^2+\\cdots+\\widehat{u}_{n-(j+1),j}^2\\right)\\). On admet que \\(\\widehat{f}_j\\) et \\(\\widehat{u}_{i,j}\\) sont indépendants, pour tout entier \\(i\\) compris entre 0 et \\(n-(j+1)\\).</li>
+            <li>On suppose en outre que \\(\\textbf{u}:=(u_{0,j},\\ldots,u_{n-(j+1),j})\\) forme un vecteur gaussien d'espérance nulle et de matrice de covariance \\(\\Var{\\textbf{u}}=\\sigma^2_j\\textbf{I}_{n-j}\\). On admet que \\((n-j-1)\\widehat{\\sigma^2_j}\\big/\\sigma^2_j\\) suit une loi du \\(\\chi^2\\) à \\(n-j-1\\) degrés de liberté. En déduire un intervalle de confiance de niveau \\(1-\\alpha\\) (où \\(\\alpha\\) est un réel de \\(]0,1[\\)) pour \\(f_j\\).</li>
+          </ol>
+        </div></li>
+
+        <li><div class="q-text"><strong>Estimateur chain ladder.</strong> Soit \\(j\\) un entier naturel au plus égal à \\(n-1\\). On considère toujours le modèle tel que, pour tout entier \\(i\\) compris entre 0 et \\(n-(j+1)\\), on ait \\(C_{i,j+1}=f_jC_{i,j}+u_{i,j}\\). On suppose cette fois que les variables aléatoires \\(u_{0,j},\\ldots,u_{n-(j+1),j}\\) satisfont les trois hypothèses suivantes : (i) pour tout entier naturel \\(i\\) au plus égal à \\(n-(j+1)\\), on a \\(\\mathbb{E}[u_{i,j}]=0\\), (ii) pour tous entiers naturels \\(i\\) et \\(i'\\) distincts au plus égaux à \\(n-(j+1)\\), on a \\(\\mathbb{E}[u_{i,j}u_{i',j}]=0\\) et (iii) il existe un réel strictement positif \\(\\sigma_j\\) vérifiant, pour tout entier naturel \\(i\\) au plus égal à \\(n-(j+1)\\), \\(\\Var{u_{i,j}}=\\sigma_j^2C_{i,j}\\) (hétéroscédasticité de forme connue).
+          <ol>
+            <li>Pour tout entier \\(i\\) compris entre 0 et \\(n-(j+1)\\), on pose \\(Y_i:=C_{i,j+1}/\\sqrt{C_{i,j}}\\), \\(X_i:=\\sqrt{C_{i,j}}\\) et \\(v_i:=u_{i,j}/\\sqrt{C_{i,j}}\\). Montrer alors que le modèle \\(Y_i=f_jX_i+v_i\\) satisfait les hypothèses de Gauss-Markov. En déduire l'estimateur des moindres carrés généralisés \\(\\widetilde{f}_j\\) de \\(f_j\\) ; calculer son espérance et sa variance. On admet que \\(\\widetilde{f}_j\\) est linéaire.</li>
+            <li>Pour tout entier \\(i\\) compris entre 0 et \\(n-(j+1)\\), on note \\(\\widehat{v}_{i}:=C_{i,j+1}-\\widetilde{f}_jC_{i,j}\\) le résidu de la \\(i\\)-ème observation du modèle. Montrer alors qu'un estimateur sans biais de \\(\\sigma_j^2\\) est donné par \\(\\widetilde{\\sigma_j^2}:=\\dfrac{1}{n-j-1}\\left(\\dfrac{\\widehat{v}_{0}^2}{C_{0,j}}+\\cdots+\\dfrac{\\widehat{v}_{n-(j+1)}^2}{C_{n-(j+1),j}}\\right)\\). On admet que \\(\\widetilde{f}_j\\) et \\(\\widehat{v}_{i}\\) sont indépendants, pour tout entier \\(i\\) compris entre 0 et \\(n-(j+1)\\).</li>
+            <li>On suppose en outre que \\(\\textbf{v}:=(v_{0},\\ldots,v_{n-(j+1)})\\) forme un vecteur gaussien d'espérance nulle et de matrice de covariance \\(\\Var{\\textbf{v}}=\\sigma^2_j\\textbf{I}_{n-j}\\). On admet que \\((n-j-1)\\widetilde{\\sigma^2_j}\\big/\\sigma^2_j\\) suit une loi du \\(\\chi^2\\) à \\(n-j-1\\) degrés de liberté. En déduire un intervalle de confiance de niveau \\(1-\\alpha\\) (où \\(\\alpha\\) est un réel de \\(]0,1[\\)) pour \\(f_j\\).</li>
+          </ol>
+        </div></li>
+
+        <li><div class="q-text"><strong>Application.</strong> ${D.insurer} provisionne ses sinistres de type « ${D.claim} ». Selon le triangle des flux de paiements (incréments) ci-dessous, exprimés en ${D.unit}, donner le montant total des provisions en appliquant la méthode <em>chain ladder</em>.
+          ${tblIncr(D)}
+        </div></li>
+
+      </ol></div>`;
+    },
+
+    sol: function(D) {
+      return `<div class="st"><ol>
+
+      <li><ol class="sub-ol">
+
+        <li>Soit \\(j\\) un entier naturel au plus égal à \\(n-1\\). On considère toujours le modèle tel que, pour tout entier \\(i\\) compris entre 0 et \\(n-(j+1)\\), on ait \\(C_{i,j+1}=f_jC_{i,j}+u_{i,j}\\), où les variables aléatoires \\(u_{0,j},\\ldots,u_{n-(j+1),j}\\) satisfont les hypothèses de Gauss-Markov. On est ici face à un modèle linéaire simple sans constante. Le vecteur à expliquer est \\(\\textbf{Y}:=(C_{0,j+1},\\ldots,C_{n-(j+1),j+1})^T\\) (où \\(\\cdot^T\\) dénote l'opérateur de transposition matricielle), tandis que la matrice des variables explicatives est \\(\\textbf{X}:=(C_{0,j},\\ldots,C_{n-(j+1),j})^T\\) (c'est juste un vecteur ici, puisqu'il n'y a pas de terme constant dans le modèle). Dès lors, l'estimateur des moindres carrés ordinaires de \\(f_j\\) dans le modèle linéaire simple sans constante est donné par :
+        \\[\\widehat{f}_j:=\\frac{\\sum_{i=0}^{n-(j+1)}C_{i,j}C_{i,j+1}}{\\sum_{i=0}^{n-(j+1)}C_{i,j}^2}\\quad\\text{avec}\\quad\\mathbb{E}[\\widehat{f}_j]=f_j\\quad\\text{et}\\quad\\Var{\\widehat{f}_j}=\\frac{\\sigma_j^2}{\\sum_{i=0}^{n-(j+1)}C_{i,j}^2}\\]</li>
+
+        <li>Posons \\(\\textbf{u}_j:=(u_{0,j},\\ldots,u_{n-(j+1),j})^T\\). Pour tout entier \\(i\\) compris entre 0 et \\(n-(j+1)\\), on note \\(\\widehat{u}_{i,j}:=C_{i,j+1}-\\widehat{f}_jC_{i,j}\\) le résidu de la \\(i\\)-ème observation du modèle. Posons alors \\(\\widehat{\\textbf{u}}_j:=(\\widehat{u}_{0,j},\\ldots,\\widehat{u}_{n-(j+1),j})^T\\). Avec les notations de la question précédente, on a \\((\\widehat{f}_j)=(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\textbf{Y}\\) (où \\((\\widehat{f}_j)\\) est une matrice scalaire). On pose alors \\(\\textbf{M}_{\\textbf{X}}:=\\textbf{I}_{n-j}-\\textbf{X}(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\). Alors il vient \\(\\widehat{\\textbf{u}}_j=\\textbf{M}_{\\textbf{X}}\\textbf{Y}\\). On rappelle alors que \\(\\textbf{M}_{\\textbf{X}}\\) (<em>residual maker matrix</em>) est une matrice certaine, qu'elle est symétrique et idempotente. En effet, on a d'une part :
+        \\[\\begin{aligned}
+        \\textbf{M}_{\\textbf{X}}^T
+        &=\\left(\\textbf{I}_{n-j}-\\textbf{X}(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\right)^T\\\\
+        &=\\textbf{I}_{n-j}^T-\\left(\\textbf{X}(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\right)^T\\\\
+        &=\\textbf{I}_{n-j}-\\left((\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\right)^T\\textbf{X}^T\\\\
+        &=\\textbf{I}_{n-j}-\\left(\\textbf{X}^T\\right)^T\\left((\\textbf{X}^T\\textbf{X})^{-1}\\right)^T\\textbf{X}^T\\\\
+        &=\\textbf{I}_{n-j}-\\textbf{X}\\left((\\textbf{X}^T\\textbf{X})^{-1}\\right)^T\\textbf{X}^T\\\\
+        &=\\textbf{I}_{n-j}-\\textbf{X}(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\quad\\text{car }\\textbf{X}^T\\textbf{X}\\text{ est symétrique, donc }(\\textbf{X}^T\\textbf{X})^{-1}\\text{ aussi}
+        \\end{aligned}\\]
+        On a donc bien \\(\\textbf{M}_{\\textbf{X}}^T=\\textbf{M}_{\\textbf{X}}\\), ce qui prouve que la matrice \\(\\textbf{M}_{\\textbf{X}}\\) est symétrique. D'autre part, on a :
+        \\[\\begin{aligned}
+        \\textbf{M}_{\\textbf{X}}^2
+        &=\\left(\\textbf{I}_{n-j}-\\textbf{X}(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\right)^2\\\\
+        &=\\textbf{I}_{n-j}^2-2\\textbf{X}(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T+\\left(\\textbf{X}(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\right)^2\\\\
+        &=\\textbf{I}_{n-j}-2\\textbf{X}(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T+\\left(\\textbf{X}(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\right)\\left(\\textbf{X}(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\right)\\\\
+        &=\\textbf{I}_{n-j}-2\\textbf{X}(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T+\\textbf{X}(\\textbf{X}^T\\textbf{X})^{-1}\\left(\\textbf{X}^T\\textbf{X}\\right)(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\\\
+        &=\\textbf{I}_{n-j}-2\\textbf{X}(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T+\\textbf{X}(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\\\
+        &=\\textbf{I}_{n-j}-\\textbf{X}(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T
+        \\end{aligned}\\]
+        On a donc bien \\(\\textbf{M}_{\\textbf{X}}^2=\\textbf{M}_{\\textbf{X}}\\), ce qui signifie exactement que la matrice \\(\\textbf{M}_{\\textbf{X}}\\) est idempotente. Par suite, on a :
+        \\[\\begin{aligned}
+        \\widehat{\\textbf{u}}_j
+        &=\\textbf{M}_{\\textbf{X}}\\textbf{Y}\\\\
+        &=\\textbf{M}_{\\textbf{X}}(\\textbf{X}(f_j)+\\textbf{u}_j)\\\\
+        &=\\textbf{M}_{\\textbf{X}}\\textbf{X}(f_j)+\\textbf{M}_{\\textbf{X}}\\textbf{u}_j\\\\
+        &=\\textbf{M}_{\\textbf{X}}\\textbf{u}_j\\quad\\text{car on a }\\textbf{M}_{\\textbf{X}}\\textbf{X}=\\textbf{0}
+        \\end{aligned}\\]
+        En effet, on a :
+        \\[\\begin{aligned}
+        \\textbf{M}_{\\textbf{X}}\\textbf{X}
+        &=\\left(\\textbf{I}_{n-j}-\\textbf{X}(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\right)\\textbf{X}\\\\
+        &=\\textbf{X}-\\left(\\textbf{X}(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\right)\\textbf{X}\\\\
+        &=\\textbf{X}-\\textbf{X}(\\textbf{X}^T\\textbf{X})^{-1}(\\textbf{X}^T\\textbf{X})\\\\
+        &=\\textbf{X}-\\textbf{X}=\\textbf{0}
+        \\end{aligned}\\]
+        Par suite, on a \\(\\text{SCR}:=\\widehat{u}_{0,j}^2+\\cdots+\\widehat{u}_{n-(j+1),j}^2=\\widehat{\\textbf{u}}_j^T\\widehat{\\textbf{u}}_j\\). On a alors :
+        \\[\\begin{aligned}
+        \\text{SCR}
+        &=\\left(\\textbf{M}_{\\textbf{X}}\\textbf{u}_j\\right)^T\\textbf{M}_{\\textbf{X}}\\textbf{u}_j\\\\
+        &=\\textbf{u}^T_j\\textbf{M}_{\\textbf{X}}^T\\textbf{M}_{\\textbf{X}}\\textbf{u}_j\\\\
+        &=\\textbf{u}^T_j\\textbf{M}_{\\textbf{X}}\\textbf{M}_{\\textbf{X}}\\textbf{u}_j\\quad\\text{car }\\textbf{M}_{\\textbf{X}}\\text{ est symétrique}\\\\
+        &=\\textbf{u}^T_j\\textbf{M}_{\\textbf{X}}\\textbf{u}_j\\quad\\text{car }\\textbf{M}_{\\textbf{X}}\\text{ est idempotente}
+        \\end{aligned}\\]
+        De plus, la matrice \\(\\textbf{u}^T_j\\textbf{M}_{\\textbf{X}}\\textbf{u}_j\\) est un scalaire. Dès lors, ce scalaire est assimilable à la trace de la matrice correspondante : on a donc \\(\\text{SCR}=\\text{Tr}\\left(\\textbf{u}_j^T\\textbf{M}_{\\textbf{X}}\\textbf{u}_j\\right)\\). Or, la trace est invariante par permutation cyclique des facteurs. On a donc \\(\\text{Tr}\\left(\\textbf{u}_j^T\\textbf{M}_{\\textbf{X}}\\textbf{u}_j\\right)=\\text{Tr}\\left(\\textbf{M}_{\\textbf{X}}\\textbf{u}_j\\textbf{u}_j^T\\right)\\). Par passage à l'espérance, on obtient donc :
+        \\[\\begin{aligned}
+        \\mathbb{E}[\\text{SCR}]
+        &=\\mathbb{E}\\left[\\text{Tr}\\left(\\textbf{M}_{\\textbf{X}}\\textbf{u}_j\\textbf{u}_j^T\\right)\\right]\\\\
+        &=\\text{Tr}\\left(\\mathbb{E}\\left[\\textbf{M}_{\\textbf{X}}\\textbf{u}_j\\textbf{u}_j^T\\right]\\right)\\quad\\text{car la trace et l'espérance sont des opérateurs linéaires}\\\\
+        &=\\text{Tr}\\left(\\textbf{M}_{\\textbf{X}}\\mathbb{E}\\left[\\textbf{u}_j\\textbf{u}_j^T\\right]\\right)\\quad\\text{par linéarité à gauche de l'espérance}\\\\
+        &=\\text{Tr}\\left(\\textbf{M}_{\\textbf{X}}\\sigma_j^2\\textbf{I}_{n-j}\\right)\\quad\\text{par homoscédasticité}\\\\
+        &=\\sigma_j^2\\,\\text{Tr}\\left(\\textbf{M}_{\\textbf{X}}\\right)\\quad\\text{par linéarité de la trace}
+        \\end{aligned}\\]
+        Dès lors, on a :
+        \\[\\begin{aligned}
+        \\mathbb{E}[\\text{SCR}]
+        &=\\sigma_j^2\\,\\text{Tr}\\left(\\textbf{I}_{n-j}-\\textbf{X}(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\right)\\\\
+        &=\\sigma_j^2\\,\\text{Tr}\\left(\\textbf{I}_{n-j}\\right)-\\sigma_j^2\\,\\text{Tr}\\left(\\textbf{X}(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\right)\\\\
+        &=\\sigma_j^2\\,\\text{Tr}\\left(\\textbf{I}_{n-j}\\right)-\\sigma_j^2\\,\\text{Tr}\\left((\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\textbf{X}\\right)\\\\
+        &=\\sigma_j^2\\,\\text{Tr}\\left(\\textbf{I}_{n-j}\\right)-\\sigma_j^2\\,\\text{Tr}\\left(\\textbf{I}_{1}\\right)\\\\
+        &=\\sigma_j^2(n-j)-\\sigma_j^2\\times 1\\\\
+        &=\\sigma_j^2(n-j-1)
+        \\end{aligned}\\]
+        On a donc \\(\\mathbb{E}\\left[\\frac{\\text{SCR}}{n-j-1}\\right]=\\sigma_j^2\\). Posons alors \\(\\widehat{\\sigma_j^2}:=\\frac{\\text{SCR}}{n-j-1}\\). Cela signifie alors exactement que \\(\\widehat{\\sigma_j^2}\\) est un estimateur sans biais de \\(\\sigma_j^2\\).</li>
+
+        <li>On suppose en outre que \\(\\textbf{u}\\) forme un vecteur gaussien d'espérance nulle et de matrice de covariance \\(\\Var{\\textbf{u}}=\\sigma^2_j\\textbf{I}_{n-j}\\), et on admet que \\((n-j-1)\\widehat{\\sigma^2_j}\\big/\\sigma^2_j\\) suit une loi du \\(\\chi^2\\) à \\(n-j-1\\) degrés de liberté. On sait que \\(\\widehat{f}_j\\) est un estimateur linéaire, alors que les \\(u_{0,j},\\ldots,u_{n-(j+1),j}\\) sont indépendants entre eux (car \\(\\textbf{u}\\) est un vecteur gaussien de matrice de covariance diagonale) : par linéarité de la loi normale, \\(\\widehat{f}_j\\) suit donc également une loi normale d'espérance \\(f_j\\) (car \\(\\widehat{f}_j\\) est un estimateur sans biais, d'après le théorème de Gauss-Markov) et de variance \\(\\Var{\\widehat{f}_j}\\). Conséquemment, \\(Z_j:=\\left(\\widehat{f}_j-f_j\\right)\\big/\\sqrt{\\Var{\\widehat{f}_j}}\\) suit une loi normale centrée réduite, tandis que la variance de \\(\\widehat{f}_j\\) est estimée par la variable aléatoire :
+        \\[\\widehat{\\textbf{Var}}(\\widehat{f}_j)=\\frac{\\widehat{\\sigma^2_j}}{\\sum_{i=0}^{n-(j+1)}C_{i,j}^2}\\]
+        Posons alors \\(\\widehat{t}=\\dfrac{\\widehat{f}_j-f_j}{\\sqrt{\\widehat{\\textbf{Var}}(\\widehat{f}_j)}}\\). Alors on a :
+        \\[\\widehat{t}=\\sqrt{(n-j-1)\\times\\frac{\\Var{\\widehat{f}_j}}{(n-j-1)\\widehat{\\textbf{Var}}(\\widehat{f}_j)}}\\times\\frac{\\widehat{f}_j-f_j}{\\sqrt{\\Var{\\widehat{f}_j}}}=\\sqrt{\\frac{(n-j-1)\\sigma^2_j}{(n-j-1)\\widehat{\\sigma^2_j}}}\\times Z_j\\]
+        Comme \\((n-j-1)\\widehat{\\sigma^2_j}\\big/\\sigma^2_j\\) suit une loi du \\(\\chi^2\\) à \\(n-j-1\\) degrés de liberté, que \\(Z_j\\) suit une loi normale centrée réduite, et que ces deux dernières variables aléatoires sont indépendantes puisque \\(\\widehat{\\sigma^2_j}\\) et \\(\\widehat{f}_j\\) le sont (lemme des coalitions), alors \\(\\widehat{t}\\) suit par définition une loi de Student à \\(n-j-1\\) degrés de liberté. Pour tout réel \\(\\alpha\\) compris entre 0 et 1, on note \\(t_{\\alpha}\\) le quantile d'ordre \\(100(1-\\alpha)\\,\\%\\) d'une loi de Student à \\(n-j-1\\) degrés de liberté. Soit \\(\\alpha\\) un réel compris entre 0 et 1. On a donc \\(\\mathbb{P}\\left(\\left[-t_{\\alpha/2}\\leq\\widehat{t}\\leq t_{\\alpha/2}\\right]\\right)=1-\\alpha\\). Or on a :
+        \\[\\begin{aligned}
+        \\mathbb{P}\\left(\\left[-t_{\\alpha/2}\\leq\\widehat{t}\\leq t_{\\alpha/2}\\right]\\right)=1-\\alpha
+        &\\iff \\mathbb{P}\\left(\\left[-t_{\\alpha/2}\\leq\\frac{\\widehat{f}_j-f_j}{\\sqrt{\\widehat{\\textbf{Var}}(\\widehat{f}_j)}}\\leq t_{\\alpha/2}\\right]\\right)=1-\\alpha\\\\
+        &\\iff \\mathbb{P}\\left(\\left[-t_{\\alpha/2}\\sqrt{\\widehat{\\textbf{Var}}(\\widehat{f}_j)}\\leq\\widehat{f}_j-f_j\\leq t_{\\alpha/2}\\sqrt{\\widehat{\\textbf{Var}}(\\widehat{f}_j)}\\right]\\right)=1-\\alpha\\\\
+        &\\iff \\mathbb{P}\\left(\\left[-\\widehat{f}_j-t_{\\alpha/2}\\sqrt{\\widehat{\\textbf{Var}}(\\widehat{f}_j)}\\leq-f_j\\leq-\\widehat{f}_j+t_{\\alpha/2}\\sqrt{\\widehat{\\textbf{Var}}(\\widehat{f}_j)}\\right]\\right)=1-\\alpha\\\\
+        &\\iff \\mathbb{P}\\left(\\left[\\widehat{f}_j-t_{\\alpha/2}\\sqrt{\\widehat{\\textbf{Var}}(\\widehat{f}_j)}\\leq f_j\\leq\\widehat{f}_j+t_{\\alpha/2}\\sqrt{\\widehat{\\textbf{Var}}(\\widehat{f}_j)}\\right]\\right)=1-\\alpha
+        \\end{aligned}\\]
+        Ainsi, un intervalle de confiance pour le facteur de développement \\(f_j\\) est donné par \\(\\left[\\widehat{f}_j-t_{\\alpha/2}\\sqrt{\\widehat{\\textbf{Var}}(\\widehat{f}_j)}\\,;\\,\\widehat{f}_j+t_{\\alpha/2}\\sqrt{\\widehat{\\textbf{Var}}(\\widehat{f}_j)}\\right]\\), au seuil de confiance \\(1-\\alpha\\).</li>
+
+      </ol></li>
+
+      <li><ol class="sub-ol">
+
+        <li>Soit \\(j\\) un entier naturel au plus égal à \\(n-1\\). Pour tout entier \\(i\\) compris entre 0 et \\(n-(j+1)\\), on pose \\(Y_i:=C_{i,j+1}/\\sqrt{C_{i,j}}\\), \\(X_i:=\\sqrt{C_{i,j}}\\) et \\(v_i:=u_{i,j}/\\sqrt{C_{i,j}}\\), et on considère le modèle \\(Y_i=f_jX_i+v_i\\). Alors on a tout d'abord, pour tout entier \\(i\\) compris entre 0 et \\(n-(j+1)\\) :
+        \\[\\mathbb{E}[v_i]=\\mathbb{E}\\left[\\frac{u_{i,j}}{\\sqrt{C_{i,j}}}\\right]=\\frac{\\mathbb{E}[u_{i,j}]}{\\sqrt{C_{i,j}}}=0\\]
+        De plus, pour tous entiers \\(i\\) et \\(i'\\) distincts compris entre 0 et \\(n-(j+1)\\), on a :
+        \\[\\mathbb{E}[v_iv_{i'}]=\\mathbb{E}\\left[\\frac{u_{i,j}u_{i',j}}{\\sqrt{C_{i,j}}\\sqrt{C_{i',j}}}\\right]=\\frac{\\mathbb{E}[u_{i,j}u_{i',j}]}{\\sqrt{C_{i,j}C_{i',j}}}=0\\]
+        Enfin, pour tout entier \\(i\\) compris entre 0 et \\(n-(j+1)\\), on a :
+        \\[\\Var{v_i}=\\Var{\\frac{u_{i,j}}{\\sqrt{C_{i,j}}}}=\\frac{\\Var{u_{i,j}}}{C_{i,j}}=\\frac{\\sigma_j^2C_{i,j}}{C_{i,j}}=\\sigma_j^2\\]
+        Dès lors, régresser \\(Y_i\\) sur \\(X_i\\) constitue bien un modèle linéaire sans constante vérifiant les hypothèses de Gauss-Markov : la transformation opérée n'est autre qu'une pondération des observations par \\(1/\\sqrt{C_{i,j}}\\), qui rétablit l'homoscédasticité. L'estimateur de \\(f_j\\) de ce modèle transformé, connu sous le nom d'estimateur <em>chain ladder</em>, vérifie alors :
+        \\[\\widetilde{f}_j:=\\frac{\\sum_{i=0}^{n-(j+1)}X_iY_i}{\\sum_{i=0}^{n-(j+1)}X_i^2}=\\frac{\\sum_{i=0}^{n-(j+1)}\\sqrt{C_{i,j}}\\times\\dfrac{C_{i,j+1}}{\\sqrt{C_{i,j}}}}{\\sum_{i=0}^{n-(j+1)}\\left(\\sqrt{C_{i,j}}\\right)^2}=\\frac{\\sum_{i=0}^{n-(j+1)}C_{i,j+1}}{\\sum_{i=0}^{n-(j+1)}C_{i,j}}\\]
+        On retrouve ainsi la formule usuelle des actuaires : le facteur de développement estimé n'est autre que le rapport de la somme des paiements cumulés en \\(j+1\\) à la somme des paiements cumulés en \\(j\\), sur les seules années de survenance pour lesquelles les deux colonnes sont observées. On a alors :
+        \\[\\widetilde{f}_j=\\frac{\\sum_{i=0}^{n-(j+1)}\\left(f_jC_{i,j}+u_{i,j}\\right)}{\\sum_{i=0}^{n-(j+1)}C_{i,j}}=f_j+\\frac{\\sum_{i=0}^{n-(j+1)}u_{i,j}}{\\sum_{i=0}^{n-(j+1)}C_{i,j}}\\]
+        Par linéarité de l'espérance et compte tenu de la nullité de l'espérance des perturbations par hypothèse, on trouve alors \\(\\mathbb{E}[\\widetilde{f}_j]=f_j\\) : l'estimateur <em>chain ladder</em> est donc sans biais. Enfin, puisque les perturbations sont non corrélées entre elles, qu'on a \\(\\Var{u_{i,j}}=\\sigma^2_jC_{i,j}\\) pour toute année de survenance \\(i\\), et que la variance est quadratique, on a enfin :
+        \\[\\begin{aligned}
+        \\Var{\\widetilde{f}_j}
+        &=\\Var{f_j+\\frac{\\sum_{i=0}^{n-(j+1)}u_{i,j}}{\\sum_{i=0}^{n-(j+1)}C_{i,j}}}=\\Var{\\frac{\\sum_{i=0}^{n-(j+1)}u_{i,j}}{\\sum_{i=0}^{n-(j+1)}C_{i,j}}}\\\\
+        &=\\frac{\\Var{\\sum_{i=0}^{n-(j+1)}u_{i,j}}}{\\left(\\sum_{i=0}^{n-(j+1)}C_{i,j}\\right)^2}=\\frac{\\sum_{i=0}^{n-(j+1)}\\Var{u_{i,j}}}{\\left(\\sum_{i=0}^{n-(j+1)}C_{i,j}\\right)^2}\\quad\\text{car les }u_{i,j}\\text{ sont non corrélés}\\\\
+        &=\\frac{\\sum_{i=0}^{n-(j+1)}\\sigma_j^2C_{i,j}}{\\left(\\sum_{i=0}^{n-(j+1)}C_{i,j}\\right)^2}=\\frac{\\sigma_j^2}{\\sum_{i=0}^{n-(j+1)}C_{i,j}}
+        \\end{aligned}\\]</li>
+
+        <li>Reprenons ce que l'on a écrit dans la question 1.(b). Dans le rôle de \\(\\textbf{u}_j\\), on pose cette fois \\(\\textbf{v}:=(v_0,\\ldots,v_{n-(j+1)})^T\\). On pose alors, pour tout entier \\(i\\) compris entre 0 et \\(n-(j+1)\\), \\(\\widetilde{v}_i:=\\dfrac{C_{i,j+1}}{\\sqrt{C_{i,j}}}-\\widetilde{f}_j\\sqrt{C_{i,j}}\\) le résidu de la \\(i\\)-ème observation dans le modèle linéaire généralisé, et \\(\\widehat{v}_i:=C_{i,j+1}-\\widetilde{f}_jC_{i,j}\\) l'erreur dans l'estimation de \\(C_{i,j+1}\\) par la méthode <em>chain ladder</em>. Dans le rôle de \\(\\widehat{\\textbf{u}}_j\\), on pose \\(\\widehat{\\textbf{v}}:=(\\widetilde{v}_0,\\ldots,\\widetilde{v}_{n-(j+1)})^T\\). De même, dans les rôles de \\(\\textbf{Y}\\) et \\(\\textbf{X}\\), on pose respectivement \\(\\textbf{Y}:=\\left(\\dfrac{C_{0,j+1}}{\\sqrt{C_{0,j}}},\\ldots,\\dfrac{C_{n-(j+1),j+1}}{\\sqrt{C_{n-(j+1),j}}}\\right)^T\\) et \\(\\textbf{X}:=\\left(\\sqrt{C_{0,j}},\\ldots,\\sqrt{C_{n-(j+1),j}}\\right)^T\\). On remarque alors qu'on retrouve \\((\\widetilde{f}_j)=(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\textbf{Y}\\). Dans ce contexte, on peut poser \\(\\textbf{M}_{\\textbf{X}}:=\\textbf{I}_{n-j}-\\textbf{X}(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\) et dérouler exactement les mêmes calculs que dans la question 1.(b), qui nous donnent comme estimateur sans biais de \\(\\sigma_j^2\\) la variable aléatoire \\(\\widetilde{\\sigma_j^2}:=\\frac{\\text{SCR}}{n-j-1}\\). La seule différence réside dans la valeur de la SCR, qui vaut cette fois :
+        \\[\\begin{aligned}
+        \\text{SCR}
+        &:=\\widetilde{v}_0^2+\\cdots+\\widetilde{v}_{n-(j+1)}^2\\\\
+        &=\\left(\\frac{C_{0,j+1}}{\\sqrt{C_{0,j}}}-\\widetilde{f}_j\\sqrt{C_{0,j}}\\right)^2+\\cdots+\\left(\\frac{C_{n-(j+1),j+1}}{\\sqrt{C_{n-(j+1),j}}}-\\widetilde{f}_j\\sqrt{C_{n-(j+1),j}}\\right)^2\\\\
+        &=\\left(\\frac{C_{0,j+1}-\\widetilde{f}_jC_{0,j}}{\\sqrt{C_{0,j}}}\\right)^2+\\cdots+\\left(\\frac{C_{n-(j+1),j+1}-\\widetilde{f}_jC_{n-(j+1),j}}{\\sqrt{C_{n-(j+1),j}}}\\right)^2\\\\
+        &=\\left(\\frac{\\widehat{v}_0}{\\sqrt{C_{0,j}}}\\right)^2+\\cdots+\\left(\\frac{\\widehat{v}_{n-(j+1)}}{\\sqrt{C_{n-(j+1),j}}}\\right)^2\\\\
+        &=\\frac{\\widehat{v}_0^2}{C_{0,j}}+\\cdots+\\frac{\\widehat{v}_{n-(j+1)}^2}{C_{n-(j+1),j}}
+        \\end{aligned}\\]
+        On obtient donc bien l'estimateur annoncé \\(\\widetilde{\\sigma_j^2}=\\dfrac{1}{n-j-1}\\left(\\dfrac{\\widehat{v}_{0}^2}{C_{0,j}}+\\cdots+\\dfrac{\\widehat{v}_{n-(j+1)}^2}{C_{n-(j+1),j}}\\right)\\). On notera que chaque résidu \\(\\widehat{v}_i\\) est pondéré par l'inverse du paiement cumulé \\(C_{i,j}\\) : c'est très exactement la traduction de l'hypothèse d'hétéroscédasticité retenue, les années de survenance les plus « lourdes » étant celles dont on tolère les erreurs les plus grandes.</li>
+
+        <li>On suppose en outre que \\(\\textbf{v}\\) forme un vecteur gaussien d'espérance nulle et de matrice de covariance \\(\\Var{\\textbf{v}}=\\sigma^2_j\\textbf{I}_{n-j}\\), et on admet que \\((n-j-1)\\widetilde{\\sigma^2_j}\\big/\\sigma^2_j\\) suit une loi du \\(\\chi^2\\) à \\(n-j-1\\) degrés de liberté. On sait que \\(\\widetilde{f}_j\\) est un estimateur linéaire, alors que les \\(v_{0},\\ldots,v_{n-(j+1)}\\) sont indépendants entre eux (car \\(\\textbf{v}\\) est un vecteur gaussien de matrice de covariance diagonale) : par linéarité de la loi normale, \\(\\widetilde{f}_j\\) suit donc également une loi normale d'espérance \\(f_j\\) (car \\(\\widetilde{f}_j\\) est un estimateur sans biais, d'après le théorème de Gauss-Markov) et de variance \\(\\Var{\\widetilde{f}_j}\\). Conséquemment, \\(U_j:=\\left(\\widetilde{f}_j-f_j\\right)\\big/\\sqrt{\\Var{\\widetilde{f}_j}}\\) suit une loi normale centrée réduite, tandis que la variance de \\(\\widetilde{f}_j\\), calculée à la question 2.(a), est estimée par la variable aléatoire :
+        \\[\\widetilde{\\textbf{Var}}(\\widetilde{f}_j)=\\frac{\\widetilde{\\sigma^2_j}}{\\sum_{i=0}^{n-(j+1)}C_{i,j}}\\]
+        Posons alors \\(\\widetilde{t}=\\dfrac{\\widetilde{f}_j-f_j}{\\sqrt{\\widetilde{\\textbf{Var}}(\\widetilde{f}_j)}}\\). Alors on a :
+        \\[\\widetilde{t}=\\sqrt{(n-j-1)\\times\\frac{\\Var{\\widetilde{f}_j}}{(n-j-1)\\widetilde{\\textbf{Var}}(\\widetilde{f}_j)}}\\times\\frac{\\widetilde{f}_j-f_j}{\\sqrt{\\Var{\\widetilde{f}_j}}}=\\sqrt{\\frac{(n-j-1)\\sigma^2_j}{(n-j-1)\\widetilde{\\sigma^2_j}}}\\times U_j\\]
+        Comme \\((n-j-1)\\widetilde{\\sigma^2_j}\\big/\\sigma^2_j\\) suit une loi du \\(\\chi^2\\) à \\(n-j-1\\) degrés de liberté, que \\(U_j\\) suit une loi normale centrée réduite, et que ces deux dernières variables aléatoires sont indépendantes puisque \\(\\widetilde{\\sigma^2_j}\\) et \\(\\widetilde{f}_j\\) le sont (lemme des coalitions), alors \\(\\widetilde{t}\\) suit par définition une loi de Student à \\(n-j-1\\) degrés de liberté. Pour tout réel \\(\\alpha\\) compris entre 0 et 1, on note \\(t_{\\alpha}\\) le quantile d'ordre \\(100(1-\\alpha)\\,\\%\\) d'une loi de Student à \\(n-j-1\\) degrés de liberté. Soit \\(\\alpha\\) un réel compris entre 0 et 1. On a donc \\(\\mathbb{P}\\left(\\left[-t_{\\alpha/2}\\leq\\widetilde{t}\\leq t_{\\alpha/2}\\right]\\right)=1-\\alpha\\). Or on a :
+        \\[\\begin{aligned}
+        \\mathbb{P}\\left(\\left[-t_{\\alpha/2}\\leq\\widetilde{t}\\leq t_{\\alpha/2}\\right]\\right)=1-\\alpha
+        &\\iff \\mathbb{P}\\left(\\left[-t_{\\alpha/2}\\leq\\frac{\\widetilde{f}_j-f_j}{\\sqrt{\\widetilde{\\textbf{Var}}(\\widetilde{f}_j)}}\\leq t_{\\alpha/2}\\right]\\right)=1-\\alpha\\\\
+        &\\iff \\mathbb{P}\\left(\\left[-t_{\\alpha/2}\\sqrt{\\widetilde{\\textbf{Var}}(\\widetilde{f}_j)}\\leq\\widetilde{f}_j-f_j\\leq t_{\\alpha/2}\\sqrt{\\widetilde{\\textbf{Var}}(\\widetilde{f}_j)}\\right]\\right)=1-\\alpha\\\\
+        &\\iff \\mathbb{P}\\left(\\left[\\widetilde{f}_j-t_{\\alpha/2}\\sqrt{\\widetilde{\\textbf{Var}}(\\widetilde{f}_j)}\\leq f_j\\leq\\widetilde{f}_j+t_{\\alpha/2}\\sqrt{\\widetilde{\\textbf{Var}}(\\widetilde{f}_j)}\\right]\\right)=1-\\alpha
+        \\end{aligned}\\]
+        Ainsi, un intervalle de confiance pour le facteur de développement \\(f_j\\) est donné par \\(\\left[\\widetilde{f}_j-t_{\\alpha/2}\\sqrt{\\widetilde{\\textbf{Var}}(\\widetilde{f}_j)}\\,;\\,\\widetilde{f}_j+t_{\\alpha/2}\\sqrt{\\widetilde{\\textbf{Var}}(\\widetilde{f}_j)}\\right]\\), au seuil de confiance \\(1-\\alpha\\).</li>
+
+      </ol></li>
+
+      <li><div>
+        On commence par calculer le triangle des paiements cumulés, en sommant les incréments ligne par ligne (on a \\(C_{i,0}=Z_{i,0}\\) puis \\(C_{i,j+1}=C_{i,j}+Z_{i,j+1}\\)) :
+        ${tblCum(D)}
+        On va alors estimer chaque facteur de développement à l'aide de la méthode <em>chain ladder</em>, c'est-à-dire, pour tout entier \\(j\\) compris entre 0 et \\(${D.nmax - 1}\\), par le rapport \\(\\widetilde{f}_j=\\sum_{i}C_{i,j+1}\\big/\\sum_{i}C_{i,j}\\), la somme portant sur les seules années de survenance pour lesquelles les colonnes \\(j\\) et \\(j+1\\) sont toutes deux renseignées. On obtient :
+        ${facBlock(D)}
+        On peut alors compléter la partie inférieure du triangle des paiements cumulés, de proche en proche, en multipliant le dernier paiement cumulé observé de chaque ligne par les facteurs de développement successifs :
+        ${tblFull(D)}
+        La provision de l'année de survenance \\(i\\) est alors la différence entre le paiement cumulé final estimé et le dernier paiement cumulé observé, soit \\(\\widetilde{R}_i=\\widetilde{C}_{i,${D.nmax}}-C_{i,${D.nmax}-i}\\) :
+        ${tblProv(D)}
+        Dès lors, la provision totale vérifie :
+        \\[\\widetilde{R}=${D.provSum}\\approx ${D.Rtot.toFixed(2)}\\]
+        soit environ <strong>${D.RtotTxt} ${D.unit}</strong> à provisionner. Ce montant correspond aux paiements que l'assureur devra encore verser, au cours des années à venir, au titre des sinistres déjà survenus : il doit être immédiatement inscrit au passif de son bilan, sous peine de se retrouver en situation de cessation de paiement lorsque les développements se matérialiseront. On observera que la provision est d'autant plus élevée que l'année de survenance est récente : l'année ${D.years[D.nmax]}, dont on n'observe que le premier paiement, concentre à elle seule ${D.partLast}&nbsp;% de la provision totale, tandis que l'année ${D.years[1]}, presque entièrement développée, n'en représente qu'une part marginale.
+      </div></li>
+
+      </ol></div>`;
+    }
+  },
+
+  en: {
+    "htmlLang": "en",
+    "title": "Exercise Generator - Chain Ladder Model",
+    "k-badge": "ECONOMETRICS",
+    "k-h1": "The Chain Ladder Model",
+    "k-sub": "© Thomas Hossen – August 29, 2026 Version",
+    "k-seed": "Reproducibility seed",
+    "k-seedtip": "Empty = random at each generation",
+    "k-n": "Accident years",
+    "k-ntip": "4 or 5, auto if empty",
+    "k-gen": "Generate →",
+    "k-welcome": "Set the parameters (or leave empty for random values), then click Generate.",
+    "k-new": "↺ New statement",
+    "k-pdf": "⬇ Export PDF",
+    "k-seedbadge": "Seed:",
+    "k-tag-ex": "Problem",
+    "k-cardtitle": "The Chain Ladder Model in Non-Life Insurance",
+    "k-tag-sol": "Solution",
+    "k-cardtitle2": "The Chain Ladder Model in Non-Life Insurance",
+    "k-modal": "Export to PDF",
+    "k-mseed-pre": "Seed:",
+    "k-mseed-post": "— write down this value to reproduce this exercise exactly.",
+    "k-opth": "Include page header",
+    "k-opthd": "Title, \"ECONOMETRICS\" badge and exercise heading",
+    "k-opts": "Include the full solution",
+    "k-optsd": "Matrix proofs, confidence intervals and numerical application",
+    "k-print": "🖨&nbsp;Print / Save as PDF",
+    "k-cancel": "Cancel",
+    "copy": "⧉ Copy",
+    "copyTitle": "Copy the active seed",
+    "copied": "✓ Copied",
+    "phSeed": "auto",
+    "phN": "default",
+    "showSol": "Show Solution",
+    "hideSol": "Hide Solution",
+
+    lbl: {
+      incr: "Payment flows",
+      cum: "Cumulative triangle",
+      full: "Completed triangle",
+      fac: "Development factors",
+      year: "Year",
+      provYear: "Accident year \\(i\\)",
+      provLast: "Last observed cumulative \\(C_{i,n-i}\\)",
+      provFinal: "Estimated ultimate \\(\\widetilde{C}_{i,n}\\)",
+      provR: "Reserve \\(\\widetilde{R}_i\\)",
+      total: "Total",
+      capIncr: function(D){ return `Triangle of incremental payments \\(Z_{i,j}\\) of ${D.insurer} for its "${D.claim}" claims, in ${D.unit}.`; },
+      capCum: "Triangle of cumulative payments \\(C_{i,j}\\) reconstructed from the increments.",
+      capFull: "Triangle completed by the chain ladder method. In red italics: the estimated cumulative payments.",
+      capProv: function(D){ return `Estimated reserve by accident year, in ${D.unit}.`; }
+    },
+
+    ex: function(D) {
+      return `
+      <div class="context-block">
+        For an insurer, losses to be indemnified occur every year. Consider the set of losses occurring in a given year \\(i\\) (for instance, various work-related accidents). In general, the insurer will have to indemnify policyholders not only for an amount \\(Z_{i,0}\\) in year \\(i\\) (where \\(i\\) is a natural number), but also in the following years (if, for example, long-term illnesses are involved, the insurer will also pay indemnities, called <em>increments</em>, \\(Z_{i,1}\\), \\(Z_{i,2}\\), etc. in years \\(i+1\\), \\(i+2\\), etc.). Finally, after \\(j\\) years, the insurer will have paid, for a loss occurring in year \\(i\\), a total amount \\(C_{i,j}:=Z_{i,0}+Z_{i,1}+\\cdots+Z_{i,j}\\): this is called the "cumulative payment for accident year \\(i\\) after \\(j\\) development years". Obviously, after a certain number of years, payments stop: \\(n\\) usually denotes the number of years corresponding to the settlement horizon of a claim (generally three to five years); \\(n\\) is therefore the maximum value taken by the index \\(j\\). Consider all the claims that the insurer is settling and has settled over the last \\(n\\) years. The most recent claims will therefore generate new <em>developments</em>, that is, new indemnities, in the years to come. Can these developments be anticipated? The answer to this question allows the insurer to set aside reserves for the additional amounts to be paid, in order to avoid ending up unable to meet its commitments.
+        <br><br>
+        Let us formalise this problem. Let \\(n\\) be a natural number. For all integers \\(i\\) and \\(j\\) between 0 and \\(n\\), let \\(C_{i,j}\\) denote the "ultimate" cumulative payment for accident year \\(i\\) after \\(j+1\\) development years, and \\(Z_{i,j}\\) the non-cumulative payments (increments) for the \\(j\\)-th development year of the claims occurring in year \\(i\\). For all natural numbers \\(i\\) and \\(j\\), we therefore have \\(C_{i,j+1}=C_{i,j}+Z_{i,j+1}\\) and \\(C_{i,0}=Z_{i,0}\\). This is presented in the form of a <em>triangle of cumulative payments</em>:
+        \\[\\begin{array}{c|ccccc}
+        i\\,\\backslash\\,j & 0 & \\cdots & j & \\cdots & n\\\\\\hline
+        0 & C_{0,0} & \\cdots & C_{0,j} & \\cdots & C_{0,n}\\\\
+        \\vdots & \\vdots & & \\vdots & & \\\\
+        i & C_{i,0} & \\cdots & C_{i,j} & & \\\\
+        \\vdots & \\vdots & & & & \\\\
+        n & C_{n,0} & & & &
+        \\end{array}\\]
+        These triangles can be read in three different ways: the rows correspond to the accident years \\(i\\) of the claims, the columns to the development years \\(j\\), and the diagonals to the calendar years \\(i+j\\). We then assume that, for every integer \\(j\\) between 0 and \\(n-1\\), there exists a <em>development factor</em> \\(f_j\\) satisfying, for every integer \\(i\\) between 0 and \\(n-(j+1)\\), \\(C_{i,j+1}=f_jC_{i,j}+u_{i,j}\\), where \\(u_{i,j}\\) is a random variable. Let \\(\\widetilde{f}_j\\) denote an estimator of \\(f_j\\). The development factors then make it possible to complete the lower part of the triangle of cumulative payments by setting \\(\\widetilde{C}_{i,j+1}=\\widetilde{f}_j\\widetilde{C}_{i,j}=\\widetilde{f}_{n-i}\\times\\cdots\\times\\widetilde{f}_{j}\\times C_{i,n-i}\\) for all natural numbers \\(i\\) and \\(j\\) such that \\(i+j>n\\): this is the <em>chain ladder</em> method. Consequently, the <em>reserve</em> for accident year \\(i\\) is estimated by the relation \\(\\widetilde{R}_i:=\\widetilde{C}_{i,n}-C_{i,n-i}\\) for every integer \\(i\\) between 1 and \\(n\\). The estimate of the total reserve is then obtained by summing the reserves of each accident year, that is \\(\\widetilde{R}:=\\widetilde{R}_1+\\cdots+\\widetilde{R}_n\\).
+      </div>
+      <div class="questions"><ol>
+
+        <li><div class="q-text"><strong>Ordinary least squares method.</strong> Let \\(j\\) be a natural number at most equal to \\(n-1\\). We still consider the model such that, for every integer \\(i\\) between 0 and \\(n-(j+1)\\), \\(C_{i,j+1}=f_jC_{i,j}+u_{i,j}\\). Assume that the random variables \\(u_{0,j},\\ldots,u_{n-(j+1),j}\\) satisfy the Gauss-Markov assumptions, that is (i) for every natural number \\(i\\) at most equal to \\(n-(j+1)\\), \\(\\mathbb{E}[u_{i,j}]=0\\) (no error on average), (ii) for all distinct natural numbers \\(i\\) and \\(i'\\) at most equal to \\(n-(j+1)\\), \\(\\mathbb{E}[u_{i,j}u_{i',j}]=0\\) (no correlation between the errors) and (iii) there exists a strictly positive real number \\(\\sigma_j\\) such that, for every natural number \\(i\\) at most equal to \\(n-(j+1)\\), \\(\\Var{u_{i,j}}=\\sigma_j^2\\) (homoscedasticity).
+          <ol>
+            <li>Recall, without proof, the value of \\(\\widehat{f}_j\\), the ordinary least squares estimator of \\(f_j\\), as well as the value of the (theoretical) expectation and variance of \\(\\widehat{f}_j\\). You may take for granted that \\(\\widehat{f}_j\\) is a linear estimator of \\(f_j\\).</li>
+            <li>For every integer \\(i\\) between 0 and \\(n-(j+1)\\), let \\(\\widehat{u}_{i,j}:=C_{i,j+1}-\\widehat{f}_jC_{i,j}\\) denote the residual of the \\(i\\)-th observation of the model. Show that an unbiased estimator of \\(\\sigma_j^2\\) is given by \\(\\widehat{\\sigma_j^2}:=\\dfrac{1}{n-j-1}\\left(\\widehat{u}_{0,j}^2+\\cdots+\\widehat{u}_{n-(j+1),j}^2\\right)\\). You may take for granted that \\(\\widehat{f}_j\\) and \\(\\widehat{u}_{i,j}\\) are independent, for every integer \\(i\\) between 0 and \\(n-(j+1)\\).</li>
+            <li>Assume further that \\(\\textbf{u}:=(u_{0,j},\\ldots,u_{n-(j+1),j})\\) is a Gaussian vector with zero mean and covariance matrix \\(\\Var{\\textbf{u}}=\\sigma^2_j\\textbf{I}_{n-j}\\). You may take for granted that \\((n-j-1)\\widehat{\\sigma^2_j}\\big/\\sigma^2_j\\) follows a \\(\\chi^2\\) distribution with \\(n-j-1\\) degrees of freedom. Deduce a confidence interval at level \\(1-\\alpha\\) (where \\(\\alpha\\) is a real number in \\(]0,1[\\)) for \\(f_j\\).</li>
+          </ol>
+        </div></li>
+
+        <li><div class="q-text"><strong>Chain ladder estimator.</strong> Let \\(j\\) be a natural number at most equal to \\(n-1\\). We still consider the model such that, for every integer \\(i\\) between 0 and \\(n-(j+1)\\), \\(C_{i,j+1}=f_jC_{i,j}+u_{i,j}\\). Assume this time that the random variables \\(u_{0,j},\\ldots,u_{n-(j+1),j}\\) satisfy the following three assumptions: (i) for every natural number \\(i\\) at most equal to \\(n-(j+1)\\), \\(\\mathbb{E}[u_{i,j}]=0\\), (ii) for all distinct natural numbers \\(i\\) and \\(i'\\) at most equal to \\(n-(j+1)\\), \\(\\mathbb{E}[u_{i,j}u_{i',j}]=0\\) and (iii) there exists a strictly positive real number \\(\\sigma_j\\) such that, for every natural number \\(i\\) at most equal to \\(n-(j+1)\\), \\(\\Var{u_{i,j}}=\\sigma_j^2C_{i,j}\\) (heteroscedasticity of known form).
+          <ol>
+            <li>For every integer \\(i\\) between 0 and \\(n-(j+1)\\), set \\(Y_i:=C_{i,j+1}/\\sqrt{C_{i,j}}\\), \\(X_i:=\\sqrt{C_{i,j}}\\) and \\(v_i:=u_{i,j}/\\sqrt{C_{i,j}}\\). Show that the model \\(Y_i=f_jX_i+v_i\\) satisfies the Gauss-Markov assumptions. Deduce the generalised least squares estimator \\(\\widetilde{f}_j\\) of \\(f_j\\); compute its expectation and its variance. You may take for granted that \\(\\widetilde{f}_j\\) is linear.</li>
+            <li>For every integer \\(i\\) between 0 and \\(n-(j+1)\\), let \\(\\widehat{v}_{i}:=C_{i,j+1}-\\widetilde{f}_jC_{i,j}\\) denote the residual of the \\(i\\)-th observation of the model. Show that an unbiased estimator of \\(\\sigma_j^2\\) is given by \\(\\widetilde{\\sigma_j^2}:=\\dfrac{1}{n-j-1}\\left(\\dfrac{\\widehat{v}_{0}^2}{C_{0,j}}+\\cdots+\\dfrac{\\widehat{v}_{n-(j+1)}^2}{C_{n-(j+1),j}}\\right)\\). You may take for granted that \\(\\widetilde{f}_j\\) and \\(\\widehat{v}_{i}\\) are independent, for every integer \\(i\\) between 0 and \\(n-(j+1)\\).</li>
+            <li>Assume further that \\(\\textbf{v}:=(v_{0},\\ldots,v_{n-(j+1)})\\) is a Gaussian vector with zero mean and covariance matrix \\(\\Var{\\textbf{v}}=\\sigma^2_j\\textbf{I}_{n-j}\\). You may take for granted that \\((n-j-1)\\widetilde{\\sigma^2_j}\\big/\\sigma^2_j\\) follows a \\(\\chi^2\\) distribution with \\(n-j-1\\) degrees of freedom. Deduce a confidence interval at level \\(1-\\alpha\\) (where \\(\\alpha\\) is a real number in \\(]0,1[\\)) for \\(f_j\\).</li>
+          </ol>
+        </div></li>
+
+        <li><div class="q-text"><strong>Application.</strong> ${D.insurer} sets aside reserves for its "${D.claim}" claims. Using the triangle of incremental payments below, expressed in ${D.unit}, give the total amount of the reserves by applying the <em>chain ladder</em> method.
+          ${tblIncr(D)}
+        </div></li>
+
+      </ol></div>`;
+    },
+
+    sol: function(D) {
+      return `<div class="st"><ol>
+
+      <li><ol class="sub-ol">
+
+        <li>Let \\(j\\) be a natural number at most equal to \\(n-1\\). We still consider the model such that, for every integer \\(i\\) between 0 and \\(n-(j+1)\\), \\(C_{i,j+1}=f_jC_{i,j}+u_{i,j}\\), where the random variables \\(u_{0,j},\\ldots,u_{n-(j+1),j}\\) satisfy the Gauss-Markov assumptions. We are dealing here with a simple linear model without a constant. The vector to be explained is \\(\\textbf{Y}:=(C_{0,j+1},\\ldots,C_{n-(j+1),j+1})^T\\) (where \\(\\cdot^T\\) denotes the matrix transposition operator), while the matrix of explanatory variables is \\(\\textbf{X}:=(C_{0,j},\\ldots,C_{n-(j+1),j})^T\\) (it is just a vector here, since there is no constant term in the model). Consequently, the ordinary least squares estimator of \\(f_j\\) in the simple linear model without a constant is given by:
+        \\[\\widehat{f}_j:=\\frac{\\sum_{i=0}^{n-(j+1)}C_{i,j}C_{i,j+1}}{\\sum_{i=0}^{n-(j+1)}C_{i,j}^2}\\quad\\text{with}\\quad\\mathbb{E}[\\widehat{f}_j]=f_j\\quad\\text{and}\\quad\\Var{\\widehat{f}_j}=\\frac{\\sigma_j^2}{\\sum_{i=0}^{n-(j+1)}C_{i,j}^2}\\]</li>
+
+        <li>Let \\(\\textbf{u}_j:=(u_{0,j},\\ldots,u_{n-(j+1),j})^T\\). For every integer \\(i\\) between 0 and \\(n-(j+1)\\), let \\(\\widehat{u}_{i,j}:=C_{i,j+1}-\\widehat{f}_jC_{i,j}\\) denote the residual of the \\(i\\)-th observation of the model, and let \\(\\widehat{\\textbf{u}}_j:=(\\widehat{u}_{0,j},\\ldots,\\widehat{u}_{n-(j+1),j})^T\\). With the notation of the previous question, we have \\((\\widehat{f}_j)=(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\textbf{Y}\\) (where \\((\\widehat{f}_j)\\) is a scalar matrix). Set \\(\\textbf{M}_{\\textbf{X}}:=\\textbf{I}_{n-j}-\\textbf{X}(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\). Then \\(\\widehat{\\textbf{u}}_j=\\textbf{M}_{\\textbf{X}}\\textbf{Y}\\). Recall that \\(\\textbf{M}_{\\textbf{X}}\\) (the <em>residual maker matrix</em>) is a deterministic matrix, and that it is symmetric and idempotent. Indeed, on the one hand:
+        \\[\\begin{aligned}
+        \\textbf{M}_{\\textbf{X}}^T
+        &=\\left(\\textbf{I}_{n-j}-\\textbf{X}(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\right)^T\\\\
+        &=\\textbf{I}_{n-j}^T-\\left(\\textbf{X}(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\right)^T\\\\
+        &=\\textbf{I}_{n-j}-\\left((\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\right)^T\\textbf{X}^T\\\\
+        &=\\textbf{I}_{n-j}-\\left(\\textbf{X}^T\\right)^T\\left((\\textbf{X}^T\\textbf{X})^{-1}\\right)^T\\textbf{X}^T\\\\
+        &=\\textbf{I}_{n-j}-\\textbf{X}\\left((\\textbf{X}^T\\textbf{X})^{-1}\\right)^T\\textbf{X}^T\\\\
+        &=\\textbf{I}_{n-j}-\\textbf{X}(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\quad\\text{since }\\textbf{X}^T\\textbf{X}\\text{ is symmetric, hence so is }(\\textbf{X}^T\\textbf{X})^{-1}
+        \\end{aligned}\\]
+        We therefore indeed have \\(\\textbf{M}_{\\textbf{X}}^T=\\textbf{M}_{\\textbf{X}}\\), which proves that the matrix \\(\\textbf{M}_{\\textbf{X}}\\) is symmetric. On the other hand:
+        \\[\\begin{aligned}
+        \\textbf{M}_{\\textbf{X}}^2
+        &=\\left(\\textbf{I}_{n-j}-\\textbf{X}(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\right)^2\\\\
+        &=\\textbf{I}_{n-j}^2-2\\textbf{X}(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T+\\left(\\textbf{X}(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\right)^2\\\\
+        &=\\textbf{I}_{n-j}-2\\textbf{X}(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T+\\textbf{X}(\\textbf{X}^T\\textbf{X})^{-1}\\left(\\textbf{X}^T\\textbf{X}\\right)(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\\\
+        &=\\textbf{I}_{n-j}-2\\textbf{X}(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T+\\textbf{X}(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\\\
+        &=\\textbf{I}_{n-j}-\\textbf{X}(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T
+        \\end{aligned}\\]
+        We therefore indeed have \\(\\textbf{M}_{\\textbf{X}}^2=\\textbf{M}_{\\textbf{X}}\\), which means exactly that the matrix \\(\\textbf{M}_{\\textbf{X}}\\) is idempotent. Consequently:
+        \\[\\begin{aligned}
+        \\widehat{\\textbf{u}}_j
+        &=\\textbf{M}_{\\textbf{X}}\\textbf{Y}\\\\
+        &=\\textbf{M}_{\\textbf{X}}(\\textbf{X}(f_j)+\\textbf{u}_j)\\\\
+        &=\\textbf{M}_{\\textbf{X}}\\textbf{X}(f_j)+\\textbf{M}_{\\textbf{X}}\\textbf{u}_j\\\\
+        &=\\textbf{M}_{\\textbf{X}}\\textbf{u}_j\\quad\\text{since }\\textbf{M}_{\\textbf{X}}\\textbf{X}=\\textbf{0}
+        \\end{aligned}\\]
+        Indeed:
+        \\[\\begin{aligned}
+        \\textbf{M}_{\\textbf{X}}\\textbf{X}
+        &=\\left(\\textbf{I}_{n-j}-\\textbf{X}(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\right)\\textbf{X}\\\\
+        &=\\textbf{X}-\\textbf{X}(\\textbf{X}^T\\textbf{X})^{-1}(\\textbf{X}^T\\textbf{X})\\\\
+        &=\\textbf{X}-\\textbf{X}=\\textbf{0}
+        \\end{aligned}\\]
+        Consequently, \\(\\text{RSS}:=\\widehat{u}_{0,j}^2+\\cdots+\\widehat{u}_{n-(j+1),j}^2=\\widehat{\\textbf{u}}_j^T\\widehat{\\textbf{u}}_j\\). We then have:
+        \\[\\begin{aligned}
+        \\text{RSS}
+        &=\\left(\\textbf{M}_{\\textbf{X}}\\textbf{u}_j\\right)^T\\textbf{M}_{\\textbf{X}}\\textbf{u}_j\\\\
+        &=\\textbf{u}^T_j\\textbf{M}_{\\textbf{X}}^T\\textbf{M}_{\\textbf{X}}\\textbf{u}_j\\\\
+        &=\\textbf{u}^T_j\\textbf{M}_{\\textbf{X}}\\textbf{M}_{\\textbf{X}}\\textbf{u}_j\\quad\\text{since }\\textbf{M}_{\\textbf{X}}\\text{ is symmetric}\\\\
+        &=\\textbf{u}^T_j\\textbf{M}_{\\textbf{X}}\\textbf{u}_j\\quad\\text{since }\\textbf{M}_{\\textbf{X}}\\text{ is idempotent}
+        \\end{aligned}\\]
+        Moreover, \\(\\textbf{u}^T_j\\textbf{M}_{\\textbf{X}}\\textbf{u}_j\\) is a scalar. This scalar can therefore be identified with the trace of the corresponding matrix: we thus have \\(\\text{RSS}=\\text{Tr}\\left(\\textbf{u}_j^T\\textbf{M}_{\\textbf{X}}\\textbf{u}_j\\right)\\). Now, the trace is invariant under cyclic permutation of the factors. We therefore have \\(\\text{Tr}\\left(\\textbf{u}_j^T\\textbf{M}_{\\textbf{X}}\\textbf{u}_j\\right)=\\text{Tr}\\left(\\textbf{M}_{\\textbf{X}}\\textbf{u}_j\\textbf{u}_j^T\\right)\\). Taking expectations, we obtain:
+        \\[\\begin{aligned}
+        \\mathbb{E}[\\text{RSS}]
+        &=\\mathbb{E}\\left[\\text{Tr}\\left(\\textbf{M}_{\\textbf{X}}\\textbf{u}_j\\textbf{u}_j^T\\right)\\right]\\\\
+        &=\\text{Tr}\\left(\\mathbb{E}\\left[\\textbf{M}_{\\textbf{X}}\\textbf{u}_j\\textbf{u}_j^T\\right]\\right)\\quad\\text{since the trace and the expectation are linear operators}\\\\
+        &=\\text{Tr}\\left(\\textbf{M}_{\\textbf{X}}\\mathbb{E}\\left[\\textbf{u}_j\\textbf{u}_j^T\\right]\\right)\\quad\\text{by left-linearity of the expectation}\\\\
+        &=\\text{Tr}\\left(\\textbf{M}_{\\textbf{X}}\\sigma_j^2\\textbf{I}_{n-j}\\right)\\quad\\text{by homoscedasticity}\\\\
+        &=\\sigma_j^2\\,\\text{Tr}\\left(\\textbf{M}_{\\textbf{X}}\\right)\\quad\\text{by linearity of the trace}
+        \\end{aligned}\\]
+        Consequently:
+        \\[\\begin{aligned}
+        \\mathbb{E}[\\text{RSS}]
+        &=\\sigma_j^2\\,\\text{Tr}\\left(\\textbf{I}_{n-j}-\\textbf{X}(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\right)\\\\
+        &=\\sigma_j^2\\,\\text{Tr}\\left(\\textbf{I}_{n-j}\\right)-\\sigma_j^2\\,\\text{Tr}\\left((\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\textbf{X}\\right)\\\\
+        &=\\sigma_j^2\\,\\text{Tr}\\left(\\textbf{I}_{n-j}\\right)-\\sigma_j^2\\,\\text{Tr}\\left(\\textbf{I}_{1}\\right)\\\\
+        &=\\sigma_j^2(n-j)-\\sigma_j^2\\times 1=\\sigma_j^2(n-j-1)
+        \\end{aligned}\\]
+        We therefore have \\(\\mathbb{E}\\left[\\frac{\\text{RSS}}{n-j-1}\\right]=\\sigma_j^2\\). Setting \\(\\widehat{\\sigma_j^2}:=\\frac{\\text{RSS}}{n-j-1}\\), this means exactly that \\(\\widehat{\\sigma_j^2}\\) is an unbiased estimator of \\(\\sigma_j^2\\).</li>
+
+        <li>Assume further that \\(\\textbf{u}\\) is a Gaussian vector with zero mean and covariance matrix \\(\\Var{\\textbf{u}}=\\sigma^2_j\\textbf{I}_{n-j}\\), and take for granted that \\((n-j-1)\\widehat{\\sigma^2_j}\\big/\\sigma^2_j\\) follows a \\(\\chi^2\\) distribution with \\(n-j-1\\) degrees of freedom. We know that \\(\\widehat{f}_j\\) is a linear estimator, while the \\(u_{0,j},\\ldots,u_{n-(j+1),j}\\) are mutually independent (since \\(\\textbf{u}\\) is a Gaussian vector with a diagonal covariance matrix): by linearity of the normal distribution, \\(\\widehat{f}_j\\) therefore also follows a normal distribution with mean \\(f_j\\) (since \\(\\widehat{f}_j\\) is unbiased, by the Gauss-Markov theorem) and variance \\(\\Var{\\widehat{f}_j}\\). Consequently, \\(Z_j:=\\left(\\widehat{f}_j-f_j\\right)\\big/\\sqrt{\\Var{\\widehat{f}_j}}\\) follows a standard normal distribution, while the variance of \\(\\widehat{f}_j\\) is estimated by the random variable:
+        \\[\\widehat{\\textbf{Var}}(\\widehat{f}_j)=\\frac{\\widehat{\\sigma^2_j}}{\\sum_{i=0}^{n-(j+1)}C_{i,j}^2}\\]
+        Setting \\(\\widehat{t}=\\dfrac{\\widehat{f}_j-f_j}{\\sqrt{\\widehat{\\textbf{Var}}(\\widehat{f}_j)}}\\), we then have:
+        \\[\\widehat{t}=\\sqrt{(n-j-1)\\times\\frac{\\Var{\\widehat{f}_j}}{(n-j-1)\\widehat{\\textbf{Var}}(\\widehat{f}_j)}}\\times\\frac{\\widehat{f}_j-f_j}{\\sqrt{\\Var{\\widehat{f}_j}}}=\\sqrt{\\frac{(n-j-1)\\sigma^2_j}{(n-j-1)\\widehat{\\sigma^2_j}}}\\times Z_j\\]
+        Since \\((n-j-1)\\widehat{\\sigma^2_j}\\big/\\sigma^2_j\\) follows a \\(\\chi^2\\) distribution with \\(n-j-1\\) degrees of freedom, \\(Z_j\\) follows a standard normal distribution, and these two random variables are independent because \\(\\widehat{\\sigma^2_j}\\) and \\(\\widehat{f}_j\\) are, then \\(\\widehat{t}\\) follows by definition a Student distribution with \\(n-j-1\\) degrees of freedom. For every real number \\(\\alpha\\) between 0 and 1, let \\(t_{\\alpha}\\) denote the quantile of order \\(100(1-\\alpha)\\,\\%\\) of a Student distribution with \\(n-j-1\\) degrees of freedom. Let \\(\\alpha\\) be a real number between 0 and 1. We therefore have \\(\\mathbb{P}\\left(\\left[-t_{\\alpha/2}\\leq\\widehat{t}\\leq t_{\\alpha/2}\\right]\\right)=1-\\alpha\\). Now:
+        \\[\\begin{aligned}
+        \\mathbb{P}\\left(\\left[-t_{\\alpha/2}\\leq\\widehat{t}\\leq t_{\\alpha/2}\\right]\\right)=1-\\alpha
+        &\\iff \\mathbb{P}\\left(\\left[-t_{\\alpha/2}\\leq\\frac{\\widehat{f}_j-f_j}{\\sqrt{\\widehat{\\textbf{Var}}(\\widehat{f}_j)}}\\leq t_{\\alpha/2}\\right]\\right)=1-\\alpha\\\\
+        &\\iff \\mathbb{P}\\left(\\left[-t_{\\alpha/2}\\sqrt{\\widehat{\\textbf{Var}}(\\widehat{f}_j)}\\leq\\widehat{f}_j-f_j\\leq t_{\\alpha/2}\\sqrt{\\widehat{\\textbf{Var}}(\\widehat{f}_j)}\\right]\\right)=1-\\alpha\\\\
+        &\\iff \\mathbb{P}\\left(\\left[\\widehat{f}_j-t_{\\alpha/2}\\sqrt{\\widehat{\\textbf{Var}}(\\widehat{f}_j)}\\leq f_j\\leq\\widehat{f}_j+t_{\\alpha/2}\\sqrt{\\widehat{\\textbf{Var}}(\\widehat{f}_j)}\\right]\\right)=1-\\alpha
+        \\end{aligned}\\]
+        Thus, a confidence interval for the development factor \\(f_j\\) is given by \\(\\left[\\widehat{f}_j-t_{\\alpha/2}\\sqrt{\\widehat{\\textbf{Var}}(\\widehat{f}_j)}\\,;\\,\\widehat{f}_j+t_{\\alpha/2}\\sqrt{\\widehat{\\textbf{Var}}(\\widehat{f}_j)}\\right]\\), at confidence level \\(1-\\alpha\\).</li>
+
+      </ol></li>
+
+      <li><ol class="sub-ol">
+
+        <li>Let \\(j\\) be a natural number at most equal to \\(n-1\\). For every integer \\(i\\) between 0 and \\(n-(j+1)\\), set \\(Y_i:=C_{i,j+1}/\\sqrt{C_{i,j}}\\), \\(X_i:=\\sqrt{C_{i,j}}\\) and \\(v_i:=u_{i,j}/\\sqrt{C_{i,j}}\\), and consider the model \\(Y_i=f_jX_i+v_i\\). First, for every integer \\(i\\) between 0 and \\(n-(j+1)\\):
+        \\[\\mathbb{E}[v_i]=\\mathbb{E}\\left[\\frac{u_{i,j}}{\\sqrt{C_{i,j}}}\\right]=\\frac{\\mathbb{E}[u_{i,j}]}{\\sqrt{C_{i,j}}}=0\\]
+        Moreover, for all distinct integers \\(i\\) and \\(i'\\) between 0 and \\(n-(j+1)\\):
+        \\[\\mathbb{E}[v_iv_{i'}]=\\mathbb{E}\\left[\\frac{u_{i,j}u_{i',j}}{\\sqrt{C_{i,j}}\\sqrt{C_{i',j}}}\\right]=\\frac{\\mathbb{E}[u_{i,j}u_{i',j}]}{\\sqrt{C_{i,j}C_{i',j}}}=0\\]
+        Finally, for every integer \\(i\\) between 0 and \\(n-(j+1)\\):
+        \\[\\Var{v_i}=\\Var{\\frac{u_{i,j}}{\\sqrt{C_{i,j}}}}=\\frac{\\Var{u_{i,j}}}{C_{i,j}}=\\frac{\\sigma_j^2C_{i,j}}{C_{i,j}}=\\sigma_j^2\\]
+        Consequently, regressing \\(Y_i\\) on \\(X_i\\) does constitute a linear model without a constant satisfying the Gauss-Markov assumptions: the transformation carried out is nothing but a weighting of the observations by \\(1/\\sqrt{C_{i,j}}\\), which restores homoscedasticity. The estimator of \\(f_j\\) in this transformed model, known as the <em>chain ladder</em> estimator, then satisfies:
+        \\[\\widetilde{f}_j:=\\frac{\\sum_{i=0}^{n-(j+1)}X_iY_i}{\\sum_{i=0}^{n-(j+1)}X_i^2}=\\frac{\\sum_{i=0}^{n-(j+1)}\\sqrt{C_{i,j}}\\times\\dfrac{C_{i,j+1}}{\\sqrt{C_{i,j}}}}{\\sum_{i=0}^{n-(j+1)}\\left(\\sqrt{C_{i,j}}\\right)^2}=\\frac{\\sum_{i=0}^{n-(j+1)}C_{i,j+1}}{\\sum_{i=0}^{n-(j+1)}C_{i,j}}\\]
+        We thus recover the usual formula used by actuaries: the estimated development factor is nothing but the ratio of the sum of cumulative payments at \\(j+1\\) to the sum of cumulative payments at \\(j\\), over those accident years for which both columns are observed. We then have:
+        \\[\\widetilde{f}_j=\\frac{\\sum_{i=0}^{n-(j+1)}\\left(f_jC_{i,j}+u_{i,j}\\right)}{\\sum_{i=0}^{n-(j+1)}C_{i,j}}=f_j+\\frac{\\sum_{i=0}^{n-(j+1)}u_{i,j}}{\\sum_{i=0}^{n-(j+1)}C_{i,j}}\\]
+        By linearity of the expectation and since the disturbances have zero mean by assumption, we find \\(\\mathbb{E}[\\widetilde{f}_j]=f_j\\): the <em>chain ladder</em> estimator is therefore unbiased. Finally, since the disturbances are uncorrelated, since \\(\\Var{u_{i,j}}=\\sigma^2_jC_{i,j}\\) for every accident year \\(i\\), and since the variance is quadratic, we finally obtain:
+        \\[\\begin{aligned}
+        \\Var{\\widetilde{f}_j}
+        &=\\Var{\\frac{\\sum_{i=0}^{n-(j+1)}u_{i,j}}{\\sum_{i=0}^{n-(j+1)}C_{i,j}}}=\\frac{\\sum_{i=0}^{n-(j+1)}\\Var{u_{i,j}}}{\\left(\\sum_{i=0}^{n-(j+1)}C_{i,j}\\right)^2}\\\\
+        &=\\frac{\\sum_{i=0}^{n-(j+1)}\\sigma_j^2C_{i,j}}{\\left(\\sum_{i=0}^{n-(j+1)}C_{i,j}\\right)^2}=\\frac{\\sigma_j^2}{\\sum_{i=0}^{n-(j+1)}C_{i,j}}
+        \\end{aligned}\\]</li>
+
+        <li>Let us take up again what was written in question 1.(b). In the role of \\(\\textbf{u}_j\\), we now set \\(\\textbf{v}:=(v_0,\\ldots,v_{n-(j+1)})^T\\). For every integer \\(i\\) between 0 and \\(n-(j+1)\\), set \\(\\widetilde{v}_i:=\\dfrac{C_{i,j+1}}{\\sqrt{C_{i,j}}}-\\widetilde{f}_j\\sqrt{C_{i,j}}\\), the residual of the \\(i\\)-th observation in the generalised linear model, and \\(\\widehat{v}_i:=C_{i,j+1}-\\widetilde{f}_jC_{i,j}\\), the error in the estimation of \\(C_{i,j+1}\\) by the <em>chain ladder</em> method. In the role of \\(\\widehat{\\textbf{u}}_j\\), we set \\(\\widehat{\\textbf{v}}:=(\\widetilde{v}_0,\\ldots,\\widetilde{v}_{n-(j+1)})^T\\). Likewise, in the roles of \\(\\textbf{Y}\\) and \\(\\textbf{X}\\), we set respectively \\(\\textbf{Y}:=\\left(\\dfrac{C_{0,j+1}}{\\sqrt{C_{0,j}}},\\ldots,\\dfrac{C_{n-(j+1),j+1}}{\\sqrt{C_{n-(j+1),j}}}\\right)^T\\) and \\(\\textbf{X}:=\\left(\\sqrt{C_{0,j}},\\ldots,\\sqrt{C_{n-(j+1),j}}\\right)^T\\). We then note that we recover \\((\\widetilde{f}_j)=(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\textbf{Y}\\). In this context, we may set \\(\\textbf{M}_{\\textbf{X}}:=\\textbf{I}_{n-j}-\\textbf{X}(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\) and carry out exactly the same computations as in question 1.(b), which give us as an unbiased estimator of \\(\\sigma_j^2\\) the random variable \\(\\widetilde{\\sigma_j^2}:=\\frac{\\text{RSS}}{n-j-1}\\). The only difference lies in the value of the RSS, which this time equals:
+        \\[\\begin{aligned}
+        \\text{RSS}
+        &:=\\widetilde{v}_0^2+\\cdots+\\widetilde{v}_{n-(j+1)}^2\\\\
+        &=\\left(\\frac{C_{0,j+1}}{\\sqrt{C_{0,j}}}-\\widetilde{f}_j\\sqrt{C_{0,j}}\\right)^2+\\cdots+\\left(\\frac{C_{n-(j+1),j+1}}{\\sqrt{C_{n-(j+1),j}}}-\\widetilde{f}_j\\sqrt{C_{n-(j+1),j}}\\right)^2\\\\
+        &=\\left(\\frac{C_{0,j+1}-\\widetilde{f}_jC_{0,j}}{\\sqrt{C_{0,j}}}\\right)^2+\\cdots+\\left(\\frac{C_{n-(j+1),j+1}-\\widetilde{f}_jC_{n-(j+1),j}}{\\sqrt{C_{n-(j+1),j}}}\\right)^2\\\\
+        &=\\frac{\\widehat{v}_0^2}{C_{0,j}}+\\cdots+\\frac{\\widehat{v}_{n-(j+1)}^2}{C_{n-(j+1),j}}
+        \\end{aligned}\\]
+        We therefore do obtain the announced estimator \\(\\widetilde{\\sigma_j^2}=\\dfrac{1}{n-j-1}\\left(\\dfrac{\\widehat{v}_{0}^2}{C_{0,j}}+\\cdots+\\dfrac{\\widehat{v}_{n-(j+1)}^2}{C_{n-(j+1),j}}\\right)\\). Note that each residual \\(\\widehat{v}_i\\) is weighted by the inverse of the cumulative payment \\(C_{i,j}\\): this is precisely the translation of the assumed form of heteroscedasticity, the "heaviest" accident years being those for which the largest errors are tolerated.</li>
+
+        <li>Assume further that \\(\\textbf{v}\\) is a Gaussian vector with zero mean and covariance matrix \\(\\Var{\\textbf{v}}=\\sigma^2_j\\textbf{I}_{n-j}\\), and take for granted that \\((n-j-1)\\widetilde{\\sigma^2_j}\\big/\\sigma^2_j\\) follows a \\(\\chi^2\\) distribution with \\(n-j-1\\) degrees of freedom. We know that \\(\\widetilde{f}_j\\) is a linear estimator, while the \\(v_{0},\\ldots,v_{n-(j+1)}\\) are mutually independent (since \\(\\textbf{v}\\) is a Gaussian vector with a diagonal covariance matrix): by linearity of the normal distribution, \\(\\widetilde{f}_j\\) therefore also follows a normal distribution with mean \\(f_j\\) (since \\(\\widetilde{f}_j\\) is unbiased, by the Gauss-Markov theorem) and variance \\(\\Var{\\widetilde{f}_j}\\). Consequently, \\(U_j:=\\left(\\widetilde{f}_j-f_j\\right)\\big/\\sqrt{\\Var{\\widetilde{f}_j}}\\) follows a standard normal distribution, while the variance of \\(\\widetilde{f}_j\\), computed in question 2.(a), is estimated by the random variable:
+        \\[\\widetilde{\\textbf{Var}}(\\widetilde{f}_j)=\\frac{\\widetilde{\\sigma^2_j}}{\\sum_{i=0}^{n-(j+1)}C_{i,j}}\\]
+        Setting \\(\\widetilde{t}=\\dfrac{\\widetilde{f}_j-f_j}{\\sqrt{\\widetilde{\\textbf{Var}}(\\widetilde{f}_j)}}\\), we then have:
+        \\[\\widetilde{t}=\\sqrt{(n-j-1)\\times\\frac{\\Var{\\widetilde{f}_j}}{(n-j-1)\\widetilde{\\textbf{Var}}(\\widetilde{f}_j)}}\\times\\frac{\\widetilde{f}_j-f_j}{\\sqrt{\\Var{\\widetilde{f}_j}}}=\\sqrt{\\frac{(n-j-1)\\sigma^2_j}{(n-j-1)\\widetilde{\\sigma^2_j}}}\\times U_j\\]
+        Since \\((n-j-1)\\widetilde{\\sigma^2_j}\\big/\\sigma^2_j\\) follows a \\(\\chi^2\\) distribution with \\(n-j-1\\) degrees of freedom, \\(U_j\\) follows a standard normal distribution, and these two random variables are independent because \\(\\widetilde{\\sigma^2_j}\\) and \\(\\widetilde{f}_j\\) are, then \\(\\widetilde{t}\\) follows by definition a Student distribution with \\(n-j-1\\) degrees of freedom. For every real number \\(\\alpha\\) between 0 and 1, let \\(t_{\\alpha}\\) denote the quantile of order \\(100(1-\\alpha)\\,\\%\\) of a Student distribution with \\(n-j-1\\) degrees of freedom. Let \\(\\alpha\\) be a real number between 0 and 1. We therefore have \\(\\mathbb{P}\\left(\\left[-t_{\\alpha/2}\\leq\\widetilde{t}\\leq t_{\\alpha/2}\\right]\\right)=1-\\alpha\\), and the same manipulations as above give:
+        \\[\\mathbb{P}\\left(\\left[\\widetilde{f}_j-t_{\\alpha/2}\\sqrt{\\widetilde{\\textbf{Var}}(\\widetilde{f}_j)}\\leq f_j\\leq\\widetilde{f}_j+t_{\\alpha/2}\\sqrt{\\widetilde{\\textbf{Var}}(\\widetilde{f}_j)}\\right]\\right)=1-\\alpha\\]
+        Thus, a confidence interval for the development factor \\(f_j\\) is given by \\(\\left[\\widetilde{f}_j-t_{\\alpha/2}\\sqrt{\\widetilde{\\textbf{Var}}(\\widetilde{f}_j)}\\,;\\,\\widetilde{f}_j+t_{\\alpha/2}\\sqrt{\\widetilde{\\textbf{Var}}(\\widetilde{f}_j)}\\right]\\), at confidence level \\(1-\\alpha\\).</li>
+
+      </ol></li>
+
+      <li><div>
+        We begin by computing the triangle of cumulative payments, by summing the increments row by row (we have \\(C_{i,0}=Z_{i,0}\\) and then \\(C_{i,j+1}=C_{i,j}+Z_{i,j+1}\\)):
+        ${tblCum(D)}
+        We then estimate each development factor by the <em>chain ladder</em> method, that is, for every integer \\(j\\) between 0 and \\(${D.nmax - 1}\\), by the ratio \\(\\widetilde{f}_j=\\sum_{i}C_{i,j+1}\\big/\\sum_{i}C_{i,j}\\), the sum being taken over those accident years only for which both columns \\(j\\) and \\(j+1\\) are filled in. We obtain:
+        ${facBlock(D)}
+        We can then complete the lower part of the triangle of cumulative payments, step by step, by multiplying the last observed cumulative payment of each row by the successive development factors:
+        ${tblFull(D)}
+        The reserve for accident year \\(i\\) is then the difference between the estimated ultimate cumulative payment and the last observed cumulative payment, that is \\(\\widetilde{R}_i=\\widetilde{C}_{i,${D.nmax}}-C_{i,${D.nmax}-i}\\):
+        ${tblProv(D)}
+        Consequently, the total reserve satisfies:
+        \\[\\widetilde{R}=${D.provSum}\\approx ${D.Rtot.toFixed(2)}\\]
+        that is about <strong>${D.RtotTxt} ${D.unit}</strong> to be reserved. This amount corresponds to the payments that the insurer will still have to make, in the years to come, for claims that have already occurred: it must be immediately recorded as a liability on its balance sheet, failing which the insurer would be unable to meet its commitments when the developments materialise. Note that the reserve is all the larger as the accident year is recent: year ${D.years[D.nmax]}, for which only the first payment is observed, alone accounts for ${D.partLast}% of the total reserve, whereas year ${D.years[1]}, which is almost fully developed, represents only a marginal share of it.
+      </div></li>
+
+      </ol></div>`;
+    }
+  }
+};
+
+/* ============================================================
+   TABLEAUX  /  TABLES
+   ============================================================ */
+function hdrRow(D, title) {
+  let h = `<tr><th class="rowh">${title}</th>`;
+  for (let j = 0; j <= D.nmax; j++) h += `<th>${j}</th>`;
+  return h + `</tr>`;
+}
+
+function tblIncr(D) {
+  const L = I18N[LANG].lbl;
+  let rows = "";
+  for (let i = 0; i <= D.nmax; i++) {
+    rows += `<tr><th class="rowh">${D.years[i]}</th>`;
+    for (let j = 0; j <= D.nmax; j++) {
+      rows += (i + j <= D.nmax) ? `<td class="num">${D.Z[i][j]}</td>` : `<td class="vide"></td>`;
+    }
+    rows += `</tr>`;
+  }
+  return `<div class="dtable-wrap"><table class="dtable"><caption>${L.capIncr(D)}</caption>${hdrRow(D, L.incr)}${rows}</table></div>`;
+}
+
+function tblCum(D) {
+  const L = I18N[LANG].lbl;
+  let rows = "";
+  for (let i = 0; i <= D.nmax; i++) {
+    rows += `<tr><th class="rowh">${D.years[i]}</th>`;
+    for (let j = 0; j <= D.nmax; j++) {
+      rows += (i + j <= D.nmax) ? `<td class="num">${D.C[i][j]}</td>` : `<td class="vide"></td>`;
+    }
+    rows += `</tr>`;
+  }
+  return `<div class="dtable-wrap"><table class="dtable"><caption>${L.capCum}</caption>${hdrRow(D, L.cum)}${rows}</table></div>`;
+}
+
+function tblFull(D) {
+  const L = I18N[LANG].lbl;
+  let rows = "";
+  for (let i = 0; i <= D.nmax; i++) {
+    rows += `<tr><th class="rowh">${D.years[i]}</th>`;
+    for (let j = 0; j <= D.nmax; j++) {
+      rows += (i + j <= D.nmax)
+        ? `<td class="num">${D.C[i][j]}</td>`
+        : `<td class="num est">${D.Chat[i][j].toFixed(2)}</td>`;
+    }
+    rows += `</tr>`;
+  }
+  let fac = `<tr><td class="rowh" style="text-align:left;font-style:italic">${L.fac}</td>`;
+  for (let j = 0; j <= D.nmax; j++) {
+    fac += (j <= D.nmax - 1) ? `<td class="num est">${D.f[j].toFixed(4)}</td>` : `<td class="vide"></td>`;
+  }
+  fac += `</tr>`;
+  return `<div class="dtable-wrap"><table class="dtable"><caption>${L.capFull}</caption>${hdrRow(D, L.full)}${rows}<tfoot>${fac}</tfoot></table></div>`;
+}
+
+function tblProv(D) {
+  const L = I18N[LANG].lbl;
+  let rows = "";
+  for (let i = 1; i <= D.nmax; i++) {
+    rows += `<tr><th class="rowh">${D.years[i]}</th><td class="num">${D.C[i][D.nmax - i]}</td><td class="num">${D.Chat[i][D.nmax].toFixed(2)}</td><td class="num">${D.R[i].toFixed(2)}</td></tr>`;
+  }
+  return `<div class="dtable-wrap"><table class="dtable"><caption>${L.capProv(D)}</caption>
+    <tr><th class="rowh">${L.provYear}</th><th>${L.provLast}</th><th>${L.provFinal}</th><th>${L.provR}</th></tr>
+    ${rows}
+    <tfoot><tr><td class="rowh" style="text-align:left">${L.total}</td><td class="num">—</td><td class="num">—</td><td class="num">${D.Rtot.toFixed(2)}</td></tr></tfoot>
+    </table></div>`;
+}
+
+function facBlock(D) {
+  let lines = [];
+  for (let j = 0; j <= D.nmax - 1; j++) {
+    let num = [], den = [];
+    for (let i = 0; i <= D.nmax - j - 1; i++) { num.push(D.C[i][j + 1]); den.push(D.C[i][j]); }
+    const sn = num.reduce((a, b) => a + b, 0), sd = den.reduce((a, b) => a + b, 0);
+    const detail = (num.length > 1) ? `\\dfrac{${num.join("+")}}{${den.join("+")}}=` : "";
+    lines.push(`\\widetilde{f}_{${j}\\to ${j + 1}}=${detail}\\dfrac{${sn}}{${sd}}\\approx ${D.f[j].toFixed(4)}`);
+  }
+  return `\\[\\begin{cases}${lines.join("\\\\[4pt]")}\\end{cases}\\]`;
+}
+
+/* ============================================================
+   CONTEXTES  /  CONTEXTS
+   ============================================================ */
+const ASSUREURS = ["La Prévoyante", "Assurances du Ponant", "Mutuelle Atlantis", "Groupe Sévigné", "Assurances Vauban", "Compagnie du Nord-Ouest"];
+const SINISTRES = [
+  { fr: "accidents du travail",              en: "work-related accidents" },
+  { fr: "dégâts des eaux",                   en: "water damage" },
+  { fr: "responsabilité civile automobile",  en: "motor third-party liability" },
+  { fr: "maladies professionnelles",         en: "occupational diseases" },
+  { fr: "catastrophes naturelles",           en: "natural catastrophes" },
+  { fr: "responsabilité civile médicale",    en: "medical liability" }
+];
+
+/* ============================================================
+   PRNG (mulberry32)
+   ============================================================ */
+let _rand, _activeSeed = 0;
+function initRand(seed) {
+  _activeSeed = seed >>> 0;
+  let s = _activeSeed;
+  _rand = () => {
+    s = (s + 0x6D2B79F5) >>> 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const rI = (a, b) => Math.floor(_rand() * (b - a + 1)) + a;
+const rA = arr => arr[Math.floor(_rand() * arr.length)];
+const r2 = x => Math.round(x * 100) / 100;
+const r4 = x => Math.round(x * 10000) / 10000;
+
+/* ============================================================
+   GENERATION DU TRIANGLE  /  TRIANGLE GENERATION
+   ============================================================ */
+function buildData(N) {
+  const nmax = N - 1;
+  let D = null, guard = 0;
+  while (D === null && guard++ < 4000) {
+    const insurer = rA(ASSUREURS);
+    const sin = rA(SINISTRES);
+    const lastYear = 2018 + rI(0, 7);
+    const years = [];
+    for (let i = 0; i <= nmax; i++) years.push(lastYear - nmax + i);
+
+    /* Incréments : ordres de grandeur décroissants avec le développement */
+    const Z = [];
+    for (let i = 0; i <= nmax; i++) {
+      const row = [];
+      for (let j = 0; j <= nmax; j++) {
+        if (i + j > nmax) { row.push(null); continue; }
+        if (j === 0) row.push(rI(75, 125));
+        else if (j === 1) row.push(rI(18, 48));
+        else if (j === 2) row.push(rI(8, 40));
+        else if (j === 3) row.push(rI(1, 9));
+        else row.push(rI(0, 4));
+      }
+      Z.push(row);
+    }
+
+    /* Paiements cumulés */
+    const C = [];
+    for (let i = 0; i <= nmax; i++) {
+      const row = [];
+      for (let j = 0; j <= nmax; j++) {
+        if (i + j > nmax) { row.push(null); continue; }
+        row.push(j === 0 ? Z[i][0] : row[j - 1] + Z[i][j]);
+      }
+      C.push(row);
+    }
+
+    /* Facteurs de développement chain ladder, arrondis au dix-millième */
+    const f = [];
+    let ok = true;
+    for (let j = 0; j <= nmax - 1; j++) {
+      let num = 0, den = 0;
+      for (let i = 0; i <= nmax - j - 1; i++) { num += C[i][j + 1]; den += C[i][j]; }
+      const fj = r4(num / den);
+      if (fj <= 1.004) { ok = false; break; }
+      f.push(fj);
+    }
+    if (!ok) continue;
+    if (f[0] < 1.15 || f[0] > 1.55) continue;
+    if (f[nmax - 1] > 1.12) continue;
+    let decr = true;
+    for (let j = 0; j <= nmax - 2; j++) if (f[j + 1] > f[j] + 0.06) decr = false;
+    if (!decr) continue;
+
+    /* Complétion du triangle, de proche en proche, arrondie au centième */
+    const Chat = [];
+    for (let i = 0; i <= nmax; i++) {
+      const row = [];
+      for (let j = 0; j <= nmax; j++) {
+        if (i + j <= nmax) row.push(C[i][j]);
+        else row.push(r2(row[j - 1] * f[j - 1]));
+      }
+      Chat.push(row);
+    }
+
+    /* Provisions */
+    const R = [0];
+    let Rtot = 0;
+    for (let i = 1; i <= nmax; i++) {
+      const Ri = r2(Chat[i][nmax] - C[i][nmax - i]);
+      R.push(Ri);
+      Rtot = r2(Rtot + Ri);
+    }
+    if (Rtot < 25 || Rtot > 500) continue;
+
+    const provSum = R.slice(1).map((v, k) => `(${Chat[k + 1][nmax].toFixed(2)}-${C[k + 1][nmax - (k + 1)]})`).join("+");
+    const L = (LANG === 'fr');
+
+    D = {
+      N: N, nmax: nmax, years: years, Z: Z, C: C, f: f, Chat: Chat, R: R, Rtot: Rtot,
+      provSum: provSum,
+      RtotTxt: Rtot.toFixed(2),
+      partLast: (R[nmax] / Rtot * 100).toFixed(1),
+      insurer: insurer,
+      claim: L ? sin.fr : sin.en,
+      unit: L ? "millions d'euros" : "millions of euros"
+    };
+  }
+  return D;
+}
+
+/* ============================================================
+   GENERATION / RENDU
+   ============================================================ */
+function regen() {
+  document.getElementById('seed-input').value = '';
+  generateFromControls();
+}
+
+function generateFromControls() {
+  const seedInp = document.getElementById('seed-input').value;
+  const seed = seedInp ? parseInt(seedInp) : Math.floor(Math.random() * 10000000);
+  initRand(seed);
+  document.getElementById('seed-disp').textContent = seed;
+  document.getElementById('modal-seed').textContent = seed;
+
+  const nInp = document.getElementById('param-n').value;
+  let N = nInp ? parseInt(nInp) : rA([4, 4, 5]);
+  if (N < 4) N = 4;
+  if (N > 5) N = 5;
+
+  const D = buildData(N);
+  if (!D) return;
+
+  document.getElementById('ex-content').innerHTML = I18N[LANG].ex(D);
+  document.getElementById('sol-content').innerHTML = I18N[LANG].sol(D);
+
+  document.getElementById('welcome').style.display = 'none';
+  document.getElementById('ex-area').style.display = 'block';
+  solVisible = false;
+  let solC = document.getElementById('sol-card'), btn = document.getElementById('toggle-btn');
+  solC.classList.remove('visible'); btn.classList.remove('shown'); btn.textContent = I18N[LANG].showSol;
+
+  if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise();
+}
+
+/* ============================================================
+   LANGUE / UI / EXPORT PDF
+   ============================================================ */
+let LANG = 'fr';
+
+function detectLang() {
+    try {
+        const q = new URLSearchParams(window.location.search).get('lang');
+        if (q && I18N[q.toLowerCase()]) return q.toLowerCase();
+    } catch (e) {}
+    const h = (window.location.hash || '').replace('#', '').toLowerCase();
+    if (I18N[h]) return h;
+    return 'fr';
+}
+
+function applyLang() {
+    const D = I18N[LANG];
+    document.documentElement.lang = D.htmlLang;
+    document.title = D.title;
+
+    document.querySelectorAll('[data-k]').forEach(function (el) {
+        const key = el.getAttribute('data-k');
+        if (D[key] !== undefined) el.innerHTML = D[key];
+    });
+
+    const cp = document.getElementById('btn-copy');
+    if (cp) { cp.textContent = D.copy; cp.title = D.copyTitle; }
+    const si = document.getElementById('seed-input');
+    if (si) si.placeholder = D.phSeed;
+    const ni = document.getElementById('param-n');
+    if (ni) ni.placeholder = D.phN;
+
+    const tb = document.getElementById('toggle-btn');
+    if (tb) tb.textContent = solVisible ? D.hideSol : D.showSol;
+
+    document.getElementById('flag-fr').classList.toggle('active', LANG === 'fr');
+    document.getElementById('flag-en').classList.toggle('active', LANG === 'en');
+}
+
+function setLang(lang) {
+    if (!I18N[lang] || lang === LANG) return;
+    LANG = lang;
+
+    try {
+        const u = new URL(window.location.href);
+        u.searchParams.set('lang', lang);
+        history.replaceState(null, '', u.toString());
+    } catch (e) {}
+
+    applyLang();
+
+    if (document.getElementById('ex-area').style.display !== 'none') {
+        const wasVis = solVisible;
+        document.getElementById('seed-input').value = _activeSeed;
+        generateFromControls();
+        if (wasVis) toggleSol();
+    }
+}
+
+function toggleSol(){
+  solVisible = !solVisible;
+  const sol = document.getElementById('sol-card'), btn = document.getElementById('toggle-btn');
+  if(solVisible){sol.classList.add('visible'); btn.classList.add('shown'); btn.textContent = I18N[LANG].hideSol;}
+  else{sol.classList.remove('visible'); btn.classList.remove('shown'); btn.textContent = I18N[LANG].showSol;}
+}
+
+function copySeed(){
+  const s = document.getElementById('seed-disp').textContent;
+  if(s && s !== '—'){
+    navigator.clipboard.writeText(s).then(() => {
+      const b = event.target, o = b.textContent;
+      b.textContent = I18N[LANG].copied; setTimeout(()=>b.textContent=o,1500);
+    });
+  }
+}
+
+function openPdfModal(){
+  document.getElementById('pdf-ov').style.display = 'block';
+  document.getElementById('pdf-modal').style.display = 'block';
+  document.getElementById('opt-sol').checked = solVisible;
+}
+function closePdfModal(){
+  document.getElementById('pdf-ov').style.display = 'none';
+  document.getElementById('pdf-modal').style.display = 'none';
+}
+function doPrint(){
+  const noHdr = !document.getElementById('opt-header').checked;
+  const inclSol = document.getElementById('opt-sol').checked;
+  const body = document.body;
+  if(noHdr) body.classList.add('print-no-header');
+  if(inclSol){body.classList.add('print-force-solution');body.classList.remove('print-no-solution');}
+  else{body.classList.add('print-no-solution');body.classList.remove('print-force-solution');}
+  closePdfModal();
+  setTimeout(() => {
+    window.print();
+    setTimeout(() => { body.classList.remove('print-no-header','print-force-solution','print-no-solution'); }, 500);
+  }, 100);
+}
+
+/* Initialisation */
+LANG = detectLang();
+applyLang();
+</script>
+
+</body>
+</html>
