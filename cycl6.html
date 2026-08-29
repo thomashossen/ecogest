@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Macroéconomie - Courbe de Lorenz et indice de Gini</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['\\[', '\\]']]
+    }
+  };
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7;text-align:justify;}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 1.5rem;border-bottom:3px solid var(--gold);text-align:left;}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end;background:rgba(255,255,255,.03);padding:1rem 1.5rem;border-radius:6px;border:1px solid rgba(255,255,255,.1)}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.6)}
+.ctrl-inp, .ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.4rem .7rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none;transition:border-color .2s}
+.ctrl-inp:focus, .ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.ctrl-sel option{background:var(--navy);color:var(--cream)}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.5rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;transition:background .18s;margin-left:auto}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN & CARDS */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:700}
+
+.top-actions{display:flex;gap:.5rem;}
+.btn-action{background:#fff;border:1px solid var(--border);color:var(--navy);padding:.4rem .8rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.85rem;font-weight:600;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.btn-action:hover{border-color:var(--navy);background:var(--cream-dark);}
+
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem;text-align:left;}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+.event-list{list-style:none;counter-reset:q}
+.event-list > li{margin-bottom:1.5rem;padding-left:1.8rem;position:relative;font-size:.95rem;text-align:justify}
+.event-list > li::before{counter-increment:q;content:counter(q) ".";position:absolute;left:0;color:var(--gold);font-weight:700}
+
+.sub-list { list-style-type: none; padding-left: 1rem; margin-top: 0.8rem; text-align:justify;}
+.sub-list li { margin-bottom: 0.5rem; }
+
+/* EXAM TABLE */
+.exam-table-wrap { overflow-x: auto; margin: 1.5rem 0; }
+.exam-table{width:100%;border-collapse:collapse;font-size:.8rem;font-family:'Source Serif 4',serif; margin: 0;}
+.exam-table th, .exam-table td{border:1px solid var(--border);padding:.5rem .4rem;text-align:center;vertical-align:middle;}
+.exam-table th{background:var(--navy);color:var(--cream);font-weight:600;}
+.exam-table .txt-left{text-align:left;font-weight:600;color:var(--navy);font-size:.78rem;line-height:1.35;}
+.exam-table .amt{font-family:'JetBrains Mono',monospace;text-align:right;white-space:nowrap;}
+.exam-table tr.hi-row td{background:#f2f7f2;}
+.table-caption{font-size:.78rem;color:var(--text-muted);font-style:italic;text-align:center;margin-top:.6rem;line-height:1.5}
+
+.two-col-table { width: 100%; display: flex; gap: 1.5rem; margin: 1.2rem 0; align-items:flex-start;}
+.col-half { flex: 1; min-width:0; }
+
+/* GRAPHIQUE */
+.chart-wrap{margin:1.4rem 0;text-align:center}
+.chart-wrap svg{max-width:100%;height:auto}
+
+/* SOLUTION TOGGLE */
+.sol-toggle-wrap{text-align:left; margin: 1.5rem 0 0 0;}
+.btn-toggle{background:transparent;border:2px solid var(--green);border-bottom:none;color:var(--green);font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;padding:.5rem 1.5rem;border-radius:4px 4px 0 0;cursor:pointer;transition:all .2s; position:relative; z-index:2; top:2px;}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--green);color:var(--cream)}
+.sol-card{border-top:2px solid var(--green);display:none; border-radius: 0 6px 6px 6px; position:relative; z-index:1;}
+.sol-card.visible{display:block;animation:fi .4s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+
+.calc-box{background:#f9fcf9;border:1px solid #c8e6c9;padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.9rem;color:var(--text);line-height:1.6;text-align:justify;}
+.method-box{background:#fdfaf2;border:1px solid #e3d3a8;border-left:3px solid var(--gold);padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.9rem;line-height:1.6;text-align:justify;}
+.persp-box{background:#f7f9fc;border:1px solid #ccd8e6;border-left:3px solid var(--navy-mid);padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.88rem;line-height:1.6;text-align:justify;}
+.sol-sub{color:var(--navy);font-weight:600;display:block;margin:1.1rem 0 .5rem;}
+.sol-sub:first-child{margin-top:0;}
+
+@media print{
+  body{background:#fff;}
+  header, .ctrls, .sol-toggle-wrap, .top-actions {display:none !important;}
+  .card{box-shadow:none; border:1px solid var(--border); margin-bottom:2rem;}
+  .sol-card{display:block !important; border-top:2px solid var(--green);}
+  #ex-area {display:block !important;}
+}
+
+/* --- Selecteur de langue / Language switch --- */
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem}
+.header-top .header-badge{margin-bottom:0}
+.lang-switch{display:flex;gap:.45rem;flex-shrink:0}
+.flag-btn{background:rgba(255,255,255,.06);border:1px solid rgba(201,149,42,.35);border-radius:3px;padding:3px;cursor:pointer;line-height:0;opacity:.5;transition:opacity .2s,border-color .2s,transform .15s}
+.flag-btn:hover{opacity:1;transform:translateY(-1px)}
+.flag-btn.active{opacity:1;border-color:var(--gold-light);box-shadow:0 0 0 1px rgba(232,184,75,.35)}
+.flag-btn svg{display:block;width:30px;height:20px;border-radius:1px}
+@media print{ .lang-switch{display:none !important;} }
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-top">
+    <div class="header-badge" data-k="k-badge">INÉGALITÉS ET RÉPARTITION</div>
+    <div class="lang-switch">
+      <button type="button" class="flag-btn active" id="flag-fr" onclick="setLang('fr')" title="Français" aria-label="Français"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="20" height="40" fill="#002654"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ED2939"/></svg></button>
+      <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
+    </div>
+  </div>
+  <h1 data-k="k-h1">Courbe de Lorenz et indice de Gini</h1>
+  <p class="subtitle" data-k="k-sub">© Thomas Hossen – Version du 7 mars 2026</p>
+
+  <div class="ctrls">
+    <div class="ctrl-g">
+      <span class="ctrl-lbl" data-k="k-seed">Seed (Optionnel)</span>
+      <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999">
+    </div>
+    <div class="ctrl-g">
+      <span class="ctrl-lbl" data-k="k-ineq">Niveau d'inégalité</span>
+      <select class="ctrl-sel" id="ineq-input">
+        <option value="auto" data-k="k-ineq-auto">Aléatoire</option>
+        <option value="low" data-k="k-ineq-low">Faible</option>
+        <option value="mid" data-k="k-ineq-mid">Intermédiaire</option>
+        <option value="high" data-k="k-ineq-high">Élevé</option>
+      </select>
+    </div>
+    <button class="btn-gen" onclick="generateExercise(false)"><span data-k="k-gen">Générer l'exercice →</span></button>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" style="text-align:center; padding:4rem; color:var(--text-muted); font-style:italic;">
+    <span data-k="k-welcome">Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.</span>
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="seed-badge"><span data-k="k-seedbadge">Seed active :</span> <span id="seed-disp"></span></div>
+      <div class="top-actions">
+        <button class="btn-action" onclick="generateExercise(true)"><span data-k="k-new">↺ Nouvel énoncé</span></button>
+        <button class="btn-action" onclick="window.print()"><span data-k="k-pdf">⬇ Exporter PDF</span></button>
+        <button class="btn-action" onclick="exportWord()"><span data-k="k-doc">⬇ Exporter DOC</span></button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="tag" data-k="k-tag-ex">Énoncé</span><h2 data-k="k-cardtitle">Mesure de la concentration des revenus</h2></div>
+      <div class="card-body">
+        <div class="context-block" id="context-text"></div>
+        <div id="enonce-table-container"></div>
+        <div class="context-block" id="additional-info" style="margin-top:1.5rem; background:#fff; border-left:none; border-radius:0;"></div>
+
+        <p style="margin-bottom:1rem; font-weight:600; color:var(--red); text-align:left;" data-k="k-work">Travail à faire</p>
+        <ul class="event-list" id="events-list"></ul>
+      </div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag" data-k="k-tag-sol">Corrigé</span><h2 data-k="k-cardtitle2">Mesure de la concentration des revenus</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+/* ============================================================
+   DICTIONNAIRE BILINGUE  /  BILINGUAL DICTIONARY
+   ============================================================ */
+const I18N = {
+
+  fr: {
+    "htmlLang": "fr",
+    "title": "Simulateur Macroéconomie - Courbe de Lorenz et indice de Gini",
+    "locale": "fr-FR",
+    "k-badge": "INÉGALITÉS ET RÉPARTITION",
+    "k-h1": "Courbe de Lorenz et indice de Gini",
+    "k-sub": "© Thomas Hossen – Version du 7 mars 2026",
+    "k-seed": "Seed (Optionnel)",
+    "k-ineq": "Niveau d'inégalité",
+    "k-ineq-auto": "Aléatoire",
+    "k-ineq-low": "Faible",
+    "k-ineq-mid": "Intermédiaire",
+    "k-ineq-high": "Élevé",
+    "k-gen": "Générer l'exercice →",
+    "k-welcome": "Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.",
+    "k-seedbadge": "Seed active :",
+    "k-new": "↺ Nouvel énoncé",
+    "k-pdf": "⬇ Exporter PDF",
+    "k-doc": "⬇ Exporter DOC",
+    "k-tag-ex": "Énoncé",
+    "k-cardtitle": "Mesure de la concentration des revenus",
+    "k-tag-sol": "Corrigé",
+    "k-cardtitle2": "Mesure de la concentration des revenus",
+    "k-work": "Travail à faire",
+    "showSol": "Afficher le corrigé",
+    "hideSol": "Masquer le corrigé",
+    "docTitle": "Exercice Courbe de Lorenz et indice de Gini",
+    "docFile": "Exercice_Lorenz_Gini.doc",
+    thousands: "\\,",
+    decimal: "{,}",
+
+    chart: {
+      xlabel: "Déciles",
+      ylabel: "Part cumulée des revenus (%)",
+      lorenz: "Courbe de Lorenz",
+      equality: "Situation d'égalité parfaite",
+      caption: y => `Courbe de Lorenz des revenus disponibles des ménages en ${y}`
+    },
+    rowBound: "Limite supérieure du revenu disponible (en euros) des ménages",
+    rowShare: "Rev. disp. tot. (RDT) du décile (en % du RDT de l'ens. des ménages)",
+    rowCum:   "RDT du décile (en % cumulé du RDT de l'ens. des ménages)",
+
+    context: function(D) {
+      return `
+      On donne la distribution des revenus disponibles des ménages en ${D.year}, par décile. On utilise les abréviations « rev. disp. tot. » pour « revenu disponible total » et « ens. » pour « ensemble ».
+    `;
+    },
+
+    table: function(D) {
+      const P = I18N['fr'];
+      let head = `<tr><th style="width:30%;"></th>` + D.dl.map(d=>`<th>${d}</th>`).join('') + `</tr>`;
+      let r1 = `<tr><td class="txt-left">${P.rowBound}</td>` + D.bounds.map(b=>`<td class="amt">${fmt(b)}</td>`).join('') + `</tr>`;
+      let r2 = `<tr><td class="txt-left">${P.rowShare}</td>` + D.shares.slice(0,9).map(s=>`<td class="amt">${sh(s)} %</td>`).join('') + `</tr>`;
+      return `<div class="exam-table-wrap"><table class="exam-table">${head}${r1}${r2}</table></div>`;
+    },
+
+    enonce: function(D) {
+      let h = "";
+      h += `<li>Tracer la courbe de Lorenz des revenus.</li>`;
+      h += `<li>En utilisant notamment vos connaissances, commenter l'évolution du rapport interdécile D9/D1 pour les revenus des ménages ; calculer sa valeur en ${D.year}.</li>`;
+      h += `<li>Proposer, à partir de la courbe de Lorenz, une approximation de l'indice de Gini pour les revenus des ménages en ${D.year}.</li>`;
+      return h;
+    },
+
+    sol: function(D) {
+      const P = I18N['fr'];
+      let s = "";
+
+      /* ---------- Q1 ---------- */
+      let head = `<tr><th style="width:30%;"></th>` + D.dl.map(d=>`<th>${d}</th>`).join('') + `</tr>`;
+      let r1 = `<tr><td class="txt-left">${P.rowBound}</td>` + D.bounds.map(b=>`<td class="amt">${fmt(b)}</td>`).join('') + `</tr>`;
+      let r2 = `<tr><td class="txt-left">${P.rowShare}</td>` + D.shares.slice(0,9).map(x=>`<td class="amt">${sh(x)} %</td>`).join('') + `</tr>`;
+      let r3 = `<tr class="hi-row"><td class="txt-left">${P.rowCum}</td>` + D.cum.slice(1,10).map(x=>`<td class="amt">${sh(x)} %</td>`).join('') + `</tr>`;
+
+      s += `<div class="calc-box">
+        <span class="sol-sub">1. Parts cumulées et tracé de la courbe de Lorenz</span>
+        On commence par calculer les revenus disponibles totaux des déciles en pourcentage cumulé du revenu disponible total de l'ensemble des ménages, en additionnant de proche en proche les parts du tableau :
+        <div class="exam-table-wrap"><table class="exam-table">${head}${r1}${r2}${r3}</table></div>
+        <p>Le tableau s'arrête au neuvième décile, mais le dixième s'en déduit : la somme des parts valant nécessairement 100 %, le dernier décile capte ${sh(D.shares[9])} % du revenu disponible total, ce qui porte le cumul à 100 % en $x=10$. On peut alors tracer la courbe de Lorenz, en portant les déciles en abscisse et la part cumulée des revenus en ordonnée.</p>
+        <div class="chart-wrap">${D.svg}<div class="table-caption">${P.chart.caption(D.year)}</div></div>
+        <p>La courbe est située sous la première bissectrice, et sa convexité traduit la concentration des revenus : plus elle s'éloigne de la diagonale, plus la répartition est inégalitaire. La lecture directe est parlante : les 50 % des ménages les plus modestes ne perçoivent que ${sh(D.cum[5])} % du revenu disponible total, tandis que les 10 % les plus aisés en captent ${sh(D.shares[9])} %.</p>
+      </div>`;
+
+      /* ---------- Q2 ---------- */
+      let hist = D.hist.map(h => `${sh2(h.v)} en ${h.y}`).join(', ');
+
+      s += `<div class="calc-box">
+        <span class="sol-sub">2. Rapport interdécile D9/D1</span>
+        Le rapport interdécile rapporte le seuil du neuvième décile à celui du premier :
+        <div class="math-formula">\\[ \\frac{D9}{D1} = \\frac{${texM(D.bounds[8],0)}}{${texM(D.bounds[0],0)}} \\approx ${texM(D.ratio,2)} \\]</div>
+        Cela signifie qu'en ${D.year}, il faut disposer d'un revenu au moins ${sh2(D.ratio)} fois supérieur pour entrer dans les 10 % des ménages les plus aisés plutôt que de rester au seuil des 10 % les plus modestes.
+        <p style="margin-top:.8rem;">Une précaution s'impose sur la lecture : ce rapport compare deux <em>seuils</em>, et non les revenus moyens des deux groupes extrêmes. Or le tableau permet justement de calculer ce second rapport, puisque chaque décile regroupe le même nombre de ménages : le revenu moyen du dernier décile rapporté à celui du premier vaut $\\frac{${texN(D.shares[9])}}{${texN(D.shares[0])}} \\approx ${texM(D.massRatio,2)}$. L'écart entre ${sh2(D.ratio)} et ${sh2(D.massRatio)} n'a rien d'anecdotique : il tient à la dispersion interne du dernier décile, où se logent les très hauts revenus, que le seuil D9 ne capte évidemment pas. C'est une raison classique pour laquelle le rapport interdécile sous-estime la concentration au sommet.</p>
+        <p>Sur longue période, le rapport interdécile de cette économie s'établissait à ${hist}. ${D.trend === 'up'
+          ? `Les inégalités de revenu se sont donc creusées de façon continue, la valeur de ${D.year} prolongeant cette tendance.`
+          : D.trend === 'down'
+          ? `Les inégalités de revenu se sont donc resserrées sur la période, la valeur de ${D.year} confirmant ce mouvement de réduction.`
+          : `Les inégalités se sont d'abord creusées avant de refluer : la valeur de ${D.year} marque un retour en deçà du point haut atteint en ${D.hist[1].y}.`}
+        On rappellera toutefois que ce type d'indicateur porte sur le revenu <em>disponible</em>, c'est-à-dire après impôts directs et prestations sociales : il mesure les inégalités qui subsistent une fois la redistribution opérée, et non les inégalités de revenu primaire, sensiblement plus fortes.</p>
+      </div>`;
+
+      /* ---------- Q3 ---------- */
+      const trap = i => `B_{${i+1}} &= (${i+1}-${i})\\times\\frac{${texN(D.cum[i+1])}+${texN(D.cum[i])}}{2} = ${texN(D.Bi[i])}`;
+      let colA = `\\[\\begin{aligned}` + [0,1,2,3,4].map(trap).join('\\\\') + `\\end{aligned}\\]`;
+      let colB = `\\[\\begin{aligned}` + [5,6,7,8,9].map(trap).join('\\\\') + `\\end{aligned}\\]`;
+
+      s += `<div class="calc-box">
+        <span class="sol-sub">3. Approximation de l'indice de Gini</span>
+        Soit $(Ox)$ l'axe des abscisses et $(Oy)$ l'axe des ordonnées. On définit $B$ comme l'aire délimitée par l'axe des abscisses, la droite d'équation $x=10$ et la courbe de Lorenz, et $A$ comme l'aire comprise entre la première bissectrice et la courbe de Lorenz. La somme $A+B$ est l'aire d'un triangle rectangle, soit $\\frac{10\\times 100}{2}=500$.
+        <p style="margin-top:.8rem;">Comment calculer l'aire $B$ ? Pour tout entier $i$ compris entre 1 et 10, on note $B_i$ l'aire du trapèze formé par l'axe des abscisses, la courbe de Lorenz et les droites d'équation $x=i-1$ et $x=i$. On approche alors $B$ par la somme $B_1+B_2+\\cdots+B_{10}$. Or on a :</p>
+        <div class="two-col-table"><div class="col-half">${colA}</div><div class="col-half">${colB}</div></div>
+        <p>En sommant ces dix aires, on obtient $B \\approx ${texN(D.B)}$. Par suite, on sait que l'indice de Gini vérifie $G := \\frac{A}{A+B}$. On a donc aussi :</p>
+        <div class="math-formula">\\[ G = \\frac{(A+B)-B}{A+B} = 1 - \\frac{B}{A+B} = 1 - \\frac{${texN(D.B)}}{500} \\approx ${texM(D.gini,3)} \\]</div>
+        L'indice de Gini des revenus disponibles s'établit donc autour de ${sh3(D.gini)} en ${D.year}. Rappelons qu'il est nul en cas d'égalité parfaite, où la courbe de Lorenz se confond avec la bissectrice, et qu'il tend vers 1 lorsqu'un seul ménage concentre tout le revenu.
+        <p style="margin-top:.8rem;">La méthode des trapèzes remplace chaque arc de la courbe par un segment de droite. Comme la courbe de Lorenz est convexe, ces segments passent au-dessus d'elle : l'aire $B$ est donc légèrement surestimée, et l'indice de Gini légèrement sous-estimé. L'approximation reste toutefois très acceptable avec un découpage en dix intervalles.</p>
+      </div>`;
+
+      /* ---------- Perspective ---------- */
+      s += `<div class="persp-box">
+        <span class="sol-sub">Pour aller plus loin</span>
+        L'indice de Gini résume toute une distribution en un seul nombre, ce qui fait sa force et sa faiblesse. Deux distributions très différentes peuvent partager le même Gini : l'indice ne dit pas <em>où</em> se situe l'inégalité, au bas ou au sommet de l'échelle. Il est d'ailleurs relativement peu sensible aux mouvements affectant les queues de distribution, là où le débat public se concentre souvent. Lorsque deux courbes de Lorenz se croisent, la comparaison des Gini devient même trompeuse : aucune des deux distributions ne domine l'autre au sens de Lorenz, et le classement dépend alors du jugement normatif que l'on porte sur les différents segments de la distribution.
+        <p style="margin-top:.8rem;">D'où l'intérêt de croiser plusieurs indicateurs : rapport interdécile, part du dernier centile, indice de Theil qui se décompose additivement entre groupes, ou encore l'indice d'Atkinson dont le paramètre rend explicite l'aversion à l'inégalité que l'on retient. Aucun n'est neutre, et le choix de l'indicateur est déjà, en lui-même, une prise de position.</p>
+      </div>`;
+
+      return s;
+    }
+  },
+
+  en: {
+    "htmlLang": "en",
+    "title": "Macroeconomics Simulator - Lorenz curve and Gini index",
+    "locale": "en-GB",
+    "k-badge": "INEQUALITY AND DISTRIBUTION",
+    "k-h1": "Lorenz curve and Gini index",
+    "k-sub": "© Thomas Hossen – March 7, 2026 Version",
+    "k-seed": "Seed (Optional)",
+    "k-ineq": "Inequality level",
+    "k-ineq-auto": "Random",
+    "k-ineq-low": "Low",
+    "k-ineq-mid": "Intermediate",
+    "k-ineq-high": "High",
+    "k-gen": "Generate Exercise →",
+    "k-welcome": "Configure the parameters and click Generate to create a new exercise.",
+    "k-seedbadge": "Active Seed:",
+    "k-new": "↺ New Statement",
+    "k-pdf": "⬇ Export PDF",
+    "k-doc": "⬇ Export DOC",
+    "k-tag-ex": "Problem",
+    "k-cardtitle": "Measuring the concentration of income",
+    "k-tag-sol": "Solution",
+    "k-cardtitle2": "Measuring the concentration of income",
+    "k-work": "Assignment",
+    "showSol": "Show the solution",
+    "hideSol": "Hide the solution",
+    "docTitle": "Lorenz Curve and Gini Index Exercise",
+    "docFile": "Lorenz_Gini_Exercise.doc",
+    thousands: ",",
+    decimal: ".",
+
+    chart: {
+      xlabel: "Deciles",
+      ylabel: "Cumulative income share (%)",
+      lorenz: "Lorenz curve",
+      equality: "Perfect equality",
+      caption: y => `Lorenz curve of household disposable income in ${y}`
+    },
+    rowBound: "Upper bound of household disposable income (in euros)",
+    rowShare: "Total disposable income (TDI) of the decile (% of all households' TDI)",
+    rowCum:   "TDI of the decile (cumulative % of all households' TDI)",
+
+    context: function(D) {
+      return `
+      The distribution of household disposable income in ${D.year} is given below, by decile. The abbreviation "TDI" stands for "total disposable income".
+    `;
+    },
+
+    table: function(D) {
+      const P = I18N['en'];
+      let head = `<tr><th style="width:30%;"></th>` + D.dl.map(d=>`<th>${d}</th>`).join('') + `</tr>`;
+      let r1 = `<tr><td class="txt-left">${P.rowBound}</td>` + D.bounds.map(b=>`<td class="amt">${fmt(b)}</td>`).join('') + `</tr>`;
+      let r2 = `<tr><td class="txt-left">${P.rowShare}</td>` + D.shares.slice(0,9).map(s=>`<td class="amt">${sh(s)}%</td>`).join('') + `</tr>`;
+      return `<div class="exam-table-wrap"><table class="exam-table">${head}${r1}${r2}</table></div>`;
+    },
+
+    enonce: function(D) {
+      let h = "";
+      h += `<li>Draw the Lorenz curve of income.</li>`;
+      h += `<li>Drawing on your own knowledge, comment on the evolution of the D9/D1 interdecile ratio for household income, and compute its value in ${D.year}.</li>`;
+      h += `<li>Using the Lorenz curve, propose an approximation of the Gini index for household income in ${D.year}.</li>`;
+      return h;
+    },
+
+    sol: function(D) {
+      const P = I18N['en'];
+      let s = "";
+
+      let head = `<tr><th style="width:30%;"></th>` + D.dl.map(d=>`<th>${d}</th>`).join('') + `</tr>`;
+      let r1 = `<tr><td class="txt-left">${P.rowBound}</td>` + D.bounds.map(b=>`<td class="amt">${fmt(b)}</td>`).join('') + `</tr>`;
+      let r2 = `<tr><td class="txt-left">${P.rowShare}</td>` + D.shares.slice(0,9).map(x=>`<td class="amt">${sh(x)}%</td>`).join('') + `</tr>`;
+      let r3 = `<tr class="hi-row"><td class="txt-left">${P.rowCum}</td>` + D.cum.slice(1,10).map(x=>`<td class="amt">${sh(x)}%</td>`).join('') + `</tr>`;
+
+      s += `<div class="calc-box">
+        <span class="sol-sub">1. Cumulative shares and the Lorenz curve</span>
+        We first compute each decile's total disposable income as a cumulative percentage of all households' total disposable income, adding the shares of the table step by step:
+        <div class="exam-table-wrap"><table class="exam-table">${head}${r1}${r2}${r3}</table></div>
+        <p>The table stops at the ninth decile, but the tenth follows: since shares must sum to 100%, the top decile captures ${sh(D.shares[9])}% of total disposable income, bringing the cumulative figure to 100% at $x=10$. We can then draw the Lorenz curve, with deciles on the horizontal axis and the cumulative income share on the vertical axis.</p>
+        <div class="chart-wrap">${D.svg}<div class="table-caption">${P.chart.caption(D.year)}</div></div>
+        <p>The curve lies below the 45-degree line, and its convexity reflects the concentration of income: the further it moves away from the diagonal, the more unequal the distribution. Reading it directly is telling: the bottom 50% of households receive only ${sh(D.cum[5])}% of total disposable income, while the top 10% capture ${sh(D.shares[9])}%.</p>
+      </div>`;
+
+      let hist = D.hist.map(h => `${sh2(h.v)} in ${h.y}`).join(', ');
+
+      s += `<div class="calc-box">
+        <span class="sol-sub">2. The D9/D1 interdecile ratio</span>
+        The interdecile ratio divides the ninth-decile threshold by the first-decile threshold:
+        <div class="math-formula">\\[ \\frac{D9}{D1} = \\frac{${texM(D.bounds[8],0)}}{${texM(D.bounds[0],0)}} \\approx ${texM(D.ratio,2)} \\]</div>
+        This means that in ${D.year}, a household needed an income at least ${sh2(D.ratio)} times higher to enter the top 10% rather than sit at the threshold of the bottom 10%.
+        <p style="margin-top:.8rem;">One caveat on interpretation: this ratio compares two <em>thresholds</em>, not the average incomes of the two extreme groups. The table lets us compute that second ratio, since each decile contains the same number of households: the top decile's mean income relative to the bottom decile's equals $\\frac{${texN(D.shares[9])}}{${texN(D.shares[0])}} \\approx ${texM(D.massRatio,2)}$. The gap between ${sh2(D.ratio)} and ${sh2(D.massRatio)} is not anecdotal: it stems from the internal dispersion of the top decile, home to very high incomes, which the D9 threshold plainly does not capture. This is a standard reason why the interdecile ratio understates concentration at the top.</p>
+        <p>Over the longer run, this economy's interdecile ratio stood at ${hist}. ${D.trend === 'up'
+          ? `Income inequality therefore widened steadily, and the ${D.year} figure extends that trend.`
+          : D.trend === 'down'
+          ? `Income inequality therefore narrowed over the period, and the ${D.year} figure confirms that reduction.`
+          : `Inequality first widened before receding: the ${D.year} figure falls back below the peak reached in ${D.hist[1].y}.`}
+        Bear in mind that this kind of indicator applies to <em>disposable</em> income, that is, after direct taxes and social transfers: it measures the inequality that remains once redistribution has taken place, not inequality in primary income, which is markedly greater.</p>
+      </div>`;
+
+      const trap = i => `B_{${i+1}} &= (${i+1}-${i})\\times\\frac{${texN(D.cum[i+1])}+${texN(D.cum[i])}}{2} = ${texN(D.Bi[i])}`;
+      let colA = `\\[\\begin{aligned}` + [0,1,2,3,4].map(trap).join('\\\\') + `\\end{aligned}\\]`;
+      let colB = `\\[\\begin{aligned}` + [5,6,7,8,9].map(trap).join('\\\\') + `\\end{aligned}\\]`;
+
+      s += `<div class="calc-box">
+        <span class="sol-sub">3. Approximating the Gini index</span>
+        Let $(Ox)$ be the horizontal axis and $(Oy)$ the vertical axis. Define $B$ as the area bounded by the horizontal axis, the line $x=10$ and the Lorenz curve, and $A$ as the area between the 45-degree line and the Lorenz curve. Their sum $A+B$ is the area of a right triangle, that is $\\frac{10\\times 100}{2}=500$.
+        <p style="margin-top:.8rem;">How can $B$ be computed? For every integer $i$ from 1 to 10, let $B_i$ denote the area of the trapezium formed by the horizontal axis, the Lorenz curve and the lines $x=i-1$ and $x=i$. We then approximate $B$ by the sum $B_1+B_2+\\cdots+B_{10}$:</p>
+        <div class="two-col-table"><div class="col-half">${colA}</div><div class="col-half">${colB}</div></div>
+        <p>Summing these ten areas gives $B \\approx ${texN(D.B)}$. The Gini index is defined by $G := \\frac{A}{A+B}$, hence:</p>
+        <div class="math-formula">\\[ G = \\frac{(A+B)-B}{A+B} = 1 - \\frac{B}{A+B} = 1 - \\frac{${texN(D.B)}}{500} \\approx ${texM(D.gini,3)} \\]</div>
+        The Gini index of disposable income therefore stands at about ${sh3(D.gini)} in ${D.year}. Recall that it equals zero under perfect equality, where the Lorenz curve coincides with the diagonal, and tends to 1 when a single household concentrates all income.
+        <p style="margin-top:.8rem;">The trapezium method replaces each arc of the curve by a straight segment. Since the Lorenz curve is convex, those segments lie above it: area $B$ is therefore slightly overstated and the Gini index slightly understated. The approximation nonetheless remains perfectly acceptable with ten intervals.</p>
+      </div>`;
+
+      s += `<div class="persp-box">
+        <span class="sol-sub">Going further</span>
+        The Gini index compresses an entire distribution into a single number, which is both its strength and its weakness. Two very different distributions can share the same Gini: the index does not say <em>where</em> inequality sits, at the bottom or at the top of the scale. It is also relatively insensitive to movements in the tails of the distribution, precisely where public debate tends to focus. When two Lorenz curves cross, comparing Gini indices becomes outright misleading: neither distribution dominates the other in the Lorenz sense, and the ranking then depends on the normative judgement one applies to the different segments of the distribution.
+        <p style="margin-top:.8rem;">Hence the value of combining indicators: the interdecile ratio, the top percentile's share, the Theil index which decomposes additively across groups, or the Atkinson index whose parameter makes explicit the inequality aversion being assumed. None is neutral, and the choice of indicator is itself already a stance.</p>
+      </div>`;
+
+      return s;
+    }
+  }
+};
+
+/* ============================================================
+   GESTION DE LA LANGUE  /  LANGUAGE HANDLING
+   ============================================================ */
+let LANG = 'fr';
+
+function detectLang() {
+    try {
+        const q = new URLSearchParams(window.location.search).get('lang');
+        if (q && I18N[q.toLowerCase()]) return q.toLowerCase();
+    } catch (e) {}
+    const h = (window.location.hash || '').replace('#', '').toLowerCase();
+    if (I18N[h]) return h;
+    return 'fr';
+}
+
+function applyLang() {
+    const D = I18N[LANG];
+    document.documentElement.lang = D.htmlLang;
+    document.title = D.title;
+
+    document.querySelectorAll('[data-k]').forEach(function (el) {
+        const key = el.getAttribute('data-k');
+        if (D[key] !== undefined) el.innerHTML = D[key];
+    });
+
+    const btn = document.getElementById('toggle-btn');
+    if (btn) btn.innerText = document.getElementById('sol-card').classList.contains('visible') ? D.hideSol : D.showSol;
+
+    document.getElementById('flag-fr').classList.toggle('active', LANG === 'fr');
+    document.getElementById('flag-en').classList.toggle('active', LANG === 'en');
+}
+
+function setLang(lang) {
+    if (!I18N[lang] || lang === LANG) return;
+    LANG = lang;
+
+    try {
+        const u = new URL(window.location.href);
+        u.searchParams.set('lang', lang);
+        history.replaceState(null, '', u.toString());
+    } catch (e) {}
+
+    applyLang();
+
+    if (document.getElementById('ex-area').style.display !== 'none') {
+        const solWasVisible = document.getElementById('sol-card').classList.contains('visible');
+        generateExercise(false);
+        if (solWasVisible) toggleSol();
+    }
+}
+
+// --- PRNG (Mulberry32) ---
+let currentSeed = 0;
+function seedPRNG(seed) {
+    return function() {
+      let t = seed += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+let random = Math.random;
+
+function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
+const rnd  = (a, b) => a + random() * (b - a);
+const half = x => Math.round(x * 2) / 2;
+const r2   = x => Math.round(x * 100) / 100;
+
+function texM(num, dec) {
+    let sign = num < 0 ? "-" : "";
+    let parts = Math.abs(num).toFixed(dec).split('.');
+    let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, I18N[LANG].thousands);
+    return sign + intPart + (dec > 0 ? I18N[LANG].decimal + parts[1] : "");
+}
+function fmt(num) { return num.toLocaleString(I18N[LANG].locale); }
+function fmtD(num, dec) {
+    return num.toLocaleString(I18N[LANG].locale, {minimumFractionDigits: dec, maximumFractionDigits: dec});
+}
+/* Affichage court : une decimale seulement si elle est utile */
+function sh(x)  { return (Math.round(x * 10) % 10 === 0) ? fmtD(x, 0) : fmtD(x, 1); }
+function texN(x) {
+    const d = (Math.round(x * 100) % 100 === 0) ? 0 : (Math.round(x * 100) % 10 === 0 ? 1 : 2);
+    return texM(x, d);
+}
+function sh2(x) { return fmtD(x, 2); }
+function sh3(x) { return fmtD(x, 3); }
+
+/* ============================================================
+   COURBE DE LORENZ (SVG)
+   ============================================================ */
+function lorenzSVG(cum, L) {
+    const X0 = 82, X1 = 578, Y0 = 34, Y1 = 396;
+    const px = i => X0 + (i / 10) * (X1 - X0);
+    const py = v => Y1 - (v / 100) * (Y1 - Y0);
+
+    let g = "";
+    /* grille */
+    for (let i = 0; i <= 10; i++) {
+        g += `<line x1="${px(i).toFixed(1)}" y1="${Y0}" x2="${px(i).toFixed(1)}" y2="${Y1}" stroke="#e2ddd2" stroke-width="1" stroke-dasharray="3 3"/>`;
+    }
+    for (let v = 0; v <= 100; v += 10) {
+        g += `<line x1="${X0}" y1="${py(v).toFixed(1)}" x2="${X1}" y2="${py(v).toFixed(1)}" stroke="#e2ddd2" stroke-width="1" stroke-dasharray="3 3"/>`;
+    }
+    /* aire A entre bissectrice et courbe */
+    let pathA = `M ${px(0)} ${py(0)} L ${px(10)} ${py(100)}`;
+    for (let i = 10; i >= 0; i--) pathA += ` L ${px(i).toFixed(1)} ${py(cum[i]).toFixed(1)}`;
+    pathA += " Z";
+    g += `<path d="${pathA}" fill="#c9952a" fill-opacity="0.13" stroke="none"/>`;
+
+    /* axes */
+    g += `<line x1="${X0}" y1="${Y1}" x2="${X1}" y2="${Y1}" stroke="#0d1b2a" stroke-width="1.6"/>`;
+    g += `<line x1="${X0}" y1="${Y0}" x2="${X0}" y2="${Y1}" stroke="#0d1b2a" stroke-width="1.6"/>`;
+
+    /* bissectrice */
+    g += `<line x1="${px(0)}" y1="${py(0)}" x2="${px(10)}" y2="${py(100)}" stroke="#5a5a5a" stroke-width="1.5" stroke-dasharray="7 5"/>`;
+
+    /* courbe de Lorenz */
+    let pts = [];
+    for (let i = 0; i <= 10; i++) pts.push(`${px(i).toFixed(1)},${py(cum[i]).toFixed(1)}`);
+    g += `<polyline points="${pts.join(' ')}" fill="none" stroke="#1a4f8a" stroke-width="2.2" stroke-linejoin="round"/>`;
+    for (let i = 0; i <= 10; i++) {
+        g += `<rect x="${(px(i) - 3.1).toFixed(1)}" y="${(py(cum[i]) - 3.1).toFixed(1)}" width="6.2" height="6.2" fill="#1a4f8a"/>`;
+    }
+
+    /* graduations */
+    for (let i = 1; i <= 10; i++) {
+        g += `<text x="${px(i).toFixed(1)}" y="${Y1 + 17}" text-anchor="middle" font-family="'Source Serif 4',serif" font-size="12" fill="#1e1e1e">${i}</text>`;
+    }
+    for (let v = 0; v <= 100; v += 10) {
+        g += `<text x="${X0 - 9}" y="${(py(v) + 4).toFixed(1)}" text-anchor="end" font-family="'Source Serif 4',serif" font-size="12" fill="#1e1e1e">${v}</text>`;
+    }
+
+    /* reperes des aires */
+    g += `<text x="${px(3.6).toFixed(1)}" y="${py((36 + cum[4]) / 2).toFixed(1)}" text-anchor="middle" font-family="'Source Serif 4',serif" font-style="italic" font-size="15" fill="#8a6a1c">A</text>`;
+    g += `<text x="${px(6.6).toFixed(1)}" y="${py(cum[7] / 2.2).toFixed(1)}" text-anchor="middle" font-family="'Source Serif 4',serif" font-style="italic" font-size="15" fill="#3a6ea8">B</text>`;
+
+    /* titres d'axes */
+    g += `<text x="${((X0 + X1) / 2).toFixed(1)}" y="${Y1 + 40}" text-anchor="middle" font-family="'Source Serif 4',serif" font-size="13" font-weight="600" fill="#0d1b2a">${L.xlabel}</text>`;
+    g += `<text x="20" y="${((Y0 + Y1) / 2).toFixed(1)}" text-anchor="middle" font-family="'Source Serif 4',serif" font-size="13" font-weight="600" fill="#0d1b2a" transform="rotate(-90 20 ${((Y0 + Y1) / 2).toFixed(1)})">${L.ylabel}</text>`;
+
+    /* legende */
+    const lx = X0 + 22, ly = Y0 + 20;
+    g += `<rect x="${lx - 10}" y="${ly - 15}" width="230" height="48" fill="#ffffff" fill-opacity="0.88" stroke="#d4cfc4" stroke-width="1" rx="3"/>`;
+    g += `<line x1="${lx}" y1="${ly}" x2="${lx + 26}" y2="${ly}" stroke="#1a4f8a" stroke-width="2.2"/>`;
+    g += `<rect x="${lx + 10}" y="${ly - 3.1}" width="6.2" height="6.2" fill="#1a4f8a"/>`;
+    g += `<text x="${lx + 34}" y="${ly + 4}" font-family="'Source Serif 4',serif" font-size="12" fill="#1e1e1e">${L.lorenz}</text>`;
+    g += `<line x1="${lx}" y1="${ly + 20}" x2="${lx + 26}" y2="${ly + 20}" stroke="#5a5a5a" stroke-width="1.5" stroke-dasharray="7 5"/>`;
+    g += `<text x="${lx + 34}" y="${ly + 24}" font-family="'Source Serif 4',serif" font-size="12" fill="#1e1e1e">${L.equality}</text>`;
+
+    return `<svg viewBox="0 0 600 450" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${L.lorenz}">${g}</svg>`;
+}
+
+/* ============================================================
+   GENERATION DE L'EXERCICE  /  EXERCISE GENERATION
+   ============================================================ */
+/* Profil de reference des parts par decile (D1..D10) et vecteur de
+   transfert a somme nulle, du bas vers le haut de la distribution. */
+const BASE  = [3.5, 5, 6, 7, 8, 9, 10, 11.5, 14.5, 25.5];
+const SHIFT = [-1, -0.8, -0.6, -0.4, -0.2, 0, 0.2, 0.4, 0.8, 1.6];
+/* Quantiles de la loi normale centree reduite en p = 0.1 ... 0.9 */
+const ZQ = [-1.2816, -0.8416, -0.5244, -0.2533, 0, 0.2533, 0.5244, 0.8416, 1.2816];
+
+function generateExercise(forceNew = false) {
+    if (forceNew) {
+        document.getElementById('seed-input').value = "";
+    }
+    let seedVal = document.getElementById('seed-input').value;
+    currentSeed = seedVal ? parseInt(seedVal) : Math.floor(Math.random() * 99999999);
+    document.getElementById('seed-disp').innerText = currentSeed;
+    document.getElementById('seed-input').value = currentSeed;
+    random = seedPRNG(currentSeed);
+
+    const DIC = I18N[LANG];
+    const ineqSel = document.getElementById('ineq-input').value;
+
+    let year, shares, bounds, cum, t, sigma, median;
+    let ok = false, guard = 0;
+
+    do {
+        guard++;
+        ok = true;
+
+        year = randInt(1998, 2023);
+
+        /* --- intensite des inegalites --- */
+        if (ineqSel === 'low')      t = rnd(-1.40, -0.55);
+        else if (ineqSel === 'mid') t = rnd(-0.40,  0.40);
+        else if (ineqSel === 'high')t = rnd( 0.55,  1.40);
+        else                        t = rnd(-1.30,  1.30);
+
+        /* --- parts par decile --- */
+        shares = [];
+        for (let i = 0; i < 9; i++) {
+            shares.push(half(BASE[i] + t * SHIFT[i] + rnd(-0.28, 0.28)));
+        }
+        const s9 = shares.reduce((a, b) => a + b, 0);
+        shares.push(Math.round((100 - s9) * 10) / 10);
+
+        /* monotonie stricte */
+        for (let i = 1; i < 10 && ok; i++) if (shares[i] <= shares[i - 1]) ok = false;
+        if (ok && (shares[0] < 1.5 || shares[9] > 34 || shares[9] < 20)) ok = false;
+
+        /* --- seuils de revenu, coherents avec l'intensite tiree --- */
+        if (ok) {
+            median = Math.round(rnd(21000, 34000) / 10) * 10;
+            sigma  = 0.600 + 0.045 * t + rnd(-0.030, 0.030);
+            bounds = ZQ.map(z => Math.round(median * Math.exp(sigma * z) / 10) * 10);
+            for (let i = 1; i < 9 && ok; i++) if (bounds[i] <= bounds[i - 1]) ok = false;
+            const r = bounds[8] / bounds[0];
+            if (r < 3.2 || r > 6.4) ok = false;
+            /* le rapport des revenus moyens doit rester nettement au-dessus
+               du rapport des seuils, comme dans les distributions reelles */
+            if (ok && shares[9] / shares[0] < r + 0.6) ok = false;
+        }
+
+    } while (!ok && guard < 400);
+
+    /* --- cumuls --- */
+    cum = [0];
+    for (let i = 0; i < 10; i++) cum.push(Math.round((cum[i] + shares[i]) * 10) / 10);
+    cum[10] = 100;
+
+    /* --- aires (methode des trapezes) --- */
+    const Bi = [];
+    for (let i = 0; i < 10; i++) Bi.push((cum[i + 1] + cum[i]) / 2);
+    const B = Bi.reduce((a, b) => a + b, 0);
+    const gini = 1 - B / 500;
+
+    const ratio = bounds[8] / bounds[0];
+    const massRatio = shares[9] / shares[0];
+
+    /* --- historique du rapport interdecile pour le commentaire --- */
+    const trends = ['up', 'down', 'bell'];
+    const trend = trends[randInt(0, 2)];
+    const hy = [year - randInt(14, 17), year - randInt(8, 10), year - randInt(3, 5)];
+    let hv;
+    if (trend === 'up')        hv = [ratio - rnd(0.38, 0.52), ratio - rnd(0.20, 0.32), ratio - rnd(0.06, 0.14)];
+    else if (trend === 'down') hv = [ratio + rnd(0.34, 0.48), ratio + rnd(0.18, 0.30), ratio + rnd(0.05, 0.12)];
+    else                       hv = [ratio - rnd(0.22, 0.34), ratio + rnd(0.14, 0.26), ratio + rnd(0.04, 0.10)];
+    const hist = hy.map((y, i) => ({y: y, v: r2(hv[i])}));
+
+    const D = {
+        year: year,
+        dl: ['D1','D2','D3','D4','D5','D6','D7','D8','D9'],
+        shares: shares, bounds: bounds, cum: cum,
+        Bi: Bi, B: B, gini: gini,
+        ratio: ratio, massRatio: massRatio,
+        hist: hist, trend: trend,
+        svg: lorenzSVG(cum, DIC.chart)
+    };
+
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('ex-area').style.display = 'block';
+    document.getElementById('sol-card').classList.remove('visible');
+    document.getElementById('toggle-btn').innerText = DIC.showSol;
+    document.getElementById('toggle-btn').classList.remove('shown');
+
+    document.getElementById('context-text').innerHTML = DIC.context(D);
+    document.getElementById('enonce-table-container').innerHTML = DIC.table(D);
+    document.getElementById('additional-info').innerHTML = "";
+    document.getElementById('events-list').innerHTML = DIC.enonce(D);
+    document.getElementById('sol-content').innerHTML = DIC.sol(D);
+
+    if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
+        MathJax.typesetPromise().catch(function (err) { console.error('MathJax :', err); });
+    }
+}
+
+function toggleSol() {
+    let solCard = document.getElementById('sol-card');
+    let btn = document.getElementById('toggle-btn');
+    if (solCard.classList.contains('visible')) {
+        solCard.classList.remove('visible');
+        btn.innerText = I18N[LANG].showSol;
+        btn.classList.remove('shown');
+    } else {
+        solCard.classList.add('visible');
+        btn.innerText = I18N[LANG].hideSol;
+        btn.classList.add('shown');
+    }
+}
+
+function exportWord() {
+    let content = document.getElementById('ex-area').cloneNode(true);
+    let actions = content.querySelector('.top-actions');
+    if (actions) actions.parentNode.removeChild(actions);
+    let toggle = content.querySelector('.sol-toggle-wrap');
+    if (toggle) toggle.parentNode.removeChild(toggle);
+    let solCard = content.querySelector('#sol-card');
+    if (solCard) solCard.style.display = 'block';
+
+    let html = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <meta charset='utf-8'>
+            <title>${I18N[LANG].docTitle}</title>
+            <style>
+                body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5; text-align: justify; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 9pt; }
+                th, td { border: 1px solid #000; padding: 3px; }
+                th { background-color: #f2f2f2; text-align: center; font-weight: bold; }
+                .txt-left { text-align: left; font-weight: bold; }
+                .amt { text-align: right; white-space: nowrap; }
+                .two-col-table { width: 100%; }
+                .col-half { width: 48%; display: inline-block; vertical-align: top; margin-right: 2%; }
+                .calc-box, .method-box, .persp-box { border: 1px solid #000; padding: 10px; margin-bottom: 15px; background-color: #f9f9f9; text-align: justify; }
+                .math-formula { text-align: center; font-style: italic; margin: 10px 0; }
+                .chart-wrap { text-align: center; margin: 15px 0; }
+                .table-caption { font-size: 9pt; font-style: italic; text-align: center; }
+                ul, ol { text-align: justify; }
+                li { margin-bottom: 5px; }
+            </style>
+        </head>
+        <body>
+            ${content.innerHTML}
+        </body>
+        </html>
+    `;
+
+    let blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    let url = URL.createObjectURL(blob);
+    let link = document.createElement('a');
+    link.href = url;
+    link.download = I18N[LANG].docFile;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+/* Initialisation */
+LANG = detectLang();
+applyLang();
+</script>
+</body>
+</html>
