@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Finance - Frontière efficiente et CML</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['\\[', '\\]']]
+    }
+  };
+</script>
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7;text-align:justify;}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 1.5rem;border-bottom:3px solid var(--gold);text-align:left;}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end;background:rgba(255,255,255,.03);padding:1rem 1.5rem;border-radius:6px;border:1px solid rgba(255,255,255,.1)}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.6)}
+.ctrl-inp, .ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.4rem .7rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none;transition:border-color .2s}
+.ctrl-inp:focus, .ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.5rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;transition:background .18s;margin-left:auto}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN & CARDS */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:700}
+
+.top-actions{display:flex;gap:.5rem;}
+.btn-action{background:#fff;border:1px solid var(--border);color:var(--navy);padding:.4rem .8rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.85rem;font-weight:600;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.btn-action:hover{border-color:var(--navy);background:var(--cream-dark);}
+
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem;text-align:left;}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+
+.question-list { list-style-type: decimal; padding-left: 1.5rem; margin-bottom: 1.5rem; text-align: justify; }
+.question-list li { margin-bottom: 0.8rem; padding-left: 0.5rem; }
+.question-list li::marker { font-weight: 600; color: var(--navy); }
+
+.sub-list { list-style-type: disc; padding-left: 1.4rem; margin: .6rem 0 .8rem; text-align: justify; }
+.sub-list li { margin-bottom: .35rem; }
+
+/* EXAM TABLE */
+.exam-table-wrap { overflow-x: auto; margin: 1.5rem 0; }
+.exam-table{width:100%;border-collapse:collapse;font-size:.85rem;font-family:'Source Serif 4',serif;}
+.exam-table th, .exam-table td{border:1px solid var(--border);padding:.5rem;text-align:center;vertical-align:middle;}
+.exam-table th{background:var(--navy);color:var(--cream);font-weight:600;}
+.exam-table .txt-left{text-align:left;font-weight:600;color:var(--navy);}
+.exam-table .amt{font-family:'JetBrains Mono',monospace;text-align:right;white-space:nowrap;}
+
+/* FIGURE */
+.fig-wrap{margin:1.6rem 0 .4rem;text-align:center;overflow-x:auto;}
+.fig-wrap svg{width:100%;max-width:720px;height:auto;background:#fff;border:1px solid var(--border);border-radius:4px;}
+.fig-caption{font-size:.82rem;color:var(--text-muted);font-style:italic;text-align:justify;margin-bottom:1.2rem;line-height:1.55;}
+
+/* SOLUTION TOGGLE */
+.sol-toggle-wrap{text-align:left; margin: 1.5rem 0 0 0;}
+.btn-toggle{background:transparent;border:2px solid var(--green);border-bottom:none;color:var(--green);font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;padding:.5rem 1.5rem;border-radius:4px 4px 0 0;cursor:pointer;transition:all .2s; position:relative; z-index:2; top:2px;}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--green);color:var(--cream)}
+.sol-card{border-top:2px solid var(--green);display:none; border-radius: 0 6px 6px 6px; position:relative; z-index:1;}
+.sol-card.visible{display:block;animation:fi .4s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+
+.calc-box{background:#f9fcf9;border:1px solid #c8e6c9;padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.9rem;color:var(--text);line-height:1.6;text-align:justify;}
+.math-formula { text-align: center; margin: 1.5rem 0; overflow-x: auto; }
+
+@media print{
+  body{background:#fff;}
+  header, .ctrls, .sol-toggle-wrap, .top-actions {display:none !important;}
+  .card{box-shadow:none; border:1px solid var(--border); margin-bottom:2rem;}
+  .sol-card{display:block !important; border-top:2px solid var(--green);}
+  #ex-area {display:block !important;}
+}
+
+/* --- Selecteur de langue / Language switch --- */
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem}
+.header-top .header-badge{margin-bottom:0}
+.lang-switch{display:flex;gap:.45rem;flex-shrink:0}
+.flag-btn{background:rgba(255,255,255,.06);border:1px solid rgba(201,149,42,.35);border-radius:3px;padding:3px;cursor:pointer;line-height:0;opacity:.5;transition:opacity .2s,border-color .2s,transform .15s}
+.flag-btn:hover{opacity:1;transform:translateY(-1px)}
+.flag-btn.active{opacity:1;border-color:var(--gold-light);box-shadow:0 0 0 1px rgba(232,184,75,.35)}
+.flag-btn svg{display:block;width:30px;height:20px;border-radius:1px}
+@media print{ .lang-switch{display:none !important;} }
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-top">
+    <div class="header-badge" id="lbl-badge">MÉTHODE D'ÉVALUATION DES ACTIFS FINANCIERS</div>
+    <div class="lang-switch">
+      <button type="button" class="flag-btn active" id="flag-fr" onclick="setLang('fr')" title="Français" aria-label="Français"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="20" height="40" fill="#002654"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ED2939"/></svg></button>
+      <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
+    </div>
+  </div>
+  <h1 id="lbl-h1">Frontière efficiente et droite de marché des capitaux</h1>
+  <p class="subtitle" id="lbl-subtitle">© Thomas Hossen – Version du 29 août 2026</p>
+
+  <div class="ctrls">
+    <div class="ctrl-g">
+      <span class="ctrl-lbl" id="lbl-seed">Seed (Optionnel)</span>
+      <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999">
+    </div>
+    <button class="btn-gen" id="lbl-gen" onclick="generateExercise(false)">Générer l'exercice →</button>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" style="text-align:center; padding:4rem; color:var(--text-muted); font-style:italic;">
+    Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="seed-badge"><span id="lbl-seed-active">Seed active :</span> <span id="seed-disp"></span></div>
+      <div class="top-actions">
+        <button class="btn-action" id="lbl-new" onclick="generateExercise(true)">↺ Nouvel énoncé</button>
+        <button class="btn-action" id="lbl-pdf" onclick="window.print()">⬇ Exporter PDF</button>
+        <button class="btn-action" id="lbl-doc" onclick="exportWord()">⬇ Exporter DOC</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="tag" id="lbl-tag-enonce">Énoncé</span><h2 id="lbl-title-enonce">Portefeuille à deux actifs risqués</h2></div>
+      <div class="card-body">
+        <div class="context-block" id="context-text"></div>
+        <p style="margin-bottom:1rem; font-weight:600; color:var(--red); text-align:left;" id="lbl-assignment">Travail à faire</p>
+        <ol class="question-list" id="events-list"></ol>
+      </div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag" id="lbl-tag-sol">Corrigé</span><h2 id="lbl-title-sol">Portefeuille à deux actifs risqués</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+/* ============================================================
+   DICTIONNAIRE BILINGUE  /  BILINGUAL DICTIONARY
+   Tous les textes de la page sont regroupes ici.
+   ============================================================ */
+const I18N = {
+
+  fr: {
+    htmlLang: "fr",
+    title: "Simulateur Finance - Frontière efficiente et CML",
+    badge: "MÉTHODE D'ÉVALUATION DES ACTIFS FINANCIERS",
+    h1: "Frontière efficiente et droite de marché des capitaux",
+    subtitle: "© Thomas Hossen – Version du 29 août 2026",
+    seedLabel: "Seed (Optionnel)",
+    btnGen: "Générer l'exercice →",
+    welcome: "Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.",
+    seedActive: "Seed active :",
+    btnNew: "↺ Nouvel énoncé",
+    btnPdf: "⬇ Exporter PDF",
+    btnDoc: "⬇ Exporter DOC",
+    tagEnonce: "Énoncé",
+    cardTitle: "Portefeuille à deux actifs risqués",
+    assignment: "Travail à faire",
+    tagSol: "Corrigé",
+    showSol: "Afficher le corrigé",
+    hideSol: "Masquer le corrigé",
+    docTitle: "Exercice Finance",
+    docFile: "Exercice_Frontiere_Efficiente.doc",
+    locale: "fr-FR",
+    pctSep: " %",
+    thousands: "\\,",
+    decimal: "{.}",
+
+    funds: ["Aquilon Gestion", "Vauban Asset Management", "Méridien Capital", "Sextant Investissements"],
+    assets: [
+      ["actions internationales", "obligations souveraines"],
+      ["actions technologiques", "obligations d'entreprises"],
+      ["actions des marchés émergents", "actif immobilier coté"],
+      ["matières premières", "obligations indexées sur l'inflation"]
+    ],
+
+    tbl: {
+      pf: "Portefeuille",
+      w1: "Part investie dans A<sub>1</sub>",
+      mu: "Rendement espéré",
+      sig: "Écart-type",
+      sharpe: "Ratio de Sharpe",
+      rf: "Actif sans risque",
+      a1: "Actif A<sub>1</sub> seul",
+      a2: "Actif A<sub>2</sub> seul",
+      mvp: "Variance minimale (MVP)",
+      tang: "Portefeuille tangent (T)",
+      na: "—"
+    },
+
+    fig: {
+      xlabel: "Écart-type σP (%)",
+      ylabel: "Rendement espéré μP (%)",
+      legDom: "Frontière dominée",
+      legEff: "Frontière efficiente",
+      legCml: "CML",
+      caption: function(P) { return `
+        Frontière des portefeuilles risqués, portefeuille tangent (T), portefeuille de variance minimale (MVP) et droite de marché des capitaux (CML) dans le plan $(\\sigma_P, \\mu_P)$ : la frontière dominée est représentée en pointillés gris ; la frontière efficiente est tracée en bleu plein ; la CML, en rouge, de pente ${nfp(P.ST,3)}, est tangente à la frontière efficiente au point $T$.
+      `; }
+    },
+
+    context: function(P) { return `
+      Le fonds <strong>${P.fund}</strong> étudie la composition de son allocation stratégique. On considère deux actifs risqués $A_1$ (${P.asset1}) et $A_2$ (${P.asset2}) de rendements moyens annuels espérés $\\mu_1 = ${pcT(P.mu1)}$ et $\\mu_2 = ${pcT(P.mu2)}$ et d'écarts-types annuels estimés $\\sigma_1 = ${pcT(P.s1)}$ et $\\sigma_2 = ${pcT(P.s2)}$, respectivement. Le coefficient de corrélation entre les rendements des deux actifs est supposé égal à $\\rho_{12} = ${nf(P.rho, 2)}$. On dispose en outre d'un actif sans risque de rendement $r_f = ${pcT(P.rf)}$.
+    `; },
+
+    enonce: [
+      function(P) { return `<li>Rappeler la formule générale du rendement espéré et de la variance d'un portefeuille $P$ constitué d'une fraction $w \\in \\mathbb{R}$ investie dans $A_1$ et $1-w$ dans $A_2$. Calculer la covariance $\\sigma_{12}$. Interpréter le signe.</li>`; },
+      function(P) { return `<li>Déterminer analytiquement le portefeuille de variance minimale (MVP). Calculer son rendement espéré et son écart-type. Comparer avec l'investissement dans un seul actif et conclure sur le bénéfice de la diversification.</li>`; },
+      function(P) { return `<li>Montrer analytiquement que le rendement du portefeuille de variance minimale s'écrit et que la variance de ce même portefeuille vérifie respectivement
+        <div class="math-formula">\\[\\mu_{\\text{MVP}}=\\mu_2 + \\frac{(\\mu_1-\\mu_2)(\\sigma_2^2-\\sigma_{12})}{\\sigma_1^2+\\sigma_2^2-2\\sigma_{12}} \\qquad \\text{et} \\qquad \\sigma_{\\text{MVP}}^2=\\frac{\\sigma_1^2\\sigma_2^2(1-\\rho_{12}^2)}{\\sigma_1^2+\\sigma_2^2-2\\sigma_{12}}\\]</div></li>`; },
+      function(P) { return `<li>Déterminer analytiquement la frontière des portefeuilles. Préciser quelle partie de la frontière constitue la frontière efficiente au sens de Markowitz.</li>`; },
+      function(P) { return `<li>Déterminer le portefeuille tangent $T$. Calculer son ratio de Sharpe et le comparer à ceux des actifs pris isolément.</li>`; },
+      function(P) { return `<li>Écrire l'équation de la droite de marché des capitaux (CML). Interpréter économiquement sa pente. Synthétiser graphiquement les résultats de cet exercice.</li>`; }
+    ],
+
+    sol: [
+      function(P) { return `<li>Soit $w$ le réel correspondant à la fraction de la richesse investie dans $A_1$, de sorte que $1-w$ est investie dans $A_2$ (la vente à découvert correspond aux cas $w < 0$ ou $w > 1$). Le rendement espéré du portefeuille est alors $\\mu_P(w) = w\\,\\mu_1 + (1-w)\\,\\mu_2$, tandis que la variance du portefeuille s'écrit $\\sigma_P^2(w) = w^2\\sigma_1^2 + (1-w)^2\\sigma_2^2 + 2\\,w(1-w)\\,\\sigma_{12}$, où $\\sigma_{12} = \\rho_{12}\\,\\sigma_1\\,\\sigma_2$ désigne la covariance entre $A_1$ et $A_2$. On a directement $\\sigma_{12} = ${nf(P.rho,2)} \\times ${nf(P.s1,2)} \\times ${nf(P.s2,2)} = ${nt(P.s12,6,4)}$. Le signe négatif signifie que les deux actifs évoluent en sens contraire en moyenne : lorsque $A_1$ surperforme, $A_2$ tend à sous-performer, et réciproquement. C'est précisément cette corrélation négative qui rendra la diversification efficace : les pertes d'un actif sont partiellement compensées par les gains de l'autre.</li>`; },
+
+      function(P) { return `<li>Pour minimiser $\\sigma_P^2(w)$, on annule sa dérivée par rapport à $w$. Or on a :
+        <div class="math-formula">\\[\\begin{aligned}
+        \\frac{\\mathrm{d}\\,\\sigma_P^2(w)}{\\mathrm{d}w}
+        &= 2w\\,\\sigma_1^2 - 2(1-w)\\,\\sigma_2^2 + 2(1-2w)\\,\\sigma_{12} \\\\
+        &= 2w\\,\\sigma_1^2 + 2w\\,\\sigma_2^2 - 2\\,\\sigma_2^2 - 4w\\,\\sigma_{12} + 2\\,\\sigma_{12} \\\\
+        &= 2w\\left(\\sigma_1^2+\\sigma_2^2-2\\sigma_{12}\\right) - 2\\left(\\sigma_2^2-\\sigma_{12}\\right)
+        \\end{aligned}\\]</div>
+        On en déduit la pondération optimale $w_{\\mathrm{MVP}}$ en égalisant cette valeur à 0. Il vient alors :
+        <div class="math-formula">\\[\\begin{aligned}
+        w_{\\mathrm{MVP}}
+        &= \\frac{\\sigma_2^2 - \\sigma_{12}}{\\sigma_1^2 + \\sigma_2^2 - 2\\,\\sigma_{12}} \\\\
+        &= \\frac{${nf(P.s2,2)}^2 - (${nt(P.s12,6,4)})}{${nf(P.s1,2)}^2 + ${nf(P.s2,2)}^2 - 2\\times(${nt(P.s12,6,4)})} \\\\
+        &= \\frac{${nf(P.s2*P.s2,4)} + ${nt(-P.s12,6,4)}}{${nf(P.s1*P.s1,4)} + ${nf(P.s2*P.s2,4)} + ${nt(-2*P.s12,6,4)}} \\approx ${pc(P.wM)}
+        \\end{aligned}\\]</div>
+        Pour minimiser la variance, on investit donc ${nfp(P.wM*100,2)} % de sa richesse dans l'actif $A_1$ et ${nfp((1-P.wM)*100,2)} % de sa richesse dans l'actif $A_2$. L'écart-type et le rendement espéré du portefeuille de variance minimale (MVP) s'établissent respectivement à $\\sigma_{\\mathrm{MVP}} = \\sqrt{${nf(P.wM,4)}^2\\times ${nf(P.s1,2)}^2 + ${nf(1-P.wM,4)}^2\\times ${nf(P.s2,2)}^2 + 2\\times ${nf(P.wM,4)}\\times ${nf(1-P.wM,4)}\\times(${nt(P.s12,6,4)})} \\approx ${pc(P.sM)}$ et $\\mu_{\\mathrm{MVP}} = ${nf(P.wM,4)}\\times ${pcT(P.mu1)} + ${nf(1-P.wM,4)}\\times ${pcT(P.mu2)} \\approx ${pc(P.muM)}$. Ce résultat illustre le bénéfice de la diversification : investi seul, $A_1$ présente un écart-type de $${pcT(P.s1)}$ et $A_2$ de $${pcT(P.s2)}$ ; la combinaison optimale réduit le risque à $${pc(P.sM)}$, soit un écart-type inférieur à celui du moins risqué des deux actifs pris isolément.</li>`; },
+
+      function(P) { return `<li>On peut donner une expression théorique pour $\\mu_{\\mathrm{MVP}}$ et $\\sigma_{\\mathrm{MVP}}$. D'une part, on a :
+        <div class="math-formula">\\[\\begin{aligned}
+        \\mu_{\\mathrm{MVP}}
+        &= w_{\\mathrm{MVP}}\\,\\mu_1 + (1-w_{\\mathrm{MVP}})\\,\\mu_2 \\\\
+        &= w_{\\mathrm{MVP}}\\,\\mu_1 + \\mu_2 - w_{\\mathrm{MVP}}\\,\\mu_2 \\\\
+        &= \\mu_2 + w_{\\mathrm{MVP}}\\,(\\mu_1 - \\mu_2) \\\\
+        &= \\mu_2 + \\frac{(\\mu_1-\\mu_2)(\\sigma_2^2-\\sigma_{12})}{\\sigma_1^2+\\sigma_2^2-2\\sigma_{12}}
+        \\end{aligned}\\]</div>
+        D'autre part, on a $\\sigma_{\\mathrm{MVP}}^2 = w_{\\mathrm{MVP}}^2\\,\\sigma_1^2 + (1-w_{\\mathrm{MVP}})^2\\,\\sigma_2^2 + 2\\,w_{\\mathrm{MVP}}(1-w_{\\mathrm{MVP}})\\,\\sigma_{12}$ (relation $(\\star)$). Or, par définition du portefeuille de variance minimale (annulation de la dérivée), on a $2w_{\\mathrm{MVP}}\\left(\\sigma_1^2+\\sigma_2^2-2\\sigma_{12}\\right)-2\\left(\\sigma_2^2-\\sigma_{12}\\right)=0$. On a alors :
+        <div class="math-formula">\\[\\begin{aligned}
+        2w_{\\mathrm{MVP}}\\left(\\sigma_1^2+\\sigma_2^2-2\\sigma_{12}\\right)-2\\left(\\sigma_2^2-\\sigma_{12}\\right)=0
+        &\\iff w_{\\mathrm{MVP}}\\left(\\sigma_1^2+\\sigma_2^2-2\\sigma_{12}\\right)-\\left(\\sigma_2^2-\\sigma_{12}\\right)=0 \\\\
+        &\\iff \\sigma_1^2w_{\\mathrm{MVP}}+\\sigma_2^2w_{\\mathrm{MVP}}-2\\sigma_{12}w_{\\mathrm{MVP}}-\\sigma_2^2+\\sigma_{12}=0 \\\\
+        &\\iff w_{\\mathrm{MVP}}\\sigma_1^2-(1-w_{\\mathrm{MVP}})\\sigma_2^2+(1-2w_{\\mathrm{MVP}})\\sigma_{12}=0
+        \\end{aligned}\\]</div>
+        En reprenant ce résultat dans la relation $(\\star)$, il vient alors :
+        <div class="math-formula">\\[\\begin{aligned}
+        \\sigma_{\\mathrm{MVP}}^2
+        &= w_{\\mathrm{MVP}}^2\\,\\sigma_1^2 + (1-w_{\\mathrm{MVP}})^2\\,\\sigma_2^2 + 2w_{\\mathrm{MVP}}(1-w_{\\mathrm{MVP}})\\,\\sigma_{12} \\\\
+        &= w_{\\mathrm{MVP}}\\left(w_{\\mathrm{MVP}}\\,\\sigma_1^2 - (1-w_{\\mathrm{MVP}})\\,\\sigma_2^2 + (1-2w_{\\mathrm{MVP}})\\,\\sigma_{12}\\right) + (1-w_{\\mathrm{MVP}})\\,\\sigma_2^2 + w_{\\mathrm{MVP}}\\,\\sigma_{12} \\\\
+        &= w_{\\mathrm{MVP}}\\times 0 + (1-w_{\\mathrm{MVP}})\\,\\sigma_2^2 + w_{\\mathrm{MVP}}\\,\\sigma_{12} \\\\
+        &= \\sigma_2^2 - w_{\\mathrm{MVP}}\\,(\\sigma_2^2-\\sigma_{12})
+        \\end{aligned}\\]</div>
+        Il suffit alors de substituer l'expression de $w_{\\mathrm{MVP}}$ :
+        <div class="math-formula">\\[\\begin{aligned}
+        \\sigma_{\\mathrm{MVP}}^2
+        &= \\sigma_2^2 - \\frac{(\\sigma_2^2-\\sigma_{12})^2}{\\sigma_1^2+\\sigma_2^2-2\\sigma_{12}} \\\\
+        &= \\frac{\\sigma_2^2\\,(\\sigma_1^2+\\sigma_2^2-2\\sigma_{12}) - (\\sigma_2^2-\\sigma_{12})^2}{\\sigma_1^2+\\sigma_2^2-2\\sigma_{12}} \\\\
+        &= \\frac{\\sigma_1^2\\sigma_2^2 + \\sigma_2^4 - 2\\sigma_2^2\\sigma_{12} - \\sigma_2^4 + 2\\sigma_2^2\\sigma_{12} - \\sigma_{12}^2}{\\sigma_1^2+\\sigma_2^2-2\\sigma_{12}} \\\\
+        &= \\frac{\\sigma_1^2\\sigma_2^2 - \\sigma_{12}^2}{\\sigma_1^2+\\sigma_2^2-2\\sigma_{12}} = \\frac{\\sigma_1^2\\sigma_2^2(1-\\rho_{12}^2)}{\\sigma_1^2+\\sigma_2^2-2\\sigma_{12}}
+        \\end{aligned}\\]</div>
+        On vérifie numériquement que $\\sigma_{\\mathrm{MVP}}^2 = \\frac{${nf(P.s1*P.s1,4)}\\times ${nf(P.s2*P.s2,4)}\\times(1-(${nf(P.rho,2)})^2)}{${nt(P.den,6,4)}} \\approx ${nt(P.sM2,6,4)}$, soit bien $\\sigma_{\\mathrm{MVP}} \\approx ${pc(P.sM)}$.</li>`; },
+
+      function(P) { return `<li>La frontière peut être obtenue explicitement en éliminant le paramètre $w$ entre l'expression de $\\mu_P$ et celle de $\\sigma_P^2$. On dispose de deux relations : d'une part, on a $\\mu_P = w\\,\\mu_1 + (1-w)\\,\\mu_2$, d'où $w = \\frac{\\mu_P - \\mu_2}{\\mu_1 - \\mu_2}$ (relation (1)) ; d'autre part, on a $\\sigma_P^2 = w^2\\sigma_1^2 + (1-w)^2\\sigma_2^2 + 2w(1-w)\\sigma_{12}$ (relation (2)). En substituant $(1)$ dans $(2)$, il vient alors :
+        <div class="math-formula">\\[\\begin{aligned}
+        \\sigma_P^2
+        &= w^2\\sigma_1^2 + (1-w)^2\\sigma_2^2 + 2w(1-w)\\sigma_{12} \\\\
+        &= \\frac{(\\mu_P - \\mu_2)^2}{{(\\mu_1-\\mu_2)}^2}\\,\\sigma_1^2 + \\frac{(\\mu_1 - \\mu_P)^2}{{(\\mu_1-\\mu_2)}^2}\\,\\sigma_2^2 + \\frac{2(\\mu_P-\\mu_2)(\\mu_1-\\mu_P)}{{(\\mu_1-\\mu_2)}^2}\\,\\sigma_{12}
+        \\end{aligned}\\]</div>
+        On a donc, en développant le membre de droite multiplié par $(\\mu_1-\\mu_2)^2$ :
+        <div class="math-formula">\\[\\begin{aligned}
+        (\\mu_1-\\mu_2)^2\\,\\sigma_P^2
+        &= (\\mu_P - \\mu_2)^2\\sigma_1^2 + \\left((\\mu_1-\\mu_2) - (\\mu_P - \\mu_2)\\right)^2\\sigma_2^2 + 2(\\mu_P - \\mu_2)\\left((\\mu_1-\\mu_2) - (\\mu_P - \\mu_2)\\right)\\sigma_{12} \\\\
+        &= (\\mu_P - \\mu_2)^2{(\\sigma_1^2+\\sigma_2^2-2\\sigma_{12})} + 2(\\mu_P - \\mu_2)\\left(\\mu_1-\\mu_2\\right){(\\sigma_{12}-\\sigma_2^2)} + \\left(\\mu_1-\\mu_2\\right)^2\\sigma_2^2
+        \\end{aligned}\\]</div>
+        On reconnaît un trinôme du second degré en $(\\mu_P - \\mu_2)$. On met en évidence $\\sigma_1^2+\\sigma_2^2-2\\sigma_{12}$ pour compléter le carré :
+        <div class="math-formula">\\[\\begin{aligned}
+        (\\mu_1-\\mu_2)^2\\,\\sigma_P^2
+        &= (\\sigma_1^2+\\sigma_2^2-2\\sigma_{12})\\left(\\mu_P - \\mu_2 - \\frac{(\\mu_1-\\mu_2)(\\sigma_2^2-\\sigma_{12})}{\\sigma_1^2+\\sigma_2^2-2\\sigma_{12}}\\right)^2 + (\\mu_1-\\mu_2)^2\\left(\\sigma_2^2 - \\frac{(\\sigma_2^2-\\sigma_{12})^2}{\\sigma_1^2+\\sigma_2^2-2\\sigma_{12}}\\right)
+        \\end{aligned}\\]</div>
+        On reconnaît, dans la première parenthèse, l'expression de $\\mu_{\\mathrm{MVP}}$ et, dans la seconde, celle de $\\sigma_{\\mathrm{MVP}}^2$ établies à la question précédente. On note d'ailleurs que $\\sigma_1^2\\sigma_2^2 - \\sigma_{12}^2 = \\sigma_1^2\\sigma_2^2(1 - \\rho_{12}^2) \\geq 0$ dès que l'on a $|\\rho_{12}| \\leq 1$ (ce qui est toujours le cas). En divisant par $(\\mu_1-\\mu_2)^2$, on obtient donc :
+        <div class="math-formula">\\[\\begin{aligned}
+        \\sigma_P^2
+        &= \\frac{\\sigma_1^2+\\sigma_2^2-2\\sigma_{12}}{(\\mu_1-\\mu_2)^2}\\left(\\mu_P - \\mu_{\\mathrm{MVP}}\\right)^2 + \\sigma_{\\mathrm{MVP}}^2 \\\\
+        &= \\frac{${nt(P.den,6,4)}}{(${nf(P.mu1,2)}-${nf(P.mu2,2)})^2}\\left(\\mu_P - ${nf(P.muM,4)}\\right)^2 + ${nt(P.sM2,6,4)} \\approx ${nf(P.A,2)}\\left(\\mu_P - ${nf(P.muM,4)}\\right)^2 + ${nt(P.sM2,6,4)}
+        \\end{aligned}\\]</div>
+        Ceci établit la forme canonique de la parabole, dont le sommet est le portefeuille de variance minimale, de coordonnées $(\\sigma_{\\mathrm{MVP}}^2,\\,\\mu_{\\mathrm{MVP}})$. Cette structure parabolique est universelle : quels que soient le nombre d'actifs et la structure de la matrice de variance-covariance (pourvu qu'elle soit définie positive), la frontière de variance minimale est toujours une parabole dans le plan $(\\sigma_P^2, \\mu_P)$, ou de façon équivalente une parabole renversée dans le plan $(\\sigma_P, \\mu_P)$. La frontière efficiente au sens de Markowitz est la branche supérieure de cette parabole renversée, c'est-à-dire la demi-courbe vérifiant $\\mu_P \\geq \\mu_{\\mathrm{MVP}}$ : tout portefeuille en dessous est dominé, puisqu'il existe toujours un portefeuille offrant le même risque pour un rendement strictement supérieur. Plus spécifiquement, la frontière efficiente est ici la branche supérieure de la parabole d'équation $\\sigma_P^2 = ${nf(P.A,2)}(\\mu_P-${nf(P.muM,4)})^2 + ${nt(P.sM2,6,4)}$, c'est-à-dire la demi-parabole d'équation $\\sigma_P = \\sqrt{${nf(P.A,2)}(\\mu_P-${nf(P.muM,4)})^2 + ${nt(P.sM2,6,4)}}$ vérifiant $\\mu_P \\geq \\mu_{\\mathrm{MVP}} \\approx ${pc(P.muM)}$.</li>`; },
+
+      function(P) { return `<li>Le portefeuille tangent $T$ maximise le ratio de Sharpe $S(w) = \\frac{\\mu_P(w)-r_f}{\\sigma_P(w)}$ parmi tous les portefeuilles de la frontière. Le ratio de Sharpe est un quotient de deux fonctions de $w$. On applique la règle de dérivation d'un quotient : si $f$ et $g$ sont deux fonctions dérivables avec $g \\neq 0$, alors $\\left(\\frac{f}{g}\\right)' = \\frac{f'g - fg'}{g^2}$. Ici, $f(w) = \\mu_P(w)-r_f$ et $g(w) = \\sigma_P(w)$. On a donc :
+        <div class="math-formula">\\[\\frac{\\mathrm{d}S}{\\mathrm{d}w} = \\frac{\\frac{\\mathrm{d}\\mu_P}{\\mathrm{d}w}\\times\\sigma_P - (\\mu_P-r_f)\\times\\frac{\\mathrm{d}\\sigma_P}{\\mathrm{d}w}}{\\sigma_P^2}\\]</div>
+        Comme $\\sigma_P^2$ est strictement positif, annuler cette dérivée revient à annuler uniquement son numérateur : on a donc $\\frac{\\mathrm{d}S}{\\mathrm{d}w} = 0$ si, et seulement si, on a $\\frac{\\mathrm{d}\\mu_P}{\\mathrm{d}w}\\cdot\\sigma_P - (\\mu_P-r_f)\\cdot\\frac{\\mathrm{d}\\sigma_P}{\\mathrm{d}w} = 0$ (relation (3)). On calcule maintenant chaque dérivée séparément. La première est immédiate : puisque $\\mu_P(w) = w\\mu_1+(1-w)\\mu_2$, on a $\\frac{\\mathrm{d}\\mu_P}{\\mathrm{d}w} = \\mu_1-\\mu_2$. Pour la seconde, on remarque que $\\sigma_P$ est la racine carrée de $\\sigma_P^2$. On applique donc la règle de dérivation des fonctions composées (règle de la chaîne) : si $h(w) = \\sqrt{u(w)}$, alors $h'(w) = \\frac{u'(w)}{2\\sqrt{u(w)}}$. En posant $u(w) = \\sigma_P^2(w)$, on obtient :
+        <div class="math-formula">\\[\\frac{\\mathrm{d}\\sigma_P}{\\mathrm{d}w} = \\frac{\\frac{\\mathrm{d}\\sigma_P^2}{\\mathrm{d}w}}{2\\sqrt{\\sigma_P^2}} = \\frac{1}{2\\sigma_P}\\times\\frac{\\mathrm{d}\\sigma_P^2}{\\mathrm{d}w}\\]</div>
+        En substituant ces deux résultats dans la condition (3), il vient donc $(\\mu_1-\\mu_2)\\sigma_P^2 = (\\mu_P-r_f)\\times\\frac{1}{2}\\times\\frac{\\mathrm{d}\\sigma_P^2}{\\mathrm{d}w}$ (relation (4)). On substitue alors dans la relation $(4)$ les trois expressions déjà établies, à savoir $\\sigma_P^2 = w^2\\sigma_1^2+(1-w)^2\\sigma_2^2+2w(1-w)\\sigma_{12}$, $\\frac{1}{2}\\frac{\\mathrm{d}\\sigma_P^2}{\\mathrm{d}w} = w\\sigma_1^2-(1-w)\\sigma_2^2+(1-2w)\\sigma_{12}$ et $\\mu_P-r_f = w(\\mu_1-r_f)+(1-w)(\\mu_2-r_f)$. La relation $(4)$ devient alors :
+        <div class="math-formula">\\[\\begin{aligned}
+        (\\mu_1-\\mu_2)\\bigl(w^2\\sigma_1^2+(1-w)^2\\sigma_2^2+2w(1-w)\\sigma_{12}\\bigr)
+        &= \\bigl(w(\\mu_1-r_f)+(1-w)(\\mu_2-r_f)\\bigr)\\bigl(w\\sigma_1^2-(1-w)\\sigma_2^2+(1-2w)\\sigma_{12}\\bigr) \\\\
+        &= w^2(\\mu_1-r_f)\\sigma_1^2 - w(1-w)(\\mu_1-r_f)\\sigma_2^2 + w(1-2w)(\\mu_1-r_f)\\sigma_{12} \\\\
+        &\\phantom{{}={}} + w(1-w)(\\mu_2-r_f)\\sigma_1^2 - (1-w)^2(\\mu_2-r_f)\\sigma_2^2 + (1-w)(1-2w)(\\mu_2-r_f)\\sigma_{12}
+        \\end{aligned}\\]</div>
+        On soustrait le membre droit au membre gauche. L'objectif est de montrer que les termes en $w^2$ s'annulent, de façon à obtenir une équation linéaire en $w$ dont on pourra extraire $w_T$.
+        <ul class="sub-list">
+          <li><strong>Annulation des termes en $w^2$.</strong> Sur le membre gauche, le coefficient de $w^2$ est $(\\mu_1-\\mu_2)(\\sigma_1^2+\\sigma_2^2-2\\sigma_{12})$, car on développe $w^2\\sigma_1^2+(1-w)^2\\sigma_2^2+2w(1-w)\\sigma_{12}$ et on collecte les termes en $w^2$. Sur le membre droit, on identifie de même le coefficient de $w^2$ en développant chacun des six termes issus du produit, ce qui donne successivement $+(\\mu_1-r_f)\\sigma_1^2$, $+(\\mu_1-r_f)\\sigma_2^2$, $-2(\\mu_1-r_f)\\sigma_{12}$, $-(\\mu_2-r_f)\\sigma_1^2$, $-(\\mu_2-r_f)\\sigma_2^2$ et $+2(\\mu_2-r_f)\\sigma_{12}$. En additionnant ces six contributions, le coefficient total de $w^2$ au membre droit est :
+          <div class="math-formula">\\[\\begin{aligned}
+          &(\\mu_1-r_f)\\sigma_1^2 + (\\mu_1-r_f)\\sigma_2^2 - 2(\\mu_1-r_f)\\sigma_{12} - (\\mu_2-r_f)\\sigma_1^2 - (\\mu_2-r_f)\\sigma_2^2 + 2(\\mu_2-r_f)\\sigma_{12} \\\\
+          &\\qquad = \\bigl[(\\mu_1-r_f)-(\\mu_2-r_f)\\bigr](\\sigma_1^2+\\sigma_2^2-2\\sigma_{12}) = (\\mu_1-\\mu_2)(\\sigma_1^2+\\sigma_2^2-2\\sigma_{12})
+          \\end{aligned}\\]</div>
+          Ceci est identique au coefficient de $w^2$ du membre gauche. Les termes en $w^2$ s'annulent donc bien lors du passage au membre gauche.</li>
+          <li><strong>Identification de l'équation linéaire en $w$.</strong> Après annulation des termes en $w^2$, il reste les termes constants (en $w^0$) et les termes en $w^1$. Le terme constant du membre gauche est $(\\mu_1-\\mu_2)\\sigma_2^2$ (en posant $w=0$) ; celui du membre droit est $-(\\mu_2-r_f)\\sigma_2^2$. Leur différence vaut donc $\\sigma_2^2\\bigl[(\\mu_1-\\mu_2)+(\\mu_2-r_f)\\bigr] = (\\mu_1-r_f)\\sigma_2^2$. Pour le coefficient de $w^1$, on identifie de même la contribution linéaire de chacun des six termes du membre droit, en développant les facteurs $(1-w)$, $(1-w)^2$ et $(1-2w)$ ; on obtient $-(\\mu_1-r_f)\\sigma_2^2 + (\\mu_1-r_f)\\sigma_{12} + (\\mu_2-r_f)\\sigma_1^2 + 2(\\mu_2-r_f)\\sigma_2^2 - 3(\\mu_2-r_f)\\sigma_{12}$. Le coefficient de $w^1$ au membre gauche vaut quant à lui $-2(\\mu_1-\\mu_2)\\sigma_2^2+2(\\mu_1-\\mu_2)\\sigma_{12}$. En passant au membre gauche (« gauche moins droit »), le coefficient de $w^1$ est :
+          <div class="math-formula">\\[\\begin{aligned}
+          &-2(\\mu_1-\\mu_2)\\sigma_2^2+2(\\mu_1-\\mu_2)\\sigma_{12} + (\\mu_1-r_f)\\sigma_2^2 - (\\mu_1-r_f)\\sigma_{12} - (\\mu_2-r_f)\\sigma_1^2 - 2(\\mu_2-r_f)\\sigma_2^2 + 3(\\mu_2-r_f)\\sigma_{12} \\\\
+          &\\qquad = -(\\mu_1-r_f)\\sigma_2^2 - (\\mu_2-r_f)\\sigma_1^2 + (\\mu_1+\\mu_2-2r_f)\\sigma_{12}
+          \\end{aligned}\\]</div>
+          L'équation (4) se réécrit donc $(\\mu_1-r_f)\\sigma_2^2 - (\\mu_2-r_f)\\sigma_{12} + w\\bigl[-(\\mu_1-r_f)\\sigma_2^2-(\\mu_2-r_f)\\sigma_1^2+(\\mu_1+\\mu_2-2r_f)\\sigma_{12}\\bigr] = 0$, dont la résolution immédiate fournit la pondération $w_T$ de l'actif $A_1$ dans le portefeuille tangent :
+          <div class="math-formula">\\[w_T = \\frac{(\\mu_1-r_f)\\,\\sigma_2^2 - (\\mu_2-r_f)\\,\\sigma_{12}}{(\\mu_1-r_f)\\,\\sigma_2^2 + (\\mu_2-r_f)\\,\\sigma_1^2 - (\\mu_1+\\mu_2-2r_f)\\,\\sigma_{12}}\\]</div></li>
+        </ul>
+        On peut vérifier intuitivement ce résultat : si $\\sigma_{12} = 0$ (c'est le cas lorsque les actifs sont indépendants), la formule se réduit à $w_T = \\frac{(\\mu_1-r_f)\\sigma_2^2}{(\\mu_1-r_f)\\sigma_2^2+(\\mu_2-r_f)\\sigma_1^2}$, qui alloue plus de poids à l'actif dont la prime de risque est élevée relativement à sa variance, ce qui correspond bien à l'intuition économique. En substituant les valeurs numériques avec $\\mu_1-r_f = ${pcT(P.mu1-P.rf)}$ et $\\mu_2-r_f = ${pcT(P.mu2-P.rf)}$, on obtient :
+        <div class="math-formula">\\[\\begin{aligned}
+        w_T
+        &= \\frac{${nf(P.mu1-P.rf,4)}\\times(${nf(P.s2,2)})^2 - ${nf(P.mu2-P.rf,4)}\\times(${nt(P.s12,6,4)})}{${nf(P.mu1-P.rf,4)}\\times(${nf(P.s2,2)})^2 + ${nf(P.mu2-P.rf,4)}\\times(${nf(P.s1,2)})^2 - (${nf(P.mu1-P.rf,4)}+${nf(P.mu2-P.rf,4)})\\times(${nt(P.s12,6,4)})} \\\\
+        &= \\frac{${nf(P.tn1,6)} + ${nf(P.tn2,6)}}{${nf(P.tn1,6)} + ${nf(P.td2,6)} + ${nf(P.td3,6)}} \\approx ${pc(P.wT)}
+        \\end{aligned}\\]</div>
+        Le rendement espéré et l'écart-type du portefeuille tangent s'établissent alors respectivement à $\\mu_T = ${nf(P.wT,4)}\\times ${pcT(P.mu1)} + ${nf(1-P.wT,4)}\\times ${pcT(P.mu2)} \\approx ${pc(P.muT)}$ et $\\sigma_T = \\sqrt{${nf(P.wT,4)}^2\\times(${nf(P.s1,2)})^2 + ${nf(1-P.wT,4)}^2\\times(${nf(P.s2,2)})^2 + 2\\times ${nf(P.wT,4)}\\times ${nf(1-P.wT,4)}\\times(${nt(P.s12,6,4)})} = \\sqrt{${nt(P.sT*P.sT,6,4)}} \\approx ${pc(P.sT)}$. Le ratio de Sharpe du portefeuille tangent vaut dès lors $S_T = \\frac{\\mu_T - r_f}{\\sigma_T} = \\frac{${pc(P.muT)} - ${pcT(P.rf)}}{${pc(P.sT)}} \\approx ${nf(P.ST,3)}$, à comparer avec les ratios individuels $S_1 = \\frac{${pcT(P.mu1)}-${pcT(P.rf)}}{${pcT(P.s1)}} \\approx ${nf(P.S1,3)}$ et $S_2 = \\frac{${pcT(P.mu2)}-${pcT(P.rf)}}{${pcT(P.s2)}} \\approx ${nf(P.S2,3)}$. Le portefeuille tangent offre donc une rémunération du risque supérieure à celle de chaque actif pris isolément : pour chaque point de pourcentage de risque supporté, l'investisseur perçoit ${nfp(P.ST,3)} % de prime, contre ${nfp(P.S1,3)} % en ne détenant que $A_1$ et ${nfp(P.S2,3)} % en ne détenant que $A_2$. Ce gain constitue la mesure la plus directe du bénéfice de la diversification dans l'espace rendement-risque.</li>`; },
+
+      function(P) { return `<li>En vertu du théorème de séparation en deux fonds de Tobin, tout portefeuille efficient s'écrit comme une combinaison de l'actif sans risque et du portefeuille tangent $T$. Si le réel $\\alpha$ désigne la fraction de richesse investie dans $T$ (et $1-\\alpha$ dans l'actif sans risque), le rendement espéré et l'écart-type du portefeuille ainsi constitué valent respectivement $\\mu_P = (1-\\alpha)\\,r_f + \\alpha\\,\\mu_T = r_f + \\alpha\\,(\\mu_T - r_f)$ et $\\sigma_P = \\lvert\\alpha\\rvert\\,\\sigma_T$. La seconde relation s'explique par le fait que l'actif sans risque a un écart-type nul et une covariance nulle avec tout autre actif : la variance du portefeuille mixte est donc bien $\\sigma_P^2 = \\alpha^2\\sigma_T^2$. Pour $\\alpha \\geq 0$, on peut donc écrire $\\alpha = \\sigma_P/\\sigma_T$. En substituant cette expression dans celle de $\\mu_P$, on élimine le paramètre $\\alpha$ et on obtient une relation directe entre $\\mu_P$ et $\\sigma_P$ :
+        <div class="math-formula">\\[\\begin{aligned}
+        \\mu_P &= r_f + \\frac{\\mu_T - r_f}{\\sigma_T}\\times\\sigma_P \\\\
+        &\\approx ${pcT(P.rf)} + \\frac{${pc(P.muT)}-${pcT(P.rf)}}{${pc(P.sT)}}\\times\\sigma_P \\approx ${pcT(P.rf)} + ${nf(P.ST,3)}\\,\\sigma_P
+        \\end{aligned}\\]</div>
+        C'est l'équation d'une droite dans le plan $(\\sigma_P,\\mu_P)$, d'ordonnée à l'origine $r_f$ et de pente $(\\mu_T-r_f)/\\sigma_T$ : la droite de marché des capitaux (CML). La pente $(\\mu_T-r_f)/\\sigma_T \\approx ${nf(P.ST,3)}$ représente le « prix du risque » : chaque point de pourcentage d'écart-type supplémentaire accepté par l'investisseur est rémunéré par ${nfp(P.ST,3)} % de rendement espéré additionnel. La CML traduit ainsi l'arbitrage entre la « patience » — rémunérée par $r_f = ${pcT(P.rf)}$ indépendamment du risque, c'est le prix pur du temps — et la « prise de risque » — rémunérée par la prime $(\\mu_T-r_f)/\\sigma_T$ par unité d'écart-type, c'est le prix pur du risque. Tout portefeuille situé en dessous de la CML est sous-optimal : l'investisseur rationnel peut toujours l'améliorer en combinant $T$ et l'actif sans risque pour atteindre le même niveau de risque avec un rendement espéré strictement supérieur. Aucun portefeuille ne peut toutefois se situer au-dessus de la CML sans générer une opportunité d'arbitrage, ce qui traduit l'efficience du marché en l'absence de frictions, hypothèse centrale du modèle de Sharpe. On peut synthétiser l'ensemble des résultats de l'exercice dans le tableau suivant :
+        ${P.tableRecap}
+        La frontière des portefeuilles décrit une hyperbole dont le sommet est le MVP $(\\sigma_{\\mathrm{MVP}} \\approx ${pc(P.sM)},\\,\\mu_{\\mathrm{MVP}} \\approx ${pc(P.muM)})$ : c'est le seul point où l'écart-type est strictement inférieur à celui de chaque actif pris isolément ($\\sigma_1 = ${pcT(P.s1)}$ et $\\sigma_2 = ${pcT(P.s2)}$). La CML, de pente $(\\mu_T - r_f)/\\sigma_T \\approx ${nf(P.ST,3)}$, est la seule droite passant par $r_f$ et tangente à la frontière efficiente : tout portefeuille se situant à droite ou en dessous de la CML est sous-optimal au sens de Sharpe, et l'investisseur rationnel lui préférera systématiquement une combinaison de l'actif sans risque et du portefeuille tangent $T$.
+        ${P.chart}</li>`; }
+    ]
+  },
+
+  en: {
+    htmlLang: "en",
+    title: "Finance Simulator - Efficient Frontier and CML",
+    badge: "FINANCIAL ASSET VALUATION METHODS",
+    h1: "Efficient Frontier and Capital Market Line",
+    subtitle: "© Thomas Hossen – August 29, 2026 Version",
+    seedLabel: "Seed (Optional)",
+    btnGen: "Generate Exercise →",
+    welcome: "Configure the parameters and click Generate to create a new exercise.",
+    seedActive: "Active Seed:",
+    btnNew: "↺ New Statement",
+    btnPdf: "⬇ Export PDF",
+    btnDoc: "⬇ Export DOC",
+    tagEnonce: "Problem",
+    cardTitle: "Two-Risky-Asset Portfolio",
+    assignment: "Assignment",
+    tagSol: "Solution",
+    showSol: "Show Solution",
+    hideSol: "Hide Solution",
+    docTitle: "Finance Exercise",
+    docFile: "Efficient_Frontier_Exercise.doc",
+    locale: "en-GB",
+    pctSep: "%",
+    thousands: ",",
+    decimal: ".",
+
+    funds: ["Aquilon Asset Management", "Vauban Asset Management", "Meridian Capital", "Sextant Investments"],
+    assets: [
+      ["international equities", "sovereign bonds"],
+      ["technology equities", "corporate bonds"],
+      ["emerging market equities", "listed real estate"],
+      ["commodities", "inflation-linked bonds"]
+    ],
+
+    tbl: {
+      pf: "Portfolio",
+      w1: "Weight in A<sub>1</sub>",
+      mu: "Expected return",
+      sig: "Standard deviation",
+      sharpe: "Sharpe ratio",
+      rf: "Risk-free asset",
+      a1: "Asset A<sub>1</sub> alone",
+      a2: "Asset A<sub>2</sub> alone",
+      mvp: "Minimum variance (MVP)",
+      tang: "Tangency portfolio (T)",
+      na: "—"
+    },
+
+    fig: {
+      xlabel: "Standard deviation σP (%)",
+      ylabel: "Expected return μP (%)",
+      legDom: "Dominated frontier",
+      legEff: "Efficient frontier",
+      legCml: "CML",
+      caption: function(P) { return `
+        Frontier of risky portfolios, tangency portfolio (T), minimum variance portfolio (MVP) and capital market line (CML) in the $(\\sigma_P, \\mu_P)$ plane: the dominated frontier is shown as a grey dashed curve; the efficient frontier is drawn as a solid blue curve; the CML, in red, with slope ${nfp(P.ST,3)}, is tangent to the efficient frontier at point $T$.
+      `; }
+    },
+
+    context: function(P) { return `
+      The fund <strong>${P.fund}</strong> is reviewing the composition of its strategic allocation. Consider two risky assets $A_1$ (${P.asset1}) and $A_2$ (${P.asset2}) with expected mean annual returns $\\mu_1 = ${pcT(P.mu1)}$ and $\\mu_2 = ${pcT(P.mu2)}$ and estimated annual standard deviations $\\sigma_1 = ${pcT(P.s1)}$ and $\\sigma_2 = ${pcT(P.s2)}$, respectively. The correlation coefficient between the returns of the two assets is assumed to be $\\rho_{12} = ${nf(P.rho, 2)}$. A risk-free asset with return $r_f = ${pcT(P.rf)}$ is also available.
+    `; },
+
+    enonce: [
+      function(P) { return `<li>Recall the general formula for the expected return and the variance of a portfolio $P$ made up of a fraction $w \\in \\mathbb{R}$ invested in $A_1$ and $1-w$ in $A_2$. Compute the covariance $\\sigma_{12}$. Interpret its sign.</li>`; },
+      function(P) { return `<li>Determine analytically the minimum variance portfolio (MVP). Compute its expected return and its standard deviation. Compare with an investment in a single asset and conclude on the benefit of diversification.</li>`; },
+      function(P) { return `<li>Show analytically that the return of the minimum variance portfolio can be written, and that the variance of that same portfolio satisfies, respectively
+        <div class="math-formula">\\[\\mu_{\\text{MVP}}=\\mu_2 + \\frac{(\\mu_1-\\mu_2)(\\sigma_2^2-\\sigma_{12})}{\\sigma_1^2+\\sigma_2^2-2\\sigma_{12}} \\qquad \\text{and} \\qquad \\sigma_{\\text{MVP}}^2=\\frac{\\sigma_1^2\\sigma_2^2(1-\\rho_{12}^2)}{\\sigma_1^2+\\sigma_2^2-2\\sigma_{12}}\\]</div></li>`; },
+      function(P) { return `<li>Determine analytically the portfolio frontier. State which part of the frontier constitutes the efficient frontier in the sense of Markowitz.</li>`; },
+      function(P) { return `<li>Determine the tangency portfolio $T$. Compute its Sharpe ratio and compare it with those of the assets taken in isolation.</li>`; },
+      function(P) { return `<li>Write the equation of the capital market line (CML). Interpret its slope economically. Summarise the results of this exercise graphically.</li>`; }
+    ],
+
+    sol: [
+      function(P) { return `<li>Let $w$ be the real number corresponding to the fraction of wealth invested in $A_1$, so that $1-w$ is invested in $A_2$ (short selling corresponds to the cases $w < 0$ or $w > 1$). The expected return of the portfolio is then $\\mu_P(w) = w\\,\\mu_1 + (1-w)\\,\\mu_2$, while the variance of the portfolio is $\\sigma_P^2(w) = w^2\\sigma_1^2 + (1-w)^2\\sigma_2^2 + 2\\,w(1-w)\\,\\sigma_{12}$, where $\\sigma_{12} = \\rho_{12}\\,\\sigma_1\\,\\sigma_2$ denotes the covariance between $A_1$ and $A_2$. We directly obtain $\\sigma_{12} = ${nf(P.rho,2)} \\times ${nf(P.s1,2)} \\times ${nf(P.s2,2)} = ${nt(P.s12,6,4)}$. The negative sign means that the two assets move in opposite directions on average: when $A_1$ outperforms, $A_2$ tends to underperform, and conversely. It is precisely this negative correlation that will make diversification effective: the losses on one asset are partly offset by the gains on the other.</li>`; },
+
+      function(P) { return `<li>In order to minimise $\\sigma_P^2(w)$, we set its derivative with respect to $w$ equal to zero. Now we have:
+        <div class="math-formula">\\[\\begin{aligned}
+        \\frac{\\mathrm{d}\\,\\sigma_P^2(w)}{\\mathrm{d}w}
+        &= 2w\\,\\sigma_1^2 - 2(1-w)\\,\\sigma_2^2 + 2(1-2w)\\,\\sigma_{12} \\\\
+        &= 2w\\,\\sigma_1^2 + 2w\\,\\sigma_2^2 - 2\\,\\sigma_2^2 - 4w\\,\\sigma_{12} + 2\\,\\sigma_{12} \\\\
+        &= 2w\\left(\\sigma_1^2+\\sigma_2^2-2\\sigma_{12}\\right) - 2\\left(\\sigma_2^2-\\sigma_{12}\\right)
+        \\end{aligned}\\]</div>
+        We deduce the optimal weight $w_{\\mathrm{MVP}}$ by setting this value equal to 0. It then follows that:
+        <div class="math-formula">\\[\\begin{aligned}
+        w_{\\mathrm{MVP}}
+        &= \\frac{\\sigma_2^2 - \\sigma_{12}}{\\sigma_1^2 + \\sigma_2^2 - 2\\,\\sigma_{12}} \\\\
+        &= \\frac{${nf(P.s2,2)}^2 - (${nt(P.s12,6,4)})}{${nf(P.s1,2)}^2 + ${nf(P.s2,2)}^2 - 2\\times(${nt(P.s12,6,4)})} \\\\
+        &= \\frac{${nf(P.s2*P.s2,4)} + ${nt(-P.s12,6,4)}}{${nf(P.s1*P.s1,4)} + ${nf(P.s2*P.s2,4)} + ${nt(-2*P.s12,6,4)}} \\approx ${pc(P.wM)}
+        \\end{aligned}\\]</div>
+        To minimise variance, one therefore invests ${nfp(P.wM*100,2)}% of wealth in asset $A_1$ and ${nfp((1-P.wM)*100,2)}% of wealth in asset $A_2$. The standard deviation and the expected return of the minimum variance portfolio (MVP) are then respectively $\\sigma_{\\mathrm{MVP}} = \\sqrt{${nf(P.wM,4)}^2\\times ${nf(P.s1,2)}^2 + ${nf(1-P.wM,4)}^2\\times ${nf(P.s2,2)}^2 + 2\\times ${nf(P.wM,4)}\\times ${nf(1-P.wM,4)}\\times(${nt(P.s12,6,4)})} \\approx ${pc(P.sM)}$ and $\\mu_{\\mathrm{MVP}} = ${nf(P.wM,4)}\\times ${pcT(P.mu1)} + ${nf(1-P.wM,4)}\\times ${pcT(P.mu2)} \\approx ${pc(P.muM)}$. This result illustrates the benefit of diversification: taken alone, $A_1$ displays a standard deviation of $${pcT(P.s1)}$ and $A_2$ one of $${pcT(P.s2)}$; the optimal combination reduces risk to $${pc(P.sM)}$, that is a standard deviation lower than that of the less risky of the two assets taken in isolation.</li>`; },
+
+      function(P) { return `<li>A theoretical expression can be given for $\\mu_{\\mathrm{MVP}}$ and $\\sigma_{\\mathrm{MVP}}$. On the one hand, we have:
+        <div class="math-formula">\\[\\begin{aligned}
+        \\mu_{\\mathrm{MVP}}
+        &= w_{\\mathrm{MVP}}\\,\\mu_1 + (1-w_{\\mathrm{MVP}})\\,\\mu_2 \\\\
+        &= w_{\\mathrm{MVP}}\\,\\mu_1 + \\mu_2 - w_{\\mathrm{MVP}}\\,\\mu_2 \\\\
+        &= \\mu_2 + w_{\\mathrm{MVP}}\\,(\\mu_1 - \\mu_2) \\\\
+        &= \\mu_2 + \\frac{(\\mu_1-\\mu_2)(\\sigma_2^2-\\sigma_{12})}{\\sigma_1^2+\\sigma_2^2-2\\sigma_{12}}
+        \\end{aligned}\\]</div>
+        On the other hand, we have $\\sigma_{\\mathrm{MVP}}^2 = w_{\\mathrm{MVP}}^2\\,\\sigma_1^2 + (1-w_{\\mathrm{MVP}})^2\\,\\sigma_2^2 + 2\\,w_{\\mathrm{MVP}}(1-w_{\\mathrm{MVP}})\\,\\sigma_{12}$ (relation $(\\star)$). Now, by definition of the minimum variance portfolio (first-order condition), we have $2w_{\\mathrm{MVP}}\\left(\\sigma_1^2+\\sigma_2^2-2\\sigma_{12}\\right)-2\\left(\\sigma_2^2-\\sigma_{12}\\right)=0$. We then have:
+        <div class="math-formula">\\[\\begin{aligned}
+        2w_{\\mathrm{MVP}}\\left(\\sigma_1^2+\\sigma_2^2-2\\sigma_{12}\\right)-2\\left(\\sigma_2^2-\\sigma_{12}\\right)=0
+        &\\iff w_{\\mathrm{MVP}}\\left(\\sigma_1^2+\\sigma_2^2-2\\sigma_{12}\\right)-\\left(\\sigma_2^2-\\sigma_{12}\\right)=0 \\\\
+        &\\iff \\sigma_1^2w_{\\mathrm{MVP}}+\\sigma_2^2w_{\\mathrm{MVP}}-2\\sigma_{12}w_{\\mathrm{MVP}}-\\sigma_2^2+\\sigma_{12}=0 \\\\
+        &\\iff w_{\\mathrm{MVP}}\\sigma_1^2-(1-w_{\\mathrm{MVP}})\\sigma_2^2+(1-2w_{\\mathrm{MVP}})\\sigma_{12}=0
+        \\end{aligned}\\]</div>
+        Using this result in relation $(\\star)$, it then follows that:
+        <div class="math-formula">\\[\\begin{aligned}
+        \\sigma_{\\mathrm{MVP}}^2
+        &= w_{\\mathrm{MVP}}^2\\,\\sigma_1^2 + (1-w_{\\mathrm{MVP}})^2\\,\\sigma_2^2 + 2w_{\\mathrm{MVP}}(1-w_{\\mathrm{MVP}})\\,\\sigma_{12} \\\\
+        &= w_{\\mathrm{MVP}}\\left(w_{\\mathrm{MVP}}\\,\\sigma_1^2 - (1-w_{\\mathrm{MVP}})\\,\\sigma_2^2 + (1-2w_{\\mathrm{MVP}})\\,\\sigma_{12}\\right) + (1-w_{\\mathrm{MVP}})\\,\\sigma_2^2 + w_{\\mathrm{MVP}}\\,\\sigma_{12} \\\\
+        &= w_{\\mathrm{MVP}}\\times 0 + (1-w_{\\mathrm{MVP}})\\,\\sigma_2^2 + w_{\\mathrm{MVP}}\\,\\sigma_{12} \\\\
+        &= \\sigma_2^2 - w_{\\mathrm{MVP}}\\,(\\sigma_2^2-\\sigma_{12})
+        \\end{aligned}\\]</div>
+        It is then enough to substitute the expression of $w_{\\mathrm{MVP}}$:
+        <div class="math-formula">\\[\\begin{aligned}
+        \\sigma_{\\mathrm{MVP}}^2
+        &= \\sigma_2^2 - \\frac{(\\sigma_2^2-\\sigma_{12})^2}{\\sigma_1^2+\\sigma_2^2-2\\sigma_{12}} \\\\
+        &= \\frac{\\sigma_2^2\\,(\\sigma_1^2+\\sigma_2^2-2\\sigma_{12}) - (\\sigma_2^2-\\sigma_{12})^2}{\\sigma_1^2+\\sigma_2^2-2\\sigma_{12}} \\\\
+        &= \\frac{\\sigma_1^2\\sigma_2^2 + \\sigma_2^4 - 2\\sigma_2^2\\sigma_{12} - \\sigma_2^4 + 2\\sigma_2^2\\sigma_{12} - \\sigma_{12}^2}{\\sigma_1^2+\\sigma_2^2-2\\sigma_{12}} \\\\
+        &= \\frac{\\sigma_1^2\\sigma_2^2 - \\sigma_{12}^2}{\\sigma_1^2+\\sigma_2^2-2\\sigma_{12}} = \\frac{\\sigma_1^2\\sigma_2^2(1-\\rho_{12}^2)}{\\sigma_1^2+\\sigma_2^2-2\\sigma_{12}}
+        \\end{aligned}\\]</div>
+        We check numerically that $\\sigma_{\\mathrm{MVP}}^2 = \\frac{${nf(P.s1*P.s1,4)}\\times ${nf(P.s2*P.s2,4)}\\times(1-(${nf(P.rho,2)})^2)}{${nt(P.den,6,4)}} \\approx ${nt(P.sM2,6,4)}$, that is indeed $\\sigma_{\\mathrm{MVP}} \\approx ${pc(P.sM)}$.</li>`; },
+
+      function(P) { return `<li>The frontier can be obtained explicitly by eliminating the parameter $w$ between the expression of $\\mu_P$ and that of $\\sigma_P^2$. We have two relations: on the one hand, $\\mu_P = w\\,\\mu_1 + (1-w)\\,\\mu_2$, hence $w = \\frac{\\mu_P - \\mu_2}{\\mu_1 - \\mu_2}$ (relation (1)); on the other hand, $\\sigma_P^2 = w^2\\sigma_1^2 + (1-w)^2\\sigma_2^2 + 2w(1-w)\\sigma_{12}$ (relation (2)). Substituting $(1)$ into $(2)$, it then follows that:
+        <div class="math-formula">\\[\\begin{aligned}
+        \\sigma_P^2
+        &= w^2\\sigma_1^2 + (1-w)^2\\sigma_2^2 + 2w(1-w)\\sigma_{12} \\\\
+        &= \\frac{(\\mu_P - \\mu_2)^2}{{(\\mu_1-\\mu_2)}^2}\\,\\sigma_1^2 + \\frac{(\\mu_1 - \\mu_P)^2}{{(\\mu_1-\\mu_2)}^2}\\,\\sigma_2^2 + \\frac{2(\\mu_P-\\mu_2)(\\mu_1-\\mu_P)}{{(\\mu_1-\\mu_2)}^2}\\,\\sigma_{12}
+        \\end{aligned}\\]</div>
+        Multiplying by $(\\mu_1-\\mu_2)^2$ and expanding, we therefore have:
+        <div class="math-formula">\\[\\begin{aligned}
+        (\\mu_1-\\mu_2)^2\\,\\sigma_P^2
+        &= (\\mu_P - \\mu_2)^2\\sigma_1^2 + \\left((\\mu_1-\\mu_2) - (\\mu_P - \\mu_2)\\right)^2\\sigma_2^2 + 2(\\mu_P - \\mu_2)\\left((\\mu_1-\\mu_2) - (\\mu_P - \\mu_2)\\right)\\sigma_{12} \\\\
+        &= (\\mu_P - \\mu_2)^2{(\\sigma_1^2+\\sigma_2^2-2\\sigma_{12})} + 2(\\mu_P - \\mu_2)\\left(\\mu_1-\\mu_2\\right){(\\sigma_{12}-\\sigma_2^2)} + \\left(\\mu_1-\\mu_2\\right)^2\\sigma_2^2
+        \\end{aligned}\\]</div>
+        We recognise a quadratic trinomial in $(\\mu_P - \\mu_2)$. We factor out $\\sigma_1^2+\\sigma_2^2-2\\sigma_{12}$ in order to complete the square:
+        <div class="math-formula">\\[\\begin{aligned}
+        (\\mu_1-\\mu_2)^2\\,\\sigma_P^2
+        &= (\\sigma_1^2+\\sigma_2^2-2\\sigma_{12})\\left(\\mu_P - \\mu_2 - \\frac{(\\mu_1-\\mu_2)(\\sigma_2^2-\\sigma_{12})}{\\sigma_1^2+\\sigma_2^2-2\\sigma_{12}}\\right)^2 + (\\mu_1-\\mu_2)^2\\left(\\sigma_2^2 - \\frac{(\\sigma_2^2-\\sigma_{12})^2}{\\sigma_1^2+\\sigma_2^2-2\\sigma_{12}}\\right)
+        \\end{aligned}\\]</div>
+        We recognise, in the first bracket, the expression of $\\mu_{\\mathrm{MVP}}$ and, in the second, that of $\\sigma_{\\mathrm{MVP}}^2$ established in the previous question. We also note that $\\sigma_1^2\\sigma_2^2 - \\sigma_{12}^2 = \\sigma_1^2\\sigma_2^2(1 - \\rho_{12}^2) \\geq 0$ as soon as $|\\rho_{12}| \\leq 1$ (which is always the case). Dividing by $(\\mu_1-\\mu_2)^2$, we therefore obtain:
+        <div class="math-formula">\\[\\begin{aligned}
+        \\sigma_P^2
+        &= \\frac{\\sigma_1^2+\\sigma_2^2-2\\sigma_{12}}{(\\mu_1-\\mu_2)^2}\\left(\\mu_P - \\mu_{\\mathrm{MVP}}\\right)^2 + \\sigma_{\\mathrm{MVP}}^2 \\\\
+        &= \\frac{${nt(P.den,6,4)}}{(${nf(P.mu1,2)}-${nf(P.mu2,2)})^2}\\left(\\mu_P - ${nf(P.muM,4)}\\right)^2 + ${nt(P.sM2,6,4)} \\approx ${nf(P.A,2)}\\left(\\mu_P - ${nf(P.muM,4)}\\right)^2 + ${nt(P.sM2,6,4)}
+        \\end{aligned}\\]</div>
+        This establishes the canonical form of the parabola, whose vertex is the minimum variance portfolio, with coordinates $(\\sigma_{\\mathrm{MVP}}^2,\\,\\mu_{\\mathrm{MVP}})$. This parabolic structure is universal: whatever the number of assets and the structure of the variance-covariance matrix (provided it is positive definite), the minimum variance frontier is always a parabola in the $(\\sigma_P^2, \\mu_P)$ plane, or equivalently a sideways parabola in the $(\\sigma_P, \\mu_P)$ plane. The efficient frontier in the sense of Markowitz is the upper branch of that curve, that is the half-curve satisfying $\\mu_P \\geq \\mu_{\\mathrm{MVP}}$: any portfolio below it is dominated, since there always exists a portfolio offering the same risk for a strictly higher return. More specifically, the efficient frontier is here the upper branch of the parabola with equation $\\sigma_P^2 = ${nf(P.A,2)}(\\mu_P-${nf(P.muM,4)})^2 + ${nt(P.sM2,6,4)}$, that is the half-parabola with equation $\\sigma_P = \\sqrt{${nf(P.A,2)}(\\mu_P-${nf(P.muM,4)})^2 + ${nt(P.sM2,6,4)}}$ satisfying $\\mu_P \\geq \\mu_{\\mathrm{MVP}} \\approx ${pc(P.muM)}$.</li>`; },
+
+      function(P) { return `<li>The tangency portfolio $T$ maximises the Sharpe ratio $S(w) = \\frac{\\mu_P(w)-r_f}{\\sigma_P(w)}$ among all portfolios on the frontier. The Sharpe ratio is a quotient of two functions of $w$. We apply the quotient rule: if $f$ and $g$ are two differentiable functions with $g \\neq 0$, then $\\left(\\frac{f}{g}\\right)' = \\frac{f'g - fg'}{g^2}$. Here, $f(w) = \\mu_P(w)-r_f$ and $g(w) = \\sigma_P(w)$. We therefore have:
+        <div class="math-formula">\\[\\frac{\\mathrm{d}S}{\\mathrm{d}w} = \\frac{\\frac{\\mathrm{d}\\mu_P}{\\mathrm{d}w}\\times\\sigma_P - (\\mu_P-r_f)\\times\\frac{\\mathrm{d}\\sigma_P}{\\mathrm{d}w}}{\\sigma_P^2}\\]</div>
+        Since $\\sigma_P^2$ is strictly positive, setting this derivative to zero amounts to setting only its numerator to zero: we therefore have $\\frac{\\mathrm{d}S}{\\mathrm{d}w} = 0$ if, and only if, $\\frac{\\mathrm{d}\\mu_P}{\\mathrm{d}w}\\cdot\\sigma_P - (\\mu_P-r_f)\\cdot\\frac{\\mathrm{d}\\sigma_P}{\\mathrm{d}w} = 0$ (relation (3)). We now compute each derivative separately. The first one is immediate: since $\\mu_P(w) = w\\mu_1+(1-w)\\mu_2$, we have $\\frac{\\mathrm{d}\\mu_P}{\\mathrm{d}w} = \\mu_1-\\mu_2$. For the second one, we note that $\\sigma_P$ is the square root of $\\sigma_P^2$. We therefore apply the chain rule: if $h(w) = \\sqrt{u(w)}$, then $h'(w) = \\frac{u'(w)}{2\\sqrt{u(w)}}$. Setting $u(w) = \\sigma_P^2(w)$, we obtain:
+        <div class="math-formula">\\[\\frac{\\mathrm{d}\\sigma_P}{\\mathrm{d}w} = \\frac{\\frac{\\mathrm{d}\\sigma_P^2}{\\mathrm{d}w}}{2\\sqrt{\\sigma_P^2}} = \\frac{1}{2\\sigma_P}\\times\\frac{\\mathrm{d}\\sigma_P^2}{\\mathrm{d}w}\\]</div>
+        Substituting these two results into condition (3), it follows that $(\\mu_1-\\mu_2)\\sigma_P^2 = (\\mu_P-r_f)\\times\\frac{1}{2}\\times\\frac{\\mathrm{d}\\sigma_P^2}{\\mathrm{d}w}$ (relation (4)). We then substitute into relation $(4)$ the three expressions already established, namely $\\sigma_P^2 = w^2\\sigma_1^2+(1-w)^2\\sigma_2^2+2w(1-w)\\sigma_{12}$, $\\frac{1}{2}\\frac{\\mathrm{d}\\sigma_P^2}{\\mathrm{d}w} = w\\sigma_1^2-(1-w)\\sigma_2^2+(1-2w)\\sigma_{12}$ and $\\mu_P-r_f = w(\\mu_1-r_f)+(1-w)(\\mu_2-r_f)$. Relation $(4)$ then becomes:
+        <div class="math-formula">\\[\\begin{aligned}
+        (\\mu_1-\\mu_2)\\bigl(w^2\\sigma_1^2+(1-w)^2\\sigma_2^2+2w(1-w)\\sigma_{12}\\bigr)
+        &= \\bigl(w(\\mu_1-r_f)+(1-w)(\\mu_2-r_f)\\bigr)\\bigl(w\\sigma_1^2-(1-w)\\sigma_2^2+(1-2w)\\sigma_{12}\\bigr) \\\\
+        &= w^2(\\mu_1-r_f)\\sigma_1^2 - w(1-w)(\\mu_1-r_f)\\sigma_2^2 + w(1-2w)(\\mu_1-r_f)\\sigma_{12} \\\\
+        &\\phantom{{}={}} + w(1-w)(\\mu_2-r_f)\\sigma_1^2 - (1-w)^2(\\mu_2-r_f)\\sigma_2^2 + (1-w)(1-2w)(\\mu_2-r_f)\\sigma_{12}
+        \\end{aligned}\\]</div>
+        We subtract the right-hand side from the left-hand side. The aim is to show that the terms in $w^2$ cancel out, so as to obtain a linear equation in $w$ from which $w_T$ can be extracted.
+        <ul class="sub-list">
+          <li><strong>Cancellation of the terms in $w^2$.</strong> On the left-hand side, the coefficient of $w^2$ is $(\\mu_1-\\mu_2)(\\sigma_1^2+\\sigma_2^2-2\\sigma_{12})$, since expanding $w^2\\sigma_1^2+(1-w)^2\\sigma_2^2+2w(1-w)\\sigma_{12}$ and collecting the terms in $w^2$ yields that expression. On the right-hand side, we identify the coefficient of $w^2$ by expanding each of the six terms of the product, which gives successively $+(\\mu_1-r_f)\\sigma_1^2$, $+(\\mu_1-r_f)\\sigma_2^2$, $-2(\\mu_1-r_f)\\sigma_{12}$, $-(\\mu_2-r_f)\\sigma_1^2$, $-(\\mu_2-r_f)\\sigma_2^2$ and $+2(\\mu_2-r_f)\\sigma_{12}$. Adding these six contributions, the total coefficient of $w^2$ on the right-hand side is:
+          <div class="math-formula">\\[\\begin{aligned}
+          &(\\mu_1-r_f)\\sigma_1^2 + (\\mu_1-r_f)\\sigma_2^2 - 2(\\mu_1-r_f)\\sigma_{12} - (\\mu_2-r_f)\\sigma_1^2 - (\\mu_2-r_f)\\sigma_2^2 + 2(\\mu_2-r_f)\\sigma_{12} \\\\
+          &\\qquad = \\bigl[(\\mu_1-r_f)-(\\mu_2-r_f)\\bigr](\\sigma_1^2+\\sigma_2^2-2\\sigma_{12}) = (\\mu_1-\\mu_2)(\\sigma_1^2+\\sigma_2^2-2\\sigma_{12})
+          \\end{aligned}\\]</div>
+          This is identical to the coefficient of $w^2$ on the left-hand side. The terms in $w^2$ therefore do cancel out.</li>
+          <li><strong>Identification of the linear equation in $w$.</strong> Once the terms in $w^2$ have cancelled out, the constant terms (in $w^0$) and the terms in $w^1$ remain. The constant term on the left-hand side is $(\\mu_1-\\mu_2)\\sigma_2^2$ (setting $w=0$); the one on the right-hand side is $-(\\mu_2-r_f)\\sigma_2^2$. Their difference is therefore $\\sigma_2^2\\bigl[(\\mu_1-\\mu_2)+(\\mu_2-r_f)\\bigr] = (\\mu_1-r_f)\\sigma_2^2$. For the coefficient of $w^1$, we identify in the same way the linear contribution of each of the six terms on the right-hand side, expanding the factors $(1-w)$, $(1-w)^2$ and $(1-2w)$; we obtain $-(\\mu_1-r_f)\\sigma_2^2 + (\\mu_1-r_f)\\sigma_{12} + (\\mu_2-r_f)\\sigma_1^2 + 2(\\mu_2-r_f)\\sigma_2^2 - 3(\\mu_2-r_f)\\sigma_{12}$. The coefficient of $w^1$ on the left-hand side is $-2(\\mu_1-\\mu_2)\\sigma_2^2+2(\\mu_1-\\mu_2)\\sigma_{12}$. Moving everything to the left-hand side ("left minus right"), the coefficient of $w^1$ is:
+          <div class="math-formula">\\[\\begin{aligned}
+          &-2(\\mu_1-\\mu_2)\\sigma_2^2+2(\\mu_1-\\mu_2)\\sigma_{12} + (\\mu_1-r_f)\\sigma_2^2 - (\\mu_1-r_f)\\sigma_{12} - (\\mu_2-r_f)\\sigma_1^2 - 2(\\mu_2-r_f)\\sigma_2^2 + 3(\\mu_2-r_f)\\sigma_{12} \\\\
+          &\\qquad = -(\\mu_1-r_f)\\sigma_2^2 - (\\mu_2-r_f)\\sigma_1^2 + (\\mu_1+\\mu_2-2r_f)\\sigma_{12}
+          \\end{aligned}\\]</div>
+          Equation (4) can therefore be rewritten as $(\\mu_1-r_f)\\sigma_2^2 - (\\mu_2-r_f)\\sigma_{12} + w\\bigl[-(\\mu_1-r_f)\\sigma_2^2-(\\mu_2-r_f)\\sigma_1^2+(\\mu_1+\\mu_2-2r_f)\\sigma_{12}\\bigr] = 0$, whose immediate resolution provides the weight $w_T$ of asset $A_1$ in the tangency portfolio:
+          <div class="math-formula">\\[w_T = \\frac{(\\mu_1-r_f)\\,\\sigma_2^2 - (\\mu_2-r_f)\\,\\sigma_{12}}{(\\mu_1-r_f)\\,\\sigma_2^2 + (\\mu_2-r_f)\\,\\sigma_1^2 - (\\mu_1+\\mu_2-2r_f)\\,\\sigma_{12}}\\]</div></li>
+        </ul>
+        This result can be checked intuitively: if $\\sigma_{12} = 0$ (which is the case when the assets are independent), the formula reduces to $w_T = \\frac{(\\mu_1-r_f)\\sigma_2^2}{(\\mu_1-r_f)\\sigma_2^2+(\\mu_2-r_f)\\sigma_1^2}$, which allocates more weight to the asset whose risk premium is high relative to its variance, which is indeed in line with economic intuition. Substituting the numerical values with $\\mu_1-r_f = ${pcT(P.mu1-P.rf)}$ and $\\mu_2-r_f = ${pcT(P.mu2-P.rf)}$, we obtain:
+        <div class="math-formula">\\[\\begin{aligned}
+        w_T
+        &= \\frac{${nf(P.mu1-P.rf,4)}\\times(${nf(P.s2,2)})^2 - ${nf(P.mu2-P.rf,4)}\\times(${nt(P.s12,6,4)})}{${nf(P.mu1-P.rf,4)}\\times(${nf(P.s2,2)})^2 + ${nf(P.mu2-P.rf,4)}\\times(${nf(P.s1,2)})^2 - (${nf(P.mu1-P.rf,4)}+${nf(P.mu2-P.rf,4)})\\times(${nt(P.s12,6,4)})} \\\\
+        &= \\frac{${nf(P.tn1,6)} + ${nf(P.tn2,6)}}{${nf(P.tn1,6)} + ${nf(P.td2,6)} + ${nf(P.td3,6)}} \\approx ${pc(P.wT)}
+        \\end{aligned}\\]</div>
+        The expected return and the standard deviation of the tangency portfolio are then respectively $\\mu_T = ${nf(P.wT,4)}\\times ${pcT(P.mu1)} + ${nf(1-P.wT,4)}\\times ${pcT(P.mu2)} \\approx ${pc(P.muT)}$ and $\\sigma_T = \\sqrt{${nf(P.wT,4)}^2\\times(${nf(P.s1,2)})^2 + ${nf(1-P.wT,4)}^2\\times(${nf(P.s2,2)})^2 + 2\\times ${nf(P.wT,4)}\\times ${nf(1-P.wT,4)}\\times(${nt(P.s12,6,4)})} = \\sqrt{${nt(P.sT*P.sT,6,4)}} \\approx ${pc(P.sT)}$. The Sharpe ratio of the tangency portfolio is therefore $S_T = \\frac{\\mu_T - r_f}{\\sigma_T} = \\frac{${pc(P.muT)} - ${pcT(P.rf)}}{${pc(P.sT)}} \\approx ${nf(P.ST,3)}$, to be compared with the individual ratios $S_1 = \\frac{${pcT(P.mu1)}-${pcT(P.rf)}}{${pcT(P.s1)}} \\approx ${nf(P.S1,3)}$ and $S_2 = \\frac{${pcT(P.mu2)}-${pcT(P.rf)}}{${pcT(P.s2)}} \\approx ${nf(P.S2,3)}$. The tangency portfolio therefore offers a higher reward for risk than each asset taken in isolation: for each percentage point of risk borne, the investor receives ${nfp(P.ST,3)}% of premium, against ${nfp(P.S1,3)}% when holding only $A_1$ and ${nfp(P.S2,3)}% when holding only $A_2$. This gain is the most direct measure of the benefit of diversification in the return-risk space.</li>`; },
+
+      function(P) { return `<li>By virtue of Tobin's two-fund separation theorem, any efficient portfolio can be written as a combination of the risk-free asset and the tangency portfolio $T$. If the real number $\\alpha$ denotes the fraction of wealth invested in $T$ (and $1-\\alpha$ in the risk-free asset), the expected return and the standard deviation of the resulting portfolio are respectively $\\mu_P = (1-\\alpha)\\,r_f + \\alpha\\,\\mu_T = r_f + \\alpha\\,(\\mu_T - r_f)$ and $\\sigma_P = \\lvert\\alpha\\rvert\\,\\sigma_T$. The second relation follows from the fact that the risk-free asset has zero standard deviation and zero covariance with any other asset: the variance of the mixed portfolio is therefore indeed $\\sigma_P^2 = \\alpha^2\\sigma_T^2$. For $\\alpha \\geq 0$, we can therefore write $\\alpha = \\sigma_P/\\sigma_T$. Substituting this expression into that of $\\mu_P$, we eliminate the parameter $\\alpha$ and obtain a direct relation between $\\mu_P$ and $\\sigma_P$:
+        <div class="math-formula">\\[\\begin{aligned}
+        \\mu_P &= r_f + \\frac{\\mu_T - r_f}{\\sigma_T}\\times\\sigma_P \\\\
+        &\\approx ${pcT(P.rf)} + \\frac{${pc(P.muT)}-${pcT(P.rf)}}{${pc(P.sT)}}\\times\\sigma_P \\approx ${pcT(P.rf)} + ${nf(P.ST,3)}\\,\\sigma_P
+        \\end{aligned}\\]</div>
+        This is the equation of a straight line in the $(\\sigma_P,\\mu_P)$ plane, with intercept $r_f$ and slope $(\\mu_T-r_f)/\\sigma_T$: the capital market line (CML). The slope $(\\mu_T-r_f)/\\sigma_T \\approx ${nf(P.ST,3)}$ represents the "price of risk": each additional percentage point of standard deviation accepted by the investor is rewarded with ${nfp(P.ST,3)}% of additional expected return. The CML thus expresses the trade-off between "patience" — rewarded by $r_f = ${pcT(P.rf)}$ irrespective of risk, this is the pure price of time — and "risk taking" — rewarded by the premium $(\\mu_T-r_f)/\\sigma_T$ per unit of standard deviation, this is the pure price of risk. Any portfolio located below the CML is suboptimal: the rational investor can always improve it by combining $T$ and the risk-free asset to reach the same level of risk with a strictly higher expected return. No portfolio can however lie above the CML without generating an arbitrage opportunity, which reflects market efficiency in the absence of frictions, a central assumption of Sharpe's model. All the results of the exercise can be summarised in the following table:
+        ${P.tableRecap}
+        The portfolio frontier describes a hyperbola whose vertex is the MVP $(\\sigma_{\\mathrm{MVP}} \\approx ${pc(P.sM)},\\,\\mu_{\\mathrm{MVP}} \\approx ${pc(P.muM)})$: it is the only point where the standard deviation is strictly lower than that of each asset taken in isolation ($\\sigma_1 = ${pcT(P.s1)}$ and $\\sigma_2 = ${pcT(P.s2)}$). The CML, with slope $(\\mu_T - r_f)/\\sigma_T \\approx ${nf(P.ST,3)}$, is the only line passing through $r_f$ and tangent to the efficient frontier: any portfolio lying to the right of or below the CML is suboptimal in the sense of Sharpe, and the rational investor will systematically prefer to it a combination of the risk-free asset and the tangency portfolio $T$.
+        ${P.chart}</li>`; }
+    ]
+  }
+};
+
+/* ============================================================
+   GESTION DE LA LANGUE  /  LANGUAGE HANDLING
+   ============================================================ */
+let LANG = 'fr';
+
+function detectLang() {
+    try {
+        const q = new URLSearchParams(window.location.search).get('lang');
+        if (q && I18N[q.toLowerCase()]) return q.toLowerCase();
+    } catch (e) {}
+    const h = (window.location.hash || '').replace('#', '').toLowerCase();
+    if (I18N[h]) return h;
+    return 'fr';
+}
+
+function setText(id, txt) {
+    const el = document.getElementById(id);
+    if (el) el.innerText = txt;
+}
+
+function applyLang() {
+    const D = I18N[LANG];
+    document.documentElement.lang = D.htmlLang;
+    document.title = D.title;
+
+    setText('lbl-badge', D.badge);
+    setText('lbl-h1', D.h1);
+    setText('lbl-subtitle', D.subtitle);
+    setText('lbl-seed', D.seedLabel);
+    setText('lbl-gen', D.btnGen);
+    setText('welcome', D.welcome);
+    setText('lbl-seed-active', D.seedActive);
+    setText('lbl-new', D.btnNew);
+    setText('lbl-pdf', D.btnPdf);
+    setText('lbl-doc', D.btnDoc);
+    setText('lbl-tag-enonce', D.tagEnonce);
+    setText('lbl-title-enonce', D.cardTitle);
+    setText('lbl-assignment', D.assignment);
+    setText('lbl-tag-sol', D.tagSol);
+    setText('lbl-title-sol', D.cardTitle);
+
+    const btn = document.getElementById('toggle-btn');
+    btn.innerText = document.getElementById('sol-card').classList.contains('visible') ? D.hideSol : D.showSol;
+
+    document.getElementById('flag-fr').classList.toggle('active', LANG === 'fr');
+    document.getElementById('flag-en').classList.toggle('active', LANG === 'en');
+}
+
+function setLang(lang) {
+    if (!I18N[lang] || lang === LANG) return;
+    LANG = lang;
+
+    /* La langue est memorisee dans l'URL (partage / rechargement) */
+    try {
+        const u = new URL(window.location.href);
+        u.searchParams.set('lang', lang);
+        history.replaceState(null, '', u.toString());
+    } catch (e) {}
+
+    applyLang();
+
+    /* Si un exercice est affiche, on le regenere a l'identique (meme seed) */
+    if (document.getElementById('ex-area').style.display !== 'none') {
+        const solWasVisible = document.getElementById('sol-card').classList.contains('visible');
+        generateExercise(false);
+        if (solWasVisible) toggleSol();
+    }
+}
+
+// --- PRNG (Mulberry32) ---
+let currentSeed = 0;
+function seedPRNG(seed) {
+    return function() {
+      let t = seed += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+let random = Math.random;
+function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
+
+/* ============================================================
+   FORMATAGE  /  FORMATTING
+   nf  : nombre pour le rendu LaTeX (MathJax)
+   nt  : idem, decimales superflues supprimees
+   pc  : pourcentage calcule (2 decimales) pour LaTeX
+   pcT : pourcentage de l'enonce (decimales superflues supprimees)
+   nfp : nombre en texte courant (hors mode mathematique)
+   ============================================================ */
+function nf(num, d) {
+    let sign = num < 0 ? "-" : "";
+    let parts = Math.abs(num).toFixed(d).split('.');
+    let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, I18N[LANG].thousands);
+    return sign + intPart + (parts.length > 1 ? I18N[LANG].decimal + parts[1] : "");
+}
+function nt(num, dmax, dmin) {
+    let d = dmax;
+    while (d > dmin) {
+        let s = Math.abs(num).toFixed(d);
+        if (s.charAt(s.length - 1) === '0') d--; else break;
+    }
+    return nf(num, d);
+}
+function pc(num, d) { return nf(num * 100, d === undefined ? 2 : d) + "\\,\\%"; }
+function pcT(num) {
+    let d = 2;
+    while (d > 0) {
+        let s = Math.abs(num * 100).toFixed(d);
+        if (s.charAt(s.length - 1) === '0') d--; else break;
+    }
+    return nf(num * 100, d) + "\\,\\%";
+}
+function nfp(num, d) { return num.toFixed(d); }
+
+/* ============================================================
+   GRAPHIQUE  /  CHART  (plan ecart-type / rendement espere)
+   ============================================================ */
+function buildChart(P, DIC) {
+    const W = 720, H = 476;
+    const x0 = 64, x1 = 702, y0 = 22, y1 = 400;
+
+    const sigAt = function(muPct) { return Math.sqrt(P.A * Math.pow(muPct / 100 - P.muM, 2) + P.sM2) * 100; };
+
+    let muTop = P.mu1 * 100 + 2;
+    let xmax = Math.ceil((Math.max(P.s1 * 100, sigAt(muTop), P.sT * 100) + 4) / 5) * 5;
+    let ymax = Math.ceil((muTop + 1) / 2) * 2;
+    let xstep = xmax > 45 ? 10 : 5;
+
+    const SX = function(v) { return x0 + (v / xmax) * (x1 - x0); };
+    const SY = function(v) { return y1 - (v / ymax) * (y1 - y0); };
+
+    function curvePath(muStart, muEnd) {
+        let pts = [];
+        for (let i = 0; i <= 140; i++) {
+            let mu = muStart + (muEnd - muStart) * i / 140;
+            pts.push((i === 0 ? "M" : "L") + SX(sigAt(mu)).toFixed(2) + "," + SY(mu).toFixed(2));
+        }
+        return pts.join(" ");
+    }
+    function star(cx, cy, r) {
+        let p = "";
+        for (let i = 0; i < 10; i++) {
+            let ang = -Math.PI / 2 + i * Math.PI / 5;
+            let rad = (i % 2 === 0) ? r : r * 0.45;
+            p += (i === 0 ? "M" : "L") + (cx + rad * Math.cos(ang)).toFixed(2) + "," + (cy + rad * Math.sin(ang)).toFixed(2);
+        }
+        return p + "Z";
+    }
+
+    let g = "";
+    for (let v = 0; v <= xmax; v += xstep) {
+        g += `<line x1="${SX(v).toFixed(1)}" y1="${y0}" x2="${SX(v).toFixed(1)}" y2="${y1}" stroke="#e2ded5" stroke-width="1"/>`;
+        g += `<text x="${SX(v).toFixed(1)}" y="${y1 + 18}" text-anchor="middle" font-size="11" fill="#5a5a5a">${v}</text>`;
+    }
+    for (let v = 0; v <= ymax; v += 2) {
+        g += `<line x1="${x0}" y1="${SY(v).toFixed(1)}" x2="${x1}" y2="${SY(v).toFixed(1)}" stroke="#e2ded5" stroke-width="1"/>`;
+        g += `<text x="${x0 - 10}" y="${(SY(v) + 4).toFixed(1)}" text-anchor="end" font-size="11" fill="#5a5a5a">${v}</text>`;
+    }
+    g += `<line x1="${x0}" y1="${y1}" x2="${x1}" y2="${y1}" stroke="#0d1b2a" stroke-width="1.4"/>`;
+    g += `<line x1="${x0}" y1="${y0}" x2="${x0}" y2="${y1}" stroke="#0d1b2a" stroke-width="1.4"/>`;
+    g += `<text x="${((x0 + x1) / 2).toFixed(0)}" y="${y1 + 42}" text-anchor="middle" font-size="12.5" fill="#1e1e1e">${DIC.fig.xlabel}</text>`;
+    g += `<text x="18" y="${((y0 + y1) / 2).toFixed(0)}" text-anchor="middle" font-size="12.5" fill="#1e1e1e" transform="rotate(-90 18 ${((y0 + y1) / 2).toFixed(0)})">${DIC.fig.ylabel}</text>`;
+
+    let muBot = Math.max(0.4, P.muM * 100 - 5.5);
+    g += `<path d="${curvePath(muBot, P.muM * 100)}" fill="none" stroke="#9a9a9a" stroke-width="1.6" stroke-dasharray="6 4"/>`;
+    g += `<path d="${curvePath(P.muM * 100, muTop)}" fill="none" stroke="#1f4e79" stroke-width="2.6"/>`;
+
+    let sEnd = Math.min(xmax, (ymax - 0.4 - P.rf * 100) / P.ST);
+    g += `<line x1="${SX(0).toFixed(2)}" y1="${SY(P.rf * 100).toFixed(2)}" x2="${SX(sEnd).toFixed(2)}" y2="${SY(P.rf * 100 + P.ST * sEnd).toFixed(2)}" stroke="#b94040" stroke-width="2"/>`;
+
+    let pRf = [SX(0), SY(P.rf * 100)], pA1 = [SX(P.s1 * 100), SY(P.mu1 * 100)], pA2 = [SX(P.s2 * 100), SY(P.mu2 * 100)];
+    let pM = [SX(P.sM * 100), SY(P.muM * 100)], pT = [SX(P.sT * 100), SY(P.muT * 100)];
+
+    g += `<polygon points="${pRf[0]},${pRf[1] - 6} ${pRf[0] + 6},${pRf[1]} ${pRf[0]},${pRf[1] + 6} ${pRf[0] - 6},${pRf[1]}" fill="#b94040"/>`;
+    g += `<text x="${pRf[0] + 10}" y="${pRf[1] + 4}" font-size="12" fill="#b94040">r<tspan dy="3" font-size="9">f</tspan></text>`;
+    g += `<rect x="${(pA1[0] - 4.5).toFixed(1)}" y="${(pA1[1] - 4.5).toFixed(1)}" width="9" height="9" fill="#0d1b2a"/>`;
+    g += `<text x="${(pA1[0] + 8).toFixed(1)}" y="${(pA1[1] + 14).toFixed(1)}" font-size="12" fill="#0d1b2a">A<tspan dy="3" font-size="9">1</tspan></text>`;
+    g += `<rect x="${(pA2[0] - 4.5).toFixed(1)}" y="${(pA2[1] - 4.5).toFixed(1)}" width="9" height="9" fill="#0d1b2a"/>`;
+    g += `<text x="${(pA2[0] + 8).toFixed(1)}" y="${(pA2[1] + 14).toFixed(1)}" font-size="12" fill="#0d1b2a">A<tspan dy="3" font-size="9">2</tspan></text>`;
+    g += `<circle cx="${pM[0].toFixed(1)}" cy="${pM[1].toFixed(1)}" r="5" fill="#2d6b4a"/>`;
+    g += `<text x="${(pM[0] - 9).toFixed(1)}" y="${(pM[1] + 4).toFixed(1)}" text-anchor="end" font-size="12" fill="#2d6b4a">MVP</text>`;
+    g += `<path d="${star(pT[0], pT[1], 7.5)}" fill="#b94040"/>`;
+    g += `<text x="${(pT[0] + 10).toFixed(1)}" y="${(pT[1] - 8).toFixed(1)}" font-size="12.5" font-style="italic" fill="#b94040">T</text>`;
+
+    let lx = x1 - 178, ly = y1 - 78;
+    g += `<rect x="${lx}" y="${ly}" width="170" height="70" fill="#ffffff" stroke="#d4cfc4" rx="3"/>`;
+    g += `<line x1="${lx + 12}" y1="${ly + 18}" x2="${lx + 42}" y2="${ly + 18}" stroke="#9a9a9a" stroke-width="1.6" stroke-dasharray="6 4"/><text x="${lx + 50}" y="${ly + 22}" font-size="11" fill="#1e1e1e">${DIC.fig.legDom}</text>`;
+    g += `<line x1="${lx + 12}" y1="${ly + 40}" x2="${lx + 42}" y2="${ly + 40}" stroke="#1f4e79" stroke-width="2.6"/><text x="${lx + 50}" y="${ly + 44}" font-size="11" fill="#1e1e1e">${DIC.fig.legEff}</text>`;
+    g += `<line x1="${lx + 12}" y1="${ly + 60}" x2="${lx + 42}" y2="${ly + 60}" stroke="#b94040" stroke-width="2"/><text x="${lx + 50}" y="${ly + 64}" font-size="11" fill="#1e1e1e">${DIC.fig.legCml}</text>`;
+
+    return `<div class="fig-wrap"><svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" font-family="Source Serif 4, serif">${g}</svg></div><p class="fig-caption">${DIC.fig.caption(P)}</p>`;
+}
+
+/* ============================================================
+   TABLEAU DE SYNTHESE  /  SUMMARY TABLE
+   ============================================================ */
+function buildRecapTable(P, DIC) {
+    const T = DIC.tbl;
+    const pctTxt = function(x) { return nfp(x * 100, 2) + DIC.pctSep; };
+    let rows = [
+        [T.rf, T.na, pctTxt(P.rf), pctTxt(0), T.na],
+        [T.a1, "100.00" + DIC.pctSep, pctTxt(P.mu1), pctTxt(P.s1), nfp(P.S1, 3)],
+        [T.a2, "0.00" + DIC.pctSep, pctTxt(P.mu2), pctTxt(P.s2), nfp(P.S2, 3)],
+        [T.mvp, pctTxt(P.wM), pctTxt(P.muM), pctTxt(P.sM), nfp((P.muM - P.rf) / P.sM, 3)],
+        [T.tang, pctTxt(P.wT), pctTxt(P.muT), pctTxt(P.sT), nfp(P.ST, 3)]
+    ];
+    let html = `<div class="exam-table-wrap"><table class="exam-table"><tr><th>${T.pf}</th><th>${T.w1}</th><th>${T.mu}</th><th>${T.sig}</th><th>${T.sharpe}</th></tr>`;
+    for (let r of rows) {
+        html += `<tr><td class="txt-left">${r[0]}</td><td class="amt">${r[1]}</td><td class="amt">${r[2]}</td><td class="amt">${r[3]}</td><td class="amt">${r[4]}</td></tr>`;
+    }
+    return html + `</table></div>`;
+}
+
+/* ============================================================
+   GENERATION DE L'EXERCICE  /  EXERCISE GENERATION
+   ============================================================ */
+function generateExercise(forceNew = false) {
+    if (forceNew) {
+        document.getElementById('seed-input').value = "";
+    }
+    let seedVal = document.getElementById('seed-input').value;
+    currentSeed = seedVal ? parseInt(seedVal) : Math.floor(Math.random() * 99999999);
+    document.getElementById('seed-disp').innerText = currentSeed;
+    document.getElementById('seed-input').value = currentSeed;
+    random = seedPRNG(currentSeed);
+
+    const DIC = I18N[LANG];
+
+    // Contexte
+    const idxFund = randInt(0, DIC.funds.length - 1);
+    const idxAsset = randInt(0, DIC.assets.length - 1);
+    const fund = DIC.funds[idxFund];
+    const asset1 = DIC.assets[idxAsset][0];
+    const asset2 = DIC.assets[idxAsset][1];
+
+    let mu1, mu2, s1, s2, rho, rf, s12, den, wM, muM, sM2, sM, wT, muT, sT, ST, S1, S2, A;
+    let tn1, tn2, td2, td3;
+
+    /* Tirage du scenario : on boucle jusqu'a obtenir un cas pedagogiquement
+       exploitable (MVP interieur, gain de diversification net, portefeuille
+       tangent situe sur la branche efficiente). */
+    while (true) {
+        mu1 = randInt(8, 15) / 100;
+        mu2 = randInt(4, 8) / 100;
+        s1 = randInt(18, 28) / 100;
+        s2 = randInt(9, 16) / 100;
+        rho = randInt(-12, -2) * 0.05;
+        rho = Math.round(rho * 100) / 100;
+        rf = randInt(1, 7) / 200;
+
+        if (mu1 - mu2 < 0.03) continue;
+        if (s1 - s2 < 0.05) continue;
+        if (rf > mu2 - 0.015) continue;
+
+        s12 = rho * s1 * s2;
+        den = s1 * s1 + s2 * s2 - 2 * s12;
+
+        wM = (s2 * s2 - s12) / den;
+        if (wM < 0.15 || wM > 0.55) continue;
+
+        muM = wM * mu1 + (1 - wM) * mu2;
+        sM2 = s1 * s1 * s2 * s2 * (1 - rho * rho) / den;
+        sM = Math.sqrt(sM2);
+        if (sM > s2 - 0.012) continue;
+        if (muM - rf < 0.02) continue;
+
+        tn1 = (mu1 - rf) * s2 * s2;
+        tn2 = -(mu2 - rf) * s12;
+        td2 = (mu2 - rf) * s1 * s1;
+        td3 = -(mu1 + mu2 - 2 * rf) * s12;
+        wT = (tn1 + tn2) / (tn1 + td2 + td3);
+        if (wT < wM + 0.06 || wT > 0.90) continue;
+
+        muT = wT * mu1 + (1 - wT) * mu2;
+        sT = Math.sqrt(wT * wT * s1 * s1 + (1 - wT) * (1 - wT) * s2 * s2 + 2 * wT * (1 - wT) * s12);
+        ST = (muT - rf) / sT;
+        S1 = (mu1 - rf) / s1;
+        S2 = (mu2 - rf) / s2;
+        if (ST < Math.max(S1, S2) + 0.03) continue;
+
+        A = den / Math.pow(mu1 - mu2, 2);
+        if (A < 5 || A > 70) continue;
+
+        break;
+    }
+
+    // Affichage Énoncé
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('ex-area').style.display = 'block';
+    document.getElementById('sol-card').classList.remove('visible');
+    document.getElementById('toggle-btn').innerText = DIC.showSol;
+    document.getElementById('toggle-btn').classList.remove('shown');
+
+    const P = {
+        fund: fund, asset1: asset1, asset2: asset2,
+        mu1: mu1, mu2: mu2, s1: s1, s2: s2, rho: rho, rf: rf,
+        s12: s12, den: den, A: A,
+        wM: wM, muM: muM, sM2: sM2, sM: sM,
+        wT: wT, muT: muT, sT: sT,
+        ST: ST, S1: S1, S2: S2,
+        tn1: tn1, tn2: tn2, td2: td2, td3: td3
+    };
+
+    document.getElementById('context-text').innerHTML = DIC.context(P);
+
+    let htmlEnonce = "";
+    for (let qi = 0; qi < DIC.enonce.length; qi++) {
+        htmlEnonce += DIC.enonce[qi](P);
+    }
+    document.getElementById('events-list').innerHTML = htmlEnonce;
+
+    // --- GÉNÉRATION CORRIGÉ ---
+    P.tableRecap = buildRecapTable(P, DIC);
+    P.chart = buildChart(P, DIC);
+
+    let htmlSol = `<div class="calc-box"><ol class="question-list" style="margin-bottom:0;">`;
+    for (let qi = 0; qi < DIC.sol.length; qi++) {
+        htmlSol += DIC.sol[qi](P);
+    }
+    htmlSol += `</ol></div>`;
+
+    document.getElementById('sol-content').innerHTML = htmlSol;
+
+    // On force MathJax à faire le rendu une fois le DOM mis à jour
+    if (window.MathJax && MathJax.typesetPromise) {
+        MathJax.typesetPromise();
+    }
+}
+
+function toggleSol() {
+    let solCard = document.getElementById('sol-card');
+    let btn = document.getElementById('toggle-btn');
+    if (solCard.classList.contains('visible')) {
+        solCard.classList.remove('visible');
+        btn.innerText = I18N[LANG].showSol;
+        btn.classList.remove('shown');
+    } else {
+        solCard.classList.add('visible');
+        btn.innerText = I18N[LANG].hideSol;
+        btn.classList.add('shown');
+    }
+}
+
+function exportWord() {
+    let content = document.getElementById('ex-area').cloneNode(true);
+    let actions = content.querySelector('.top-actions');
+    if(actions) actions.parentNode.removeChild(actions);
+    let toggle = content.querySelector('.sol-toggle-wrap');
+    if(toggle) toggle.parentNode.removeChild(toggle);
+    let solCard = content.querySelector('#sol-card');
+    if(solCard) solCard.style.display = 'block';
+
+    let html = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <meta charset='utf-8'>
+            <title>${I18N[LANG].docTitle}</title>
+            <style>
+                body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5; text-align: justify; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                th, td { border: 1px solid #000; padding: 5px; }
+                th { background-color: #f2f2f2; text-align: center; font-weight: bold; }
+                .amt { text-align: right; white-space: nowrap; }
+                .txt-left { text-align: left; font-weight: bold; }
+                .calc-box { border: 1px solid #000; padding: 10px; margin-bottom: 15px; background-color: #f9f9f9; text-align: justify; }
+                .math-formula { text-align: center; font-style: italic; margin: 10px 0; }
+                .fig-caption { font-size: 9pt; font-style: italic; text-align: justify; }
+                ol { text-align: justify; }
+                li { margin-bottom: 5px; }
+            </style>
+        </head>
+        <body>
+            ${content.innerHTML}
+        </body>
+        </html>
+    `;
+
+    let blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    let url = URL.createObjectURL(blob);
+    let link = document.createElement('a');
+    link.href = url;
+    link.download = I18N[LANG].docFile;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+/* Initialisation */
+LANG = detectLang();
+applyLang();
+</script>
+</body>
+</html>
