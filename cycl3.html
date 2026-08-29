@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Macroéconomie - PIB nominal et PIB réel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['\\[', '\\]']]
+    }
+  };
+</script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7;text-align:justify;}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 1.5rem;border-bottom:3px solid var(--gold);text-align:left;}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end;background:rgba(255,255,255,.03);padding:1rem 1.5rem;border-radius:6px;border:1px solid rgba(255,255,255,.1)}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.6)}
+.ctrl-inp, .ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.4rem .7rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none;transition:border-color .2s}
+.ctrl-inp:focus, .ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.5rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;transition:background .18s;margin-left:auto}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN & CARDS */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:700}
+
+.top-actions{display:flex;gap:.5rem;}
+.btn-action{background:#fff;border:1px solid var(--border);color:var(--navy);padding:.4rem .8rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.85rem;font-weight:600;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.btn-action:hover{border-color:var(--navy);background:var(--cream-dark);}
+
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem;text-align:left;}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+.event-list{list-style:none;}
+.event-list > li{margin-bottom:1.5rem;padding-left:1.5rem;position:relative;font-size:.95rem;text-align:justify}
+.event-list > li::before{content:"•";position:absolute;left:0;color:var(--gold);font-size:1.5rem;line-height:1}
+
+.sub-list { list-style-type: none; padding-left: 1rem; margin-top: 0.8rem; text-align:justify;}
+.sub-list li { margin-bottom: 0.5rem; }
+
+/* EXAM TABLE */
+.exam-table-wrap { overflow-x: auto; margin: 1.5rem 0; }
+.exam-table{width:100%;border-collapse:collapse;font-size:.85rem;font-family:'Source Serif 4',serif; margin: 0;}
+.exam-table th, .exam-table td{border:1px solid var(--border);padding:.6rem;text-align:center;vertical-align:middle;}
+.exam-table th{background:var(--navy);color:var(--cream);font-weight:600;}
+.exam-table .txt-left{text-align:left;font-weight:600;color:var(--navy);}
+.exam-table .amt{font-family:'JetBrains Mono',monospace;text-align:right;white-space:nowrap;}
+
+.two-col-table { width: 100%; display: flex; gap: 2rem; margin: 1.5rem 0; }
+.col-half { flex: 1; }
+
+/* SOLUTION TOGGLE */
+.sol-toggle-wrap{text-align:left; margin: 1.5rem 0 0 0;}
+.btn-toggle{background:transparent;border:2px solid var(--green);border-bottom:none;color:var(--green);font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;padding:.5rem 1.5rem;border-radius:4px 4px 0 0;cursor:pointer;transition:all .2s; position:relative; z-index:2; top:2px;}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--green);color:var(--cream)}
+.sol-card{border-top:2px solid var(--green);display:none; border-radius: 0 6px 6px 6px; position:relative; z-index:1;}
+.sol-card.visible{display:block;animation:fi .4s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+
+.calc-box{background:#f9fcf9;border:1px solid #c8e6c9;padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.9rem;color:var(--text);line-height:1.6;text-align:justify;}
+
+@media print{
+  body{background:#fff;}
+  header, .ctrls, .sol-toggle-wrap, .top-actions {display:none !important;}
+  .card{box-shadow:none; border:1px solid var(--border); margin-bottom:2rem;}
+  .sol-card{display:block !important; border-top:2px solid var(--green);}
+  #ex-area {display:block !important;}
+}
+
+/* --- Selecteur de langue / Language switch --- */
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem}
+.header-top .header-badge{margin-bottom:0}
+.lang-switch{display:flex;gap:.45rem;flex-shrink:0}
+.flag-btn{background:rgba(255,255,255,.06);border:1px solid rgba(201,149,42,.35);border-radius:3px;padding:3px;cursor:pointer;line-height:0;opacity:.5;transition:opacity .2s,border-color .2s,transform .15s}
+.flag-btn:hover{opacity:1;transform:translateY(-1px)}
+.flag-btn.active{opacity:1;border-color:var(--gold-light);box-shadow:0 0 0 1px rgba(232,184,75,.35)}
+.flag-btn svg{display:block;width:30px;height:20px;border-radius:1px}
+@media print{ .lang-switch{display:none !important;} }
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-top">
+    <div class="header-badge" data-k="k-badge">CROISSANCE ET CYCLES ÉCONOMIQUES</div>
+    <div class="lang-switch">
+      <button type="button" class="flag-btn active" id="flag-fr" onclick="setLang('fr')" title="Français" aria-label="Français"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="20" height="40" fill="#002654"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ED2939"/></svg></button>
+      <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
+    </div>
+  </div>
+  <h1 data-k="k-h1">PIB nominal, PIB réel et déflateur</h1>
+  <p class="subtitle" data-k="k-sub">© Thomas Hossen – Version du 7 mars 2026</p>
+  
+  <div class="ctrls">
+    <div class="ctrl-g">
+      <span class="ctrl-lbl" data-k="k-seed">Seed (Optionnel)</span>
+      <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999">
+    </div>
+    <button class="btn-gen" onclick="generateExercise(false)"><span data-k="k-gen">Générer l'exercice →</span></button>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" style="text-align:center; padding:4rem; color:var(--text-muted); font-style:italic;">
+    <span data-k="k-welcome">Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.</span>
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="seed-badge"><span data-k="k-seedbadge">Seed active :</span> <span id="seed-disp"></span></div>
+      <div class="top-actions">
+        <button class="btn-action" onclick="generateExercise(true)"><span data-k="k-new">↺ Nouvel énoncé</span></button>
+        <button class="btn-action" onclick="window.print()"><span data-k="k-pdf">⬇ Exporter PDF</span></button>
+        <button class="btn-action" onclick="exportWord()"><span data-k="k-doc">⬇ Exporter DOC</span></button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="tag" data-k="k-tag-ex">Énoncé</span><h2 data-k="k-cardtitle">Mesure de la production et des prix</h2></div>
+      <div class="card-body">
+        <div class="context-block" id="context-text"></div>
+        <div id="enonce-table-container"></div>
+        <div class="context-block" id="additional-info" style="margin-top:1.5rem; background:#fff; border-left:none; border-radius:0;"></div>
+        
+        <p style="margin-bottom:1rem; font-weight:600; color:var(--red); text-align:left;" data-k="k-work">Travail à faire</p>
+        <ul class="event-list" id="events-list"></ul>
+      </div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag" data-k="k-tag-sol">Corrigé</span><h2 data-k="k-cardtitle2">Mesure de la production et des prix</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+/* ============================================================
+   DICTIONNAIRE BILINGUE  /  BILINGUAL DICTIONARY
+   ============================================================ */
+const I18N = {
+
+  fr: {
+    "htmlLang": "fr",
+    "title": "Simulateur Macroéconomie - PIB nominal et PIB réel",
+    "locale": "fr-FR",
+    "k-badge": "CROISSANCE ET CYCLES ÉCONOMIQUES",
+    "k-h1": "PIB nominal, PIB réel et déflateur",
+    "k-sub": "© Thomas Hossen – Version du 7 mars 2026",
+    "k-seed": "Seed (Optionnel)",
+    "k-gen": "Générer l'exercice →",
+    "k-welcome": "Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.",
+    "k-seedbadge": "Seed active :",
+    "k-new": "↺ Nouvel énoncé",
+    "k-pdf": "⬇ Exporter PDF",
+    "k-doc": "⬇ Exporter DOC",
+    "k-tag-ex": "Énoncé",
+    "k-cardtitle": "Mesure de la production et des prix",
+    "k-tag-sol": "Corrigé",
+    "k-cardtitle2": "Mesure de la production et des prix",
+    "k-work": "Travail à faire",
+    "showSol": "Afficher le corrigé",
+    "hideSol": "Masquer le corrigé",
+    "docTitle": "Exercice PIB nominal et PIB réel",
+    "docFile": "Exercice_PIB_Nominal_Reel.doc",
+    thousands: "\\,",
+    decimal: "{,}",
+    goods: [
+      {A:{price:"Prix d'un ordinateur", qtyShort:"Nb d'ordinateurs", qtyLong:"Nombre d'ordinateurs produits"},
+       B:{price:"Prix d'une voiture",   qtyShort:"Nb de voitures",   qtyLong:"Nombre de voitures produites"},
+       pair:"des ordinateurs et des voitures"},
+      {A:{price:"Prix d'un pain",       qtyShort:"Nb de pains",      qtyLong:"Nombre de pains produits"},
+       B:{price:"Prix d'une voiture",   qtyShort:"Nb de voitures",   qtyLong:"Nombre de voitures produites"},
+       pair:"du pain et des voitures"},
+      {A:{price:"Prix d'un smartphone", qtyShort:"Nb de smartphones",qtyLong:"Nombre de smartphones produits"},
+       B:{price:"Prix d'un vélo électrique", qtyShort:"Nb de vélos", qtyLong:"Nombre de vélos électriques produits"},
+       pair:"des smartphones et des vélos électriques"},
+      {A:{price:"Prix d'un téléviseur", qtyShort:"Nb de téléviseurs",qtyLong:"Nombre de téléviseurs produits"},
+       B:{price:"Prix d'un réfrigérateur", qtyShort:"Nb de réfrigérateurs", qtyLong:"Nombre de réfrigérateurs produits"},
+       pair:"des téléviseurs et des réfrigérateurs"},
+      {A:{price:"Prix d'une tonne de blé", qtyShort:"Nb de tonnes de blé", qtyLong:"Nombre de tonnes de blé produites"},
+       B:{price:"Prix d'un tracteur",   qtyShort:"Nb de tracteurs",  qtyLong:"Nombre de tracteurs produits"},
+       pair:"du blé et des tracteurs"}
+    ],
+    context: function(D) {
+      const {y0, y1, goods, pA0, pA1, qA0, qA1, pB0, pB1, qB0, qB1, nom0, nom1, reel1, taux, deflateur, inflation} = D;
+      return `
+      Étudions une économie qui ne produit et ne consomme que deux biens finaux : ${goods.pair}. Le tableau suivant donne les prix de vente et les quantités produites pour les années ${y0} et ${y1}.
+    `;
+    },
+    table: function(D) {
+      const {y0, y1, goods, pA0, pA1, qA0, qA1, pB0, pB1, qB0, qB1, nom0, nom1, reel1, taux, deflateur, inflation} = D;
+      return `<div class="exam-table-wrap">
+        <table class="exam-table" style="width:78%; margin:0 auto;">
+            <tr><th style="width:46%;"></th><th style="width:27%;">Année ${y0}</th><th style="width:27%;">Année ${y1}</th></tr>
+            <tr><td class="txt-left">${goods.A.price}</td><td class="amt">${fmt(pA0)} euros</td><td class="amt">${fmt(pA1)} euros</td></tr>
+            <tr><td class="txt-left">${goods.B.price}</td><td class="amt">${fmt(pB0)} euros</td><td class="amt">${fmt(pB1)} euros</td></tr>
+            <tr><td class="txt-left">${goods.A.qtyLong}</td><td class="amt">${fmt(qA0)}</td><td class="amt">${fmt(qA1)}</td></tr>
+            <tr><td class="txt-left">${goods.B.qtyLong}</td><td class="amt">${fmt(qB0)}</td><td class="amt">${fmt(qB1)}</td></tr>
+        </table>
+    </div>`;
+    },
+    enonce: function(D) {
+      const {y0, y1, goods, pA0, pA1, qA0, qA1, pB0, pB1, qB0, qB1, nom0, nom1, reel1, taux, deflateur, inflation} = D;
+    let htmlEnonce = "";
+    htmlEnonce += `<li>En supposant que les deux biens sont des biens finaux, calculer le PIB nominal, également appelé PIB en valeur, de ce pays pour les années ${y0} et ${y1}.</li>`;
+    htmlEnonce += `<li>Calculer le PIB réel de ${y1}, en prenant ${y0} comme année de référence.</li>`;
+    htmlEnonce += `<li>Calculer le taux de variation en pourcentage du PIB réel entre ${y0} et ${y1}.</li>`;
+    htmlEnonce += `<li>Calculer le déflateur du PIB en ${y1} et interpréter le résultat obtenu.</li>`;
+
+      return htmlEnonce;
+    },
+    sol: function(D) {
+      const {y0, y1, goods, pA0, pA1, qA0, qA1, pB0, pB1, qB0, qB1, nom0, nom1, reel1, taux, deflateur, inflation} = D;
+
+    let htmlSol = `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">1. PIB nominal des années ${y0} et ${y1}</span>
+        Le <strong>PIB nominal</strong> est calculé en multipliant les quantités produites par les prix de vente dans l'année concernée. On trouve tout d'abord pour ${y0} :
+        <div class="math-formula">\\[\\begin{aligned}
+        \\text{PIB nominal ${y0}} &= (\\text{${goods.B.price} en ${y0}} \\times \\text{${goods.B.qtyShort} en ${y0}}) + (\\text{${goods.A.price} en ${y0}} \\times \\text{${goods.A.qtyShort} en ${y0}}) \\\\
+        &= (${texI(pB0)}~\\text{euros} \\times ${texI(qB0)}) + (${texI(pA0)}~\\text{euros} \\times ${texI(qA0)}) \\\\
+        &= ${texI(pB0 * qB0)}~\\text{euros} + ${texI(pA0 * qA0)}~\\text{euros} = ${texI(nom0)}~\\text{euros}
+        \\end{aligned}\\]</div>
+        On trouve de même pour ${y1} :
+        <div class="math-formula">\\[\\begin{aligned}
+        \\text{PIB nominal ${y1}} &= (\\text{${goods.B.price} en ${y1}} \\times \\text{${goods.B.qtyShort} en ${y1}}) + (\\text{${goods.A.price} en ${y1}} \\times \\text{${goods.A.qtyShort} en ${y1}}) \\\\
+        &= (${texI(pB1)}~\\text{euros} \\times ${texI(qB1)}) + (${texI(pA1)}~\\text{euros} \\times ${texI(qA1)}) \\\\
+        &= ${texI(pB1 * qB1)}~\\text{euros} + ${texI(pA1 * qA1)}~\\text{euros} = ${texI(nom1)}~\\text{euros (courants)}
+        \\end{aligned}\\]</div>
+    </div>`;
+
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">2. PIB réel de ${y1}, base ${y0}</span>
+        Le <strong>PIB réel</strong>, également appelé PIB en volume, se calcule en utilisant les prix de ${y0}, puisque ${y0} est considérée comme l'année de base. La formule est la suivante :
+        <div class="math-formula">\\[\\begin{aligned}
+        \\text{PIB réel ${y1}} &= (\\text{${goods.B.price} en ${y0}} \\times \\text{${goods.B.qtyShort} en ${y1}}) + (\\text{${goods.A.price} en ${y0}} \\times \\text{${goods.A.qtyShort} en ${y1}}) \\\\
+        &= (${texI(pB0)}~\\text{euros} \\times ${texI(qB1)}) + (${texI(pA0)}~\\text{euros} \\times ${texI(qA1)}) \\\\
+        &= ${texI(pB0 * qB1)}~\\text{euros} + ${texI(pA0 * qA1)}~\\text{euros} = ${texI(reel1)}~\\text{euros (constants base ${y0})}
+        \\end{aligned}\\]</div>
+        L'écart avec le PIB nominal de ${y1} tient uniquement à l'évolution des prix entre les deux dates, les quantités étant les mêmes dans les deux calculs.
+    </div>`;
+
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">3. Taux de variation du PIB réel entre ${y0} et ${y1}</span>
+        Remarquons d'abord que le PIB réel de ${y0} est égal au PIB nominal de ${y0}, soit ${fmt(nom0)} euros, puisque ${y0} est l'année de référence : les prix courants y sont, par construction, les prix constants. Dès lors, le taux de variation en pourcentage du PIB réel entre ${y0} et ${y1} est donné par :
+        <div class="math-formula">\\[\\begin{aligned}
+        \\text{Taux de variation} &= \\frac{\\text{PIB réel ${y1}} - \\text{PIB réel ${y0}}}{\\text{PIB réel ${y0}}} \\times 100 \\\\
+        &= \\frac{${texI(reel1)} - ${texI(nom0)}}{${texI(nom0)}} \\times 100 \\\\
+        &= \\frac{${texI(reel1 - nom0)}}{${texI(nom0)}} \\times 100 \\approx ${texM(taux, 1)}~\\%
+        \\end{aligned}\\]</div>
+        La production en volume a donc ${taux >= 0 ? `progressé` : `reculé`} de ${fmtD(Math.abs(taux), 1)} % entre ${y0} et ${y1}. C'est bien cette grandeur, et non le PIB nominal, qui mesure la croissance économique, puisqu'elle neutralise l'effet des prix.
+    </div>`;
+
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">4. Déflateur du PIB en ${y1}</span>
+        Le <strong>déflateur du PIB</strong> dénote le ratio du PIB nominal sur le PIB réel, exprimé en base 100 :
+        <div class="math-formula">\\[\\text{Déflateur ${y1}} = \\frac{\\text{PIB nominal ${y1}}}{\\text{PIB réel ${y1}}} \\times 100 = \\frac{${texI(nom1)}}{${texI(reel1)}} \\times 100 \\approx ${texM(deflateur, 1)}\\]</div>
+        ${inflation >= 0
+          ? `Cela signifie qu'il y a eu ${fmtD(inflation, 1)} % d'inflation entre ${y0} et ${y1} en moyenne sur les deux biens.`
+          : `Cela signifie qu'il y a eu ${fmtD(Math.abs(inflation), 1)} % de déflation entre ${y0} et ${y1} en moyenne sur les deux biens : le niveau général des prix de cette économie a baissé, tiré par la baisse du prix du premier bien.`}
+        Par construction, le déflateur de l'année de base vaut 100. À la différence d'un indice des prix à la consommation, il porte sur l'ensemble des biens produits, avec une pondération qui suit chaque année la structure de la production.
+    </div>`;
+
+      return htmlSol;
+    }
+  },
+
+  en: {
+    "htmlLang": "en",
+    "title": "Macroeconomics Simulator - Nominal and Real GDP",
+    "locale": "en-GB",
+    "k-badge": "GROWTH AND BUSINESS CYCLES",
+    "k-h1": "Nominal GDP, Real GDP and the Deflator",
+    "k-sub": "© Thomas Hossen – March 7, 2026 Version",
+    "k-seed": "Seed (Optional)",
+    "k-gen": "Generate Exercise →",
+    "k-welcome": "Configure the parameters and click Generate to create a new exercise.",
+    "k-seedbadge": "Active Seed:",
+    "k-new": "↺ New Statement",
+    "k-pdf": "⬇ Export PDF",
+    "k-doc": "⬇ Export DOC",
+    "k-tag-ex": "Problem",
+    "k-cardtitle": "Measuring output and prices",
+    "k-tag-sol": "Solution",
+    "k-cardtitle2": "Measuring output and prices",
+    "k-work": "Assignment",
+    "showSol": "Show the solution",
+    "hideSol": "Hide the solution",
+    "docTitle": "Nominal and Real GDP Exercise",
+    "docFile": "Nominal_Real_GDP_Exercise.doc",
+    thousands: ",",
+    decimal: ".",
+    goods: [
+      {A:{price:"Price of a computer", qtyShort:"Number of computers", qtyLong:"Number of computers produced"},
+       B:{price:"Price of a car",      qtyShort:"Number of cars",      qtyLong:"Number of cars produced"},
+       pair:"computers and cars"},
+      {A:{price:"Price of a loaf of bread", qtyShort:"Number of loaves", qtyLong:"Number of loaves produced"},
+       B:{price:"Price of a car",      qtyShort:"Number of cars",      qtyLong:"Number of cars produced"},
+       pair:"bread and cars"},
+      {A:{price:"Price of a smartphone", qtyShort:"Number of smartphones", qtyLong:"Number of smartphones produced"},
+       B:{price:"Price of an electric bike", qtyShort:"Number of bikes", qtyLong:"Number of electric bikes produced"},
+       pair:"smartphones and electric bikes"},
+      {A:{price:"Price of a television", qtyShort:"Number of televisions", qtyLong:"Number of televisions produced"},
+       B:{price:"Price of a refrigerator", qtyShort:"Number of refrigerators", qtyLong:"Number of refrigerators produced"},
+       pair:"televisions and refrigerators"},
+      {A:{price:"Price of a tonne of wheat", qtyShort:"Number of tonnes of wheat", qtyLong:"Number of tonnes of wheat produced"},
+       B:{price:"Price of a tractor",  qtyShort:"Number of tractors",  qtyLong:"Number of tractors produced"},
+       pair:"wheat and tractors"}
+    ],
+    context: function(D) {
+      const {y0, y1, goods, pA0, pA1, qA0, qA1, pB0, pB1, qB0, qB1, nom0, nom1, reel1, taux, deflateur, inflation} = D;
+      return `
+      Consider an economy that produces and consumes only two final goods: ${goods.pair}. The following table gives the selling prices and the quantities produced for the years ${y0} and ${y1}.
+    `;
+    },
+    table: function(D) {
+      const {y0, y1, goods, pA0, pA1, qA0, qA1, pB0, pB1, qB0, qB1, nom0, nom1, reel1, taux, deflateur, inflation} = D;
+      return `<div class="exam-table-wrap">
+        <table class="exam-table" style="width:78%; margin:0 auto;">
+            <tr><th style="width:46%;"></th><th style="width:27%;">Year ${y0}</th><th style="width:27%;">Year ${y1}</th></tr>
+            <tr><td class="txt-left">${goods.A.price}</td><td class="amt">${fmt(pA0)} euros</td><td class="amt">${fmt(pA1)} euros</td></tr>
+            <tr><td class="txt-left">${goods.B.price}</td><td class="amt">${fmt(pB0)} euros</td><td class="amt">${fmt(pB1)} euros</td></tr>
+            <tr><td class="txt-left">${goods.A.qtyLong}</td><td class="amt">${fmt(qA0)}</td><td class="amt">${fmt(qA1)}</td></tr>
+            <tr><td class="txt-left">${goods.B.qtyLong}</td><td class="amt">${fmt(qB0)}</td><td class="amt">${fmt(qB1)}</td></tr>
+        </table>
+    </div>`;
+    },
+    enonce: function(D) {
+      const {y0, y1, goods, pA0, pA1, qA0, qA1, pB0, pB1, qB0, qB1, nom0, nom1, reel1, taux, deflateur, inflation} = D;
+    let htmlEnonce = "";
+    htmlEnonce += `<li>Assuming that the two goods are final goods, compute the nominal GDP, also called GDP at current prices, of this country for the years ${y0} and ${y1}.</li>`;
+    htmlEnonce += `<li>Compute the real GDP of ${y1}, taking ${y0} as the base year.</li>`;
+    htmlEnonce += `<li>Compute the percentage change in real GDP between ${y0} and ${y1}.</li>`;
+    htmlEnonce += `<li>Compute the GDP deflator in ${y1} and interpret the result obtained.</li>`;
+
+      return htmlEnonce;
+    },
+    sol: function(D) {
+      const {y0, y1, goods, pA0, pA1, qA0, qA1, pB0, pB1, qB0, qB1, nom0, nom1, reel1, taux, deflateur, inflation} = D;
+
+    let htmlSol = `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">1. Nominal GDP for ${y0} and ${y1}</span>
+        <strong>Nominal GDP</strong> is computed by multiplying the quantities produced by the selling prices of the year concerned. For ${y0} we first obtain:
+        <div class="math-formula">\\[\\begin{aligned}
+        \\text{Nominal GDP ${y0}} &= (\\text{${goods.B.price} in ${y0}} \\times \\text{${goods.B.qtyShort} in ${y0}}) + (\\text{${goods.A.price} in ${y0}} \\times \\text{${goods.A.qtyShort} in ${y0}}) \\\\
+        &= (${texI(pB0)}~\\text{euros} \\times ${texI(qB0)}) + (${texI(pA0)}~\\text{euros} \\times ${texI(qA0)}) \\\\
+        &= ${texI(pB0 * qB0)}~\\text{euros} + ${texI(pA0 * qA0)}~\\text{euros} = ${texI(nom0)}~\\text{euros}
+        \\end{aligned}\\]</div>
+        In the same way, for ${y1}:
+        <div class="math-formula">\\[\\begin{aligned}
+        \\text{Nominal GDP ${y1}} &= (\\text{${goods.B.price} in ${y1}} \\times \\text{${goods.B.qtyShort} in ${y1}}) + (\\text{${goods.A.price} in ${y1}} \\times \\text{${goods.A.qtyShort} in ${y1}}) \\\\
+        &= (${texI(pB1)}~\\text{euros} \\times ${texI(qB1)}) + (${texI(pA1)}~\\text{euros} \\times ${texI(qA1)}) \\\\
+        &= ${texI(pB1 * qB1)}~\\text{euros} + ${texI(pA1 * qA1)}~\\text{euros} = ${texI(nom1)}~\\text{euros (current prices)}
+        \\end{aligned}\\]</div>
+    </div>`;
+
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">2. Real GDP of ${y1}, ${y0} base</span>
+        <strong>Real GDP</strong>, also called GDP at constant prices, is computed using the prices of ${y0}, since ${y0} is taken as the base year. The formula is as follows:
+        <div class="math-formula">\\[\\begin{aligned}
+        \\text{Real GDP ${y1}} &= (\\text{${goods.B.price} in ${y0}} \\times \\text{${goods.B.qtyShort} in ${y1}}) + (\\text{${goods.A.price} in ${y0}} \\times \\text{${goods.A.qtyShort} in ${y1}}) \\\\
+        &= (${texI(pB0)}~\\text{euros} \\times ${texI(qB1)}) + (${texI(pA0)}~\\text{euros} \\times ${texI(qA1)}) \\\\
+        &= ${texI(pB0 * qB1)}~\\text{euros} + ${texI(pA0 * qA1)}~\\text{euros} = ${texI(reel1)}~\\text{euros (constant ${y0} prices)}
+        \\end{aligned}\\]</div>
+        The gap with the nominal GDP of ${y1} is due solely to the change in prices between the two dates, since the quantities are the same in both computations.
+    </div>`;
+
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">3. Percentage change in real GDP between ${y0} and ${y1}</span>
+        Note first that the real GDP of ${y0} equals the nominal GDP of ${y0}, that is ${fmt(nom0)} euros, since ${y0} is the base year: current prices are, by construction, constant prices in that year. The percentage change in real GDP between ${y0} and ${y1} is therefore given by:
+        <div class="math-formula">\\[\\begin{aligned}
+        \\text{Percentage change} &= \\frac{\\text{Real GDP ${y1}} - \\text{Real GDP ${y0}}}{\\text{Real GDP ${y0}}} \\times 100 \\\\
+        &= \\frac{${texI(reel1)} - ${texI(nom0)}}{${texI(nom0)}} \\times 100 \\\\
+        &= \\frac{${texI(reel1 - nom0)}}{${texI(nom0)}} \\times 100 \\approx ${texM(taux, 1)}\\%
+        \\end{aligned}\\]</div>
+        Output in volume terms has therefore ${taux >= 0 ? `risen` : `fallen`} by ${fmtD(Math.abs(taux), 1)}% between ${y0} and ${y1}. It is this magnitude, and not nominal GDP, that measures economic growth, since it neutralises the effect of prices.
+    </div>`;
+
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">4. GDP deflator in ${y1}</span>
+        The <strong>GDP deflator</strong> denotes the ratio of nominal GDP to real GDP, expressed in base 100:
+        <div class="math-formula">\\[\\text{Deflator ${y1}} = \\frac{\\text{Nominal GDP ${y1}}}{\\text{Real GDP ${y1}}} \\times 100 = \\frac{${texI(nom1)}}{${texI(reel1)}} \\times 100 \\approx ${texM(deflateur, 1)}\\]</div>
+        ${inflation >= 0
+          ? `This means that there was ${fmtD(inflation, 1)}% inflation between ${y0} and ${y1} on average across the two goods.`
+          : `This means that there was ${fmtD(Math.abs(inflation), 1)}% deflation between ${y0} and ${y1} on average across the two goods: the general price level of this economy fell, driven by the collapse in the price of the first good.`}
+        By construction, the deflator of the base year equals 100. Unlike a consumer price index, it covers all the goods produced, with weights that follow the structure of production each year.
+    </div>`;
+
+      return htmlSol;
+    }
+  }
+};
+/* ============================================================
+   GESTION DE LA LANGUE  /  LANGUAGE HANDLING
+   ============================================================ */
+let LANG = 'fr';
+
+function detectLang() {
+    try {
+        const q = new URLSearchParams(window.location.search).get('lang');
+        if (q && I18N[q.toLowerCase()]) return q.toLowerCase();
+    } catch (e) {}
+    const h = (window.location.hash || '').replace('#', '').toLowerCase();
+    if (I18N[h]) return h;
+    return 'fr';
+}
+
+function applyLang() {
+    const D = I18N[LANG];
+    document.documentElement.lang = D.htmlLang;
+    document.title = D.title;
+
+    document.querySelectorAll('[data-k]').forEach(function (el) {
+        const key = el.getAttribute('data-k');
+        if (D[key] !== undefined) el.innerHTML = D[key];
+    });
+
+    const btn = document.getElementById('toggle-btn');
+    if (btn) btn.innerText = document.getElementById('sol-card').classList.contains('visible') ? D.hideSol : D.showSol;
+
+    document.getElementById('flag-fr').classList.toggle('active', LANG === 'fr');
+    document.getElementById('flag-en').classList.toggle('active', LANG === 'en');
+}
+
+function setLang(lang) {
+    if (!I18N[lang] || lang === LANG) return;
+    LANG = lang;
+
+    /* La langue est memorisee dans l'URL (partage / rechargement) */
+    try {
+        const u = new URL(window.location.href);
+        u.searchParams.set('lang', lang);
+        history.replaceState(null, '', u.toString());
+    } catch (e) {}
+
+    applyLang();
+
+    /* Si un exercice est affiche, on le regenere a l'identique (meme seed) */
+    if (document.getElementById('ex-area').style.display !== 'none') {
+        const solWasVisible = document.getElementById('sol-card').classList.contains('visible');
+        generateExercise(false);
+        if (solWasVisible) toggleSol();
+    }
+}
+
+// --- PRNG (Mulberry32) ---
+let currentSeed = 0;
+function seedPRNG(seed) {
+    return function() {
+      let t = seed += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+let random = Math.random;
+
+function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
+
+function texI(num) {
+    let sign = num < 0 ? "-" : "";
+    let absNum = Math.round(Math.abs(num));
+    return sign + absNum.toString().replace(/\B(?=(\d{3})+(?!\d))/g, I18N[LANG].thousands);
+}
+function texM(num, dec) {
+    let sign = num < 0 ? "-" : "";
+    let parts = Math.abs(num).toFixed(dec).split('.');
+    let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, I18N[LANG].thousands);
+    return sign + intPart + I18N[LANG].decimal + parts[1];
+}
+function fmt(num) {
+    return num.toLocaleString(I18N[LANG].locale);
+}
+function fmtD(num, dec) {
+    return num.toLocaleString(I18N[LANG].locale, {minimumFractionDigits: dec, maximumFractionDigits: dec});
+}
+
+
+function generateExercise(forceNew = false) {
+    if(forceNew) {
+        document.getElementById('seed-input').value = "";
+    }
+    let seedVal = document.getElementById('seed-input').value;
+    currentSeed = seedVal ? parseInt(seedVal) : Math.floor(Math.random() * 99999999);
+    document.getElementById('seed-disp').innerText = currentSeed;
+    document.getElementById('seed-input').value = currentSeed;
+    random = seedPRNG(currentSeed);
+
+    const DIC = I18N[LANG];
+
+    /* Plages de tirage par couple de biens (identiques dans les deux langues :
+       seuls les libelles changent, cf. DIC.goods) */
+    const RANGES = [
+        // ordinateurs (prix en forte baisse, volumes en forte hausse) / automobiles
+        {A: {p0:[8000,12000], pm:[15,35],  q0:[150,300],    qs:1000, qm:[400,800]},
+         B: {p0:[5000,8000],  pm:[120,180], q0:[800,1200],  qs:1000, qm:[100,160]}},
+        // pain / voitures
+        {A: {p0:[8,14],       pm:[150,250], q0:[400,600],   qs:1000, qm:[70,95]},
+         B: {p0:[45000,55000],pm:[110,140], q0:[80,130],    qs:1,    qm:[100,140]}},
+        // smartphones / velos electriques
+        {A: {p0:[600,900],    pm:[60,110],  q0:[300,700],   qs:1000, qm:[150,320]},
+         B: {p0:[1200,2000],  pm:[105,145], q0:[50,150],    qs:1000, qm:[200,450]}},
+        // televiseurs / refrigerateurs
+        {A: {p0:[900,1500],   pm:[35,65],   q0:[200,400],   qs:1000, qm:[130,260]},
+         B: {p0:[500,800],    pm:[115,160], q0:[300,600],   qs:1000, qm:[95,140]}},
+        // tonnes de ble / tracteurs
+        {A: {p0:[150,260],    pm:[130,220], q0:[900,1600],  qs:1000, qm:[90,130]},
+         B: {p0:[60000,90000],pm:[110,150], q0:[8,20],      qs:1000, qm:[90,140]}}
+    ];
+
+    const rnd  = (a, b) => a + random() * (b - a);
+    const rndI = (a, b) => Math.round(rnd(a, b));
+
+    let y0, y1, gi, pA0, pA1, qA0, qA1, pB0, pB1, qB0, qB1;
+    let nom0, nom1, reel1, taux, deflateur;
+
+    do {
+        y0 = [1990, 1995, 2000, 2005][randInt(0, 3)];
+        y1 = y0 + [10, 15, 20][randInt(0, 2)];
+
+        gi = randInt(0, RANGES.length - 1);
+        const R = RANGES[gi];
+
+        pA0 = Math.round(rnd(R.A.p0[0], R.A.p0[1]) / (R.A.p0[1] > 1000 ? 500 : 1));
+        pA0 = R.A.p0[1] > 1000 ? pA0 * 500 : pA0;
+        pA1 = Math.round(pA0 * rndI(R.A.pm[0], R.A.pm[1]) / 100);
+        qA0 = rndI(R.A.q0[0], R.A.q0[1]) * R.A.qs;
+        qA1 = Math.round(qA0 * rndI(R.A.qm[0], R.A.qm[1]) / 100 / R.A.qs) * R.A.qs;
+
+        pB0 = Math.round(rnd(R.B.p0[0], R.B.p0[1]) / (R.B.p0[1] > 1000 ? 500 : 1));
+        pB0 = R.B.p0[1] > 1000 ? pB0 * 500 : pB0;
+        pB1 = Math.round(pB0 * rndI(R.B.pm[0], R.B.pm[1]) / 100);
+        qB0 = rndI(R.B.q0[0], R.B.q0[1]) * R.B.qs;
+        qB1 = Math.round(qB0 * rndI(R.B.qm[0], R.B.qm[1]) / 100 / R.B.qs) * R.B.qs;
+
+        nom0  = pA0 * qA0 + pB0 * qB0;
+        nom1  = pA1 * qA1 + pB1 * qB1;
+        reel1 = pA0 * qA1 + pB0 * qB1;
+        taux  = (reel1 - nom0) / nom0 * 100;
+        deflateur = nom1 / reel1 * 100;
+    } while (deflateur < 65 || deflateur > 260 || taux < -40 || taux > 400
+             || Math.abs(deflateur - 100) < 4 || Math.abs(taux) < 5);
+
+    let goods = DIC.goods[gi];
+    let inflation = deflateur - 100;
+
+    const D = {y0, y1, goods, pA0, pA1, qA0, qA1, pB0, pB1, qB0, qB1,
+               nom0, nom1, reel1, taux, deflateur, inflation};
+
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('ex-area').style.display = 'block';
+    document.getElementById('sol-card').classList.remove('visible');
+    document.getElementById('toggle-btn').innerText = DIC.showSol;
+    document.getElementById('toggle-btn').classList.remove('shown');
+
+    document.getElementById('context-text').innerHTML = DIC.context(D);
+    document.getElementById('enonce-table-container').innerHTML = DIC.table(D);
+    document.getElementById('additional-info').innerHTML = "";
+    document.getElementById('events-list').innerHTML = DIC.enonce(D);
+    document.getElementById('sol-content').innerHTML = DIC.sol(D);
+
+    if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
+        MathJax.typesetPromise().catch(function (err) { console.error('MathJax :', err); });
+    }
+}
+
+function toggleSol() {
+    let solCard = document.getElementById('sol-card');
+    let btn = document.getElementById('toggle-btn');
+    if(solCard.classList.contains('visible')) {
+        solCard.classList.remove('visible');
+        btn.innerText = I18N[LANG].showSol;
+        btn.classList.remove('shown');
+    } else {
+        solCard.classList.add('visible');
+        btn.innerText = I18N[LANG].hideSol;
+        btn.classList.add('shown');
+    }
+}
+
+function exportWord() {
+    let content = document.getElementById('ex-area').cloneNode(true);
+    let actions = content.querySelector('.top-actions');
+    if(actions) actions.parentNode.removeChild(actions);
+    let toggle = content.querySelector('.sol-toggle-wrap');
+    if(toggle) toggle.parentNode.removeChild(toggle);
+    let solCard = content.querySelector('#sol-card');
+    if(solCard) solCard.style.display = 'block';
+
+    let html = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <meta charset='utf-8'>
+            <title>${I18N[LANG].docTitle}</title>
+            <style>
+                body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5; text-align: justify; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 10pt; }
+                th, td { border: 1px solid #000; padding: 4px; }
+                th { background-color: #f2f2f2; text-align: center; font-weight: bold; }
+                .txt-left { text-align: left; font-weight: bold; }
+                .amt { text-align: right; white-space: nowrap; }
+                .two-col-table { width: 100%; }
+                .col-half { width: 48%; display: inline-block; vertical-align: top; margin-right: 2%; }
+                .calc-box { border: 1px solid #000; padding: 10px; margin-bottom: 15px; background-color: #f9f9f9; text-align: justify; }
+                .math-formula { text-align: center; font-style: italic; margin: 10px 0; }
+                ul { text-align: justify; }
+                li { margin-bottom: 5px; }
+            </style>
+        </head>
+        <body>
+            ${content.innerHTML}
+        </body>
+        </html>
+    `;
+    
+    let blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    let url = URL.createObjectURL(blob);
+    let link = document.createElement('a');
+    link.href = url;
+    link.download = I18N[LANG].docFile;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+/* Initialisation */
+LANG = detectLang();
+applyLang();
+</script>
+</body>
+</html>
