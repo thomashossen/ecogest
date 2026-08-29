@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Macroéconomie - Différentiels de taux de croissance</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['\\[', '\\]']]
+    }
+  };
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7;text-align:justify;}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 1.5rem;border-bottom:3px solid var(--gold);text-align:left;}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end;background:rgba(255,255,255,.03);padding:1rem 1.5rem;border-radius:6px;border:1px solid rgba(255,255,255,.1)}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.6)}
+.ctrl-inp, .ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.4rem .7rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none;transition:border-color .2s}
+.ctrl-inp:focus, .ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.ctrl-sel option{background:var(--navy);color:var(--cream)}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.5rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;transition:background .18s;margin-left:auto}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN & CARDS */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:700}
+
+.top-actions{display:flex;gap:.5rem;}
+.btn-action{background:#fff;border:1px solid var(--border);color:var(--navy);padding:.4rem .8rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.85rem;font-weight:600;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.btn-action:hover{border-color:var(--navy);background:var(--cream-dark);}
+
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem;text-align:left;}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+.event-list{list-style:none;counter-reset:q}
+.event-list > li{margin-bottom:1.5rem;padding-left:1.8rem;position:relative;font-size:.95rem;text-align:justify}
+.event-list > li::before{counter-increment:q;content:counter(q) ".";position:absolute;left:0;color:var(--gold);font-weight:700}
+
+.sub-list { list-style-type: none; padding-left: 1rem; margin-top: 0.8rem; text-align:justify;}
+.sub-list li { margin-bottom: 0.5rem; }
+.alpha-list { list-style-type: lower-alpha; padding-left: 1.6rem; margin-top: 0.7rem; text-align:justify;}
+.alpha-list li { margin-bottom: 0.6rem; }
+
+/* EXAM TABLE */
+.exam-table-wrap { overflow-x: auto; margin: 1.5rem 0; }
+.exam-table{width:100%;border-collapse:collapse;font-size:.85rem;font-family:'Source Serif 4',serif; margin: 0;}
+.exam-table th, .exam-table td{border:1px solid var(--border);padding:.6rem;text-align:center;vertical-align:middle;}
+.exam-table th{background:var(--navy);color:var(--cream);font-weight:600;}
+.exam-table .txt-left{text-align:left;font-weight:600;color:var(--navy);}
+.exam-table .amt{font-family:'JetBrains Mono',monospace;text-align:right;white-space:nowrap;}
+.exam-table tr.total-row td{background:var(--cream-dark);font-weight:700;}
+.table-caption{font-size:.78rem;color:var(--text-muted);font-style:italic;text-align:center;margin-top:.6rem;line-height:1.5}
+
+/* SOLUTION TOGGLE */
+.sol-toggle-wrap{text-align:left; margin: 1.5rem 0 0 0;}
+.btn-toggle{background:transparent;border:2px solid var(--green);border-bottom:none;color:var(--green);font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;padding:.5rem 1.5rem;border-radius:4px 4px 0 0;cursor:pointer;transition:all .2s; position:relative; z-index:2; top:2px;}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--green);color:var(--cream)}
+.sol-card{border-top:2px solid var(--green);display:none; border-radius: 0 6px 6px 6px; position:relative; z-index:1;}
+.sol-card.visible{display:block;animation:fi .4s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+
+.calc-box{background:#f9fcf9;border:1px solid #c8e6c9;padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.9rem;color:var(--text);line-height:1.6;text-align:justify;}
+.method-box{background:#fdfaf2;border:1px solid #e3d3a8;border-left:3px solid var(--gold);padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.9rem;line-height:1.6;text-align:justify;}
+.persp-box{background:#f7f9fc;border:1px solid #ccd8e6;border-left:3px solid var(--navy-mid);padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.88rem;line-height:1.6;text-align:justify;}
+.sol-sub{color:var(--navy);font-weight:600;display:block;margin:1.1rem 0 .5rem;}
+.sol-sub:first-child{margin-top:0;}
+
+@media print{
+  body{background:#fff;}
+  header, .ctrls, .sol-toggle-wrap, .top-actions {display:none !important;}
+  .card{box-shadow:none; border:1px solid var(--border); margin-bottom:2rem;}
+  .sol-card{display:block !important; border-top:2px solid var(--green);}
+  #ex-area {display:block !important;}
+}
+
+/* --- Selecteur de langue / Language switch --- */
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem}
+.header-top .header-badge{margin-bottom:0}
+.lang-switch{display:flex;gap:.45rem;flex-shrink:0}
+.flag-btn{background:rgba(255,255,255,.06);border:1px solid rgba(201,149,42,.35);border-radius:3px;padding:3px;cursor:pointer;line-height:0;opacity:.5;transition:opacity .2s,border-color .2s,transform .15s}
+.flag-btn:hover{opacity:1;transform:translateY(-1px)}
+.flag-btn.active{opacity:1;border-color:var(--gold-light);box-shadow:0 0 0 1px rgba(232,184,75,.35)}
+.flag-btn svg{display:block;width:30px;height:20px;border-radius:1px}
+@media print{ .lang-switch{display:none !important;} }
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-top">
+    <div class="header-badge" data-k="k-badge">CROISSANCE ET CYCLES ÉCONOMIQUES</div>
+    <div class="lang-switch">
+      <button type="button" class="flag-btn active" id="flag-fr" onclick="setLang('fr')" title="Français" aria-label="Français"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="20" height="40" fill="#002654"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ED2939"/></svg></button>
+      <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
+    </div>
+  </div>
+  <h1 data-k="k-h1">Différentiels de taux de croissance</h1>
+  <p class="subtitle" data-k="k-sub">© Thomas Hossen – Version du 7 mars 2026</p>
+
+  <div class="ctrls">
+    <div class="ctrl-g">
+      <span class="ctrl-lbl" data-k="k-seed">Seed (Optionnel)</span>
+      <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999">
+    </div>
+    <button class="btn-gen" onclick="generateExercise(false)"><span data-k="k-gen">Générer l'exercice →</span></button>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" style="text-align:center; padding:4rem; color:var(--text-muted); font-style:italic;">
+    <span data-k="k-welcome">Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.</span>
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="seed-badge"><span data-k="k-seedbadge">Seed active :</span> <span id="seed-disp"></span></div>
+      <div class="top-actions">
+        <button class="btn-action" onclick="generateExercise(true)"><span data-k="k-new">↺ Nouvel énoncé</span></button>
+        <button class="btn-action" onclick="window.print()"><span data-k="k-pdf">⬇ Exporter PDF</span></button>
+        <button class="btn-action" onclick="exportWord()"><span data-k="k-doc">⬇ Exporter DOC</span></button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="tag" data-k="k-tag-ex">Énoncé</span><h2 data-k="k-cardtitle">Croissance cumulative et rattrapage</h2></div>
+      <div class="card-body">
+        <div class="context-block" id="context-text"></div>
+        <div id="enonce-table-container"></div>
+        <div class="context-block" id="additional-info" style="margin-top:1.5rem; background:#fff; border-left:none; border-radius:0;"></div>
+
+        <p style="margin-bottom:1rem; font-weight:600; color:var(--red); text-align:left;" data-k="k-work">Travail à faire</p>
+        <ul class="event-list" id="events-list"></ul>
+      </div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag" data-k="k-tag-sol">Corrigé</span><h2 data-k="k-cardtitle2">Croissance cumulative et rattrapage</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+/* ============================================================
+   DICTIONNAIRE BILINGUE  /  BILINGUAL DICTIONARY
+   ============================================================ */
+const I18N = {
+
+  fr: {
+    "htmlLang": "fr",
+    "title": "Simulateur Macroéconomie - Différentiels de taux de croissance",
+    "locale": "fr-FR",
+    "k-badge": "CROISSANCE ET CYCLES ÉCONOMIQUES",
+    "k-h1": "Différentiels de taux de croissance",
+    "k-sub": "© Thomas Hossen – Version du 7 mars 2026",
+    "k-seed": "Seed (Optionnel)",
+    "k-gen": "Générer l'exercice →",
+    "k-welcome": "Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.",
+    "k-seedbadge": "Seed active :",
+    "k-new": "↺ Nouvel énoncé",
+    "k-pdf": "⬇ Exporter PDF",
+    "k-doc": "⬇ Exporter DOC",
+    "k-tag-ex": "Énoncé",
+    "k-cardtitle": "Croissance cumulative et rattrapage",
+    "k-tag-sol": "Corrigé",
+    "k-cardtitle2": "Croissance cumulative et rattrapage",
+    "k-work": "Travail à faire",
+    "showSol": "Afficher le corrigé",
+    "hideSol": "Masquer le corrigé",
+    "docTitle": "Exercice Différentiels de taux de croissance",
+    "docFile": "Exercice_Differentiels_Croissance.doc",
+    thousands: "\\,",
+    decimal: "{,}",
+
+    zones: {
+      advanced: [
+        {name:"France",        det:"la France",        loc:"en France"},
+        {name:"Suède",         det:"la Suède",         loc:"en Suède"},
+        {name:"Allemagne",     det:"l'Allemagne",      loc:"en Allemagne"},
+        {name:"Italie",        det:"l'Italie",         loc:"en Italie"},
+        {name:"Espagne",       det:"l'Espagne",        loc:"en Espagne"},
+        {name:"Japon",         det:"le Japon",         loc:"au Japon"},
+        {name:"Canada",        det:"le Canada",        loc:"au Canada"},
+        {name:"Australie",     det:"l'Australie",      loc:"en Australie"},
+        {name:"Royaume-Uni",   det:"le Royaume-Uni",   loc:"au Royaume-Uni"},
+        {name:"Danemark",      det:"le Danemark",      loc:"au Danemark"},
+        {name:"Norvège",       det:"la Norvège",       loc:"en Norvège"},
+        {name:"Belgique",      det:"la Belgique",      loc:"en Belgique"}
+      ],
+      fast: [
+        {name:"Chine",         det:"la Chine",         loc:"en Chine"},
+        {name:"Corée du Sud",  det:"la Corée du Sud",  loc:"en Corée du Sud"},
+        {name:"Vietnam",       det:"le Vietnam",       loc:"au Vietnam"},
+        {name:"Inde",          det:"l'Inde",           loc:"en Inde"},
+        {name:"Thaïlande",     det:"la Thaïlande",     loc:"en Thaïlande"},
+        {name:"Indonésie",     det:"l'Indonésie",      loc:"en Indonésie"},
+        {name:"Botswana",      det:"le Botswana",      loc:"au Botswana"}
+      ],
+      rich: [
+        {name:"Amérique du Nord",  det:"l'Amérique du Nord",  loc:"en Amérique du Nord"},
+        {name:"Europe de l'Ouest", det:"l'Europe de l'Ouest", loc:"en Europe de l'Ouest"},
+        {name:"Europe du Nord",    det:"l'Europe du Nord",    loc:"en Europe du Nord"},
+        {name:"Union européenne",  det:"l'Union européenne",  loc:"dans l'Union européenne"}
+      ],
+      poor: [
+        {name:"Afrique subsaharienne", det:"l'Afrique subsaharienne", loc:"en Afrique subsaharienne"},
+        {name:"Afrique de l'Est",      det:"l'Afrique de l'Est",      loc:"en Afrique de l'Est"},
+        {name:"Afrique centrale",      det:"l'Afrique centrale",      loc:"en Afrique centrale"},
+        {name:"Asie du Sud",           det:"l'Asie du Sud",           loc:"en Asie du Sud"}
+      ],
+      world: {name:"Monde", det:"le monde", loc:"dans le monde"}
+    },
+
+    context: function(D) {
+      return `
+      Le tableau ci-dessous indique l'évolution du PIB par habitant, exprimé en dollars américains constants, dans le monde ainsi que dans ${D.rows.length - 1} zones géographiques, entre ${D.y0} et ${D.y1}.
+    `;
+    },
+
+    table: function(D) {
+      let head = `<tr><th style="width:46%;text-align:left;padding-left:.9rem;">PIB par habitant</th><th style="width:27%;">${D.y0}</th><th style="width:27%;">${D.y1}</th></tr>`;
+      let rows = D.rows.map(z =>
+        `<tr><td class="txt-left">${z.name}</td><td class="amt">${fmtD(z.v0,1)}</td><td class="amt">${fmtD(z.v1,1)}</td></tr>`
+      ).join('');
+      return `<div class="exam-table-wrap">
+        <table class="exam-table" style="width:74%;margin:0 auto;">${head}${rows}</table>
+        <div class="table-caption">PIB par habitant en dollars américains constants.</div>
+    </div>`;
+    },
+
+    enonce: function(D) {
+      let h = "";
+      h += `<li>À partir des données du tableau ci-dessus, calculez le taux de croissance annuel moyen de chacune des zones considérées.</li>`;
+      h += `<li>Avec un taux de croissance annuel moyen de ${D.rD}&nbsp;%, en combien d'années une économie peut-elle doubler son PIB ? En combien d'années ${D.ref.det} peut-${D.ref.pro} doubler son PIB avec le taux de croissance annuel moyen calculé à la question précédente ? Et ${D.fast.det} ?</li>`;
+      h += `<li>Situons-nous en ${D.y2}.
+        <ol class="alpha-list">
+          <li>De combien de fois le PIB par habitant ${D.rich.dePrep} est-il plus élevé que celui ${D.poor.dePrep} ?</li>
+          <li>Si cette dernière connaissait un taux de croissance de ${D.rc1}&nbsp;% par an, en combien d'années pourrait-elle atteindre un niveau de vie identique à celui ${D.rich.dePrep} ?</li>
+          <li>Et si ce taux passait à ${D.rc2}&nbsp;% ? Comparez les deux cas. Donnez l'expression du résultat sans faire les calculs.</li>
+        </ol></li>`;
+      return h;
+    },
+
+    sol: function(D) {
+      const p2 = x => fmtD(x, 2);
+      let s = "";
+
+      /* ---------- Q1 ---------- */
+      let liste = D.rows.map((z, i) =>
+        `<li>${z.loc} : $\\left(\\frac{${texM(z.v1,1)}}{${texM(z.v0,1)}}\\right)^{\\frac{1}{${D.n}}}-1 \\approx ${texM(z.tcam,2)}~\\%$${i === D.rows.length - 1 ? '.' : ' ;'}</li>`
+      ).join('');
+
+      s += `<div class="calc-box">
+        <span class="sol-sub">1. Taux de croissance annuel moyen entre ${D.y0} et ${D.y1}</span>
+        Entre ${D.y0} et ${D.y1}, il s'est écoulé ${D.n} ans. Le taux de croissance annuel moyen se déduit du coefficient multiplicateur sur l'ensemble de la période, dont on extrait la racine d'ordre ${D.n} :
+        <div class="math-formula">\\[ g = \\left(\\frac{Y_{${D.y1}}}{Y_{${D.y0}}}\\right)^{\\frac{1}{${D.n}}} - 1 \\]</div>
+        On obtient ainsi :
+        <ul class="sub-list">${liste}</ul>
+        <p style="margin-top:.8rem;">Les écarts paraissent faibles — quelques points de pourcentage tout au plus — mais ils portent sur ${D.n} années : c'est la nature cumulative de la croissance qui transforme ces différentiels annuels en divergences considérables de niveau de vie.</p>
+      </div>`;
+
+      /* ---------- Q2 ---------- */
+      s += `<div class="calc-box">
+        <span class="sol-sub">2. Temps de doublement du PIB</span>
+        On suppose que, pour un pays donné, le taux de croissance annuel moyen est de ${D.rD}&nbsp;%. Soit $Y$ le PIB initial, supposé non nul. On cherche le nombre d'années $T$ au bout desquelles le PIB aura doublé et donc atteint $2Y$. On doit résoudre l'équation $(1+${D.rD}\\%)^T \\times Y = 2Y$ d'inconnue $T$. Or on a :
+        <div class="math-formula">\\[\\begin{aligned}
+        (1+${D.rD}\\%)^T \\times Y = 2Y
+        &\\iff (1+${texM(D.rD/100,2)})^T = 2\\\\
+        &\\iff \\ln\\left((1+${texM(D.rD/100,2)})^T\\right) = \\ln(2)\\\\
+        &\\iff T\\ln(1+${texM(D.rD/100,2)}) = \\ln(2)\\\\
+        &\\iff T = \\frac{\\ln(2)}{\\ln(${texM(1+D.rD/100,2)})} \\approx ${texM(D.TD,2)}
+        \\end{aligned}\\]</div>
+        Cela signifie qu'avec un taux de croissance annuel moyen de ${D.rD}&nbsp;%, le PIB double en ${D.TDc} ans.
+        <p style="margin-top:.8rem;">On sait que le taux de croissance annuel moyen ${D.ref.dePrep} entre ${D.y0} et ${D.y1} est de ${p2(D.ref.tcam)}&nbsp;% environ. En reprenant le calcul précédent après avoir remplacé ${D.rD}&nbsp;% par ${p2(D.ref.tcam)}&nbsp;%, on trouve que ${D.ref.det} peut doubler son PIB en ${D.ref.Tc} ans, à supposer qu'${D.ref.pro} maintienne le même régime de croissance, puisque $\\frac{\\ln(2)}{\\ln(${texM(1+D.ref.tcam/100,4)})} \\approx ${texM(D.ref.T,2)}$.</p>
+        <p>De la même manière, le taux de croissance annuel moyen ${D.fast.dePrep} sur la période est de ${p2(D.fast.tcam)}&nbsp;% environ. Le même calcul donne $\\frac{\\ln(2)}{\\ln(${texM(1+D.fast.tcam/100,4)})} \\approx ${texM(D.fast.T,2)}$ : ${D.fast.det} double son PIB en ${D.fast.Tc} ans, soit ${fmtD(D.ratioT,1)} fois plus vite ${D.ref.quePrep}.</p>
+      </div>`;
+
+      /* ---------- Q3a ---------- */
+      s += `<div class="calc-box">
+        <span class="sol-sub">3.a. Écart de niveau de vie en ${D.y2}</span>
+        On estime le PIB par habitant des deux régions en ${D.y2} en s'appuyant sur les régimes de croissance déterminés à la première question. Entre ${D.y0} et ${D.y2}, il s'est écoulé ${D.n2} ans. Sachant que le taux de croissance annuel moyen ${D.rich.dePrep} est de ${p2(D.rich.tcam)}&nbsp;% par an et que celui ${D.poor.dePrep} est de ${p2(D.poor.tcam)}&nbsp;%, on estime le PIB par habitant en ${D.y2} à :
+        <div class="math-formula">\\[\\begin{aligned}
+        \\text{${D.poor.name}} &: (1+${p2(D.poor.tcam)}\\%)^{${D.n2}} \\times ${texM(D.poor.v0,1)} \\approx ${texM(D.poor.v2,1)}\\\\
+        \\text{${D.rich.name}} &: (1+${p2(D.rich.tcam)}\\%)^{${D.n2}} \\times ${texM(D.rich.v0,1)} \\approx ${texM(D.rich.v2,1)}
+        \\end{aligned}\\]</div>
+        On estime donc le PIB par habitant ${D.rich.dePrep} $\\frac{${texM(D.rich.v2,1)}}{${texM(D.poor.v2,1)}} \\approx ${texM(D.ratio,2)}$ fois plus élevé que celui ${D.poor.dePrep} en ${D.y2}.
+      </div>`;
+
+      /* ---------- Q3b ---------- */
+      s += `<div class="calc-box">
+        <span class="sol-sub">3.b. Durée du rattrapage avec un taux de ${D.rc1}&nbsp;%</span>
+        On suppose que ${D.rich.det} gardera le même régime de croissance, à savoir ${p2(D.rich.tcam)}&nbsp;% par an. On cherche le nombre d'années $T$ qui permettra ${D.poor.aPrep} de la rattraper. Partant de l'estimation pour ${D.y2}, on veut résoudre $(1+${p2(D.rich.tcam)}\\%)^T \\times ${texM(D.rich.v2,1)} = (1+${D.rc1}\\%)^T \\times ${texM(D.poor.v2,1)}$. Or :
+        <div class="math-formula">\\[\\begin{aligned}
+        (1+${p2(D.rich.tcam)}\\%)^T \\times ${texM(D.rich.v2,1)} = (1+${D.rc1}\\%)^T \\times ${texM(D.poor.v2,1)}
+        &\\iff ${texM(D.richMult,4)}^T \\times ${texM(D.rich.v2,1)} = ${texM(1+D.rc1/100,2)}^T \\times ${texM(D.poor.v2,1)}\\\\
+        &\\iff \\frac{${texM(D.richMult,4)}^T}{${texM(1+D.rc1/100,2)}^T} = \\frac{${texM(D.poor.v2,1)}}{${texM(D.rich.v2,1)}}\\\\
+        &\\iff \\left(\\frac{${texM(D.richMult,4)}}{${texM(1+D.rc1/100,2)}}\\right)^T = \\frac{${texM(D.poor.v2,1)}}{${texM(D.rich.v2,1)}}\\\\
+        &\\iff T\\ln\\left(\\frac{${texM(D.richMult,4)}}{${texM(1+D.rc1/100,2)}}\\right) = \\ln\\left(\\frac{${texM(D.poor.v2,1)}}{${texM(D.rich.v2,1)}}\\right)\\\\
+        &\\iff T = \\frac{\\ln(${texM(D.poor.v2,1)}) - \\ln(${texM(D.rich.v2,1)})}{\\ln(${texM(D.richMult,4)}) - \\ln(${texM(1+D.rc1/100,2)})} \\approx ${texM(D.T1,2)}
+        \\end{aligned}\\]</div>
+        Si le taux de croissance annuel moyen ${D.poor.dePrep} atteint ${D.rc1}&nbsp;% à partir de ${D.y2}, tandis que ${D.rich.det} maintient un taux de ${p2(D.rich.tcam)}&nbsp;%, il faudra donc attendre ${D.y2} + ${D.T1c} = ${D.year1} pour que ${D.poor.det} atteigne le même niveau de vie ${D.rich.quePrep}.
+      </div>`;
+
+      /* ---------- Q3c ---------- */
+      s += `<div class="calc-box">
+        <span class="sol-sub">3.c. Durée du rattrapage avec un taux de ${D.rc2}&nbsp;%</span>
+        Supposons maintenant que ${D.poor.det} affiche un taux de croissance annuel moyen de ${D.rc2}&nbsp;%. En reprenant les calculs de la sous-question précédente après avoir remplacé ${texM(1+D.rc1/100,2)} par ${texM(1+D.rc2/100,2)}, et en conservant les mêmes notations, on obtient :
+        <div class="math-formula">\\[ T = \\frac{\\ln(${texM(D.poor.v2,1)}) - \\ln(${texM(D.rich.v2,1)})}{\\ln(${texM(D.richMult,4)}) - \\ln(${texM(1+D.rc2/100,2)})} \\approx ${texM(D.T2,2)} \\]</div>
+        Le rattrapage interviendrait alors en ${D.y2} + ${D.T2c} = ${D.year2}, du moins si l'on considère que le PIB par habitant constitue une bonne mesure du niveau de vie.
+        <p style="margin-top:.8rem;">On constate que le rattrapage s'opère ${fmtD(D.speedUp,2)} fois plus vite, alors même que le taux de croissance retenu ici n'est que ${fmtD(D.rateUp,2)} fois supérieur à celui de la sous-question précédente. ${D.speedUp > D.rateUp
+          ? `L'effet cumulatif de la croissance, de la même façon que les intérêts se composent en finance, explique cette accélération du rattrapage.`
+          : `L'écart entre les deux durées reste ici modéré, le différentiel de taux étant lui-même resserré.`}</p>
+      </div>`;
+
+      /* ---------- Perspective ---------- */
+      s += `<div class="persp-box">
+        <span class="sol-sub">Pour aller plus loin</span>
+        Ce type de calcul fournit une première approche de la question de la convergence, au cœur du modèle de Solow. La convergence dite absolue supposerait que les économies pauvres croissent mécaniquement plus vite que les économies riches, du fait de la productivité marginale décroissante du capital. Les données ne valident cette prédiction que de façon conditionnelle, c'est-à-dire à taux d'épargne, de croissance démographique et de progrès technique comparables. Le cas ${D.poor.dePrep} illustre bien cette réserve : ${D.poor.tcam < D.rich.tcam
+          ? `avec un taux de croissance inférieur à celui ${D.rich.dePrep} sur la période, elle a divergé plutôt que convergé.`
+          : `sa croissance dépasse ici celle ${D.rich.dePrep}, mais le rattrapage reste extrêmement long tant l'écart de départ est béant.`}
+        Une règle de calcul mental utile pour l'oral : la règle de 70, selon laquelle le temps de doublement vaut approximativement $70/g$ lorsque $g$ est exprimé en pourcentage. Avec ${D.rD}&nbsp;%, elle donne ${fmtD(70/D.rD,1)} ans, contre ${fmtD(D.TD,2)} par le calcul exact.
+      </div>`;
+
+      return s;
+    }
+  },
+
+  en: {
+    "htmlLang": "en",
+    "title": "Macroeconomics Simulator - Growth rate differentials",
+    "locale": "en-GB",
+    "k-badge": "GROWTH AND BUSINESS CYCLES",
+    "k-h1": "Growth rate differentials",
+    "k-sub": "© Thomas Hossen – March 7, 2026 Version",
+    "k-seed": "Seed (Optional)",
+    "k-gen": "Generate Exercise →",
+    "k-welcome": "Configure the parameters and click Generate to create a new exercise.",
+    "k-seedbadge": "Active Seed:",
+    "k-new": "↺ New Statement",
+    "k-pdf": "⬇ Export PDF",
+    "k-doc": "⬇ Export DOC",
+    "k-tag-ex": "Problem",
+    "k-cardtitle": "Compound growth and catching up",
+    "k-tag-sol": "Solution",
+    "k-cardtitle2": "Compound growth and catching up",
+    "k-work": "Assignment",
+    "showSol": "Show the solution",
+    "hideSol": "Hide the solution",
+    "docTitle": "Growth Rate Differentials Exercise",
+    "docFile": "Growth_Rate_Differentials_Exercise.doc",
+    thousands: ",",
+    decimal: ".",
+
+    zones: {
+      advanced: [
+        {name:"France",         det:"France",         loc:"in France"},
+        {name:"Sweden",         det:"Sweden",         loc:"in Sweden"},
+        {name:"Germany",        det:"Germany",        loc:"in Germany"},
+        {name:"Italy",          det:"Italy",          loc:"in Italy"},
+        {name:"Spain",          det:"Spain",          loc:"in Spain"},
+        {name:"Japan",          det:"Japan",          loc:"in Japan"},
+        {name:"Canada",         det:"Canada",         loc:"in Canada"},
+        {name:"Australia",      det:"Australia",      loc:"in Australia"},
+        {name:"United Kingdom", det:"the United Kingdom", loc:"in the United Kingdom"},
+        {name:"Denmark",        det:"Denmark",        loc:"in Denmark"},
+        {name:"Norway",         det:"Norway",         loc:"in Norway"},
+        {name:"Belgium",        det:"Belgium",        loc:"in Belgium"}
+      ],
+      fast: [
+        {name:"China",       det:"China",       loc:"in China"},
+        {name:"South Korea", det:"South Korea", loc:"in South Korea"},
+        {name:"Vietnam",     det:"Vietnam",     loc:"in Vietnam"},
+        {name:"India",       det:"India",       loc:"in India"},
+        {name:"Thailand",    det:"Thailand",    loc:"in Thailand"},
+        {name:"Indonesia",   det:"Indonesia",   loc:"in Indonesia"},
+        {name:"Botswana",    det:"Botswana",    loc:"in Botswana"}
+      ],
+      rich: [
+        {name:"North America",   det:"North America",       loc:"in North America"},
+        {name:"Western Europe",  det:"Western Europe",      loc:"in Western Europe"},
+        {name:"Northern Europe", det:"Northern Europe",     loc:"in Northern Europe"},
+        {name:"European Union",  det:"the European Union",  loc:"in the European Union"}
+      ],
+      poor: [
+        {name:"Sub-Saharan Africa", det:"Sub-Saharan Africa", loc:"in Sub-Saharan Africa"},
+        {name:"East Africa",        det:"East Africa",        loc:"in East Africa"},
+        {name:"Central Africa",     det:"Central Africa",     loc:"in Central Africa"},
+        {name:"South Asia",         det:"South Asia",         loc:"in South Asia"}
+      ],
+      world: {name:"World", det:"the world", loc:"in the world"}
+    },
+
+    context: function(D) {
+      return `
+      The table below reports GDP per capita, in constant US dollars, for the world and for ${D.rows.length - 1} geographical areas, between ${D.y0} and ${D.y1}.
+    `;
+    },
+
+    table: function(D) {
+      let head = `<tr><th style="width:46%;text-align:left;padding-left:.9rem;">GDP per capita</th><th style="width:27%;">${D.y0}</th><th style="width:27%;">${D.y1}</th></tr>`;
+      let rows = D.rows.map(z =>
+        `<tr><td class="txt-left">${z.name}</td><td class="amt">${fmtD(z.v0,1)}</td><td class="amt">${fmtD(z.v1,1)}</td></tr>`
+      ).join('');
+      return `<div class="exam-table-wrap">
+        <table class="exam-table" style="width:74%;margin:0 auto;">${head}${rows}</table>
+        <div class="table-caption">GDP per capita in constant US dollars.</div>
+    </div>`;
+    },
+
+    enonce: function(D) {
+      let h = "";
+      h += `<li>Using the table above, compute the average annual growth rate of each of the areas considered.</li>`;
+      h += `<li>With an average annual growth rate of ${D.rD}%, how many years does an economy need to double its GDP? How many years would ${D.ref.det} need, at the average annual growth rate computed in the previous question? And ${D.fast.det}?</li>`;
+      h += `<li>Now place yourself in ${D.y2}.
+        <ol class="alpha-list">
+          <li>How many times higher is GDP per capita in ${D.rich.det} than in ${D.poor.det}?</li>
+          <li>If the latter grew at ${D.rc1}% a year, how many years would it need to reach the same standard of living as ${D.rich.det}?</li>
+          <li>What if that rate rose to ${D.rc2}%? Compare the two cases. State the expression of the result without carrying out the computation.</li>
+        </ol></li>`;
+      return h;
+    },
+
+    sol: function(D) {
+      const p2 = x => fmtD(x, 2);
+      let s = "";
+
+      let liste = D.rows.map((z, i) =>
+        `<li>${z.loc}: $\\left(\\frac{${texM(z.v1,1)}}{${texM(z.v0,1)}}\\right)^{\\frac{1}{${D.n}}}-1 \\approx ${texM(z.tcam,2)}\\%$${i === D.rows.length - 1 ? '.' : ';'}</li>`
+      ).join('');
+
+      s += `<div class="calc-box">
+        <span class="sol-sub">1. Average annual growth rate between ${D.y0} and ${D.y1}</span>
+        ${D.n} years elapsed between ${D.y0} and ${D.y1}. The average annual growth rate follows from the growth factor over the whole period, of which we take the ${D.n}-th root:
+        <div class="math-formula">\\[ g = \\left(\\frac{Y_{${D.y1}}}{Y_{${D.y0}}}\\right)^{\\frac{1}{${D.n}}} - 1 \\]</div>
+        This gives:
+        <ul class="sub-list">${liste}</ul>
+        <p style="margin-top:.8rem;">The gaps look small — a few percentage points at most — but they apply over ${D.n} years: it is the compound nature of growth that turns these annual differentials into wide divergences in living standards.</p>
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span class="sol-sub">2. Doubling time of GDP</span>
+        Suppose a country's average annual growth rate is ${D.rD}%. Let $Y$ be initial GDP, assumed non-zero. We look for the number of years $T$ after which GDP has doubled and thus reached $2Y$. We must solve $(1+${D.rD}\\%)^T \\times Y = 2Y$ for $T$:
+        <div class="math-formula">\\[\\begin{aligned}
+        (1+${D.rD}\\%)^T \\times Y = 2Y
+        &\\iff (1+${texM(D.rD/100,2)})^T = 2\\\\
+        &\\iff \\ln\\left((1+${texM(D.rD/100,2)})^T\\right) = \\ln(2)\\\\
+        &\\iff T\\ln(1+${texM(D.rD/100,2)}) = \\ln(2)\\\\
+        &\\iff T = \\frac{\\ln(2)}{\\ln(${texM(1+D.rD/100,2)})} \\approx ${texM(D.TD,2)}
+        \\end{aligned}\\]</div>
+        So at an average annual rate of ${D.rD}%, GDP doubles in ${D.TDc} years.
+        <p style="margin-top:.8rem;">The average annual growth rate ${D.ref.loc} between ${D.y0} and ${D.y1} is about ${p2(D.ref.tcam)}%. Repeating the calculation with ${p2(D.ref.tcam)}% in place of ${D.rD}%, ${D.ref.det} would double its GDP in ${D.ref.Tc} years, provided the same growth regime is sustained, since $\\frac{\\ln(2)}{\\ln(${texM(1+D.ref.tcam/100,4)})} \\approx ${texM(D.ref.T,2)}$.</p>
+        <p>Likewise, the average annual growth rate ${D.fast.loc} over the period is about ${p2(D.fast.tcam)}%. The same calculation yields $\\frac{\\ln(2)}{\\ln(${texM(1+D.fast.tcam/100,4)})} \\approx ${texM(D.fast.T,2)}$: ${D.fast.det} doubles its GDP in ${D.fast.Tc} years, that is ${fmtD(D.ratioT,1)} times faster than ${D.ref.det}.</p>
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span class="sol-sub">3.a. Gap in living standards in ${D.y2}</span>
+        We estimate GDP per capita in both areas in ${D.y2} using the growth regimes found in question 1. ${D.n2} years elapsed between ${D.y0} and ${D.y2}. Given an average annual growth rate of ${p2(D.rich.tcam)}% ${D.rich.loc} and of ${p2(D.poor.tcam)}% ${D.poor.loc}, estimated GDP per capita in ${D.y2} is:
+        <div class="math-formula">\\[\\begin{aligned}
+        \\text{${D.poor.name}} &: (1+${p2(D.poor.tcam)}\\%)^{${D.n2}} \\times ${texM(D.poor.v0,1)} \\approx ${texM(D.poor.v2,1)}\\\\
+        \\text{${D.rich.name}} &: (1+${p2(D.rich.tcam)}\\%)^{${D.n2}} \\times ${texM(D.rich.v0,1)} \\approx ${texM(D.rich.v2,1)}
+        \\end{aligned}\\]</div>
+        GDP per capita ${D.rich.loc} is therefore estimated at $\\frac{${texM(D.rich.v2,1)}}{${texM(D.poor.v2,1)}} \\approx ${texM(D.ratio,2)}$ times the level ${D.poor.loc} in ${D.y2}.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span class="sol-sub">3.b. Catch-up time at ${D.rc1}%</span>
+        Assume ${D.rich.det} keeps the same growth regime, namely ${p2(D.rich.tcam)}% a year. We look for the number of years $T$ allowing ${D.poor.det} to catch up. Starting from the ${D.y2} estimates, we solve $(1+${p2(D.rich.tcam)}\\%)^T \\times ${texM(D.rich.v2,1)} = (1+${D.rc1}\\%)^T \\times ${texM(D.poor.v2,1)}$:
+        <div class="math-formula">\\[\\begin{aligned}
+        (1+${p2(D.rich.tcam)}\\%)^T \\times ${texM(D.rich.v2,1)} = (1+${D.rc1}\\%)^T \\times ${texM(D.poor.v2,1)}
+        &\\iff ${texM(D.richMult,4)}^T \\times ${texM(D.rich.v2,1)} = ${texM(1+D.rc1/100,2)}^T \\times ${texM(D.poor.v2,1)}\\\\
+        &\\iff \\frac{${texM(D.richMult,4)}^T}{${texM(1+D.rc1/100,2)}^T} = \\frac{${texM(D.poor.v2,1)}}{${texM(D.rich.v2,1)}}\\\\
+        &\\iff \\left(\\frac{${texM(D.richMult,4)}}{${texM(1+D.rc1/100,2)}}\\right)^T = \\frac{${texM(D.poor.v2,1)}}{${texM(D.rich.v2,1)}}\\\\
+        &\\iff T\\ln\\left(\\frac{${texM(D.richMult,4)}}{${texM(1+D.rc1/100,2)}}\\right) = \\ln\\left(\\frac{${texM(D.poor.v2,1)}}{${texM(D.rich.v2,1)}}\\right)\\\\
+        &\\iff T = \\frac{\\ln(${texM(D.poor.v2,1)}) - \\ln(${texM(D.rich.v2,1)})}{\\ln(${texM(D.richMult,4)}) - \\ln(${texM(1+D.rc1/100,2)})} \\approx ${texM(D.T1,2)}
+        \\end{aligned}\\]</div>
+        So if the average annual growth rate ${D.poor.loc} reaches ${D.rc1}% from ${D.y2} onwards, while ${D.rich.det} sustains ${p2(D.rich.tcam)}%, one would have to wait until ${D.y2} + ${D.T1c} = ${D.year1} for ${D.poor.det} to reach the same standard of living as ${D.rich.det}.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span class="sol-sub">3.c. Catch-up time at ${D.rc2}%</span>
+        Now suppose ${D.poor.det} posts an average annual growth rate of ${D.rc2}%. Repeating the previous computation with ${texM(1+D.rc2/100,2)} in place of ${texM(1+D.rc1/100,2)}, and keeping the same notation:
+        <div class="math-formula">\\[ T = \\frac{\\ln(${texM(D.poor.v2,1)}) - \\ln(${texM(D.rich.v2,1)})}{\\ln(${texM(D.richMult,4)}) - \\ln(${texM(1+D.rc2/100,2)})} \\approx ${texM(D.T2,2)} \\]</div>
+        Catch-up would then occur in ${D.y2} + ${D.T2c} = ${D.year2}, at least if GDP per capita is taken as a good measure of living standards.
+        <p style="margin-top:.8rem;">Catch-up is ${fmtD(D.speedUp,2)} times faster, even though the growth rate used here is only ${fmtD(D.rateUp,2)} times the previous one. ${D.speedUp > D.rateUp
+          ? `The compounding of growth, much as interest compounds in finance, accounts for this acceleration.`
+          : `The gap between the two durations remains moderate here, since the rate differential itself is narrow.`}</p>
+      </div>`;
+
+      s += `<div class="persp-box">
+        <span class="sol-sub">Going further</span>
+        This kind of calculation gives a first handle on convergence, a central question in the Solow model. Absolute convergence would imply that poor economies mechanically grow faster than rich ones, owing to the diminishing marginal productivity of capital. The data support that prediction only conditionally, that is, at comparable saving rates, population growth and technical progress. The case of ${D.poor.det} illustrates the caveat: ${D.poor.tcam < D.rich.tcam
+          ? `growing more slowly than ${D.rich.det} over the period, it diverged rather than converged.`
+          : `its growth does exceed that of ${D.rich.det} here, yet catch-up remains extremely slow given how wide the initial gap is.`}
+        A useful rule of thumb for oral exams is the rule of 70: doubling time is approximately $70/g$ when $g$ is expressed in percent. At ${D.rD}%, it gives ${fmtD(70/D.rD,1)} years, against ${fmtD(D.TD,2)} by exact computation.
+      </div>`;
+
+      return s;
+    }
+  }
+};
+
+/* ============================================================
+   GESTION DE LA LANGUE  /  LANGUAGE HANDLING
+   ============================================================ */
+let LANG = 'fr';
+
+function detectLang() {
+    try {
+        const q = new URLSearchParams(window.location.search).get('lang');
+        if (q && I18N[q.toLowerCase()]) return q.toLowerCase();
+    } catch (e) {}
+    const h = (window.location.hash || '').replace('#', '').toLowerCase();
+    if (I18N[h]) return h;
+    return 'fr';
+}
+
+function applyLang() {
+    const D = I18N[LANG];
+    document.documentElement.lang = D.htmlLang;
+    document.title = D.title;
+
+    document.querySelectorAll('[data-k]').forEach(function (el) {
+        const key = el.getAttribute('data-k');
+        if (D[key] !== undefined) el.innerHTML = D[key];
+    });
+
+    const btn = document.getElementById('toggle-btn');
+    if (btn) btn.innerText = document.getElementById('sol-card').classList.contains('visible') ? D.hideSol : D.showSol;
+
+    document.getElementById('flag-fr').classList.toggle('active', LANG === 'fr');
+    document.getElementById('flag-en').classList.toggle('active', LANG === 'en');
+}
+
+function setLang(lang) {
+    if (!I18N[lang] || lang === LANG) return;
+    LANG = lang;
+
+    try {
+        const u = new URL(window.location.href);
+        u.searchParams.set('lang', lang);
+        history.replaceState(null, '', u.toString());
+    } catch (e) {}
+
+    applyLang();
+
+    if (document.getElementById('ex-area').style.display !== 'none') {
+        const solWasVisible = document.getElementById('sol-card').classList.contains('visible');
+        generateExercise(false);
+        if (solWasVisible) toggleSol();
+    }
+}
+
+// --- PRNG (Mulberry32) ---
+let currentSeed = 0;
+function seedPRNG(seed) {
+    return function() {
+      let t = seed += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+let random = Math.random;
+
+function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
+const rnd = (a, b) => a + random() * (b - a);
+const r1  = x => Math.round(x * 10) / 10;
+const r2  = x => Math.round(x * 100) / 100;
+
+function texI(num) {
+    let sign = num < 0 ? "-" : "";
+    let absNum = Math.round(Math.abs(num));
+    return sign + absNum.toString().replace(/\B(?=(\d{3})+(?!\d))/g, I18N[LANG].thousands);
+}
+function texM(num, dec) {
+    let sign = num < 0 ? "-" : "";
+    let parts = Math.abs(num).toFixed(dec).split('.');
+    let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, I18N[LANG].thousands);
+    return sign + intPart + I18N[LANG].decimal + parts[1];
+}
+function fmt(num) {
+    return num.toLocaleString(I18N[LANG].locale);
+}
+function fmtD(num, dec) {
+    return num.toLocaleString(I18N[LANG].locale, {minimumFractionDigits: dec, maximumFractionDigits: dec});
+}
+
+/* Formes contractees "de + determinant" et "que + determinant" (francais) */
+function dePrep(det, lang) {
+    if (lang !== 'fr') return det;
+    if (det.startsWith("l'")) return "de " + det;
+    if (det.startsWith("la "))  return "de la " + det.slice(3);
+    if (det.startsWith("le "))  return "du " + det.slice(3);
+    if (det.startsWith("les ")) return "des " + det.slice(4);
+    return "de " + det;
+}
+function aPrep(det, lang) {
+    if (lang !== 'fr') return "for " + det;
+    if (det.startsWith("l'"))   return "à " + det;
+    if (det.startsWith("la "))  return "à la " + det.slice(3);
+    if (det.startsWith("le "))  return "au " + det.slice(3);
+    if (det.startsWith("les ")) return "aux " + det.slice(4);
+    return "à " + det;
+}
+function quePrep(det, lang) {
+    if (lang !== 'fr') return "than " + det;
+    return "que " + det;
+}
+/* Pronom sujet : "il" pour les determinants masculins, "elle" sinon */
+function pronom(det, lang) {
+    if (lang !== 'fr') return "it";
+    return (det.startsWith("le ") || det.startsWith("les ")) ? "il" : "elle";
+}
+
+/* ============================================================
+   GENERATION DE L'EXERCICE  /  EXERCISE GENERATION
+   ============================================================ */
+function generateExercise(forceNew = false) {
+    if (forceNew) {
+        document.getElementById('seed-input').value = "";
+    }
+    let seedVal = document.getElementById('seed-input').value;
+    currentSeed = seedVal ? parseInt(seedVal) : Math.floor(Math.random() * 99999999);
+    document.getElementById('seed-disp').innerText = currentSeed;
+    document.getElementById('seed-input').value = currentSeed;
+    random = seedPRNG(currentSeed);
+
+    const DIC = I18N[LANG];
+    const Z = DIC.zones;
+
+    let y0, y1, n, y2, n2, rD, rc1, rc2;
+    let idxRef, idxOther, idxFast, idxRich, idxPoor, order;
+    let raw, ok = false, guard = 0;
+
+    do {
+        guard++;
+        ok = true;
+
+        /* --- calendrier --- */
+        y0 = randInt(1950, 1972);
+        y1 = randInt(2012, 2024);
+        n  = y1 - y0;
+        y2 = y1 - randInt(1, 5);
+        n2 = y2 - y0;
+        if (n < 48 || n > 70) { ok = false; continue; }
+
+        /* --- choix des zones (indices communs aux deux langues) --- */
+        idxRef   = randInt(0, Z.advanced.length - 1);
+        do { idxOther = randInt(0, Z.advanced.length - 1); } while (idxOther === idxRef);
+        idxFast  = randInt(0, Z.fast.length - 1);
+        idxRich  = randInt(0, Z.rich.length - 1);
+        idxPoor  = randInt(0, Z.poor.length - 1);
+
+        /* --- niveaux de depart et regimes de croissance --- */
+        raw = {
+            ref:   {v0: r1(rnd( 9000, 15000)), g: rnd(1.85, 2.65)},
+            other: {v0: r1(rnd(12000, 20000)), g: rnd(1.70, 2.45)},
+            fast:  {v0: r1(rnd(  150,   620)), g: rnd(5.40, 7.60)},
+            rich:  {v0: r1(rnd(14000, 19500)), g: rnd(1.80, 2.35)},
+            poor:  {v0: r1(rnd(  780,  1450)), g: rnd(0.35, 1.15)},
+            world: {v0: r1(rnd( 2900,  4600)), g: rnd(1.55, 2.25)}
+        };
+        for (const k in raw) raw[k].v1 = r1(raw[k].v0 * Math.pow(1 + raw[k].g / 100, n));
+
+        /* --- taux hypothetiques --- */
+        rD  = randInt(4, 7);
+        rc1 = randInt(4, 6);
+        rc2 = rc1 + randInt(2, 4);
+
+        /* --- garde-fous --- */
+        if (raw.fast.v1 > raw.ref.v1)        ok = false;   /* le rattrapant ne doit pas depasser la reference */
+        if (raw.rich.v1 < raw.other.v1)      ok = false;   /* la zone riche reste au-dessus des pays avances */
+        if (raw.poor.v1 > 3200)              ok = false;
+        if (raw.world.v1 < raw.fast.v1)      ok = false;
+        if (raw.poor.g >= raw.rich.g - 0.4)  ok = false;   /* divergence nette a commenter */
+        if (rc1 <= raw.rich.g + 1.2)         ok = false;   /* convergence effective */
+
+        /* --- ordre d'affichage : zones melangees, monde en dernier --- */
+        order = ['ref', 'fast', 'other', 'poor', 'rich'];
+        for (let i = order.length - 1; i > 0; i--) {
+            const j = randInt(0, i);
+            const t = order[i]; order[i] = order[j]; order[j] = t;
+        }
+
+    } while (!ok && guard < 400);
+
+    /* ============================================================
+       CONSTRUCTION DE L'OBJET DE DONNEES
+       ============================================================ */
+    const labelOf = {
+        ref:   Z.advanced[idxRef],
+        other: Z.advanced[idxOther],
+        fast:  Z.fast[idxFast],
+        rich:  Z.rich[idxRich],
+        poor:  Z.poor[idxPoor],
+        world: Z.world
+    };
+
+    const build = key => {
+        const lab = labelOf[key], r = raw[key];
+        const tcam = (Math.pow(r.v1 / r.v0, 1 / n) - 1) * 100;
+        const tcamR = r2(tcam);
+        const T = Math.log(2) / Math.log(1 + tcamR / 100);
+        return {
+            key: key, name: lab.name, det: lab.det, loc: lab.loc,
+            dePrep: dePrep(lab.det, LANG), aPrep: aPrep(lab.det, LANG), quePrep: quePrep(lab.det, LANG), pro: pronom(lab.det, LANG),
+            v0: r.v0, v1: r.v1, tcam: tcamR, T: T, Tc: Math.ceil(T)
+        };
+    };
+
+    const ref = build('ref'), other = build('other'), fast = build('fast');
+    const rich = build('rich'), poor = build('poor'), world = build('world');
+    const byKey = {ref: ref, other: other, fast: fast, rich: rich, poor: poor, world: world};
+
+    const rows = order.map(k => byKey[k]).concat([world]);
+
+    /* Q2 */
+    const TD = Math.log(2) / Math.log(1 + rD / 100);
+
+    /* Q3 : estimations pour y2, a partir des TCAM arrondis */
+    rich.v2 = r1(rich.v0 * Math.pow(1 + rich.tcam / 100, n2));
+    poor.v2 = r1(poor.v0 * Math.pow(1 + poor.tcam / 100, n2));
+    const ratio = rich.v2 / poor.v2;
+
+    const richMult = 1 + rich.tcam / 100;
+    const T1 = (Math.log(poor.v2) - Math.log(rich.v2)) / (Math.log(richMult) - Math.log(1 + rc1 / 100));
+    const T2 = (Math.log(poor.v2) - Math.log(rich.v2)) / (Math.log(richMult) - Math.log(1 + rc2 / 100));
+
+    const D = {
+        y0: y0, y1: y1, n: n, y2: y2, n2: n2,
+        rD: rD, TD: TD, TDc: Math.ceil(TD),
+        rc1: rc1, rc2: rc2,
+        rows: rows,
+        ref: ref, other: other, fast: fast, rich: rich, poor: poor, world: world,
+        ratioT: ref.T / fast.T,
+        ratio: ratio, richMult: richMult,
+        T1: T1, T1c: Math.ceil(T1), year1: y2 + Math.ceil(T1),
+        T2: T2, T2c: Math.ceil(T2), year2: y2 + Math.ceil(T2),
+        speedUp: T1 / T2, rateUp: rc2 / rc1
+    };
+
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('ex-area').style.display = 'block';
+    document.getElementById('sol-card').classList.remove('visible');
+    document.getElementById('toggle-btn').innerText = DIC.showSol;
+    document.getElementById('toggle-btn').classList.remove('shown');
+
+    document.getElementById('context-text').innerHTML = DIC.context(D);
+    document.getElementById('enonce-table-container').innerHTML = DIC.table(D);
+    document.getElementById('additional-info').innerHTML = "";
+    document.getElementById('events-list').innerHTML = DIC.enonce(D);
+    document.getElementById('sol-content').innerHTML = DIC.sol(D);
+
+    if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
+        MathJax.typesetPromise().catch(function (err) { console.error('MathJax :', err); });
+    }
+}
+
+function toggleSol() {
+    let solCard = document.getElementById('sol-card');
+    let btn = document.getElementById('toggle-btn');
+    if (solCard.classList.contains('visible')) {
+        solCard.classList.remove('visible');
+        btn.innerText = I18N[LANG].showSol;
+        btn.classList.remove('shown');
+    } else {
+        solCard.classList.add('visible');
+        btn.innerText = I18N[LANG].hideSol;
+        btn.classList.add('shown');
+    }
+}
+
+function exportWord() {
+    let content = document.getElementById('ex-area').cloneNode(true);
+    let actions = content.querySelector('.top-actions');
+    if (actions) actions.parentNode.removeChild(actions);
+    let toggle = content.querySelector('.sol-toggle-wrap');
+    if (toggle) toggle.parentNode.removeChild(toggle);
+    let solCard = content.querySelector('#sol-card');
+    if (solCard) solCard.style.display = 'block';
+
+    let html = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <meta charset='utf-8'>
+            <title>${I18N[LANG].docTitle}</title>
+            <style>
+                body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5; text-align: justify; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 10pt; }
+                th, td { border: 1px solid #000; padding: 4px; }
+                th { background-color: #f2f2f2; text-align: center; font-weight: bold; }
+                .txt-left { text-align: left; font-weight: bold; }
+                .amt { text-align: right; white-space: nowrap; }
+                .calc-box, .method-box, .persp-box { border: 1px solid #000; padding: 10px; margin-bottom: 15px; background-color: #f9f9f9; text-align: justify; }
+                .math-formula { text-align: center; font-style: italic; margin: 10px 0; }
+                .table-caption { font-size: 9pt; font-style: italic; text-align: center; }
+                ul, ol { text-align: justify; }
+                li { margin-bottom: 5px; }
+            </style>
+        </head>
+        <body>
+            ${content.innerHTML}
+        </body>
+        </html>
+    `;
+
+    let blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    let url = URL.createObjectURL(blob);
+    let link = document.createElement('a');
+    link.href = url;
+    link.download = I18N[LANG].docFile;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+/* Initialisation */
+LANG = detectLang();
+applyLang();
+</script>
+</body>
+</html>
