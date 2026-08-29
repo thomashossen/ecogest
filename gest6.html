@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Comptabilité - Choix de la structure juridique</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7;text-align:justify;}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 1.5rem;border-bottom:3px solid var(--gold);text-align:left;}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+.ctrls{display:flex;gap:1.1rem;flex-wrap:wrap;align-items:flex-end;background:rgba(255,255,255,.03);padding:1rem 1.5rem;border-radius:6px;border:1px solid rgba(255,255,255,.1)}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.6)}
+.ctrl-inp, .ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.4rem .7rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none;transition:border-color .2s}
+.ctrl-inp:focus, .ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.ctrl-inp.w90{width:90px}
+.ctrl-sep{width:100%;height:1px;background:rgba(201,149,42,.22);margin:.15rem 0 .1rem}
+.ctrl-note{font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.06em;color:rgba(250,247,240,.42);width:100%;margin-bottom:-.2rem}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.5rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;transition:background .18s;margin-left:auto}
+.btn-gen:hover{background:var(--gold-light)}
+.btn-preset{background:transparent;border:1px solid rgba(201,149,42,.5);color:var(--gold-light);padding:.42rem 1rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.85rem;font-weight:600;transition:all .18s}
+.btn-preset:hover{background:rgba(201,149,42,.15);border-color:var(--gold-light)}
+
+/* MAIN & CARDS */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:700}
+
+.top-actions{display:flex;gap:.5rem;}
+.btn-action{background:#fff;border:1px solid var(--border);color:var(--navy);padding:.4rem .8rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.85rem;font-weight:600;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.btn-action:hover{border-color:var(--navy);background:var(--cream-dark);}
+
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem;text-align:left;}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+.event-list{list-style:none;}
+.event-list li{margin-bottom:0.4rem;padding-left:1.5rem;position:relative;font-size:.95rem;text-align:justify}
+.event-list li::before{content:"•";position:absolute;left:0;color:var(--gold);font-size:1.5rem;line-height:1}
+.highlight{font-family:'JetBrains Mono',monospace;font-size:.85rem;font-weight:600;background:var(--cream-dark);padding:2px 6px;border-radius:3px;color:var(--navy)}
+
+/* EXAM TABLE */
+.exam-table{width:100%;border-collapse:collapse;margin:1.5rem 0;font-size:.9rem;font-family:'Source Serif 4',serif;}
+.exam-table th, .exam-table td{border:1px solid var(--border);padding:.6rem;text-align:center;vertical-align:middle;}
+.exam-table th{background:var(--navy);color:var(--cream);font-weight:600;}
+.exam-table .txt-left{text-align:left;font-weight:600;color:var(--navy);}
+.exam-table .amt{font-family:'JetBrains Mono',monospace;text-align:right;white-space:nowrap;}
+.exam-table .pct{font-family:'JetBrains Mono',monospace;text-align:center;width:110px;background:var(--cream-dark);}
+.exam-table tr.total-row td{background:var(--cream-dark);font-weight:700;color:var(--navy);}
+
+/* SOLUTION TOGGLE */
+.sol-toggle-wrap{text-align:left; margin: 1.5rem 0 0 0;}
+.btn-toggle{background:transparent;border:2px solid var(--green);border-bottom:none;color:var(--green);font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;padding:.5rem 1.5rem;border-radius:4px 4px 0 0;cursor:pointer;transition:all .2s; position:relative; z-index:2; top:2px;}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--green);color:var(--cream)}
+.sol-card{border-top:2px solid var(--green);display:none; border-radius: 0 6px 6px 6px; position:relative; z-index:1;}
+.sol-card.visible{display:block;animation:fi .4s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+
+.calc-box{background:#f9fcf9;border:1px solid #c8e6c9;padding:1.2rem;border-radius:4px;margin-bottom:1rem;font-size:.9rem;color:var(--text);line-height:1.6;text-align:justify;}
+.calc-box strong{color:var(--green);font-family:'JetBrains Mono',monospace;}
+.calc-box .box-title{color:var(--navy);font-weight:600;display:block;margin-bottom:8px;}
+
+.formula{display:block;text-align:center;font-family:'JetBrains Mono',monospace;font-size:.86rem;background:#fff;border:1px solid #c8e6c9;border-radius:3px;padding:.6rem .8rem;margin:.8rem 0;color:var(--navy);overflow-x:auto;white-space:nowrap;}
+
+.verdict-box{border-left:4px solid var(--gold);background:var(--cream-dark);padding:1rem 1.3rem;border-radius:0 4px 4px 0;margin:1.2rem 0;font-size:.95rem;}
+.verdict-box .v-title{font-family:'JetBrains Mono',monospace;font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:.3rem;}
+.verdict-box .v-main{font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:700;color:var(--navy);}
+
+.caveat-list{list-style:none;margin-top:.6rem;}
+.caveat-list li{margin-bottom:.5rem;padding-left:1.3rem;position:relative;font-size:.88rem;text-align:justify;}
+.caveat-list li::before{content:"—";position:absolute;left:0;color:var(--gold);}
+
+@media print{
+  body{background:#fff;}
+  header, .ctrls, .sol-toggle-wrap, .top-actions {display:none !important;}
+  .card{box-shadow:none; border:1px solid var(--border); margin-bottom:2rem;}
+  .sol-card{display:block !important; border-top:2px solid var(--green);}
+  #ex-area {display:block !important;}
+}
+
+/* --- Selecteur de langue / Language switch --- */
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem}
+.header-top .header-badge{margin-bottom:0}
+.lang-switch{display:flex;gap:.45rem;flex-shrink:0}
+.flag-btn{background:rgba(255,255,255,.06);border:1px solid rgba(201,149,42,.35);border-radius:3px;padding:3px;cursor:pointer;line-height:0;opacity:.5;transition:opacity .2s,border-color .2s,transform .15s}
+.flag-btn:hover{opacity:1;transform:translateY(-1px)}
+.flag-btn.active{opacity:1;border-color:var(--gold-light);box-shadow:0 0 0 1px rgba(232,184,75,.35)}
+.flag-btn svg{display:block;width:30px;height:20px;border-radius:1px}
+@media print{ .lang-switch{display:none !important;} }
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-top">
+    <div class="header-badge" data-k="k-badge">INFORMATION COMPTABLE ET FINANCIÈRE</div>
+    <div class="lang-switch">
+      <button type="button" class="flag-btn active" id="flag-fr" onclick="setLang('fr')" title="Français" aria-label="Français"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="20" height="40" fill="#002654"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ED2939"/></svg></button>
+      <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
+    </div>
+  </div>
+  <h1 data-k="k-h1">Choix de la structure juridique</h1>
+  <p class="subtitle" data-k="k-sub">© Thomas Hossen – Version du 7 mars 2026</p>
+
+  <div class="ctrls">
+    <div class="ctrl-g">
+      <span class="ctrl-lbl" data-k="k-seed">Seed (Optionnel)</span>
+      <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999">
+    </div>
+    <button type="button" class="btn-preset" onclick="loadPreset()"><span data-k="k-preset">Valeurs du cours</span></button>
+    <button class="btn-gen" onclick="generateExercise(false)"><span data-k="k-gen">Générer l'exercice →</span></button>
+
+    <div class="ctrl-sep"></div>
+    <div class="ctrl-note" data-k="k-paramnote">PARAMÈTRES FISCAUX — LAISSER VIDE POUR UN TIRAGE ALÉATOIRE</div>
+
+    <div class="ctrl-g">
+      <span class="ctrl-lbl" data-k="k-tis">Taux d'IS (%)</span>
+      <input class="ctrl-inp w90" type="number" id="p-is" placeholder="auto" step="0.1" min="0" max="99">
+    </div>
+    <div class="ctrl-g">
+      <span class="ctrl-lbl" data-k="k-tflat">Flat tax (%)</span>
+      <input class="ctrl-inp w90" type="number" id="p-flat" placeholder="auto" step="0.1" min="0" max="99">
+    </div>
+    <div class="ctrl-g">
+      <span class="ctrl-lbl" data-k="k-tmicro">Taux micro (%)</span>
+      <input class="ctrl-inp w90" type="number" id="p-micro" placeholder="auto" step="0.1" min="0" max="99">
+    </div>
+    <div class="ctrl-g">
+      <span class="ctrl-lbl" data-k="k-tir">Libératoire IR (%)</span>
+      <input class="ctrl-inp w90" type="number" id="p-ir" placeholder="auto" step="0.1" min="0" max="99">
+    </div>
+    <div class="ctrl-g">
+      <span class="ctrl-lbl" data-k="k-ttva">Taux de TVA (%)</span>
+      <input class="ctrl-inp w90" type="number" id="p-tva" placeholder="auto" step="0.1" min="0" max="99">
+    </div>
+    <div class="ctrl-g">
+      <span class="ctrl-lbl" data-k="k-seuil">Seuil franchise TVA (€)</span>
+      <input class="ctrl-inp w120" type="number" id="p-seuil" placeholder="auto" step="100" min="0">
+    </div>
+
+    <div class="ctrl-sep"></div>
+    <div class="ctrl-note" data-k="k-casenote">SITUATION DE L'ENTREPRENEUR — LAISSER VIDE POUR UN TIRAGE ALÉATOIRE</div>
+
+    <div class="ctrl-g">
+      <span class="ctrl-lbl" data-k="k-ca">Chiffre d'affaires HT (€)</span>
+      <input class="ctrl-inp w120" type="number" id="p-ca" placeholder="auto" step="100" min="0">
+    </div>
+    <div class="ctrl-g">
+      <span class="ctrl-lbl" data-k="k-ch">Charges HT (€)</span>
+      <input class="ctrl-inp w120" type="number" id="p-ch" placeholder="auto" step="10" min="0">
+    </div>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" style="text-align:center; padding:4rem; color:var(--text-muted); font-style:italic;">
+    <span data-k="k-welcome">Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.</span>
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="seed-badge"><span data-k="k-seedbadge">Seed active :</span> <span id="seed-disp"></span></div>
+      <div class="top-actions">
+        <button class="btn-action" onclick="generateExercise(true)"><span data-k="k-new">↺ Nouvel énoncé</span></button>
+        <button class="btn-action" onclick="window.print()"><span data-k="k-pdf">⬇ Exporter PDF</span></button>
+        <button class="btn-action" onclick="exportWord()"><span data-k="k-doc">⬇ Exporter DOC</span></button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="tag" data-k="k-tag-ex">Énoncé</span><h2 data-k="k-cardtitle">SASU contre micro-entreprise</h2></div>
+      <div class="card-body">
+        <div class="context-block" id="context-text"></div>
+        <p style="margin-bottom:.4rem; font-weight:600; color:var(--navy); text-align:left;" data-k="k-params">Paramètres fiscaux et sociaux applicables</p>
+        <table class="exam-table" id="params-table"></table>
+        <p style="margin-bottom:1rem; font-weight:600; color:var(--navy); text-align:left;" data-k="k-data">Situation de l'entrepreneur</p>
+        <ul class="event-list" id="events-list"></ul>
+        <p style="margin-top:1.5rem; font-weight:600; color:var(--red); text-align:left;" data-k="k-work">Travail à faire</p>
+        <p id="question-text" style="font-style:italic; text-align:justify;"></p>
+      </div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag" data-k="k-tag-sol">Corrigé</span><h2 data-k="k-cardtitle2">SASU contre micro-entreprise</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+/* ============================================================
+   DICTIONNAIRE BILINGUE  /  BILINGUAL DICTIONARY
+   ============================================================ */
+const I18N = {
+
+  fr: {
+    "htmlLang": "fr",
+    "title": "Simulateur Comptabilité - Choix de la structure juridique",
+    "locale": "fr-FR",
+    "k-badge": "INFORMATION COMPTABLE ET FINANCIÈRE",
+    "k-h1": "Choix de la structure juridique",
+    "k-sub": "© Thomas Hossen – Version du 7 mars 2026",
+    "k-seed": "Seed (Optionnel)",
+    "k-preset": "Valeurs du cours",
+    "k-gen": "Générer l'exercice →",
+    "k-paramnote": "PARAMÈTRES FISCAUX — LAISSER VIDE POUR UN TIRAGE ALÉATOIRE",
+    "k-tis": "Taux d'IS (%)",
+    "k-tflat": "Flat tax (%)",
+    "k-tmicro": "Taux micro (%)",
+    "k-tir": "Libératoire IR (%)",
+    "k-ttva": "Taux de TVA (%)",
+    "k-seuil": "Seuil franchise TVA (€)",
+    "k-casenote": "SITUATION DE L'ENTREPRENEUR — LAISSER VIDE POUR UN TIRAGE ALÉATOIRE",
+    "k-ca": "Chiffre d'affaires HT (€)",
+    "k-ch": "Charges HT (€)",
+    "k-welcome": "Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.",
+    "k-seedbadge": "Seed active :",
+    "k-new": "↺ Nouvel énoncé",
+    "k-pdf": "⬇ Exporter PDF",
+    "k-doc": "⬇ Exporter DOC",
+    "k-tag-ex": "Énoncé",
+    "k-cardtitle": "SASU contre micro-entreprise",
+    "k-tag-sol": "Corrigé",
+    "k-cardtitle2": "SASU contre micro-entreprise",
+    "k-params": "Paramètres fiscaux et sociaux applicables",
+    "k-data": "Situation de l'entrepreneur",
+    "k-work": "Travail à faire",
+    "showSol": "Afficher le corrigé",
+    "hideSol": "Masquer le corrigé",
+    "docTitle": "Exercice Comptabilité de Gestion",
+    "docFile": "Exercice_Structure_Juridique.doc",
+
+    activities: [
+      "de conseil en systèmes d'information",
+      "de conseil en stratégie digitale",
+      "de développement logiciel sur mesure",
+      "de traduction technique spécialisée",
+      "de formation professionnelle continue"
+    ],
+    firstNames: ["Camille", "Julien", "Léa", "Mathieu", "Sarah", "Antoine"],
+
+    paramsTable: function(D) {
+      return `
+      <tr>
+        <th style="text-align:left">Paramètre</th>
+        <th>Valeur</th>
+      </tr>
+      <tr><td class="txt-left">Taux d'impôt sur les sociétés (IS)</td><td class="pct">${fmtPct(D.tIS)}</td></tr>
+      <tr><td class="txt-left">Flat tax sur les dividendes</td><td class="pct">${fmtPct(D.tFlat)}</td></tr>
+      <tr><td class="txt-left">Cotisations sociales du micro-entrepreneur (sur CA)</td><td class="pct">${fmtPct(D.tMicro)}</td></tr>
+      <tr><td class="txt-left">Versement libératoire de l'impôt sur le revenu (sur CA)</td><td class="pct">${fmtPct(D.tIR)}</td></tr>
+      <tr><td class="txt-left">Taux de TVA applicable aux charges</td><td class="pct">${fmtPct(D.tTVA)}</td></tr>
+      <tr><td class="txt-left">Seuil de chiffre d'affaires de la franchise en base de TVA</td><td class="pct">${formatMoney(D.seuilTVA)}</td></tr>
+      `;
+    },
+
+    context: function(D) {
+      return `
+      <strong>${D.prenom}</strong> souhaite se lancer dans une activité ${D.activite} et hésite entre deux structures juridiques : la <strong>société par actions simplifiée unipersonnelle</strong> (SASU), soumise aux règles comptables du PCG, et le régime de la <strong>micro-entreprise</strong>.
+      <br><br>
+      La SASU est soumise à l'impôt sur les sociétés (IS) sur son résultat courant. Une fois cet impôt payé, l'actionnaire unique doit encore s'acquitter de la <em>flat tax</em> sur les dividendes qu'il se verse : il y a donc une double imposition. Le micro-entrepreneur, à l'inverse, dégage des « revenus mixtes » — il est à la fois personne morale (en tant qu'entreprise) et personne physique — de sorte qu'il n'y a pas de double imposition. Mais il ne peut ni déduire ses charges, ni récupérer la TVA supportée sur celles-ci tant qu'il reste sous le seuil de la franchise en base.
+      `;
+    },
+
+    enonce: function(D) {
+      let h = "";
+      h += `<li>Le chiffre d'affaires annuel hors taxes prévisionnel (noté CA) s'élève à <span class="highlight">${formatMoney(D.ca)}</span>.</li>`;
+      h += `<li>Le montant total hors taxes des charges d'exploitation (noté CH) est estimé à <span class="highlight">${formatMoney(D.ch)}</span>, soit ${fmtPct(D.chargeRatioPct)} du chiffre d'affaires.</li>`;
+      h += `<li>L'actionnaire unique de la SASU ne serait pas salarié de la société : il se rémunérerait exclusivement en dividendes.</li>`;
+      if (D.franchise) {
+        h += `<li>Le chiffre d'affaires prévisionnel restant inférieur au seuil de ${formatMoney(D.seuilTVA)}, le micro-entrepreneur pourrait facturer ses prestations <strong>sans TVA</strong> (franchise en base), mais supporterait en contrepartie la TVA de ${fmtPct(D.tTVA)} sur ses propres charges sans pouvoir la récupérer.</li>`;
+      } else {
+        h += `<li>Le chiffre d'affaires prévisionnel <strong>dépassant</strong> le seuil de ${formatMoney(D.seuilTVA)}, le micro-entrepreneur sortirait de la franchise en base : il facturerait ses prestations avec TVA et pourrait alors récupérer la TVA supportée sur ses charges.</li>`;
+      }
+      return h;
+    },
+
+    question: function(D) {
+      return `À partir de quel montant de charges, relativement au chiffre d'affaires, la SASU devient-elle <em>a priori</em> plus rentable que la micro-entreprise ? Déterminez ce seuil, puis appliquez-le à la situation de ${D.prenom} en calculant, pour chaque structure, le montant qu'elle ou il récupérerait effectivement sur son compte bancaire personnel. Commentez le résultat.`;
+    },
+
+    sol: function(D) {
+      let h = "";
+
+      /* --- Étape 1 : la SASU --- */
+      h += `<div class="calc-box">
+        <span class="box-title">Étape 1 — Ce que récupère l'actionnaire unique de la SASU</span>
+        Le résultat courant de la société est la différence entre le chiffre d'affaires et les charges, que la SASU peut intégralement déduire : CA − CH. Ce résultat subit d'abord l'impôt sur les sociétés au taux de ${fmtPct(D.tIS)}, puis les dividendes distribués subissent la <em>flat tax</em> au taux de ${fmtPct(D.tFlat)}. Le montant qui arrive <em>in fine</em> sur le compte personnel de l'actionnaire vérifie donc :
+        <span class="formula">(1 − ${fmtDec(D.tFlat/100)}) × (1 − ${fmtDec(D.tIS/100)}) × (CA − CH) = ${fmtDec(D.k)} × (CA − CH)</span>
+        Autrement dit, l'actionnaire ne récupère dans sa poche que ${fmtPct(D.k*100)} du résultat courant de l'entreprise.
+      </div>`;
+
+      /* --- Étape 2 : la micro-entreprise --- */
+      h += `<div class="calc-box">
+        <span class="box-title">Étape 2 — Ce que récupère le micro-entrepreneur</span>
+        Le micro-entrepreneur est imposé <strong>sur son chiffre d'affaires</strong> et non sur son résultat : il supporte ${fmtPct(D.tMicro)} de cotisations sociales et ${fmtPct(D.tIR)} au titre du versement libératoire de l'impôt sur le revenu, soit ${fmtPct(D.tMicro)} + ${fmtPct(D.tIR)} = ${fmtPct(D.tMicro + D.tIR)} du CA. ${D.franchise
+          ? `Il ne peut par ailleurs déduire aucune charge, et supporte la TVA de ${fmtPct(D.tTVA)} sur celles-ci sans pouvoir la récupérer : ses charges lui coûtent donc ${fmtDec(D.chargeMult)} × CH.`
+          : `Il ne peut déduire aucune charge de son assiette d'imposition, mais, étant sorti de la franchise en base, il récupère la TVA supportée sur ses charges : celles-ci lui coûtent donc leur montant hors taxes, soit CH.`}
+        <span class="formula">(1 − ${fmtDec(D.tMicro/100)} − ${fmtDec(D.tIR/100)}) × CA − ${fmtDec(D.chargeMult)} × CH = ${fmtDec(D.microNetRate)} × CA − ${fmtDec(D.chargeMult)} × CH</span>
+      </div>`;
+
+      /* --- Étape 3 : le seuil d'indifférence --- */
+      h += `<div class="calc-box">
+        <span class="box-title">Étape 3 — Détermination du seuil d'indifférence</span>
+        Il est plus rentable de choisir la SASU plutôt que la micro-entreprise si, et seulement si, le montant récupéré en micro-entreprise est inférieur à celui récupéré en SASU :
+        <span class="formula">${fmtDec(D.microNetRate)} × CA − ${fmtDec(D.chargeMult)} × CH &lt; ${fmtDec(D.k)} × (CA − CH)</span>
+        En regroupant les termes en CA à gauche et les termes en CH à droite :
+        <span class="formula">(${fmtDec(D.microNetRate)} − ${fmtDec(D.k)}) × CA &lt; (${fmtDec(D.chargeMult)} − ${fmtDec(D.k)}) × CH</span>
+        <span class="formula">${fmtDec(D.numerateur)} × CA &lt; ${fmtDec(D.denominateur)} × CH</span>
+        ${D.numerateur <= 0
+          ? `Le coefficient qui multiplie le chiffre d'affaires est ici <strong>négatif ou nul</strong> (${fmtDec(D.numerateur)}), tandis que celui qui multiplie les charges est strictement positif. L'inégalité est donc <strong>toujours vérifiée</strong>, quel que soit le niveau des charges : avec ce jeu de paramètres, la SASU est plus avantageuse en toutes circonstances. Cela traduit le fait que la taxation forfaitaire du chiffre d'affaires en micro-entreprise (${fmtPct(D.tMicro + D.tIR)}) est ici si lourde qu'elle absorbe à elle seule plus que la double imposition de la SASU.`
+          : `soit, en divisant les deux membres par ${fmtDec(D.denominateur)} (strictement positif, ce qui préserve le sens de l'inégalité) :
+        <span class="formula">CH &gt; ${fmtDec(D.numerateur)} / ${fmtDec(D.denominateur)} × CA = ${fmtDec(D.seuilRatio)} × CA</span>
+        Autrement dit, dès lors que les charges de l'entrepreneur dépassent <strong>${fmtPct(D.seuilRatioPct)}</strong> de son chiffre d'affaires, il est plus avantageux pour lui d'adopter le régime de la SASU. Appliqué au chiffre d'affaires de ${formatMoney(D.ca)}, ce seuil correspond à un montant de charges de ${fmtDec(D.seuilRatio)} × ${formatMoney(D.ca)} = <strong>${formatMoney(D.seuilCharges)}</strong>.`}
+      </div>`;
+
+      /* --- Étape 4 : application chiffrée --- */
+      h += `<div class="calc-box">
+        <span class="box-title">Étape 4 — Application chiffrée à la situation de ${D.prenom}</span>
+        Les charges réelles s'élèvent à ${formatMoney(D.ch)}, soit ${fmtPct(D.chargeRatioPct)} du chiffre d'affaires${D.numerateur > 0 ? `, ${D.sasuWins ? `au-dessus` : `en dessous`} du seuil d'indifférence de ${fmtPct(D.seuilRatioPct)}` : ``}. Le détail des deux calculs est le suivant.
+      </div>`;
+
+      h += `<table class="exam-table">
+        <tr>
+          <th style="text-align:left">Structure</th>
+          <th>Calcul</th>
+          <th>Montant net perçu</th>
+        </tr>
+        <tr>
+          <td class="txt-left">SASU</td>
+          <td>${fmtDec(D.k)} × (${formatMoney(D.ca)} − ${formatMoney(D.ch)})</td>
+          <td class="amt">${formatMoney(D.netSASU)}</td>
+        </tr>
+        <tr>
+          <td class="txt-left">Micro-entreprise</td>
+          <td>${fmtDec(D.microNetRate)} × ${formatMoney(D.ca)} − ${fmtDec(D.chargeMult)} × ${formatMoney(D.ch)}</td>
+          <td class="amt">${formatMoney(D.netMicro)}</td>
+        </tr>
+        <tr class="total-row">
+          <td class="txt-left">Écart en faveur de la ${D.sasuWins ? `SASU` : `micro-entreprise`}</td>
+          <td>—</td>
+          <td class="amt">${formatMoney(Math.abs(D.ecart))}</td>
+        </tr>
+      </table>`;
+
+      h += `<div class="verdict-box">
+        <span class="v-title">Conclusion</span>
+        <span class="v-main">${D.sasuWins ? `La SASU est la structure la plus avantageuse.` : `La micro-entreprise est la structure la plus avantageuse.`}</span>
+        <br>${D.prenom} récupérerait ${formatMoney(Math.abs(D.ecart))} de plus par an en optant pour ${D.sasuWins ? `la SASU` : `la micro-entreprise`}.
+      </div>`;
+
+      /* --- Étape 5 : commentaire --- */
+      h += `<div class="calc-box">
+        <span class="box-title">Étape 5 — Commentaire</span>
+        La logique économique de ce seuil tient à la nature même des deux assiettes d'imposition. La micro-entreprise est taxée sur le <strong>chiffre d'affaires</strong>, indépendamment des charges : c'est un régime forfaitaire, très favorable lorsque l'activité mobilise peu de moyens, mais qui devient pénalisant dès que les charges s'alourdissent, puisqu'elles ne sont ni déductibles ni récupérables au titre de la TVA. La SASU est au contraire taxée sur le <strong>résultat</strong> : elle subit certes une double imposition (IS puis <em>flat tax</em>), mais cette double imposition ne porte que sur ce qui reste après déduction des charges.
+        <ul class="caveat-list">
+          <li>Le seuil calculé ici ne tient pas compte des <strong>frais d'ouverture</strong> d'une SASU (rédaction des statuts, publication d'une annonce légale, immatriculation), ni du recours annuel à un expert-comptable — environ mille euros la prestation — si l'entrepreneur est incapable de tenir sa comptabilité lui-même. Ces honoraires constituent toutefois eux-mêmes une charge déductible en SASU, alors qu'ils ne le seraient pas en micro-entreprise : ils viennent donc gonfler CH et, mécaniquement, renforcer l'intérêt de la SASU.</li>
+          <li>Le choix de la SASU devient rapidement intéressant si l'entrepreneur maîtrise la rédaction de statuts ainsi que les normes comptables de base.</li>
+          ${D.beneficeAboveISCap ? `<li>Attention : le résultat courant de la SASU (${formatMoney(D.benefice)}) dépasse ici le plafond de 42 500 euros au-delà duquel le taux réduit d'IS ne s'applique plus. La fraction du bénéfice excédant ce plafond serait taxée au taux normal, ce qui dégraderait le résultat obtenu ci-dessus en faveur de la SASU.</li>` : ``}
+          ${D.franchise ? `<li>Le raisonnement suppose que le micro-entrepreneur reste sous le seuil de franchise en base de TVA de ${formatMoney(D.seuilTVA)}. Au-delà, il facturerait avec TVA et récupérerait celle supportée sur ses charges, ce qui déplacerait le seuil d'indifférence vers le haut et rendrait la micro-entreprise relativement plus attractive.</li>` : `<li>Le micro-entrepreneur étant ici sorti de la franchise en base, il récupère la TVA sur ses charges : le seuil d'indifférence s'en trouve relevé par rapport au cas de la franchise, la principale pénalité du régime micro (la TVA non récupérable) ayant disparu.</li>`}
+          <li>Cette comparaison est purement fiscale et sociale. Elle ignore d'autres critères de choix déterminants : la protection sociale attachée à chaque statut, la responsabilité juridique, la crédibilité vis-à-vis des clients et des banques, ou encore la capacité à faire entrer des associés au capital.</li>
+        </ul>
+      </div>`;
+
+      return h;
+    }
+  },
+
+  en: {
+    "htmlLang": "en",
+    "title": "Accounting Simulator - Choice of Legal Structure",
+    "locale": "en-GB",
+    "k-badge": "ACCOUNTING AND FINANCIAL INFORMATION",
+    "k-h1": "Choice of Legal Structure",
+    "k-sub": "© Thomas Hossen – Version of 7 March 2026",
+    "k-seed": "Seed (Optional)",
+    "k-preset": "Course values",
+    "k-gen": "Generate exercise →",
+    "k-paramnote": "TAX PARAMETERS — LEAVE BLANK FOR A RANDOM DRAW",
+    "k-tis": "Corporate tax (%)",
+    "k-tflat": "Flat tax (%)",
+    "k-tmicro": "Micro rate (%)",
+    "k-tir": "Flat-rate income tax (%)",
+    "k-ttva": "VAT rate (%)",
+    "k-seuil": "VAT exemption threshold (€)",
+    "k-casenote": "THE ENTREPRENEUR'S SITUATION — LEAVE BLANK FOR A RANDOM DRAW",
+    "k-ca": "Turnover excl. VAT (€)",
+    "k-ch": "Expenses excl. VAT (€)",
+    "k-welcome": "Set the parameters and click Generate to create a new exercise.",
+    "k-seedbadge": "Active seed:",
+    "k-new": "↺ New exercise",
+    "k-pdf": "⬇ Export PDF",
+    "k-doc": "⬇ Export DOC",
+    "k-tag-ex": "Problem",
+    "k-cardtitle": "Single-shareholder company versus micro-enterprise",
+    "k-tag-sol": "Solution",
+    "k-cardtitle2": "Single-shareholder company versus micro-enterprise",
+    "k-params": "Applicable tax and social security parameters",
+    "k-data": "The entrepreneur's situation",
+    "k-work": "Required",
+    "showSol": "Show solution",
+    "hideSol": "Hide solution",
+    "docTitle": "Management Accounting Exercise",
+    "docFile": "Exercise_Legal_Structure.doc",
+
+    activities: [
+      "information systems consulting",
+      "digital strategy consulting",
+      "bespoke software development",
+      "specialised technical translation",
+      "professional training"
+    ],
+    firstNames: ["Camille", "Julien", "Léa", "Mathieu", "Sarah", "Antoine"],
+
+    paramsTable: function(D) {
+      return `
+      <tr>
+        <th style="text-align:left">Parameter</th>
+        <th>Value</th>
+      </tr>
+      <tr><td class="txt-left">Corporate income tax rate</td><td class="pct">${fmtPct(D.tIS)}</td></tr>
+      <tr><td class="txt-left">Flat tax on dividends</td><td class="pct">${fmtPct(D.tFlat)}</td></tr>
+      <tr><td class="txt-left">Micro-entrepreneur's social contributions (on turnover)</td><td class="pct">${fmtPct(D.tMicro)}</td></tr>
+      <tr><td class="txt-left">Flat-rate settlement of income tax (on turnover)</td><td class="pct">${fmtPct(D.tIR)}</td></tr>
+      <tr><td class="txt-left">VAT rate applicable to expenses</td><td class="pct">${fmtPct(D.tTVA)}</td></tr>
+      <tr><td class="txt-left">Turnover threshold for the VAT basic exemption</td><td class="pct">${formatMoney(D.seuilTVA)}</td></tr>
+      `;
+    },
+
+    context: function(D) {
+      return `
+      <strong>${D.prenom}</strong> plans to start a ${D.activite} business and is hesitating between two legal structures: a <strong>single-shareholder simplified joint-stock company</strong> (SASU), subject to the accounting rules of the French General Chart of Accounts, and the <strong>micro-enterprise</strong> regime.
+      <br><br>
+      The SASU is liable to corporate income tax on its operating profit. Once that tax has been paid, the sole shareholder must still pay the <em>flat tax</em> on the dividends they draw: there is therefore double taxation. The micro-entrepreneur, by contrast, earns "mixed income" — being at once a legal entity (as a business) and a natural person — so that no double taxation arises. However, they may neither deduct their expenses nor reclaim the VAT borne on them, as long as they remain below the basic exemption threshold.
+      `;
+    },
+
+    enonce: function(D) {
+      let h = "";
+      h += `<li>The forecast annual turnover excluding VAT (denoted CA) amounts to <span class="highlight">${formatMoney(D.ca)}</span>.</li>`;
+      h += `<li>Total operating expenses excluding VAT (denoted CH) are estimated at <span class="highlight">${formatMoney(D.ch)}</span>, that is ${fmtPct(D.chargeRatioPct)} of turnover.</li>`;
+      h += `<li>The sole shareholder of the SASU would not be an employee of the company: they would draw their remuneration exclusively as dividends.</li>`;
+      if (D.franchise) {
+        h += `<li>As the forecast turnover remains below the threshold of ${formatMoney(D.seuilTVA)}, the micro-entrepreneur could invoice their services <strong>without VAT</strong> (basic exemption), but would in return bear the ${fmtPct(D.tTVA)} VAT on their own expenses without being able to reclaim it.</li>`;
+      } else {
+        h += `<li>As the forecast turnover <strong>exceeds</strong> the threshold of ${formatMoney(D.seuilTVA)}, the micro-entrepreneur would fall outside the basic exemption: they would invoice their services with VAT and could then reclaim the VAT borne on their expenses.</li>`;
+      }
+      return h;
+    },
+
+    question: function(D) {
+      return `Above what level of expenses, relative to turnover, does the SASU become <em>a priori</em> more profitable than the micro-enterprise? Determine this threshold, then apply it to ${D.prenom}'s situation by calculating, for each structure, the amount they would actually receive in their personal bank account. Comment on the result.`;
+    },
+
+    sol: function(D) {
+      let h = "";
+
+      /* --- Step 1 : the SASU --- */
+      h += `<div class="calc-box">
+        <span class="box-title">Step 1 — What the sole shareholder of the SASU receives</span>
+        The company's operating profit is the difference between turnover and expenses, which the SASU may deduct in full: CA − CH. This profit first bears corporate income tax at ${fmtPct(D.tIS)}, then the distributed dividends bear the <em>flat tax</em> at ${fmtPct(D.tFlat)}. The amount that ultimately reaches the shareholder's personal account therefore satisfies:
+        <span class="formula">(1 − ${fmtDec(D.tFlat/100)}) × (1 − ${fmtDec(D.tIS/100)}) × (CA − CH) = ${fmtDec(D.k)} × (CA − CH)</span>
+        In other words, the shareholder pockets only ${fmtPct(D.k*100)} of the company's operating profit.
+      </div>`;
+
+      /* --- Step 2 : the micro-enterprise --- */
+      h += `<div class="calc-box">
+        <span class="box-title">Step 2 — What the micro-entrepreneur receives</span>
+        The micro-entrepreneur is taxed <strong>on turnover</strong> rather than on profit: they bear ${fmtPct(D.tMicro)} in social contributions and ${fmtPct(D.tIR)} under the flat-rate settlement of income tax, that is ${fmtPct(D.tMicro)} + ${fmtPct(D.tIR)} = ${fmtPct(D.tMicro + D.tIR)} of turnover. ${D.franchise
+          ? `They may deduct no expenses, and bear the ${fmtPct(D.tTVA)} VAT on them without being able to reclaim it: their expenses therefore cost them ${fmtDec(D.chargeMult)} × CH.`
+          : `They may deduct no expenses from their tax base, but, having fallen outside the basic exemption, they reclaim the VAT borne on their expenses: these therefore cost them their amount excluding VAT, that is CH.`}
+        <span class="formula">(1 − ${fmtDec(D.tMicro/100)} − ${fmtDec(D.tIR/100)}) × CA − ${fmtDec(D.chargeMult)} × CH = ${fmtDec(D.microNetRate)} × CA − ${fmtDec(D.chargeMult)} × CH</span>
+      </div>`;
+
+      /* --- Step 3 : the indifference threshold --- */
+      h += `<div class="calc-box">
+        <span class="box-title">Step 3 — Determining the indifference threshold</span>
+        Choosing the SASU rather than the micro-enterprise is more profitable if, and only if, the amount received under the micro-enterprise regime is lower than the amount received under the SASU:
+        <span class="formula">${fmtDec(D.microNetRate)} × CA − ${fmtDec(D.chargeMult)} × CH &lt; ${fmtDec(D.k)} × (CA − CH)</span>
+        Grouping the CA terms on the left and the CH terms on the right:
+        <span class="formula">(${fmtDec(D.microNetRate)} − ${fmtDec(D.k)}) × CA &lt; (${fmtDec(D.chargeMult)} − ${fmtDec(D.k)}) × CH</span>
+        <span class="formula">${fmtDec(D.numerateur)} × CA &lt; ${fmtDec(D.denominateur)} × CH</span>
+        ${D.numerateur <= 0
+          ? `Here the coefficient multiplying turnover is <strong>negative or zero</strong> (${fmtDec(D.numerateur)}), while the one multiplying expenses is strictly positive. The inequality therefore <strong>always holds</strong>, whatever the level of expenses: with this set of parameters, the SASU is more advantageous in all circumstances. This reflects the fact that the flat-rate taxation of turnover under the micro-enterprise regime (${fmtPct(D.tMicro + D.tIR)}) is here so heavy that it alone absorbs more than the SASU's double taxation.`
+          : `that is, dividing both sides by ${fmtDec(D.denominateur)} (strictly positive, which preserves the direction of the inequality):
+        <span class="formula">CH &gt; ${fmtDec(D.numerateur)} / ${fmtDec(D.denominateur)} × CA = ${fmtDec(D.seuilRatio)} × CA</span>
+        In other words, as soon as the entrepreneur's expenses exceed <strong>${fmtPct(D.seuilRatioPct)}</strong> of their turnover, it becomes more advantageous for them to adopt the SASU regime. Applied to the turnover of ${formatMoney(D.ca)}, this threshold corresponds to an expense level of ${fmtDec(D.seuilRatio)} × ${formatMoney(D.ca)} = <strong>${formatMoney(D.seuilCharges)}</strong>.`}
+      </div>`;
+
+      /* --- Step 4 : numerical application --- */
+      h += `<div class="calc-box">
+        <span class="box-title">Step 4 — Numerical application to ${D.prenom}'s situation</span>
+        Actual expenses amount to ${formatMoney(D.ch)}, that is ${fmtPct(D.chargeRatioPct)} of turnover${D.numerateur > 0 ? `, ${D.sasuWins ? `above` : `below`} the indifference threshold of ${fmtPct(D.seuilRatioPct)}` : ``}. The two calculations break down as follows.
+      </div>`;
+
+      h += `<table class="exam-table">
+        <tr>
+          <th style="text-align:left">Structure</th>
+          <th>Calculation</th>
+          <th>Net amount received</th>
+        </tr>
+        <tr>
+          <td class="txt-left">SASU</td>
+          <td>${fmtDec(D.k)} × (${formatMoney(D.ca)} − ${formatMoney(D.ch)})</td>
+          <td class="amt">${formatMoney(D.netSASU)}</td>
+        </tr>
+        <tr>
+          <td class="txt-left">Micro-enterprise</td>
+          <td>${fmtDec(D.microNetRate)} × ${formatMoney(D.ca)} − ${fmtDec(D.chargeMult)} × ${formatMoney(D.ch)}</td>
+          <td class="amt">${formatMoney(D.netMicro)}</td>
+        </tr>
+        <tr class="total-row">
+          <td class="txt-left">Difference in favour of the ${D.sasuWins ? `SASU` : `micro-enterprise`}</td>
+          <td>—</td>
+          <td class="amt">${formatMoney(Math.abs(D.ecart))}</td>
+        </tr>
+      </table>`;
+
+      h += `<div class="verdict-box">
+        <span class="v-title">Conclusion</span>
+        <span class="v-main">${D.sasuWins ? `The SASU is the more advantageous structure.` : `The micro-enterprise is the more advantageous structure.`}</span>
+        <br>${D.prenom} would receive ${formatMoney(Math.abs(D.ecart))} more per year by opting for the ${D.sasuWins ? `SASU` : `micro-enterprise`}.
+      </div>`;
+
+      /* --- Step 5 : commentary --- */
+      h += `<div class="calc-box">
+        <span class="box-title">Step 5 — Commentary</span>
+        The economic logic behind this threshold lies in the very nature of the two tax bases. The micro-enterprise is taxed on <strong>turnover</strong>, regardless of expenses: it is a flat-rate regime, highly favourable when the activity requires few resources, but which becomes penalising as soon as expenses grow, since they are neither deductible nor recoverable for VAT purposes. The SASU, by contrast, is taxed on <strong>profit</strong>: it does suffer double taxation (corporate tax then flat tax), but that double taxation applies only to what remains after expenses have been deducted.
+        <ul class="caveat-list">
+          <li>The threshold calculated here does not take into account the <strong>set-up costs</strong> of a SASU (drafting the articles of association, publishing a legal notice, registration), nor the annual recourse to a chartered accountant — around one thousand euros for the engagement — should the entrepreneur be unable to keep the accounts themselves. These fees are however themselves a deductible expense in a SASU, whereas they would not be under the micro-enterprise regime: they therefore inflate CH and, mechanically, strengthen the case for the SASU.</li>
+          <li>The SASU quickly becomes an attractive choice if the entrepreneur is comfortable drafting articles of association and applying basic accounting standards.</li>
+          ${D.beneficeAboveISCap ? `<li>Note: the SASU's operating profit (${formatMoney(D.benefice)}) here exceeds the ceiling of 42,500 euros beyond which the reduced corporate tax rate no longer applies. The portion of profit above that ceiling would be taxed at the standard rate, which would worsen the result obtained above in favour of the SASU.</li>` : ``}
+          ${D.franchise ? `<li>The reasoning assumes that the micro-entrepreneur remains below the VAT basic exemption threshold of ${formatMoney(D.seuilTVA)}. Beyond it, they would invoice with VAT and reclaim the VAT borne on their expenses, which would shift the indifference threshold upwards and make the micro-enterprise relatively more attractive.</li>` : `<li>As the micro-entrepreneur here falls outside the basic exemption, they reclaim the VAT on their expenses: the indifference threshold is accordingly higher than in the exemption case, the regime's main penalty (non-recoverable VAT) having disappeared.</li>`}
+          <li>This comparison is purely fiscal and social. It ignores other decisive selection criteria: the social protection attached to each status, legal liability, credibility with clients and banks, or the ability to bring partners into the share capital.</li>
+        </ul>
+      </div>`;
+
+      return h;
+    }
+  }
+};
+
+/* ============================================================
+   GESTION DE LA LANGUE  /  LANGUAGE HANDLING
+   ============================================================ */
+let LANG = 'fr';
+
+function detectLang() {
+    try {
+        const q = new URLSearchParams(window.location.search).get('lang');
+        if (q && I18N[q.toLowerCase()]) return q.toLowerCase();
+    } catch (e) {}
+    const h = (window.location.hash || '').replace('#', '').toLowerCase();
+    if (I18N[h]) return h;
+    return 'fr';
+}
+
+function applyLang() {
+    const D = I18N[LANG];
+    document.documentElement.lang = D.htmlLang;
+    document.title = D.title;
+
+    document.querySelectorAll('[data-k]').forEach(function (el) {
+        const key = el.getAttribute('data-k');
+        if (D[key] !== undefined) el.innerHTML = D[key];
+    });
+
+    const btn = document.getElementById('toggle-btn');
+    if (btn) btn.innerText = document.getElementById('sol-card').classList.contains('visible') ? D.hideSol : D.showSol;
+
+    document.getElementById('flag-fr').classList.toggle('active', LANG === 'fr');
+    document.getElementById('flag-en').classList.toggle('active', LANG === 'en');
+}
+
+function setLang(lang) {
+    if (!I18N[lang] || lang === LANG) return;
+    LANG = lang;
+
+    /* La langue est memorisee dans l'URL (partage / rechargement) */
+    try {
+        const u = new URL(window.location.href);
+        u.searchParams.set('lang', lang);
+        history.replaceState(null, '', u.toString());
+    } catch (e) {}
+
+    applyLang();
+
+    /* Si un exercice est affiche, on le regenere a l'identique (meme seed) */
+    if (document.getElementById('ex-area').style.display !== 'none') {
+        const solWasVisible = document.getElementById('sol-card').classList.contains('visible');
+        generateExercise(false);
+        if (solWasVisible) toggleSol();
+    }
+}
+
+// --- PRNG (Mulberry32) ---
+let currentSeed = 0;
+function seedPRNG(seed) {
+    return function() {
+      let t = seed += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+let random = Math.random;
+
+function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
+function formatMoney(num) { return num.toLocaleString(I18N[LANG].locale, {minimumFractionDigits:2, maximumFractionDigits:2}) + ' €'; }
+function fmtPct(num) { return num.toLocaleString(I18N[LANG].locale, {minimumFractionDigits:0, maximumFractionDigits:2}) + ' %'; }
+function fmtDec(num) { return num.toLocaleString(I18N[LANG].locale, {minimumFractionDigits:0, maximumFractionDigits:4}); }
+
+/* Valeurs du cours (SASU vs micro-entreprise, prestations de services) */
+const PRESET = { is: 15, flat: 33, micro: 26.3, ir: 2.2, tva: 20, seuil: 37500 };
+
+function loadPreset() {
+    document.getElementById('p-is').value    = PRESET.is;
+    document.getElementById('p-flat').value  = PRESET.flat;
+    document.getElementById('p-micro').value = PRESET.micro;
+    document.getElementById('p-ir').value    = PRESET.ir;
+    document.getElementById('p-tva').value   = PRESET.tva;
+    document.getElementById('p-seuil').value = PRESET.seuil;
+}
+
+/* Lit un champ : valeur saisie si presente et valide, sinon valeur aleatoire */
+function readParam(id, randomFn) {
+    const raw = document.getElementById(id).value;
+    if (raw === "" || raw === null) return randomFn();
+    const v = parseFloat(raw);
+    if (!isFinite(v)) return randomFn();
+    return v;
+}
+
+function generateExercise(forceNew = false) {
+    if(forceNew) {
+        document.getElementById('seed-input').value = "";
+    }
+    let seedVal = document.getElementById('seed-input').value;
+    currentSeed = seedVal ? parseInt(seedVal) : Math.floor(Math.random() * 99999999);
+    document.getElementById('seed-disp').innerText = currentSeed;
+    document.getElementById('seed-input').value = currentSeed;
+    random = seedPRNG(currentSeed);
+
+    const DIC = I18N[LANG];
+
+    /* --- Habillage --- */
+    const prenom   = DIC.firstNames[randInt(0, DIC.firstNames.length-1)];
+    const activite = DIC.activities[randInt(0, DIC.activities.length-1)];
+
+    /* --- Parametres fiscaux : saisis manuellement, sinon tires au sort --- */
+    const tIS     = readParam('p-is',    () => randInt(150, 250) / 10);
+    const tFlat   = readParam('p-flat',  () => randInt(280, 340) / 10);
+    const tMicro  = readParam('p-micro', () => randInt(210, 275) / 10);
+    const tIR     = readParam('p-ir',    () => randInt(10, 25) / 10);
+    const tTVA    = readParam('p-tva',   () => [5.5, 10, 20][randInt(0, 2)]);
+    const seuilTVA= readParam('p-seuil', () => randInt(340, 400) * 100);
+
+    /* --- Chiffre d'affaires : saisi, sinon tire sous le seuil de franchise (cas du cours) --- */
+    let ca = readParam('p-ca', () => {
+        let v = Math.round(seuilTVA * (randInt(45, 95) / 100) / 100) * 100;
+        return v < 100 ? 100 : v;
+    });
+    if (!(ca > 0)) ca = 100;
+    const franchise = ca <= seuilTVA;
+
+    /* --- Coefficients du modele --- */
+    const k            = (1 - tFlat/100) * (1 - tIS/100);   // part du resultat qui arrive a l'actionnaire
+    const microNetRate = 1 - tMicro/100 - tIR/100;          // part du CA qui reste au micro-entrepreneur
+    const chargeMult   = franchise ? (1 + tTVA/100) : 1;    // cout reel d'un euro de charge en micro
+
+    const numerateur   = microNetRate - k;
+    const denominateur = chargeMult - k;                    // strictement positif car k < 1 <= chargeMult
+    const seuilRatio   = numerateur / denominateur;
+    const seuilRatioPct= seuilRatio * 100;
+    const seuilCharges = seuilRatio * ca;
+
+    /* --- Charges : saisies, sinon positionnees de part et d'autre du seuil pour varier le verdict --- */
+    let ch = readParam('p-ch', () => {
+        let chargeRatio;
+        if (numerateur > 0 && seuilRatio > 0.02 && seuilRatio < 0.75) {
+            const ecartRel = randInt(15, 70) / 1000;
+            chargeRatio = (randInt(0, 1) === 0) ? seuilRatio + ecartRel : seuilRatio - ecartRel;
+        } else {
+            chargeRatio = randInt(100, 400) / 1000;
+        }
+        if (chargeRatio < 0.03) chargeRatio = 0.03;
+        if (chargeRatio > 0.80) chargeRatio = 0.80;
+        let v = Math.round(ca * chargeRatio / 10) * 10;
+        return v < 10 ? 10 : v;
+    });
+    if (!(ch >= 0)) ch = 0;
+    const chargeRatioPct = (ch / ca) * 100;
+
+    /* --- Application chiffree --- */
+    const benefice = ca - ch;
+    const netSASU  = k * benefice;
+    const netMicro = microNetRate * ca - chargeMult * ch;
+    const ecart    = netSASU - netMicro;
+    const sasuWins = ecart > 0;
+    const beneficeAboveISCap = benefice > 42500;
+
+    /* --- Affichage --- */
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('ex-area').style.display = 'block';
+    document.getElementById('sol-card').classList.remove('visible');
+    document.getElementById('toggle-btn').innerText = DIC.showSol;
+    document.getElementById('toggle-btn').classList.remove('shown');
+
+    const D = { prenom, activite, tIS, tFlat, tMicro, tIR, tTVA, seuilTVA, ca, ch,
+                franchise, k, microNetRate, chargeMult, numerateur, denominateur,
+                seuilRatio, seuilRatioPct, seuilCharges, chargeRatioPct,
+                benefice, netSASU, netMicro, ecart, sasuWins, beneficeAboveISCap };
+
+    document.getElementById('context-text').innerHTML  = DIC.context(D);
+    document.getElementById('params-table').innerHTML  = DIC.paramsTable(D);
+    document.getElementById('events-list').innerHTML   = DIC.enonce(D);
+    document.getElementById('question-text').innerHTML = DIC.question(D);
+    document.getElementById('sol-content').innerHTML   = DIC.sol(D);
+}
+
+function toggleSol() {
+    let solCard = document.getElementById('sol-card');
+    let btn = document.getElementById('toggle-btn');
+    if(solCard.classList.contains('visible')) {
+        solCard.classList.remove('visible');
+        btn.innerText = I18N[LANG].showSol;
+        btn.classList.remove('shown');
+    } else {
+        solCard.classList.add('visible');
+        btn.innerText = I18N[LANG].hideSol;
+        btn.classList.add('shown');
+    }
+}
+
+// --- FONCTION EXPORT DOC ---
+function exportWord() {
+    let content = document.getElementById('ex-area').cloneNode(true);
+    let actions = content.querySelector('.top-actions');
+    if(actions) actions.parentNode.removeChild(actions);
+    let toggle = content.querySelector('.sol-toggle-wrap');
+    if(toggle) toggle.parentNode.removeChild(toggle);
+    let solCard = content.querySelector('#sol-card');
+    if(solCard) solCard.style.display = 'block';
+
+    let html = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <meta charset='utf-8'>
+            <title>${I18N[LANG].docTitle}</title>
+            <style>
+                body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5; text-align: justify; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                th, td { border: 1px solid #000; padding: 5px; }
+                th { background-color: #f2f2f2; text-align: center; font-weight: bold; }
+                .amt { text-align: right; white-space: nowrap; }
+                .pct { text-align: center; }
+                .txt-left { text-align: left; font-weight: bold; }
+                .calc-box { border: 1px solid #000; padding: 10px; margin-bottom: 15px; background-color: #f9f9f9; text-align: justify; }
+                .formula { display: block; text-align: center; font-family: 'Courier New', monospace; margin: 10px 0; }
+                .verdict-box { border: 1px solid #000; padding: 10px; margin: 15px 0; background-color: #f2f2f2; }
+                .v-main { font-weight: bold; }
+                .highlight { font-weight: bold; }
+                ul { text-align: justify; }
+                li { margin-bottom: 5px; }
+            </style>
+        </head>
+        <body>
+            ${content.innerHTML}
+        </body>
+        </html>
+    `;
+
+    let blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    let url = URL.createObjectURL(blob);
+    let link = document.createElement('a');
+    link.href = url;
+    link.download = I18N[LANG].docFile;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+/* Initialisation */
+LANG = detectLang();
+applyLang();
+</script>
+</body>
+</html>
