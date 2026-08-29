@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Macroéconomie - Modèle de Solow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['\\[', '\\]']]
+    }
+  };
+</script>
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7;text-align:justify;}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 1.5rem;border-bottom:3px solid var(--gold);text-align:left;}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end;background:rgba(255,255,255,.03);padding:1rem 1.5rem;border-radius:6px;border:1px solid rgba(255,255,255,.1)}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.6)}
+.ctrl-inp, .ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.4rem .7rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none;transition:border-color .2s}
+.ctrl-inp:focus, .ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.5rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;transition:background .18s;margin-left:auto}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN & CARDS */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:700}
+
+.top-actions{display:flex;gap:.5rem;}
+.btn-action{background:#fff;border:1px solid var(--border);color:var(--navy);padding:.4rem .8rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.85rem;font-weight:600;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.btn-action:hover{border-color:var(--navy);background:var(--cream-dark);}
+
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem;text-align:left;}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+
+.question-list { list-style-type: decimal; padding-left: 1.5rem; margin-bottom: 1.5rem; text-align: justify; }
+.question-list li { margin-bottom: 0.8rem; padding-left: 0.5rem; }
+.question-list li::marker { font-weight: 600; color: var(--navy); }
+
+.sub-list { list-style-type: disc; padding-left: 1.4rem; margin: .6rem 0 .8rem; text-align: justify; }
+.sub-list li { margin-bottom: .35rem; }
+.sub-ol { list-style-type: lower-alpha; padding-left: 1.5rem; margin: .55rem 0 .3rem; text-align: justify; }
+.sub-ol li { margin-bottom: .55rem; padding-left: .3rem; }
+.sub-ol li::marker { font-weight: 600; color: var(--navy); }
+
+/* EXAM TABLE */
+.exam-table-wrap { overflow-x: auto; margin: 1.5rem 0; }
+.exam-table{width:100%;border-collapse:collapse;font-size:.85rem;font-family:'Source Serif 4',serif;}
+.exam-table th, .exam-table td{border:1px solid var(--border);padding:.5rem;text-align:center;vertical-align:middle;}
+.exam-table th{background:var(--navy);color:var(--cream);font-weight:600;}
+.exam-table .txt-left{text-align:left;font-weight:600;color:var(--navy);}
+.exam-table .amt{font-family:'JetBrains Mono',monospace;text-align:right;white-space:nowrap;}
+
+/* FIGURE */
+.fig-wrap{margin:1.6rem 0 .4rem;text-align:center;overflow-x:auto;}
+.fig-wrap svg{width:100%;max-width:720px;height:auto;background:#fff;border:1px solid var(--border);border-radius:4px;}
+.fig-caption{font-size:.82rem;color:var(--text-muted);font-style:italic;text-align:justify;margin-bottom:1.2rem;line-height:1.55;}
+
+/* SOLUTION TOGGLE */
+.sol-toggle-wrap{text-align:left; margin: 1.5rem 0 0 0;}
+.btn-toggle{background:transparent;border:2px solid var(--green);border-bottom:none;color:var(--green);font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;padding:.5rem 1.5rem;border-radius:4px 4px 0 0;cursor:pointer;transition:all .2s; position:relative; z-index:2; top:2px;}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--green);color:var(--cream)}
+.sol-card{border-top:2px solid var(--green);display:none; border-radius: 0 6px 6px 6px; position:relative; z-index:1;}
+.sol-card.visible{display:block;animation:fi .4s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+
+.calc-box{background:#f9fcf9;border:1px solid #c8e6c9;padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.9rem;color:var(--text);line-height:1.6;text-align:justify;}
+.math-formula { text-align: center; margin: 1.5rem 0; overflow-x: auto; }
+
+@media print{
+  body{background:#fff;}
+  header, .ctrls, .sol-toggle-wrap, .top-actions {display:none !important;}
+  .card{box-shadow:none; border:1px solid var(--border); margin-bottom:2rem;}
+  .sol-card{display:block !important; border-top:2px solid var(--green);}
+  #ex-area {display:block !important;}
+}
+
+/* --- Selecteur de langue / Language switch --- */
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem}
+.header-top .header-badge{margin-bottom:0}
+.lang-switch{display:flex;gap:.45rem;flex-shrink:0}
+.flag-btn{background:rgba(255,255,255,.06);border:1px solid rgba(201,149,42,.35);border-radius:3px;padding:3px;cursor:pointer;line-height:0;opacity:.5;transition:opacity .2s,border-color .2s,transform .15s}
+.flag-btn:hover{opacity:1;transform:translateY(-1px)}
+.flag-btn.active{opacity:1;border-color:var(--gold-light);box-shadow:0 0 0 1px rgba(232,184,75,.35)}
+.flag-btn svg{display:block;width:30px;height:20px;border-radius:1px}
+@media print{ .lang-switch{display:none !important;} }
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-top">
+    <div class="header-badge" id="lbl-badge">CROISSANCE ET CYCLES ÉCONOMIQUES</div>
+    <div class="lang-switch">
+      <button type="button" class="flag-btn active" id="flag-fr" onclick="setLang('fr')" title="Français" aria-label="Français"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="20" height="40" fill="#002654"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ED2939"/></svg></button>
+      <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
+    </div>
+  </div>
+  <h1 id="lbl-h1">L'accumulation du capital dans le modèle de Solow</h1>
+  <p class="subtitle" id="lbl-subtitle">© Thomas Hossen – Version du 29 août 2026</p>
+
+  <div class="ctrls">
+    <div class="ctrl-g">
+      <span class="ctrl-lbl" id="lbl-seed">Seed (Optionnel)</span>
+      <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999">
+    </div>
+    <button class="btn-gen" id="lbl-gen" onclick="generateExercise(false)">Générer l'exercice →</button>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" style="text-align:center; padding:4rem; color:var(--text-muted); font-style:italic;">
+    Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="seed-badge"><span id="lbl-seed-active">Seed active :</span> <span id="seed-disp"></span></div>
+      <div class="top-actions">
+        <button class="btn-action" id="lbl-new" onclick="generateExercise(true)">↺ Nouvel énoncé</button>
+        <button class="btn-action" id="lbl-pdf" onclick="window.print()">⬇ Exporter PDF</button>
+        <button class="btn-action" id="lbl-doc" onclick="exportWord()">⬇ Exporter DOC</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="tag" id="lbl-tag-enonce">Énoncé</span><h2 id="lbl-title-enonce">Le modèle de Solow simplifié</h2></div>
+      <div class="card-body">
+        <div class="context-block" id="context-text"></div>
+        <div id="enonce-table"></div>
+        <p style="margin-bottom:1rem; font-weight:600; color:var(--red); text-align:left;" id="lbl-assignment">Travail à faire</p>
+        <ol class="question-list" id="events-list"></ol>
+      </div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag" id="lbl-tag-sol">Corrigé</span><h2 id="lbl-title-sol">Le modèle de Solow simplifié</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+/* ============================================================
+   DICTIONNAIRE BILINGUE  /  BILINGUAL DICTIONARY
+   ============================================================ */
+const I18N = {
+
+  fr: {
+    htmlLang: "fr",
+    title: "Simulateur Macroéconomie - Modèle de Solow",
+    badge: "CROISSANCE ET CYCLES ÉCONOMIQUES",
+    h1: "L'accumulation du capital dans le modèle de Solow",
+    subtitle: "© Thomas Hossen – Version du 29 août 2026",
+    seedLabel: "Seed (Optionnel)",
+    btnGen: "Générer l'exercice →",
+    welcome: "Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.",
+    seedActive: "Seed active :",
+    btnNew: "↺ Nouvel énoncé",
+    btnPdf: "⬇ Exporter PDF",
+    btnDoc: "⬇ Exporter DOC",
+    tagEnonce: "Énoncé",
+    cardTitle: "Le modèle de Solow simplifié",
+    assignment: "Travail à faire",
+    tagSol: "Corrigé",
+    showSol: "Afficher le corrigé",
+    hideSol: "Masquer le corrigé",
+    docTitle: "Exercice Macroéconomie",
+    docFile: "Exercice_Modele_Solow.doc",
+    locale: "fr-FR",
+    pctSep: " %",
+    thousands: "\\,",
+    decimal: "{.}",
+
+    tbl: {
+      k: "Capital<br>par tête $k$",
+      y: "Production<br>par tête $y$",
+      c: "Consommation<br>par tête $c$",
+      i: "Investissement<br>par tête $i$",
+      dk: "Dépréciation<br>par tête $\\delta k$",
+      vk: "Variation du capital<br>par tête $\\Delta k$"
+    },
+
+    fig: {
+      xlabel: "Capital par tête k",
+      ylabel: "PIB par tête y",
+      labK: "k* = ",
+      labY: "y* = ",
+      labS: "s* = ",
+      labC: "c* = ",
+      caption: function(P, lvl) {
+        if (lvl === 1) return `Fonction de production par tête $f(k) = ${P.fTex}$.`;
+        if (lvl === 2) return `Fonction de production par tête $f(k) = ${P.fTex}$ et investissement par tête $s\\,f(k) = ${P.sfTex}$.`;
+        if (lvl === 3) return `Fonction de production par tête, investissement par tête $s\\,f(k)$ et dépréciation par tête $\\delta k = ${nt(P.delta,4,0)}k$.`;
+        return `État stationnaire du modèle de Solow : le capital par tête $k^{*} = ${nt(P.kStar,4,0)}$ égalise l'investissement par tête et la dépréciation du capital par tête.`;
+      }
+    },
+
+    context: function(P) { return `
+      On considère une fonction de production de type Cobb-Douglas $Y = A K^{${P.aTex}}L^{${P.bTex}}$. Les lignes du tableau sont indépendantes. On suppose qu'on a $A = ${nt(P.A,2,0)}$.
+    `; },
+
+    enonce: [
+      function(P) { return `<li>En divisant la fonction de production par $L$, exprimez la production par travailleur ($y=\\frac{Y}{L}$) en fonction du capital par travailleur ($k=\\frac{K}{L}$). Utilisez l'équation trouvée pour compléter la deuxième colonne du tableau.</li>`; },
+      function(P) { return `<li>Représentez sur un graphique la fonction de production $f(k)$. Expliquez pourquoi la pente de la fonction de production indique approximativement dans quelle mesure la production par tête augmente quand le capital par tête augmente d'une unité.</li>`; },
+      function(P) { return `<li>On note $C$ la consommation, $S$ l'épargne, $I$ l'investissement, $c$ la consommation par travailleur et $i$ l'investissement par travailleur.
+        <ol class="sub-ol">
+          <li>Le modèle de Solow (1956) fait l'hypothèse que la consommation est proportionnelle au revenu, à savoir $C = (1-s)Y$, où $s$ est le taux d'épargne, dont la valeur est comprise entre 0 et 1. Complétez la colonne 3 du tableau en supposant $s = ${nt(P.s,4,0)}$.</li>
+          <li>À l'équilibre macroéconomique, quelle est la relation entre la production $Y$, la consommation $C$ et l'épargne $S$ ? Quelle relation entre épargne et investissement doit être satisfaite pour que la demande de biens macroéconomique soit égale à l'offre de biens macroéconomique ? Exprimez alors $i$ en fonction de $y$, et complétez la colonne 4 du tableau. Tracez la courbe $sf(k)$ sur le graphique.</li>
+        </ol></li>`; },
+      function(P) { return `<li><ol class="sub-ol">
+          <li>Même si l'investissement augmente le capital par tête, le stock de capital se déprécie chaque année. On note $\\delta$ le taux de dépréciation du capital, et on suppose celui-ci égal à $${pcT(P.delta)}$. Utilisez ces données pour compléter la colonne 5 du tableau. Tracez la courbe $\\delta k$ sur le graphique.</li>
+          <li>La variation du stock de capital est égale à l'investissement moins la dépréciation du capital (on a donc la relation $\\Delta k = i - \\delta k = s f(k) - \\delta k$). Si $s = ${nt(P.s,4,0)}$, calculez la variation du stock de capital et complétez la colonne 6 du tableau.</li>
+        </ol></li>`; },
+      function(P) { return `<li>À l'état stationnaire (sans progrès technique), le capital par tête et la consommation par tête restent constants d'une année sur l'autre. Le capital par tête reste constant quand $\\Delta k = 0$, soit $i = sf(k) = \\delta k$.
+        <ol class="sub-ol">
+          <li>Repérez ce point sur le graphique (ce point a pour abscisse $k^{*}$).</li>
+          <li>Calculez à l'état stationnaire la production par tête $y^{*}$, la consommation par tête $c^{*}$, l'épargne par tête $s^{*}$.</li>
+          <li>Calculez algébriquement $k^{*}$.</li>
+        </ol></li>`; },
+      function(P) { return `<li>Quel est l'impact d'une augmentation du taux d'épargne sur le niveau stationnaire du stock de capital par tête ? Commentez les effets d'une telle augmentation sur le taux de croissance de long terme de l'économie.</li>`; }
+    ],
+
+    sol: [
+      function(P) { return `<li>La production par tête vérifie
+        <div class="math-formula">\\[\\frac{Y}{L} = \\frac{A K^{${P.aTex}}L^{${P.bTex}}}{L} = \\frac{A K^{${P.aTex}}}{L^{${P.aTex}}} = A\\left(\\frac{K}{L}\\right)^{${P.aTex}}\\]</div>
+        On a donc $y = A k^{${P.aTex}} = ${P.fTex}$. On complète peu à peu le tableau et on trouve :
+        ${P.table1}</li>`; },
+
+      function(P) { return `<li>On représente la fonction de production $f : k \\mapsto ${P.fTex}$ et on obtient le graphe suivant :
+        ${P.chart1}
+        On rappelle que la pente de la fonction $f$ correspond à sa dérivée $f'$. Or on a $f'(k) = ${P.aTex}\\,A\\,k^{${P.aTex}-1}$, et cette dérivée correspond par définition à la productivité marginale du capital par tête : elle mesure donc approximativement l'accroissement du PIB par tête lorsque le capital par tête augmente d'une unité.</li>`; },
+
+      function(P) { return `<li><ol class="sub-ol">
+        <li>Si l'on a $C = (1-s)Y$, alors on a $\\frac{C}{L} = (1-s)\\frac{Y}{L}$, c'est-à-dire $c = (1-s)y$, soit ici $c = ${nt(1-P.s,4,0)}y$ : la consommation par tête représente donc ${nfp((1-P.s)*100,0)} % du PIB par tête, ce qui nous permet de compléter le tableau :
+        ${P.table2}</li>
+        <li>L'épargne, c'est par définition ce qui n'est pas consommé : on a donc $S = sY$ et $C = (1-s)Y$. Par ailleurs, on est dans une économie fermée : l'épargne nationale est donc égale à $S = Y - C - G$. Or le modèle IS/LM en économie fermée stipule qu'on vérifie la relation $Y = C + I + G$. On a donc $S = I$ : l'investissement est égal à l'épargne en économie fermée. Il vient alors $I = sY$, d'où $\\frac{I}{L} = s\\frac{Y}{L}$. On a donc $i = sy$, soit ici $i = ${nt(P.s,4,0)}y$ : ${nfp(P.s*100,0)} % du PIB par tête sont donc consacrés à l'investissement, ce qui permet de compléter le tableau :
+        ${P.table3}
+        Par suite, on peut ajouter à notre représentation graphique précédente l'investissement par tête $sf(k) = ${P.sfTex}$ et on obtient :
+        ${P.chart2}</li>
+      </ol></li>`; },
+
+      function(P) { return `<li><ol class="sub-ol">
+        <li>On calcule $\\delta k = ${nt(P.delta,4,0)}k$ et on complète le tableau :
+        ${P.table4}
+        On peut alors ajouter la droite d'équation $y = \\delta k$ à notre graphique et on obtient :
+        ${P.chart3}</li>
+        <li>On calcule $\\Delta k = i - \\delta k$ et on complète la dernière colonne du tableau :
+        ${P.table5}</li>
+      </ol></li>`; },
+
+      function(P) { return `<li><ol class="sub-ol">
+        <li>L'équilibre dans le modèle de Solow est atteint au croisement de la droite d'équation $y = \\delta k$ (courbe noire) et de la courbe d'équation $y = i = sf(k)$ (courbe bleue). D'après le tableau <em>supra</em>, on a $\\Delta k = 0$ lorsqu'on a $k = ${nt(P.kStar,4,0)}$ : à l'équilibre, le niveau de capital par tête s'élève donc à $k^{*} = ${nt(P.kStar,4,0)}$. On peut donc repérer graphiquement l'équilibre comme suit :
+        ${P.chart4}</li>
+        <li>Le PIB par tête vaut $y = ${P.fTex}$. À l'équilibre, le niveau de PIB par tête s'établit donc à $y^{*} = ${P.fStarTex} = ${nt(P.yStar,4,0)}$. Par suite, le niveau d'investissement par tête à l'équilibre, qui correspond également au niveau d'épargne par tête à l'équilibre, s'établit à $s^{*} = s\\,y^{*} = ${nt(P.s,4,0)} \\times ${nt(P.yStar,4,0)} = ${nt(P.iStar,4,0)}$. On en déduit que la consommation par tête à l'équilibre, c'est-à-dire la part du revenu par tête qui n'est pas épargnée, vaut $c^{*} = (1-s)y^{*} = ${nt(1-P.s,4,0)} \\times ${nt(P.yStar,4,0)} = ${nt(P.cStar,4,0)}$.</li>
+        <li>La valeur $k^{*}$ est celle qui, par définition, égalise l'investissement par tête et le niveau de dépréciation. Or on a :
+        <div class="math-formula">\\[\\begin{aligned}
+        i = \\delta k
+        &\\iff s f(k) = \\delta k \\\\
+        &\\iff s A k^{${P.aTex}} = \\delta k \\\\
+        &\\iff k^{1-${P.aTex}} = k^{${P.bTex}} = \\frac{sA}{\\delta} \\\\
+        &\\iff k = \\left(\\frac{sA}{\\delta}\\right)^{${P.expTex}}
+        \\end{aligned}\\]</div>
+        la dernière équivalence étant licite puisque $k$ est positif. Ici, on trouve donc $k^{*} = \\left(\\frac{${nt(P.s,4,0)} \\times ${nt(P.A,2,0)}}{${nt(P.delta,4,0)}}\\right)^{${P.expTex}} = ${P.R}^{${P.expTex}} = ${nt(P.kStar,4,0)}$, comme attendu.</li>
+      </ol></li>`; },
+
+      function(P) { return `<li>D'après la question précédente, on a $k^{*} = \\left(\\frac{sA}{\\delta}\\right)^{${P.expTex}}$ : si le taux d'épargne $s$ augmente, le capital par tête à l'équilibre $k^{*}$ augmente lui aussi. Par suite, lorsqu'on est à l'état stationnaire, le capital par tête ne varie plus : le taux de croissance du capital par tête est donc nul. En outre, le PIB par tête $y^{*}$ vérifie à l'équilibre $y^{*} = A(k^{*})^{${P.aTex}}$ comme démontré <em>supra</em> : si $k^{*}$ ne varie plus, alors $y^{*}$ non plus. Ainsi, à l'état stationnaire, le taux de croissance du PIB par tête est nul lui aussi. Mais ici, ce qui nous intéresse n'est pas le taux de croissance du PIB par tête mais celui du PIB. Or on a $y = \\frac{Y}{L}$, c'est-à-dire $Y = yL$. On a donc $\\ln(Y) = \\ln(yL) = \\ln(y) + \\ln(L)$. En dérivant cette relation par rapport au temps, on trouve $\\frac{Y'}{Y} = \\frac{y'}{y} + \\frac{L'}{L}$. Or $\\frac{Y'}{Y}$, $\\frac{y'}{y}$ et $\\frac{L'}{L}$ s'interprètent respectivement comme le taux de croissance du PIB, le taux de croissance du PIB par tête et le taux de croissance de la population (c'est-à-dire le taux de croissance démographique). Or, à l'équilibre, le taux de croissance du PIB par tête est nul. On vient donc de démontrer qu'à l'état stationnaire le taux de croissance du PIB est égal au taux de croissance démographique : plus la population est dynamique, plus l'économie le sera. On remarque alors que le taux de croissance du PIB à l'état stationnaire n'est aucunement lié au taux d'épargne : ce dernier ne fait que déterminer le niveau de capital par tête à l'état stationnaire, donc le PIB par tête à l'état stationnaire (pas la croissance de ces variables).</li>`; }
+    ]
+  },
+
+  en: {
+    htmlLang: "en",
+    title: "Macroeconomics Simulator - Solow Model",
+    badge: "GROWTH AND BUSINESS CYCLES",
+    h1: "Capital Accumulation in the Solow Model",
+    subtitle: "© Thomas Hossen – August 29, 2026 Version",
+    seedLabel: "Seed (Optional)",
+    btnGen: "Generate Exercise →",
+    welcome: "Configure the parameters and click Generate to create a new exercise.",
+    seedActive: "Active Seed:",
+    btnNew: "↺ New Statement",
+    btnPdf: "⬇ Export PDF",
+    btnDoc: "⬇ Export DOC",
+    tagEnonce: "Problem",
+    cardTitle: "The Simplified Solow Model",
+    assignment: "Assignment",
+    tagSol: "Solution",
+    showSol: "Show Solution",
+    hideSol: "Hide Solution",
+    docTitle: "Macroeconomics Exercise",
+    docFile: "Solow_Model_Exercise.doc",
+    locale: "en-GB",
+    pctSep: "%",
+    thousands: ",",
+    decimal: ".",
+
+    tbl: {
+      k: "Capital<br>per worker $k$",
+      y: "Output<br>per worker $y$",
+      c: "Consumption<br>per worker $c$",
+      i: "Investment<br>per worker $i$",
+      dk: "Depreciation<br>per worker $\\delta k$",
+      vk: "Change in capital<br>per worker $\\Delta k$"
+    },
+
+    fig: {
+      xlabel: "Capital per worker k",
+      ylabel: "GDP per worker y",
+      labK: "k* = ",
+      labY: "y* = ",
+      labS: "s* = ",
+      labC: "c* = ",
+      caption: function(P, lvl) {
+        if (lvl === 1) return `Production function per worker $f(k) = ${P.fTex}$.`;
+        if (lvl === 2) return `Production function per worker $f(k) = ${P.fTex}$ and investment per worker $s\\,f(k) = ${P.sfTex}$.`;
+        if (lvl === 3) return `Production function per worker, investment per worker $s\\,f(k)$ and depreciation per worker $\\delta k = ${nt(P.delta,4,0)}k$.`;
+        return `Steady state of the Solow model: capital per worker $k^{*} = ${nt(P.kStar,4,0)}$ equalises investment per worker and depreciation of capital per worker.`;
+      }
+    },
+
+    context: function(P) { return `
+      Consider a Cobb-Douglas production function $Y = A K^{${P.aTex}}L^{${P.bTex}}$. The rows of the table are independent. Assume that $A = ${nt(P.A,2,0)}$.
+    `; },
+
+    enonce: [
+      function(P) { return `<li>By dividing the production function by $L$, express output per worker ($y=\\frac{Y}{L}$) as a function of capital per worker ($k=\\frac{K}{L}$). Use the equation you obtain to complete the second column of the table.</li>`; },
+      function(P) { return `<li>Draw the production function $f(k)$ on a graph. Explain why the slope of the production function approximately indicates by how much output per worker increases when capital per worker increases by one unit.</li>`; },
+      function(P) { return `<li>Let $C$ denote consumption, $S$ saving, $I$ investment, $c$ consumption per worker and $i$ investment per worker.
+        <ol class="sub-ol">
+          <li>The Solow (1956) model assumes that consumption is proportional to income, namely $C = (1-s)Y$, where $s$ is the saving rate, whose value lies between 0 and 1. Complete column 3 of the table assuming $s = ${nt(P.s,4,0)}$.</li>
+          <li>At the macroeconomic equilibrium, what is the relation between output $Y$, consumption $C$ and saving $S$? Which relation between saving and investment must hold for aggregate demand for goods to equal aggregate supply of goods? Then express $i$ as a function of $y$, and complete column 4 of the table. Draw the curve $sf(k)$ on the graph.</li>
+        </ol></li>`; },
+      function(P) { return `<li><ol class="sub-ol">
+          <li>Even though investment increases capital per worker, the capital stock depreciates every year. Let $\\delta$ denote the depreciation rate of capital, and assume it equals $${pcT(P.delta)}$. Use these data to complete column 5 of the table. Draw the curve $\\delta k$ on the graph.</li>
+          <li>The change in the capital stock equals investment minus depreciation of capital (we therefore have the relation $\\Delta k = i - \\delta k = s f(k) - \\delta k$). If $s = ${nt(P.s,4,0)}$, compute the change in the capital stock and complete column 6 of the table.</li>
+        </ol></li>`; },
+      function(P) { return `<li>At the steady state (without technical progress), capital per worker and consumption per worker remain constant from one year to the next. Capital per worker remains constant when $\\Delta k = 0$, that is $i = sf(k) = \\delta k$.
+        <ol class="sub-ol">
+          <li>Locate this point on the graph (its abscissa is $k^{*}$).</li>
+          <li>Compute output per worker $y^{*}$, consumption per worker $c^{*}$ and saving per worker $s^{*}$ at the steady state.</li>
+          <li>Compute $k^{*}$ algebraically.</li>
+        </ol></li>`; },
+      function(P) { return `<li>What is the impact of an increase in the saving rate on the steady-state level of capital per worker? Comment on the effects of such an increase on the long-run growth rate of the economy.</li>`; }
+    ],
+
+    sol: [
+      function(P) { return `<li>Output per worker satisfies
+        <div class="math-formula">\\[\\frac{Y}{L} = \\frac{A K^{${P.aTex}}L^{${P.bTex}}}{L} = \\frac{A K^{${P.aTex}}}{L^{${P.aTex}}} = A\\left(\\frac{K}{L}\\right)^{${P.aTex}}\\]</div>
+        We therefore have $y = A k^{${P.aTex}} = ${P.fTex}$. Filling in the table step by step, we obtain:
+        ${P.table1}</li>`; },
+
+      function(P) { return `<li>We draw the production function $f : k \\mapsto ${P.fTex}$ and obtain the following graph:
+        ${P.chart1}
+        Recall that the slope of the function $f$ is its derivative $f'$. Now we have $f'(k) = ${P.aTex}\\,A\\,k^{${P.aTex}-1}$, and this derivative is by definition the marginal productivity of capital per worker: it therefore approximately measures the increase in GDP per worker when capital per worker increases by one unit.</li>`; },
+
+      function(P) { return `<li><ol class="sub-ol">
+        <li>If $C = (1-s)Y$, then $\\frac{C}{L} = (1-s)\\frac{Y}{L}$, that is $c = (1-s)y$, here $c = ${nt(1-P.s,4,0)}y$: consumption per worker therefore represents ${nfp((1-P.s)*100,0)}% of GDP per worker, which allows us to complete the table:
+        ${P.table2}</li>
+        <li>Saving is by definition what is not consumed: we therefore have $S = sY$ and $C = (1-s)Y$. Moreover, we are in a closed economy: national saving is thus equal to $S = Y - C - G$. Now the IS/LM model in a closed economy states that $Y = C + I + G$ holds. We therefore have $S = I$: investment equals saving in a closed economy. It then follows that $I = sY$, hence $\\frac{I}{L} = s\\frac{Y}{L}$. We therefore have $i = sy$, here $i = ${nt(P.s,4,0)}y$: ${nfp(P.s*100,0)}% of GDP per worker is thus devoted to investment, which allows us to complete the table:
+        ${P.table3}
+        Consequently, we can add investment per worker $sf(k) = ${P.sfTex}$ to our previous graph and we obtain:
+        ${P.chart2}</li>
+      </ol></li>`; },
+
+      function(P) { return `<li><ol class="sub-ol">
+        <li>We compute $\\delta k = ${nt(P.delta,4,0)}k$ and complete the table:
+        ${P.table4}
+        We can then add the line with equation $y = \\delta k$ to our graph and we obtain:
+        ${P.chart3}</li>
+        <li>We compute $\\Delta k = i - \\delta k$ and complete the last column of the table:
+        ${P.table5}</li>
+      </ol></li>`; },
+
+      function(P) { return `<li><ol class="sub-ol">
+        <li>The equilibrium in the Solow model is reached at the intersection of the line with equation $y = \\delta k$ (black curve) and the curve with equation $y = i = sf(k)$ (blue curve). From the table <em>supra</em>, we have $\\Delta k = 0$ when $k = ${nt(P.kStar,4,0)}$: at the equilibrium, capital per worker therefore amounts to $k^{*} = ${nt(P.kStar,4,0)}$. The equilibrium can thus be located graphically as follows:
+        ${P.chart4}</li>
+        <li>GDP per worker is $y = ${P.fTex}$. At the equilibrium, GDP per worker therefore amounts to $y^{*} = ${P.fStarTex} = ${nt(P.yStar,4,0)}$. Consequently, investment per worker at the equilibrium, which also corresponds to saving per worker at the equilibrium, amounts to $s^{*} = s\\,y^{*} = ${nt(P.s,4,0)} \\times ${nt(P.yStar,4,0)} = ${nt(P.iStar,4,0)}$. We deduce that consumption per worker at the equilibrium, that is the share of income per worker which is not saved, equals $c^{*} = (1-s)y^{*} = ${nt(1-P.s,4,0)} \\times ${nt(P.yStar,4,0)} = ${nt(P.cStar,4,0)}$.</li>
+        <li>The value $k^{*}$ is, by definition, the one which equalises investment per worker and depreciation. Now we have:
+        <div class="math-formula">\\[\\begin{aligned}
+        i = \\delta k
+        &\\iff s f(k) = \\delta k \\\\
+        &\\iff s A k^{${P.aTex}} = \\delta k \\\\
+        &\\iff k^{1-${P.aTex}} = k^{${P.bTex}} = \\frac{sA}{\\delta} \\\\
+        &\\iff k = \\left(\\frac{sA}{\\delta}\\right)^{${P.expTex}}
+        \\end{aligned}\\]</div>
+        the last equivalence being valid since $k$ is positive. Here, we therefore find $k^{*} = \\left(\\frac{${nt(P.s,4,0)} \\times ${nt(P.A,2,0)}}{${nt(P.delta,4,0)}}\\right)^{${P.expTex}} = ${P.R}^{${P.expTex}} = ${nt(P.kStar,4,0)}$, as expected.</li>
+      </ol></li>`; },
+
+      function(P) { return `<li>From the previous question, we have $k^{*} = \\left(\\frac{sA}{\\delta}\\right)^{${P.expTex}}$: if the saving rate $s$ increases, steady-state capital per worker $k^{*}$ increases as well. Consequently, once at the steady state, capital per worker no longer varies: the growth rate of capital per worker is therefore zero. Moreover, GDP per worker $y^{*}$ satisfies $y^{*} = A(k^{*})^{${P.aTex}}$ at the equilibrium as shown <em>supra</em>: if $k^{*}$ no longer varies, then neither does $y^{*}$. Thus, at the steady state, the growth rate of GDP per worker is zero as well. But what interests us here is not the growth rate of GDP per worker but that of GDP. Now we have $y = \\frac{Y}{L}$, that is $Y = yL$. We therefore have $\\ln(Y) = \\ln(yL) = \\ln(y) + \\ln(L)$. Differentiating this relation with respect to time, we find $\\frac{Y'}{Y} = \\frac{y'}{y} + \\frac{L'}{L}$. Now $\\frac{Y'}{Y}$, $\\frac{y'}{y}$ and $\\frac{L'}{L}$ are interpreted respectively as the growth rate of GDP, the growth rate of GDP per worker and the growth rate of the population (that is, the demographic growth rate). At the equilibrium, the growth rate of GDP per worker is zero. We have therefore just shown that, at the steady state, the growth rate of GDP equals the demographic growth rate: the more dynamic the population, the more dynamic the economy. We then note that the growth rate of GDP at the steady state is in no way related to the saving rate: the latter only determines the level of capital per worker at the steady state, hence GDP per worker at the steady state (not the growth of these variables).</li>`; }
+    ]
+  }
+};
+
+/* ============================================================
+   GESTION DE LA LANGUE  /  LANGUAGE HANDLING
+   ============================================================ */
+let LANG = 'fr';
+
+function detectLang() {
+    try {
+        const q = new URLSearchParams(window.location.search).get('lang');
+        if (q && I18N[q.toLowerCase()]) return q.toLowerCase();
+    } catch (e) {}
+    const h = (window.location.hash || '').replace('#', '').toLowerCase();
+    if (I18N[h]) return h;
+    return 'fr';
+}
+
+function setText(id, txt) {
+    const el = document.getElementById(id);
+    if (el) el.innerText = txt;
+}
+
+function applyLang() {
+    const D = I18N[LANG];
+    document.documentElement.lang = D.htmlLang;
+    document.title = D.title;
+
+    setText('lbl-badge', D.badge);
+    setText('lbl-h1', D.h1);
+    setText('lbl-subtitle', D.subtitle);
+    setText('lbl-seed', D.seedLabel);
+    setText('lbl-gen', D.btnGen);
+    setText('welcome', D.welcome);
+    setText('lbl-seed-active', D.seedActive);
+    setText('lbl-new', D.btnNew);
+    setText('lbl-pdf', D.btnPdf);
+    setText('lbl-doc', D.btnDoc);
+    setText('lbl-tag-enonce', D.tagEnonce);
+    setText('lbl-title-enonce', D.cardTitle);
+    setText('lbl-assignment', D.assignment);
+    setText('lbl-tag-sol', D.tagSol);
+    setText('lbl-title-sol', D.cardTitle);
+
+    const btn = document.getElementById('toggle-btn');
+    btn.innerText = document.getElementById('sol-card').classList.contains('visible') ? D.hideSol : D.showSol;
+
+    document.getElementById('flag-fr').classList.toggle('active', LANG === 'fr');
+    document.getElementById('flag-en').classList.toggle('active', LANG === 'en');
+}
+
+function setLang(lang) {
+    if (!I18N[lang] || lang === LANG) return;
+    LANG = lang;
+
+    try {
+        const u = new URL(window.location.href);
+        u.searchParams.set('lang', lang);
+        history.replaceState(null, '', u.toString());
+    } catch (e) {}
+
+    applyLang();
+
+    if (document.getElementById('ex-area').style.display !== 'none') {
+        const solWasVisible = document.getElementById('sol-card').classList.contains('visible');
+        generateExercise(false);
+        if (solWasVisible) toggleSol();
+    }
+}
+
+// --- PRNG (Mulberry32) ---
+let currentSeed = 0;
+function seedPRNG(seed) {
+    return function() {
+      let t = seed += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+let random = Math.random;
+function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
+
+/* ============================================================
+   FORMATAGE  /  FORMATTING
+   ============================================================ */
+function nf(num, d) {
+    if (Math.abs(num) < 5e-10) num = 0;
+    let sign = num < 0 ? "-" : "";
+    let parts = Math.abs(num).toFixed(d).split('.');
+    let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, I18N[LANG].thousands);
+    return sign + intPart + (parts.length > 1 ? I18N[LANG].decimal + parts[1] : "");
+}
+function nt(num, dmax, dmin) {
+    let d = dmax;
+    while (d > dmin) {
+        let s = Math.abs(num).toFixed(d);
+        if (s.charAt(s.length - 1) === '0') d--; else break;
+    }
+    return nf(num, d);
+}
+function pcT(num) {
+    let d = 2;
+    while (d > 0) {
+        let s = Math.abs(num * 100).toFixed(d);
+        if (s.charAt(s.length - 1) === '0') d--; else break;
+    }
+    return nf(num * 100, d) + "\\,\\%";
+}
+function nfp(num, d) { return num.toFixed(d); }
+function np(num) {
+    let s = num.toFixed(4);
+    while (s.indexOf('.') >= 0 && (s.charAt(s.length - 1) === '0' || s.charAt(s.length - 1) === '.')) s = s.slice(0, -1);
+    return s;
+}
+
+/* Simplification du radical : k = d^n * r  */
+function radical(k, n) {
+    let r = k, d = 1;
+    for (let x = 2; Math.pow(x, n) <= r; x++) {
+        while (r % Math.pow(x, n) === 0) { r /= Math.pow(x, n); d *= x; }
+    }
+    return { d: d, r: r };
+}
+function isPow(k, n) { return Math.pow(Math.round(Math.pow(k, 1 / n)), n) === k; }
+
+function radTex(r, n) { return n === 2 ? `\\sqrt{${r}}` : `\\sqrt[3]{${r}}`; }
+
+/* Valeur exacte du type "coef x racine n-ieme" suivie de son approximation */
+function fmtRad(mult, k, n) {
+    if (k === 0) return "0";
+    const R = radical(k, n);
+    const coef = mult * R.d;
+    if (R.r === 1) return nt(coef, 4, 0);
+    const cs = Math.abs(coef - 1) < 1e-12 ? "" : nt(coef, 4, 0);
+    return `${cs}${radTex(R.r, n)} \\approx ${nf(mult * Math.pow(k, 1 / n), 3)}`;
+}
+function fmtDeltaK(P, k) {
+    if (k === 0) return "0";
+    const dk = P.delta * k;
+    let val = P.s * P.A * Math.pow(k, 1 / P.n) - dk;
+    if (Math.abs(val) < 1e-9) val = 0;
+    const R = radical(k, P.n);
+    const coef = P.s * P.A * R.d;
+    if (R.r === 1) return nt(val, 4, 0);
+    const cs = Math.abs(coef - 1) < 1e-12 ? "" : nt(coef, 4, 0);
+    return `${cs}${radTex(R.r, P.n)} - ${nt(dk, 4, 0)} \\approx ${nf(val, 3)}`;
+}
+
+/* ============================================================
+   TABLEAU  /  TABLE   (cols = nombre de colonnes remplies)
+   ============================================================ */
+function buildTable(P, DIC, cols) {
+    const T = DIC.tbl;
+    let html = `<div class="exam-table-wrap"><table class="exam-table"><tr><th>${T.k}</th><th>${T.y}</th><th>${T.c}</th><th>${T.i}</th><th>${T.dk}</th><th>${T.vk}</th></tr>`;
+    for (let k of P.rows) {
+        let c = [];
+        c.push(`$${nt(k, 4, 0)}$`);
+        c.push(cols >= 1 ? `$${fmtRad(P.A, k, P.n)}$` : "");
+        c.push(cols >= 2 ? `$${fmtRad((1 - P.s) * P.A, k, P.n)}$` : "");
+        c.push(cols >= 3 ? `$${fmtRad(P.s * P.A, k, P.n)}$` : "");
+        c.push(cols >= 4 ? `$${nt(P.delta * k, 4, 0)}$` : "");
+        c.push(cols >= 5 ? `$${fmtDeltaK(P, k)}$` : "");
+        html += `<tr>${c.map(x => `<td>${x}</td>`).join("")}</tr>`;
+    }
+    return html + `</table></div>`;
+}
+
+/* ============================================================
+   GRAPHIQUE  /  CHART   (lvl = 1 a 4)
+   ============================================================ */
+function buildChart(P, DIC, lvl) {
+    const W = 640, H = 470;
+    const x0 = 58, x1 = 618, y0 = 20, y1 = 392;
+
+    const f = function(k) { return P.A * Math.pow(k, 1 / P.n); };
+    const xmax = P.kMax;
+    const ymax = Math.ceil(f(xmax) * 10) / 10 + 0.4;
+    const xstep = xmax <= 20 ? 2 : (xmax <= 40 ? 5 : 10);
+    const ystep = ymax <= 8 ? 1 : 2;
+
+    const SX = function(v) { return x0 + (v / xmax) * (x1 - x0); };
+    const SY = function(v) { return y1 - (v / ymax) * (y1 - y0); };
+
+    function curve(fn, color, width) {
+        let pts = [];
+        for (let i = 0; i <= 160; i++) {
+            let k = xmax * i / 160;
+            pts.push((i === 0 ? "M" : "L") + SX(k).toFixed(2) + "," + SY(fn(k)).toFixed(2));
+        }
+        return `<path d="${pts.join(" ")}" fill="none" stroke="${color}" stroke-width="${width}"/>`;
+    }
+
+    let g = "";
+    for (let v = 0; v <= xmax + 1e-9; v += xstep) {
+        g += `<line x1="${SX(v).toFixed(1)}" y1="${y0}" x2="${SX(v).toFixed(1)}" y2="${y1}" stroke="#e2ded5" stroke-width="1"/>`;
+        g += `<text x="${SX(v).toFixed(1)}" y="${y1 + 18}" text-anchor="middle" font-size="11" fill="#5a5a5a">${v}</text>`;
+    }
+    for (let v = 0; v <= ymax; v += ystep) {
+        g += `<line x1="${x0}" y1="${SY(v).toFixed(1)}" x2="${x1}" y2="${SY(v).toFixed(1)}" stroke="#e2ded5" stroke-width="1"/>`;
+        g += `<text x="${x0 - 10}" y="${(SY(v) + 4).toFixed(1)}" text-anchor="end" font-size="11" fill="#5a5a5a">${v}</text>`;
+    }
+    g += `<line x1="${x0}" y1="${y1}" x2="${x1}" y2="${y1}" stroke="#0d1b2a" stroke-width="1.4"/>`;
+    g += `<line x1="${x0}" y1="${y0}" x2="${x0}" y2="${y1}" stroke="#0d1b2a" stroke-width="1.4"/>`;
+    g += `<text x="${((x0 + x1) / 2).toFixed(0)}" y="${y1 + 42}" text-anchor="middle" font-size="12.5" fill="#1e1e1e">${DIC.fig.xlabel}</text>`;
+    g += `<text x="16" y="${((y0 + y1) / 2).toFixed(0)}" text-anchor="middle" font-size="12.5" fill="#1e1e1e" transform="rotate(-90 16 ${((y0 + y1) / 2).toFixed(0)})">${DIC.fig.ylabel}</text>`;
+
+    g += curve(f, "#b94040", 2.4);
+    if (lvl >= 2) g += curve(function(k) { return P.s * f(k); }, "#1f4e79", 2.2);
+    if (lvl >= 3) g += `<line x1="${SX(0).toFixed(2)}" y1="${SY(0).toFixed(2)}" x2="${SX(xmax).toFixed(2)}" y2="${SY(P.delta * xmax).toFixed(2)}" stroke="#0d1b2a" stroke-width="2"/>`;
+
+    if (lvl >= 4) {
+        const xk = SX(P.kStar), yy = SY(P.yStar), yi = SY(P.iStar);
+        g += `<line x1="${xk.toFixed(2)}" y1="${y1}" x2="${xk.toFixed(2)}" y2="${yy.toFixed(2)}" stroke="#5a5a5a" stroke-width="1" stroke-dasharray="3 3"/>`;
+        g += `<line x1="${x0}" y1="${yy.toFixed(2)}" x2="${xk.toFixed(2)}" y2="${yy.toFixed(2)}" stroke="#5a5a5a" stroke-width="1" stroke-dasharray="3 3"/>`;
+        g += `<line x1="${x0}" y1="${yi.toFixed(2)}" x2="${xk.toFixed(2)}" y2="${yi.toFixed(2)}" stroke="#5a5a5a" stroke-width="1" stroke-dasharray="3 3"/>`;
+        g += `<circle cx="${x0}" cy="${yy.toFixed(2)}" r="4" fill="#0d1b2a"/><text x="${x0 + 8}" y="${(yy - 8).toFixed(2)}" font-size="12" fill="#0d1b2a">${DIC.fig.labY}${np(P.yStar)}</text>`;
+        g += `<circle cx="${x0}" cy="${yi.toFixed(2)}" r="4" fill="#0d1b2a"/><text x="${x0 + 8}" y="${(yi - 8).toFixed(2)}" font-size="12" fill="#0d1b2a">${DIC.fig.labS}${np(P.iStar)}</text>`;
+        g += `<circle cx="${xk.toFixed(2)}" cy="${y1}" r="4" fill="#0d1b2a"/><text x="${(xk + 8).toFixed(2)}" y="${y1 - 8}" font-size="12" fill="#0d1b2a">${DIC.fig.labK}${np(P.kStar)}</text>`;
+        const xb = xk - 14;
+        g += `<line x1="${xb.toFixed(2)}" y1="${yy.toFixed(2)}" x2="${xb.toFixed(2)}" y2="${yi.toFixed(2)}" stroke="#2d6b4a" stroke-width="1.4"/>`;
+        g += `<line x1="${(xb - 4).toFixed(2)}" y1="${yy.toFixed(2)}" x2="${(xb + 4).toFixed(2)}" y2="${yy.toFixed(2)}" stroke="#2d6b4a" stroke-width="1.4"/>`;
+        g += `<line x1="${(xb - 4).toFixed(2)}" y1="${yi.toFixed(2)}" x2="${(xb + 4).toFixed(2)}" y2="${yi.toFixed(2)}" stroke="#2d6b4a" stroke-width="1.4"/>`;
+        g += `<text x="${(xb - 8).toFixed(2)}" y="${((yy + yi) / 2 + 4).toFixed(2)}" text-anchor="end" font-size="12" fill="#2d6b4a">${DIC.fig.labC}${np(P.cStar)}</text>`;
+    }
+
+    let entries = [["#b94040", P.legF]];
+    if (lvl >= 2) entries.push(["#1f4e79", P.legSF]);
+    if (lvl >= 3) entries.push(["#0d1b2a", P.legDK]);
+    let lw = 200, lh = 14 + entries.length * 20;
+    let lx = x1 - lw - 8, ly = y1 - lh - 8;
+    g += `<rect x="${lx}" y="${ly}" width="${lw}" height="${lh}" fill="#ffffff" stroke="#d4cfc4" rx="3"/>`;
+    entries.forEach(function(e, idx) {
+        let yy = ly + 18 + idx * 20;
+        g += `<line x1="${lx + 10}" y1="${yy}" x2="${lx + 38}" y2="${yy}" stroke="${e[0]}" stroke-width="2.4"/><text x="${lx + 46}" y="${yy + 4}" font-size="11" fill="#1e1e1e">${e[1]}</text>`;
+    });
+
+    return `<div class="fig-wrap"><svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" font-family="Source Serif 4, serif">${g}</svg></div><p class="fig-caption">${DIC.fig.caption(P, lvl)}</p>`;
+}
+
+/* ============================================================
+   GENERATION DE L'EXERCICE  /  EXERCISE GENERATION
+   ============================================================ */
+function generateExercise(forceNew = false) {
+    if (forceNew) {
+        document.getElementById('seed-input').value = "";
+    }
+    let seedVal = document.getElementById('seed-input').value;
+    currentSeed = seedVal ? parseInt(seedVal) : Math.floor(Math.random() * 99999999);
+    document.getElementById('seed-disp').innerText = currentSeed;
+    document.getElementById('seed-input').value = currentSeed;
+    random = seedPRNG(currentSeed);
+
+    const DIC = I18N[LANG];
+
+    const sList = [0.10, 0.12, 0.15, 0.18, 0.20, 0.24, 0.25, 0.30];
+    const dList = [0.02, 0.03, 0.04, 0.05, 0.06, 0.08, 0.10];
+
+    let n, A, s, delta, R, m, kStar;
+
+    /* Tirage : on impose un etat stationnaire "propre" (k* puissance n-ieme
+       exacte), afin que les valeurs remarquables restent calculables a la main. */
+    while (true) {
+        n = randInt(0, 1) === 0 ? 2 : 3;
+        A = randInt(1, 2);
+        s = sList[randInt(0, sList.length - 1)];
+        delta = dList[randInt(0, dList.length - 1)];
+
+        R = s * A / delta;
+        if (Math.abs(R - Math.round(R)) > 1e-9) continue;
+        R = Math.round(R);
+
+        if (n === 2 && (R < 3 || R > 6)) continue;
+        if (n === 3 && !(R === 4 || R === 9)) continue;
+
+        m = (n === 2) ? R : Math.round(Math.sqrt(R));
+        kStar = Math.pow(m, n);
+        break;
+    }
+
+    const below = Math.pow(m - 1, n);
+    const above = Math.pow(m + (n === 2 ? 2 : 1), n);
+    let mid1, mid2;
+    do { mid1 = randInt(below + 1, kStar - 1); } while (isPow(mid1, n));
+    do { mid2 = randInt(kStar + 1, above - 1); } while (isPow(mid2, n));
+
+    const yStar = A * m;
+    const iStar = s * yStar;
+    const cStar = (1 - s) * yStar;
+
+    const rad = (n === 2) ? "\\sqrt{k}" : "\\sqrt[3]{k}";
+    const radU = (n === 2) ? "\u221A" : "\u221B";
+
+    // Affichage Énoncé
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('ex-area').style.display = 'block';
+    document.getElementById('sol-card').classList.remove('visible');
+    document.getElementById('toggle-btn').innerText = DIC.showSol;
+    document.getElementById('toggle-btn').classList.remove('shown');
+
+    const P = {
+        n: n, A: A, s: s, delta: delta, R: R, m: m,
+        kStar: kStar, yStar: yStar, iStar: iStar, cStar: cStar,
+        rows: [0, below, mid1, kStar, mid2, above], kMax: above,
+        aTex: n === 2 ? "\\frac{1}{2}" : "\\frac{1}{3}",
+        bTex: n === 2 ? "\\frac{1}{2}" : "\\frac{2}{3}",
+        expTex: n === 2 ? "2" : "\\frac{3}{2}",
+        fTex: (A === 1 ? "" : nt(A, 2, 0)) + rad,
+        sfTex: nt(s * A, 4, 0) + rad,
+        fStarTex: (A === 1 ? "" : nt(A, 2, 0)) + ((n === 2) ? `\\sqrt{${kStar}}` : `\\sqrt[3]{${kStar}}`),
+        legF: "y = f(k) = " + (A === 1 ? "" : np(A)) + radU + "k",
+        legSF: "i = s\u00B7f(k) = " + np(s * A) + radU + "k",
+        legDK: "\u03B4k = " + np(delta) + "k"
+    };
+
+    document.getElementById('context-text').innerHTML = DIC.context(P);
+    document.getElementById('enonce-table').innerHTML = buildTable(P, DIC, 0);
+
+    let htmlEnonce = "";
+    for (let qi = 0; qi < DIC.enonce.length; qi++) {
+        htmlEnonce += DIC.enonce[qi](P);
+    }
+    document.getElementById('events-list').innerHTML = htmlEnonce;
+
+    // --- GÉNÉRATION CORRIGÉ ---
+    P.table1 = buildTable(P, DIC, 1);
+    P.table2 = buildTable(P, DIC, 2);
+    P.table3 = buildTable(P, DIC, 3);
+    P.table4 = buildTable(P, DIC, 4);
+    P.table5 = buildTable(P, DIC, 5);
+    P.chart1 = buildChart(P, DIC, 1);
+    P.chart2 = buildChart(P, DIC, 2);
+    P.chart3 = buildChart(P, DIC, 3);
+    P.chart4 = buildChart(P, DIC, 4);
+
+    let htmlSol = `<div class="calc-box"><ol class="question-list" style="margin-bottom:0;">`;
+    for (let qi = 0; qi < DIC.sol.length; qi++) {
+        htmlSol += DIC.sol[qi](P);
+    }
+    htmlSol += `</ol></div>`;
+
+    document.getElementById('sol-content').innerHTML = htmlSol;
+
+    if (window.MathJax && MathJax.typesetPromise) {
+        MathJax.typesetPromise();
+    }
+}
+
+function toggleSol() {
+    let solCard = document.getElementById('sol-card');
+    let btn = document.getElementById('toggle-btn');
+    if (solCard.classList.contains('visible')) {
+        solCard.classList.remove('visible');
+        btn.innerText = I18N[LANG].showSol;
+        btn.classList.remove('shown');
+    } else {
+        solCard.classList.add('visible');
+        btn.innerText = I18N[LANG].hideSol;
+        btn.classList.add('shown');
+    }
+}
+
+function exportWord() {
+    let content = document.getElementById('ex-area').cloneNode(true);
+    let actions = content.querySelector('.top-actions');
+    if(actions) actions.parentNode.removeChild(actions);
+    let toggle = content.querySelector('.sol-toggle-wrap');
+    if(toggle) toggle.parentNode.removeChild(toggle);
+    let solCard = content.querySelector('#sol-card');
+    if(solCard) solCard.style.display = 'block';
+
+    let html = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <meta charset='utf-8'>
+            <title>${I18N[LANG].docTitle}</title>
+            <style>
+                body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5; text-align: justify; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                th, td { border: 1px solid #000; padding: 5px; text-align: center; }
+                th { background-color: #f2f2f2; font-weight: bold; }
+                .calc-box { border: 1px solid #000; padding: 10px; margin-bottom: 15px; background-color: #f9f9f9; text-align: justify; }
+                .math-formula { text-align: center; font-style: italic; margin: 10px 0; }
+                .fig-caption { font-size: 9pt; font-style: italic; text-align: justify; }
+                ol { text-align: justify; }
+                li { margin-bottom: 5px; }
+            </style>
+        </head>
+        <body>
+            ${content.innerHTML}
+        </body>
+        </html>
+    `;
+
+    let blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    let url = URL.createObjectURL(blob);
+    let link = document.createElement('a');
+    link.href = url;
+    link.download = I18N[LANG].docFile;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+/* Initialisation */
+LANG = detectLang();
+applyLang();
+</script>
+</body>
+</html>
