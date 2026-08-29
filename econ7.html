@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Générateur d'exercices - Problème d'économétrie</title>
+<script>
+window.MathJax = {
+  tex: { 
+    inlineMath: [['\\(','\\)']], 
+    displayMath: [['\\[','\\]']], 
+    packages: {'[+]': ['ams']},
+    macros: {
+      Var: ['\\textbf{Var}\\left(#1\\right)', 1],
+      Cov: ['\\textbf{Cov}\\left(#1\\right)', 1]
+    }
+  },
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] }
+};
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 0;border-bottom:3px solid var(--gold)}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+#controls-bar{border-top:1px solid rgba(255,255,255,.08);padding:1.1rem 0 1.3rem}
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.5)}
+.ctrl-inp{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.38rem .65rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.82rem;width:88px;outline:none;transition:border-color .2s}
+.ctrl-inp:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.38rem .65rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.82rem;width:88px;outline:none;cursor:pointer;transition:border-color .2s;appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,rgba(232,184,75,.8) 50%),linear-gradient(135deg,rgba(232,184,75,.8) 50%,transparent 50%);background-position:calc(100% - 14px) 52%,calc(100% - 9px) 52%;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+.ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-sel option{background:var(--navy);color:var(--cream)}
+.ctrl-tip{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:rgba(250,247,240,.33);margin-top:2px}
+.seed-row{display:flex;align-items:flex-end;gap:.45rem}
+.btn-copy-seed{background:transparent;border:1px solid rgba(201,149,42,.4);color:rgba(250,247,240,.55);padding:.38rem .55rem;border-radius:3px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:.65rem;transition:all .18s;white-space:nowrap}
+.btn-copy-seed:hover{border-color:var(--gold-light);color:var(--gold-light)}
+.ctrl-vsep{width:1px;background:rgba(255,255,255,.1);align-self:stretch;margin:0 .2rem}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.3rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.9rem;font-weight:600;transition:background .18s;white-space:nowrap;align-self:flex-end}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.welcome-msg{text-align:center;padding:5rem 2rem;color:var(--text-muted);font-style:italic;font-size:1.05rem}
+.welcome-msg .arrow{font-size:2rem;display:block;margin-bottom:1rem;opacity:.4}
+
+/* TOP BAR */
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.top-bar-left{display:flex;gap:.6rem;align-items:center}
+.btn-sm{background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:'JetBrains Mono',monospace;font-size:.67rem;letter-spacing:.08em;text-transform:uppercase;padding:.4rem 1rem;border-radius:3px;cursor:pointer;transition:all .18s;white-space:nowrap}
+.btn-sm:hover{background:var(--gold);color:var(--navy)}
+.btn-sm.pdf{border-color:#7bafd4;color:#7bafd4}
+.btn-sm.pdf:hover{background:#7bafd4;color:var(--navy)}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.67rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:500}
+
+/* CARDS */
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);margin-bottom:1.5rem;border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+
+/* QUESTIONS */
+.questions ol{counter-reset:q;list-style:none}
+.questions ol>li{counter-increment:q;margin-bottom:1.4rem;display:flex;gap:1rem;align-items:flex-start}
+.questions ol>li::before{content:counter(q);min-width:28px;height:28px;background:var(--navy);color:var(--cream);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:500;flex-shrink:0;margin-top:.15rem}
+.questions ol>li .q-text{flex:1;font-size:.93rem;text-align:justify}
+
+/* SOLUTION */
+.sol-toggle-wrap{text-align:center;margin:1rem 0 0}
+.btn-toggle{background:transparent;border:2px solid var(--navy);color:var(--navy);font-family:'Source Serif 4',serif;font-size:.9rem;padding:.6rem 2rem;border-radius:4px;cursor:pointer;transition:all .2s}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--navy);color:var(--cream)}
+.sol-card{border-top:4px solid var(--green);display:none}
+.sol-card.visible{display:block;animation:fi .3s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+.st{font-size:.92rem;line-height:1.75;text-align:justify}
+.st p{margin-bottom:.7rem}
+.st ol{counter-reset:sq;list-style:none}
+.st>ol>li{counter-increment:sq;margin-bottom:1.6rem;display:flex;gap:1rem;align-items:flex-start}
+.st>ol>li::before{content:counter(sq);min-width:24px;height:24px;background:var(--green);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.68rem;flex-shrink:0;margin-top:.15rem}
+.st ul{list-style:disc;padding-left:1.5rem;margin-bottom:.7rem}
+.st ul li{margin-bottom:1rem}
+
+/* PDF MODAL */
+#pdf-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;backdrop-filter:blur(2px)}
+#pdf-modal{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:101;background:#fff;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.25);width:390px;max-width:95vw;border-top:4px solid #7bafd4;overflow:hidden}
+.mh{background:var(--navy);color:var(--cream);padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
+.mh h3{font-family:'Playfair Display',serif;font-size:1rem;font-weight:600}
+.mclose{background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:1.2rem;line-height:1;padding:2px 6px;border-radius:3px;transition:color .15s}
+.mclose:hover{color:#fff}
+.mb2{padding:1.5rem}
+.opt-row{display:flex;align-items:flex-start;gap:.75rem;margin-bottom:1rem;cursor:pointer}
+.opt-row input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--navy);flex-shrink:0;margin-top:3px}
+.opt-lbl{font-size:.93rem}
+.opt-desc{font-size:.75rem;color:var(--text-muted);display:block}
+.seed-note{font-family:'JetBrains Mono',monospace;font-size:.7rem;background:var(--cream-dark);border:1px solid var(--border);padding:.55rem .85rem;border-radius:3px;color:var(--text-muted);margin-bottom:1.2rem;line-height:1.5}
+.seed-note strong{color:var(--navy)}
+.mactions{display:flex;gap:.6rem}
+.btn-print{flex:1;background:var(--navy);color:var(--cream);border:none;padding:.7rem;border-radius:4px;font-family:'Source Serif 4',serif;font-size:.9rem;cursor:pointer;transition:background .2s}
+.btn-print:hover{background:var(--navy-mid)}
+.btn-cancel{background:transparent;border:1px solid var(--border);color:var(--text-muted);padding:.7rem 1rem;border-radius:4px;font-family:'Source Serif 4',serif;font-size:.9rem;cursor:pointer;transition:all .2s}
+.btn-cancel:hover{border-color:var(--text);color:var(--text)}
+
+/* PRINT */
+@media print{
+:root{--navy:#0d1b2a;--cream:#fff;--cream-dark:#f8f8f8;--gold:#c9952a;--green:#2d6b4a;--border:#ccc}
+body{background:#fff;font-size:11pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+header{padding:1rem 1.5rem .8rem}
+header .subtitle{display:none}
+#controls-bar,.top-bar,.sol-toggle-wrap,#pdf-ov,#pdf-modal{display:none!important}
+.card{box-shadow:none;border-radius:0;page-break-inside:avoid;margin-bottom:1rem}
+main{padding:1rem 1.5rem;max-width:100%}
+body.print-no-header header{display:none!important}
+body.print-no-solution .sol-card{display:none!important}
+body.print-force-solution .sol-card{display:block!important}
+}
+
+/* TABLEAUX DE DONNEES */
+.dtable-wrap{overflow-x:auto;margin:1.1rem 0}
+.dtable{width:100%;border-collapse:collapse;font-size:.82rem;font-family:'Source Serif 4',serif}
+.dtable th,.dtable td{border:1px solid var(--border);padding:.4rem .5rem;text-align:center;vertical-align:middle}
+.dtable th{background:var(--navy);color:var(--cream);font-weight:600;font-size:.78rem}
+.dtable tr:nth-child(even) td{background:#fbf9f4}
+.dtable td.num{font-family:'JetBrains Mono',monospace;font-size:.78rem;white-space:nowrap}
+.dtable tfoot td{font-weight:700;background:var(--cream-dark)}
+.dtable caption{caption-side:bottom;font-size:.76rem;color:var(--text-muted);font-style:italic;padding-top:.5rem;text-align:justify}
+
+/* ENCADRE AIDE AU CALCUL */
+.aide{background:#f7faf7;border:1px solid #c8e6c9;border-left:3px solid var(--green);padding:.9rem 1.2rem;border-radius:0 4px 4px 0;margin:1.2rem 0;font-size:.87rem;line-height:1.7;text-align:justify}
+.aide .aide-t{display:block;font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--green);margin-bottom:.45rem}
+.aide ul{list-style:disc;padding-left:1.4rem;margin:.4rem 0 0}
+.aide ul li{margin-bottom:.3rem}
+
+/* FIGURES */
+.fig-wrap{margin:1.2rem 0 .3rem;text-align:center;overflow-x:auto}
+.fig-wrap svg{width:100%;max-width:640px;height:auto;background:#fff;border:1px solid var(--border);border-radius:4px}
+.fig-cap{font-size:.78rem;color:var(--text-muted);font-style:italic;text-align:justify;margin-bottom:1rem;line-height:1.5}
+
+/* MISE EN AVANT D'UN RESULTAT */
+.res{background:var(--cream-dark);border:1px solid var(--border);border-radius:4px;padding:.6rem .9rem;margin:.8rem 0;font-size:.9rem;text-align:center}
+
+/* SOUS-QUESTIONS (a, b, c) */
+.questions ol ol{list-style:lower-alpha;padding-left:1.5rem;margin-top:.7rem;counter-reset:none}
+.questions ol ol>li{display:list-item;counter-increment:none;margin-bottom:.8rem;gap:0}
+.questions ol ol>li::before{content:none;display:none}
+.st ol.sub-ol{list-style:lower-alpha;padding-left:1.5rem;margin:.7rem 0 .3rem;counter-reset:none}
+.st ol.sub-ol>li{display:list-item;counter-increment:none;margin-bottom:1.3rem;gap:0}
+.st ol.sub-ol>li::before{content:none;display:none}
+.dtable td.est{font-style:italic;color:var(--red)}
+.dtable td.vide{background:#f4f2ec}
+.dtable th.rowh{background:var(--navy-mid);text-align:left;padding-left:.7rem}
+
+/* TABLE DE REGRESSION */
+.rtable{width:100%;border-collapse:collapse;font-size:.84rem;margin:1rem 0}
+.rtable th,.rtable td{border:1px solid var(--border);padding:.42rem .6rem}
+.rtable th{background:var(--navy);color:var(--cream);font-weight:600;font-size:.78rem;text-align:center}
+.rtable td.v{text-align:left;font-family:'Source Serif 4',serif}
+.rtable td.n{text-align:right;font-family:'JetBrains Mono',monospace;font-size:.78rem;white-space:nowrap}
+.rtable tr:nth-child(even) td{background:#fbf9f4}
+.rtable tfoot td{background:var(--cream-dark);font-size:.78rem}
+.rnote{font-size:.78rem;color:var(--text-muted);font-style:italic;margin:-.5rem 0 1.1rem;text-align:justify}
+
+/* --- Selecteur de langue / Language switch --- */
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem}
+.header-top .header-badge{margin-bottom:0}
+.lang-switch{display:flex;gap:.45rem;flex-shrink:0}
+.flag-btn{background:rgba(255,255,255,.06);border:1px solid rgba(201,149,42,.35);border-radius:3px;padding:3px;cursor:pointer;line-height:0;opacity:.5;transition:opacity .2s,border-color .2s,transform .15s}
+.flag-btn:hover{opacity:1;transform:translateY(-1px)}
+.flag-btn.active{opacity:1;border-color:var(--gold-light);box-shadow:0 0 0 1px rgba(232,184,75,.35)}
+.flag-btn svg{display:block;width:30px;height:20px;border-radius:1px}
+@media print{ .lang-switch{display:none !important;} }
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-top">
+    <div class="header-badge" data-k="k-badge">ÉCONOMÉTRIE</div>
+    <div class="lang-switch">
+      <button type="button" class="flag-btn active" id="flag-fr" onclick="setLang('fr')" title="Français" aria-label="Français"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="20" height="40" fill="#002654"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ED2939"/></svg></button>
+      <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
+    </div>
+  </div>
+  <h1 data-k="k-h1">Problème d'économétrie</h1>
+  <p class="subtitle" data-k="k-sub">© Thomas Hossen – Version du 29 août 2026</p>
+
+  <div id="controls-bar">
+    <div class="ctrls">
+      <div class="ctrl-g">
+        <span class="ctrl-lbl" data-k="k-seed">Seed de reproductibilité</span>
+        <div class="seed-row">
+          <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="0" max="99999999">
+          <button class="btn-copy-seed" id="btn-copy" onclick="copySeed()" title="Copier la seed active">⧉ Copier</button>
+        </div>
+        <span class="ctrl-tip" data-k="k-seedtip">Vide = aléatoire à chaque génération</span>
+      </div>
+      <div class="ctrl-vsep"></div>
+      <div class="ctrl-g">
+        <span class="ctrl-lbl" data-k="k-n">Observations <em>(n)</em></span>
+        <select class="ctrl-sel" id="param-n">
+          <option value="">auto</option>
+          <option value="50">50</option>
+          <option value="60">60</option>
+          <option value="80">80</option>
+          <option value="100">100</option>
+        </select>
+        <span class="ctrl-tip" data-k="k-ntip">Taille de l'échantillon</span>
+      </div>
+      <div class="ctrl-vsep"></div>
+      <button class="btn-gen" onclick="generateFromControls()"><span data-k="k-gen">Générer →</span></button>
+    </div>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" class="welcome-msg">
+    <span class="arrow">↑</span>
+    <span data-k="k-welcome">Configurez les paramètres (ou laissez vide pour de l'aléatoire), puis cliquez sur Générer.</span>
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="top-bar-left">
+        <button class="btn-sm" onclick="regen()"><span data-k="k-new">↺ Nouvel énoncé</span></button>
+        <button class="btn-sm pdf" onclick="openPdfModal()"><span data-k="k-pdf">⬇ Exporter PDF</span></button>
+      </div>
+      <div class="seed-badge"><span data-k="k-seedbadge">Seed&nbsp;:</span> <span id="seed-disp">—</span></div>
+    </div>
+
+    <div id="ex-card" class="card">
+      <div class="card-header"><span class="tag" data-k="k-tag-ex">Énoncé</span><h2 id="card-title" data-k="k-cardtitle">Déterminants du chiffre d'affaires</h2></div>
+      <div class="card-body" id="ex-content"></div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag" data-k="k-tag-sol">Corrigé</span><h2 data-k="k-cardtitle2">Déterminants du chiffre d'affaires</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+
+  </div>
+</main>
+
+<div id="pdf-ov" onclick="closePdfModal()"></div>
+<div id="pdf-modal">
+  <div class="mh">
+    <h3 data-k="k-modal">Exporter en PDF</h3>
+    <button class="mclose" onclick="closePdfModal()">✕</button>
+  </div>
+  <div class="mb2">
+    <div class="seed-note"><span data-k="k-mseed-pre">Seed&nbsp;:</span> <strong id="modal-seed">—</strong> <span data-k="k-mseed-post">— notez cette valeur pour reproduire exactement cet exercice.</span></div>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-header" checked>
+      <div><span class="opt-lbl" data-k="k-opth">Inclure l'en-tête de page</span>
+           <span class="opt-desc" data-k="k-opthd">Titre, badge « ÉCONOMÉTRIE » et intitulé du problème</span></div>
+    </label>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-sol">
+      <div><span class="opt-lbl" data-k="k-opts">Inclure le corrigé complet</span>
+           <span class="opt-desc" data-k="k-optsd">Démonstrations matricielles, tests de Student, Fisher, Chow, White et Goldfeld-Quandt</span></div>
+    </label>
+    <div class="mactions">
+      <button class="btn-print" onclick="doPrint()"><span data-k="k-print">🖨&nbsp;Imprimer / Sauvegarder PDF</span></button>
+      <button class="btn-cancel" onclick="closePdfModal()"><span data-k="k-cancel">Annuler</span></button>
+    </div>
+  </div>
+</div>
+
+<script>
+let solVisible = false;
+
+/* ============================================================
+   LOIS DE PROBABILITE  /  PROBABILITY DISTRIBUTIONS
+   Quantiles de Student, Fisher et khi-deux calculés numériquement
+   (fonctions bêta et gamma incomplètes), afin que les valeurs
+   critiques soient exactes quels que soient les degrés de liberté.
+   ============================================================ */
+function lgamma(x) {
+  const g = [676.5203681218851, -1259.1392167224028, 771.32342877765313, -176.61502916214059,
+             12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+  if (x < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * x)) - lgamma(1 - x);
+  x -= 1; let a = 0.99999999999980993, t = x + 7.5;
+  for (let i = 0; i < 8; i++) a += g[i] / (x + i + 1);
+  return 0.5 * Math.log(2 * Math.PI) + (x + 0.5) * Math.log(t) - t + Math.log(a);
+}
+function betacf(a, b, x) {
+  const MAXIT = 200, EPS = 3e-14, FPMIN = 1e-300;
+  let qab = a + b, qap = a + 1, qam = a - 1, c = 1, d = 1 - qab * x / qap;
+  if (Math.abs(d) < FPMIN) d = FPMIN; d = 1 / d; let h = d;
+  for (let m = 1; m <= MAXIT; m++) {
+    let m2 = 2 * m, aa = m * (b - m) * x / ((qam + m2) * (a + m2));
+    d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN;
+    c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN;
+    d = 1 / d; h *= d * c;
+    aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2));
+    d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN;
+    c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN;
+    d = 1 / d; let del = d * c; h *= del;
+    if (Math.abs(del - 1) < EPS) break;
+  }
+  return h;
+}
+function betai(a, b, x) {
+  if (x <= 0) return 0; if (x >= 1) return 1;
+  const bt = Math.exp(lgamma(a + b) - lgamma(a) - lgamma(b) + a * Math.log(x) + b * Math.log(1 - x));
+  if (x < (a + 1) / (a + b + 2)) return bt * betacf(a, b, x) / a;
+  return 1 - bt * betacf(b, a, 1 - x) / b;
+}
+function tCDF(t, df) { const x = df / (df + t * t); const p = 0.5 * betai(df / 2, 0.5, x); return t > 0 ? 1 - p : p; }
+function tQ(p, df) { let lo = 0, hi = 200; for (let i = 0; i < 160; i++) { const m = (lo + hi) / 2; if (tCDF(m, df) < p) lo = m; else hi = m; } return (lo + hi) / 2; }
+function FCDF(f, d1, d2) { if (f <= 0) return 0; return betai(d1 / 2, d2 / 2, d1 * f / (d1 * f + d2)); }
+function FQ(p, d1, d2) { let lo = 0, hi = 1000; for (let i = 0; i < 160; i++) { const m = (lo + hi) / 2; if (FCDF(m, d1, d2) < p) lo = m; else hi = m; } return (lo + hi) / 2; }
+function gammap(a, x) {
+  if (x < 0 || a <= 0) return 0;
+  if (x < a + 1) {
+    let ap = a, sum = 1 / a, del = sum;
+    for (let i = 1; i < 500; i++) { ap++; del *= x / ap; sum += del; if (Math.abs(del) < Math.abs(sum) * 3e-14) break; }
+    return sum * Math.exp(-x + a * Math.log(x) - lgamma(a));
+  }
+  const FPMIN = 1e-300; let b = x + 1 - a, c = 1 / FPMIN, d = 1 / b, h = d;
+  for (let i = 1; i < 500; i++) {
+    const an = -i * (i - a); b += 2; d = an * d + b; if (Math.abs(d) < FPMIN) d = FPMIN;
+    c = b + an / c; if (Math.abs(c) < FPMIN) c = FPMIN; d = 1 / d; const del = d * c; h *= del;
+    if (Math.abs(del - 1) < 3e-14) break;
+  }
+  return 1 - Math.exp(-x + a * Math.log(x) - lgamma(a)) * h;
+}
+function chi2Q(p, k) { let lo = 0, hi = 1000; for (let i = 0; i < 160; i++) { const m = (lo + hi) / 2; if (gammap(k / 2, m / 2) < p) lo = m; else hi = m; } return (lo + hi) / 2; }
+
+/* ============================================================
+   ALGEBRE LINEAIRE ET MCO  /  LINEAR ALGEBRA AND OLS
+   ============================================================ */
+function mT(A) { return A[0].map((_, j) => A.map(r => r[j])); }
+function mM(A, B) {
+  const n = A.length, m = B[0].length, K = B.length, C = [];
+  for (let i = 0; i < n; i++) {
+    const r = new Array(m).fill(0);
+    for (let k = 0; k < K; k++) { const a = A[i][k]; if (a === 0) continue; for (let j = 0; j < m; j++) r[j] += a * B[k][j]; }
+    C.push(r);
+  }
+  return C;
+}
+function mInv(A) {
+  const n = A.length;
+  const M = A.map((r, i) => r.concat(Array.from({ length: n }, (_, j) => i === j ? 1 : 0)));
+  for (let c = 0; c < n; c++) {
+    let p = c; for (let r = c + 1; r < n; r++) if (Math.abs(M[r][c]) > Math.abs(M[p][c])) p = r;
+    const tmp = M[c]; M[c] = M[p]; M[p] = tmp;
+    const pv = M[c][c];
+    for (let j = 0; j < 2 * n; j++) M[c][j] /= pv;
+    for (let r = 0; r < n; r++) { if (r === c) continue; const f = M[r][c]; if (f === 0) continue; for (let j = 0; j < 2 * n; j++) M[r][j] -= f * M[c][j]; }
+  }
+  return M.map(r => r.slice(n));
+}
+function ols(X, y) {
+  const n = X.length, k = X[0].length;
+  const inv = mInv(mM(mT(X), X));
+  const b = mM(inv, mM(mT(X), y.map(v => [v]))).map(r => r[0]);
+  const fit = X.map(r => r.reduce((s, v, j) => s + v * b[j], 0));
+  const res = y.map((v, i) => v - fit[i]);
+  const SCR = res.reduce((s, v) => s + v * v, 0);
+  const ybar = y.reduce((s, v) => s + v, 0) / n;
+  const SCT = y.reduce((s, v) => s + (v - ybar) * (v - ybar), 0);
+  const df = n - k, s2 = SCR / df;
+  const se = inv.map((r, i) => Math.sqrt(s2 * r[i]));
+  const R2 = 1 - SCR / SCT;
+  return { b: b, se: se, res: res, SCR: SCR, SCT: SCT, R2: R2, R2adj: 1 - (1 - R2) * (n - 1) / df, df: df, n: n, k: k };
+}
+
+/* ============================================================
+   PRNG (mulberry32) ET TIRAGES
+   ============================================================ */
+let _rand, _activeSeed = 0;
+function initRand(seed) {
+  _activeSeed = seed >>> 0; let s = _activeSeed;
+  _rand = () => {
+    s = (s + 0x6D2B79F5) >>> 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const rI = (a, b) => Math.floor(_rand() * (b - a + 1)) + a;
+const rA = arr => arr[Math.floor(_rand() * arr.length)];
+const rN = () => { let u = 0, v = 0; while (u === 0) u = _rand(); while (v === 0) v = _rand(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+const f3 = x => (Math.abs(x) < 5e-4 ? 0 : x).toFixed(3);
+const f2 = x => x.toFixed(2);
+
+/* ============================================================
+   CONTEXTES  /  CONTEXTS
+   ============================================================ */
+const BIZ = [
+  { firm: "Supermarket", fr: "supermarchés", frOne: "supermarché", en: "supermarkets", enOne: "supermarket" },
+  { firm: "Vitaform",    fr: "salles de sport", frOne: "salle de sport", en: "fitness clubs", enOne: "fitness club" },
+  { firm: "Pharmedis",   fr: "pharmacies", frOne: "pharmacie", en: "pharmacies", enOne: "pharmacy" },
+  { firm: "Bistronome",  fr: "restaurants", frOne: "restaurant", en: "restaurants", enOne: "restaurant" },
+  { firm: "AutoPrestige",fr: "concessions automobiles", frOne: "concession", en: "car dealerships", enOne: "dealership" },
+  { firm: "Verdissimo",  fr: "jardineries", frOne: "jardinerie", en: "garden centres", enOne: "garden centre" },
+  { firm: "Bricolux",    fr: "magasins de bricolage", frOne: "magasin", en: "DIY stores", enOne: "DIY store" }
+];
+/* Bornes de la table de Durbin-Watson au seuil de 5 %, pour k = 4 régresseurs */
+const DWTAB = { 50: [1.378, 1.721], 60: [1.444, 1.727], 80: [1.534, 1.743], 100: [1.592, 1.758] };
+
+/* ============================================================
+   SIMULATION DE L'ECHANTILLON ET ESTIMATIONS
+   ============================================================ */
+function buildData(n) {
+  let D = null, guard = 0;
+  while (D === null && guard++ < 6000) {
+    const biz = BIZ[rI(0, BIZ.length - 1)];
+    const radius = rA([10, 15, 20, 25, 30]);
+    const sig = 0.12 + rI(0, 5) / 100;
+    const B = [1.0 + rI(0, 12) / 10, 0.85 + rI(0, 30) / 100, 0.80 + rI(0, 30) / 100,
+               0.45 + rI(0, 30) / 100, 0.15 + rI(0, 20) / 100];
+
+    const lnPop = [], lnRev = [], lnPub = [], lnConc = [], y = [];
+    for (let i = 0; i < n; i++) {
+      const z = rN();
+      const p = 4.00 + 0.55 * z;
+      const r = 3.30 + 0.45 * (0.85 * z + 0.5268 * rN());
+      const pu = 3.40 + 0.90 * rN();
+      const co = 1.10 + 0.45 * rN();
+      const u = sig * pu * rN();                 /* Var(u_i) = sig^2 ln(Pub_i)^2 */
+      lnPop.push(p); lnRev.push(r); lnPub.push(pu); lnConc.push(co);
+      y.push(B[0] + B[1] * p + B[2] * r + B[3] * pu + B[4] * co + u);
+    }
+
+    const X1 = lnPop.map((p, i) => [1, p, lnRev[i]]);
+    const X2 = lnPop.map((p, i) => [1, p, lnRev[i], lnPub[i], lnConc[i]]);
+    const m1 = ols(X1, y), m2 = ols(X2, y);
+
+    /* Contraintes de plausibilité économique et pédagogique */
+    const b = m2.b;
+    if (b[1] < 0.70 || b[1] > 1.35) continue;
+    if (b[2] < 0.60 || b[2] > 1.35) continue;
+    if (b[3] < 0.40 || b[3] > 0.85) continue;
+    if (b[4] < 0.05 || b[4] > 0.45) continue;
+    if (m1.R2 < 0.45 || m1.R2 > 0.78) continue;
+    if (m2.R2 < 0.70 || m2.R2 > 0.93) continue;
+    if (m2.R2adj - m1.R2adj < 0.06) continue;
+
+    /* Durbin-Watson sur les résidus du modèle 2 */
+    let nu = 0, de = 0;
+    for (let i = 1; i < n; i++) nu += Math.pow(m2.res[i] - m2.res[i - 1], 2);
+    for (let i = 0; i < n; i++) de += m2.res[i] * m2.res[i];
+    const DW = nu / de;
+    if (DW < 1.85 || DW > 2.15) continue;
+
+    /* Test de White : régression auxiliaire des carrés des résidus */
+    const Xw = lnRev.map((r, i) => [1, r, lnPub[i], r * r, lnPub[i] * lnPub[i], r * lnPub[i]]);
+    const mw = ols(Xw, m2.res.map(v => v * v));
+    const W = n * mw.R2;
+    if (W < chi2Q(0.95, 5) + 0.3) continue;
+
+    /* Test de Chow : sous-échantillons urbain / rural */
+    const nU = Math.round(n * 2 / 3), nR = n - nU;
+    const mU = ols(X2.slice(0, nU), y.slice(0, nU));
+    const mR = ols(X2.slice(nU), y.slice(nU));
+    const Fchow = ((m2.SCR - (mU.SCR + mR.SCR)) / (mU.SCR + mR.SCR)) * ((n - 10) / 5);
+    if (Fchow > FQ(0.95, 5, n - 10) * 0.9) continue;
+
+    /* Test de Goldfeld-Quandt : tri sur ln(Pub), q observations centrales retirées */
+    const ord = lnPub.map((v, i) => [v, i]).sort((a, c) => a[0] - c[0]).map(x => x[1]);
+    const q = Math.round(n / 4), mg = Math.floor((n - q) / 2);
+    const lo = ord.slice(0, mg), hi = ord.slice(n - mg);
+    const mLo = ols(lo.map(i => X2[i]), lo.map(i => y[i]));
+    const mHi = ols(hi.map(i => X2[i]), hi.map(i => y[i]));
+    const GQ = mHi.SCR / mLo.SCR;
+
+    /* Moindres carrés pondérés : division de toutes les variables par ln(Pub) */
+    const mP = ols(X2.map((r, i) => r.map(v => v / lnPub[i])), y.map((v, i) => v / lnPub[i]));
+
+    /* Statistiques de test et valeurs critiques */
+    const Fglob = (m1.R2 / (1 - m1.R2)) * ((n - 3) / 2);
+    const Fadd = ((m1.SCR - m2.SCR) / m2.SCR) * ((n - 5) / 2);
+    const dwb = DWTAB[n] || DWTAB[60];
+
+    D = {
+      n: n, biz: biz, radius: radius, sig: sig,
+      m1: m1, m2: m2, mP: mP, DW: DW, dL: dwb[0], dU: dwb[1],
+      nU: nU, nR: nR, SCRu: mU.SCR, SCRr: mR.SCR, Fchow: Fchow,
+      R2w: mw.R2, W: W, q: q, mg: mg, SCRlo: mLo.SCR, SCRhi: mHi.SCR, GQ: GQ,
+      Fglob: Fglob, Fadd: Fadd,
+      lnPub: lnPub, res2: m2.res,
+      tc1: tQ(0.975, n - 3), tc2: tQ(0.975, n - 5),
+      Fc_glob: FQ(0.95, 2, n - 3), Fc_add: FQ(0.95, 2, n - 5),
+      Fc_chow: FQ(0.95, 5, n - 10), Fc_gq: FQ(0.95, mg - 5, mg - 5),
+      chi2c: chi2Q(0.95, 5)
+    };
+    D.t1 = m1.b.map((v, i) => v / m1.se[i]);
+    D.t2 = m2.b.map((v, i) => v / m2.se[i]);
+    D.tb2eq1 = (m1.b[2] - 1) / m1.se[2];
+    D.sig1 = Math.abs(D.t1[1]) > D.tc1;
+    D.sig2 = Math.abs(D.t1[2]) > D.tc1;
+    D.rejB2 = Math.abs(D.tb2eq1) > D.tc1;
+    D.sig1m2 = Math.abs(D.t2[1]) > D.tc2;
+    D.sig4m2 = Math.abs(D.t2[4]) > D.tc2;
+    D.rejChow = Fchow > D.Fc_chow;
+    D.rejGQ = GQ > D.Fc_gq;
+  }
+  return D;
+}
+
+/* ============================================================
+   TABLEAUX ET FIGURE  /  TABLES AND CHART
+   ============================================================ */
+function regTable(D, m, names, extra) {
+  const L = I18N[LANG].lbl;
+  let rows = "";
+  for (let i = 0; i < names.length; i++) {
+    rows += `<tr><td class="v">${names[i]}</td><td class="n">${f3(m.b[i])}</td><td class="n">${f3(m.se[i])}</td></tr>`;
+  }
+  return `<table class="rtable"><tr><th>${L.varc}</th><th>${L.coef}</th><th>${L.sec}</th></tr>${rows}
+    <tfoot><tr><td class="v" colspan="3">${extra}</td></tr></tfoot></table>`;
+}
+
+function figRes(D) {
+  const L = I18N[LANG].lbl;
+  const W = 620, H = 330, x0 = 56, x1 = 600, y0 = 18, y1 = 262;
+  const xs = D.lnPub, ys = D.res2;
+  const xmin = Math.floor(Math.min.apply(null, xs) * 2) / 2 - 0.2;
+  const xmax = Math.ceil(Math.max.apply(null, xs) * 2) / 2 + 0.2;
+  const amax = Math.max.apply(null, ys.map(Math.abs)) * 1.12;
+  const SX = v => x0 + (v - xmin) / (xmax - xmin) * (x1 - x0);
+  const SY = v => (y0 + y1) / 2 - v / amax * ((y1 - y0) / 2);
+  let g = "";
+  for (let v = Math.ceil(xmin * 2) / 2; v <= xmax; v += 0.5) {
+    g += `<line x1="${SX(v).toFixed(1)}" y1="${y0}" x2="${SX(v).toFixed(1)}" y2="${y1}" stroke="#eeebe4" stroke-width="1"/>`;
+    g += `<text x="${SX(v).toFixed(1)}" y="${y1 + 17}" text-anchor="middle" font-size="10.5" fill="#5a5a5a">${v.toFixed(1)}</text>`;
+  }
+  const step = amax > 1.2 ? 0.5 : 0.25;
+  for (let v = -Math.floor(amax / step) * step; v <= amax; v += step) {
+    g += `<line x1="${x0}" y1="${SY(v).toFixed(1)}" x2="${x1}" y2="${SY(v).toFixed(1)}" stroke="#eeebe4" stroke-width="1"/>`;
+    g += `<text x="${x0 - 8}" y="${(SY(v) + 4).toFixed(1)}" text-anchor="end" font-size="10.5" fill="#5a5a5a">${v.toFixed(2)}</text>`;
+  }
+  g += `<line x1="${x0}" y1="${SY(0).toFixed(1)}" x2="${x1}" y2="${SY(0).toFixed(1)}" stroke="#0d1b2a" stroke-width="1.3"/>`;
+  g += `<line x1="${x0}" y1="${y0}" x2="${x0}" y2="${y1}" stroke="#0d1b2a" stroke-width="1.3"/>`;
+  g += `<text x="${((x0 + x1) / 2).toFixed(0)}" y="${y1 + 40}" text-anchor="middle" font-size="12" fill="#1e1e1e">${L.figX}</text>`;
+  g += `<text x="14" y="${((y0 + y1) / 2).toFixed(0)}" text-anchor="middle" font-size="12" fill="#1e1e1e" transform="rotate(-90 14 ${((y0 + y1) / 2).toFixed(0)})">${L.figY}</text>`;
+  for (let i = 0; i < xs.length; i++) {
+    g += `<circle cx="${SX(xs[i]).toFixed(2)}" cy="${SY(ys[i]).toFixed(2)}" r="2.8" fill="none" stroke="#1f4e79" stroke-width="1.3"/>`;
+  }
+  return `<div class="fig-wrap"><svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" font-family="Source Serif 4, serif">${g}</svg></div><p class="fig-cap">${L.capFig(D)}</p>`;
+}
+
+/* ============================================================
+   DICTIONNAIRE BILINGUE  /  BILINGUAL DICTIONARY
+   ============================================================ */
+const I18N = {
+
+  fr: {
+    "htmlLang": "fr",
+    "title": "Générateur d'exercices - Problème d'économétrie",
+    "k-badge": "ÉCONOMÉTRIE",
+    "k-h1": "Problème d'économétrie",
+    "k-sub": "© Thomas Hossen – Version du 29 août 2026",
+    "k-seed": "Seed de reproductibilité",
+    "k-seedtip": "Vide = aléatoire à chaque génération",
+    "k-n": "Observations <em>(n)</em>",
+    "k-ntip": "Taille de l'échantillon",
+    "k-gen": "Générer →",
+    "k-welcome": "Configurez les paramètres (ou laissez vide pour de l'aléatoire), puis cliquez sur Générer.",
+    "k-new": "↺ Nouvel énoncé",
+    "k-pdf": "⬇ Exporter PDF",
+    "k-seedbadge": "Seed&nbsp;:",
+    "k-tag-ex": "Énoncé",
+    "k-cardtitle": "Déterminants du chiffre d'affaires",
+    "k-tag-sol": "Corrigé",
+    "k-cardtitle2": "Déterminants du chiffre d'affaires",
+    "k-modal": "Exporter en PDF",
+    "k-mseed-pre": "Seed&nbsp;:",
+    "k-mseed-post": "— notez cette valeur pour reproduire exactement ce problème.",
+    "k-opth": "Inclure l'en-tête de page",
+    "k-opthd": "Titre, badge « ÉCONOMÉTRIE » et intitulé du problème",
+    "k-opts": "Inclure le corrigé complet",
+    "k-optsd": "Démonstrations matricielles, tests de Student, Fisher, Chow, White et Goldfeld-Quandt",
+    "k-print": "🖨&nbsp;Imprimer / Sauvegarder PDF",
+    "k-cancel": "Annuler",
+    "copy": "⧉ Copier",
+    "copyTitle": "Copier la seed active",
+    "copied": "✓ Copié",
+    "phSeed": "auto",
+    "showSol": "Afficher le corrigé",
+    "hideSol": "Masquer le corrigé",
+
+    lbl: {
+      varc: "Variable", coef: "Coefficient", sec: "Écart-type",
+      cst: "Constante",
+      figX: "ln(Pub)", figY: "Résidu",
+      capFig: function(D) { return `Nuage des résidus \\(\\widehat{u}_i\\) du deuxième modèle en fonction du logarithme des dépenses publicitaires (${D.n} observations).`; }
+    },
+
+    ex: function(D) {
+      const B = D.biz;
+      return `
+      <div class="context-block">
+        L'entreprise <strong>${B.firm}</strong> possède en France ${D.n} ${B.fr}. Afin d'améliorer leur rentabilité, l'entreprise cherche à identifier les facteurs qui déterminent le chiffre d'affaires d'un établissement. Soit \\(\\text{CA}_i\\) le chiffre d'affaires ${B.frOne === "concession" || B.frOne === "jardinerie" || B.frOne === "pharmacie" || B.frOne === "salle de sport" ? "de la" : "du"} ${B.frOne} \\(i\\), \\(\\text{Pop}_i\\) la population (en milliers de personnes) habitant dans un rayon de ${D.radius} kilomètres, \\(\\text{Rev}_i\\) le revenu annuel moyen des habitants (en milliers d'euros) dans ce même rayon, \\(\\text{Pub}_i\\) les dépenses publicitaires annuelles (en milliers d'euros) engagées en sa faveur et \\(\\text{Conc}_i\\) le nombre d'établissements concurrents situés à plus de ${D.radius} kilomètres. Le service économique de l'entreprise propose tout d'abord de régresser le modèle
+        \\[\\ln(\\text{CA}_i)=b_0+b_1\\ln(\\text{Pop}_i)+b_2\\ln(\\text{Rev}_i)+u_i\\]
+        où \\(u_i\\) est un terme d'erreur supposé suivre une loi normale.
+      </div>
+      <div class="questions"><ol>
+
+        <li><div class="q-text">
+          <ol>
+            <li>Écrire le modèle sous une forme matricielle, en précisant bien le format et le contenu des matrices et des vecteurs employés.</li>
+            <li>Énoncer les hypothèses de Gauss-Markov du modèle de régression linéaire multiple, et préciser l'impact du non-respect de chacune d'entre elles sur l'estimateur des moindres carrés ordinaires (MCO).</li>
+            <li>Démontrer que l'estimateur des MCO est sans biais et interpréter la signification de ce résultat. Déterminer ensuite la variance de l'estimateur des MCO.</li>
+          </ol>
+        </div></li>
+
+        <li><div class="q-text">L'estimation du modèle par la méthode des moindres carrés ordinaires fournit les résultats suivants :
+          ${regTable(D, D.m1, ["Constante", "\\(\\ln(\\text{Pop})\\)", "\\(\\ln(\\text{Rev})\\)"], `Somme des carrés des résidus : \\(\\text{SCR}=${f3(D.m1.SCR)}\\) — \\(R^2=${f3(D.m1.R2)}\\) — \\(\\overline{R^2}=${f3(D.m1.R2adj)}\\) — \\(n=${D.n}\\) observations.`)}
+          <ol>
+            <li>Interpréter la valeur des estimations des coefficients \\(b_1\\) et \\(b_2\\). Tester ensuite leur significativité. Que peut-on en déduire ?</li>
+            <li>Au risque de première espèce de 5 %, peut-on rejeter l'hypothèse nulle \\((H_0):b_2=1\\) ? Interpréter le résultat en termes économiques.</li>
+            <li>Tester la significativité globale du modèle au niveau de confiance 95 %.</li>
+          </ol>
+        </div></li>
+
+        <li><div class="q-text">Le service économique souhaite enrichir son modèle économétrique et propose une nouvelle régression, sous la forme
+          \\[\\ln(\\text{CA}_i)=b'_0+b'_1\\ln(\\text{Pop}_i)+b'_2\\ln(\\text{Rev}_i)+b_3\\ln(\\text{Pub}_i)+b_4\\ln(\\text{Conc}_i)+u'_i\\]
+          où \\(u'_i\\) est un terme d'erreur supposé suivre une loi normale d'espérance nulle. L'estimation par la méthode des moindres carrés ordinaires fournit cette fois :
+          ${regTable(D, D.m2, ["Constante", "\\(\\ln(\\text{Pop})\\)", "\\(\\ln(\\text{Rev})\\)", "\\(\\ln(\\text{Pub})\\)", "\\(\\ln(\\text{Conc})\\)"], `Somme des carrés des résidus : \\(\\text{SCR}=${f3(D.m2.SCR)}\\) — \\(R^2=${f3(D.m2.R2)}\\) — \\(\\overline{R^2}=${f3(D.m2.R2adj)}\\) — statistique de Durbin-Watson : \\(\\text{DW}=${f3(D.DW)}\\).`)}
+          <p class="rnote">On donne les bornes de la table de Durbin-Watson au seuil de 5 %, pour \\(n=${D.n}\\) observations et \\(k=4\\) régresseurs : \\(d_L=${f3(D.dL)}\\) et \\(d_U=${f3(D.dU)}\\).</p>
+          <ol>
+            <li>À l'aide d'un test statistique, déterminer si l'ajout des deux nouvelles variables améliore significativement le modèle.</li>
+            <li>Comparer les résultats des estimations des deux modèles. Quel semble être le modèle le plus pertinent ?</li>
+            <li>Tester au seuil de 5 % la présence d'autocorrélation d'ordre 1 des résidus. Que pensez-vous de cette démarche ?</li>
+          </ol>
+        </div></li>
+
+        <li><div class="q-text">Le service économique pense que les ${D.nU} établissements situés en zone urbaine ont un comportement différent des ${D.nR} établissements situés en zone rurale. Le deuxième modèle est donc estimé séparément sur les deux sous-groupes : la somme des carrés des résidus de la régression sur les établissements urbains s'établit à ${f3(D.SCRu)}, celle de la régression sur les établissements ruraux à ${f3(D.SCRr)}. Peut-on considérer que les variables influençant le chiffre d'affaires ont un effet homogène sur les deux sous-groupes ? Tester cette hypothèse au seuil de confiance de 95 %.</div></li>
+
+        <li><div class="q-text">Le service économique souhaite enfin vérifier si les hypothèses sous-jacentes aux MCO sont vérifiées et mène donc une série de tests.
+          <ol>
+            <li>Quel phénomène est illustré par le graphique ci-dessous ? Écrire la variance des perturbations qui semble adaptée au cas représenté, et détailler l'écriture de \\(\\Omega\\), la matrice de variances-covariances des perturbations.
+              ${figRes(D)}
+            </li>
+            <li>On réalise deux tests. Le premier test vise à régresser le carré des ${D.n} résidus \\(\\widehat{u}_i^2\\) sur une constante et sur les variables \\(\\ln(\\text{Rev})\\), \\(\\ln(\\text{Pub})\\), \\(\\ln(\\text{Rev})^2\\), \\(\\ln(\\text{Pub})^2\\) et \\(\\ln(\\text{Rev})\\times\\ln(\\text{Pub})\\) : cette régression fournit un coefficient de détermination \\(R^2\\) de ${f3(D.R2w)} environ. Le second test sélectionne les \\(n_1=${D.mg}\\) établissements pour lesquels la variable \\(\\ln(\\text{Pub})\\) est la plus faible et les \\(n_2=${D.mg}\\) établissements pour lesquels elle est la plus élevée (les \\(q=${D.q}\\) observations centrales étant écartées) ; sur chacun de ces groupes, on régresse \\(\\ln(\\text{CA})\\) sur une constante, \\(\\ln(\\text{Pop})\\), \\(\\ln(\\text{Rev})\\), \\(\\ln(\\text{Pub})\\) et \\(\\ln(\\text{Conc})\\) : la somme des carrés des résidus sur le premier groupe est \\(\\text{SCR}_{\\inf}=${f3(D.SCRlo)}\\), tandis que celle du second groupe est \\(\\text{SCR}_{\\sup}=${f3(D.SCRhi)}\\). Décrire chacun des deux tests de façon précise, et donner leur conclusion au seuil de risque de 5 %. Quelles sont les conséquences des résultats de ces tests sur le biais et la précision des estimations précédentes ?</li>
+            <li>Transformer le deuxième modèle en un modèle homoscédastique. On vérifiera rigoureusement que le modèle ainsi transformé satisfait bien les hypothèses de Gauss-Markov.</li>
+            <li>On estime le modèle à l'aide de la méthode des moindres carrés pondérés et on obtient les résultats suivants :
+              ${regTable(D, D.mP, ["Constante", "\\(\\ln(\\text{Pop})\\)", "\\(\\ln(\\text{Rev})\\)", "\\(\\ln(\\text{Pub})\\)", "\\(\\ln(\\text{Conc})\\)"], `Somme des carrés des résidus (modèle transformé) : \\(\\text{SCR}=${f3(D.mP.SCR)}\\) — \\(R^2=${f3(D.mP.R2)}\\) — \\(\\overline{R^2}=${f3(D.mP.R2adj)}\\).`)}
+              Commenter les résultats obtenus.</li>
+          </ol>
+        </div></li>
+
+      </ol></div>`;
+    },
+    sol: function(D) {
+      const m1 = D.m1, m2 = D.m2, mP = D.mP, n = D.n;
+      return `<div class="st"><ol>
+
+      <li><ol class="sub-ol">
+        <li>Posons :
+        \\[\\textbf{Y}:=\\begin{pmatrix}\\ln(\\text{CA}_1)\\\\\\vdots\\\\\\ln(\\text{CA}_{${n}})\\end{pmatrix},\\quad
+        \\textbf{X}:=\\begin{pmatrix}1&\\ln(\\text{Pop}_1)&\\ln(\\text{Rev}_1)\\\\\\vdots&\\vdots&\\vdots\\\\1&\\ln(\\text{Pop}_{${n}})&\\ln(\\text{Rev}_{${n}})\\end{pmatrix},\\quad
+        \\textbf{b}:=\\begin{pmatrix}b_0\\b_1\\b_2\\end{pmatrix},\\quad
+        \\textbf{u}:=\\begin{pmatrix}u_1\\\\\\vdots\\u_{${n}}\\end{pmatrix}\\]
+        Le vecteur \\(\\textbf{Y}\\) est de format \\(${n}\\times 1\\), la matrice \\(\\textbf{X}\\) de format \\(${n}\\times 3\\) (une colonne de 1 pour la constante et une colonne par régresseur), le vecteur des paramètres \\(\\textbf{b}\\) de format \\(3\\times 1\\) et le vecteur des perturbations \\(\\textbf{u}\\) de format \\(${n}\\times 1\\). Le modèle tel que, pour tout établissement \\(i\\), on ait \\(\\ln(\\text{CA}_i)=b_0+b_1\\ln(\\text{Pop}_i)+b_2\\ln(\\text{Rev}_i)+u_i\\) se réécrit alors matriciellement \\(\\textbf{Y}=\\textbf{X}\\textbf{b}+\\textbf{u}\\).</li>
+
+        <li>On suppose que \\(\\textbf{u}\\) est un vecteur aléatoire d'espérance nulle et de matrice de variance-covariance \\(\\Omega:=\\sigma^2\\textbf{I}_{${n}}\\), où \\(\\sigma\\) est un réel strictement positif. Cette écriture condense trois hypothèses.
+        <ul>
+          <li><strong>Absence d'erreur en moyenne</strong> : pour tout établissement \\(i\\), on a \\(\\mathbb{E}[u_i]=0\\). C'est cette hypothèse qui garantit que les estimateurs des moindres carrés ordinaires de \\(b_0\\), \\(b_1\\) et \\(b_2\\) sont sans biais ; son non-respect (variable omise corrélée aux régresseurs, erreur de mesure sur les explicatives, simultanéité) rend l'estimateur <em>biaisé</em>, et le biais ne disparaît pas quand la taille de l'échantillon augmente.</li>
+          <li><strong>Homoscédasticité</strong> : il existe un réel \\(\\sigma>0\\) tel que, pour tout \\(i\\), on ait \\(\\Var{u_i}=\\sigma^2\\). La diagonale de \\(\\Omega\\) est donc constante.</li>
+          <li><strong>Absence d'autocorrélation</strong> : pour tous \\(i\\ne j\\), on a \\(\\mathbb{E}[u_iu_j]=0\\), donc \\(\\Omega\\) est diagonale.</li>
+        </ul>
+        Le fait que \\(\\Omega\\) soit une matrice d'homothétie garantit (si l'hypothèse d'absence d'erreur en moyenne est par ailleurs valide) que les estimateurs des MCO sont BLUE (<em>best linear unbiased estimators</em>), c'est-à-dire qu'ils sont, parmi tous les estimateurs linéaires sans biais de \\(\\textbf{b}\\), ceux de variance minimale : c'est le théorème de Gauss-Markov. Inversement, si \\(\\Omega\\) n'est plus diagonale (autocorrélation) ou si sa diagonale n'est plus constante (hétéroscédasticité), l'estimateur des MCO <em>reste sans biais</em>, mais il n'est plus à variance minimale et surtout l'estimation usuelle de sa variance est fausse : les tests de Student et de Fisher construits à partir de ces erreurs-types ne sont plus valides sans précaution supplémentaire (matrice de variance-covariance robuste, moindres carrés généralisés, etc.).</li>
+
+        <li>On sait que l'estimateur des moindres carrés ordinaires de \\(\\textbf{b}\\) est \\(\\widehat{\\textbf{b}}:=(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\textbf{Y}\\). Or on a :
+        \\[\\begin{aligned}
+        \\widehat{\\textbf{b}}=(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\textbf{Y}
+        &\\iff \\widehat{\\textbf{b}}=(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T(\\textbf{X}\\textbf{b}+\\textbf{u})\\\\
+        &\\iff \\widehat{\\textbf{b}}=(\\textbf{X}^T\\textbf{X})^{-1}(\\textbf{X}^T\\textbf{X})\\textbf{b}+(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\textbf{u}\\\\
+        &\\iff \\widehat{\\textbf{b}}=\\textbf{b}+(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\textbf{u}
+        \\end{aligned}\\]
+        On a donc, par linéarité de l'espérance, \\(\\mathbb{E}[\\widehat{\\textbf{b}}]=\\textbf{b}+(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\mathbb{E}[\\textbf{u}]=\\textbf{b}\\), puisqu'on a supposé \\(\\mathbb{E}[\\textbf{u}]=\\textbf{0}\\). L'estimateur des moindres carrés ordinaires est donc bien sans biais : cela signifie qu'en moyenne, sur un grand nombre d'échantillons de même taille tirés de la même population, l'estimation obtenue coïncide avec la vraie valeur du paramètre. Autrement dit, la procédure d'estimation ne se trompe pas <em>systématiquement</em> dans un sens ou dans l'autre — ce qui ne dit rien, en revanche, sur l'erreur commise sur un échantillon particulier. Par suite, on a :
+        \\[\\begin{aligned}
+        \\Var{\\widehat{\\textbf{b}}}
+        &=\\mathbb{E}\\left[\\left(\\widehat{\\textbf{b}}-\\textbf{b}\\right)\\left(\\widehat{\\textbf{b}}-\\textbf{b}\\right)^T\\right]\\\\
+        &=\\mathbb{E}\\left[(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\textbf{u}\\,\\textbf{u}^T\\textbf{X}(\\textbf{X}^T\\textbf{X})^{-1}\\right]\\\\
+        &=(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\,\\mathbb{E}\\left[\\textbf{u}\\textbf{u}^T\\right]\\,\\textbf{X}(\\textbf{X}^T\\textbf{X})^{-1}\\quad\\text{par linéarité de l'espérance}\\\\
+        &=(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\,\\sigma^2\\textbf{I}_{${n}}\\,\\textbf{X}(\\textbf{X}^T\\textbf{X})^{-1}\\quad\\text{car }\\mathbb{E}[\\textbf{u}\\textbf{u}^T]=\\Omega=\\sigma^2\\textbf{I}_{${n}}\\\\
+        &=\\sigma^2(\\textbf{X}^T\\textbf{X})^{-1}(\\textbf{X}^T\\textbf{X})(\\textbf{X}^T\\textbf{X})^{-1}=\\sigma^2\\left(\\textbf{X}^T\\textbf{X}\\right)^{-1}
+        \\end{aligned}\\]
+        On a utilisé le fait que \\(\\mathbb{E}[\\textbf{u}\\textbf{u}^T]=\\Var{\\textbf{u}}\\) (puisque \\(\\textbf{u}\\) est centré), que cette matrice est diagonale (absence d'autocorrélation) et que ses éléments diagonaux valent tous \\(\\sigma^2\\) (homoscédasticité). Le paramètre \\(\\sigma^2\\) étant exogène, la précision des estimations ne peut être améliorée qu'en agissant sur \\(\\left(\\textbf{X}^T\\textbf{X}\\right)^{-1}\\), c'est-à-dire en augmentant le nombre d'observations ou la variabilité des régresseurs — et en évitant qu'ils soient trop fortement corrélés entre eux.</li>
+      </ol></li>
+
+      <li><ol class="sub-ol">
+        <li>On est face à un modèle log-log : les coefficients s'interprètent directement comme des élasticités. L'estimation des MCO de \\(b_1\\) est \\(\\widehat{b}_1=${f3(m1.b[1])}\\) : un accroissement, toutes choses égales par ailleurs, de la population dans un rayon de ${D.radius} kilomètres de 1 % est corrélé à une hausse du chiffre d'affaires de ${f3(m1.b[1])} % en moyenne. De même, l'estimation des MCO de \\(b_2\\) est \\(\\widehat{b}_2=${f3(m1.b[2])}\\) : un accroissement, toutes choses égales par ailleurs, du revenu moyen des habitants de 1 % est corrélé à une hausse du chiffre d'affaires de ${f3(m1.b[2])} % en moyenne.
+        <ul>
+          <li>On veut tester l'hypothèse nulle \\((H_0):b_1=0\\) contre l'hypothèse alternative \\((H_1):b_1\\ne 0\\) (test bilatéral). On note \\(\\widehat{\\sigma}_1\\) l'erreur-type de \\(\\widehat{b}_1\\). Sous l'hypothèse nulle, la variable aléatoire \\(\\widehat{t}_1:=\\dfrac{\\widehat{b}_1-0}{\\widehat{\\sigma}_1}\\) suit une loi de Student à \\(${n}-(2+1)=${n - 3}\\) degrés de liberté (${n} observations, 2 régresseurs hors constante). Or on a :
+          \\[\\widehat{t}_1=\\frac{${f3(m1.b[1])}}{${f3(m1.se[1])}}\\approx ${f3(D.t1[1])}\\]
+          Le quantile à 97.5 % d'une loi de Student à ${n - 3} degrés de liberté vaut \\(t_{${n - 3};\\,0.975}\\approx ${f3(D.tc1)}\\). Comme on a \\(|\\widehat{t}_1|${D.sig1 ? ">" : "&lt;"}${f3(D.tc1)}\\), on ${D.sig1 ? "peut" : "ne peut pas"} rejeter l'hypothèse nulle au niveau de confiance de 95 % : on conclut que \\(b_1\\) ${D.sig1 ? "est significativement non nul, donc que la variable \\(\\ln(\\text{Pop})\\) est significative" : "n'est pas significativement non nul, donc que la variable \\(\\ln(\\text{Pop})\\) n'est pas significative"} au niveau de confiance de 95 %.</li>
+          <li>On teste de même \\((H_0):b_2=0\\) contre \\((H_1):b_2\\ne 0\\). On a :
+          \\[\\widehat{t}_2=\\frac{${f3(m1.b[2])}}{${f3(m1.se[2])}}\\approx ${f3(D.t1[2])}\\]
+          Comme on a \\(|\\widehat{t}_2|${D.sig2 ? ">" : "&lt;"}${f3(D.tc1)}\\), on ${D.sig2 ? "peut" : "ne peut pas"} rejeter l'hypothèse nulle au niveau de confiance de 95 % : la variable \\(\\ln(\\text{Rev})\\) ${D.sig2 ? "est" : "n'est pas"} significative.</li>
+        </ul>
+        ${(D.sig1 && D.sig2) ? "Les deux variables sont donc individuellement significatives : la taille du marché local comme le niveau de vie des habitants président à la formation du chiffre d'affaires." : (!D.sig1 && D.sig2) ? "Il est troublant que la population ne ressorte pas significative alors que l'intuition économique la désigne comme un déterminant majeur du chiffre d'affaires. Deux explications sont possibles : soit la variable n'a effectivement pas d'effet propre, soit — explication bien plus plausible ici — la forte corrélation entre population et revenu moyen de la zone (multicolinéarité) gonfle les erreurs-types et rend chaque coefficient individuellement imprécis, alors même que les deux variables expliquent conjointement une part importante de la variance." : (D.sig1 && !D.sig2) ? "Il est troublant que le revenu moyen ne ressorte pas significatif : la forte corrélation entre population et revenu de la zone (multicolinéarité) gonfle les erreurs-types et rend chaque coefficient individuellement imprécis, alors même que les deux variables expliquent conjointement une part importante de la variance." : "Aucune des deux variables n'est individuellement significative, alors que le modèle est globalement significatif (voir question 2.c) : c'est la signature caractéristique d'un problème de multicolinéarité entre la population et le revenu moyen de la zone."}</li>
+
+        <li>On veut tester l'hypothèse nulle \\((H_0):b_2=1\\) contre l'hypothèse alternative \\((H_1):b_2\\ne 1\\) (test bilatéral). Sous l'hypothèse nulle, la variable aléatoire \\(\\widehat{t}\\,'_2:=\\dfrac{\\widehat{b}_2-1}{\\widehat{\\sigma}_2}\\) suit une loi de Student à ${n - 3} degrés de liberté. Or on a :
+        \\[\\widehat{t}\\,'_2=\\frac{${f3(m1.b[2])}-1}{${f3(m1.se[2])}}\\approx ${f3(D.tb2eq1)}\\]
+        Comme on a \\(|\\widehat{t}\\,'_2|${D.rejB2 ? ">" : "&lt;"}t_{${n - 3};\\,0.975}\\approx ${f3(D.tc1)}\\), on ${D.rejB2 ? "peut" : "ne peut pas"} rejeter l'hypothèse nulle au niveau de confiance de 95 %. ${D.rejB2 ? "L'élasticité du chiffre d'affaires au revenu des habitants est donc significativement différente de l'unité : le chiffre d'affaires ne varie pas proportionnellement au revenu de la zone de chalandise." : "Économiquement, cela signifie qu'on ne peut exclure une élasticité unitaire : tout se passe comme si le chiffre d'affaires variait proportionnellement au revenu moyen de la zone de chalandise, un accroissement de 1 % du revenu se traduisant par un accroissement de 1 % du chiffre d'affaires."}</li>
+
+        <li>On veut à présent tester la significativité globale du modèle, c'est-à-dire l'hypothèse nulle \\((H_0):b_1=b_2=0\\) contre l'hypothèse alternative \\((H_1)\\) selon laquelle au moins un des deux coefficients est non nul. On pose la statistique de Fisher :
+        \\[\\widehat{F}:=\\frac{R^2}{1-R^2}\\times\\frac{n-(k+1)}{k}=\\frac{${f3(m1.R2)}}{1-${f3(m1.R2)}}\\times\\frac{${n}-3}{2}\\approx ${f3(D.Fglob)}\\]
+        Sous l'hypothèse nulle, \\(\\widehat{F}\\) suit une loi de Fisher à \\(k=2\\) et \\(n-(k+1)=${n - 3}\\) degrés de liberté, dont le quantile à 95 % vaut \\(f_{2;\\,${n - 3};\\,0.95}\\approx ${f3(D.Fc_glob)}\\). Comme on a \\(\\widehat{F}>${f3(D.Fc_glob)}\\), on rejette l'hypothèse nulle au seuil de confiance 95 % : le modèle est globalement significatif. Au moins une des deux variables préside significativement à la formation du logarithme du chiffre d'affaires, et \\(${f3(m1.R2 * 100)}\\)&nbsp;% de la variance de \\(\\ln(\\text{CA})\\) est expliquée par le modèle.</li>
+      </ol></li>
+
+      <li><ol class="sub-ol">
+        <li>On a ajouté deux coefficients dans le deuxième modèle : \\(b_3\\), associé au logarithme des dépenses publicitaires, et \\(b_4\\), associé au logarithme du nombre d'établissements concurrents éloignés. On veut tester l'hypothèse nulle \\((H_0):b_3=b_4=0\\) contre l'hypothèse alternative \\((H_1):b_3\\ne 0\\text{ ou }b_4\\ne 0\\). Le premier modèle est le modèle <em>contraint</em> (de somme des carrés des résidus \\(\\text{SCR}_{\\text{C}}=${f3(m1.SCR)}\\)), le second le modèle <em>non contraint</em> (\\(\\text{SCR}_{\\text{NC}}=${f3(m2.SCR)}\\)). On pose alors la statistique de Fisher suivante, sachant qu'il y a \\(n=${n}\\) observations, \\(k'=4\\) variables dans le modèle non contraint et \\(p=2\\) restrictions à tester :
+        \\[\\widehat{F}:=\\frac{\\text{SCR}_{\\text{C}}-\\text{SCR}_{\\text{NC}}}{\\text{SCR}_{\\text{NC}}}\\times\\frac{n-(k'+1)}{p}=\\frac{${f3(m1.SCR)}-${f3(m2.SCR)}}{${f3(m2.SCR)}}\\times\\frac{${n}-5}{2}\\approx ${f3(D.Fadd)}\\]
+        Sous l'hypothèse nulle, \\(\\widehat{F}\\) suit une loi de Fisher à \\(p=2\\) et \\(n-(k'+1)=${n - 5}\\) degrés de liberté, dont le quantile à 95 % vaut environ ${f3(D.Fc_add)}. Comme on a \\(\\widehat{F}>${f3(D.Fc_add)}\\), on rejette l'hypothèse nulle au seuil de confiance 95 % : l'ajout des deux variables supplémentaires est pertinent. Cela n'a rien d'étonnant, le coefficient de détermination ajusté passant de ${f3(m1.R2adj)} à ${f3(m2.R2adj)}.</li>
+
+        <li>Pour arbitrer entre les deux modèles, on se réfère au critère du coefficient de détermination ajusté (qui, contrairement au \\(R^2\\), ne croît pas mécaniquement avec le nombre de régresseurs) : le second modèle est donc préférable au premier. Commentons ses résultats.
+        <ul>
+          <li>On est toujours face à un modèle log-log. L'estimation des MCO de \\(b_3\\) est \\(\\widehat{b}_3=${f3(m2.b[3])}\\) : un accroissement des dépenses publicitaires de 1 % est corrélé, toutes choses égales par ailleurs, à une hausse du chiffre d'affaires de ${f3(m2.b[3])} % en moyenne. L'estimation de \\(b_4\\) est \\(\\widehat{b}_4=${f3(m2.b[4])}\\) : un accroissement de 1 % du nombre de concurrents situés au-delà de ${D.radius} kilomètres est corrélé à une hausse du chiffre d'affaires de ${f3(m2.b[4])} % en moyenne — ce qui n'est pas absurde, la présence de concurrents éloignés signalant surtout une zone commercialement dynamique.</li>
+          <li>Les estimations des deux premières élasticités sont peu modifiées par l'ajout des deux variables : \\(\\widehat{b}'_1=${f3(m2.b[1])}\\) contre ${f3(m1.b[1])} dans le premier modèle, et \\(\\widehat{b}'_2=${f3(m2.b[2])}\\) contre ${f3(m1.b[2])}. La stabilité des coefficients suggère que les deux variables ajoutées ne sont pas fortement corrélées aux deux premières : le premier modèle ne souffrait donc pas d'un biais de variable omise majeur sur \\(b_1\\) et \\(b_2\\).</li>
+          <li>Reste la question de la significativité de \\(\\ln(\\text{Pop})\\). On teste \\((H_0):b'_1=0\\) contre \\((H_1):b'_1\\ne 0\\) : on a \\(\\widehat{t}\\,'_1=\\dfrac{${f3(m2.b[1])}}{${f3(m2.se[1])}}\\approx ${f3(D.t2[1])}\\), à comparer au quantile \\(t_{${n - 5};\\,0.975}\\approx ${f3(D.tc2)}\\) (${n} observations, 4 régresseurs hors constante). ${!D.sig1m2 ? "La variable n'est donc toujours pas significative au seuil de 5 % : le second modèle confirme ce diagnostic, qu'on ne peut donc pas imputer à un simple biais d'omission." : (D.sig1 ? "La variable reste donc significative au seuil de 5 % dans le second modèle." : "Elle devient donc significative au seuil de 5 % dans le second modèle : en réduisant fortement la variance résiduelle, l'ajout des deux nouvelles variables améliore la précision de tous les coefficients, ce qui suffit à faire ressortir l'effet propre de la population — la non-significativité constatée à la question 2.a tenait donc à un manque de précision, non à une absence d'effet.")}</li>
+        </ul></li>
+
+        <li>Pour que les estimations du modèle soient valides, il faut que les hypothèses de Gauss-Markov le soient, en particulier celle d'absence d'autocorrélation entre les erreurs. Testons l'autocorrélation d'ordre 1 des résidus grâce à un test de Durbin-Watson : dans le modèle \\(\\widehat{u}_i=\\rho\\widehat{u}_{i-1}+\\varepsilon_i\\), on teste l'hypothèse nulle \\((H_0):\\rho=0\\) contre l'hypothèse alternative \\((H_1):\\rho\\ne 0\\). On pose :
+        \\[\\widehat{\\rho}:=\\frac{\\sum_{i=2}^{n}\\widehat{u}_{i-1}\\widehat{u}_i}{\\sum_{i=2}^{n}\\widehat{u}_{i-1}^2}\\quad\\text{et}\\quad \\text{DW}:=\\frac{\\sum_{i=2}^{n}\\left(\\widehat{u}_i-\\widehat{u}_{i-1}\\right)^2}{\\sum_{i=1}^{n}\\widehat{u}_i^2}\\approx 2\\left(1-\\widehat{\\rho}\\right)\\]
+        Sous \\((H_0)\\), il existe deux bornes \\(d_L\\) et \\(d_U\\) (avec \\(d_L&lt;d_U&lt;2\\)) dont la loi ne dépend que du nombre d'observations \\(n\\) et du nombre de régresseurs \\(k\\). Ici, on a \\(\\text{DW}=${f3(D.DW)}\\) et, pour \\(n=${n}\\) et \\(k=4\\), la table donne \\(d_L=${f3(D.dL)}\\) et \\(d_U=${f3(D.dU)}\\). Comme DW appartient à l'intervalle \\([d_U;4-d_U]=[${f3(D.dU)};${f3(4 - D.dU)}]\\), on en déduit que le modèle ne souffre pas d'autocorrélation d'ordre 1 des perturbations. La valeur de DW, très proche de 2, correspond d'ailleurs à une autocorrélation empirique \\(\\widehat{\\rho}\\approx ${f3(1 - D.DW / 2)}\\), quasi nulle. Si ce résultat est rassurant et soutient la validité des estimations du deuxième modèle, la démarche elle-même reste douteuse : nous sommes ici en présence de <em>données en coupe transversale</em>, alors que l'autocorrélation est un phénomène caractéristique des séries temporelles. L'ordre des observations est ici arbitraire (il dépend de la numérotation des établissements) : on pourrait obtenir n'importe quelle valeur de DW en permutant les lignes de la base, ce qui ôte tout contenu au test.</li>
+      </ol></li>
+
+      <li><div>On segmente l'échantillon en un groupe de \\(n_1=${D.nU}\\) établissements urbains d'une part et un groupe de \\(n_2=${D.nR}\\) établissements ruraux d'autre part. Soit \\(\\text{SCR}_1=${f3(D.SCRu)}\\) la somme des carrés des résidus du modèle estimé sur les établissements urbains et \\(\\text{SCR}_2=${f3(D.SCRr)}\\) celle du modèle estimé sur les établissements ruraux ; la somme des carrés des résidus du modèle global est celle du modèle 2, soit \\(\\text{SCR}_{\\text{NC}}=${f3(m2.SCR)}\\). On veut tester l'hypothèse nulle \\((H_0)\\) selon laquelle les coefficients sont identiques sur les deux segments contre l'hypothèse alternative \\((H_1)\\) selon laquelle au moins un des coefficients diffère. On applique pour cela un test de Chow, dont la statistique est :
+      \\[\\widehat{F}:=\\frac{\\text{SCR}_{\\text{NC}}-(\\text{SCR}_1+\\text{SCR}_2)}{\\text{SCR}_1+\\text{SCR}_2}\\times\\frac{n_1+n_2-2(k+1)}{k+1}=\\frac{${f3(m2.SCR)}-${f3(D.SCRu + D.SCRr)}}{${f3(D.SCRu + D.SCRr)}}\\times\\frac{${n}-10}{5}\\approx ${f3(D.Fchow)}\\]
+      Sous l'hypothèse nulle, \\(\\widehat{F}\\) suit une loi de Fisher à \\(k+1=5\\) et \\(n_1+n_2-2(k+1)=${n - 10}\\) degrés de liberté, dont le quantile à 95 % vaut environ ${f3(D.Fc_chow)}. ${D.rejChow ? `Comme on a \\(\\widehat{F}>${f3(D.Fc_chow)}\\), on rejette l'hypothèse nulle au niveau de risque 5 % : les déterminants du chiffre d'affaires diffèrent significativement entre zone urbaine et zone rurale, et il conviendrait d'estimer deux modèles distincts (ou d'introduire des termes d'interaction avec une indicatrice de ruralité).` : `Comme on a \\(\\widehat{F}&lt;${f3(D.Fc_chow)}\\), on ne peut rejeter l'hypothèse nulle au niveau de risque 5 % : on en déduit que les estimations ne diffèrent pas significativement entre les deux environnements. Il n'y a donc pas lieu de scinder l'échantillon, et l'on conserve le modèle estimé sur les ${n} établissements, plus précis puisqu'il mobilise davantage d'observations.`}</div></li>
+
+      <li><ol class="sub-ol">
+        <li>Le graphique des résidus en fonction du logarithme des dépenses publicitaires présente une forme caractéristique d'<em>entonnoir</em> : la dispersion des résidus s'accroît nettement avec \\(\\ln(\\text{Pub})\\). Autrement dit, la variance des perturbations ne semble pas constante mais dépendre de la valeur d'un régresseur : c'est le phénomène d'<strong>hétéroscédasticité</strong>. Économiquement, cela se comprend : les établissements qui engagent des budgets publicitaires importants ont un chiffre d'affaires beaucoup plus volatil (campagnes réussies ou manquées) que ceux qui n'en engagent presque pas. La matrice de variance-covariance des perturbations \\(\\Omega\\), si elle demeure diagonale (rien ne suggère d'autocorrélation, voir question 3.c), n'est plus de diagonale constante. Comme l'entonnoir s'évase proportionnellement à \\(\\ln(\\text{Pub})\\), une modélisation naturelle consiste à supposer qu'il existe un réel \\(\\sigma>0\\) tel que, pour tout établissement \\(i\\), on ait \\(\\Var{u'_i}=\\sigma^2\\left(\\ln(\\text{Pub}_i)\\right)^2\\). On aurait alors :
+        \\[\\Omega=\\sigma^2\\begin{pmatrix}
+        \\ln(\\text{Pub}_1)^2&0&\\cdots&0\\\\
+        0&\\ddots&\\ddots&\\vdots\\\\
+        \\vdots&\\ddots&\\ddots&0\\\\
+        0&\\cdots&0&\\ln(\\text{Pub}_{${n}})^2
+        \\end{pmatrix}\\]</li>
+
+        <li>On cherche à tester l'hypothèse nulle \\((H_0)\\) d'homoscédasticité des perturbations contre l'hypothèse alternative \\((H_1)\\) selon laquelle le modèle souffre d'hétéroscédasticité.
+        <ul>
+          <li><strong>Test de White.</strong> Il consiste à régresser les carrés des résidus sur chaque variable, chaque carré de variable et chaque produit croisé. On obtient une régression auxiliaire à \\(d=5\\) régresseurs (plus la constante), dont on note \\(a_1,\\ldots,a_5\\) les coefficients. On teste \\((H_0):a_1=\\cdots=a_5=0\\) contre l'hypothèse alternative selon laquelle au moins un de ces coefficients est non nul. Soit \\(R^2_{\\text{aux.}}\\) le coefficient de détermination de cette régression auxiliaire : White a montré que, sous l'hypothèse nulle, la statistique \\(\\text{W}:=nR^2_{\\text{aux.}}\\) suit asymptotiquement une loi du \\(\\chi^2\\) à \\(d=5\\) degrés de liberté. Or on a \\(\\text{W}=${n}\\times ${f3(D.R2w)}\\approx ${f3(D.W)}\\), tandis que le quantile à 95 % d'une loi du \\(\\chi^2\\) à 5 degrés de liberté vaut ${f3(D.chi2c)}. Comme on a \\(\\text{W}>${f3(D.chi2c)}\\), on rejette l'hypothèse nulle au seuil de confiance de 95 % : le modèle souffre bien d'hétéroscédasticité.</li>
+          <li><strong>Test de Goldfeld-Quandt.</strong> Il consiste à scinder l'échantillon en deux sous-échantillons de taille quasi égale et à comparer les variances des erreurs de ces sous-échantillons. Le test se déroule en quatre étapes : (i) on ordonne les observations selon les valeurs croissantes de \\(\\ln(\\text{Pub})\\) ; (ii) on supprime \\(q=${D.q}\\) observations centrales, ce qui laisse deux sous-échantillons de \\(n_1=n_2=${D.mg}\\) observations ; (iii) on estime le modèle par les MCO sur chacun des deux sous-échantillons et on calcule les sommes des carrés des résidus \\(\\text{SCR}_{\\inf}=${f3(D.SCRlo)}\\) et \\(\\text{SCR}_{\\sup}=${f3(D.SCRhi)}\\) ; (iv) en notant \\(\\sigma^2_{\\inf}\\) et \\(\\sigma^2_{\\sup}\\) les variances des erreurs sur chacun des sous-échantillons, on teste \\((H_0):\\sigma^2_{\\inf}=\\sigma^2_{\\sup}\\) contre \\((H_1):\\sigma^2_{\\inf}\\ne\\sigma^2_{\\sup}\\). Goldfeld et Quandt montrent que, sous l'hypothèse nulle, la statistique \\(\\text{GQ}:=\\text{SCR}_{\\sup}\\big/\\text{SCR}_{\\inf}=${f3(D.SCRhi)}/${f3(D.SCRlo)}\\approx ${f3(D.GQ)}\\) suit une loi de Fisher à \\(n_2-(k+1)=${D.mg - 5}\\) et \\(n_1-(k+1)=${D.mg - 5}\\) degrés de liberté, dont le quantile à 95 % vaut environ ${f3(D.Fc_gq)}. ${D.rejGQ ? `Comme on a \\(\\text{GQ}>${f3(D.Fc_gq)}\\), on rejette l'hypothèse nulle : le test de Goldfeld-Quandt confirme le diagnostic du test de White.` : `Comme on a \\(\\text{GQ}&lt;${f3(D.Fc_gq)}\\), on ne peut rejeter l'hypothèse nulle : le test de Goldfeld-Quandt ne détecte pas d'hétéroscédasticité et s'oppose donc, dans sa conclusion, au test de White. Étant donné que le test de White teste bien plus de formes potentielles d'hétéroscédasticité et qu'il ne repose pas sur le choix — arbitraire — d'une variable de tri et d'un nombre d'observations écartées, il a la faveur des économètres : on retiendra donc la présence d'hétéroscédasticité.`}</li>
+        </ul>
+        <strong>Conséquences.</strong> L'hétéroscédasticité ne biaise pas l'estimateur des MCO : la démonstration de la question 1.(c) n'utilise que l'hypothèse \\(\\mathbb{E}[\\textbf{u}]=\\textbf{0}\\), et reste donc valable. En revanche, l'estimateur n'est plus à variance minimale (il n'est plus BLUE) et, surtout, la formule usuelle \\(\\widehat{\\Var{\\widehat{\\textbf{b}}}}=\\widehat{\\sigma}^2(\\textbf{X}^T\\textbf{X})^{-1}\\) est fausse : les erreurs-types affichées plus haut sont biaisées, et tous les tests de Student et de Fisher menés aux questions 2, 3 et 4 sont à prendre avec précaution.</li>
+
+        <li>Le modèle s'écrit \\(\\textbf{Y}=\\textbf{X}'\\textbf{b}'+\\textbf{u}'\\), où \\(\\textbf{u}'\\) est d'espérance nulle et de matrice de variance-covariance \\(\\Omega\\) (voir question 5.a). Posons alors la matrice de pondération :
+        \\[\\textbf{A}:=\\begin{pmatrix}
+        \\dfrac{1}{\\ln(\\text{Pub}_1)}&0&\\cdots&0\\\\
+        0&\\ddots&\\ddots&\\vdots\\\\
+        \\vdots&\\ddots&\\ddots&0\\\\
+        0&\\cdots&0&\\dfrac{1}{\\ln(\\text{Pub}_{${n}})}
+        \\end{pmatrix}\\]
+        et considérons le modèle transformé \\(\\textbf{A}\\textbf{Y}=\\textbf{A}\\textbf{X}'\\textbf{b}'+\\textbf{A}\\textbf{u}'\\), équivalent au modèle initial. Sous forme développée, il s'écrit :
+        \\[\\forall\\,i\\in\\{1,\\ldots,${n}\\}\\quad \\frac{\\ln(\\text{CA}_i)}{\\ln(\\text{Pub}_i)}=b_3+\\frac{b'_0}{\\ln(\\text{Pub}_i)}+b'_1\\frac{\\ln(\\text{Pop}_i)}{\\ln(\\text{Pub}_i)}+b'_2\\frac{\\ln(\\text{Rev}_i)}{\\ln(\\text{Pub}_i)}+b_4\\frac{\\ln(\\text{Conc}_i)}{\\ln(\\text{Pub}_i)}+\\frac{u'_i}{\\ln(\\text{Pub}_i)}\\]
+        Soit \\(i\\) un entier compris entre 1 et ${n}. Comme \\(\\mathbb{E}[u'_i]=0\\), on a par linéarité de l'espérance :
+        \\[\\mathbb{E}\\left[\\frac{u'_i}{\\ln(\\text{Pub}_i)}\\right]=\\frac{\\mathbb{E}[u'_i]}{\\ln(\\text{Pub}_i)}=0\\]
+        Les perturbations transformées sont donc bien d'espérance nulle. Par suite, pour tout \\(j\\ne i\\), par bilinéarité de la covariance et puisque \\(\\Omega\\) est diagonale :
+        \\[\\textbf{Cov}\\left(\\frac{u'_i}{\\ln(\\text{Pub}_i)},\\frac{u'_j}{\\ln(\\text{Pub}_j)}\\right)=\\frac{\\textbf{Cov}(u'_i,u'_j)}{\\ln(\\text{Pub}_i)\\ln(\\text{Pub}_j)}=0\\]
+        Les perturbations transformées sont donc non corrélées entre elles. Enfin, sachant qu'on a \\(\\Var{u'_i}=\\sigma^2\\left(\\ln(\\text{Pub}_i)\\right)^2\\), il vient :
+        \\[\\Var{\\frac{u'_i}{\\ln(\\text{Pub}_i)}}=\\frac{\\Var{u'_i}}{\\left(\\ln(\\text{Pub}_i)\\right)^2}=\\sigma^2\\]
+        La variance des perturbations transformées est donc constante : le modèle pondéré satisfait bien les trois hypothèses de Gauss-Markov, et les MCO appliqués à ce modèle transformé — c'est-à-dire les <em>moindres carrés pondérés</em> — fournissent à nouveau des estimateurs BLUE. On notera que la pondération revient à donner moins de poids aux observations les plus bruitées (celles dont les dépenses publicitaires sont élevées), ce qui est exactement l'intuition des moindres carrés généralisés.</li>
+
+        <li>On est toujours face à un modèle log-log, et les estimations des moindres carrés pondérés s'interprètent donc toujours comme des élasticités. L'estimation pondérée de \\(b'_1\\) est ${f3(mP.b[1])} (contre ${f3(m2.b[1])} par les MCO), celle de \\(b'_2\\) est ${f3(mP.b[2])} (contre ${f3(m2.b[2])}), celle de \\(b_3\\) est ${f3(mP.b[3])} (contre ${f3(m2.b[3])}) et celle de \\(b_4\\) est ${f3(mP.b[4])} (contre ${f3(m2.b[4])}). Deux enseignements se dégagent.
+        <ul>
+          <li>Les estimations ponctuelles sont <em>très proches</em> de celles des MCO, ce qui était attendu : l'hétéroscédasticité ne biaise pas l'estimateur des MCO, de sorte que les deux méthodes estiment la même chose et ne peuvent différer que par l'aléa d'échantillonnage. Les conclusions économiques sont donc inchangées : le chiffre d'affaires croît avec la taille du marché local, avec le niveau de vie de la zone et avec l'effort publicitaire.</li>
+          <li>En revanche, les <em>erreurs-types</em> sont modifiées (par exemple ${f3(mP.se[1])} contre ${f3(m2.se[1])} pour \\(b'_1\\), et ${f3(mP.se[3])} contre ${f3(m2.se[3])} pour \\(b_3\\)) : ce sont elles qui font tout l'intérêt de la procédure, puisque les erreurs-types des MCO étaient biaisées en présence d'hétéroscédasticité. Ce sont donc les tests de Student fondés sur les moindres carrés pondérés qu'il convient de retenir.</li>
+        </ul>
+        On se gardera enfin de comparer les \\(R^2\\) des deux modèles : celui du modèle pondéré (${f3(mP.R2)}) porte sur une variable expliquée différente — \\(\\ln(\\text{CA}_i)/\\ln(\\text{Pub}_i)\\) et non \\(\\ln(\\text{CA}_i)\\) — et n'est donc pas comparable à celui du modèle initial (${f3(m2.R2)}). Une dernière réserve s'impose : la pondération retenue repose sur une <em>hypothèse</em> quant à la forme de l'hétéroscédasticité, lue sur un graphique. Si cette forme est mal spécifiée, les moindres carrés pondérés ne rétablissent pas l'homoscédasticité ; en pratique, on leur préfère souvent les erreurs-types robustes de White, qui ne requièrent aucune hypothèse sur la forme de \\(\\Omega\\).</li>
+      </ol></li>
+
+      </ol></div>`;
+    }
+  },
+
+  en: {
+    "htmlLang": "en",
+    "title": "Exercise Generator - Econometrics Problem",
+    "k-badge": "ECONOMETRICS",
+    "k-h1": "Econometrics Problem",
+    "k-sub": "© Thomas Hossen – August 29, 2026 Version",
+    "k-seed": "Reproducibility seed",
+    "k-seedtip": "Empty = random at each generation",
+    "k-n": "Observations <em>(n)</em>",
+    "k-ntip": "Sample size",
+    "k-gen": "Generate →",
+    "k-welcome": "Set the parameters (or leave empty for random values), then click Generate.",
+    "k-new": "↺ New statement",
+    "k-pdf": "⬇ Export PDF",
+    "k-seedbadge": "Seed:",
+    "k-tag-ex": "Problem",
+    "k-cardtitle": "Determinants of Store Revenue",
+    "k-tag-sol": "Solution",
+    "k-cardtitle2": "Determinants of Store Revenue",
+    "k-modal": "Export to PDF",
+    "k-mseed-pre": "Seed:",
+    "k-mseed-post": "— write down this value to reproduce this problem exactly.",
+    "k-opth": "Include page header",
+    "k-opthd": "Title, \"ECONOMETRICS\" badge and problem heading",
+    "k-opts": "Include the full solution",
+    "k-optsd": "Matrix proofs, Student, Fisher, Chow, White and Goldfeld-Quandt tests",
+    "k-print": "🖨&nbsp;Print / Save as PDF",
+    "k-cancel": "Cancel",
+    "copy": "⧉ Copy",
+    "copyTitle": "Copy the active seed",
+    "copied": "✓ Copied",
+    "phSeed": "auto",
+    "showSol": "Show Solution",
+    "hideSol": "Hide Solution",
+
+    lbl: {
+      varc: "Variable", coef: "Coefficient", sec: "Standard error",
+      cst: "Constant",
+      figX: "ln(Adv)", figY: "Residual",
+      capFig: function(D) { return `Scatter plot of the residuals \\(\\widehat{u}_i\\) of the second model against the logarithm of advertising expenditure (${D.n} observations).`; }
+    },
+
+    ex: function(D) {
+      const B = D.biz;
+      return `
+      <div class="context-block">
+        The firm <strong>${B.firm}</strong> owns ${D.n} ${B.en} in France. In order to improve their profitability, the firm seeks to identify the factors that determine the revenue of an outlet. Let \\(\\text{CA}_i\\) denote the revenue of ${B.enOne} \\(i\\), \\(\\text{Pop}_i\\) the population (in thousands of people) living within a radius of ${D.radius} kilometres, \\(\\text{Rev}_i\\) the average annual income of those inhabitants (in thousands of euros), \\(\\text{Pub}_i\\) the annual advertising expenditure (in thousands of euros) devoted to it, and \\(\\text{Conc}_i\\) the number of competing outlets located more than ${D.radius} kilometres away. The economics department of the firm first proposes to estimate the model
+        \\[\\ln(\\text{CA}_i)=b_0+b_1\\ln(\\text{Pop}_i)+b_2\\ln(\\text{Rev}_i)+u_i\\]
+        where \\(u_i\\) is an error term assumed to follow a normal distribution.
+      </div>
+      <div class="questions"><ol>
+
+        <li><div class="q-text">
+          <ol>
+            <li>Write the model in matrix form, specifying carefully the size and the content of the matrices and vectors used.</li>
+            <li>State the Gauss-Markov assumptions of the multiple linear regression model, and specify the impact of a violation of each of them on the ordinary least squares (OLS) estimator.</li>
+            <li>Prove that the OLS estimator is unbiased and interpret the meaning of this result. Then determine the variance of the OLS estimator.</li>
+          </ol>
+        </div></li>
+
+        <li><div class="q-text">Estimating the model by ordinary least squares yields the following results:
+          ${regTable(D, D.m1, ["Constant", "\\(\\ln(\\text{Pop})\\)", "\\(\\ln(\\text{Rev})\\)"], `Residual sum of squares: \\(\\text{RSS}=${f3(D.m1.SCR)}\\) — \\(R^2=${f3(D.m1.R2)}\\) — \\(\\overline{R^2}=${f3(D.m1.R2adj)}\\) — \\(n=${D.n}\\) observations.`)}
+          <ol>
+            <li>Interpret the estimated values of the coefficients \\(b_1\\) and \\(b_2\\). Then test their significance. What can be deduced from this?</li>
+            <li>At the 5 % type-I error level, can the null hypothesis \\((H_0):b_2=1\\) be rejected? Interpret the result in economic terms.</li>
+            <li>Test the overall significance of the model at the 95 % confidence level.</li>
+          </ol>
+        </div></li>
+
+        <li><div class="q-text">The economics department wishes to enrich its econometric model and proposes a new regression, of the form
+          \\[\\ln(\\text{CA}_i)=b'_0+b'_1\\ln(\\text{Pop}_i)+b'_2\\ln(\\text{Rev}_i)+b_3\\ln(\\text{Pub}_i)+b_4\\ln(\\text{Conc}_i)+u'_i\\]
+          where \\(u'_i\\) is an error term assumed to follow a normal distribution with zero mean. Ordinary least squares estimation now yields:
+          ${regTable(D, D.m2, ["Constant", "\\(\\ln(\\text{Pop})\\)", "\\(\\ln(\\text{Rev})\\)", "\\(\\ln(\\text{Pub})\\)", "\\(\\ln(\\text{Conc})\\)"], `Residual sum of squares: \\(\\text{RSS}=${f3(D.m2.SCR)}\\) — \\(R^2=${f3(D.m2.R2)}\\) — \\(\\overline{R^2}=${f3(D.m2.R2adj)}\\) — Durbin-Watson statistic: \\(\\text{DW}=${f3(D.DW)}\\).`)}
+          <p class="rnote">The bounds of the Durbin-Watson table at the 5 % level, for \\(n=${D.n}\\) observations and \\(k=4\\) regressors, are given: \\(d_L=${f3(D.dL)}\\) and \\(d_U=${f3(D.dU)}\\).</p>
+          <ol>
+            <li>Using a statistical test, determine whether adding the two new variables significantly improves the model.</li>
+            <li>Compare the results of the two estimations. Which model appears to be the more relevant?</li>
+            <li>Test at the 5 % level for the presence of first-order autocorrelation of the residuals. What do you think of this approach?</li>
+          </ol>
+        </div></li>
+
+        <li><div class="q-text">The economics department believes that the ${D.nU} outlets located in urban areas behave differently from the ${D.nR} outlets located in rural areas. The second model is therefore estimated separately on the two subgroups: the residual sum of squares of the regression on urban outlets is ${f3(D.SCRu)}, that of the regression on rural outlets is ${f3(D.SCRr)}. Can the variables influencing revenue be considered to have a homogeneous effect on the two subgroups? Test this hypothesis at the 95 % confidence level.</div></li>
+
+        <li><div class="q-text">Finally, the economics department wishes to check whether the assumptions underlying OLS hold, and therefore carries out a series of tests.
+          <ol>
+            <li>What phenomenon is illustrated by the graph below? Write the variance of the disturbances that seems appropriate to the case shown, and spell out \\(\\Omega\\), the variance-covariance matrix of the disturbances.
+              ${figRes(D)}
+            </li>
+            <li>Two tests are carried out. The first regresses the squares of the ${D.n} residuals \\(\\widehat{u}_i^2\\) on a constant and on the variables \\(\\ln(\\text{Rev})\\), \\(\\ln(\\text{Pub})\\), \\(\\ln(\\text{Rev})^2\\), \\(\\ln(\\text{Pub})^2\\) and \\(\\ln(\\text{Rev})\\times\\ln(\\text{Pub})\\): this regression yields a coefficient of determination \\(R^2\\) of about ${f3(D.R2w)}. The second test selects the \\(n_1=${D.mg}\\) outlets for which \\(\\ln(\\text{Pub})\\) is lowest and the \\(n_2=${D.mg}\\) outlets for which it is highest (the \\(q=${D.q}\\) central observations being discarded); on each of these groups, \\(\\ln(\\text{CA})\\) is regressed on a constant, \\(\\ln(\\text{Pop})\\), \\(\\ln(\\text{Rev})\\), \\(\\ln(\\text{Pub})\\) and \\(\\ln(\\text{Conc})\\): the residual sum of squares on the first group is \\(\\text{RSS}_{\\inf}=${f3(D.SCRlo)}\\), while that of the second group is \\(\\text{RSS}_{\\sup}=${f3(D.SCRhi)}\\). Describe each of the two tests precisely, and give their conclusion at the 5 % level. What are the consequences of these results for the bias and the precision of the previous estimates?</li>
+            <li>Transform the second model into a homoscedastic model. Check rigorously that the transformed model does satisfy the Gauss-Markov assumptions.</li>
+            <li>The model is estimated by weighted least squares, yielding the following results:
+              ${regTable(D, D.mP, ["Constant", "\\(\\ln(\\text{Pop})\\)", "\\(\\ln(\\text{Rev})\\)", "\\(\\ln(\\text{Pub})\\)", "\\(\\ln(\\text{Conc})\\)"], `Residual sum of squares (transformed model): \\(\\text{RSS}=${f3(D.mP.SCR)}\\) — \\(R^2=${f3(D.mP.R2)}\\) — \\(\\overline{R^2}=${f3(D.mP.R2adj)}\\).`)}
+              Comment on the results obtained.</li>
+          </ol>
+        </div></li>
+
+      </ol></div>`;
+    },
+
+    sol: function(D) {
+      const m1 = D.m1, m2 = D.m2, mP = D.mP, n = D.n;
+      return `<div class="st"><ol>
+
+      <li><ol class="sub-ol">
+        <li>Let us set:
+        \\[\\textbf{Y}:=\\begin{pmatrix}\\ln(\\text{CA}_1)\\\\\\vdots\\\\\\ln(\\text{CA}_{${n}})\\end{pmatrix},\\quad
+        \\textbf{X}:=\\begin{pmatrix}1&\\ln(\\text{Pop}_1)&\\ln(\\text{Rev}_1)\\\\\\vdots&\\vdots&\\vdots\\\\1&\\ln(\\text{Pop}_{${n}})&\\ln(\\text{Rev}_{${n}})\\end{pmatrix},\\quad
+        \\textbf{b}:=\\begin{pmatrix}b_0\\b_1\\b_2\\end{pmatrix},\\quad
+        \\textbf{u}:=\\begin{pmatrix}u_1\\\\\\vdots\\u_{${n}}\\end{pmatrix}\\]
+        The vector \\(\\textbf{Y}\\) is of size \\(${n}\\times 1\\), the matrix \\(\\textbf{X}\\) of size \\(${n}\\times 3\\) (a column of ones for the constant and one column per regressor), the parameter vector \\(\\textbf{b}\\) of size \\(3\\times 1\\) and the disturbance vector \\(\\textbf{u}\\) of size \\(${n}\\times 1\\). The model such that, for every outlet \\(i\\), \\(\\ln(\\text{CA}_i)=b_0+b_1\\ln(\\text{Pop}_i)+b_2\\ln(\\text{Rev}_i)+u_i\\), can then be rewritten in matrix form as \\(\\textbf{Y}=\\textbf{X}\\textbf{b}+\\textbf{u}\\).</li>
+
+        <li>We assume that \\(\\textbf{u}\\) is a random vector with zero mean and variance-covariance matrix \\(\\Omega:=\\sigma^2\\textbf{I}_{${n}}\\), where \\(\\sigma\\) is a strictly positive real number. This condenses three assumptions.
+        <ul>
+          <li><strong>No error on average</strong>: for every outlet \\(i\\), \\(\\mathbb{E}[u_i]=0\\). It is this assumption that guarantees that the OLS estimators of \\(b_0\\), \\(b_1\\) and \\(b_2\\) are unbiased; its violation (an omitted variable correlated with the regressors, measurement error on the explanatory variables, simultaneity) makes the estimator <em>biased</em>, and the bias does not vanish as the sample size grows.</li>
+          <li><strong>Homoscedasticity</strong>: there exists \\(\\sigma>0\\) such that, for every \\(i\\), \\(\\Var{u_i}=\\sigma^2\\). The diagonal of \\(\\Omega\\) is therefore constant.</li>
+          <li><strong>No autocorrelation</strong>: for all \\(i\\ne j\\), \\(\\mathbb{E}[u_iu_j]=0\\), so that \\(\\Omega\\) is diagonal.</li>
+        </ul>
+        The fact that \\(\\Omega\\) is a scalar matrix guarantees (provided the zero-mean assumption also holds) that the OLS estimators are BLUE (<em>best linear unbiased estimators</em>), that is, among all linear unbiased estimators of \\(\\textbf{b}\\), those with minimum variance: this is the Gauss-Markov theorem. Conversely, if \\(\\Omega\\) is no longer diagonal (autocorrelation) or if its diagonal is no longer constant (heteroscedasticity), the OLS estimator <em>remains unbiased</em>, but it is no longer of minimum variance and, above all, the usual estimate of its variance is wrong: the Student and Fisher tests built on those standard errors are no longer valid without further precautions (robust variance-covariance matrix, generalised least squares, and so on).</li>
+
+        <li>We know that the OLS estimator of \\(\\textbf{b}\\) is \\(\\widehat{\\textbf{b}}:=(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\textbf{Y}\\). Now:
+        \\[\\begin{aligned}
+        \\widehat{\\textbf{b}}=(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\textbf{Y}
+        &\\iff \\widehat{\\textbf{b}}=(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T(\\textbf{X}\\textbf{b}+\\textbf{u})\\\\
+        &\\iff \\widehat{\\textbf{b}}=(\\textbf{X}^T\\textbf{X})^{-1}(\\textbf{X}^T\\textbf{X})\\textbf{b}+(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\textbf{u}\\\\
+        &\\iff \\widehat{\\textbf{b}}=\\textbf{b}+(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\textbf{u}
+        \\end{aligned}\\]
+        By linearity of the expectation, \\(\\mathbb{E}[\\widehat{\\textbf{b}}]=\\textbf{b}+(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\mathbb{E}[\\textbf{u}]=\\textbf{b}\\), since \\(\\mathbb{E}[\\textbf{u}]=\\textbf{0}\\) by assumption. The OLS estimator is therefore unbiased: this means that, on average over a large number of samples of the same size drawn from the same population, the estimate obtained coincides with the true value of the parameter. In other words, the estimation procedure is not <em>systematically</em> wrong in one direction or the other — which says nothing, however, about the error made on one particular sample. Consequently:
+        \\[\\begin{aligned}
+        \\Var{\\widehat{\\textbf{b}}}
+        &=\\mathbb{E}\\left[\\left(\\widehat{\\textbf{b}}-\\textbf{b}\\right)\\left(\\widehat{\\textbf{b}}-\\textbf{b}\\right)^T\\right]\\\\
+        &=\\mathbb{E}\\left[(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\textbf{u}\\,\\textbf{u}^T\\textbf{X}(\\textbf{X}^T\\textbf{X})^{-1}\\right]\\\\
+        &=(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\,\\mathbb{E}\\left[\\textbf{u}\\textbf{u}^T\\right]\\,\\textbf{X}(\\textbf{X}^T\\textbf{X})^{-1}\\quad\\text{by linearity of the expectation}\\\\
+        &=(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\,\\sigma^2\\textbf{I}_{${n}}\\,\\textbf{X}(\\textbf{X}^T\\textbf{X})^{-1}\\quad\\text{since }\\mathbb{E}[\\textbf{u}\\textbf{u}^T]=\\Omega=\\sigma^2\\textbf{I}_{${n}}\\\\
+        &=\\sigma^2\\left(\\textbf{X}^T\\textbf{X}\\right)^{-1}
+        \\end{aligned}\\]
+        We used the fact that \\(\\mathbb{E}[\\textbf{u}\\textbf{u}^T]=\\Var{\\textbf{u}}\\) (since \\(\\textbf{u}\\) is centred), that this matrix is diagonal (no autocorrelation) and that all its diagonal entries equal \\(\\sigma^2\\) (homoscedasticity). Since \\(\\sigma^2\\) is exogenous, the precision of the estimates can only be improved by acting on \\(\\left(\\textbf{X}^T\\textbf{X}\\right)^{-1}\\), that is by increasing the number of observations or the variability of the regressors — and by avoiding regressors that are too strongly correlated with one another.</li>
+      </ol></li>
+
+      <li><ol class="sub-ol">
+        <li>This is a log-log model: the coefficients are directly interpreted as elasticities. The OLS estimate of \\(b_1\\) is \\(\\widehat{b}_1=${f3(m1.b[1])}\\): a 1 % increase, all else equal, in the population within a radius of ${D.radius} kilometres is associated with a ${f3(m1.b[1])} % increase in revenue on average. Likewise, the OLS estimate of \\(b_2\\) is \\(\\widehat{b}_2=${f3(m1.b[2])}\\): a 1 % increase, all else equal, in the average income of the inhabitants is associated with a ${f3(m1.b[2])} % increase in revenue on average.
+        <ul>
+          <li>We test the null hypothesis \\((H_0):b_1=0\\) against \\((H_1):b_1\\ne 0\\) (two-sided test). Let \\(\\widehat{\\sigma}_1\\) denote the standard error of \\(\\widehat{b}_1\\). Under the null hypothesis, \\(\\widehat{t}_1:=\\dfrac{\\widehat{b}_1-0}{\\widehat{\\sigma}_1}\\) follows a Student distribution with \\(${n}-(2+1)=${n - 3}\\) degrees of freedom (${n} observations, 2 regressors excluding the constant). Now:
+          \\[\\widehat{t}_1=\\frac{${f3(m1.b[1])}}{${f3(m1.se[1])}}\\approx ${f3(D.t1[1])}\\]
+          The 97.5 % quantile of a Student distribution with ${n - 3} degrees of freedom is \\(t_{${n - 3};\\,0.975}\\approx ${f3(D.tc1)}\\). Since \\(|\\widehat{t}_1|${D.sig1 ? ">" : "&lt;"}${f3(D.tc1)}\\), we ${D.sig1 ? "can" : "cannot"} reject the null hypothesis at the 95 % confidence level: \\(b_1\\) ${D.sig1 ? "is significantly different from zero, so that \\(\\ln(\\text{Pop})\\) is significant" : "is not significantly different from zero, so that \\(\\ln(\\text{Pop})\\) is not significant"} at the 95 % confidence level.</li>
+          <li>We test likewise \\((H_0):b_2=0\\) against \\((H_1):b_2\\ne 0\\):
+          \\[\\widehat{t}_2=\\frac{${f3(m1.b[2])}}{${f3(m1.se[2])}}\\approx ${f3(D.t1[2])}\\]
+          Since \\(|\\widehat{t}_2|${D.sig2 ? ">" : "&lt;"}${f3(D.tc1)}\\), we ${D.sig2 ? "can" : "cannot"} reject the null hypothesis at the 95 % confidence level: the variable \\(\\ln(\\text{Rev})\\) ${D.sig2 ? "is" : "is not"} significant.</li>
+        </ul>
+        ${(D.sig1 && D.sig2) ? "Both variables are therefore individually significant: the size of the local market and the standard of living of its inhabitants both drive revenue." : (!D.sig1 && D.sig2) ? "It is disturbing that population does not come out significant, although economic intuition designates it as a major determinant of revenue. Two explanations are possible: either the variable genuinely has no effect of its own, or — a far more plausible explanation here — the strong correlation between the population and the average income of the area (multicollinearity) inflates the standard errors and makes each coefficient individually imprecise, even though the two variables jointly explain a large share of the variance." : (D.sig1 && !D.sig2) ? "It is disturbing that average income does not come out significant: the strong correlation between population and income of the area (multicollinearity) inflates the standard errors and makes each coefficient individually imprecise, even though the two variables jointly explain a large share of the variance." : "Neither variable is individually significant, although the model is jointly significant (see question 2.c): this is the characteristic signature of multicollinearity between the population and the average income of the area."}</li>
+
+        <li>We test the null hypothesis \\((H_0):b_2=1\\) against \\((H_1):b_2\\ne 1\\) (two-sided test). Under the null hypothesis, \\(\\widehat{t}\\,'_2:=\\dfrac{\\widehat{b}_2-1}{\\widehat{\\sigma}_2}\\) follows a Student distribution with ${n - 3} degrees of freedom. Now:
+        \\[\\widehat{t}\\,'_2=\\frac{${f3(m1.b[2])}-1}{${f3(m1.se[2])}}\\approx ${f3(D.tb2eq1)}\\]
+        Since \\(|\\widehat{t}\\,'_2|${D.rejB2 ? ">" : "&lt;"}t_{${n - 3};\\,0.975}\\approx ${f3(D.tc1)}\\), we ${D.rejB2 ? "can" : "cannot"} reject the null hypothesis at the 95 % confidence level. ${D.rejB2 ? "The elasticity of revenue with respect to local income is therefore significantly different from unity: revenue does not vary proportionally with the income of the catchment area." : "Economically, this means that a unit elasticity cannot be ruled out: it is as if revenue varied proportionally with the average income of the catchment area, a 1 % increase in income translating into a 1 % increase in revenue."}</li>
+
+        <li>We now test the overall significance of the model, that is the null hypothesis \\((H_0):b_1=b_2=0\\) against the alternative \\((H_1)\\) that at least one of the two coefficients is non-zero. We use the Fisher statistic:
+        \\[\\widehat{F}:=\\frac{R^2}{1-R^2}\\times\\frac{n-(k+1)}{k}=\\frac{${f3(m1.R2)}}{1-${f3(m1.R2)}}\\times\\frac{${n}-3}{2}\\approx ${f3(D.Fglob)}\\]
+        Under the null hypothesis, \\(\\widehat{F}\\) follows a Fisher distribution with \\(k=2\\) and \\(n-(k+1)=${n - 3}\\) degrees of freedom, whose 95 % quantile is \\(f_{2;\\,${n - 3};\\,0.95}\\approx ${f3(D.Fc_glob)}\\). Since \\(\\widehat{F}>${f3(D.Fc_glob)}\\), we reject the null hypothesis at the 95 % confidence level: the model is jointly significant. At least one of the two variables significantly drives the logarithm of revenue, and \\(${f3(m1.R2 * 100)}\\)&nbsp;% of the variance of \\(\\ln(\\text{CA})\\) is explained by the model.</li>
+      </ol></li>
+
+      <li><ol class="sub-ol">
+        <li>Two coefficients have been added in the second model: \\(b_3\\), associated with the logarithm of advertising expenditure, and \\(b_4\\), associated with the logarithm of the number of distant competing outlets. We test the null hypothesis \\((H_0):b_3=b_4=0\\) against \\((H_1):b_3\\ne 0\\text{ or }b_4\\ne 0\\). The first model is the <em>constrained</em> model (with residual sum of squares \\(\\text{RSS}_{\\text{C}}=${f3(m1.SCR)}\\)), the second the <em>unconstrained</em> model (\\(\\text{RSS}_{\\text{U}}=${f3(m2.SCR)}\\)). We use the Fisher statistic, with \\(n=${n}\\) observations, \\(k'=4\\) variables in the unconstrained model and \\(p=2\\) restrictions to be tested:
+        \\[\\widehat{F}:=\\frac{\\text{RSS}_{\\text{C}}-\\text{RSS}_{\\text{U}}}{\\text{RSS}_{\\text{U}}}\\times\\frac{n-(k'+1)}{p}=\\frac{${f3(m1.SCR)}-${f3(m2.SCR)}}{${f3(m2.SCR)}}\\times\\frac{${n}-5}{2}\\approx ${f3(D.Fadd)}\\]
+        Under the null hypothesis, \\(\\widehat{F}\\) follows a Fisher distribution with \\(p=2\\) and \\(n-(k'+1)=${n - 5}\\) degrees of freedom, whose 95 % quantile is about ${f3(D.Fc_add)}. Since \\(\\widehat{F}>${f3(D.Fc_add)}\\), we reject the null hypothesis at the 95 % confidence level: adding the two extra variables is relevant. This is hardly surprising, the adjusted coefficient of determination rising from ${f3(m1.R2adj)} to ${f3(m2.R2adj)}.</li>
+
+        <li>To choose between the two models, we rely on the adjusted coefficient of determination (which, unlike \\(R^2\\), does not increase mechanically with the number of regressors): the second model is therefore preferable to the first. Let us comment on its results.
+        <ul>
+          <li>This is still a log-log model. The OLS estimate of \\(b_3\\) is \\(\\widehat{b}_3=${f3(m2.b[3])}\\): a 1 % increase in advertising expenditure is associated, all else equal, with a ${f3(m2.b[3])} % increase in revenue on average. The estimate of \\(b_4\\) is \\(\\widehat{b}_4=${f3(m2.b[4])}\\): a 1 % increase in the number of competitors located more than ${D.radius} kilometres away is associated with a ${f3(m2.b[4])} % increase in revenue on average — which is not absurd, distant competitors mainly signalling a commercially dynamic area.</li>
+          <li>The estimates of the first two elasticities are barely modified by the addition of the two variables: \\(\\widehat{b}'_1=${f3(m2.b[1])}\\) against ${f3(m1.b[1])} in the first model, and \\(\\widehat{b}'_2=${f3(m2.b[2])}\\) against ${f3(m1.b[2])}. The stability of the coefficients suggests that the two added variables are not strongly correlated with the first two: the first model therefore did not suffer from a major omitted-variable bias on \\(b_1\\) and \\(b_2\\).</li>
+          <li>There remains the question of the significance of \\(\\ln(\\text{Pop})\\). Testing \\((H_0):b'_1=0\\) against \\((H_1):b'_1\\ne 0\\), we obtain \\(\\widehat{t}\\,'_1=\\dfrac{${f3(m2.b[1])}}{${f3(m2.se[1])}}\\approx ${f3(D.t2[1])}\\), to be compared with the quantile \\(t_{${n - 5};\\,0.975}\\approx ${f3(D.tc2)}\\) (${n} observations, 4 regressors excluding the constant). ${!D.sig1m2 ? "The variable is therefore still not significant at the 5 % level: the second model confirms this diagnosis, which cannot then be blamed on a mere omitted-variable bias." : (D.sig1 ? "The variable therefore remains significant at the 5 % level in the second model." : "It therefore becomes significant at the 5 % level in the second model: by sharply reducing the residual variance, the addition of the two new variables improves the precision of every coefficient, which is enough to bring out the specific effect of population — the insignificance found in question 2.a was thus a matter of precision, not of absence of effect.")}</li>
+        </ul></li>
+
+        <li>For the estimates of the model to be valid, the Gauss-Markov assumptions must hold, in particular that of no autocorrelation between the errors. Let us test first-order autocorrelation of the residuals with a Durbin-Watson test: in the model \\(\\widehat{u}_i=\\rho\\widehat{u}_{i-1}+\\varepsilon_i\\), we test \\((H_0):\\rho=0\\) against \\((H_1):\\rho\\ne 0\\). We set:
+        \\[\\widehat{\\rho}:=\\frac{\\sum_{i=2}^{n}\\widehat{u}_{i-1}\\widehat{u}_i}{\\sum_{i=2}^{n}\\widehat{u}_{i-1}^2}\\quad\\text{and}\\quad \\text{DW}:=\\frac{\\sum_{i=2}^{n}\\left(\\widehat{u}_i-\\widehat{u}_{i-1}\\right)^2}{\\sum_{i=1}^{n}\\widehat{u}_i^2}\\approx 2\\left(1-\\widehat{\\rho}\\right)\\]
+        Under \\((H_0)\\), there exist two bounds \\(d_L\\) and \\(d_U\\) (with \\(d_L&lt;d_U&lt;2\\)) whose distribution depends only on the number of observations \\(n\\) and the number of regressors \\(k\\). Here \\(\\text{DW}=${f3(D.DW)}\\) and, for \\(n=${n}\\) and \\(k=4\\), the table gives \\(d_L=${f3(D.dL)}\\) and \\(d_U=${f3(D.dU)}\\). Since DW lies in the interval \\([d_U;4-d_U]=[${f3(D.dU)};${f3(4 - D.dU)}]\\), we conclude that the model does not suffer from first-order autocorrelation of the disturbances. The value of DW, very close to 2, corresponds to an empirical autocorrelation \\(\\widehat{\\rho}\\approx ${f3(1 - D.DW / 2)}\\), that is essentially zero. While this result is reassuring and supports the validity of the estimates of the second model, the approach itself remains questionable: we are dealing here with <em>cross-sectional data</em>, whereas autocorrelation is a phenomenon characteristic of time series. The ordering of the observations is arbitrary (it depends on how the outlets are numbered): any value of DW could be obtained by permuting the rows of the dataset, which deprives the test of any content.</li>
+      </ol></li>
+
+      <li><div>We split the sample into a group of \\(n_1=${D.nU}\\) urban outlets and a group of \\(n_2=${D.nR}\\) rural outlets. Let \\(\\text{RSS}_1=${f3(D.SCRu)}\\) be the residual sum of squares of the model estimated on urban outlets and \\(\\text{RSS}_2=${f3(D.SCRr)}\\) that of the model estimated on rural outlets; the residual sum of squares of the overall model is that of model 2, namely \\(\\text{RSS}_{\\text{U}}=${f3(m2.SCR)}\\). We test the null hypothesis \\((H_0)\\) that the coefficients are identical across the two segments against the alternative \\((H_1)\\) that at least one coefficient differs. We apply a Chow test, whose statistic is:
+      \\[\\widehat{F}:=\\frac{\\text{RSS}_{\\text{U}}-(\\text{RSS}_1+\\text{RSS}_2)}{\\text{RSS}_1+\\text{RSS}_2}\\times\\frac{n_1+n_2-2(k+1)}{k+1}=\\frac{${f3(m2.SCR)}-${f3(D.SCRu + D.SCRr)}}{${f3(D.SCRu + D.SCRr)}}\\times\\frac{${n}-10}{5}\\approx ${f3(D.Fchow)}\\]
+      Under the null hypothesis, \\(\\widehat{F}\\) follows a Fisher distribution with \\(k+1=5\\) and \\(n_1+n_2-2(k+1)=${n - 10}\\) degrees of freedom, whose 95 % quantile is about ${f3(D.Fc_chow)}. ${D.rejChow ? `Since \\(\\widehat{F}>${f3(D.Fc_chow)}\\), we reject the null hypothesis at the 5 % level: the determinants of revenue differ significantly between urban and rural areas, and two distinct models should be estimated (or interaction terms with a rural dummy introduced).` : `Since \\(\\widehat{F}&lt;${f3(D.Fc_chow)}\\), we cannot reject the null hypothesis at the 5 % level: the estimates do not differ significantly between the two environments. There is therefore no reason to split the sample, and we keep the model estimated on all ${n} outlets, which is more precise since it uses more observations.`}</div></li>
+
+      <li><ol class="sub-ol">
+        <li>The plot of the residuals against the logarithm of advertising expenditure displays a characteristic <em>funnel</em> shape: the dispersion of the residuals clearly increases with \\(\\ln(\\text{Pub})\\). In other words, the variance of the disturbances does not appear to be constant but to depend on the value of a regressor: this is <strong>heteroscedasticity</strong>. Economically, this makes sense: outlets that spend heavily on advertising have far more volatile revenue (successful or failed campaigns) than those that spend almost nothing. The variance-covariance matrix \\(\\Omega\\), while remaining diagonal (nothing suggests autocorrelation, see question 3.c), no longer has a constant diagonal. Since the funnel widens proportionally to \\(\\ln(\\text{Pub})\\), a natural modelling assumption is that there exists \\(\\sigma>0\\) such that, for every outlet \\(i\\), \\(\\Var{u'_i}=\\sigma^2\\left(\\ln(\\text{Pub}_i)\\right)^2\\). We would then have:
+        \\[\\Omega=\\sigma^2\\begin{pmatrix}
+        \\ln(\\text{Pub}_1)^2&0&\\cdots&0\\\\
+        0&\\ddots&\\ddots&\\vdots\\\\
+        \\vdots&\\ddots&\\ddots&0\\\\
+        0&\\cdots&0&\\ln(\\text{Pub}_{${n}})^2
+        \\end{pmatrix}\\]</li>
+
+        <li>We test the null hypothesis \\((H_0)\\) of homoscedasticity of the disturbances against the alternative \\((H_1)\\) that the model suffers from heteroscedasticity.
+        <ul>
+          <li><strong>White test.</strong> It consists in regressing the squared residuals on each variable, each squared variable and each cross-product. This gives an auxiliary regression with \\(d=5\\) regressors (plus the constant), whose coefficients are denoted \\(a_1,\\ldots,a_5\\). We test \\((H_0):a_1=\\cdots=a_5=0\\) against the alternative that at least one of them is non-zero. Let \\(R^2_{\\text{aux.}}\\) be the coefficient of determination of that auxiliary regression: White showed that, under the null hypothesis, the statistic \\(\\text{W}:=nR^2_{\\text{aux.}}\\) follows asymptotically a \\(\\chi^2\\) distribution with \\(d=5\\) degrees of freedom. Here \\(\\text{W}=${n}\\times ${f3(D.R2w)}\\approx ${f3(D.W)}\\), while the 95 % quantile of a \\(\\chi^2\\) distribution with 5 degrees of freedom is ${f3(D.chi2c)}. Since \\(\\text{W}>${f3(D.chi2c)}\\), we reject the null hypothesis at the 95 % confidence level: the model does suffer from heteroscedasticity.</li>
+          <li><strong>Goldfeld-Quandt test.</strong> It consists in splitting the sample into two subsamples of almost equal size and comparing the error variances of those subsamples. The test proceeds in four steps: (i) the observations are ordered by increasing values of \\(\\ln(\\text{Pub})\\); (ii) \\(q=${D.q}\\) central observations are discarded, leaving two subsamples of \\(n_1=n_2=${D.mg}\\) observations; (iii) the model is estimated by OLS on each subsample and the residual sums of squares \\(\\text{RSS}_{\\inf}=${f3(D.SCRlo)}\\) and \\(\\text{RSS}_{\\sup}=${f3(D.SCRhi)}\\) are computed; (iv) denoting by \\(\\sigma^2_{\\inf}\\) and \\(\\sigma^2_{\\sup}\\) the error variances on each subsample, we test \\((H_0):\\sigma^2_{\\inf}=\\sigma^2_{\\sup}\\) against \\((H_1):\\sigma^2_{\\inf}\\ne\\sigma^2_{\\sup}\\). Goldfeld and Quandt show that, under the null hypothesis, the statistic \\(\\text{GQ}:=\\text{RSS}_{\\sup}\\big/\\text{RSS}_{\\inf}=${f3(D.SCRhi)}/${f3(D.SCRlo)}\\approx ${f3(D.GQ)}\\) follows a Fisher distribution with \\(n_2-(k+1)=${D.mg - 5}\\) and \\(n_1-(k+1)=${D.mg - 5}\\) degrees of freedom, whose 95 % quantile is about ${f3(D.Fc_gq)}. ${D.rejGQ ? `Since \\(\\text{GQ}>${f3(D.Fc_gq)}\\), we reject the null hypothesis: the Goldfeld-Quandt test confirms the diagnosis of the White test.` : `Since \\(\\text{GQ}&lt;${f3(D.Fc_gq)}\\), we cannot reject the null hypothesis: the Goldfeld-Quandt test does not detect heteroscedasticity and therefore contradicts the White test. Since the White test examines far more potential forms of heteroscedasticity and does not rest on the — arbitrary — choice of a sorting variable and of a number of discarded observations, it is favoured by econometricians: we therefore conclude that heteroscedasticity is present.`}</li>
+        </ul>
+        <strong>Consequences.</strong> Heteroscedasticity does not bias the OLS estimator: the proof of question 1.(c) only uses the assumption \\(\\mathbb{E}[\\textbf{u}]=\\textbf{0}\\) and therefore remains valid. However, the estimator is no longer of minimum variance (it is no longer BLUE) and, above all, the usual formula \\(\\widehat{\\Var{\\widehat{\\textbf{b}}}}=\\widehat{\\sigma}^2(\\textbf{X}^T\\textbf{X})^{-1}\\) is wrong: the standard errors reported above are biased, and all the Student and Fisher tests carried out in questions 2, 3 and 4 must be treated with caution.</li>
+
+        <li>The model is \\(\\textbf{Y}=\\textbf{X}'\\textbf{b}'+\\textbf{u}'\\), where \\(\\textbf{u}'\\) has zero mean and variance-covariance matrix \\(\\Omega\\) (see question 5.a). Let us set the weighting matrix:
+        \\[\\textbf{A}:=\\begin{pmatrix}
+        \\dfrac{1}{\\ln(\\text{Pub}_1)}&0&\\cdots&0\\\\
+        0&\\ddots&\\ddots&\\vdots\\\\
+        \\vdots&\\ddots&\\ddots&0\\\\
+        0&\\cdots&0&\\dfrac{1}{\\ln(\\text{Pub}_{${n}})}
+        \\end{pmatrix}\\]
+        and consider the transformed model \\(\\textbf{A}\\textbf{Y}=\\textbf{A}\\textbf{X}'\\textbf{b}'+\\textbf{A}\\textbf{u}'\\), which is equivalent to the initial model. Written out, it reads:
+        \\[\\forall\\,i\\in\\{1,\\ldots,${n}\\}\\quad \\frac{\\ln(\\text{CA}_i)}{\\ln(\\text{Pub}_i)}=b_3+\\frac{b'_0}{\\ln(\\text{Pub}_i)}+b'_1\\frac{\\ln(\\text{Pop}_i)}{\\ln(\\text{Pub}_i)}+b'_2\\frac{\\ln(\\text{Rev}_i)}{\\ln(\\text{Pub}_i)}+b_4\\frac{\\ln(\\text{Conc}_i)}{\\ln(\\text{Pub}_i)}+\\frac{u'_i}{\\ln(\\text{Pub}_i)}\\]
+        Let \\(i\\) be an integer between 1 and ${n}. Since \\(\\mathbb{E}[u'_i]=0\\), by linearity of the expectation:
+        \\[\\mathbb{E}\\left[\\frac{u'_i}{\\ln(\\text{Pub}_i)}\\right]=\\frac{\\mathbb{E}[u'_i]}{\\ln(\\text{Pub}_i)}=0\\]
+        The transformed disturbances therefore have zero mean. Next, for every \\(j\\ne i\\), by bilinearity of the covariance and since \\(\\Omega\\) is diagonal:
+        \\[\\textbf{Cov}\\left(\\frac{u'_i}{\\ln(\\text{Pub}_i)},\\frac{u'_j}{\\ln(\\text{Pub}_j)}\\right)=\\frac{\\textbf{Cov}(u'_i,u'_j)}{\\ln(\\text{Pub}_i)\\ln(\\text{Pub}_j)}=0\\]
+        The transformed disturbances are therefore uncorrelated. Finally, since \\(\\Var{u'_i}=\\sigma^2\\left(\\ln(\\text{Pub}_i)\\right)^2\\):
+        \\[\\Var{\\frac{u'_i}{\\ln(\\text{Pub}_i)}}=\\frac{\\Var{u'_i}}{\\left(\\ln(\\text{Pub}_i)\\right)^2}=\\sigma^2\\]
+        The variance of the transformed disturbances is therefore constant: the weighted model does satisfy the three Gauss-Markov assumptions, and OLS applied to this transformed model — that is, <em>weighted least squares</em> — again yields BLUE estimators. Note that the weighting amounts to giving less weight to the noisiest observations (those with high advertising expenditure), which is exactly the intuition behind generalised least squares.</li>
+
+        <li>This is still a log-log model, so the weighted least squares estimates are still interpreted as elasticities. The weighted estimate of \\(b'_1\\) is ${f3(mP.b[1])} (against ${f3(m2.b[1])} by OLS), that of \\(b'_2\\) is ${f3(mP.b[2])} (against ${f3(m2.b[2])}), that of \\(b_3\\) is ${f3(mP.b[3])} (against ${f3(m2.b[3])}) and that of \\(b_4\\) is ${f3(mP.b[4])} (against ${f3(m2.b[4])}). Two lessons emerge.
+        <ul>
+          <li>The point estimates are <em>very close</em> to the OLS ones, as expected: heteroscedasticity does not bias the OLS estimator, so both methods estimate the same object and can only differ through sampling noise. The economic conclusions are therefore unchanged: revenue increases with the size of the local market, with the standard of living of the area and with advertising effort.</li>
+          <li>The <em>standard errors</em>, by contrast, are modified (for instance ${f3(mP.se[1])} against ${f3(m2.se[1])} for \\(b'_1\\), and ${f3(mP.se[3])} against ${f3(m2.se[3])} for \\(b_3\\)): they are what makes the procedure worthwhile, since the OLS standard errors were biased in the presence of heteroscedasticity. It is therefore the Student tests based on weighted least squares that should be retained.</li>
+        </ul>
+        Finally, one should refrain from comparing the \\(R^2\\) of the two models: that of the weighted model (${f3(mP.R2)}) refers to a different dependent variable — \\(\\ln(\\text{CA}_i)/\\ln(\\text{Pub}_i)\\) rather than \\(\\ln(\\text{CA}_i)\\) — and is therefore not comparable with that of the initial model (${f3(m2.R2)}). One last caveat: the chosen weighting rests on an <em>assumption</em> about the form of the heteroscedasticity, read off a graph. If that form is misspecified, weighted least squares do not restore homoscedasticity; in practice, White's robust standard errors, which require no assumption about the form of \\(\\Omega\\), are often preferred.</li>
+      </ol></li>
+
+      </ol></div>`;
+    }
+  }
+};
+
+/* ============================================================
+   GENERATION / RENDU
+   ============================================================ */
+function regen() {
+  document.getElementById('seed-input').value = '';
+  generateFromControls();
+}
+
+function generateFromControls() {
+  const seedInp = document.getElementById('seed-input').value;
+  const seed = seedInp ? parseInt(seedInp) : Math.floor(Math.random() * 10000000);
+  initRand(seed);
+  document.getElementById('seed-disp').textContent = seed;
+  document.getElementById('modal-seed').textContent = seed;
+
+  const nInp = document.getElementById('param-n').value;
+  const n = nInp ? parseInt(nInp) : rA([50, 60, 60, 80, 100]);
+
+  const D = buildData(n);
+  if (!D) return;
+
+  document.getElementById('ex-content').innerHTML = I18N[LANG].ex(D);
+  document.getElementById('sol-content').innerHTML = I18N[LANG].sol(D);
+
+  document.getElementById('welcome').style.display = 'none';
+  document.getElementById('ex-area').style.display = 'block';
+  solVisible = false;
+  const solC = document.getElementById('sol-card'), btn = document.getElementById('toggle-btn');
+  solC.classList.remove('visible'); btn.classList.remove('shown'); btn.textContent = I18N[LANG].showSol;
+
+  if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise();
+}
+
+/* ============================================================
+   LANGUE / UI / EXPORT PDF
+   ============================================================ */
+let LANG = 'fr';
+
+function detectLang() {
+    try {
+        const q = new URLSearchParams(window.location.search).get('lang');
+        if (q && I18N[q.toLowerCase()]) return q.toLowerCase();
+    } catch (e) {}
+    const h = (window.location.hash || '').replace('#', '').toLowerCase();
+    if (I18N[h]) return h;
+    return 'fr';
+}
+
+function applyLang() {
+    const D = I18N[LANG];
+    document.documentElement.lang = D.htmlLang;
+    document.title = D.title;
+
+    document.querySelectorAll('[data-k]').forEach(function (el) {
+        const key = el.getAttribute('data-k');
+        if (D[key] !== undefined) el.innerHTML = D[key];
+    });
+
+    const cp = document.getElementById('btn-copy');
+    if (cp) { cp.textContent = D.copy; cp.title = D.copyTitle; }
+    const si = document.getElementById('seed-input');
+    if (si) si.placeholder = D.phSeed;
+
+    const tb = document.getElementById('toggle-btn');
+    if (tb) tb.textContent = solVisible ? D.hideSol : D.showSol;
+
+    document.getElementById('flag-fr').classList.toggle('active', LANG === 'fr');
+    document.getElementById('flag-en').classList.toggle('active', LANG === 'en');
+}
+
+function setLang(lang) {
+    if (!I18N[lang] || lang === LANG) return;
+    LANG = lang;
+
+    try {
+        const u = new URL(window.location.href);
+        u.searchParams.set('lang', lang);
+        history.replaceState(null, '', u.toString());
+    } catch (e) {}
+
+    applyLang();
+
+    if (document.getElementById('ex-area').style.display !== 'none') {
+        const wasVis = solVisible;
+        document.getElementById('seed-input').value = _activeSeed;
+        generateFromControls();
+        if (wasVis) toggleSol();
+    }
+}
+
+function toggleSol(){
+  solVisible = !solVisible;
+  const sol = document.getElementById('sol-card'), btn = document.getElementById('toggle-btn');
+  if(solVisible){sol.classList.add('visible'); btn.classList.add('shown'); btn.textContent = I18N[LANG].hideSol;}
+  else{sol.classList.remove('visible'); btn.classList.remove('shown'); btn.textContent = I18N[LANG].showSol;}
+}
+
+function copySeed(){
+  const s = document.getElementById('seed-disp').textContent;
+  if(s && s !== '—'){
+    navigator.clipboard.writeText(s).then(() => {
+      const b = event.target, o = b.textContent;
+      b.textContent = I18N[LANG].copied; setTimeout(()=>b.textContent=o,1500);
+    });
+  }
+}
+
+function openPdfModal(){
+  document.getElementById('pdf-ov').style.display = 'block';
+  document.getElementById('pdf-modal').style.display = 'block';
+  document.getElementById('opt-sol').checked = solVisible;
+}
+function closePdfModal(){
+  document.getElementById('pdf-ov').style.display = 'none';
+  document.getElementById('pdf-modal').style.display = 'none';
+}
+function doPrint(){
+  const noHdr = !document.getElementById('opt-header').checked;
+  const inclSol = document.getElementById('opt-sol').checked;
+  const body = document.body;
+  if(noHdr) body.classList.add('print-no-header');
+  if(inclSol){body.classList.add('print-force-solution');body.classList.remove('print-no-solution');}
+  else{body.classList.add('print-no-solution');body.classList.remove('print-force-solution');}
+  closePdfModal();
+  setTimeout(() => {
+    window.print();
+    setTimeout(() => { body.classList.remove('print-no-header','print-force-solution','print-no-solution'); }, 500);
+  }, 100);
+}
+
+/* Initialisation */
+LANG = detectLang();
+applyLang();
+</script>
+
+</body>
+</html>
