@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Macroéconomie - Crédibilité de la politique monétaire</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['\\[', '\\]']]
+    }
+  };
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7;text-align:justify;}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 1.5rem;border-bottom:3px solid var(--gold);text-align:left;}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end;background:rgba(255,255,255,.03);padding:1rem 1.5rem;border-radius:6px;border:1px solid rgba(255,255,255,.1)}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.6)}
+.ctrl-inp, .ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.4rem .7rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none;transition:border-color .2s}
+.ctrl-inp:focus, .ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.ctrl-sel option{background:var(--navy);color:var(--cream)}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.5rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;transition:background .18s;margin-left:auto}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN & CARDS */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:700}
+
+.top-actions{display:flex;gap:.5rem;}
+.btn-action{background:#fff;border:1px solid var(--border);color:var(--navy);padding:.4rem .8rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.85rem;font-weight:600;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.btn-action:hover{border-color:var(--navy);background:var(--cream-dark);}
+
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem;text-align:left;}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+.event-list{list-style:none;counter-reset:q}
+.event-list > li{margin-bottom:1.5rem;padding-left:1.8rem;position:relative;font-size:.95rem;text-align:justify}
+.event-list > li::before{counter-increment:q;content:counter(q) ".";position:absolute;left:0;color:var(--gold);font-weight:700}
+
+.sub-list { list-style-type: none; padding-left: 1rem; margin-top: 0.8rem; text-align:justify;}
+.sub-list li { margin-bottom: 0.5rem; }
+
+/* SOLUTION TOGGLE */
+.sol-toggle-wrap{text-align:left; margin: 1.5rem 0 0 0;}
+.btn-toggle{background:transparent;border:2px solid var(--green);border-bottom:none;color:var(--green);font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;padding:.5rem 1.5rem;border-radius:4px 4px 0 0;cursor:pointer;transition:all .2s; position:relative; z-index:2; top:2px;}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--green);color:var(--cream)}
+.sol-card{border-top:2px solid var(--green);display:none; border-radius: 0 6px 6px 6px; position:relative; z-index:1;}
+.sol-card.visible{display:block;animation:fi .4s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+
+.calc-box{background:#f9fcf9;border:1px solid #c8e6c9;padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.9rem;color:var(--text);line-height:1.6;text-align:justify;}
+.method-box{background:#fdfaf2;border:1px solid #e3d3a8;border-left:3px solid var(--gold);padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.9rem;line-height:1.6;text-align:justify;}
+.persp-box{background:#f7f9fc;border:1px solid #ccd8e6;border-left:3px solid var(--navy-mid);padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.88rem;line-height:1.6;text-align:justify;}
+.sol-sub{color:var(--navy);font-weight:600;display:block;margin:1.1rem 0 .5rem;}
+.sol-sub:first-child{margin-top:0;}
+
+@media print{
+  body{background:#fff;}
+  header, .ctrls, .sol-toggle-wrap, .top-actions {display:none !important;}
+  .card{box-shadow:none; border:1px solid var(--border); margin-bottom:2rem;}
+  .sol-card{display:block !important; border-top:2px solid var(--green);}
+  #ex-area {display:block !important;}
+}
+
+/* --- Selecteur de langue / Language switch --- */
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem}
+.header-top .header-badge{margin-bottom:0}
+.lang-switch{display:flex;gap:.45rem;flex-shrink:0}
+.flag-btn{background:rgba(255,255,255,.06);border:1px solid rgba(201,149,42,.35);border-radius:3px;padding:3px;cursor:pointer;line-height:0;opacity:.5;transition:opacity .2s,border-color .2s,transform .15s}
+.flag-btn:hover{opacity:1;transform:translateY(-1px)}
+.flag-btn.active{opacity:1;border-color:var(--gold-light);box-shadow:0 0 0 1px rgba(232,184,75,.35)}
+.flag-btn svg{display:block;width:30px;height:20px;border-radius:1px}
+@media print{ .lang-switch{display:none !important;} }
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-top">
+    <div class="header-badge" data-k="k-badge">POLITIQUE MONÉTAIRE</div>
+    <div class="lang-switch">
+      <button type="button" class="flag-btn active" id="flag-fr" onclick="setLang('fr')" title="Français" aria-label="Français"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="20" height="40" fill="#002654"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ED2939"/></svg></button>
+      <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
+    </div>
+  </div>
+  <h1 data-k="k-h1">Crédibilité de la politique monétaire</h1>
+  <p class="subtitle" data-k="k-sub">© Thomas Hossen – Version du 7 mars 2026</p>
+
+  <div class="ctrls">
+    <div class="ctrl-g">
+      <span class="ctrl-lbl" data-k="k-seed">Seed (Optionnel)</span>
+      <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999">
+    </div>
+    <div class="ctrl-g">
+      <span class="ctrl-lbl" data-k="k-form">Fonction de perte</span>
+      <select class="ctrl-sel" id="form-input">
+        <option value="auto" data-k="k-form-auto">Aléatoire</option>
+        <option value="plain" data-k="k-form-plain">Canonique</option>
+        <option value="target" data-k="k-form-target">Avec cible d'inflation</option>
+      </select>
+    </div>
+    <button class="btn-gen" onclick="generateExercise(false)"><span data-k="k-gen">Générer l'exercice →</span></button>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" style="text-align:center; padding:4rem; color:var(--text-muted); font-style:italic;">
+    <span data-k="k-welcome">Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.</span>
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="seed-badge"><span data-k="k-seedbadge">Seed active :</span> <span id="seed-disp"></span></div>
+      <div class="top-actions">
+        <button class="btn-action" onclick="generateExercise(true)"><span data-k="k-new">↺ Nouvel énoncé</span></button>
+        <button class="btn-action" onclick="window.print()"><span data-k="k-pdf">⬇ Exporter PDF</span></button>
+        <button class="btn-action" onclick="exportWord()"><span data-k="k-doc">⬇ Exporter DOC</span></button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="tag" data-k="k-tag-ex">Énoncé</span><h2 data-k="k-cardtitle">Règle, discrétion et incohérence temporelle</h2></div>
+      <div class="card-body">
+        <div class="context-block" id="context-text"></div>
+        <div id="enonce-table-container"></div>
+        <div class="context-block" id="additional-info" style="margin-top:1.5rem; background:#fff; border-left:none; border-radius:0;"></div>
+
+        <p style="margin-bottom:1rem; font-weight:600; color:var(--red); text-align:left;" data-k="k-work">Travail à faire</p>
+        <ul class="event-list" id="events-list"></ul>
+      </div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag" data-k="k-tag-sol">Corrigé</span><h2 data-k="k-cardtitle2">Règle, discrétion et incohérence temporelle</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+/* ============================================================
+   DICTIONNAIRE BILINGUE  /  BILINGUAL DICTIONARY
+   ============================================================ */
+const I18N = {
+
+  fr: {
+    "htmlLang": "fr",
+    "title": "Simulateur Macroéconomie - Crédibilité de la politique monétaire",
+    "locale": "fr-FR",
+    "k-badge": "POLITIQUE MONÉTAIRE",
+    "k-h1": "Crédibilité de la politique monétaire",
+    "k-sub": "© Thomas Hossen – Version du 7 mars 2026",
+    "k-seed": "Seed (Optionnel)",
+    "k-form": "Fonction de perte",
+    "k-form-auto": "Aléatoire",
+    "k-form-plain": "Canonique",
+    "k-form-target": "Avec cible d'inflation",
+    "k-gen": "Générer l'exercice →",
+    "k-welcome": "Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.",
+    "k-seedbadge": "Seed active :",
+    "k-new": "↺ Nouvel énoncé",
+    "k-pdf": "⬇ Exporter PDF",
+    "k-doc": "⬇ Exporter DOC",
+    "k-tag-ex": "Énoncé",
+    "k-cardtitle": "Règle, discrétion et incohérence temporelle",
+    "k-tag-sol": "Corrigé",
+    "k-cardtitle2": "Règle, discrétion et incohérence temporelle",
+    "k-work": "Travail à faire",
+    "showSol": "Afficher le corrigé",
+    "hideSol": "Masquer le corrigé",
+    "docTitle": "Exercice Crédibilité de la politique monétaire",
+    "docFile": "Exercice_Credibilite_Politique_Monetaire.doc",
+
+    context: function(V) {
+      return `
+      Dans un cadre statique, considérons que la banque centrale puisse contrôler le taux d'inflation $\\pi$ en agissant sur le taux d'intérêt ou sur la masse monétaire en circulation. Avant que la banque centrale ne fixe le taux d'inflation, les agents économiques forment des croyances sur ce dernier ; on notera l'anticipation d'inflation $\\pi^a$. L'objectif du banquier central est de minimiser une fonction de perte donnée par :
+      <div class="math-formula">\\[ L(\\pi, \\pi^a) = ${V.L} \\]</div>
+      avec $${V.cond}$${V.targetNote}${V.phillipsNote}
+    `;
+    },
+
+    enonce: function(V) {
+      let h = "";
+      h += `<li>Décrivez la fonction de perte du banquier central.</li>`;
+      h += `<li>Supposons que les anticipations des agents soient parfaites et que la politique monétaire suive la règle suivante : un taux d'inflation est annoncé, les agents forment leur anticipation et la banque applique le taux annoncé. Déterminez le taux d'inflation optimal, noté $\\pi^*$, et la perte associée, $L^*$.</li>`;
+      h += `<li>La banque centrale a désormais la possibilité de pratiquer une politique discrétionnaire. La banque centrale peut-elle rationnellement reproduire la situation précédente, c'est-à-dire annoncer $\\pi^*$ et s'y tenir ?</li>`;
+      h += `<li>Quelle est la valeur du taux d'inflation $\\pi^d$ choisi dans le cadre d'une politique discrétionnaire, pour tout $\\pi^a$ ? Quelle est la valeur de la perte associée, $L^d$ ?</li>`;
+      h += `<li>Considérons désormais un modèle dynamique à horizon infini. La fonction de perte devient :
+        <div class="math-formula">\\[ P = \\sum_{t=0}^{+\\infty} \\left(\\frac{1}{1+\\theta}\\right)^t L(\\pi_t, \\pi^a_t) \\]</div>
+        Il s'agit donc de la somme actualisée au taux $\\theta$ des pertes instantanées. Supposons que la banque centrale annonce une règle de la forme $\\pi_t = \\pi^*$ pour tout $t \\geq 0$. Elle n'a pas la possibilité de s'engager à suivre cette règle et peut mener à chaque instant une politique discrétionnaire. On suppose par ailleurs que les anticipations des autres agents se forment selon le mécanisme suivant : $\\pi^a_t = \\pi^*$ si $\\pi_{t-1} = \\pi^a_{t-1}$, et $\\pi^a_t = \\pi^d$ si $\\pi_{t-1} \\neq \\pi^a_{t-1}$. Quelle est la nature de la punition subie par un décideur qui ne respecte pas la règle annoncée ? Combien de temps dure cette punition ?</li>`;
+      return h;
+    },
+
+    sol: function(V) {
+      let s = "";
+
+      /* ---------- Q1 ---------- */
+      s += `<div class="calc-box">
+        <span class="sol-sub">1. Lecture de la fonction de perte</span>
+        La fonction $L(\\pi, \\pi^a) = ${V.L}$ se compose de deux termes aux interprétations économiques distinctes.
+        <p style="margin-top:.7rem;">Le premier terme, $${V.quad}$, est un coût quadratique de l'inflation : il est convexe, symétrique autour de ${V.targetWord}, et croissant en $|${V.Xin}|$. Le banquier central est donc pénalisé par tout écart de l'inflation par rapport à ${V.targetWord2}, quel qu'en soit le signe.</p>
+        <p>Le second terme, $-${V.surp}$, représente le bénéfice retiré d'une <em>surprise inflationniste</em>. Via la courbe de Phillips augmentée des anticipations, un écart positif $\\pi - \\pi^a > 0$ réduit le chômage en dessous de son niveau naturel et stimule le produit, ce qui réduit la perte du banquier central.${V.phillipsRead}</p>
+        <p>La banque centrale fait donc face à un arbitrage : elle a intérêt à générer des surprises inflationnistes pour stimuler l'activité, mais supporte un coût croissant de l'inflation. Les paramètres $${V.a} > 0$ et $${V.b} > 0$ mesurent respectivement l'aversion à l'inflation et la valeur accordée à la stabilisation de l'activité. Notons enfin que $L$ est strictement convexe en $\\pi$, puisque $\\frac{\\partial^2 L}{\\partial \\pi^2} = ${V.d2} > 0$ : toute condition du premier ordre caractérisera bien un minimum.</p>
+      </div>`;
+
+      /* ---------- Q2 ---------- */
+      s += `<div class="calc-box">
+        <span class="sol-sub">2. Politique de règle : $\\pi^*$ et $L^*$</span>
+        Sous une politique de règle, la banque centrale annonce un taux d'inflation et s'engage à le respecter. Les agents anticipent parfaitement ce taux, de sorte qu'on ait $\\pi^a = \\pi$. En substituant dans la fonction de perte, il vient :
+        <div class="math-formula">\\[ L(\\pi, \\pi) = ${V.quad} - ${V.surpZero} = ${V.quad} \\]</div>
+        La banque centrale minimise donc cette expression sur $\\pi$. La condition du premier ordre s'écrit $\\frac{\\partial L}{\\partial \\pi} = ${V.focRule} = 0$, d'où $\\pi^* = ${V.piStar}$. La perte associée est :
+        <div class="math-formula">\\[ L^* = L(${V.piStar}, ${V.piStar}) = 0 \\]</div>
+        Sous une politique de règle crédible, la banque centrale fixe donc une inflation ${V.starWord} et supporte une perte nulle : l'absence de surprise inflationniste élimine tout biais, et l'objectif de stabilité des prix est parfaitement atteint.
+      </div>`;
+
+      /* ---------- Q3 ---------- */
+      s += `<div class="calc-box">
+        <span class="sol-sub">3. La règle est-elle temporellement cohérente ?</span>
+        Sous une politique discrétionnaire, la banque centrale prend les anticipations $\\pi^a$ comme données et minimise $L(\\pi, \\pi^a) = ${V.L}$ sur $\\pi$. La condition du premier ordre donne :
+        <div class="math-formula">\\[ \\frac{\\partial L}{\\partial \\pi} = ${V.focDis} = 0 \\quad\\Longleftrightarrow\\quad \\pi = ${V.piD} \\]</div>
+        Or $${V.piD} > ${V.piStar} = \\pi^*$, puisque $${V.gap} > 0$. Ainsi, quelle que soit l'anticipation $\\pi^a$, la banque centrale a toujours intérêt à choisir $${V.piD}$ plutôt que $\\pi^*$ : si elle annonce $\\pi^*$ et que les agents forment $\\pi^a = \\pi^*$, elle peut réduire sa perte en déviant, ce qui génère une surprise inflationniste bénéfique.
+        <p style="margin-top:.7rem;">La banque centrale ne peut donc pas rationnellement reproduire la situation précédente : annoncer $\\pi^*$ et s'y tenir est <em>temporellement incohérent</em>. Une fois les anticipations formées, la banque a systématiquement intérêt à dévier, de sorte qu'une annonce de $\\pi^*$ n'est pas crédible.</p>
+      </div>`;
+
+      /* ---------- Q4 ---------- */
+      s += `<div class="calc-box">
+        <span class="sol-sub">4. Politique discrétionnaire : $\\pi^d$ et $L^d$</span>
+        D'après la condition du premier ordre établie à la question précédente, on obtient, pour tout $\\pi^a$, une cible d'inflation idéale :
+        <div class="math-formula">\\[ \\pi^d = ${V.piD} \\]</div>
+        Le taux d'inflation discrétionnaire est donc <em>indépendant des anticipations</em> : la banque centrale fixe toujours cette valeur, quelle que soit la croyance des agents. Dès lors, sous anticipations rationnelles, les agents anticipent ce comportement et forment $\\pi^a = \\pi^d$, de sorte qu'on ait $\\pi^d - \\pi^a = 0$. La perte associée vérifie donc :
+        <div class="math-formula">\\[\\begin{aligned} ${V.LdSteps} \\end{aligned}\\]</div>
+        On a donc $L^d = ${V.Ld} > 0 = L^*$. La discrétion conduit ainsi à un <em>biais inflationniste</em> de $${V.gap}$ au-dessus de l'optimum, sans aucun gain sur l'activité — la surprise inflationniste est nulle à l'équilibre — et à une perte strictement supérieure à celle obtenue sous règle. C'est le résultat central de Kydland et Prescott (1977), repris par Barro et Gordon (1983) : le pire des deux mondes, davantage d'inflation sans plus de croissance.
+      </div>`;
+
+      /* ---------- Q5 ---------- */
+      s += `<div class="calc-box">
+        <span class="sol-sub">5. Nature et durée de la punition</span>
+        Le mécanisme d'anticipation défini dans l'énoncé est une stratégie de <em>trigger</em> : les agents récompensent le respect de la règle en continuant à anticiper $\\pi^*$, et sanctionnent toute déviation en basculant vers $\\pi^d$ à la période suivante.
+        <p style="margin-top:.7rem;">Supposons que la banque centrale dévie en $t$ en fixant $\\pi_t \\neq \\pi^a_t = \\pi^*$. En $t+1$, les agents anticipent $\\pi^a_{t+1} = \\pi^d$. La banque centrale, prenant cette anticipation comme donnée, choisit alors $\\pi_{t+1} = \\pi^d$, car $\\pi^d$ est optimal pour tout $\\pi^a$ d'après la question précédente. On vérifie donc $\\pi_{t+1} = \\pi^d = \\pi^a_{t+1}$ : la condition $\\pi_{t+1} = \\pi^a_{t+1}$ est satisfaite.</p>
+        <p>La punition consiste donc à imposer à la banque centrale un passage d'une période dans l'équilibre discrétionnaire $(\\pi^d, \\pi^d)$, associé à une perte $L^d = ${V.Ld} > 0$ au lieu de $L^* = 0$. Mais puisqu'on a $\\pi_{t+1} = \\pi^a_{t+1}$, le mécanisme d'anticipation donne $\\pi^a_{t+2} = \\pi^*$ : le système revient dès $t+2$ à l'équilibre de règle. La punition dure donc <em>exactement une période</em>.</p>
+        <p>Évaluons si cette punition suffit à dissuader la déviation. Le gain immédiat de dévier en $t$, étant donné $\\pi^a_t = \\pi^*$, vaut :</p>
+        <div class="math-formula">\\[\\begin{aligned} ${V.devSteps} \\end{aligned}\\]</div>
+        <p>Le coût de la punition en $t+1$, actualisé au taux $\\theta$, est quant à lui $\\frac{1}{1+\\theta}\\left(L^d - L^*\\right) = \\frac{1}{1+\\theta} \\times ${V.Ld}$. Le bénéfice net de la déviation vérifie donc :</p>
+        <div class="math-formula">\\[ ${V.Ld} - \\frac{1}{1+\\theta} \\times ${V.Ld} = ${V.Ld} \\times \\frac{\\theta}{1+\\theta} > 0 \\]</div>
+        <p>Ce bénéfice net est strictement positif pour tout $\\theta > 0$. La punition d'une seule période est donc toujours insuffisante pour dissuader la banque centrale de dévier, quel que soit le taux d'actualisation. La règle $\\pi_t = \\pi^*$ ne constitue pas un équilibre de ce jeu dynamique : la crédibilité de la politique monétaire ne peut être assurée par un mécanisme de punition temporaire aussi bref.</p>
+      </div>`;
+
+      /* ---------- Perspective ---------- */
+      s += `<div class="persp-box">
+        <span class="sol-sub">Pour aller plus loin</span>
+        Le résultat tient à la brièveté de la sanction, non au principe de la sanction. Si les agents punissaient pendant $N$ périodes, le coût actualisé de la déviation deviendrait $L^d \\sum_{k=1}^{N}\\left(\\frac{1}{1+\\theta}\\right)^k = \\frac{L^d}{\\theta}\\left(1 - (1+\\theta)^{-N}\\right)$, et la déviation ne serait dissuadée que si cette somme dépasse $L^d$. À la limite d'une punition définitive, la condition se réduit à $\\theta \\leq 1$ : un banquier central suffisamment patient peut alors être tenu par la menace. On retrouve le résultat standard des jeux répétés, où la coopération n'est soutenable que si l'horizon est long et l'actualisation faible.
+        <p style="margin-top:.7rem;">D'où l'intérêt des solutions institutionnelles explorées après Barro et Gordon. Rogoff (1985) propose de déléguer la politique monétaire à un banquier central « conservateur », dont l'aversion à l'inflation $${V.a}$ est plus forte que celle de la société : le biais inflationniste $${V.gap}$ diminue mécaniquement, au prix d'une moindre stabilisation des chocs. Walsh (1995) suggère plutôt un contrat incitatif indexant la rémunération du banquier central sur l'inflation réalisée. Dans les deux cas, il s'agit de modifier la fonction objectif du décideur plutôt que de compter sur sa parole — ce que traduisent, en pratique, l'indépendance statutaire des banques centrales et la formalisation de cibles d'inflation.</p>
+      </div>`;
+
+      return s;
+    }
+  },
+
+  en: {
+    "htmlLang": "en",
+    "title": "Macroeconomics Simulator - Credibility of monetary policy",
+    "locale": "en-GB",
+    "k-badge": "MONETARY POLICY",
+    "k-h1": "Credibility of monetary policy",
+    "k-sub": "© Thomas Hossen – March 7, 2026 Version",
+    "k-seed": "Seed (Optional)",
+    "k-form": "Loss function",
+    "k-form-auto": "Random",
+    "k-form-plain": "Canonical",
+    "k-form-target": "With inflation target",
+    "k-gen": "Generate Exercise →",
+    "k-welcome": "Configure the parameters and click Generate to create a new exercise.",
+    "k-seedbadge": "Active Seed:",
+    "k-new": "↺ New Statement",
+    "k-pdf": "⬇ Export PDF",
+    "k-doc": "⬇ Export DOC",
+    "k-tag-ex": "Problem",
+    "k-cardtitle": "Rules, discretion and time inconsistency",
+    "k-tag-sol": "Solution",
+    "k-cardtitle2": "Rules, discretion and time inconsistency",
+    "k-work": "Assignment",
+    "showSol": "Show the solution",
+    "hideSol": "Hide the solution",
+    "docTitle": "Credibility of Monetary Policy Exercise",
+    "docFile": "Monetary_Policy_Credibility_Exercise.doc",
+
+    context: function(V) {
+      return `
+      In a static setting, suppose the central bank can control the inflation rate $\\pi$ through the interest rate or the money supply. Before the central bank sets inflation, economic agents form beliefs about it; let $\\pi^a$ denote expected inflation. The central banker's objective is to minimise a loss function given by:
+      <div class="math-formula">\\[ L(\\pi, \\pi^a) = ${V.L} \\]</div>
+      with $${V.cond}$${V.targetNote}${V.phillipsNote}
+    `;
+    },
+
+    enonce: function(V) {
+      let h = "";
+      h += `<li>Describe the central banker's loss function.</li>`;
+      h += `<li>Suppose expectations are perfect and monetary policy follows this rule: an inflation rate is announced, agents form their expectation, and the bank applies the announced rate. Determine the optimal inflation rate $\\pi^*$ and the associated loss $L^*$.</li>`;
+      h += `<li>The central bank can now run a discretionary policy. Can it rationally replicate the previous situation, that is, announce $\\pi^*$ and stick to it?</li>`;
+      h += `<li>What is the inflation rate $\\pi^d$ chosen under discretionary policy, for any $\\pi^a$? What is the associated loss $L^d$?</li>`;
+      h += `<li>Now consider an infinite-horizon dynamic model. The loss function becomes:
+        <div class="math-formula">\\[ P = \\sum_{t=0}^{+\\infty} \\left(\\frac{1}{1+\\theta}\\right)^t L(\\pi_t, \\pi^a_t) \\]</div>
+        that is, the sum of instantaneous losses discounted at rate $\\theta$. Suppose the central bank announces a rule of the form $\\pi_t = \\pi^*$ for all $t \\geq 0$. It cannot commit to that rule and may act with discretion at any date. Assume expectations are formed as follows: $\\pi^a_t = \\pi^*$ if $\\pi_{t-1} = \\pi^a_{t-1}$, and $\\pi^a_t = \\pi^d$ if $\\pi_{t-1} \\neq \\pi^a_{t-1}$. What is the nature of the punishment borne by a policymaker who breaks the announced rule? How long does it last?</li>`;
+      return h;
+    },
+
+    sol: function(V) {
+      let s = "";
+
+      s += `<div class="calc-box">
+        <span class="sol-sub">1. Reading the loss function</span>
+        The function $L(\\pi, \\pi^a) = ${V.L}$ has two terms with distinct economic meanings.
+        <p style="margin-top:.7rem;">The first, $${V.quad}$, is a quadratic cost of inflation: convex, symmetric around ${V.targetWord}, and increasing in $|${V.Xin}|$. The central banker is thus penalised by any deviation of inflation from ${V.targetWord2}, whatever its sign.</p>
+        <p>The second, $-${V.surp}$, captures the benefit of an <em>inflation surprise</em>. Through the expectations-augmented Phillips curve, a positive gap $\\pi - \\pi^a > 0$ pushes unemployment below its natural rate and boosts output, reducing the banker's loss.${V.phillipsRead}</p>
+        <p>The central bank therefore faces a trade-off: it gains from engineering inflation surprises to stimulate activity, but bears a rising cost of inflation. The parameters $${V.a} > 0$ and $${V.b} > 0$ measure inflation aversion and the weight placed on stabilising activity respectively. Note finally that $L$ is strictly convex in $\\pi$, since $\\frac{\\partial^2 L}{\\partial \\pi^2} = ${V.d2} > 0$: any first-order condition will indeed characterise a minimum.</p>
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span class="sol-sub">2. Policy under a rule: $\\pi^*$ and $L^*$</span>
+        Under a rule, the central bank announces an inflation rate and commits to it. Agents anticipate that rate perfectly, so $\\pi^a = \\pi$. Substituting into the loss function:
+        <div class="math-formula">\\[ L(\\pi, \\pi) = ${V.quad} - ${V.surpZero} = ${V.quad} \\]</div>
+        The bank therefore minimises this expression over $\\pi$. The first-order condition reads $\\frac{\\partial L}{\\partial \\pi} = ${V.focRule} = 0$, hence $\\pi^* = ${V.piStar}$. The associated loss is:
+        <div class="math-formula">\\[ L^* = L(${V.piStar}, ${V.piStar}) = 0 \\]</div>
+        Under a credible rule the central bank therefore sets ${V.starWordEn} inflation and bears no loss: the absence of any inflation surprise removes the bias entirely, and price stability is fully achieved.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span class="sol-sub">3. Is the rule time-consistent?</span>
+        Under discretion, the central bank takes expectations $\\pi^a$ as given and minimises $L(\\pi, \\pi^a) = ${V.L}$ over $\\pi$. The first-order condition gives:
+        <div class="math-formula">\\[ \\frac{\\partial L}{\\partial \\pi} = ${V.focDis} = 0 \\quad\\Longleftrightarrow\\quad \\pi = ${V.piD} \\]</div>
+        Now $${V.piD} > ${V.piStar} = \\pi^*$, since $${V.gap} > 0$. So whatever the expectation $\\pi^a$, the bank always prefers $${V.piD}$ to $\\pi^*$: if it announces $\\pi^*$ and agents form $\\pi^a = \\pi^*$, deviating lowers its loss by generating a beneficial inflation surprise.
+        <p style="margin-top:.7rem;">The central bank therefore cannot rationally replicate the previous outcome: announcing $\\pi^*$ and sticking to it is <em>time-inconsistent</em>. Once expectations are formed, the bank systematically gains from deviating, so an announcement of $\\pi^*$ is not credible.</p>
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span class="sol-sub">4. Discretionary policy: $\\pi^d$ and $L^d$</span>
+        From the first-order condition above, for any $\\pi^a$ the ideal inflation target is:
+        <div class="math-formula">\\[ \\pi^d = ${V.piD} \\]</div>
+        The discretionary inflation rate is thus <em>independent of expectations</em>: the bank always sets this value, whatever agents believe. Under rational expectations, agents anticipate this behaviour and form $\\pi^a = \\pi^d$, so that $\\pi^d - \\pi^a = 0$. The associated loss is therefore:
+        <div class="math-formula">\\[\\begin{aligned} ${V.LdSteps} \\end{aligned}\\]</div>
+        Hence $L^d = ${V.Ld} > 0 = L^*$. Discretion produces an <em>inflation bias</em> of $${V.gap}$ above the optimum, with no gain in activity — the inflation surprise is zero in equilibrium — and a loss strictly greater than under the rule. This is the central result of Kydland and Prescott (1977), developed by Barro and Gordon (1983): the worst of both worlds, more inflation without more growth.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span class="sol-sub">5. Nature and length of the punishment</span>
+        The expectation mechanism in the statement is a <em>trigger</em> strategy: agents reward compliance by continuing to expect $\\pi^*$, and punish any deviation by switching to $\\pi^d$ the following period.
+        <p style="margin-top:.7rem;">Suppose the bank deviates at $t$ by setting $\\pi_t \\neq \\pi^a_t = \\pi^*$. At $t+1$, agents expect $\\pi^a_{t+1} = \\pi^d$. Taking that expectation as given, the bank then chooses $\\pi_{t+1} = \\pi^d$, since $\\pi^d$ is optimal for any $\\pi^a$. Hence $\\pi_{t+1} = \\pi^d = \\pi^a_{t+1}$: the condition $\\pi_{t+1} = \\pi^a_{t+1}$ holds.</p>
+        <p>The punishment therefore amounts to one period spent in the discretionary equilibrium $(\\pi^d, \\pi^d)$, with a loss $L^d = ${V.Ld} > 0$ instead of $L^* = 0$. But since $\\pi_{t+1} = \\pi^a_{t+1}$, the expectation mechanism yields $\\pi^a_{t+2} = \\pi^*$: from $t+2$ onwards the system returns to the rule equilibrium. The punishment therefore lasts <em>exactly one period</em>.</p>
+        <p>Is that punishment enough to deter deviation? The immediate gain from deviating at $t$, given $\\pi^a_t = \\pi^*$, is:</p>
+        <div class="math-formula">\\[\\begin{aligned} ${V.devSteps} \\end{aligned}\\]</div>
+        <p>The cost of the punishment at $t+1$, discounted at rate $\\theta$, is $\\frac{1}{1+\\theta}\\left(L^d - L^*\\right) = \\frac{1}{1+\\theta} \\times ${V.Ld}$. The net benefit of deviating is therefore:</p>
+        <div class="math-formula">\\[ ${V.Ld} - \\frac{1}{1+\\theta} \\times ${V.Ld} = ${V.Ld} \\times \\frac{\\theta}{1+\\theta} > 0 \\]</div>
+        <p>This net benefit is strictly positive for every $\\theta > 0$. A one-period punishment is thus always insufficient to deter the central bank from deviating, whatever the discount rate. The rule $\\pi_t = \\pi^*$ is not an equilibrium of this dynamic game: the credibility of monetary policy cannot be secured by so brief a punishment mechanism.</p>
+      </div>`;
+
+      s += `<div class="persp-box">
+        <span class="sol-sub">Going further</span>
+        The result stems from the brevity of the sanction, not from the principle of sanctioning. Were agents to punish for $N$ periods, the discounted cost of deviating would be $L^d \\sum_{k=1}^{N}\\left(\\frac{1}{1+\\theta}\\right)^k = \\frac{L^d}{\\theta}\\left(1 - (1+\\theta)^{-N}\\right)$, and deviation would be deterred only if that sum exceeds $L^d$. In the limit of a permanent punishment, the condition reduces to $\\theta \\leq 1$: a sufficiently patient central banker can then be held to the rule. This is the standard repeated-game result, where cooperation is sustainable only if the horizon is long and discounting mild.
+        <p style="margin-top:.7rem;">Hence the institutional solutions explored after Barro and Gordon. Rogoff (1985) proposes delegating monetary policy to a "conservative" central banker whose inflation aversion $${V.a}$ exceeds society's: the inflation bias $${V.gap}$ falls mechanically, at the cost of weaker shock stabilisation. Walsh (1995) instead suggests an incentive contract indexing the banker's remuneration on realised inflation. Either way, the point is to change the policymaker's objective function rather than rely on its word — which is precisely what statutory central bank independence and formal inflation targets do in practice.</p>
+      </div>`;
+
+      return s;
+    }
+  }
+};
+
+/* ============================================================
+   GESTION DE LA LANGUE  /  LANGUAGE HANDLING
+   ============================================================ */
+let LANG = 'fr';
+
+function detectLang() {
+    try {
+        const q = new URLSearchParams(window.location.search).get('lang');
+        if (q && I18N[q.toLowerCase()]) return q.toLowerCase();
+    } catch (e) {}
+    const h = (window.location.hash || '').replace('#', '').toLowerCase();
+    if (I18N[h]) return h;
+    return 'fr';
+}
+
+function applyLang() {
+    const D = I18N[LANG];
+    document.documentElement.lang = D.htmlLang;
+    document.title = D.title;
+
+    document.querySelectorAll('[data-k]').forEach(function (el) {
+        const key = el.getAttribute('data-k');
+        if (D[key] !== undefined) el.innerHTML = D[key];
+    });
+
+    const btn = document.getElementById('toggle-btn');
+    if (btn) btn.innerText = document.getElementById('sol-card').classList.contains('visible') ? D.hideSol : D.showSol;
+
+    document.getElementById('flag-fr').classList.toggle('active', LANG === 'fr');
+    document.getElementById('flag-en').classList.toggle('active', LANG === 'en');
+}
+
+function setLang(lang) {
+    if (!I18N[lang] || lang === LANG) return;
+    LANG = lang;
+
+    try {
+        const u = new URL(window.location.href);
+        u.searchParams.set('lang', lang);
+        history.replaceState(null, '', u.toString());
+    } catch (e) {}
+
+    applyLang();
+
+    if (document.getElementById('ex-area').style.display !== 'none') {
+        const solWasVisible = document.getElementById('sol-card').classList.contains('visible');
+        generateExercise(false);
+        if (solWasVisible) toggleSol();
+    }
+}
+
+// --- PRNG (Mulberry32) ---
+let currentSeed = 0;
+function seedPRNG(seed) {
+    return function() {
+      let t = seed += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+let random = Math.random;
+function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
+
+/* ============================================================
+   CONSTRUCTION SYMBOLIQUE DE LA FONCTION DE PERTE
+   ------------------------------------------------------------
+   Famille retenue :  L(pi, pi^a) = A (pi - piBar)^2 - B (pi - pi^a)
+   avec A = a/2 ou a, et B = b ou b*c. Les grandeurs derivees
+   (pi*, pi^d, L^d, gain de deviation) sont recalculees a partir
+   de ces choix, de sorte que l'algebre du corrige suit la forme
+   tiree sans intervention manuelle.
+   ============================================================ */
+const NAMES = [
+    {a: "a",        b: "b",       c: "c"},
+    {a: "\\alpha",  b: "\\beta",  c: "\\kappa"},
+    {a: "\\lambda", b: "\\gamma", c: "\\kappa"}
+];
+
+function buildVariant(o) {
+    const a = o.a, b = o.b, c = o.c;
+
+    /* coefficient du terme de surprise : B = b, ou B = b*c */
+    const Bs  = o.phillips ? `${b}${c}` : b;
+    const Bsq = o.phillips ? `${b}^2${c}^2` : `${b}^2`;
+
+    /* cible d'inflation : null, symbolique, ou numerique */
+    const T    = o.target;                                   /* null | "\\bar{\\pi}" | "2" */
+    const Xin  = T ? `\\pi - ${T}` : `\\pi`;                  /* argument du terme quadratique */
+    const Xpar = T ? `(\\pi - ${T})` : `\\pi`;
+    const Xpow = T ? `(\\pi - ${T})^2` : `\\pi^2`;
+
+    /* A = a/2 (half) ou A = a */
+    const A2   = o.half ? `\\frac{${a}}{2}` : a;
+    const dCo  = o.half ? a : `2${a}`;                       /* dL/dpi = dCo * (pi - piBar) */
+    const den  = o.half ? a : `2${a}`;                       /* denominateur de l'ecart pi^d - pi^* */
+    const denL = o.half ? `2${a}` : `4${a}`;                 /* denominateur de L^d */
+    const gapSq = o.half ? `\\frac{${Bsq}}{${a}^2}` : `\\frac{${Bsq}}{4${a}^2}`;
+
+    const quad   = `${A2}${Xpow}`;
+    const surp   = `${Bs}(\\pi - \\pi^a)`;
+    const L      = `${quad} - ${surp}`;
+    const gap    = `\\frac{${Bs}}{${den}}`;
+    const piStar = T ? T : "0";
+    const piD    = T ? `${T} + ${gap}` : gap;
+    const Ld     = `\\frac{${Bsq}}{${denL}}`;
+    const focRule = `${dCo}${Xpar === "\\pi" ? "\\pi" : `(${Xin})`}`;
+    const focDis  = `${focRule} - ${Bs}`;
+    const d2      = o.half ? a : `2${a}`;
+
+    const LdSteps =
+        `L^d &= ${A2}\\left(${gap}\\right)^2 - ${Bs}\\left(\\pi^d - \\pi^a\\right) \\\\` +
+        `&= ${A2} \\times ${gapSq} - 0 = ${Ld}`;
+
+    const devSteps =
+        `L(\\pi^*, \\pi^*) - L(\\pi^d, \\pi^*) &= 0 - \\left(${A2} \\times ${gapSq} - ${Bs} \\times ${gap}\\right) \\\\` +
+        `&= -\\left(${Ld} - \\frac{${Bsq}}{${den}}\\right) = ${Ld}`;
+
+    return {
+        a: a, b: b, c: c, half: o.half, target: T, phillips: o.phillips,
+        cond: o.phillips ? `${a}, ${b}, ${c} > 0` : `${a}, ${b} > 0`,
+        L: L, quad: quad, surp: surp, surpZero: `${Bs}(\\pi - \\pi)`,
+        Xin: Xin, focRule: focRule, focDis: focDis, d2: d2,
+        piStar: piStar, piD: piD, gap: gap, Ld: Ld,
+        LdSteps: LdSteps, devSteps: devSteps
+    };
+}
+
+/* ============================================================
+   GENERATION DE L'EXERCICE  /  EXERCISE GENERATION
+   ============================================================ */
+function generateExercise(forceNew = false) {
+    if (forceNew) {
+        document.getElementById('seed-input').value = "";
+    }
+    let seedVal = document.getElementById('seed-input').value;
+    currentSeed = seedVal ? parseInt(seedVal) : Math.floor(Math.random() * 99999999);
+    document.getElementById('seed-disp').innerText = currentSeed;
+    document.getElementById('seed-input').value = currentSeed;
+    random = seedPRNG(currentSeed);
+
+    const DIC = I18N[LANG];
+    const formSel = document.getElementById('form-input').value;
+
+    /* --- tirage de la forme de L --- */
+    const nm = NAMES[randInt(0, NAMES.length - 1)];
+    const half = randInt(0, 1) === 0;
+
+    let target = null, phillips = false;
+    if (formSel === 'plain') {
+        target = null; phillips = false;
+    } else if (formSel === 'target') {
+        target = randInt(0, 1) === 0 ? "\\bar{\\pi}" : "2";
+        phillips = false;
+    } else {
+        const tPick = randInt(0, 2);
+        target = tPick === 0 ? null : (tPick === 1 ? "\\bar{\\pi}" : "2");
+    }
+
+    const V = buildVariant({a: nm.a, b: nm.b, c: nm.c, half: half, target: target, phillips: phillips});
+
+    /* --- habillage textuel dependant de la forme tiree --- */
+    if (LANG === 'fr') {
+        V.targetNote = target
+            ? (target === "2"
+                ? `, où la constante 2 représente la cible d'inflation de la banque centrale, exprimée en pourcentage.`
+                : `, où $\\bar{\\pi} > 0$ désigne la cible d'inflation de la banque centrale.`)
+            : `.`;
+        V.phillipsNote = phillips
+            ? ` Le paramètre $${nm.c}$ mesure la pente de la courbe de Phillips, c'est-à-dire la sensibilité de l'activité à une surprise d'inflation.`
+            : ``;
+        V.targetWord  = target ? (target === "2" ? `la cible de 2 %` : `la cible $\\bar{\\pi}$`) : `zéro`;
+        V.targetWord2 = V.targetWord;
+        V.phillipsRead = phillips
+            ? ` Le produit $${nm.b}${nm.c}$ combine ici deux effets : la valeur que la banque accorde au soutien de l'activité, et l'ampleur avec laquelle une surprise d'inflation se transmet effectivement à cette activité.`
+            : ``;
+        V.starWord = target ? (target === "2" ? `égale à sa cible de 2 %` : `égale à sa cible $\\bar{\\pi}$`) : `nulle`;
+    } else {
+        V.targetNote = target
+            ? (target === "2"
+                ? `, where the constant 2 is the central bank's inflation target, in percent.`
+                : `, where $\\bar{\\pi} > 0$ denotes the central bank's inflation target.`)
+            : `.`;
+        V.phillipsNote = phillips
+            ? ` The parameter $${nm.c}$ measures the slope of the Phillips curve, that is, how sensitive activity is to an inflation surprise.`
+            : ``;
+        V.targetWord  = target ? (target === "2" ? `the 2% target` : `the target $\\bar{\\pi}$`) : `zero`;
+        V.targetWord2 = V.targetWord;
+        V.phillipsRead = phillips
+            ? ` The product $${nm.b}${nm.c}$ combines two effects here: how much the bank values supporting activity, and how strongly an inflation surprise actually feeds through to it.`
+            : ``;
+        V.starWordEn = target ? (target === "2" ? `inflation at its 2% target` : `inflation at its target $\\bar{\\pi}$`) : `zero`;
+    }
+
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('ex-area').style.display = 'block';
+    document.getElementById('sol-card').classList.remove('visible');
+    document.getElementById('toggle-btn').innerText = DIC.showSol;
+    document.getElementById('toggle-btn').classList.remove('shown');
+
+    document.getElementById('context-text').innerHTML = DIC.context(V);
+    document.getElementById('enonce-table-container').innerHTML = "";
+    document.getElementById('additional-info').innerHTML = "";
+    document.getElementById('events-list').innerHTML = DIC.enonce(V);
+    document.getElementById('sol-content').innerHTML = DIC.sol(V);
+
+    if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
+        MathJax.typesetPromise().catch(function (err) { console.error('MathJax :', err); });
+    }
+}
+
+function toggleSol() {
+    let solCard = document.getElementById('sol-card');
+    let btn = document.getElementById('toggle-btn');
+    if (solCard.classList.contains('visible')) {
+        solCard.classList.remove('visible');
+        btn.innerText = I18N[LANG].showSol;
+        btn.classList.remove('shown');
+    } else {
+        solCard.classList.add('visible');
+        btn.innerText = I18N[LANG].hideSol;
+        btn.classList.add('shown');
+    }
+}
+
+function exportWord() {
+    let content = document.getElementById('ex-area').cloneNode(true);
+    let actions = content.querySelector('.top-actions');
+    if (actions) actions.parentNode.removeChild(actions);
+    let toggle = content.querySelector('.sol-toggle-wrap');
+    if (toggle) toggle.parentNode.removeChild(toggle);
+    let solCard = content.querySelector('#sol-card');
+    if (solCard) solCard.style.display = 'block';
+
+    let html = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <meta charset='utf-8'>
+            <title>${I18N[LANG].docTitle}</title>
+            <style>
+                body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5; text-align: justify; }
+                .calc-box, .method-box, .persp-box { border: 1px solid #000; padding: 10px; margin-bottom: 15px; background-color: #f9f9f9; text-align: justify; }
+                .math-formula { text-align: center; font-style: italic; margin: 10px 0; }
+                ul, ol { text-align: justify; }
+                li { margin-bottom: 5px; }
+            </style>
+        </head>
+        <body>
+            ${content.innerHTML}
+        </body>
+        </html>
+    `;
+
+    let blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    let url = URL.createObjectURL(blob);
+    let link = document.createElement('a');
+    link.href = url;
+    link.download = I18N[LANG].docFile;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+/* Initialisation */
+LANG = detectLang();
+applyLang();
+</script>
+</body>
+</html>
