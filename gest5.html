@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Comptabilité - Gestion des stocks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7;text-align:justify;}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 1.5rem;border-bottom:3px solid var(--gold);text-align:left;}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end;background:rgba(255,255,255,.03);padding:1rem 1.5rem;border-radius:6px;border:1px solid rgba(255,255,255,.1)}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.6)}
+.ctrl-inp, .ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.4rem .7rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none;transition:border-color .2s}
+.ctrl-inp:focus, .ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.ctrl-sel option{background:var(--navy);color:var(--cream)}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.5rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;transition:background .18s;margin-left:auto}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN & CARDS */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:700}
+
+.top-actions{display:flex;gap:.5rem;}
+.btn-action{background:#fff;border:1px solid var(--border);color:var(--navy);padding:.4rem .8rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.85rem;font-weight:600;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.btn-action:hover{border-color:var(--navy);background:var(--cream-dark);}
+
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem;text-align:left;}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+.event-list{list-style:none;}
+.event-list li{margin-bottom:0.4rem;padding-left:1.5rem;position:relative;font-size:.95rem;text-align:justify}
+.event-list li::before{content:"•";position:absolute;left:0;color:var(--gold);font-size:1.5rem;line-height:1}
+.highlight{font-family:'JetBrains Mono',monospace;font-size:.85rem;font-weight:600;background:var(--cream-dark);padding:2px 6px;border-radius:3px;color:var(--navy)}
+
+/* EXAM TABLE */
+.exam-table-wrap{overflow-x:auto;margin:1.4rem 0;}
+.exam-table{width:100%;border-collapse:collapse;margin:0;font-size:.82rem;font-family:'Source Serif 4',serif;}
+.exam-table th, .exam-table td{border:1px solid var(--border);padding:.45rem .5rem;text-align:center;vertical-align:middle;}
+.exam-table th{background:var(--navy);color:var(--cream);font-weight:600;font-size:.78rem;}
+.exam-table th.grp{background:var(--navy-mid);}
+.exam-table .txt-left{text-align:left;font-weight:600;color:var(--navy);}
+.exam-table .lib{text-align:left;}
+.exam-table .amt{font-family:'JetBrains Mono',monospace;text-align:right;white-space:nowrap;}
+.exam-table .det{font-size:.76rem;color:var(--text-muted);white-space:nowrap;}
+.exam-table tr.hi-row td{background:#f2f7f2;font-weight:600;}
+.exam-table tr.tot-row td{background:var(--cream-dark);font-weight:600;}
+.table-caption{font-size:.78rem;color:var(--text-muted);font-style:italic;text-align:center;margin-top:.5rem;line-height:1.5}
+
+/* JOURNAL */
+.journal{width:100%;border-collapse:collapse;font-size:.85rem;margin:1.2rem 0;}
+.journal th, .journal td{border:1px solid var(--border);padding:.45rem .6rem;vertical-align:top;}
+.journal th{background:var(--navy);color:var(--cream);font-weight:600;font-size:.78rem;text-align:center;}
+.journal .num{font-family:'JetBrains Mono',monospace;text-align:center;width:70px;}
+.journal .amt{font-family:'JetBrains Mono',monospace;text-align:right;white-space:nowrap;width:120px;}
+.journal .ind{padding-left:1.6rem;}
+.journal .note{font-style:italic;color:var(--text-muted);font-size:.8rem;}
+.journal tr.sep td{border-top:2px solid var(--navy-mid);}
+
+/* GRAPHIQUE */
+.chart-wrap{margin:1.4rem 0;text-align:center}
+.chart-wrap svg{max-width:100%;height:auto}
+
+/* SOLUTION TOGGLE */
+.sol-toggle-wrap{text-align:left; margin: 1.5rem 0 0 0;}
+.btn-toggle{background:transparent;border:2px solid var(--green);border-bottom:none;color:var(--green);font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;padding:.5rem 1.5rem;border-radius:4px 4px 0 0;cursor:pointer;transition:all .2s; position:relative; z-index:2; top:2px;}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--green);color:var(--cream)}
+.sol-card{border-top:2px solid var(--green);display:none; border-radius: 0 6px 6px 6px; position:relative; z-index:1;}
+.sol-card.visible{display:block;animation:fi .4s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+
+.calc-box{background:#f9fcf9;border:1px solid #c8e6c9;padding:1.2rem;border-radius:4px;margin-bottom:1rem;font-size:.9rem;color:var(--text);line-height:1.6;text-align:justify;}
+.calc-box strong{color:var(--green);font-family:'JetBrains Mono',monospace;}
+.persp-box{background:#f7f9fc;border:1px solid #ccd8e6;border-left:3px solid var(--navy-mid);padding:1.2rem;border-radius:4px;margin-bottom:1rem;font-size:.88rem;line-height:1.6;text-align:justify;}
+.sol-sub{color:var(--navy);font-weight:600;display:block;margin-bottom:8px;}
+
+@media print{
+  body{background:#fff;}
+  header, .ctrls, .sol-toggle-wrap, .top-actions {display:none !important;}
+  .card{box-shadow:none; border:1px solid var(--border); margin-bottom:2rem;}
+  .sol-card{display:block !important; border-top:2px solid var(--green);}
+  #ex-area {display:block !important;}
+}
+
+/* --- Selecteur de langue / Language switch --- */
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem}
+.header-top .header-badge{margin-bottom:0}
+.lang-switch{display:flex;gap:.45rem;flex-shrink:0}
+.flag-btn{background:rgba(255,255,255,.06);border:1px solid rgba(201,149,42,.35);border-radius:3px;padding:3px;cursor:pointer;line-height:0;opacity:.5;transition:opacity .2s,border-color .2s,transform .15s}
+.flag-btn:hover{opacity:1;transform:translateY(-1px)}
+.flag-btn.active{opacity:1;border-color:var(--gold-light);box-shadow:0 0 0 1px rgba(232,184,75,.35)}
+.flag-btn svg{display:block;width:30px;height:20px;border-radius:1px}
+@media print{ .lang-switch{display:none !important;} }
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-top">
+    <div class="header-badge" data-k="k-badge">INFORMATION COMPTABLE ET FINANCIÈRE</div>
+    <div class="lang-switch">
+      <button type="button" class="flag-btn active" id="flag-fr" onclick="setLang('fr')" title="Français" aria-label="Français"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="20" height="40" fill="#002654"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ED2939"/></svg></button>
+      <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
+    </div>
+  </div>
+  <h1 data-k="k-h1">Gestion et évaluation des stocks</h1>
+  <p class="subtitle" data-k="k-sub">© Thomas Hossen – Version du 7 mars 2026</p>
+
+  <div class="ctrls">
+    <div class="ctrl-g">
+      <span class="ctrl-lbl" data-k="k-seed">Seed (Optionnel)</span>
+      <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999">
+    </div>
+    <div class="ctrl-g">
+      <span class="ctrl-lbl" data-k="k-trend">Tendance des prix</span>
+      <select class="ctrl-sel" id="trend-input">
+        <option value="auto" data-k="k-tr-auto">Aléatoire</option>
+        <option value="up" data-k="k-tr-up">Hausse</option>
+        <option value="down" data-k="k-tr-down">Baisse</option>
+      </select>
+    </div>
+    <div class="ctrl-g">
+      <span class="ctrl-lbl" data-k="k-mvt">Mouvements</span>
+      <select class="ctrl-sel" id="mvt-input">
+        <option value="4" data-k="k-mvt-4">2 achats, 2 ventes</option>
+        <option value="6" data-k="k-mvt-6">3 achats, 3 ventes</option>
+      </select>
+    </div>
+    <button class="btn-gen" onclick="generateExercise(false)"><span data-k="k-gen">Générer l'exercice →</span></button>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" style="text-align:center; padding:4rem; color:var(--text-muted); font-style:italic;">
+    <span data-k="k-welcome">Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.</span>
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="seed-badge"><span data-k="k-seedbadge">Seed active :</span> <span id="seed-disp"></span></div>
+      <div class="top-actions">
+        <button class="btn-action" onclick="generateExercise(true)"><span data-k="k-new">↺ Nouvel énoncé</span></button>
+        <button class="btn-action" onclick="window.print()"><span data-k="k-pdf">⬇ Exporter PDF</span></button>
+        <button class="btn-action" onclick="exportWord()"><span data-k="k-doc">⬇ Exporter DOC</span></button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="tag" data-k="k-tag-ex">Énoncé</span><h2 data-k="k-cardtitle">Évaluation des sorties de stock et incidence sur le résultat</h2></div>
+      <div class="card-body">
+        <div class="context-block" id="context-text"></div>
+        <p style="margin-bottom:1rem; font-weight:600; color:var(--navy); text-align:left;" data-k="k-data">Mouvements de stock de la période</p>
+        <div id="enonce-table"></div>
+        <ul class="event-list" id="events-list"></ul>
+        <p style="margin-top:1.5rem; font-weight:600; color:var(--red); text-align:left;" data-k="k-work">Travail à faire</p>
+        <p id="question-text" style="text-align:justify;"></p>
+      </div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag" data-k="k-tag-sol">Corrigé</span><h2 data-k="k-cardtitle2">Évaluation des sorties de stock et incidence sur le résultat</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+/* ============================================================
+   DICTIONNAIRE BILINGUE  /  BILINGUAL DICTIONARY
+   ============================================================ */
+const I18N = {
+
+  fr: {
+    "htmlLang": "fr",
+    "title": "Simulateur Comptabilité - Gestion des stocks",
+    "locale": "fr-FR",
+    "k-badge": "INFORMATION COMPTABLE ET FINANCIÈRE",
+    "k-h1": "Gestion et évaluation des stocks",
+    "k-sub": "© Thomas Hossen – Version du 7 mars 2026",
+    "k-seed": "Seed (Optionnel)",
+    "k-trend": "Tendance des prix",
+    "k-tr-auto": "Aléatoire",
+    "k-tr-up": "Hausse",
+    "k-tr-down": "Baisse",
+    "k-mvt": "Mouvements",
+    "k-mvt-4": "2 achats, 2 ventes",
+    "k-mvt-6": "3 achats, 3 ventes",
+    "k-gen": "Générer l'exercice →",
+    "k-welcome": "Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.",
+    "k-seedbadge": "Seed active :",
+    "k-new": "↺ Nouvel énoncé",
+    "k-pdf": "⬇ Exporter PDF",
+    "k-doc": "⬇ Exporter DOC",
+    "k-tag-ex": "Énoncé",
+    "k-cardtitle": "Évaluation des sorties de stock et incidence sur le résultat",
+    "k-tag-sol": "Corrigé",
+    "k-cardtitle2": "Évaluation des sorties de stock et incidence sur le résultat",
+    "k-data": "Mouvements de stock de la période",
+    "k-work": "Travail à faire",
+    "showSol": "Afficher le corrigé",
+    "hideSol": "Masquer le corrigé",
+    "docTitle": "Exercice Gestion des stocks",
+    "docFile": "Exercice_Gestion_des_Stocks.doc",
+
+    goods: ["sacs de café vert d'Éthiopie", "bobines de fil de cuivre", "palettes de carrelage grès cérame", "cartons de vis inox", "fûts de résine époxy"],
+    companies: ["Négoce Delvaux", "Comptoir Bertin", "Sogedis", "Maison Ravel", "Établissements Nolan"],
+    months: ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"],
+
+    lblSI: "Stock initial", lblAchat: "Achat", lblVente: "Vente", lblSF: "Stock final",
+    colDate: "Date", colLib: "Libellé", colIn: "Entrées", colOut: "Sorties", colStock: "Stock",
+    colQty: "Qté", colCU: "CU", colAmt: "Montant", colDet: "Détail des lots",
+    colMethod: "Méthode", colSF: "Stock final", colVar: "Variation des stocks (SI − SF)",
+    colCAMV: "Coût d'achat des marchandises vendues", colRes: "Résultat",
+    mPEPS: "PEPS (FIFO)", mDEPS: "DEPS (LIFO)", mCUMPP: "CUMP, inventaire permanent", mCUMPI: "CUMP, inventaire intermittent",
+    colElem: "Élément", colVal: "Valeur",
+    jDate: "Date", jAcc: "Compte", jLib: "Libellé", jDeb: "Débit", jCred: "Crédit",
+    unit: "unités",
+    chart: {
+      title: "Comparaison des méthodes",
+      sSF: "Stock final",
+      sRes: "Résultat",
+      caption: "Valeur du stock final et résultat de la période selon la méthode d'évaluation retenue"
+    },
+
+    context: function(D) {
+      return `
+      L'entreprise commerciale <strong>${D.company}</strong> distribue des ${D.good}, marchandises fongibles qu'il est impossible d'individualiser une fois entreposées. Les cours d'achat ayant ${D.trendUp ? 'sensiblement augmenté' : 'nettement reculé'} au cours du mois de ${D.monthName} ${D.year}, le choix de la méthode d'évaluation des sorties de stock n'est pas sans conséquence sur les comptes. Le dirigeant vous demande d'éclairer ce choix.
+    `;
+    },
+
+    enonceTable: function(D) {
+      const P = I18N['fr'];
+      let rows = "";
+      D.mv.forEach(m => {
+        if (m.type === 'si') {
+          rows += `<tr><td>${D.fmtDate(m)}</td><td class="lib">${P.lblSI}</td><td class="amt">${formatQty(m.q)}</td><td class="amt">${formatMoney(m.cu)}</td><td class="amt">${formatMoney(m.q * m.cu)}</td><td class="amt">—</td><td class="amt">—</td></tr>`;
+        } else if (m.type === 'in') {
+          rows += `<tr><td>${D.fmtDate(m)}</td><td class="lib">${P.lblAchat}</td><td class="amt">${formatQty(m.q)}</td><td class="amt">${formatMoney(m.cu)}</td><td class="amt">${formatMoney(m.q * m.cu)}</td><td class="amt">—</td><td class="amt">—</td></tr>`;
+        } else {
+          rows += `<tr><td>${D.fmtDate(m)}</td><td class="lib">${P.lblVente}</td><td class="amt">—</td><td class="amt">—</td><td class="amt">—</td><td class="amt">${formatQty(m.q)}</td><td class="amt">${formatMoney(D.price)}</td></tr>`;
+        }
+      });
+      return `<div class="exam-table-wrap"><table class="exam-table">
+        <tr><th rowspan="2">${P.colDate}</th><th rowspan="2">${P.colLib}</th><th class="grp" colspan="3">${P.colIn} / ${P.lblAchat.toLowerCase()}s</th><th class="grp" colspan="2">${P.colOut} / ${P.lblVente.toLowerCase()}s</th></tr>
+        <tr><th>${P.colQty}</th><th>${P.colCU}</th><th>${P.colAmt}</th><th>${P.colQty}</th><th>Prix de vente</th></tr>
+        ${rows}</table></div>`;
+    },
+
+    enonce: function(D) {
+      let h = "";
+      h += `<li>Le stock au ${D.fmtDate(D.mv[0])} s'élevait à <span class="highlight">${formatQty(D.q0)} unités</span> valorisées <span class="highlight">${formatMoney(D.c0)}</span> l'unité, soit un stock initial de <span class="highlight">${formatMoney(D.si)}</span>.</li>`;
+      h += `<li>Les achats du mois représentent <span class="highlight">${formatQty(D.totIn)} unités</span> pour un montant total de <span class="highlight">${formatMoney(D.buys)}</span> hors taxes.</li>`;
+      h += `<li>Les ventes du mois portent sur <span class="highlight">${formatQty(D.totOut)} unités</span> cédées au prix unitaire constant de <span class="highlight">${formatMoney(D.price)}</span>, soit un chiffre d'affaires de <span class="highlight">${formatMoney(D.ca)}</span> hors taxes.</li>`;
+      h += `<li>Le stock final s'établit donc à <span class="highlight">${formatQty(D.qf)} unités</span>. L'entreprise ne supporte aucune autre charge sur la période.</li>`;
+      return h;
+    },
+
+    question: function(D) {
+      return `
+      1. Présenter la fiche de stock selon la méthode du premier entré, premier sorti (PEPS), puis calculer le résultat de la période.<br>
+      2. Présenter la fiche de stock selon la méthode du dernier entré, premier sorti (DEPS), puis calculer le résultat de la période.<br>
+      3. Présenter la fiche de stock selon la méthode du coût unitaire moyen pondéré en inventaire permanent, puis procéder à la même évaluation en inventaire intermittent.<br>
+      4. Comparer les quatre évaluations obtenues : stock final, variation des stocks, coût d'achat des marchandises vendues et résultat. Commenter l'incidence du choix de méthode.<br>
+      5. Enregistrer au journal, en inventaire intermittent, les écritures d'inventaire relatives à la variation des stocks de marchandises. Préciser quelles méthodes sont admises par la réglementation française.
+    `;
+    },
+
+    sol: function(D) {
+      const P = I18N['fr'];
+      let s = "";
+
+      s += `<div class="calc-box">
+        <span class="sol-sub">1. La méthode du premier entré, premier sorti (PEPS)</span>
+        La méthode PEPS repose sur l'hypothèse que les unités sortent du magasin dans l'ordre où elles y sont entrées : on épuise d'abord le lot le plus ancien, puis le suivant. Le stock restant est donc composé des lots les plus récents.
+        ${D.tFIFO}
+        <p>Le stock final ressort à ${formatQty(D.qf)} unités pour <strong>${formatMoney(D.fifo.sf)}</strong>. La variation des stocks, définie comme le stock initial diminué du stock final, s'élève à ${formatMoney(D.si)} − ${formatMoney(D.fifo.sf)} = <strong>${formatMoney(D.fifo.varStock)}</strong>${D.fifo.varNote}. Le résultat de la période s'obtient alors en retranchant du chiffre d'affaires les achats et cette variation : ${D.fifo.resExpr}, ce qui revient bien à ${formatMoney(D.ca)} − ${formatMoney(D.fifo.camv)} de coût d'achat des marchandises vendues.</p>
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span class="sol-sub">2. La méthode du dernier entré, premier sorti (DEPS)</span>
+        La méthode DEPS retient l'hypothèse inverse : les sorties s'imputent en priorité sur le lot le plus récemment entré. Le stock restant est alors constitué des lots les plus anciens.
+        ${D.tLIFO}
+        <p>Le stock final s'établit à <strong>${formatMoney(D.lifo.sf)}</strong>, la variation des stocks à <strong>${formatMoney(D.lifo.varStock)}</strong> et le résultat à ${D.lifo.resExpr}.</p>
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span class="sol-sub">3. La méthode du coût unitaire moyen pondéré</span>
+        En inventaire permanent, l'entreprise suit ses stocks en continu : un nouveau coût moyen est calculé après chaque entrée, en rapportant la valeur totale du stock à la quantité totale détenue, et toutes les sorties postérieures sont valorisées à ce coût jusqu'à l'entrée suivante.
+        ${D.tCUMPP}
+        <p>Le stock final ressort à <strong>${formatMoney(D.cumpP.sf)}</strong>, pour une variation des stocks de <strong>${formatMoney(D.cumpP.varStock)}</strong> et un résultat de <strong>${formatMoney(D.cumpP.res)}</strong>.</p>
+        <p style="margin-top:.9rem;">En inventaire intermittent, au contraire, l'entreprise ne procède qu'à un seul inventaire en fin de période. Un coût moyen unique est alors calculé sur l'ensemble du mois, en rapportant la valeur cumulée du stock initial et des entrées à la quantité cumulée correspondante :</p>
+        ${D.tCUMPI}
+        <p>Le coût moyen pondéré de la période s'établit ainsi à ${formatMoney(D.si)} + ${formatMoney(D.buys)} rapporté à ${formatQty(D.q0)} + ${formatQty(D.totIn)} unités, soit <strong>${formatMoney(D.cumpI.cump)}</strong> l'unité. Le stock final vaut alors ${formatQty(D.qf)} × ${formatMoney(D.cumpI.cump)} = <strong>${formatMoney(D.cumpI.sf)}</strong>, d'où une variation des stocks de <strong>${formatMoney(D.cumpI.varStock)}</strong> et un résultat de <strong>${formatMoney(D.cumpI.res)}</strong>.</p>
+        <p style="margin-top:.9rem;">La périodicité de l'inventaire n'est pas indifférente : elle doit rester inférieure à la durée moyenne de séjour des marchandises en magasin. Des marchandises stockées en moyenne un mois appellent ainsi un inventaire mensuel, faute de quoi le coût moyen calculé mélangerait des lots qui ne se sont jamais côtoyés en stock.</p>
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span class="sol-sub">4. Comparaison des quatre évaluations</span>
+        ${D.tComp}
+        <div class="chart-wrap">${D.svg}<div class="table-caption">${P.chart.caption}</div></div>
+        <p>${D.narr4}</p>
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span class="sol-sub">5. Les écritures d'inventaire en inventaire intermittent</span>
+        En inventaire intermittent, les achats de la période ont été enregistrés au fur et à mesure au débit du compte 607 « Achats de marchandises », sans que le compte de stock ne bouge : le compte 37 « Stocks de marchandises » est resté figé à sa valeur d'ouverture, soit ${formatMoney(D.si)}. À la clôture, deux écritures sont donc nécessaires : la première annule le stock initial, la seconde constate le stock final déterminé par l'inventaire physique. On retient ici l'évaluation au coût moyen pondéré de fin de période, soit ${formatMoney(D.cumpI.sf)}.
+        ${D.journal}
+        <p>Le compte 6037 présente ainsi un solde ${D.cumpI.varStock >= 0 ? 'débiteur' : 'créditeur'} de ${formatMoney(Math.abs(D.cumpI.varStock))}, qui figure ${D.cumpI.varStock >= 0 ? 'en charge' : 'en diminution des charges'} au compte de résultat sous l'intitulé « variation des stocks de marchandises ». ${D.cumpI.varStock >= 0 ? `Le stock ayant diminué sur la période, l'entreprise a vendu davantage qu'elle n'a acheté : la consommation de la période excède les achats, et la variation vient majorer les charges.` : `Le stock ayant augmenté sur la période, l'entreprise a acheté davantage qu'elle n'a vendu : une fraction des achats reste en magasin, et la variation vient en diminution des charges.`} Le coût d'achat des marchandises vendues se lit alors directement : ${formatMoney(D.buys)} d'achats ${D.cumpI.varStock >= 0 ? '+' : '−'} ${formatMoney(Math.abs(D.cumpI.varStock))} de variation = ${formatMoney(D.cumpI.camv)}.</p>
+        <p style="margin-top:.9rem;">En inventaire permanent, la logique est différente : le compte 37 est mouvementé à chaque entrée et à chaque sortie, par le débit ou le crédit du compte 6037, de sorte que le solde du compte de stock reflète à tout moment l'état réel du magasin. Les deux systèmes conduisent au même résultat comptable ; ils diffèrent par la fréquence de l'information disponible, et donc par le coût de sa production.</p>
+        <p style="margin-top:.9rem;">Sur le plan réglementaire, la méthode DEPS n'est admise ni par le Plan comptable général ni par la norme IAS 2 : seules la méthode du coût moyen pondéré et la méthode PEPS peuvent être retenues pour l'évaluation des biens fongibles. La méthode DEPS n'a donc été présentée ici qu'à titre de comparaison — elle reste en revanche autorisée par les principes comptables américains, ce qui complique les comparaisons internationales.</p>
+      </div>`;
+
+      s += `<div class="persp-box">
+        <span class="sol-sub">Pour aller plus loin</span>
+        Le point à retenir est dérangeant : quatre traitements comptables également défendables du même mois d'activité produisent quatre résultats différents, ici de ${formatMoney(D.resMin)} à ${formatMoney(D.resMax)}, soit un écart de ${formatMoney(D.resMax - D.resMin)} sur un chiffre d'affaires de ${formatMoney(D.ca)}. Aucune erreur n'a pourtant été commise, et aucune de ces valeurs n'est plus « vraie » que les autres. Le résultat d'une entreprise s'apprécie donc autant à l'aune de ses performances économiques qu'à celle des choix méthodologiques opérés.
+        <p style="margin-top:.8rem;">C'est précisément ce qui justifie le principe de permanence des méthodes. Aux termes de l'article L. 123-17 du Code de commerce, la présentation des comptes annuels comme les méthodes d'évaluation retenues ne peuvent être modifiées d'un exercice à l'autre, à moins qu'un changement exceptionnel n'intervienne dans la situation de l'entreprise ; toute modification doit alors être décrite et justifiée en annexe, avec ses incidences chiffrées. Sans cette règle, il suffirait de changer de méthode l'année où le résultat déçoit.</p>
+        <p style="margin-top:.8rem;">Notons enfin que l'écart entre les méthodes ne joue que sur la répartition du résultat entre les exercices, jamais sur son total : les unités aujourd'hui laissées en stock à une valeur élevée sortiront demain à cette même valeur. La différence est donc de nature temporaire — ce qui ne la rend pas anodine, puisqu'elle déplace de l'impôt dans le temps et modifie les ratios sur lesquels se fondent les tiers.</p>
+      </div>`;
+
+      return s;
+    }
+  },
+
+  en: {
+    "htmlLang": "en",
+    "title": "Accounting Simulator - Inventory valuation",
+    "locale": "en-GB",
+    "k-badge": "ACCOUNTING AND FINANCIAL INFORMATION",
+    "k-h1": "Inventory management and valuation",
+    "k-sub": "© Thomas Hossen – March 7, 2026 Version",
+    "k-seed": "Seed (Optional)",
+    "k-trend": "Price trend",
+    "k-tr-auto": "Random",
+    "k-tr-up": "Rising",
+    "k-tr-down": "Falling",
+    "k-mvt": "Movements",
+    "k-mvt-4": "2 purchases, 2 sales",
+    "k-mvt-6": "3 purchases, 3 sales",
+    "k-gen": "Generate Exercise →",
+    "k-welcome": "Configure the parameters and click Generate to create a new exercise.",
+    "k-seedbadge": "Active Seed:",
+    "k-new": "↺ New Statement",
+    "k-pdf": "⬇ Export PDF",
+    "k-doc": "⬇ Export DOC",
+    "k-tag-ex": "Problem",
+    "k-cardtitle": "Valuing inventory issues and their impact on profit",
+    "k-tag-sol": "Solution",
+    "k-cardtitle2": "Valuing inventory issues and their impact on profit",
+    "k-data": "Inventory movements of the period",
+    "k-work": "Assignment",
+    "showSol": "Show the solution",
+    "hideSol": "Hide the solution",
+    "docTitle": "Inventory Valuation Exercise",
+    "docFile": "Inventory_Valuation_Exercise.doc",
+
+    goods: ["bags of Ethiopian green coffee", "reels of copper wire", "pallets of porcelain stoneware tiles", "boxes of stainless steel screws", "drums of epoxy resin"],
+    companies: ["Négoce Delvaux", "Comptoir Bertin", "Sogedis", "Maison Ravel", "Établissements Nolan"],
+    months: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+
+    lblSI: "Opening inventory", lblAchat: "Purchase", lblVente: "Sale", lblSF: "Closing inventory",
+    colDate: "Date", colLib: "Item", colIn: "Receipts", colOut: "Issues", colStock: "Balance",
+    colQty: "Qty", colCU: "Unit cost", colAmt: "Amount", colDet: "Batch detail",
+    colMethod: "Method", colSF: "Closing inventory", colVar: "Change in inventories (opening − closing)",
+    colCAMV: "Cost of goods sold", colRes: "Profit",
+    mPEPS: "FIFO", mDEPS: "LIFO", mCUMPP: "Weighted average, perpetual", mCUMPI: "Weighted average, periodic",
+    colElem: "Item", colVal: "Value",
+    jDate: "Date", jAcc: "Account", jLib: "Description", jDeb: "Debit", jCred: "Credit",
+    unit: "units",
+    chart: {
+      title: "Comparison of methods",
+      sSF: "Closing inventory",
+      sRes: "Profit",
+      caption: "Closing inventory value and profit for the period under each valuation method"
+    },
+
+    context: function(D) {
+      return `
+      The trading company <strong>${D.company}</strong> distributes ${D.good}, fungible goods that cannot be identified individually once stored. Since purchase prices ${D.trendUp ? 'rose markedly' : 'fell sharply'} during ${D.monthName} ${D.year}, the choice of method for valuing inventory issues is far from neutral for the accounts. The managing director asks you to shed light on that choice.
+    `;
+    },
+
+    enonceTable: function(D) {
+      const P = I18N['en'];
+      let rows = "";
+      D.mv.forEach(m => {
+        if (m.type === 'si') {
+          rows += `<tr><td>${D.fmtDate(m)}</td><td class="lib">${P.lblSI}</td><td class="amt">${formatQty(m.q)}</td><td class="amt">${formatMoney(m.cu)}</td><td class="amt">${formatMoney(m.q * m.cu)}</td><td class="amt">—</td><td class="amt">—</td></tr>`;
+        } else if (m.type === 'in') {
+          rows += `<tr><td>${D.fmtDate(m)}</td><td class="lib">${P.lblAchat}</td><td class="amt">${formatQty(m.q)}</td><td class="amt">${formatMoney(m.cu)}</td><td class="amt">${formatMoney(m.q * m.cu)}</td><td class="amt">—</td><td class="amt">—</td></tr>`;
+        } else {
+          rows += `<tr><td>${D.fmtDate(m)}</td><td class="lib">${P.lblVente}</td><td class="amt">—</td><td class="amt">—</td><td class="amt">—</td><td class="amt">${formatQty(m.q)}</td><td class="amt">${formatMoney(D.price)}</td></tr>`;
+        }
+      });
+      return `<div class="exam-table-wrap"><table class="exam-table">
+        <tr><th rowspan="2">${P.colDate}</th><th rowspan="2">${P.colLib}</th><th class="grp" colspan="3">${P.colIn}</th><th class="grp" colspan="2">${P.colOut}</th></tr>
+        <tr><th>${P.colQty}</th><th>${P.colCU}</th><th>${P.colAmt}</th><th>${P.colQty}</th><th>Selling price</th></tr>
+        ${rows}</table></div>`;
+    },
+
+    enonce: function(D) {
+      let h = "";
+      h += `<li>Inventory on ${D.fmtDate(D.mv[0])} amounted to <span class="highlight">${formatQty(D.q0)} units</span> valued at <span class="highlight">${formatMoney(D.c0)}</span> each, that is an opening inventory of <span class="highlight">${formatMoney(D.si)}</span>.</li>`;
+      h += `<li>Purchases for the month represent <span class="highlight">${formatQty(D.totIn)} units</span> for a total of <span class="highlight">${formatMoney(D.buys)}</span> excluding tax.</li>`;
+      h += `<li>Sales for the month cover <span class="highlight">${formatQty(D.totOut)} units</span> sold at the constant unit price of <span class="highlight">${formatMoney(D.price)}</span>, that is revenue of <span class="highlight">${formatMoney(D.ca)}</span> excluding tax.</li>`;
+      h += `<li>Closing inventory therefore stands at <span class="highlight">${formatQty(D.qf)} units</span>. The company bears no other cost over the period.</li>`;
+      return h;
+    },
+
+    question: function(D) {
+      return `
+      1. Draw up the inventory card under the first-in, first-out method (FIFO), then compute the profit for the period.<br>
+      2. Draw up the inventory card under the last-in, first-out method (LIFO), then compute the profit for the period.<br>
+      3. Draw up the inventory card under the weighted average cost method with a perpetual inventory system, then carry out the same valuation under a periodic inventory system.<br>
+      4. Compare the four valuations obtained: closing inventory, change in inventories, cost of goods sold and profit. Comment on the impact of the choice of method.<br>
+      5. Record the period-end journal entries for the change in inventories under the periodic system. State which methods French regulations permit.
+    `;
+    },
+
+    sol: function(D) {
+      const P = I18N['en'];
+      let s = "";
+
+      s += `<div class="calc-box">
+        <span class="sol-sub">1. The first-in, first-out method (FIFO)</span>
+        FIFO assumes that units leave the warehouse in the order in which they entered it: the oldest batch is used up first, then the next one. What remains in stock therefore consists of the most recent batches.
+        ${D.tFIFO}
+        <p>Closing inventory amounts to ${formatQty(D.qf)} units for <strong>${formatMoney(D.fifo.sf)}</strong>. The change in inventories, defined as opening less closing inventory, equals ${formatMoney(D.si)} − ${formatMoney(D.fifo.sf)} = <strong>${formatMoney(D.fifo.varStock)}</strong>${D.fifo.varNote}. Profit for the period follows by deducting purchases and that change from revenue: ${D.fifo.resExpr}, which indeed amounts to ${formatMoney(D.ca)} − ${formatMoney(D.fifo.camv)} of cost of goods sold.</p>
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span class="sol-sub">2. The last-in, first-out method (LIFO)</span>
+        LIFO adopts the opposite assumption: issues are charged first against the most recently received batch. What remains in stock then consists of the oldest batches.
+        ${D.tLIFO}
+        <p>Closing inventory stands at <strong>${formatMoney(D.lifo.sf)}</strong>, the change in inventories at <strong>${formatMoney(D.lifo.varStock)}</strong> and profit at ${D.lifo.resExpr}.</p>
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span class="sol-sub">3. The weighted average cost method</span>
+        Under a perpetual system the company tracks its inventory continuously: a new average cost is computed after each receipt, by dividing the total value of the stock by the total quantity held, and every subsequent issue is valued at that cost until the next receipt.
+        ${D.tCUMPP}
+        <p>Closing inventory amounts to <strong>${formatMoney(D.cumpP.sf)}</strong>, giving a change in inventories of <strong>${formatMoney(D.cumpP.varStock)}</strong> and a profit of <strong>${formatMoney(D.cumpP.res)}</strong>.</p>
+        <p style="margin-top:.9rem;">Under a periodic system, by contrast, the company takes stock only once, at the end of the period. A single average cost is then computed over the whole month, by dividing the combined value of opening inventory and receipts by the corresponding combined quantity:</p>
+        ${D.tCUMPI}
+        <p>The weighted average cost of the period is therefore ${formatMoney(D.si)} + ${formatMoney(D.buys)} divided by ${formatQty(D.q0)} + ${formatQty(D.totIn)} units, that is <strong>${formatMoney(D.cumpI.cump)}</strong> per unit. Closing inventory is then ${formatQty(D.qf)} × ${formatMoney(D.cumpI.cump)} = <strong>${formatMoney(D.cumpI.sf)}</strong>, whence a change in inventories of <strong>${formatMoney(D.cumpI.varStock)}</strong> and a profit of <strong>${formatMoney(D.cumpI.res)}</strong>.</p>
+        <p style="margin-top:.9rem;">The frequency of the count matters: it must remain shorter than the average time goods spend in the warehouse. Goods stored for about a month therefore call for a monthly count, failing which the average cost computed would blend batches that never sat in the warehouse together.</p>
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span class="sol-sub">4. Comparing the four valuations</span>
+        ${D.tComp}
+        <div class="chart-wrap">${D.svg}<div class="table-caption">${P.chart.caption}</div></div>
+        <p>${D.narr4}</p>
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span class="sol-sub">5. Period-end entries under the periodic system</span>
+        Under a periodic system, purchases have been recorded as they occurred in the debit of account 607 "Purchases of goods", without the inventory account moving: account 37 "Inventories of goods" stayed frozen at its opening value of ${formatMoney(D.si)}. Two entries are therefore required at the closing: the first cancels the opening inventory, the second records the closing inventory established by the physical count. We retain here the period-end weighted average valuation, that is ${formatMoney(D.cumpI.sf)}.
+        ${D.journal}
+        <p>Account 6037 thus shows a ${D.cumpI.varStock >= 0 ? 'debit' : 'credit'} balance of ${formatMoney(Math.abs(D.cumpI.varStock))}, which appears in the income statement ${D.cumpI.varStock >= 0 ? 'as an expense' : 'as a reduction of expenses'} under "change in inventories of goods". ${D.cumpI.varStock >= 0 ? `Since inventory fell over the period, the company sold more than it bought: consumption exceeds purchases, and the change increases expenses.` : `Since inventory rose over the period, the company bought more than it sold: part of the purchases remains in the warehouse, and the change reduces expenses.`} The cost of goods sold can then be read directly: ${formatMoney(D.buys)} of purchases ${D.cumpI.varStock >= 0 ? '+' : '−'} ${formatMoney(Math.abs(D.cumpI.varStock))} of change = ${formatMoney(D.cumpI.camv)}.</p>
+        <p style="margin-top:.9rem;">Under a perpetual system the logic differs: account 37 is moved at every receipt and every issue, against account 6037, so that the balance of the inventory account reflects the actual state of the warehouse at all times. Both systems lead to the same accounting profit; they differ in how frequently the information is available, and therefore in the cost of producing it.</p>
+        <p style="margin-top:.9rem;">As regards regulation, LIFO is permitted neither by the French Plan comptable général nor by IAS 2: only the weighted average cost method and FIFO may be used for fungible goods. LIFO has therefore been presented here for comparison only — it does remain permitted under US GAAP, which complicates international comparisons.</p>
+      </div>`;
+
+      s += `<div class="persp-box">
+        <span class="sol-sub">Going further</span>
+        The lesson is an uncomfortable one: four equally defensible accounting treatments of the same month of trading produce four different profits, here from ${formatMoney(D.resMin)} to ${formatMoney(D.resMax)}, a spread of ${formatMoney(D.resMax - D.resMin)} on revenue of ${formatMoney(D.ca)}. Yet no error has been made, and none of these figures is any "truer" than the others. A company's profit is therefore as much a matter of its economic performance as of the methodological choices made.
+        <p style="margin-top:.8rem;">This is precisely what justifies the principle of consistency of methods. Under Article L. 123-17 of the French Commercial Code, neither the presentation of the annual accounts nor the valuation methods adopted may be changed from one year to the next, unless an exceptional change occurs in the company's situation; any change must then be described and justified in the notes, together with its quantified effects. Without that rule, one would simply switch methods in the year profits disappoint.</p>
+        <p style="margin-top:.8rem;">Note finally that the gap between methods only affects how profit is spread across periods, never its total: the units left in stock today at a high value will leave tomorrow at that same value. The difference is therefore temporary in nature — which does not make it harmless, since it shifts tax over time and alters the ratios on which outside parties rely.</p>
+      </div>`;
+
+      return s;
+    }
+  }
+};
+
+/* ============================================================
+   GESTION DE LA LANGUE  /  LANGUAGE HANDLING
+   ============================================================ */
+let LANG = 'fr';
+
+function detectLang() {
+    try {
+        const q = new URLSearchParams(window.location.search).get('lang');
+        if (q && I18N[q.toLowerCase()]) return q.toLowerCase();
+    } catch (e) {}
+    const h = (window.location.hash || '').replace('#', '').toLowerCase();
+    if (I18N[h]) return h;
+    return 'fr';
+}
+
+function applyLang() {
+    const D = I18N[LANG];
+    document.documentElement.lang = D.htmlLang;
+    document.title = D.title;
+
+    document.querySelectorAll('[data-k]').forEach(function (el) {
+        const key = el.getAttribute('data-k');
+        if (D[key] !== undefined) el.innerHTML = D[key];
+    });
+
+    const btn = document.getElementById('toggle-btn');
+    if (btn) btn.innerText = document.getElementById('sol-card').classList.contains('visible') ? D.hideSol : D.showSol;
+
+    document.getElementById('flag-fr').classList.toggle('active', LANG === 'fr');
+    document.getElementById('flag-en').classList.toggle('active', LANG === 'en');
+}
+
+function setLang(lang) {
+    if (!I18N[lang] || lang === LANG) return;
+    LANG = lang;
+
+    try {
+        const u = new URL(window.location.href);
+        u.searchParams.set('lang', lang);
+        history.replaceState(null, '', u.toString());
+    } catch (e) {}
+
+    applyLang();
+
+    if (document.getElementById('ex-area').style.display !== 'none') {
+        const solWasVisible = document.getElementById('sol-card').classList.contains('visible');
+        generateExercise(false);
+        if (solWasVisible) toggleSol();
+    }
+}
+
+// --- PRNG (Mulberry32) ---
+let currentSeed = 0;
+function seedPRNG(seed) {
+    return function() {
+      let t = seed += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+let random = Math.random;
+
+function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
+function pick(arr) { return arr[randInt(0, arr.length - 1)]; }
+const r2 = x => Math.round(x * 100) / 100;
+
+function formatMoney(num) {
+    const dec = (Math.round(num * 100) % 100 === 0) ? 0 : 2;
+    const t = num.toLocaleString(I18N[LANG].locale, {minimumFractionDigits: dec, maximumFractionDigits: dec}) + ' €';
+    return t.replace(/^-/, '\u2212\u00a0');
+}
+function formatQty(num) { return num.toLocaleString(I18N[LANG].locale); }
+
+/* ============================================================
+   HISTOGRAMME COMPARATIF (SVG)
+   ============================================================ */
+function compareSVG(D, L) {
+    const X0 = 74, X1 = 578, Y0 = 42, Y1 = 316;
+    const labels = D.methodShort;
+    const sf = D.methods.map(m => m.sf);
+    const res = D.methods.map(m => m.res);
+    const vmax = Math.max.apply(null, sf.concat(res)) * 1.16;
+    const py = v => Y1 - (v / vmax) * (Y1 - Y0);
+    const slot = (X1 - X0) / labels.length;
+    const bw = slot * 0.28;
+
+    let g = "";
+    /* grille */
+    const step = niceStep(vmax / 5);
+    for (let v = 0; v <= vmax; v += step) {
+        g += `<line x1="${X0}" y1="${py(v).toFixed(1)}" x2="${X1}" y2="${py(v).toFixed(1)}" stroke="#eeeae0" stroke-width="1"/>`;
+        g += `<text x="${X0 - 8}" y="${(py(v) + 4).toFixed(1)}" text-anchor="end" font-family="'Source Serif 4',serif" font-size="11" fill="#1e1e1e">${formatQty(Math.round(v))}</text>`;
+    }
+    /* barres */
+    labels.forEach((lab, i) => {
+        const cx = X0 + slot * (i + 0.5);
+        const x1 = cx - bw - 3, x2 = cx + 3;
+        g += `<rect x="${x1.toFixed(1)}" y="${py(sf[i]).toFixed(1)}" width="${bw.toFixed(1)}" height="${(Y1 - py(sf[i])).toFixed(1)}" fill="#1a4f8a"/>`;
+        g += `<rect x="${x2.toFixed(1)}" y="${py(res[i]).toFixed(1)}" width="${bw.toFixed(1)}" height="${(Y1 - py(res[i])).toFixed(1)}" fill="#2d6b4a"/>`;
+        g += `<text x="${(x1 + bw / 2).toFixed(1)}" y="${(py(sf[i]) - 5).toFixed(1)}" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="9.5" fill="#1a4f8a">${formatQty(Math.round(sf[i]))}</text>`;
+        g += `<text x="${(x2 + bw / 2).toFixed(1)}" y="${(py(res[i]) - 5).toFixed(1)}" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="9.5" fill="#2d6b4a">${formatQty(Math.round(res[i]))}</text>`;
+        lab.split('|').forEach((ln, k) => {
+            g += `<text x="${cx.toFixed(1)}" y="${Y1 + 17 + k * 13}" text-anchor="middle" font-family="'Source Serif 4',serif" font-size="11" fill="#1e1e1e">${ln}</text>`;
+        });
+    });
+    /* axes */
+    g += `<line x1="${X0}" y1="${Y1}" x2="${X1}" y2="${Y1}" stroke="#0d1b2a" stroke-width="1.6"/>`;
+    g += `<line x1="${X0}" y1="${Y0 - 10}" x2="${X0}" y2="${Y1}" stroke="#0d1b2a" stroke-width="1.6"/>`;
+    g += `<text x="20" y="${((Y0 + Y1) / 2).toFixed(1)}" text-anchor="middle" font-family="'Source Serif 4',serif" font-size="12.5" font-weight="600" fill="#0d1b2a" transform="rotate(-90 20 ${((Y0 + Y1) / 2).toFixed(1)})">${L.title} (€)</text>`;
+    /* legende */
+    const lx = X0 + 6, ly = Y0 - 22;
+    g += `<rect x="${lx}" y="${ly - 11}" width="14" height="14" fill="#1a4f8a"/>`;
+    g += `<text x="${lx + 20}" y="${ly}" font-family="'Source Serif 4',serif" font-size="11.5" fill="#1e1e1e">${L.sSF}</text>`;
+    g += `<rect x="${lx + 160}" y="${ly - 11}" width="14" height="14" fill="#2d6b4a"/>`;
+    g += `<text x="${lx + 180}" y="${ly}" font-family="'Source Serif 4',serif" font-size="11.5" fill="#1e1e1e">${L.sRes}</text>`;
+
+    return `<svg viewBox="0 0 600 372" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${L.caption}">${g}</svg>`;
+}
+
+function niceStep(raw) {
+    const p = Math.pow(10, Math.floor(Math.log10(raw)));
+    const r = raw / p;
+    return (r <= 1 ? 1 : r <= 2 ? 2 : r <= 5 ? 5 : 10) * p;
+}
+
+/* ============================================================
+   MOTEURS D'EVALUATION  /  VALUATION ENGINES
+   ============================================================ */
+/* PEPS / DEPS : suivi par lots. mode = 'fifo' ou 'lifo' */
+function runLayers(mv, mode) {
+    let layers = [], lines = [];
+    mv.forEach(m => {
+        if (m.type === 'si' || m.type === 'in') {
+            layers.push({ q: m.q, c: m.cu });
+            lines.push({ m: m, outQ: 0, outDet: "", outVal: 0, layers: layers.map(l => ({ q: l.q, c: l.c })) });
+        } else {
+            let rest = m.q, val = 0, det = [];
+            while (rest > 0) {
+                const idx = (mode === 'fifo') ? 0 : layers.length - 1;
+                const L = layers[idx];
+                const take = Math.min(L.q, rest);
+                val += take * L.c;
+                det.push({ q: take, c: L.c });
+                L.q -= take; rest -= take;
+                if (L.q === 0) layers.splice(idx, 1);
+            }
+            lines.push({ m: m, outQ: m.q, outDet: det, outVal: r2(val), layers: layers.map(l => ({ q: l.q, c: l.c })) });
+        }
+    });
+    const sf = r2(layers.reduce((a, l) => a + l.q * l.c, 0));
+    return { lines: lines, sf: sf };
+}
+
+/* CUMP en inventaire permanent : nouveau cout moyen apres chaque entree */
+function runCUMP(mv) {
+    let q = 0, v = 0, cu = 0, lines = [];
+    mv.forEach(m => {
+        if (m.type === 'si') {
+            q = m.q; v = r2(m.q * m.cu); cu = m.cu;
+            lines.push({ m: m, cu: cu, q: q, v: v, outVal: 0 });
+        } else if (m.type === 'in') {
+            q += m.q; v = r2(v + m.q * m.cu); cu = r2(v / q);
+            lines.push({ m: m, cu: cu, q: q, v: v, outVal: 0 });
+        } else {
+            const val = r2(m.q * cu);
+            q -= m.q; v = r2(v - val);
+            lines.push({ m: m, cu: cu, q: q, v: v, outVal: val });
+        }
+    });
+    return { lines: lines, sf: r2(v) };
+}
+
+/* ============================================================
+   GENERATION DE L'EXERCICE  /  EXERCISE GENERATION
+   ============================================================ */
+function generateExercise(forceNew = false) {
+    if (forceNew) { document.getElementById('seed-input').value = ""; }
+    let seedVal = document.getElementById('seed-input').value;
+    currentSeed = seedVal ? parseInt(seedVal) : Math.floor(Math.random() * 99999999);
+    document.getElementById('seed-disp').innerText = currentSeed;
+    document.getElementById('seed-input').value = currentSeed;
+    random = seedPRNG(currentSeed);
+
+    const DIC = I18N[LANG];
+    const trendSel = document.getElementById('trend-input').value;
+    const nbMv = parseInt(document.getElementById('mvt-input').value) || 4;
+    const nbPairs = nbMv / 2;
+
+    let q0, c0, mv, price, trendUp, month, year;
+    let ok = false, guard = 0;
+
+    /* un CUMP doit tomber juste au centime pres */
+    const exact = x => Math.abs(x * 100 - Math.round(x * 100)) < 1e-7;
+
+    do {
+        guard++; ok = true;
+
+        trendUp = (trendSel === 'up') ? true : (trendSel === 'down') ? false : (random() < 0.5);
+        month = randInt(0, 11);
+        year = 2024 + randInt(0, 2);
+
+        q0 = 10 * randInt(2, 8);
+        c0 = randInt(10, 28);
+
+        /* dates : stock initial le 1er, puis alternance achat / vente */
+        let days = [1];
+        let d = 1;
+        for (let i = 0; i < nbMv; i++) {
+            d += randInt(2, 4);
+            days.push(d);
+        }
+        if (d > 28) { ok = false; continue; }
+
+        mv = [{ type: 'si', day: 1, q: q0, cu: c0 }];
+        let cost = c0, onHand = q0;
+        for (let i = 0; i < nbPairs; i++) {
+            cost = trendUp ? cost + randInt(1, 3) : cost - randInt(1, 3);
+            if (cost < 5) { ok = false; break; }
+            const qi = 10 * randInt(4, 14);
+            mv.push({ type: 'in', day: days[2 * i + 1], q: qi, cu: cost });
+            onHand += qi;
+            /* la sortie doit laisser un stock strictement positif */
+            const maxOut = onHand - 10;
+            if (maxOut < 30) { ok = false; break; }
+            const qo = 10 * randInt(3, Math.min(14, Math.floor(maxOut / 10)));
+            mv.push({ type: 'out', day: days[2 * i + 2], q: qo });
+            onHand -= qo;
+        }
+        if (!ok) continue;
+        if (onHand < 20 || onHand > 220) { ok = false; continue; }
+
+        /* le CUMP doit rester exact au centime, en permanent comme en intermittent */
+        const cp = runCUMP(mv);
+        if (cp.lines.some(l => !exact(l.cu) || !exact(l.v) || !exact(l.outVal))) { ok = false; continue; }
+        const totInQ = mv.filter(m => m.type === 'in').reduce((a, m) => a + m.q, 0);
+        const totInV = mv.filter(m => m.type === 'in').reduce((a, m) => a + m.q * m.cu, 0);
+        const cumpI = (q0 * c0 + totInV) / (q0 + totInQ);
+        if (!exact(cumpI) || !exact(onHand * cumpI)) { ok = false; continue; }
+
+        /* prix de vente : marge confortable sur le coût le plus élevé */
+        const maxCost = Math.max.apply(null, mv.filter(m => m.cu).map(m => m.cu));
+        price = Math.round(maxCost * (1.3 + random() * 0.25) / 5) * 5;
+        if (price <= maxCost * 1.15) { ok = false; continue; }
+    } while (!ok && guard < 4000);
+
+    /* --- agregats --- */
+    const si = r2(q0 * c0);
+    const totIn = mv.filter(m => m.type === 'in').reduce((a, m) => a + m.q, 0);
+    const buys = r2(mv.filter(m => m.type === 'in').reduce((a, m) => a + m.q * m.cu, 0));
+    const totOut = mv.filter(m => m.type === 'out').reduce((a, m) => a + m.q, 0);
+    const qf = q0 + totIn - totOut;
+    const ca = r2(totOut * price);
+
+    /* --- evaluations --- */
+    const fifoR = runLayers(mv, 'fifo');
+    const lifoR = runLayers(mv, 'lifo');
+    const cumpR = runCUMP(mv);
+    const cumpU = r2((si + buys) / (q0 + totIn));
+    const cumpISF = r2(qf * cumpU);
+
+    const build = sf => {
+        const varStock = r2(si - sf);
+        const camv = r2(si + buys - sf);
+        const res = r2(ca - buys - varStock);
+        /* la variation est retranchee du CA : si elle est negative, elle vient donc en addition */
+        const resExpr = `${formatMoney(ca)} \u2212 ${formatMoney(buys)} ${varStock >= 0 ? '\u2212' : '+'} ${formatMoney(Math.abs(varStock))} = <strong>${formatMoney(res)}</strong>`;
+        const varNote = (LANG === 'fr')
+            ? (varStock >= 0
+                ? `, positive puisque le stock a diminu\u00e9 : la consommation de la p\u00e9riode exc\u00e8de les achats`
+                : `, n\u00e9gative puisque le stock a augment\u00e9 : une fraction des achats reste en magasin et ne constitue pas une charge de la p\u00e9riode, de sorte qu'elle vient en diminution des charges`)
+            : (varStock >= 0
+                ? `, positive since inventory fell: consumption of the period exceeds purchases`
+                : `, negative since inventory rose: part of the purchases remains in the warehouse and is not an expense of the period, so it reduces expenses`);
+        return { sf: sf, varStock: varStock, camv: camv, res: res, resExpr: resExpr, varNote: varNote };
+    };
+    const fifo = build(fifoR.sf), lifo = build(lifoR.sf);
+    const cumpP = build(cumpR.sf), cumpI = build(cumpISF);
+    cumpI.cump = cumpU;
+
+    const methods = [fifo, lifo, cumpP, cumpI];
+    const resMin = Math.min.apply(null, methods.map(m => m.res));
+    const resMax = Math.max.apply(null, methods.map(m => m.res));
+
+    /* --- mise en forme des dates --- */
+    const fmtDate = m => (LANG === 'fr')
+        ? `${String(m.day).padStart(2, '0')}/${String(month + 1).padStart(2, '0')}`
+        : `${DIC.months[month].slice(0, 3)} ${m.day}`;
+    const endDay = new Date(year, month + 1, 0).getDate();
+    const lastDay = (LANG === 'fr')
+        ? `${endDay}/${String(month + 1).padStart(2, '0')}/${year}`
+        : `${DIC.months[month].slice(0, 3)} ${endDay}, ${year}`;
+    const lastShort = (LANG === 'fr')
+        ? `${endDay}/${String(month + 1).padStart(2, '0')}`
+        : `${DIC.months[month].slice(0, 3)} ${endDay}`;
+
+    /* --- fiches de stock par lots (PEPS / DEPS) --- */
+    const detStr = arr => arr.map(l => `${formatQty(l.q)} × ${formatMoney(l.c)}`).join(' + ');
+    const layerTable = R => {
+        let rows = "";
+        R.lines.forEach(L => {
+            const m = L.m;
+            const lib = m.type === 'si' ? DIC.lblSI : (m.type === 'in' ? DIC.lblAchat : DIC.lblVente);
+            const inCells = (m.type === 'out')
+                ? `<td class="amt">—</td><td class="det">—</td><td class="amt">—</td>`
+                : `<td class="amt">${formatQty(m.q)}</td><td class="det">${formatMoney(m.cu)}</td><td class="amt">${formatMoney(m.q * m.cu)}</td>`;
+            const outCells = (m.type === 'out')
+                ? `<td class="amt">${formatQty(L.outQ)}</td><td class="det">${detStr(L.outDet)}</td><td class="amt">${formatMoney(L.outVal)}</td>`
+                : `<td class="amt">—</td><td class="det">—</td><td class="amt">—</td>`;
+            const q = L.layers.reduce((a, l) => a + l.q, 0);
+            const v = r2(L.layers.reduce((a, l) => a + l.q * l.c, 0));
+            rows += `<tr>${`<td>${fmtDate(m)}</td><td class="lib">${lib}</td>`}${inCells}${outCells}<td class="amt">${formatQty(q)}</td><td class="det">${detStr(L.layers)}</td><td class="amt">${formatMoney(v)}</td></tr>`;
+        });
+        rows += `<tr class="hi-row"><td>${lastShort}</td><td class="lib">${DIC.lblSF}</td><td colspan="6"></td><td class="amt">${formatQty(qf)}</td><td class="det">—</td><td class="amt">${formatMoney(R.sf)}</td></tr>`;
+        return `<div class="exam-table-wrap"><table class="exam-table">
+          <tr><th rowspan="2">${DIC.colDate}</th><th rowspan="2">${DIC.colLib}</th><th class="grp" colspan="3">${DIC.colIn}</th><th class="grp" colspan="3">${DIC.colOut}</th><th class="grp" colspan="3">${DIC.colStock}</th></tr>
+          <tr><th>${DIC.colQty}</th><th>${DIC.colCU}</th><th>${DIC.colAmt}</th><th>${DIC.colQty}</th><th>${DIC.colDet}</th><th>${DIC.colAmt}</th><th>${DIC.colQty}</th><th>${DIC.colDet}</th><th>${DIC.colAmt}</th></tr>
+          ${rows}</table></div>`;
+    };
+
+    /* --- fiche CUMP inventaire permanent --- */
+    const cumpTable = R => {
+        let rows = "";
+        R.lines.forEach(L => {
+            const m = L.m;
+            const lib = m.type === 'si' ? DIC.lblSI : (m.type === 'in' ? DIC.lblAchat : DIC.lblVente);
+            const inCells = (m.type === 'out')
+                ? `<td class="amt">—</td><td class="amt">—</td><td class="amt">—</td>`
+                : `<td class="amt">${formatQty(m.q)}</td><td class="amt">${formatMoney(m.cu)}</td><td class="amt">${formatMoney(m.q * m.cu)}</td>`;
+            const outCells = (m.type === 'out')
+                ? `<td class="amt">${formatQty(m.q)}</td><td class="amt">${formatMoney(L.cu)}</td><td class="amt">${formatMoney(L.outVal)}</td>`
+                : `<td class="amt">—</td><td class="amt">—</td><td class="amt">—</td>`;
+            rows += `<tr><td>${fmtDate(m)}</td><td class="lib">${lib}</td>${inCells}${outCells}<td class="amt">${formatQty(L.q)}</td><td class="amt">${formatMoney(L.cu)}</td><td class="amt">${formatMoney(L.v)}</td></tr>`;
+        });
+        rows += `<tr class="hi-row"><td>${lastShort}</td><td class="lib">${DIC.lblSF}</td><td colspan="6"></td><td class="amt">${formatQty(qf)}</td><td class="amt">${formatMoney(R.lines[R.lines.length - 1].cu)}</td><td class="amt">${formatMoney(R.sf)}</td></tr>`;
+        return `<div class="exam-table-wrap"><table class="exam-table">
+          <tr><th rowspan="2">${DIC.colDate}</th><th rowspan="2">${DIC.colLib}</th><th class="grp" colspan="3">${DIC.colIn}</th><th class="grp" colspan="3">${DIC.colOut}</th><th class="grp" colspan="3">${DIC.colStock}</th></tr>
+          <tr><th>${DIC.colQty}</th><th>${DIC.colCU}</th><th>${DIC.colAmt}</th><th>${DIC.colQty}</th><th>${DIC.colCU}</th><th>${DIC.colAmt}</th><th>${DIC.colQty}</th><th>${DIC.colCU}</th><th>${DIC.colAmt}</th></tr>
+          ${rows}</table></div>`;
+    };
+
+    /* --- tableau CUMP intermittent --- */
+    const tCUMPI = `<div class="exam-table-wrap"><table class="exam-table">
+      <tr><th class="txt-left" style="width:44%;">${DIC.colElem}</th><th>${DIC.colQty}</th><th>${DIC.colCU}</th><th>${DIC.colVal}</th></tr>
+      <tr><td class="txt-left">${DIC.lblSI}</td><td class="amt">${formatQty(q0)}</td><td class="amt">${formatMoney(c0)}</td><td class="amt">${formatMoney(si)}</td></tr>
+      <tr><td class="txt-left">${DIC.lblAchat}s</td><td class="amt">${formatQty(totIn)}</td><td class="amt">—</td><td class="amt">${formatMoney(buys)}</td></tr>
+      <tr class="tot-row"><td class="txt-left">${LANG === 'fr' ? 'Total à répartir' : 'Total to be allocated'}</td><td class="amt">${formatQty(q0 + totIn)}</td><td class="amt">${formatMoney(cumpU)}</td><td class="amt">${formatMoney(si + buys)}</td></tr>
+      <tr><td class="txt-left">${DIC.colOut}</td><td class="amt">${formatQty(totOut)}</td><td class="amt">${formatMoney(cumpU)}</td><td class="amt">${formatMoney(r2(totOut * cumpU))}</td></tr>
+      <tr class="hi-row"><td class="txt-left">${DIC.lblSF}</td><td class="amt">${formatQty(qf)}</td><td class="amt">${formatMoney(cumpU)}</td><td class="amt">${formatMoney(cumpISF)}</td></tr>
+    </table></div>`;
+
+    /* --- tableau comparatif --- */
+    const names = [DIC.mPEPS, DIC.mDEPS, DIC.mCUMPP, DIC.mCUMPI];
+    let compRows = "";
+    methods.forEach((m, i) => {
+        compRows += `<tr${m.res === resMax ? ' class="hi-row"' : ''}><td class="txt-left">${names[i]}</td><td class="amt">${formatMoney(m.sf)}</td><td class="amt">${formatMoney(m.varStock)}</td><td class="amt">${formatMoney(m.camv)}</td><td class="amt">${formatMoney(m.res)}</td></tr>`;
+    });
+    const tComp = `<div class="exam-table-wrap"><table class="exam-table">
+      <tr><th class="txt-left" style="width:26%;">${DIC.colMethod}</th><th>${DIC.colSF}</th><th>${DIC.colVar}</th><th>${DIC.colCAMV}</th><th>${DIC.colRes}</th></tr>
+      ${compRows}</table>
+      <div class="table-caption">${LANG === 'fr'
+        ? `Résultat = chiffre d'affaires (${formatMoney(ca)}) − achats (${formatMoney(buys)}) − variation des stocks, soit encore chiffre d'affaires − coût d'achat des marchandises vendues.`
+        : `Profit = revenue (${formatMoney(ca)}) − purchases (${formatMoney(buys)}) − change in inventories, equivalently revenue − cost of goods sold.`}</div></div>`;
+
+    /* --- journal --- */
+    const journal = `<table class="journal">
+      <tr><th>${DIC.jDate}</th><th>${DIC.jAcc}</th><th>${DIC.jLib}</th><th>${DIC.jDeb}</th><th>${DIC.jCred}</th></tr>
+      <tr><td rowspan="3">${lastDay}</td><td class="num">6037</td><td>${LANG === 'fr' ? 'Variation des stocks de marchandises' : 'Change in inventories of goods'}</td><td class="amt">${formatMoney(si)}</td><td class="amt"></td></tr>
+      <tr><td class="num">37</td><td class="ind">${LANG === 'fr' ? 'Stocks de marchandises' : 'Inventories of goods'}</td><td class="amt"></td><td class="amt">${formatMoney(si)}</td></tr>
+      <tr><td colspan="2" class="note">${LANG === 'fr' ? 'Annulation du stock initial' : 'Cancellation of opening inventory'}</td><td class="amt"></td><td class="amt"></td></tr>
+      <tr class="sep"><td rowspan="3">${lastDay}</td><td class="num">37</td><td>${LANG === 'fr' ? 'Stocks de marchandises' : 'Inventories of goods'}</td><td class="amt">${formatMoney(cumpISF)}</td><td class="amt"></td></tr>
+      <tr><td class="num">6037</td><td class="ind">${LANG === 'fr' ? 'Variation des stocks de marchandises' : 'Change in inventories of goods'}</td><td class="amt"></td><td class="amt">${formatMoney(cumpISF)}</td></tr>
+      <tr><td colspan="2" class="note">${LANG === 'fr' ? 'Constatation du stock final (inventaire physique)' : 'Recognition of closing inventory (physical count)'}</td><td class="amt"></td><td class="amt"></td></tr>
+    </table>`;
+
+    /* --- commentaire de la comparaison --- */
+    const iBest = methods.map(m => m.res).indexOf(resMax);
+    const iWorst = methods.map(m => m.res).indexOf(resMin);
+    let narr4;
+    if (LANG === 'fr') {
+        narr4 = `Une première vérification s'impose : dans les quatre cas, la somme du stock final et du coût d'achat des marchandises vendues reste égale à ${formatMoney(si + buys)}, c'est-à-dire au stock initial augmenté des achats. Les méthodes ne créent ni ne détruisent de valeur ; elles se contentent de répartir différemment cette masse entre ce qui reste en magasin et ce qui a été consommé.`;
+        narr4 += ` C'est bien là tout l'enjeu : le résultat s'échelonne de ${formatMoney(resMin)} avec la méthode ${names[iWorst]} à ${formatMoney(resMax)} avec la méthode ${names[iBest]}, soit ${formatMoney(r2(resMax - resMin))} d'écart pour des opérations rigoureusement identiques.`;
+        narr4 += ` La logique est mécanique. ${trendUp
+            ? `Les prix d'achat montant au fil du mois, la méthode PEPS fait sortir en premier les lots anciens, donc les moins chers : le coût des marchandises vendues est minoré, le stock final est valorisé aux prix récents, et le résultat affiché est le plus élevé. La méthode DEPS produit l'effet exactement inverse, en imputant aux ventes les lots les plus récents, donc les plus onéreux.`
+            : `Les prix d'achat reculant au fil du mois, la méthode PEPS fait sortir en premier les lots anciens, donc les plus chers : le coût des marchandises vendues est majoré et le résultat affiché est le plus faible. La méthode DEPS produit l'effet inverse, en imputant aux ventes les lots récents, moins onéreux.`}`;
+        narr4 += ` Les deux variantes du coût moyen pondéré occupent une position intermédiaire, ce qui est leur vertu : en lissant les prix, elles amortissent l'effet des à-coups du marché. L'écart entre inventaire permanent (${formatMoney(cumpP.res)}) et inventaire intermittent (${formatMoney(cumpI.res)}) tient uniquement au moment où le coût moyen est arrêté — après chaque entrée dans le premier cas, une seule fois en fin de période dans le second — et donc à la position des ventes dans le calendrier des achats.`;
+    } else {
+        narr4 = `One check comes first: in all four cases, closing inventory plus cost of goods sold still equals ${formatMoney(si + buys)}, that is opening inventory plus purchases. The methods neither create nor destroy value; they merely split that total differently between what remains in the warehouse and what has been consumed.`;
+        narr4 += ` And that is precisely the issue: profit ranges from ${formatMoney(resMin)} under ${names[iWorst]} to ${formatMoney(resMax)} under ${names[iBest]}, a gap of ${formatMoney(r2(resMax - resMin))} for strictly identical transactions.`;
+        narr4 += ` The logic is mechanical. ${trendUp
+            ? `As purchase prices rose over the month, FIFO issues the oldest and therefore cheapest batches first: cost of goods sold is understated, closing inventory is carried at recent prices, and reported profit is the highest. LIFO does exactly the opposite, charging sales with the most recent and therefore dearest batches.`
+            : `As purchase prices fell over the month, FIFO issues the oldest and therefore dearest batches first: cost of goods sold is overstated and reported profit is the lowest. LIFO does the opposite, charging sales with the recent, cheaper batches.`}`;
+        narr4 += ` Both weighted-average variants sit in between, which is their virtue: by smoothing prices they dampen the effect of market swings. The gap between the perpetual system (${formatMoney(cumpP.res)}) and the periodic one (${formatMoney(cumpI.res)}) stems solely from when the average cost is struck — after each receipt in the first case, once at period end in the second — and hence from where sales fall in the sequence of purchases.`;
+    }
+
+    const D = {
+        company: pick(DIC.companies), good: pick(DIC.goods),
+        month: month, monthName: DIC.months[month], year: year, trendUp: trendUp,
+        q0: q0, c0: c0, si: si, mv: mv, price: price,
+        totIn: totIn, buys: buys, totOut: totOut, qf: qf, ca: ca,
+        fifo: fifo, lifo: lifo, cumpP: cumpP, cumpI: cumpI,
+        methods: methods, resMin: resMin, resMax: resMax,
+        methodShort: (LANG === 'fr') ? ["PEPS", "DEPS", "CUMP|permanent", "CUMP|intermittent"] : ["FIFO", "LIFO", "Average|perpetual", "Average|periodic"],
+        fmtDate: fmtDate, lastDay: lastDay,
+        tFIFO: layerTable(fifoR), tLIFO: layerTable(lifoR), tCUMPP: cumpTable(cumpR),
+        tCUMPI: tCUMPI, tComp: tComp, journal: journal, narr4: narr4
+    };
+    D.svg = compareSVG(D, DIC.chart);
+
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('ex-area').style.display = 'block';
+    document.getElementById('sol-card').classList.remove('visible');
+    document.getElementById('toggle-btn').innerText = DIC.showSol;
+    document.getElementById('toggle-btn').classList.remove('shown');
+
+    document.getElementById('context-text').innerHTML = DIC.context(D);
+    document.getElementById('enonce-table').innerHTML = DIC.enonceTable(D);
+    document.getElementById('events-list').innerHTML = DIC.enonce(D);
+    document.getElementById('question-text').innerHTML = DIC.question(D);
+    document.getElementById('sol-content').innerHTML = DIC.sol(D);
+}
+
+function toggleSol() {
+    let solCard = document.getElementById('sol-card');
+    let btn = document.getElementById('toggle-btn');
+    if (solCard.classList.contains('visible')) {
+        solCard.classList.remove('visible');
+        btn.innerText = I18N[LANG].showSol;
+        btn.classList.remove('shown');
+    } else {
+        solCard.classList.add('visible');
+        btn.innerText = I18N[LANG].hideSol;
+        btn.classList.add('shown');
+    }
+}
+
+// --- FONCTION EXPORT DOC ---
+function exportWord() {
+    let content = document.getElementById('ex-area').cloneNode(true);
+    let actions = content.querySelector('.top-actions');
+    if (actions) actions.parentNode.removeChild(actions);
+    let toggle = content.querySelector('.sol-toggle-wrap');
+    if (toggle) toggle.parentNode.removeChild(toggle);
+    let solCard = content.querySelector('#sol-card');
+    if (solCard) solCard.style.display = 'block';
+
+    let html = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <meta charset='utf-8'>
+            <title>${I18N[LANG].docTitle}</title>
+            <style>
+                body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5; text-align: justify; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 9pt; }
+                th, td { border: 1px solid #000; padding: 3px; }
+                th { background-color: #f2f2f2; text-align: center; font-weight: bold; }
+                .amt { text-align: right; white-space: nowrap; }
+                .det { font-size: 8pt; }
+                .lib, .txt-left { text-align: left; }
+                .num { text-align: center; }
+                .ind { padding-left: 20px; }
+                .note { font-style: italic; }
+                .calc-box, .persp-box { border: 1px solid #000; padding: 10px; margin-bottom: 15px; background-color: #f9f9f9; text-align: justify; }
+                .chart-wrap { text-align: center; margin: 15px 0; }
+                .table-caption { font-size: 9pt; font-style: italic; text-align: center; }
+                .highlight { font-weight: bold; }
+                ul { text-align: justify; }
+                li { margin-bottom: 5px; }
+            </style>
+        </head>
+        <body>
+            ${content.innerHTML}
+        </body>
+        </html>
+    `;
+
+    let blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    let url = URL.createObjectURL(blob);
+    let link = document.createElement('a');
+    link.href = url;
+    link.download = I18N[LANG].docFile;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+/* Initialisation */
+LANG = detectLang();
+applyLang();
+</script>
+</body>
+</html>
