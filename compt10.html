@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Comptabilité - Immobilisations atypiques</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 1.5rem;border-bottom:3px solid var(--gold)}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end;background:rgba(255,255,255,.03);padding:1rem 1.5rem;border-radius:6px;border:1px solid rgba(255,255,255,.1)}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.6)}
+.ctrl-inp, .ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.4rem .7rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none;transition:border-color .2s}
+.ctrl-inp:focus, .ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.5rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;transition:background .18s;margin-left:auto}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN & CARDS */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:700}
+
+.top-actions{display:flex;gap:.5rem;}
+.btn-action{background:#fff;border:1px solid var(--border);color:var(--navy);padding:.4rem .8rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.85rem;font-weight:600;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.btn-action:hover{border-color:var(--navy);background:var(--cream-dark);}
+
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+.highlight{font-family:'JetBrains Mono',monospace;font-size:.85rem;font-weight:600;background:var(--cream-dark);padding:2px 6px;border-radius:3px;color:var(--navy)}
+
+/* EXAM TABLE */
+.exam-table{width:100%;border-collapse:collapse;margin:1.2rem 0 1.5rem;font-size:.9rem;}
+.exam-table th, .exam-table td{border:1px solid var(--border);padding:.6rem;text-align:center;vertical-align:middle;}
+.exam-table th{background:var(--cream-dark);color:var(--navy);font-weight:600;}
+.exam-table .txt-left{text-align:left;}
+
+/* JOURNAL TABLE */
+.journal-wrap{overflow-x:auto;margin:1.5rem 0}
+table.journal{width:100%;border-collapse:collapse;font-size:.85rem;font-family:'Source Serif 4',serif;box-shadow:0 0 0 1px var(--border)}
+table.journal th{background:var(--navy);color:var(--cream);padding:.6rem;text-align:left;font-weight:600;border:1px solid var(--navy-mid)}
+table.journal td{padding:.5rem .6rem;border:1px solid var(--border);vertical-align:middle}
+table.journal .num{font-family:'JetBrains Mono',monospace;width:90px;text-align:center;color:var(--navy);font-weight:600}
+table.journal .amt{font-family:'JetBrains Mono',monospace;text-align:right;width:115px;white-space:nowrap;}
+table.journal .date-row{background:var(--cream-dark);font-style:italic;text-align:center;font-weight:600;color:var(--text-muted)}
+.debit-col{color:var(--navy)}
+.credit-col{color:var(--text)}
+
+/* SOLUTION TOGGLE */
+.sol-toggle-wrap{text-align:left; margin: 1.5rem 0 0 0;}
+.btn-toggle{background:transparent;border:2px solid var(--green);border-bottom:none;color:var(--green);font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;padding:.5rem 1.5rem;border-radius:4px 4px 0 0;cursor:pointer;transition:all .2s; position:relative; z-index:2; top:2px;}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--green);color:var(--cream)}
+.sol-card{border-top:2px solid var(--green);display:none; border-radius: 0 6px 6px 6px; position:relative; z-index:1;}
+.sol-card.visible{display:block;animation:fi .4s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+
+.calc-box{background:#f9fcf9;border:1px solid #c8e6c9;padding:1.2rem;border-radius:4px;margin-bottom:1rem;font-size:.9rem;color:var(--text);line-height:1.6;text-align:justify;}
+.calc-box strong{color:var(--green);font-family:'JetBrains Mono',monospace;}
+
+.dossier-title{margin:2rem 0 1rem; font-weight:600; color:var(--navy); font-size:1.02rem; border-bottom:1px solid var(--border); padding-bottom:.4rem;}
+.dossier-title:first-of-type{margin-top:0}
+
+@media print{
+  body{background:#fff;}
+  header, .ctrls, .sol-toggle-wrap, .top-actions {display:none !important;}
+  .card{box-shadow:none; border:1px solid var(--border); margin-bottom:2rem;}
+  .sol-card{display:block !important; border-top:2px solid var(--green);}
+  #ex-area {display:block !important;}
+}
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-badge">INFORMATION COMPTABLE ET FINANCIÈRE</div>
+  <h1>Immobilisations atypiques : don, échange et démantèlement</h1>
+  <p class="subtitle">© Thomas Hossen – Version du 7 mars 2026</p>
+
+  <div class="ctrls">
+    <div class="ctrl-g">
+      <span class="ctrl-lbl">Seed (Optionnel)</span>
+      <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999">
+    </div>
+    <button class="btn-gen" onclick="generateExercise(false)">Générer l'exercice →</button>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" style="text-align:center; padding:4rem; color:var(--text-muted); font-style:italic;">
+    Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="seed-badge">Seed active : <span id="seed-disp"></span></div>
+      <div class="top-actions">
+        <button class="btn-action" onclick="generateExercise(true)">↺ Nouvel énoncé</button>
+        <button class="btn-action" onclick="window.print()">⬇ Exporter PDF</button>
+        <button class="btn-action" onclick="exportWord()">⬇ Exporter DOC</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="tag">Énoncé</span><h2>Trois dossiers clients atypiques</h2></div>
+      <div class="card-body">
+        <div class="context-block" id="context-text"></div>
+
+        <p class="dossier-title">Dossier 1 — Acquisition à titre gratuit</p>
+        <p id="dossier1-text" style="font-size:.95rem;"></p>
+
+        <p class="dossier-title">Dossier 2 — Acquisition par voie d'échange</p>
+        <p id="dossier2-text" style="font-size:.95rem; margin-bottom:1rem;"></p>
+        <table class="exam-table" id="echange-table"></table>
+
+        <p class="dossier-title">Dossier 3 — Coûts de démantèlement</p>
+        <p id="dossier3-text" style="font-size:.95rem;"></p>
+
+        <p style="margin-top:2rem; font-weight:600; color:var(--red);">Travail à faire</p>
+        <p id="question-text" style="font-style:italic;"></p>
+      </div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag">Corrigé</span><h2>Trois dossiers clients atypiques</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+// --- PRNG (Mulberry32) ---
+let currentSeed = 0;
+function seedPRNG(seed) {
+    return function() {
+      let t = seed += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+let random = Math.random;
+
+function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
+function formatMoney(num) { return num.toLocaleString('fr-FR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' €'; }
+function padDate(num) { return num < 10 ? '0' + num : num; }
+
+const moisNoms = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+
+const animaux = [
+    { nom: "lionceau", parc: "Parc zoologique de Beaumont" },
+    { nom: "girafon", parc: "Réserve animalière du Marais" },
+    { nom: "éléphanteau", parc: "Zoo de la Vallée Verte" },
+    { nom: "tigreau", parc: "Parc animalier des Cimes" }
+];
+
+const clubsNoms = ["FC Girondin", "Racing Nordique", "AS Vallée", "Stade Occitan"];
+const joueursNoms = ["Julien Fabre", "Karim Belloc", "Thomas Lenoir", "Antoine Ricard", "Marc Delvaux", "Yanis Choukri"];
+
+const installations = [
+    { nom: "une plateforme d'extraction offshore", entreprise: "Atlantis Offshore SAS" },
+    { nom: "un site de stockage de déchets industriels", entreprise: "GéoRessources SA" },
+    { nom: "un parc éolien en mer", entreprise: "Nordic Energy SAS" },
+    { nom: "une usine de traitement chimique", entreprise: "ChimEco Industries" }
+];
+
+function generateExercise(forceNew = false) {
+    if(forceNew) {
+        document.getElementById('seed-input').value = "";
+    }
+    let seedVal = document.getElementById('seed-input').value;
+    currentSeed = seedVal ? parseInt(seedVal) : Math.floor(Math.random() * 99999999);
+    document.getElementById('seed-disp').innerText = currentSeed;
+    document.getElementById('seed-input').value = currentSeed;
+    random = seedPRNG(currentSeed);
+
+    // ================= DOSSIER 1 : ACQUISITION À TITRE GRATUIT =================
+    let animal = animaux[randInt(0, animaux.length-1)];
+    let naissJour = randInt(1, 28);
+    let naissMois = randInt(3, 11);
+    let confirmMois = naissMois + 3;
+    let confirmAnneeOffset = 0;
+    if (confirmMois > 12) { confirmMois -= 12; confirmAnneeOffset = 1; }
+    let confirmJour = naissJour;
+    let valeurVenale1 = randInt(30, 120) * 100;
+
+    // ================= DOSSIER 2 : ACQUISITION PAR VOIE D'ÉCHANGE =================
+    let clubCedant = clubsNoms[randInt(0, clubsNoms.length-1)];
+    let clubReceveur = clubsNoms[randInt(0, clubsNoms.length-1)];
+    while (clubReceveur === clubCedant) clubReceveur = clubsNoms[randInt(0, clubsNoms.length-1)];
+    let joueurA = joueursNoms[randInt(0, joueursNoms.length-1)];
+    let joueurB = joueursNoms[randInt(0, joueursNoms.length-1)];
+    while (joueurB === joueurA) joueurB = joueursNoms[randInt(0, joueursNoms.length-1)];
+
+    let valeurBruteA = randInt(150, 500) * 1000;
+    let tauxAmortA = randInt(30, 70);
+    let cumulAmortA = Math.round(valeurBruteA * (tauxAmortA/100) / 100) * 100;
+    let vncA = valeurBruteA - cumulAmortA;
+    let gainSurCessionA = randInt(20, 80) * 1000;
+    let valeurVenaleA = vncA + gainSurCessionA;
+    let soulte = randInt(50, 200) * 1000;
+    let valeurVenaleB = valeurVenaleA + soulte;
+
+    // ================= DOSSIER 3 : COÛTS DE DÉMANTÈLEMENT =================
+    let installation = installations[randInt(0, installations.length-1)];
+    let prixAchat3 = randInt(200, 900) * 1000;
+    let tauxDemantelement = randInt(10, 30);
+    let coutDemantelement = Math.round(prixAchat3 * (tauxDemantelement/100) / 100) * 100;
+    let duree3 = [10, 15, 20, 25][randInt(0, 3)];
+    let tva3 = Math.round(prixAchat3 * 0.20 * 100) / 100;
+    let dotationSupport3 = Math.round((prixAchat3 / duree3) * 100) / 100;
+    let dotationDemant3 = Math.round((coutDemantelement / duree3) * 100) / 100;
+    let totalDotation3 = Math.round((dotationSupport3 + dotationDemant3) * 100) / 100;
+    let vncSupportN3 = prixAchat3 - dotationSupport3;
+    let vncDemantN3 = coutDemantelement - dotationDemant3;
+
+    // --- Affichage Énoncé ---
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('ex-area').style.display = 'block';
+    document.getElementById('sol-card').classList.remove('visible');
+    document.getElementById('toggle-btn').innerText = "Afficher le corrigé";
+    document.getElementById('toggle-btn').classList.remove('shown');
+
+    document.getElementById('context-text').innerHTML = `
+      Vous effectuez un stage au sein d'un cabinet d'expertise comptable. Votre maître de stage vous confie trois dossiers clients portant chacun sur une opération d'acquisition d'immobilisation qui sort du cadre classique de l'achat au comptant ou à crédit. L'exercice comptable de chaque entreprise coïncide avec l'année civile.
+    `;
+
+    document.getElementById('dossier1-text').innerHTML = `
+      Le ${padDate(naissJour)} ${moisNoms[naissMois-1]} N, un ${animal.nom} naît en captivité au sein du <strong>${animal.parc}</strong>. Conformément à la doctrine comptable, l'établissement attend la confirmation de la viabilité de l'animal avant de l'enregistrer à l'actif : ce délai est fixé à trois mois. Le ${padDate(confirmJour)} ${moisNoms[confirmMois-1]} N${confirmAnneeOffset > 0 ? '+1' : ''}, le vétérinaire du parc confirme la viabilité de l'animal, dont la valeur vénale est alors estimée à <span class="highlight">${formatMoney(valeurVenale1)}</span>.
+    `;
+
+    document.getElementById('dossier2-text').innerHTML = `
+      Le club <strong>${clubCedant}</strong> échange l'un de ses joueurs, ${joueurA}, contre un joueur du club <strong>${clubReceveur}</strong>, ${joueurB}. Les caractéristiques comptables du joueur cédé et la soulte versée sont connues ; la valeur vénale retenue pour le joueur reçu devra être déterminée.
+    `;
+
+    document.getElementById('echange-table').innerHTML = `
+      <tr>
+        <th></th>
+        <th>Joueur cédé (${joueurA})</th>
+        <th>Joueur reçu (${joueurB})</th>
+      </tr>
+      <tr>
+        <td class="txt-left">Valeur brute d'origine</td>
+        <td>${formatMoney(valeurBruteA)}</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td class="txt-left">Cumul des amortissements</td>
+        <td>${formatMoney(cumulAmortA)}</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td class="txt-left">Valeur vénale retenue pour l'échange</td>
+        <td>${formatMoney(valeurVenaleA)}</td>
+        <td>à déterminer</td>
+      </tr>
+      <tr>
+        <td class="txt-left">Soulte versée par ${clubCedant} (virement bancaire)</td>
+        <td colspan="2">${formatMoney(soulte)}</td>
+      </tr>
+    `;
+
+    document.getElementById('dossier3-text').innerHTML = `
+      Le 1er janvier N, la société <strong>${installation.entreprise}</strong> fait installer ${installation.nom} pour un prix d'achat de <span class="highlight">${formatMoney(prixAchat3)}</span> HT (TVA 20 %), réglé par virement à la mise en service. Le contrat d'exploitation impose à l'entreprise une obligation légale de démantèlement de l'installation en fin de vie. Le coût de ce démantèlement est estimé, dès l'acquisition, à <span class="highlight">${tauxDemantelement} %</span> du prix d'achat HT. La durée d'utilisation de l'installation est fixée à ${duree3} ans, amortissement linéaire.
+    `;
+
+    document.getElementById('question-text').innerText = `Pour chacun des trois dossiers ci-dessus, enregistrez au journal les écritures comptables nécessaires, y compris, le cas échéant, les écritures d'inventaire au 31 décembre N.`;
+
+    // --- GENERATION CORRIGE ---
+    let htmlSol = "";
+
+    const addJournal = (date, entries) => {
+        let t = `<div class="journal-wrap"><table class="journal">
+        <tr class="date-row"><td colspan="4">${date}</td></tr>
+        <tr><th>N° Cpte</th><th>Libellé</th><th style="text-align:right">Débit</th><th style="text-align:right">Crédit</th></tr>`;
+
+        entries.filter(e => e.sens === 'D').forEach(e => {
+            t += `<tr><td class="num">${e.c}</td><td class="debit-col">${e.l}</td><td class="amt">${formatMoney(e.m)}</td><td></td></tr>`;
+        });
+        entries.filter(e => e.sens === 'C').forEach(e => {
+            t += `<tr><td class="num">${e.c}</td><td class="credit-col" style="padding-left:1.5rem">${e.l}</td><td></td><td class="amt">${formatMoney(e.m)}</td></tr>`;
+        });
+        t += `</table></div>`;
+        return t;
+    };
+
+    // --- Corrigé Dossier 1 ---
+    htmlSol += `<p class="dossier-title">Dossier 1 — Acquisition à titre gratuit</p>`;
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Enregistrement du ${animal.nom} (le ${padDate(confirmJour)}/${padDate(confirmMois)}/N${confirmAnneeOffset > 0 ? '+1' : ''})</span>
+        Une immobilisation reçue à titre gratuit se comptabilise à sa valeur vénale, en contrepartie d'un produit exceptionnel. La date d'enregistrement n'est cependant pas la date de naissance : selon l'article 321-11 du PCG, les coûts ne sont attribués à l'immobilisation qu'à compter de la date à laquelle il est démontré qu'elle générera des avantages économiques futurs, ce qui suppose ici d'attendre la confirmation de la viabilité de l'animal, trois mois après sa naissance. L'écriture est donc passée à cette date, pour la valeur vénale de <strong>${formatMoney(valeurVenale1)}</strong>.
+    </div>`;
+
+    htmlSol += addJournal(`${padDate(confirmJour)}/${padDate(confirmMois)}/N${confirmAnneeOffset > 0 ? '+1' : ''}`, [
+        {c:"2", l:"Immobilisations corporelles (animaux)", m: valeurVenale1, sens:'D'},
+        {c:"7788", l:"Autres produits exceptionnels", m: valeurVenale1, sens:'C'}
+    ]);
+
+    // --- Corrigé Dossier 2 ---
+    htmlSol += `<p class="dossier-title">Dossier 2 — Acquisition par voie d'échange</p>`;
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Étape 1 : sortie du joueur cédé (${joueurA})</span>
+        Une acquisition par voie d'échange s'analyse en deux temps. On sort d'abord l'élément cédé du patrimoine, comme pour une cession classique. La valeur nette comptable du joueur ${joueurA} s'élève à ${formatMoney(valeurBruteA)} − ${formatMoney(cumulAmortA)} = <strong>${formatMoney(vncA)}</strong>. Cette VNC est constatée en charges (compte 675), tandis que le compte d'immobilisation est soldé pour sa valeur brute et le cumul des amortissements est annulé.
+    </div>`;
+
+    htmlSol += addJournal(`Date de l'échange`, [
+        {c:"2808", l:"Amort. des autres immob. incorporelles", m: cumulAmortA, sens:'D'},
+        {c:"675", l:"Valeur comptable des éléments d'actif cédés", m: vncA, sens:'D'},
+        {c:"208", l:"Autres immobilisations incorporelles", m: valeurBruteA, sens:'C'}
+    ]);
+
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Étape 2 : entrée du joueur reçu (${joueurB})</span>
+        L'acquisition du joueur reçu est financée par deux éléments : la valeur vénale retenue pour le joueur cédé, comptabilisée en produit de cession (compte 775) pour ${formatMoney(valeurVenaleA)}, et la soulte versée en banque de ${formatMoney(soulte)}. Le joueur reçu est donc enregistré pour ${formatMoney(valeurVenaleA)} + ${formatMoney(soulte)} = <strong>${formatMoney(valeurVenaleB)}</strong>. Notez qu'en combinant les deux écritures, l'opération dans son ensemble fait apparaître un gain sur la cession du joueur ${joueurA} de ${formatMoney(valeurVenaleA)} − ${formatMoney(vncA)} = <strong>${formatMoney(gainSurCessionA)}</strong>, puisque la valeur vénale retenue pour l'échange excède sa valeur nette comptable.
+    </div>`;
+
+    htmlSol += addJournal(`Date de l'échange`, [
+        {c:"208", l:"Autres immobilisations incorporelles", m: valeurVenaleB, sens:'D'},
+        {c:"512", l:"Banque", m: soulte, sens:'C'},
+        {c:"775", l:"Produits des cessions d'éléments d'actif", m: valeurVenaleA, sens:'C'}
+    ]);
+
+    // --- Corrigé Dossier 3 ---
+    htmlSol += `<p class="dossier-title">Dossier 3 — Coûts de démantèlement</p>`;
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Acquisition et provision pour démantèlement (le 01/01/N)</span>
+        La méthode des composants impose d'enregistrer le coût de démantèlement estimé comme un composant distinct de l'immobilisation, en créant une subdivision du compte d'actif support. Le coût de démantèlement s'élève à ${tauxDemantelement} % × ${formatMoney(prixAchat3)} = <strong>${formatMoney(coutDemantelement)}</strong>. En contrepartie de cet actif de démantèlement, une provision pour charge future (remise en état) est constatée au passif pour le même montant. Notez que la TVA déductible de ${formatMoney(tva3)} ne porte que sur le prix d'achat effectivement facturé par le fournisseur (${formatMoney(prixAchat3)}), et non sur le coût de démantèlement, qui ne correspond à aucune facture réelle.
+    </div>`;
+
+    htmlSol += addJournal(`01/01/N`, [
+        {c:"21511-a", l:"Installations complexes – Actif support", m: prixAchat3, sens:'D'},
+        {c:"21511-b", l:"Installations complexes – Actif de démantèlement", m: coutDemantelement, sens:'D'},
+        {c:"44562", l:"État – TVA sur immobilisations", m: tva3, sens:'D'},
+        {c:"404", l:"Fournisseurs d'immobilisations", m: prixAchat3 + tva3, sens:'C'},
+        {c:"1581", l:"Provisions pour remise en état", m: coutDemantelement, sens:'C'}
+    ]);
+
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Amortissement de l'exercice N (le 31/12/N)</span>
+        Les deux composants s'amortissent séparément, chacun sur la durée d'utilisation de ${duree3} ans. La dotation de l'actif support s'élève à ${formatMoney(prixAchat3)} / ${duree3} = ${formatMoney(dotationSupport3)}, et celle de l'actif de démantèlement à ${formatMoney(coutDemantelement)} / ${duree3} = ${formatMoney(dotationDemant3)}, soit une dotation totale de <strong>${formatMoney(totalDotation3)}</strong>. À l'issue de cette première annuité, la valeur nette comptable de l'actif support s'élève à ${formatMoney(vncSupportN3)}, et celle de l'actif de démantèlement à ${formatMoney(vncDemantN3)}.
+    </div>`;
+
+    htmlSol += addJournal(`31/12/N`, [
+        {c:"68112", l:"Dotations aux amort. des immob. corporelles", m: totalDotation3, sens:'D'},
+        {c:"28151-a", l:"Amortissement de l'actif support", m: dotationSupport3, sens:'C'},
+        {c:"28151-b", l:"Amortissement de l'actif de démantèlement", m: dotationDemant3, sens:'C'}
+    ]);
+
+    document.getElementById('sol-content').innerHTML = htmlSol;
+}
+
+function toggleSol() {
+    let solCard = document.getElementById('sol-card');
+    let btn = document.getElementById('toggle-btn');
+    if(solCard.classList.contains('visible')) {
+        solCard.classList.remove('visible');
+        btn.innerText = "Afficher le corrigé";
+        btn.classList.remove('shown');
+    } else {
+        solCard.classList.add('visible');
+        btn.innerText = "Masquer le corrigé";
+        btn.classList.add('shown');
+    }
+}
+
+// --- FONCTION EXPORT DOC ---
+function exportWord() {
+    let content = document.getElementById('ex-area').cloneNode(true);
+    let actions = content.querySelector('.top-actions');
+    if(actions) actions.parentNode.removeChild(actions);
+    let toggle = content.querySelector('.sol-toggle-wrap');
+    if(toggle) toggle.parentNode.removeChild(toggle);
+    let solCard = content.querySelector('#sol-card');
+    if(solCard) solCard.style.display = 'block';
+
+    let html = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <meta charset='utf-8'>
+            <title>Exercice Comptabilité</title>
+            <style>
+                body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                th, td { border: 1px solid #000; padding: 5px; }
+                th { background-color: #f2f2f2; text-align: center; font-weight: bold; }
+                .amt { text-align: right; white-space: nowrap; }
+                .txt-left { text-align: left !important; }
+                .calc-box { border: 1px solid #000; padding: 10px; margin-bottom: 15px; background-color: #f9f9f9; }
+                .date-row { font-style: italic; text-align: center; font-weight: bold; }
+                .highlight { font-weight: bold; }
+                .dossier-title { font-weight: bold; margin-top: 20px; }
+            </style>
+        </head>
+        <body>
+            ${content.innerHTML}
+        </body>
+        </html>
+    `;
+
+    let blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    let url = URL.createObjectURL(blob);
+    let link = document.createElement('a');
+    link.href = url;
+    link.download = 'Exercice_Immobilisations_Atypiques.doc';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>
