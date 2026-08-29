@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Macroéconomie - Contributions à la croissance</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['\\[', '\\]']]
+    }
+  };
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7;text-align:justify;}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 1.5rem;border-bottom:3px solid var(--gold);text-align:left;}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end;background:rgba(255,255,255,.03);padding:1rem 1.5rem;border-radius:6px;border:1px solid rgba(255,255,255,.1)}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.6)}
+.ctrl-inp, .ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.4rem .7rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none;transition:border-color .2s}
+.ctrl-inp:focus, .ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.ctrl-sel option{background:var(--navy);color:var(--cream)}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.5rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;transition:background .18s;margin-left:auto}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN & CARDS */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:700}
+
+.top-actions{display:flex;gap:.5rem;}
+.btn-action{background:#fff;border:1px solid var(--border);color:var(--navy);padding:.4rem .8rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.85rem;font-weight:600;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.btn-action:hover{border-color:var(--navy);background:var(--cream-dark);}
+
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem;text-align:left;}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+.event-list{list-style:none;}
+.event-list > li{margin-bottom:1.5rem;padding-left:1.5rem;position:relative;font-size:.95rem;text-align:justify}
+.event-list > li::before{content:"•";position:absolute;left:0;color:var(--gold);font-size:1.5rem;line-height:1}
+
+.sub-list { list-style-type: none; padding-left: 1rem; margin-top: 0.8rem; text-align:justify;}
+.sub-list li { margin-bottom: 0.5rem; }
+
+/* EXAM TABLE */
+.exam-table-wrap { overflow-x: auto; margin: 1.5rem 0; }
+.exam-table{width:100%;border-collapse:collapse;font-size:.85rem;font-family:'Source Serif 4',serif; margin: 0;}
+.exam-table th, .exam-table td{border:1px solid var(--border);padding:.6rem;text-align:center;vertical-align:middle;}
+.exam-table th{background:var(--navy);color:var(--cream);font-weight:600;}
+.exam-table .txt-left{text-align:left;font-weight:600;color:var(--navy);}
+.exam-table .amt{font-family:'JetBrains Mono',monospace;text-align:right;white-space:nowrap;}
+.exam-table tr.total-row td{background:var(--cream-dark);font-weight:700;}
+.table-caption{font-size:.78rem;color:var(--text-muted);font-style:italic;text-align:center;margin-top:.6rem;line-height:1.5}
+
+.two-col-table { width: 100%; display: flex; gap: 2rem; margin: 1.5rem 0; }
+.col-half { flex: 1; }
+
+/* SOLUTION TOGGLE */
+.sol-toggle-wrap{text-align:left; margin: 1.5rem 0 0 0;}
+.btn-toggle{background:transparent;border:2px solid var(--green);border-bottom:none;color:var(--green);font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;padding:.5rem 1.5rem;border-radius:4px 4px 0 0;cursor:pointer;transition:all .2s; position:relative; z-index:2; top:2px;}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--green);color:var(--cream)}
+.sol-card{border-top:2px solid var(--green);display:none; border-radius: 0 6px 6px 6px; position:relative; z-index:1;}
+.sol-card.visible{display:block;animation:fi .4s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+
+.calc-box{background:#f9fcf9;border:1px solid #c8e6c9;padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.9rem;color:var(--text);line-height:1.6;text-align:justify;}
+.method-box{background:#fdfaf2;border:1px solid #e3d3a8;border-left:3px solid var(--gold);padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.9rem;line-height:1.6;text-align:justify;}
+.persp-box{background:#f7f9fc;border:1px solid #ccd8e6;border-left:3px solid var(--navy-mid);padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.88rem;line-height:1.6;text-align:justify;}
+
+@media print{
+  body{background:#fff;}
+  header, .ctrls, .sol-toggle-wrap, .top-actions {display:none !important;}
+  .card{box-shadow:none; border:1px solid var(--border); margin-bottom:2rem;}
+  .sol-card{display:block !important; border-top:2px solid var(--green);}
+  #ex-area {display:block !important;}
+}
+
+/* --- Selecteur de langue / Language switch --- */
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem}
+.header-top .header-badge{margin-bottom:0}
+.lang-switch{display:flex;gap:.45rem;flex-shrink:0}
+.flag-btn{background:rgba(255,255,255,.06);border:1px solid rgba(201,149,42,.35);border-radius:3px;padding:3px;cursor:pointer;line-height:0;opacity:.5;transition:opacity .2s,border-color .2s,transform .15s}
+.flag-btn:hover{opacity:1;transform:translateY(-1px)}
+.flag-btn.active{opacity:1;border-color:var(--gold-light);box-shadow:0 0 0 1px rgba(232,184,75,.35)}
+.flag-btn svg{display:block;width:30px;height:20px;border-radius:1px}
+@media print{ .lang-switch{display:none !important;} }
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-top">
+    <div class="header-badge" data-k="k-badge">CROISSANCE ET CYCLES ÉCONOMIQUES</div>
+    <div class="lang-switch">
+      <button type="button" class="flag-btn active" id="flag-fr" onclick="setLang('fr')" title="Français" aria-label="Français"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="20" height="40" fill="#002654"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ED2939"/></svg></button>
+      <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
+    </div>
+  </div>
+  <h1 data-k="k-h1">Contributions à la croissance économique</h1>
+  <p class="subtitle" data-k="k-sub">© Thomas Hossen – Version du 7 mars 2026</p>
+
+  <div class="ctrls">
+    <div class="ctrl-g">
+      <span class="ctrl-lbl" data-k="k-seed">Seed (Optionnel)</span>
+      <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999">
+    </div>
+    <div class="ctrl-g">
+      <span class="ctrl-lbl" data-k="k-regime">Conjoncture</span>
+      <select class="ctrl-sel" id="regime-input">
+        <option value="auto" data-k="k-reg-auto">Aléatoire</option>
+        <option value="0" data-k="k-reg-0">Choc majeur puis rebond</option>
+        <option value="1" data-k="k-reg-1">Récession et rechute</option>
+        <option value="2" data-k="k-reg-2">Ralentissement / stagnation</option>
+        <option value="3" data-k="k-reg-3">Expansion soutenue</option>
+      </select>
+    </div>
+    <button class="btn-gen" onclick="generateExercise(false)"><span data-k="k-gen">Générer l'exercice →</span></button>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" style="text-align:center; padding:4rem; color:var(--text-muted); font-style:italic;">
+    <span data-k="k-welcome">Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.</span>
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="seed-badge"><span data-k="k-seedbadge">Seed active :</span> <span id="seed-disp"></span></div>
+      <div class="top-actions">
+        <button class="btn-action" onclick="generateExercise(true)"><span data-k="k-new">↺ Nouvel énoncé</span></button>
+        <button class="btn-action" onclick="window.print()"><span data-k="k-pdf">⬇ Exporter PDF</span></button>
+        <button class="btn-action" onclick="exportWord()"><span data-k="k-doc">⬇ Exporter DOC</span></button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="tag" data-k="k-tag-ex">Énoncé</span><h2 data-k="k-cardtitle">Décomposition de la croissance par la demande</h2></div>
+      <div class="card-body">
+        <div class="context-block" id="context-text"></div>
+        <div id="enonce-table-container"></div>
+        <div class="context-block" id="additional-info" style="margin-top:1.5rem; background:#fff; border-left:none; border-radius:0;"></div>
+
+        <p style="margin-bottom:1rem; font-weight:600; color:var(--red); text-align:left;" data-k="k-work">Travail à faire</p>
+        <ul class="event-list" id="events-list"></ul>
+      </div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag" data-k="k-tag-sol">Corrigé</span><h2 data-k="k-cardtitle2">Décomposition de la croissance par la demande</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+/* ============================================================
+   DICTIONNAIRE BILINGUE  /  BILINGUAL DICTIONARY
+   ============================================================ */
+const I18N = {
+
+  fr: {
+    "htmlLang": "fr",
+    "title": "Simulateur Macroéconomie - Contributions à la croissance",
+    "locale": "fr-FR",
+    "k-badge": "CROISSANCE ET CYCLES ÉCONOMIQUES",
+    "k-h1": "Contributions à la croissance économique",
+    "k-sub": "© Thomas Hossen – Version du 7 mars 2026",
+    "k-seed": "Seed (Optionnel)",
+    "k-regime": "Conjoncture",
+    "k-reg-auto": "Aléatoire",
+    "k-reg-0": "Choc majeur puis rebond",
+    "k-reg-1": "Récession et rechute",
+    "k-reg-2": "Ralentissement / stagnation",
+    "k-reg-3": "Expansion soutenue",
+    "k-gen": "Générer l'exercice →",
+    "k-welcome": "Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.",
+    "k-seedbadge": "Seed active :",
+    "k-new": "↺ Nouvel énoncé",
+    "k-pdf": "⬇ Exporter PDF",
+    "k-doc": "⬇ Exporter DOC",
+    "k-tag-ex": "Énoncé",
+    "k-cardtitle": "Décomposition de la croissance par la demande",
+    "k-tag-sol": "Corrigé",
+    "k-cardtitle2": "Décomposition de la croissance par la demande",
+    "k-work": "Travail à faire",
+    "showSol": "Afficher le corrigé",
+    "hideSol": "Masquer le corrigé",
+    "docTitle": "Exercice Contributions à la croissance",
+    "docFile": "Exercice_Contributions_Croissance.doc",
+    thousands: "\\,",
+    decimal: "{,}",
+    unit: "milliards d'euros",
+    comps: [
+      {key:"cm",   label:"Consommation effective des ménages",                     short:"consommation effective des ménages",                     art:"la ", tex:"C_m"},
+      {key:"cc",   label:"Consommation collective des administrations publiques",  short:"consommation collective des administrations publiques",  art:"la ", tex:"C_g"},
+      {key:"fbcf", label:"Formation brute de capital fixe (FBCF)",                 short:"FBCF",                                                   art:"la ", tex:"I"},
+      {key:"stk",  label:"Variations de stocks",                                   short:"variations de stocks",                                   art:"les ", tex:"\\Delta S"},
+      {key:"bc",   label:"Balance commerciale",                                    short:"balance commerciale",                                    art:"la ", tex:"BC"}
+    ],
+    thPib: "Produit intérieur brut (PIB)",
+    /* --- libelles calcules --- */
+    up: "progressé", down: "reculé",
+    grew: "a progressé", fell: "a chuté",
+    grewP: "ont progressé", fellP: "ont chuté",
+    ptS: "point de pourcentage", ptP: "points de pourcentage",
+
+    context: function(D) {
+      return `
+      Le tableau ci-dessous retrace, pour une économie développée de la zone euro, l'évolution du produit intérieur brut <strong>en volume</strong> (en milliards d'euros constants de ${D.baseYear}) entre ${D.t0} et ${D.tN}, ainsi que sa décomposition selon l'<strong>approche par la demande</strong> : consommation effective des ménages, consommation collective des administrations publiques, formation brute de capital fixe (FBCF), variations de stocks et solde de la balance commerciale.
+      La fenêtre d'analyse retenue est marquée par ${D.gAB < 0
+        ? `un net retournement conjoncturel en ${D.tb}, année au cours de laquelle l'activité s'est contractée.`
+        : `une phase d'accélération marquée de l'activité en ${D.tb}.`}
+    `;
+    },
+
+    table: function(D) {
+      const yrs = D.wYears.slice().reverse();
+      let head = `<tr><th style="width:34%;"></th>` + yrs.map(y=>`<th><strong>${y}</strong></th>`).join('') + `</tr>`;
+      let rowPib = `<tr class="total-row"><td class="txt-left">Produit intérieur brut (PIB)</td>` + yrs.map(y=>`<td class="amt">${fmtD(D.get('pib', y),1)}</td>`).join('') + `</tr>`;
+      let rows = I18N['fr'].comps.map(c =>
+        `<tr><td class="txt-left">${c.label}</td>` + yrs.map(y=>`<td class="amt">${fmtD(D.get(c.key, y),1)}</td>`).join('') + `</tr>`
+      ).join('');
+      return `<div class="exam-table-wrap">
+        <table class="exam-table">${head}${rowPib}${rows}</table>
+        <div class="table-caption">Évolution du PIB en volume (en milliards d'euros constants de ${D.baseYear}) et décomposition selon l'approche par la demande. Données de comptabilité nationale.</div>
+    </div>`;
+    },
+
+    enonce: function(D) {
+      let h = "";
+      h += `<li>Déterminer le <strong>taux de croissance annuel moyen</strong> du PIB de ce pays entre ${D.t0} et ${D.tN}.</li>`;
+      h += `<li>Déterminer les <strong>contributions</strong> des différentes composantes du PIB à ${D.gAB < 0 ? `la récession` : `la croissance`} de la période ${D.ta}–${D.tb}.</li>`;
+      h += `<li>Commenter.</li>`;
+      return h;
+    },
+
+    sol: function(D) {
+      const P = I18N['fr'];
+      const pct = (x, d) => fmtD(x, d===undefined?2:d);
+      const abs = Math.abs;
+
+      /* ---------- Methode ---------- */
+      let s = `<div class="method-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Rappel de méthode</span>
+        La <strong>contribution</strong> d'une composante à la croissance d'un agrégat (le PIB ici) est égale au produit du <em>taux de croissance</em> de cette composante par son <em>poids</em> dans l'agrégat à la date précédente :
+        <div class="math-formula">\\[
+        \\text{Contribution de } X = \\underbrace{\\frac{X_{t}-X_{t-1}}{X_{t-1}}}_{\\text{taux de croissance}} \\times \\underbrace{\\frac{X_{t-1}}{\\text{PIB}_{t-1}}}_{\\text{poids en } t-1} \\times 100 \\;=\\; \\frac{X_{t}-X_{t-1}}{\\text{PIB}_{t-1}} \\times 100
+        \\]</div>
+        Une contribution s'exprime en <strong>points de pourcentage</strong> (et non en pourcentage) : elle indique de combien de points la croissance du PIB aurait varié si cette seule composante avait bougé. Par construction, la somme des contributions restitue le taux de croissance du PIB.
+      </div>`;
+
+      /* ---------- Q1 : TCAM ---------- */
+      let gRows = `<tr><th style="width:34%;">Année</th>` + D.wYears.slice(1).map(y=>`<th>${y-1}–${y}</th>`).join('') + `</tr>`;
+      gRows += `<tr><td class="txt-left">Taux de croissance du PIB</td>` + D.wGrowth.map(g=>`<td class="amt">${g>=0?'+':'−'}${pct(abs(g),2)} %</td>`).join('') + `</tr>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">1. Taux de croissance annuel moyen entre ${D.t0} et ${D.tN}</span>
+        Entre ${D.t0} et ${D.tN}, le PIB en volume est passé de ${fmtD(D.pib0,1)} à ${fmtD(D.pibN,1)} milliards d'euros, soit une variation globale de :
+        <div class="math-formula">\\[\\frac{${texM(D.pibN,1)}-${texM(D.pib0,1)}}{${texM(D.pib0,1)}} \\approx ${texM(D.Gtot,2)}~\\%\\]</div>
+        Il s'est écoulé ${D.n} ans entre ces deux dates. Le taux de croissance annuel moyen (TCAM) ne s'obtient pas en divisant ce taux global par ${D.n} : la croissance est un phénomène <strong>multiplicatif</strong>. On extrait donc la racine d'ordre ${D.n} du coefficient multiplicateur :
+        <div class="math-formula">\\[ \\text{TCAM} = \\left(1 + \\frac{${texM(D.Gtot,2)}}{100}\\right)^{1/${D.n}} - 1 \\approx ${texM(D.tcam,2)}~\\% \\]</div>
+        Autrement dit, une croissance constante de ${pct(D.tcam,2)} % par an pendant ${D.n} ans aurait conduit exactement au même niveau de PIB en ${D.tN}. Ce rythme moyen masque toutefois une trajectoire heurtée, comme le montre le détail annuel :
+        <div class="exam-table-wrap"><table class="exam-table">${gRows}</table></div>
+      </div>`;
+
+      /* ---------- Q2a : taux de croissance des composantes ---------- */
+      let txDetail = D.comp.map(c => {
+        if (c.key === 'bc') {
+          return `<li>${c.art}${c.short} : $\\frac{${texM(c.b,1)}-(${texM(c.a,1)})}{${texM(c.a,1)}} \\approx ${texM(c.taux,2)}~\\%$ — ${c.taux >= 0
+            ? `le solde extérieur étant négatif, un taux <em>positif</em> signifie ici que le <strong>déficit commercial s'est creusé</strong> de ${pct(abs(c.taux),2)} %`
+            : `le solde extérieur étant négatif, un taux <em>négatif</em> signifie ici que le <strong>déficit commercial s'est résorbé</strong> de ${pct(abs(c.taux),2)} %`} ;</li>`;
+        }
+        return `<li>${c.art}${c.short} : $\\frac{${texM(c.b,1)}-${texM(c.a,1)}}{${texM(c.a,1)}} \\approx ${texM(c.taux,2)}~\\%$ ;</li>`;
+      }).join('');
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">2. Taux de croissance des composantes entre ${D.ta} et ${D.tb}</span>
+        Entre ${D.ta} et ${D.tb}, le PIB a connu une variation de $\\frac{${texM(D.pibB,1)}-${texM(D.pibA,1)}}{${texM(D.pibA,1)}} \\approx ${texM(D.gAB,2)}~\\%$. On calcule de la même façon le taux de variation de chaque composante :
+        <ul class="sub-list">${txDetail}</ul>
+        <p style="margin-top:.8rem;">Ces taux ne sont pas directement comparables entre eux : une composante peut varier très fortement en pourcentage sans peser sur le PIB si son poids est faible. C'est précisément ce que corrige le calcul des contributions.</p>
+      </div>`;
+
+      /* ---------- Q2b : poids et contributions ---------- */
+      let detail = D.comp.map(c => {
+        let tete;
+        if (c.key === 'bc') {
+          tete = `le déficit commercial ${c.taux>=0 ? `s'est creusé` : `s'est résorbé`} de ${pct(abs(c.taux),2)} %, alors que le solde extérieur représentait`;
+        } else {
+          const verb = (c.key==='stk') ? (c.taux>=0 ? P.grewP : P.fellP) : (c.taux>=0 ? P.grew : P.fell);
+          tete = `${c.art}${c.short} ${verb} de ${pct(abs(c.taux),2)} %, alors qu'${c.key==='stk'?'elles représentaient':'elle représentait'}`;
+        }
+        return `<p style="margin-bottom:.7rem;">Entre ${D.ta} et ${D.tb}, ${tete} $\\frac{${texM(c.a,1)}}{${texM(D.pibA,1)}} \\approx ${texM(c.poids,2)}~\\%$ du PIB. Sa contribution s'établit donc à $${texM(c.poids/100,4)} \\times ${texM(c.taux,2)} \\approx ${texM(c.contrib,2)}$ ${abs(c.contrib)<1?P.ptS:P.ptP}.</p>`;
+      }).join('');
+
+      let ctbHead = `<tr><th style="width:40%;">Composante</th><th>Poids en ${D.ta}</th><th>Taux de croissance</th><th>Contribution</th></tr>`;
+      let ctbRows = D.comp.map(c =>
+        `<tr><td class="txt-left">${c.label}</td><td class="amt">${pct(c.poids,2)} %</td><td class="amt">${c.taux>=0?'+':'−'}${pct(abs(c.taux),2)} %</td><td class="amt">${c.contrib>=0?'+':'−'}${pct(abs(c.contrib),2)} pt</td></tr>`
+      ).join('');
+      ctbRows += `<tr class="total-row"><td class="txt-left">Somme des contributions</td><td class="amt">—</td><td class="amt">—</td><td class="amt">${D.sumContrib>=0?'+':'−'}${pct(abs(D.sumContrib),2)} pt</td></tr>`;
+      ctbRows += `<tr class="total-row"><td class="txt-left">Taux de croissance du PIB observé</td><td class="amt">—</td><td class="amt">—</td><td class="amt">${D.gAB>=0?'+':'−'}${pct(abs(D.gAB),2)} %</td></tr>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">3. Contributions à ${D.gAB<0?`la contraction`:`la croissance`} du PIB entre ${D.ta} et ${D.tb}</span>
+        ${detail}
+        <p style="margin-top:.6rem;">Le cas de la balance commerciale mérite une attention particulière : son poids dans le PIB est <strong>négatif</strong> (${pct(D.comp[4].poids,2)} %), puisque le pays est en déficit extérieur. Le produit d'un poids négatif par un taux ${D.comp[4].taux>=0?`positif`:`négatif`} donne bien une contribution ${D.comp[4].contrib>=0?`positive`:`négative`}. En pratique, on préférera souvent la formule équivalente $\\frac{X_{t}-X_{t-1}}{\\text{PIB}_{t-1}}\\times 100$, qui évite d'avoir à interpréter le « taux de croissance » d'une grandeur négative.</p>
+        <div class="exam-table-wrap"><table class="exam-table">${ctbHead}${ctbRows}</table></div>
+      </div>`;
+
+      /* ---------- Q2c : verification ---------- */
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">4. Vérification</span>
+        En sommant les contributions, on trouve une variation totale de ${pct(D.sumContrib,2)} points de pourcentage, soit peu ou prou la variation du PIB en pourcentage entre ${D.ta} et ${D.tb} (${pct(D.gAB,2)} %). ${abs(D.ecart) < 0.005
+          ? `L'égalité est ici parfaite au centième près.`
+          : `Le léger écart de ${pct(abs(D.ecart),2)} point s'explique par le fait que la somme des dépenses de consommation, de la FBCF, des variations de stocks et de la balance commerciale n'est pas exactement égale au PIB : il existe en effet dans la comptabilité nationale des <em>erreurs et omissions</em>, non documentées dans l'énoncé, qui expliquent ce décalage.`}
+      </div>`;
+
+      /* ---------- Q3 : commentaire ---------- */
+      const dom = D.dom, sec = D.sec;
+      const partDom = D.sumContrib !== 0 ? abs(dom.contrib / D.sumContrib) * 100 : 0;
+      const partSec = D.sumContrib !== 0 ? abs(sec.contrib / D.sumContrib) * 100 : 0;
+      const cm = D.byKey.cm, fb = D.byKey.fbcf;
+
+      let comment = `<p style="margin-bottom:.8rem;">Avec ${pct(partDom,2)} % de ${D.gAB<0?`la contraction`:`la croissance`} du PIB entre ${D.ta} et ${D.tb}, ${dom.art}${dom.short} est la composante qui contribue le plus ${D.gAB<0?`au recul`:`à la progression`} de l'activité, devant ${sec.art}${sec.short} (${pct(partSec,2)} %).</p>`;
+
+      if (dom.key === 'cm') {
+        comment += `<p style="margin-bottom:.8rem;">Ce résultat n'a rien d'accidentel : avec un poids de l'ordre de ${pct(cm.poids,0)} % du PIB, la consommation des ménages constitue mécaniquement le premier moteur — ou le premier frein — de l'activité. C'est la raison pour laquelle c'est en général la consommation des ménages que soutiennent prioritairement les politiques de relance keynésienne.</p>`;
+      } else if (dom.key === 'fbcf') {
+        comment += `<p style="margin-bottom:.8rem;">C'est ici l'<strong>investissement privé</strong>, capté par la FBCF, qui explique l'essentiel du mouvement, alors même que son poids (${pct(fb.poids,2)} % du PIB) est près de trois fois inférieur à celui de la consommation des ménages. Cela tient à sa forte élasticité au cycle : c'est le principe de l'<em>accélérateur</em>, l'investissement réagissant à la variation de la demande anticipée et non à son niveau. La FBCF est ainsi la composante la plus volatile du PIB.</p>`;
+      } else if (dom.key === 'bc') {
+        comment += `<p style="margin-bottom:.8rem;">Le mouvement est ici dominé par le <strong>solde extérieur</strong>. Un tel résultat traduit un décalage entre la dynamique de la demande interne et celle des partenaires commerciaux, ou un choc sur les termes de l'échange. Il rappelle qu'en économie ouverte, une partie de la demande intérieure « fuit » vers l'étranger : c'est tout le problème des politiques de relance non coordonnées en union monétaire.</p>`;
+      } else if (dom.key === 'stk') {
+        comment += `<p style="margin-bottom:.8rem;">La contribution dominante des <strong>variations de stocks</strong> appelle la prudence : il s'agit d'une composante par nature transitoire, qui traduit surtout un décalage temporaire entre production et demande. Un mouvement de déstockage ou de restockage se retourne généralement dès l'exercice suivant et ne dit rien de la croissance potentielle.</p>`;
+      } else {
+        comment += `<p style="margin-bottom:.8rem;">La <strong>dépense publique collective</strong> joue ici le premier rôle, ce qui traduit le fonctionnement des stabilisateurs automatiques : les dépenses des administrations soutiennent l'activité au moment même où la demande privée fléchit.</p>`;
+      }
+
+      comment += `<p style="margin-bottom:.8rem;">On notera l'écart entre <em>ampleur relative</em> et <em>contribution</em> : ${abs(fb.taux) > abs(cm.taux)
+        ? `la FBCF a varié de ${pct(abs(fb.taux),2)} % contre ${pct(abs(cm.taux),2)} % pour la consommation des ménages, soit un mouvement bien plus ample ; mais son poids plus faible ramène sa contribution à ${pct(abs(fb.contrib),2)} point contre ${pct(abs(cm.contrib),2)} point.`
+        : `la consommation des ménages n'a varié que de ${pct(abs(cm.taux),2)} %, contre ${pct(abs(fb.taux),2)} % pour la FBCF, mais son poids considérable lui confère une contribution de ${pct(abs(cm.contrib),2)} point.`} De même, ${D.byKey.stk.art}${D.byKey.stk.short} affichent une variation spectaculaire de ${pct(abs(D.byKey.stk.taux),2)} % pour une contribution de seulement ${pct(abs(D.byKey.stk.contrib),2)} point : un poids de ${pct(D.byKey.stk.poids,2)} % du PIB ne peut pas déplacer l'agrégat.</p>`;
+
+      if (D.gAB < 0) {
+        comment += `<p>Sur le plan des politiques publiques, ce diagnostic est décisif : soutenir la demande (transferts aux ménages, chèques à la consommation) ou soutenir l'offre (aides aux entreprises, subventions à l'investissement) n'a pas le même rendement selon la composante qui décroche. ${abs(fb.taux) > abs(cm.taux)
+          ? `Ici, la consommation des ménages explique la plus grande part du recul en niveau, mais c'est l'investissement qui se contracte le plus fortement en rythme : l'argument d'une politique de l'offre trouve dans ces chiffres un point d'appui.`
+          : `Ici, la consommation des ménages décroche à la fois en niveau et en rythme : l'argument d'une politique de la demande trouve dans ces chiffres un point d'appui.`}</p>`;
+      } else {
+        comment += `<p>Une croissance tirée par ${dom.art}${dom.short} n'a enfin pas la même portée qu'une croissance tirée par l'investissement : seule cette dernière accroît le stock de capital et donc la croissance <em>potentielle</em>. Une expansion portée par les stocks ou par le solde extérieur est, à l'inverse, largement conjoncturelle.</p>`;
+      }
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">5. Commentaire</span>
+        ${comment}
+      </div>`;
+
+      if (D.gAB < 0) {
+        s += `<div class="persp-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Mise en perspective — offre contre demande pendant la crise du Covid-19</span>
+        La crise sanitaire de 2020 offre une illustration grandeur nature de cet arbitrage. Aux États-Unis, l'administration Biden a misé sur une politique de la <strong>demande</strong> : l'<em>American Rescue Plan</em> de mars 2021 a versé des chèques de 1&nbsp;400 dollars par personne aux foyers gagnant moins de 75&nbsp;000 dollars par an (150&nbsp;000 dollars pour les couples mariés), pour un coût total de l'ordre de 400 milliards de dollars. La France a au contraire privilégié une politique de l'<strong>offre</strong>, à destination des entreprises (activité partielle, prêts garantis par l'État, fonds de solidarité). On peut s'en étonner <em>a priori</em>, puisque c'est la consommation des ménages qui explique la plus grande part de la récession ; mais l'investissement s'étant contracté plus violemment encore en rythme, le choix du soutien à l'offre s'est imposé au gouvernement.
+      </div>`;
+      }
+
+      return s;
+    }
+  },
+
+  en: {
+    "htmlLang": "en",
+    "title": "Macroeconomics Simulator - Contributions to growth",
+    "locale": "en-GB",
+    "k-badge": "GROWTH AND BUSINESS CYCLES",
+    "k-h1": "Contributions to economic growth",
+    "k-sub": "© Thomas Hossen – March 7, 2026 Version",
+    "k-seed": "Seed (Optional)",
+    "k-regime": "Business cycle",
+    "k-reg-auto": "Random",
+    "k-reg-0": "Major shock then rebound",
+    "k-reg-1": "Recession and relapse",
+    "k-reg-2": "Slowdown / stagnation",
+    "k-reg-3": "Sustained expansion",
+    "k-gen": "Generate Exercise →",
+    "k-welcome": "Configure the parameters and click Generate to create a new exercise.",
+    "k-seedbadge": "Active Seed:",
+    "k-new": "↺ New Statement",
+    "k-pdf": "⬇ Export PDF",
+    "k-doc": "⬇ Export DOC",
+    "k-tag-ex": "Problem",
+    "k-cardtitle": "Decomposing growth by expenditure",
+    "k-tag-sol": "Solution",
+    "k-cardtitle2": "Decomposing growth by expenditure",
+    "k-work": "Assignment",
+    "showSol": "Show the solution",
+    "hideSol": "Hide the solution",
+    "docTitle": "Contributions to Growth Exercise",
+    "docFile": "Growth_Contributions_Exercise.doc",
+    thousands: ",",
+    decimal: ".",
+    unit: "billion euros",
+    comps: [
+      {key:"cm",   label:"Actual household consumption",        short:"actual household consumption",        art:"", tex:"C_m"},
+      {key:"cc",   label:"Collective government consumption",   short:"collective government consumption",   art:"", tex:"C_g"},
+      {key:"fbcf", label:"Gross fixed capital formation (GFCF)",short:"GFCF",                                art:"", tex:"I"},
+      {key:"stk",  label:"Changes in inventories",              short:"changes in inventories",              art:"", tex:"\\Delta S"},
+      {key:"bc",   label:"Trade balance",                       short:"the trade balance",                   art:"", tex:"TB"}
+    ],
+    thPib: "Gross domestic product (GDP)",
+    up: "risen", down: "fallen",
+    grew: "rose", fell: "fell",
+    grewP: "rose", fellP: "fell",
+    ptS: "percentage point", ptP: "percentage points",
+
+    context: function(D) {
+      return `
+      The table below reports, for a developed euro-area economy, the path of gross domestic product <strong>in volume terms</strong> (in billions of ${D.baseYear} constant euros) between ${D.t0} and ${D.tN}, together with its breakdown under the <strong>expenditure approach</strong>: actual household consumption, collective government consumption, gross fixed capital formation (GFCF), changes in inventories and the trade balance.
+      The window under study features ${D.gAB < 0
+        ? `a sharp cyclical downturn in ${D.tb}, a year in which activity contracted.`
+        : `a marked acceleration of activity in ${D.tb}.`}
+    `;
+    },
+
+    table: function(D) {
+      const yrs = D.wYears.slice().reverse();
+      let head = `<tr><th style="width:34%;"></th>` + yrs.map(y=>`<th><strong>${y}</strong></th>`).join('') + `</tr>`;
+      let rowPib = `<tr class="total-row"><td class="txt-left">Gross domestic product (GDP)</td>` + yrs.map(y=>`<td class="amt">${fmtD(D.get('pib', y),1)}</td>`).join('') + `</tr>`;
+      let rows = I18N['en'].comps.map(c =>
+        `<tr><td class="txt-left">${c.label}</td>` + yrs.map(y=>`<td class="amt">${fmtD(D.get(c.key, y),1)}</td>`).join('') + `</tr>`
+      ).join('');
+      return `<div class="exam-table-wrap">
+        <table class="exam-table">${head}${rowPib}${rows}</table>
+        <div class="table-caption">GDP in volume terms (billions of ${D.baseYear} constant euros) and its breakdown under the expenditure approach. National accounts data.</div>
+    </div>`;
+    },
+
+    enonce: function(D) {
+      let h = "";
+      h += `<li>Compute the <strong>average annual growth rate</strong> of this country's GDP between ${D.t0} and ${D.tN}.</li>`;
+      h += `<li>Compute the <strong>contributions</strong> of the components of GDP to the ${D.gAB < 0 ? `recession` : `growth`} of the ${D.ta}–${D.tb} period.</li>`;
+      h += `<li>Comment on your results.</li>`;
+      return h;
+    },
+
+    sol: function(D) {
+      const P = I18N['en'];
+      const pct = (x, d) => fmtD(x, d===undefined?2:d);
+      const abs = Math.abs;
+
+      let s = `<div class="method-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Method reminder</span>
+        The <strong>contribution</strong> of a component to the growth of an aggregate (GDP here) equals the product of that component's <em>growth rate</em> and its <em>weight</em> in the aggregate in the previous period:
+        <div class="math-formula">\\[
+        \\text{Contribution of } X = \\underbrace{\\frac{X_{t}-X_{t-1}}{X_{t-1}}}_{\\text{growth rate}} \\times \\underbrace{\\frac{X_{t-1}}{\\text{GDP}_{t-1}}}_{\\text{weight in } t-1} \\times 100 \\;=\\; \\frac{X_{t}-X_{t-1}}{\\text{GDP}_{t-1}} \\times 100
+        \\]</div>
+        A contribution is expressed in <strong>percentage points</strong>, not in percent: it says by how many points GDP growth would have moved had this component alone changed. By construction, contributions sum to the GDP growth rate.
+      </div>`;
+
+      let gRows = `<tr><th style="width:34%;">Year</th>` + D.wYears.slice(1).map(y=>`<th>${y-1}–${y}</th>`).join('') + `</tr>`;
+      gRows += `<tr><td class="txt-left">GDP growth rate</td>` + D.wGrowth.map(g=>`<td class="amt">${g>=0?'+':'−'}${pct(abs(g),2)}%</td>`).join('') + `</tr>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">1. Average annual growth rate between ${D.t0} and ${D.tN}</span>
+        Between ${D.t0} and ${D.tN}, GDP in volume terms went from ${fmtD(D.pib0,1)} to ${fmtD(D.pibN,1)} billion euros, an overall change of:
+        <div class="math-formula">\\[\\frac{${texM(D.pibN,1)}-${texM(D.pib0,1)}}{${texM(D.pib0,1)}} \\approx ${texM(D.Gtot,2)}\\%\\]</div>
+        ${D.n} years elapsed between those two dates. The average annual growth rate is <em>not</em> obtained by dividing the overall rate by ${D.n}: growth is a <strong>multiplicative</strong> process. We therefore take the ${D.n}-th root of the growth factor:
+        <div class="math-formula">\\[ \\text{AAGR} = \\left(1 + \\frac{${texM(D.Gtot,2)}}{100}\\right)^{1/${D.n}} - 1 \\approx ${texM(D.tcam,2)}\\% \\]</div>
+        In other words, constant growth of ${pct(D.tcam,2)}% per year over ${D.n} years would have produced exactly the same level of GDP in ${D.tN}. That average conceals a bumpy path, as the year-by-year detail shows:
+        <div class="exam-table-wrap"><table class="exam-table">${gRows}</table></div>
+      </div>`;
+
+      let txDetail = D.comp.map(c => {
+        if (c.key === 'bc') {
+          return `<li>${c.short}: $\\frac{${texM(c.b,1)}-(${texM(c.a,1)})}{${texM(c.a,1)}} \\approx ${texM(c.taux,2)}\\%$ — ${c.taux >= 0
+            ? `since the external balance is negative, a <em>positive</em> rate here means the <strong>trade deficit widened</strong> by ${pct(abs(c.taux),2)}%`
+            : `since the external balance is negative, a <em>negative</em> rate here means the <strong>trade deficit narrowed</strong> by ${pct(abs(c.taux),2)}%`};</li>`;
+        }
+        return `<li>${c.short}: $\\frac{${texM(c.b,1)}-${texM(c.a,1)}}{${texM(c.a,1)}} \\approx ${texM(c.taux,2)}\\%$;</li>`;
+      }).join('');
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">2. Growth rates of the components between ${D.ta} and ${D.tb}</span>
+        Between ${D.ta} and ${D.tb}, GDP changed by $\\frac{${texM(D.pibB,1)}-${texM(D.pibA,1)}}{${texM(D.pibA,1)}} \\approx ${texM(D.gAB,2)}\\%$. Each component's rate of change is computed the same way:
+        <ul class="sub-list">${txDetail}</ul>
+        <p style="margin-top:.8rem;">These rates are not directly comparable: a component can move sharply in percentage terms without moving GDP if its weight is small. That is exactly what the contribution calculation corrects for.</p>
+      </div>`;
+
+      let detail = D.comp.map(c => {
+        let head;
+        if (c.key === 'bc') {
+          head = `the trade deficit ${c.taux>=0 ? `widened` : `narrowed`} by ${pct(abs(c.taux),2)}%, while the external balance represented`;
+        } else {
+          head = `${c.short} ${c.taux >= 0 ? P.grew : P.fell} by ${pct(abs(c.taux),2)}%, while representing`;
+        }
+        return `<p style="margin-bottom:.7rem;">Between ${D.ta} and ${D.tb}, ${head} $\\frac{${texM(c.a,1)}}{${texM(D.pibA,1)}} \\approx ${texM(c.poids,2)}\\%$ of GDP. Its contribution therefore stands at $${texM(c.poids/100,4)} \\times ${texM(c.taux,2)} \\approx ${texM(c.contrib,2)}$ ${abs(c.contrib)<1?P.ptS:P.ptP}.</p>`;
+      }).join('');
+
+      let ctbHead = `<tr><th style="width:40%;">Component</th><th>Weight in ${D.ta}</th><th>Growth rate</th><th>Contribution</th></tr>`;
+      let ctbRows = D.comp.map(c =>
+        `<tr><td class="txt-left">${c.label}</td><td class="amt">${pct(c.poids,2)}%</td><td class="amt">${c.taux>=0?'+':'−'}${pct(abs(c.taux),2)}%</td><td class="amt">${c.contrib>=0?'+':'−'}${pct(abs(c.contrib),2)} pt</td></tr>`
+      ).join('');
+      ctbRows += `<tr class="total-row"><td class="txt-left">Sum of contributions</td><td class="amt">—</td><td class="amt">—</td><td class="amt">${D.sumContrib>=0?'+':'−'}${pct(abs(D.sumContrib),2)} pt</td></tr>`;
+      ctbRows += `<tr class="total-row"><td class="txt-left">Observed GDP growth rate</td><td class="amt">—</td><td class="amt">—</td><td class="amt">${D.gAB>=0?'+':'−'}${pct(abs(D.gAB),2)}%</td></tr>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">3. Contributions to the ${D.gAB<0?`contraction`:`growth`} of GDP between ${D.ta} and ${D.tb}</span>
+        ${detail}
+        <p style="margin-top:.6rem;">The trade balance deserves special care: its weight in GDP is <strong>negative</strong> (${pct(D.comp[4].poids,2)}%), since the country runs an external deficit. A negative weight times a ${D.comp[4].taux>=0?`positive`:`negative`} rate does give a ${D.comp[4].contrib>=0?`positive`:`negative`} contribution. In practice the equivalent formula $\\frac{X_{t}-X_{t-1}}{\\text{GDP}_{t-1}}\\times 100$ is preferable, as it avoids interpreting the "growth rate" of a negative quantity.</p>
+        <div class="exam-table-wrap"><table class="exam-table">${ctbHead}${ctbRows}</table></div>
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">4. Consistency check</span>
+        Summing the contributions gives an overall change of ${pct(D.sumContrib,2)} percentage points, essentially the percentage change in GDP between ${D.ta} and ${D.tb} (${pct(D.gAB,2)}%). ${abs(D.ecart) < 0.005
+          ? `The identity holds exactly here, to the second decimal.`
+          : `The small gap of ${pct(abs(D.ecart),2)} point arises because consumption spending, GFCF, changes in inventories and the trade balance do not sum exactly to GDP: national accounts include <em>errors and omissions</em>, not documented in the statement, which account for the discrepancy.`}
+      </div>`;
+
+      const dom = D.dom, sec = D.sec;
+      const partDom = D.sumContrib !== 0 ? abs(dom.contrib / D.sumContrib) * 100 : 0;
+      const partSec = D.sumContrib !== 0 ? abs(sec.contrib / D.sumContrib) * 100 : 0;
+      const cm = D.byKey.cm, fb = D.byKey.fbcf;
+
+      let comment = `<p style="margin-bottom:.8rem;">Accounting for ${pct(partDom,2)}% of the ${D.gAB<0?`contraction`:`growth`} of GDP between ${D.ta} and ${D.tb}, ${dom.short} is the component contributing most to the ${D.gAB<0?`decline`:`expansion`} in activity, ahead of ${sec.short} (${pct(partSec,2)}%).</p>`;
+
+      if (dom.key === 'cm') {
+        comment += `<p style="margin-bottom:.8rem;">This is no accident: at roughly ${pct(cm.poids,0)}% of GDP, household consumption is mechanically the first engine — or the first brake — of activity. That is why Keynesian stimulus policies typically target household consumption first.</p>`;
+      } else if (dom.key === 'fbcf') {
+        comment += `<p style="margin-bottom:.8rem;">Here it is <strong>private investment</strong>, captured by GFCF, that drives most of the movement, even though its weight (${pct(fb.poids,2)}% of GDP) is nearly three times smaller than household consumption's. This reflects its high cyclical elasticity: the <em>accelerator</em> principle, whereby investment responds to the change in expected demand rather than to its level. GFCF is thus the most volatile component of GDP.</p>`;
+      } else if (dom.key === 'bc') {
+        comment += `<p style="margin-bottom:.8rem;">The movement is dominated here by the <strong>external balance</strong>. Such a result reflects a gap between domestic demand dynamics and those of trading partners, or a terms-of-trade shock. It is a reminder that in an open economy part of domestic demand "leaks" abroad — the core difficulty of uncoordinated stimulus within a monetary union.</p>`;
+      } else if (dom.key === 'stk') {
+        comment += `<p style="margin-bottom:.8rem;">A dominant contribution from <strong>changes in inventories</strong> calls for caution: this component is transitory by nature and mostly reflects a temporary mismatch between production and demand. Destocking or restocking typically reverses the following year and says nothing about potential growth.</p>`;
+      } else {
+        comment += `<p style="margin-bottom:.8rem;"><strong>Collective public spending</strong> plays the leading role here, which is how automatic stabilisers work: government spending supports activity precisely when private demand weakens.</p>`;
+      }
+
+      comment += `<p style="margin-bottom:.8rem;">Note the gap between <em>relative amplitude</em> and <em>contribution</em>: ${abs(fb.taux) > abs(cm.taux)
+        ? `GFCF moved by ${pct(abs(fb.taux),2)}% against ${pct(abs(cm.taux),2)}% for household consumption — a far larger swing; but its smaller weight brings its contribution down to ${pct(abs(fb.contrib),2)} point against ${pct(abs(cm.contrib),2)} point.`
+        : `household consumption moved by only ${pct(abs(cm.taux),2)}% against ${pct(abs(fb.taux),2)}% for GFCF, yet its sheer weight gives it a contribution of ${pct(abs(cm.contrib),2)} point.`} Likewise, ${D.byKey.stk.short} swung by a spectacular ${pct(abs(D.byKey.stk.taux),2)}% for a contribution of just ${pct(abs(D.byKey.stk.contrib),2)} point: a weight of ${pct(D.byKey.stk.poids,2)}% of GDP simply cannot move the aggregate.</p>`;
+
+      if (D.gAB < 0) {
+        comment += `<p>For policy, this diagnosis is decisive: supporting demand (transfers to households, stimulus cheques) and supporting supply (business aid, investment subsidies) do not deliver the same return depending on which component gives way. ${abs(fb.taux) > abs(cm.taux)
+          ? `Here household consumption explains the larger share of the decline in levels, but investment contracts far more sharply in relative terms: the case for a supply-side policy finds support in these figures.`
+          : `Here household consumption gives way both in level and in pace: the case for a demand-side policy finds support in these figures.`}</p>`;
+      } else {
+        comment += `<p>Finally, growth driven by ${dom.short} does not carry the same weight as growth driven by investment: only the latter raises the capital stock and hence <em>potential</em> growth. An expansion carried by inventories or by the external balance is, conversely, largely cyclical.</p>`;
+      }
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">5. Comment</span>
+        ${comment}
+      </div>`;
+
+      if (D.gAB < 0) {
+        s += `<div class="persp-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Perspective — supply versus demand during the Covid-19 crisis</span>
+        The 2020 health crisis offers a full-scale illustration of this trade-off. In the United States, the Biden administration bet on a <strong>demand-side</strong> policy: the March 2021 <em>American Rescue Plan</em> sent cheques of 1,400 dollars per person to households earning less than 75,000 dollars a year (150,000 dollars for married couples), at a total cost of roughly 400 billion dollars. France, by contrast, favoured a <strong>supply-side</strong> approach aimed at firms (short-time work schemes, state-guaranteed loans, a solidarity fund). This may seem surprising <em>a priori</em>, since household consumption accounts for the largest share of the recession; but with investment contracting even more violently in relative terms, supporting supply became the government's choice.
+      </div>`;
+      }
+
+      return s;
+    }
+  }
+};
+
+/* ============================================================
+   GESTION DE LA LANGUE  /  LANGUAGE HANDLING
+   ============================================================ */
+let LANG = 'fr';
+
+function detectLang() {
+    try {
+        const q = new URLSearchParams(window.location.search).get('lang');
+        if (q && I18N[q.toLowerCase()]) return q.toLowerCase();
+    } catch (e) {}
+    const h = (window.location.hash || '').replace('#', '').toLowerCase();
+    if (I18N[h]) return h;
+    return 'fr';
+}
+
+function applyLang() {
+    const D = I18N[LANG];
+    document.documentElement.lang = D.htmlLang;
+    document.title = D.title;
+
+    document.querySelectorAll('[data-k]').forEach(function (el) {
+        const key = el.getAttribute('data-k');
+        if (D[key] !== undefined) el.innerHTML = D[key];
+    });
+
+    const btn = document.getElementById('toggle-btn');
+    if (btn) btn.innerText = document.getElementById('sol-card').classList.contains('visible') ? D.hideSol : D.showSol;
+
+    document.getElementById('flag-fr').classList.toggle('active', LANG === 'fr');
+    document.getElementById('flag-en').classList.toggle('active', LANG === 'en');
+}
+
+function setLang(lang) {
+    if (!I18N[lang] || lang === LANG) return;
+    LANG = lang;
+
+    try {
+        const u = new URL(window.location.href);
+        u.searchParams.set('lang', lang);
+        history.replaceState(null, '', u.toString());
+    } catch (e) {}
+
+    applyLang();
+
+    if (document.getElementById('ex-area').style.display !== 'none') {
+        const solWasVisible = document.getElementById('sol-card').classList.contains('visible');
+        generateExercise(false);
+        if (solWasVisible) toggleSol();
+    }
+}
+
+// --- PRNG (Mulberry32) ---
+let currentSeed = 0;
+function seedPRNG(seed) {
+    return function() {
+      let t = seed += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+let random = Math.random;
+
+function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
+const rnd = (a, b) => a + random() * (b - a);
+const r1  = x => Math.round(x * 10) / 10;
+const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
+
+function texI(num) {
+    let sign = num < 0 ? "-" : "";
+    let absNum = Math.round(Math.abs(num));
+    return sign + absNum.toString().replace(/\B(?=(\d{3})+(?!\d))/g, I18N[LANG].thousands);
+}
+function texM(num, dec) {
+    let sign = num < 0 ? "-" : "";
+    let parts = Math.abs(num).toFixed(dec).split('.');
+    let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, I18N[LANG].thousands);
+    return sign + intPart + I18N[LANG].decimal + parts[1];
+}
+function fmt(num) {
+    return num.toLocaleString(I18N[LANG].locale);
+}
+function fmtD(num, dec) {
+    return num.toLocaleString(I18N[LANG].locale, {minimumFractionDigits: dec, maximumFractionDigits: dec});
+}
+
+/* ============================================================
+   GENERATION DE L'EXERCICE  /  EXERCISE GENERATION
+   ============================================================ */
+const NY = 12;   /* longueur de l'historique simule */
+
+function generateExercise(forceNew = false) {
+    if (forceNew) {
+        document.getElementById('seed-input').value = "";
+    }
+    let seedVal = document.getElementById('seed-input').value;
+    currentSeed = seedVal ? parseInt(seedVal) : Math.floor(Math.random() * 99999999);
+    document.getElementById('seed-disp').innerText = currentSeed;
+    document.getElementById('seed-input').value = currentSeed;
+    random = seedPRNG(currentSeed);
+
+    const DIC = I18N[LANG];
+    const regimeSel = document.getElementById('regime-input').value;
+
+    let years, PIB, CM, CC, FBCF, STK, BC, growth, ic, s, L;
+    let guard = 0, ok = false;
+
+    do {
+        guard++;
+        ok = true;
+
+        /* --- calendrier --- */
+        const yStart = randInt(1996, 2012);
+        years = []; for (let i = 0; i < NY; i++) years.push(yStart + i);
+
+        /* --- trajectoire cible du PIB --- */
+        const g = [0];
+        for (let i = 1; i < NY; i++) g.push(rnd(0.8, 2.6));
+        const ci   = randInt(3, NY - 4);
+        const kind = (regimeSel === 'auto') ? randInt(0, 3) : parseInt(regimeSel);
+        if (kind === 0)      { g[ci] = rnd(-8.5, -4.5); g[ci+1] = rnd( 4.5, 7.5); g[ci+2] = rnd(1.8, 3.6); }
+        else if (kind === 1) { g[ci] = rnd(-3.6, -1.4); g[ci+1] = rnd(-0.9, 0.8); g[ci+2] = rnd(1.0, 2.6); }
+        else if (kind === 2) { g[ci] = rnd( 0.0,  0.7); g[ci+1] = rnd(-1.8, 0.2); g[ci+2] = rnd(1.2, 2.8); }
+        else                 { g[ci] = rnd( 3.6,  5.2); g[ci+1] = rnd( 2.8, 4.2); g[ci+2] = rnd(1.0, 2.4); }
+
+        /* --- niveaux initiaux --- */
+        const pib0  = r1(rnd(1400, 2900));
+        const sCM   = rnd(0.640, 0.715), sCC = rnd(0.065, 0.095), sFBCF = rnd(0.200, 0.255);
+        const sSTK  = rnd(0.004, 0.010), sBC = -rnd(0.007, 0.026);
+        CM   = [r1(pib0 * sCM)];
+        CC   = [r1(pib0 * sCC)];
+        FBCF = [r1(pib0 * sFBCF)];
+        STK  = [r1(pib0 * sSTK)];
+        BC   = [r1(pib0 * sBC)];
+        PIB  = [r1(CM[0] + CC[0] + FBCF[0] + STK[0] + BC[0] + rnd(-0.3, 0.3))];
+
+        for (let i = 1; i < NY; i++) {
+            const gi  = g[i];
+            const u   = gi >= 0 ? rnd(0.72, 0.98) : rnd(0.62, 0.92);
+            const v   = rnd(1.5, 2.4);
+            const aCM = gi * u + rnd(-0.35, 0.35);
+            const aFB = clamp(gi * v + rnd(-1.2, 1.2), -17, 15);
+            const aCC = gi < 0 ? rnd(0.8, 3.0) : rnd(0.3, 2.2);
+
+            CM.push(r1(CM[i-1]   * (1 + aCM / 100)));
+            CC.push(r1(CC[i-1]   * (1 + aCC / 100)));
+            FBCF.push(r1(FBCF[i-1] * (1 + aFB / 100)));
+
+            const approx = CM[i] + CC[i] + FBCF[i];
+            let stk = STK[i-1] * rnd(0.55, 1.60);
+            let bc  = BC[i-1]  * rnd(0.72, 1.42);
+            stk = clamp(stk, 0.0035 * approx, 0.0150 * approx);
+            bc  = clamp(bc, -0.0420 * approx, -0.0050 * approx);
+            STK.push(r1(stk));
+            BC.push(r1(bc));
+
+            PIB.push(r1(CM[i] + CC[i] + FBCF[i] + STK[i] + BC[i] + rnd(-0.3, 0.3)));
+        }
+
+        /* --- validation de la serie --- */
+        growth = [0];
+        for (let i = 1; i < NY; i++) growth.push((PIB[i] - PIB[i-1]) / PIB[i-1] * 100);
+
+        const rate = (A, i) => (A[i] - A[i-1]) / A[i-1] * 100;
+        for (let i = 1; i < NY && ok; i++) {
+            if (Math.abs(growth[i]) > 9.5) ok = false;
+            if (Math.abs(rate(CM, i))   < 0.12 || Math.abs(rate(CM, i))   > 11) ok = false;
+            if (Math.abs(rate(CC, i))   < 0.12) ok = false;
+            if (Math.abs(rate(FBCF, i)) < 0.20 || Math.abs(rate(FBCF, i)) > 19) ok = false;
+            if (Math.abs(rate(STK, i))  < 4    || Math.abs(rate(STK, i))  > 125) ok = false;
+            if (Math.abs(rate(BC, i))   < 2    || Math.abs(rate(BC, i))   > 60) ok = false;
+            const sc = CM[i] / PIB[i], sf = FBCF[i] / PIB[i], sg = CC[i] / PIB[i];
+            if (sc < 0.60 || sc > 0.76) ok = false;
+            if (sf < 0.17 || sf > 0.29) ok = false;
+            if (sg < 0.055 || sg > 0.115) ok = false;
+            if (BC[i] >= -0.1) ok = false;
+        }
+
+        if (ok) {
+            /* --- annee remarquable = plus forte amplitude --- */
+            ic = 1;
+            for (let i = 2; i < NY; i++) if (Math.abs(growth[i]) > Math.abs(growth[ic])) ic = i;
+            if (Math.abs(growth[ic]) < 1.6) ok = false;
+        }
+
+        if (ok) {
+            /* --- fenetre d'analyse contenant la transition (ic-1 -> ic) --- */
+            L = randInt(4, 5);
+            const lo = Math.max(0, ic - L + 1);
+            const hi = Math.min(ic - 1, NY - L);
+            if (lo > hi) { ok = false; } else { s = randInt(lo, hi); }
+        }
+
+    } while (!ok && guard < 500);
+
+    /* ============================================================
+       CONSTRUCTION DE L'OBJET DE DONNEES
+       ============================================================ */
+    const lev = {pib: PIB, cm: CM, cc: CC, fbcf: FBCF, stk: STK, bc: BC};
+    const wYears  = years.slice(s, s + L);
+    const wGrowth = [];
+    for (let i = s + 1; i < s + L; i++) wGrowth.push(growth[i]);
+
+    const ia = ic - 1, ib = ic;
+    const pibA = PIB[ia], pibB = PIB[ib];
+    const gAB  = (pibB - pibA) / pibA * 100;
+
+    const comp = DIC.comps.map(c => {
+        const a = lev[c.key][ia], b = lev[c.key][ib];
+        const taux  = (b - a) / a * 100;
+        const poids = a / pibA * 100;
+        return {key: c.key, label: c.label, short: c.short, art: c.art, tex: c.tex,
+                a: a, b: b, taux: taux, poids: poids, contrib: poids / 100 * taux};
+    });
+    const byKey = {}; comp.forEach(c => byKey[c.key] = c);
+    const sumContrib = comp.reduce((acc, c) => acc + c.contrib, 0);
+    const ranked = comp.slice().sort((x, y) => Math.abs(y.contrib) - Math.abs(x.contrib));
+
+    const pib0 = PIB[s], pibN = PIB[s + L - 1], n = L - 1;
+    const Gtot = (pibN - pib0) / pib0 * 100;
+    const tcam = (Math.pow(1 + Gtot / 100, 1 / n) - 1) * 100;
+
+    const D = {
+        years: years, wYears: wYears, wGrowth: wGrowth,
+        baseYear: years[0] - randInt(1, 4),
+        t0: years[s], tN: years[s + L - 1], n: n,
+        pib0: pib0, pibN: pibN, Gtot: Gtot, tcam: tcam,
+        ta: years[ia], tb: years[ib], pibA: pibA, pibB: pibB, gAB: gAB,
+        comp: comp, byKey: byKey, sumContrib: sumContrib,
+        ecart: sumContrib - gAB,
+        dom: ranked[0], sec: ranked[1],
+        get: function (key, year) { return lev[key][years.indexOf(year)]; }
+    };
+
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('ex-area').style.display = 'block';
+    document.getElementById('sol-card').classList.remove('visible');
+    document.getElementById('toggle-btn').innerText = DIC.showSol;
+    document.getElementById('toggle-btn').classList.remove('shown');
+
+    document.getElementById('context-text').innerHTML = DIC.context(D);
+    document.getElementById('enonce-table-container').innerHTML = DIC.table(D);
+    document.getElementById('additional-info').innerHTML = "";
+    document.getElementById('events-list').innerHTML = DIC.enonce(D);
+    document.getElementById('sol-content').innerHTML = DIC.sol(D);
+
+    if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
+        MathJax.typesetPromise().catch(function (err) { console.error('MathJax :', err); });
+    }
+}
+
+function toggleSol() {
+    let solCard = document.getElementById('sol-card');
+    let btn = document.getElementById('toggle-btn');
+    if (solCard.classList.contains('visible')) {
+        solCard.classList.remove('visible');
+        btn.innerText = I18N[LANG].showSol;
+        btn.classList.remove('shown');
+    } else {
+        solCard.classList.add('visible');
+        btn.innerText = I18N[LANG].hideSol;
+        btn.classList.add('shown');
+    }
+}
+
+function exportWord() {
+    let content = document.getElementById('ex-area').cloneNode(true);
+    let actions = content.querySelector('.top-actions');
+    if (actions) actions.parentNode.removeChild(actions);
+    let toggle = content.querySelector('.sol-toggle-wrap');
+    if (toggle) toggle.parentNode.removeChild(toggle);
+    let solCard = content.querySelector('#sol-card');
+    if (solCard) solCard.style.display = 'block';
+
+    let html = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <meta charset='utf-8'>
+            <title>${I18N[LANG].docTitle}</title>
+            <style>
+                body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5; text-align: justify; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 10pt; }
+                th, td { border: 1px solid #000; padding: 4px; }
+                th { background-color: #f2f2f2; text-align: center; font-weight: bold; }
+                .txt-left { text-align: left; font-weight: bold; }
+                .amt { text-align: right; white-space: nowrap; }
+                .two-col-table { width: 100%; }
+                .col-half { width: 48%; display: inline-block; vertical-align: top; margin-right: 2%; }
+                .calc-box, .method-box, .persp-box { border: 1px solid #000; padding: 10px; margin-bottom: 15px; background-color: #f9f9f9; text-align: justify; }
+                .math-formula { text-align: center; font-style: italic; margin: 10px 0; }
+                .table-caption { font-size: 9pt; font-style: italic; text-align: center; }
+                ul { text-align: justify; }
+                li { margin-bottom: 5px; }
+            </style>
+        </head>
+        <body>
+            ${content.innerHTML}
+        </body>
+        </html>
+    `;
+
+    let blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    let url = URL.createObjectURL(blob);
+    let link = document.createElement('a');
+    link.href = url;
+    link.download = I18N[LANG].docFile;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+/* Initialisation */
+LANG = detectLang();
+applyLang();
+</script>
+</body>
+</html>
