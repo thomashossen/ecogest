@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Finance - Swaps</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['\\[', '\\]']],
+      macros: {
+        E: ['\\mathbb{E}\\left[#1\\right]', 1],
+        P: ['\\mathbb{P}\\left(#1\\right)', 1],
+        ee: '\\text{e}',
+        mathds: ['\\mathbb{#1}', 1]
+      }
+    }
+  };
+</script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --blue:#2a6bc9;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7;text-align:justify;}
+
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 1.5rem;border-bottom:3px solid var(--gold);text-align:left;}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end;background:rgba(255,255,255,.03);padding:1rem 1.5rem;border-radius:6px;border:1px solid rgba(255,255,255,.1)}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.6)}
+.ctrl-inp, .ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.4rem .7rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none;transition:border-color .2s}
+.ctrl-inp:focus, .ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-sel option{background:var(--navy-mid);color:var(--cream)}
+.ctrl-inp.w120{width:120px}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.5rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;transition:background .18s;margin-left:auto}
+.btn-gen:hover{background:var(--gold-light)}
+
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:700}
+
+.top-actions{display:flex;gap:.5rem;}
+.btn-action{background:#fff;border:1px solid var(--border);color:var(--navy);padding:.4rem .8rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.85rem;font-weight:600;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.btn-action:hover{border-color:var(--navy);background:var(--cream-dark);}
+
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem;text-align:left;}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+
+.sol-toggle-wrap{text-align:left; margin: 1.5rem 0 0 0;}
+.btn-toggle{background:transparent;border:2px solid var(--green);border-bottom:none;color:var(--green);font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;padding:.5rem 1.5rem;border-radius:4px 4px 0 0;cursor:pointer;transition:all .2s; position:relative; z-index:2; top:2px;}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--green);color:var(--cream)}
+.sol-card{border-top:2px solid var(--green);display:none; border-radius: 0 6px 6px 6px; position:relative; z-index:1;}
+.sol-card.visible{display:block;animation:fi .4s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+
+.calc-box{background:#f9fcf9;border:1px solid #c8e6c9;padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.9rem;color:var(--text);line-height:1.6;text-align:justify;}
+.math-formula { text-align: center; margin: 1.2rem 0; overflow-x: auto; }
+
+.chart-container { width: 100%; display: flex; justify-content: center; margin: 2rem 0; }
+.svg-chart { background: #fcfcfc; border: 1px solid var(--border); border-radius: 4px; box-shadow: inset 0 2px 8px rgba(0,0,0,0.02); max-width:100%; height:auto; }
+
+/* --- Tableaux de donnees / Data tables --- */
+.table-wrap{overflow-x:auto;margin:1.5rem 0;}
+.data-table{width:100%;border-collapse:collapse;font-size:.88rem;}
+.data-table caption{caption-side:top;font-size:.72rem;font-family:'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);text-align:left;padding-bottom:.5rem;}
+.data-table th{background:var(--navy-mid);color:var(--cream);font-family:'JetBrains Mono',monospace;font-size:.64rem;letter-spacing:.07em;text-transform:uppercase;font-weight:500;padding:.55rem .7rem;text-align:center;border:none;}
+.data-table td{padding:.5rem .7rem;text-align:center;border-bottom:1px solid var(--border);}
+.data-table tbody tr:nth-child(even){background:var(--cream-dark);}
+.data-table tbody tr:last-child td{border-bottom:1px solid var(--navy-mid);}
+.data-table td:first-child{text-align:left;font-weight:600;color:var(--navy);}
+.table-note{font-size:.8rem;color:var(--text-muted);font-style:italic;margin-top:-1rem;margin-bottom:1.5rem;text-align:left;}
+
+/* --- Liste de questions / Question list --- */
+.q-list{margin:0 0 0 1rem;padding-left:1rem;}
+.q-list li{margin-bottom:.75rem;text-align:justify;color:var(--navy);}
+.q-list li::marker{font-weight:700;color:var(--gold);}
+
+.sol-q{font-family:'Playfair Display',serif;font-size:1.02rem;font-weight:600;color:var(--navy);margin:0 0 .8rem 0;border-left:3px solid var(--gold);padding-left:.75rem;text-align:left;}
+.res{background:var(--cream-dark);border:1px solid var(--gold);border-radius:3px;padding:.1rem .45rem;font-weight:700;color:var(--navy);white-space:nowrap;}
+.pos{color:var(--green);font-weight:700;}
+.neg{color:var(--red);font-weight:700;}
+
+@media print{
+  body{background:#fff;}
+  header, .ctrls, .sol-toggle-wrap, .top-actions {display:none !important;}
+  .card{box-shadow:none; border:1px solid var(--border); margin-bottom:2rem;}
+  .sol-card{display:block !important; border-top:2px solid var(--green);}
+  #ex-area {display:block !important;}
+}
+
+/* --- Selecteur de langue / Language switch --- */
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem}
+.header-top .header-badge{margin-bottom:0}
+.lang-switch{display:flex;gap:.45rem;flex-shrink:0}
+.flag-btn{background:rgba(255,255,255,.06);border:1px solid rgba(201,149,42,.35);border-radius:3px;padding:3px;cursor:pointer;line-height:0;opacity:.5;transition:opacity .2s,border-color .2s,transform .15s}
+.flag-btn:hover{opacity:1;transform:translateY(-1px)}
+.flag-btn.active{opacity:1;border-color:var(--gold-light);box-shadow:0 0 0 1px rgba(232,184,75,.35)}
+.flag-btn svg{display:block;width:30px;height:20px;border-radius:1px}
+@media print{ .lang-switch{display:none !important;} }
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-top">
+    <div class="header-badge" id="lbl-badge">PRODUITS DÉRIVÉS ET STRATÉGIES DE COUVERTURE</div>
+    <div class="lang-switch">
+      <button type="button" class="flag-btn active" id="flag-fr" onclick="setLang('fr')" title="Français" aria-label="Français"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="20" height="40" fill="#002654"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ED2939"/></svg></button>
+      <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
+    </div>
+  </div>
+  <h1 id="lbl-h1">Swaps et couverture</h1>
+  <p class="subtitle" id="lbl-subtitle">© Thomas Hossen – Version du 7 mars 2026</p>
+
+  <div class="ctrls">
+    <div class="ctrl-g">
+      <span class="ctrl-lbl" id="lbl-opttype">Type de swap</span>
+      <select class="ctrl-sel" id="opt-select">
+        <option value="IRS" id="opt-irs">Swap de taux d'intérêt (IRS)</option>
+        <option value="CCS" id="opt-ccs">Swap de devises (CCS)</option>
+        <option value="CDS" id="opt-cds">Swap de défaut de crédit (CDS)</option>
+        <option value="COM" id="opt-com">Swap de matières premières</option>
+      </select>
+    </div>
+    <div class="ctrl-g">
+      <span class="ctrl-lbl" id="lbl-seed">Seed (Optionnel)</span>
+      <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999">
+    </div>
+    <button class="btn-gen" id="lbl-gen" onclick="generateExercise(false)">Générer l'exercice →</button>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" style="text-align:center; padding:4rem; color:var(--text-muted); font-style:italic;">
+    Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice sur les swaps.
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="seed-badge"><span id="lbl-seed-active">Seed active :</span> <span id="seed-disp"></span></div>
+      <div class="top-actions">
+        <button class="btn-action" id="lbl-new" onclick="generateExercise(true)">↺ Nouvel énoncé</button>
+        <button class="btn-action" id="lbl-pdf" onclick="window.print()">⬇ Exporter PDF</button>
+        <button class="btn-action" id="lbl-doc" onclick="exportWord()">⬇ Exporter DOC</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="tag" id="lbl-tag-enonce">Énoncé</span><h2 id="lbl-title-enonce">Swap</h2></div>
+      <div class="card-body">
+        <div class="context-block" id="context-text"></div>
+        <div id="enonce-table"></div>
+        <ol class="q-list" id="enonce-actions"></ol>
+      </div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag" id="lbl-tag-sol">Corrigé</span><h2 id="lbl-title-sol">Swap</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+/* ============================================================
+   NOYAU NUMERIQUE  /  NUMERIC CORE
+   Aucune dependance au DOM : toutes les fonctions ci-dessous
+   ne produisent que des nombres (testables isolement).
+   ============================================================ */
+/* CORE-START */
+let currentSeed = 0;
+function seedPRNG(seed) {
+    return function() {
+      let t = seed += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+let random = Math.random;
+function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
+function pick(arr) { return arr[randInt(0, arr.length - 1)]; }
+function coin() { return randInt(0, 1) === 1; }
+
+/* Arrondis : les enonces affichent des facteurs a 5 decimales et des
+   taux a 3 decimales. Tous les calculs du corrige repartent de ces
+   valeurs arrondies, exactement comme le ferait un etudiant. */
+function rnd(x, d) { const f = Math.pow(10, d); return Math.round(x * f) / f; }
+function r5(x) { return rnd(x, 5); }
+function r3(x) { return rnd(x, 3); }
+function r2(x) { return rnd(x, 2); }
+/* Facteur d'actualisation en capitalisation continue, taux en % */
+function df(ratePct, t) { return r5(Math.exp(-ratePct / 100 * t)); }
+
+/* ---------------- 1. SWAP DE TAUX D'INTERET ---------------- */
+function computeIRS() {
+    const N      = randInt(3, 10) * 1000000;
+    const spread = randInt(6, 16) * 5;              /* points de base */
+    const estr0  = r2(randInt(200, 360) / 100);
+    const r1     = r2(randInt(220, 320) / 100);
+    const r2v    = r2(r1  + randInt(15, 40) / 100);
+    const r3v    = r2(r2v + randInt(10, 30) / 100);
+
+    const P1 = df(r1, 1), P2 = df(r2v, 2), P3 = df(r3v, 3);
+    const A  = r5(P1 + P2 + P3);
+    const S  = r3((1 - P3) / A * 100);              /* taux par, en % */
+
+    const Vfix = N * S / 100 * A;
+    const Vflt = N * (1 - P3);
+    const gap  = Math.abs(Vfix - Vflt);
+
+    const fixPay = N * S / 100;
+    const fltRec = N * estr0 / 100;
+    const net    = fixPay - fltRec;
+
+    const shiftBp = (coin() ? 1 : -1) * randInt(10, 20) * 5;
+    const shift   = shiftBp / 100;                  /* en points de % */
+    const n1 = r2(r1 + shift), n2 = r2(r2v + shift);
+    const Q1 = df(n1, 1), Q2 = df(n2, 2);
+    const A2 = r5(Q1 + Q2);
+    const S2 = r3((1 - Q2) / A2 * 100);
+    const V  = N * (S2 - S) / 100 * A2;
+
+    return { type:'IRS', N:N, spread:spread, estr0:estr0,
+             r:[r1, r2v, r3v], P:[P1, P2, P3], A:A, S:S,
+             Vfix:Vfix, Vflt:Vflt, gap:gap,
+             fixPay:fixPay, fltRec:fltRec, net:net,
+             shiftBp:shiftBp, nr:[n1, n2], nP:[Q1, Q2], A2:A2, S2:S2, V:V,
+             allIn: r3(S + spread / 100) };
+}
+
+/* ---------------- 2. SWAP DE DEVISES ---------------- */
+function computeCCS() {
+    const NE   = randInt(5, 12) * 1000000;
+    const S0   = r2(randInt(103, 122) / 100);       /* USD par EUR */
+    const NU   = Math.round(NE * S0);
+
+    const e1 = r2(randInt(200, 300) / 100);
+    const e2 = r2(e1 + randInt(15, 40) / 100);
+    const e3 = r2(e2 + randInt(10, 30) / 100);
+
+    const u1 = r2(randInt(400, 500) / 100);
+    const u2 = r2(u1 + randInt(10, 30) / 100);
+    const u3 = r2(u2 + randInt(5, 25) / 100);
+    /* Le coupon USD est cale sur la courbe SOFR : l'obligation est
+       emise au voisinage du pair, comme dans la pratique de marche. */
+    const cU   = r2(Math.round(u3 * 4) / 4 + randInt(-1, 1) * 0.25);
+
+    const PE = [df(e1,1), df(e2,2), df(e3,3)];
+    const PU = [df(u1,1), df(u2,2), df(u3,3)];
+    const AE = r5(PE[0] + PE[1] + PE[2]);
+    const AU = r5(PU[0] + PU[1] + PU[2]);
+
+    const kU     = r5(cU / 100 * AU + PU[2]);       /* valeur par USD de notionnel */
+    const VU     = NU * kU;
+    const VUE    = VU / S0;
+    const cE     = r3((VUE / NE - PE[2]) / AE * 100);
+
+    const payE   = NE * cE / 100;
+    const recU   = NU * cU / 100;
+    const recUE  = recU / S0;
+    const net    = payE - recUE;
+
+    const shiftBp = (coin() ? 1 : -1) * randInt(5, 15) * 5;
+    const shift   = shiftBp / 100;
+    const ne1 = r2(e1 + shift), ne2 = r2(e2 + shift);
+    const PEn = [df(ne1,1), df(ne2,2)];
+    const AEn = r5(PEn[0] + PEn[1]);
+    const VE1 = NE * (cE / 100 * AEn + PEn[1]);
+
+    const PUn = [df(u1,1), df(u2,2)];
+    const AUn = r5(PUn[0] + PUn[1]);
+    const VU1 = NU * (cU / 100 * AUn + PUn[1]);
+
+    let dS = randInt(-12, 12); if (Math.abs(dS) < 3) dS = (dS < 0 ? -1 : 1) * 4;
+    const S1   = r2(S0 + dS / 100);
+    const VU1E = VU1 / S1;
+    const V    = VU1E - VE1;
+
+    return { type:'CCS', NE:NE, NU:NU, S0:S0, S1:S1, cU:cU, cE:cE,
+             e:[e1,e2,e3], u:[u1,u2,u3], PE:PE, PU:PU, AE:AE, AU:AU,
+             kU:kU, VU:VU, VUE:VUE,
+             payE:payE, recU:recU, recUE:recUE, net:net,
+             shiftBp:shiftBp, ne:[ne1,ne2], PEn:PEn, AEn:AEn, VE1:VE1,
+             PUn:PUn, AUn:AUn, VU1:VU1, VU1E:VU1E, V:V,
+             diffBp: Math.round((cU - cE) * 100) };
+}
+
+/* ---------------- 3. SWAP DE DEFAUT DE CREDIT ---------------- */
+function computeCDS() {
+    const N   = randInt(5, 20) * 1000000;
+    const M   = coin() ? 3 : 5;
+    const R   = pick([30, 35, 40, 45]);
+    const cpn = coin() ? 100 : 500;                 /* coupon standardise, pb */
+    const s   = (cpn === 100) ? randInt(24, 56) * 5 : randInt(64, 130) * 5;
+    const rf  = r2(randInt(20, 40) / 10);
+
+    const h = r5(s / 10000 / (1 - R / 100));        /* taux de hasard, decimal */
+
+    const Q = [], P = [], PQ = [], dQ = [], dl = [];
+    for (let i = 1; i <= M; i++) {
+        Q.push(r5(Math.exp(-h * i)));
+        P.push(df(rf, i));
+    }
+    let sumPQ = 0, sumDL = 0;
+    for (let i = 0; i < M; i++) {
+        PQ.push(r5(P[i] * Q[i]));  sumPQ += PQ[i];
+        const d = r5((i === 0 ? 1 : Q[i-1]) - Q[i]);
+        dQ.push(d);
+        const c = r5(P[i] * d);
+        dl.push(c);                sumDL += c;
+    }
+    sumPQ = r5(sumPQ); sumDL = r5(sumDL);
+
+    const PL  = N * cpn / 10000 * sumPQ;
+    const DL  = N * (1 - R / 100) * sumDL;
+    const upf = DL - PL;
+    const PLfair = N * s / 10000 * sumPQ;
+
+    return { type:'CDS', N:N, M:M, R:R, cpn:cpn, s:s, rf:rf, h:h,
+             Q:Q, P:P, PQ:PQ, dQ:dQ, dl:dl, sumPQ:sumPQ, sumDL:sumDL,
+             PL:PL, DL:DL, upf:upf, PLfair:PLfair,
+             coincide: Math.abs(rf - h * 100) < 0.03,
+             defProb: r5(1 - Q[M-1]) };
+}
+
+/* ---------------- 4. SWAP DE MATIERES PREMIERES ---------------- */
+function computeCOM() {
+    const q     = randInt(6, 12) * 5000;            /* barils par echeance */
+    const total = 3 * q;
+    const S0    = rnd(randInt(700, 950) / 10, 1);
+    const back  = coin();                           /* backwardation ? */
+    let F1, F2, F3;
+    if (back) {
+        F1 = rnd(S0 + randInt(-8, 3) / 10, 1);
+        F2 = rnd(F1 - randInt(8, 20) / 10, 1);
+        F3 = rnd(F2 - randInt(8, 20) / 10, 1);
+    } else {
+        F1 = rnd(S0 + randInt(2, 10) / 10, 1);
+        F2 = rnd(F1 + randInt(8, 20) / 10, 1);
+        F3 = rnd(F2 + randInt(8, 20) / 10, 1);
+    }
+    const rf = rnd(randInt(25, 45) / 10, 1);
+    const P  = [df(rf, 0.25), df(rf, 0.50), df(rf, 0.75)];
+    const F  = [F1, F2, F3];
+    const FP = [r3(F1 * P[0]), r3(F2 * P[1]), r3(F3 * P[2])];
+    const sumFP = r3(FP[0] + FP[1] + FP[2]);
+    const sumP  = r5(P[0] + P[1] + P[2]);
+    const K     = r2(sumFP / sumP);
+
+    let jump = randInt(-90, 90) / 10;
+    if (Math.abs(F1 + jump - K) < 1.5) jump += (jump < 0 ? -2 : 2);
+    const ST1 = rnd(F1 + jump, 1);
+    const net = q * (K - ST1);                      /* > 0 : paye par le raffineur */
+
+    const m   = rnd((ST1 - F1) + randInt(-25, 25) / 10, 1);
+    const F2n = rnd(F2 + m, 1);
+    const F3n = rnd(F3 + m, 1);
+    const Pn  = [df(rf, 0.25), df(rf, 0.50)];
+    const V   = q * ((F2n - K) * Pn[0] + (F3n - K) * Pn[1]);
+
+    const isBrent = coin();
+    return { type:'COM', q:q, total:total, S0:S0, back:back, F:F, rf:rf,
+             grade: isBrent ? "Brent" : "WTI",
+             index: isBrent ? "Brent ICE" : "WTI NYMEX",
+             P:P, FP:FP, sumFP:sumFP, sumP:sumP, K:K,
+             ST1:ST1, net:net, Fn:[F2n, F3n], Pn:Pn, V:V,
+             unit: r3((F2n - K) * Pn[0] + (F3n - K) * Pn[1]) };
+}
+
+const COMPUTERS = { IRS: computeIRS, CCS: computeCCS, CDS: computeCDS, COM: computeCOM };
+/* CORE-END */
+/* ============================================================
+   DICTIONNAIRE BILINGUE  /  BILINGUAL DICTIONARY
+   Tous les textes de la page sont regroupes ici.
+   ============================================================ */
+const I18N = {
+
+  fr: {
+    htmlLang: 'fr',
+    title: "Simulateur Finance - Swaps",
+    badge: "PRODUITS DÉRIVÉS ET STRATÉGIES DE COUVERTURE",
+    h1: "Swaps et couverture",
+    subtitle: "© Thomas Hossen – Version du 7 mars 2026",
+    optTypeLabel: "Type de swap",
+    seedLabel: "Seed (Optionnel)",
+    btnGen: "Générer l'exercice →",
+    welcome: "Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice sur les swaps.",
+    seedActive: "Seed active :",
+    btnNew: "↺ Nouvel énoncé",
+    btnPdf: "⬇ Exporter PDF",
+    btnDoc: "⬇ Exporter DOC",
+    tagEnonce: "Énoncé",
+    tagSol: "Corrigé",
+    showSol: "Afficher le corrigé",
+    hideSol: "Masquer le corrigé",
+
+    optNames: {
+      IRS: "Swap de taux d'intérêt (IRS)",
+      CCS: "Swap de devises (CCS)",
+      CDS: "Swap de défaut de crédit (CDS)",
+      COM: "Swap de matières premières"
+    },
+    cardTitle: {
+      IRS: "Swap de taux d'intérêt",
+      CCS: "Swap de devises",
+      CDS: "Swap de défaut de crédit",
+      COM: "Swap de matières premières"
+    },
+    docTitle: {
+      IRS: "Exercice Swap de Taux d'Intérêt",
+      CCS: "Exercice Swap de Devises",
+      CDS: "Exercice Swap de Défaut de Crédit",
+      COM: "Exercice Swap de Matières Premières"
+    },
+    docFile: {
+      IRS: "Exercice_Swap_Taux.doc",
+      CCS: "Exercice_Swap_Devises.doc",
+      CDS: "Exercice_Swap_Credit.doc",
+      COM: "Exercice_Swap_Matieres_Premieres.doc"
+    },
+
+    /* Separateurs typographiques */
+    txtThousands: "\u202f", texThousands: "\\,",
+    txtPct: "\u00a0%",      texPct: "~\\%",
+
+    /* Etiquettes de graphique */
+    ch: {
+      IRS:  { title:"Courbe des taux zéro-coupon", y:"Taux (%)", s1:"Courbe initiale (date 0)", s2:"Courbe déplacée (date 1)", x:["1 an","2 ans","3 ans"] },
+      CCS:  { title:"Courbes zéro-coupon EUR et USD", y:"Taux (%)", s1:"Courbe EUR (€STR)", s2:"Courbe USD (SOFR)", x:["1 an","2 ans","3 ans"] },
+      CDS:  { title:"Probabilité de survie et probabilité de défaut cumulée", y:"Probabilité", s1:"Survie Q(0,Tᵢ)", s2:"Défaut cumulé 1 − Q(0,Tᵢ)" },
+      COM:  { title:"Courbe des prix forward", y:"Dollars par baril", s1:"Courbe initiale (date 0)", s2:"Courbe résiduelle (date T₁)", s3:"Prix fixe par K*", x:["T₁ = 3 mois","T₂ = 6 mois","T₃ = 9 mois"] }
+    },
+
+    /* ==================== 1. IRS ==================== */
+    IRS: {
+      context: function(d) {
+        return `Le 1<sup>er</sup> janvier N, une entreprise a contracté un emprunt de ${fN(d.N,0)} euros à taux variable (€STR annuel majoré de ${d.spread} points de base), remboursable <em>in fine</em> dans trois ans, avec paiement annuel des intérêts. À cette même date, l'€STR s'établit à ${fPN(d.estr0,2)}. Afin de se couvrir contre une hausse des taux, l'entreprise conclut simultanément un IRS de maturité trois ans sur un notionnel de ${fN(d.N,0)} euros, en position <em>payeur fixe / receveur variable</em> (€STR annuel). La courbe des taux zéro-coupon OIS observée à la date de mise en place est donnée ci-dessous.`;
+      },
+      table: function(d) {
+        return tbl("Courbe zéro-coupon OIS au 1er janvier N",
+          ["Maturité","Taux zéro-coupon","Facteur d'actualisation"],
+          [1,2,3].map(i => [`${i} an${i>1?'s':''}`, fPN(d.r[i-1],2), `$P(0,${i}) = ${fT(d.P[i-1],5)}$`]),
+          `Capitalisation continue : $P(0,T)=\\ee^{-r_T\\,T}$.`);
+      },
+      questions: function(d) {
+        return [
+          `Calculer le <em>taux par</em> de l'IRS trois ans (<em>swap rate</em> $S$). Vérifier que la valeur de l'IRS est nulle à l'initiation.`,
+          `À la fin de l'année N (un an après la mise en place), l'€STR constaté le 1<sup>er</sup> janvier N était de ${fPN(d.estr0,2)}. Calculer le <em>flux net</em> échangé entre l'entreprise et la banque le 1<sup>er</sup> janvier N+1.`,
+          `La courbe des taux s'est parallèlement déplacée de ${sgn(d.shiftBp)}${Math.abs(d.shiftBp)} points de base un an après la mise en place. Calculer la <em>valeur de marché</em> du <em>swap</em> résiduel (deux ans) pour l'entreprise à cette date.`
+        ];
+      },
+      sol: function(d) {
+        let s = '';
+
+        /* --- Question 1 --- */
+        s += `<div class="calc-box"><div class="sol-q">1. Taux par de l'IRS trois ans</div>`;
+        s += `Par définition du taux par $S$, avec $T_0 = 0$, $P(0,0) = 1$ et $\\delta_i = 1$, on obtient :`;
+        s += `<div class="math-formula">\\[ S = \\frac{P(0,0) - P(0,3)}{\\delta_1 P(0,1)+ \\delta_2 P(0,2) + \\delta_3 P(0,3)} = \\frac{1 - ${fT(d.P[2],5)}}{${fT(d.P[0],5)} + ${fT(d.P[1],5)}+ ${fT(d.P[2],5)}}= \\frac{${fT(1-d.P[2],5)}}{${fT(d.A,5)}}\\approx ${fPT(d.S,3)} \\]</div>`;
+        s += `On vérifie alors que la valeur de la jambe fixe est $V_{\\mathrm{fix}}(0) = ${fT(d.N,0)} \\times ${fPT(d.S,3)}\\times ${fT(d.A,5)} \\approx ${fT(d.Vfix,0)}$ euros. De même, la valeur de la jambe variable est $V_{\\mathrm{flt}}(0) = ${fT(d.N,0)} \\times(1 - ${fT(d.P[2],5)}) = ${fT(d.N,0)} \\times ${fT(1-d.P[2],5)} \\approx ${fT(d.Vflt,0)}$ euros. L'écart résiduel de ${fN(d.gap,0)} euros provient uniquement de l'arrondi du taux par à trois décimales : la valeur du <em>swap</em> est bien nulle à l'initiation.</div>`;
+
+        /* --- Question 2 --- */
+        s += `<div class="calc-box"><div class="sol-q">2. Flux net échangé au 1<sup>er</sup> janvier N+1</div>`;
+        s += `Le taux variable de la première période a été fixé à la mise en place, au niveau de l'€STR constaté le 1<sup>er</sup> janvier N, soit ${fPN(d.estr0,2)}. L'entreprise <em>paie fixe</em> : elle verse $${fT(d.N,0)} \\times ${fPT(d.S,3)} = ${fT(d.fixPay,0)}$ euros. Elle <em>reçoit variable</em> : elle perçoit $${fT(d.N,0)} \\times ${fPT(d.estr0,2)} = ${fT(d.fltRec,0)}$ euros. Le flux net échangé est donc la différence entre les deux, à savoir $${fT(d.fixPay,0)} - ${fT(d.fltRec,0)} = ${fT(Math.abs(d.net),0)}$ euros. `;
+        if (d.net > 0) {
+          s += `Ce flux est <span class="neg">versé par l'entreprise</span> à la banque : il représente le coût immédiat de la couverture, l'entreprise servant un taux fixe supérieur au taux variable, lequel n'a pas (encore) monté. `;
+        } else {
+          s += `Ce flux est <span class="pos">encaissé par l'entreprise</span> : le taux variable de référence dépasse déjà le taux fixe contractuel, de sorte que la couverture est immédiatement gagnante en trésorerie. `;
+        }
+        s += `Au total, et c'est là tout l'objet de l'opération, le coût de l'emprunt couvert ressort à $S + ${d.spread}\\text{ pb} = ${fPT(d.allIn,3)}$, figé pour les trois ans, quelle que soit l'évolution future de l'€STR.</div>`;
+
+        /* --- Question 3 --- */
+        s += `<div class="calc-box"><div class="sol-q">3. Valeur de marché du <em>swap</em> résiduel</div>`;
+        s += `La courbe s'étant déplacée parallèlement de ${sgn(d.shiftBp)}${Math.abs(d.shiftBp)} points de base, la nouvelle courbe en N+1 est $r'(1) = ${fPT(d.r[0],2)} ${sgn(d.shiftBp)} ${fPT(Math.abs(d.shiftBp)/100,2)} = ${fPT(d.nr[0],2)}$ et $r'(2) = ${fPT(d.r[1],2)} ${sgn(d.shiftBp)} ${fPT(Math.abs(d.shiftBp)/100,2)} = ${fPT(d.nr[1],2)}$. Les nouveaux facteurs d'actualisation sont alors $P'(1) = \\ee^{-${fPT(d.nr[0],2)} \\times 1} \\approx ${fT(d.nP[0],5)}$ et $P'(2) = \\ee^{-${fPT(d.nr[1],2)} \\times 2} \\approx ${fT(d.nP[1],5)}$. Le nouveau taux par à deux ans vaut donc :`;
+        s += `<div class="math-formula">\\[ S'_2 = \\frac{1 - ${fT(d.nP[1],5)}}{${fT(d.nP[0],5)} + ${fT(d.nP[1],5)}}= \\frac{${fT(1-d.nP[1],5)}}{${fT(d.A2,5)}} \\approx ${fPT(d.S2,3)} \\]</div>`;
+        s += `La valeur du <em>swap</em> pour le <em>payeur fixe</em> est la valeur présente de la différence entre le taux <em>forward</em> (nouveau taux par) et le taux fixe contractuel, actualisée sur l'<em>annuity factor</em> résiduel :`;
+        s += `<div class="math-formula">\\[ \\begin{aligned} V_{\\mathrm{swap}} &= N \\times (S'_2 - S)\\times A'_2 = N \\times (S'_2 - S)\\times (\\delta_2 P'(1)+\\delta_3 P'(2))\\\\ &= ${fT(d.N,0)} \\times (${fPT(d.S2,3)} - ${fPT(d.S,3)})\\times ${fT(d.A2,5)}\\\\ &= ${fT(d.N,0)} \\times ${fPTp(d.S2-d.S,3)} \\times ${fT(d.A2,5)} \\approx ${d.V>0?'+':'-'}${fT(Math.abs(d.V),0)}~\\text{euros} \\end{aligned} \\]</div>`;
+        if (d.shiftBp > 0) {
+          s += `La hausse des taux a donc créé une <span class="pos">valeur positive</span> pour l'entreprise payeuse fixe : le <em>swap</em>, initialement de valeur nulle, vaut désormais environ ${fN(Math.abs(d.V),0)} euros en <em>mark-to-market</em> — exactement la contrepartie de la hausse du coût financier de son emprunt à taux variable, que la couverture avait précisément pour objet de neutraliser.`;
+        } else {
+          s += `La baisse des taux a au contraire créé une <span class="neg">valeur négative</span> pour l'entreprise payeuse fixe : le <em>swap</em>, initialement de valeur nulle, affiche désormais une moins-value latente d'environ ${fN(Math.abs(d.V),0)} euros en <em>mark-to-market</em>. Cette perte n'est toutefois qu'apparente : elle est exactement compensée par l'allègement du coût financier de l'emprunt à taux variable sous-jacent, la position globale demeurant insensible au niveau des taux.`;
+        }
+        s += `</div>`;
+        return s;
+      }
+    },
+
+    /* ==================== 2. CCS ==================== */
+    CCS: {
+      context: function(d) {
+        return `Le 1<sup>er</sup> janvier N, une entreprise française émet une obligation en dollars d'un montant de ${fN(d.NU,0)} USD, à taux fixe de ${fPN(d.cU,2)}, de maturité trois ans, à coupons annuels et remboursement <em>in fine</em>. Le taux de change spot est $S_0 = ${fT(d.S0,2)}$ USD/EUR, soit un notionnel équivalent de $N_{\\text{EUR}} = ${fT(d.NE,0)}$ euros. Pour couvrir intégralement son risque de change, l'entreprise conclut simultanément un CCS <em>fixed-fixed</em> de trois ans dans lequel elle <em>paie fixe en euros</em> au taux $c_{\\text{EUR}}$ et <em>reçoit fixe en dollars</em> à ${fPN(d.cU,2)}, avec échange des notionnels à l'initiation et à l'échéance au taux de change $S_0$. Les courbes zéro-coupon OIS observées à cette date sont les suivantes.`;
+      },
+      table: function(d) {
+        return tbl("Courbes zéro-coupon OIS au 1er janvier N",
+          ["Maturité","Taux ZC EUR","$P_{\\text{EUR}}(0,T_i)$","Taux ZC USD","$P_{\\text{USD}}(0,T_i)$"],
+          [1,2,3].map(i => [`${i} an${i>1?'s':''}`, fPN(d.e[i-1],2), fT(d.PE[i-1],5), fPN(d.u[i-1],2), fT(d.PU[i-1],5)]),
+          `Capitalisation continue : les facteurs EUR découlent de la courbe €STR, les facteurs USD de la courbe SOFR.`);
+      },
+      questions: function(d) {
+        return [
+          `Calculer le <em>taux par EUR</em> $c_{\\text{EUR}}^{*}$ du CCS, c'est-à-dire le taux fixe en euros qui annule la valeur du <em>swap</em> à l'initiation.`,
+          `Calculer le <em>flux net annuel</em> en euros supporté par l'entreprise au titre du <em>swap</em> (hors échange de notionnel).`,
+          `Un an après la mise en place ($t = 1$ an), la courbe EUR s'est déplacée de ${sgn(d.shiftBp)}${Math.abs(d.shiftBp)} points de base et le taux de change a évolué à $S_1 = ${fT(d.S1,2)}$ USD/EUR (le dollar s'est ${d.S1<d.S0?'renforcé':'affaibli'}). Calculer la <em>valeur de marché</em> du <em>swap</em> résiduel (deux ans) pour l'entreprise, en supposant les courbes USD inchangées.`
+        ];
+      },
+      sol: function(d) {
+        let s = '';
+
+        /* --- Question 1 --- */
+        s += `<div class="calc-box"><div class="sol-q">1. Taux par EUR du CCS</div>`;
+        s += `À l'initiation, la valeur du CCS est nulle : la jambe USD reçue, valorisée au taux spot $S_0$, égalise exactement la jambe EUR payée. La jambe USD correspond à recevoir une obligation à taux fixe de ${fPN(d.cU,2)} sur un notionnel de ${fN(d.NU,0)} USD ; sa valeur en dollars vaut :`;
+        s += `<div class="math-formula">\\[ \\begin{aligned} V_{\\text{USD}}(0) &= ${fT(d.NU,0)}\\times\\left(${fPT(d.cU,2)}\\times(${fT(d.PU[0],5)} + ${fT(d.PU[1],5)} + ${fT(d.PU[2],5)})+ ${fT(d.PU[2],5)}\\right)\\\\ &= ${fT(d.NU,0)}\\times\\left(${fPT(d.cU,2)}\\times ${fT(d.AU,5)}+ ${fT(d.PU[2],5)}\\right)\\\\ &= ${fT(d.NU,0)}\\times ${fT(d.kU,5)} \\approx ${fT(d.VU,0)}~\\text{USD} \\end{aligned} \\]</div>`;
+        s += `Convertie en euros au taux spot $S_0 = ${fT(d.S0,2)}$, on obtient $V_{\\text{USD}}^{\\text{en EUR}}(0)= \\frac{${fT(d.VU,0)}}{${fT(d.S0,2)}} \\approx ${fT(d.VUE,0)}$ EUR. La jambe EUR payée doit alors valoir exactement ce montant ; or, pour le payeur fixe EUR (qui verse $c_{\\text{EUR}}$ et rembourse le notionnel à l'échéance), sa valeur s'écrit $V_{\\text{EUR}}(0)= N_{\\text{EUR}}\\times\\left(c_{\\text{EUR}}\\times A_{\\text{EUR}} + P_{\\text{EUR}}(0,3)\\right)$, où $A_{\\text{EUR}} = ${fT(d.PE[0],5)} + ${fT(d.PE[1],5)} + ${fT(d.PE[2],5)} = ${fT(d.AE,5)}$. En posant $V_{\\text{EUR}}(0) = V_{\\text{USD}}(0)/S_0$, il vient :`;
+        s += `<div class="math-formula">\\[ c_{\\text{EUR}}^{*} = \\frac{${fT(d.VUE,0)}\\,/\\,${fT(d.NE,0)} - ${fT(d.PE[2],5)}}{${fT(d.AE,5)}} \\approx ${fPT(d.cE,3)} \\]</div>`;
+        s += `L'entreprise paie donc ${fPN(d.cE,3)} en euros contre ${fPN(d.cU,2)} en dollars : le différentiel de taux, soit environ ${d.diffBp} points de base, est précisément le reflet de l'écart de niveau entre les deux courbes (la courbe SOFR étant sensiblement plus haute que la courbe €STR), conformément à la parité des taux d'intérêt couverte (CIP).</div>`;
+
+        /* --- Question 2 --- */
+        s += `<div class="calc-box"><div class="sol-q">2. Flux net annuel en euros</div>`;
+        s += `L'entreprise reçoit les coupons de la jambe USD, qui lui servent à rémunérer les porteurs de l'obligation : $${fT(d.NU,0)}\\times ${fPT(d.cU,2)} = ${fT(d.recU,0)}$ USD, soit $${fT(d.recU,0)}/${fT(d.S0,2)} = ${fT(d.recUE,0)}$ EUR au taux de change contractuel. Elle paie les coupons de la jambe EUR : $${fT(d.NE,0)}\\times ${fPT(d.cE,3)} = ${fT(d.payE,0)}$ EUR. Le flux net annuel supporté par l'entreprise est donc $${fT(d.payE,0)} - ${fT(d.recUE,0)} = ${d.net<0?'-':'+'}${fT(Math.abs(d.net),0)}$ EUR : <span class="pos">il s'agit d'un flux net favorable, l'entreprise encaissant ${fN(Math.abs(d.net),0)} EUR nets par an</span>. `;
+        s += `Ce gain annuel n'est cependant pas un gain économique : il n'est que la contrepartie du coût plus élevé de la dette libellée en dollars (${fPN(d.cU,2)} en USD contre ${fPN(d.cE,3)} en EUR). L'opération globale — émission obligataire plus <em>swap</em> — est de valeur présente nulle à l'initiation, et revient économiquement à un financement synthétique en euros au taux de ${fPN(d.cE,3)}.</div>`;
+
+        /* --- Question 3 --- */
+        s += `<div class="calc-box"><div class="sol-q">3. Valeur de marché du <em>swap</em> résiduel</div>`;
+        s += `Déterminons d'abord la nouvelle courbe EUR après un déplacement de ${sgn(d.shiftBp)}${Math.abs(d.shiftBp)} points de base : $r'_{\\text{EUR}}(1) = ${fPT(d.ne[0],2)}$ et $r'_{\\text{EUR}}(2) = ${fPT(d.ne[1],2)}$, ce qui donne pour nouveaux facteurs d'actualisation $P'_{\\text{EUR}}(1,2) = \\ee^{-${fPT(d.ne[0],2)}\\times 1}\\approx ${fT(d.PEn[0],5)}$ et $P'_{\\text{EUR}}(1,3) = \\ee^{-${fPT(d.ne[1],2)}\\times 2}\\approx ${fT(d.PEn[1],5)}$. La valeur résiduelle de la jambe EUR payée (deux ans restants, notionnel inclus) vaut donc :`;
+        s += `<div class="math-formula">\\[ V'_{\\text{EUR}} = ${fT(d.NE,0)}\\times\\left(${fPT(d.cE,3)}\\times (${fT(d.PEn[0],5)} + ${fT(d.PEn[1],5)}) + ${fT(d.PEn[1],5)}\\right)\\approx ${fT(d.VE1,0)}~\\text{EUR} \\]</div>`;
+        s += `Les courbes USD étant inchangées, les facteurs d'actualisation vus de $t=1$ pour des horizons de un et deux ans sont $P_{\\text{USD}}(1,2) = \\ee^{-${fPT(d.u[0],2)}\\times 1}\\approx ${fT(d.PUn[0],5)}$ et $P_{\\text{USD}}(1,3) = \\ee^{-${fPT(d.u[1],2)}\\times 2}\\approx ${fT(d.PUn[1],5)}$. La valeur résiduelle de la jambe USD reçue s'établit alors à :`;
+        s += `<div class="math-formula">\\[ \\begin{aligned} V'_{\\text{USD}} &= ${fT(d.NU,0)}\\times\\left(${fPT(d.cU,2)}\\times(${fT(d.PUn[0],5)} + ${fT(d.PUn[1],5)}) + ${fT(d.PUn[1],5)}\\right)\\approx ${fT(d.VU1,0)}~\\text{USD}\\\\ {V'}_{\\text{USD}}^{\\text{en EUR}} &= \\frac{${fT(d.VU1,0)}}{${fT(d.S1,2)}} \\approx ${fT(d.VU1E,0)}~\\text{EUR} \\end{aligned} \\]</div>`;
+        s += `La valeur de marché du <em>swap</em> pour l'entreprise, qui est <em>receveur</em> de dollars et <em>payeur</em> d'euros, devient donc :`;
+        s += `<div class="math-formula">\\[ V_{\\mathrm{CCS}}(1) = {V'}_{\\text{USD}}^{\\text{en EUR}} - V'_{\\text{EUR}} \\approx ${fT(d.VU1E,0)} - ${fT(d.VE1,0)} = ${d.V>0?'+':'-'}${fT(Math.abs(d.V),0)}~\\text{EUR} \\]</div>`;
+        s += `Ce résultat combine deux effets de sens éventuellement contraires. D'une part, `;
+        s += (d.shiftBp > 0)
+          ? `la hausse des taux EUR a <span class="pos">diminué la valeur de la jambe EUR payée</span>, ce qui est favorable au payeur fixe. `
+          : `la baisse des taux EUR a <span class="neg">augmenté la valeur de la jambe EUR payée</span>, ce qui est défavorable au payeur fixe. `;
+        s += `D'autre part, `;
+        s += (d.S1 < d.S0)
+          ? `l'appréciation du dollar ($S$ passe de ${fT(d.S0,2)} à ${fT(d.S1,2)} USD/EUR, soit moins de dollars par euro) <span class="pos">augmente</span>, une fois convertie en euros, la valeur de la jambe USD reçue. `
+          : `la dépréciation du dollar ($S$ passe de ${fT(d.S0,2)} à ${fT(d.S1,2)} USD/EUR, soit davantage de dollars par euro) <span class="neg">diminue</span>, une fois convertie en euros, la valeur de la jambe USD reçue. `;
+        s += `Au net, le <em>swap</em> affiche une ${d.V>0?'plus-value':'moins-value'} latente de ${fN(Math.abs(d.V),0)} EUR. Cela illustre le risque résiduel de change que porte le <em>mark-to-market</em> du <em>swap</em>, alors même que les notionnels sont contractuellement figés au taux initial $S_0$ : la couverture est parfaite en flux, mais non en valeur instantanée.</div>`;
+        return s;
+      }
+    },
+
+    /* ==================== 3. CDS ==================== */
+    CDS: {
+      context: function(d) {
+        return `Le 1<sup>er</sup> janvier N, un gérant obligataire détient une obligation <em>${d.cpn===100?'investment grade':'high yield'}</em> de notionnel ${fN(d.N,0)} euros et de maturité ${fW(d.M)} ans, et souhaite couvrir son risque de défaut au moyen d'un CDS standardisé (coupon fixe de ${d.cpn} points de base, convention <em>big bang</em>). Le CDS ${fW(d.M)} ans sur l'entité de référence cote à un <em>fair spread</em> de $s^{*} = ${d.s}$ points de base sur le marché. Le taux de recouvrement conventionnel est $R = ${fPT(d.R,0)}$. La courbe des taux OIS est plate à $r = ${fPT(d.rf,1)}$ (capitalisation continue).`;
+      },
+      table: function(d) { return ''; },
+      questions: function(d) {
+        return [
+          `En utilisant l'approximation de Duffie, calculer le <em>taux de hasard implicite</em> $h$ et la <em>probabilité de survie</em> à ${listYears(d.M,'fr')} ans.`,
+          `Calculer la <em>valeur de la jambe prime</em> $\\mathrm{PL}(${d.cpn}\\,\\mathrm{pb})$ au coupon standardisé de ${d.cpn} points de base (pb), en discrétisant annuellement.`,
+          `Calculer la <em>valeur de la jambe de défaut</em> $\\mathrm{DL}$.`,
+          `En déduire le <em>paiement initial</em> (<em>upfront</em>) que l'acheteur de protection doit verser au vendeur pour entrer dans le CDS standardisé. Interpréter le signe.`
+        ];
+      },
+      sol: function(d) {
+        let s = '';
+
+        /* --- Question 1 --- */
+        s += `<div class="calc-box"><div class="sol-q">1. Taux de hasard implicite et probabilités de survie</div>`;
+        s += `D'après l'approximation de Duffie, le taux de hasard implicite vérifie :`;
+        s += `<div class="math-formula">\\[ h = \\frac{s^{*}}{1-R} = \\frac{${fT(d.s/10000,4)}}{1 - ${fT(d.R/100,2)}}\\approx ${fPT(d.h*100,3)} \\]</div>`;
+        s += `par an. Les probabilités de survie vérifient quant à elles $Q(0,T_i) = \\ee^{-h\\,T_i}$, soit ${d.Q.map((q,i)=>`$Q(0,${i+1}) \\approx ${fT(q,5)}$`).join(', ')}. La probabilité cumulée de défaut à l'horizon ${fW(d.M)} ans ressort donc à $1 - ${fT(d.Q[d.M-1],5)} = ${fPT(d.defProb*100,2)}$.</div>`;
+
+        /* --- Question 2 --- */
+        s += `<div class="calc-box"><div class="sol-q">2. Valeur de la jambe prime</div>`;
+        s += `Les facteurs d'actualisation pour un taux d'intérêt $r = ${fPT(d.rf,1)}$ (continu) vérifient $P(0,T_i) = \\ee^{-${fPT(d.rf,1)}\\times T_i}$, soit ${d.P.map((p,i)=>`$P(0,${i+1}) \\approx ${fT(p,5)}$`).join(', ')}. `;
+        if (d.coincide) {
+          s += `On observera ici que les valeurs $P(0,T_i)$ et $Q(0,T_i)$ sont très proches, mais il s'agit d'une pure coïncidence numérique due au fait que $r \\approx h$ dans cet exercice. `;
+        }
+        s += `On peut alors évaluer la jambe prime pour un coupon standardisé $s = ${d.cpn}$ points de base et $\\delta_i = 1$ :`;
+        s += `<div class="math-formula">\\[ \\begin{aligned} \\mathrm{PL}(${d.cpn}\\,\\text{pb}) &= ${fT(d.N,0)} \\times ${fT(d.cpn/10000,4)} \\times \\sum_{i=1}^{${d.M}} P(0,T_i)\\,Q(0,T_i)\\\\ &= ${fT(d.N,0)} \\times ${fT(d.cpn/10000,4)} \\times ${fT(d.sumPQ,5)} \\approx ${fT(d.PL,0)}~\\text{EUR} \\end{aligned} \\]</div>`;
+        s += `Le détail période par période est reporté dans le tableau ci-dessous.`;
+        s += tbl("Décomposition période par période",
+          ["$i$","$P(0,T_i)$","$Q(0,T_i)$","$P\\cdot Q$","$Q_{i-1}-Q_i$","$P\\cdot\\Delta Q$"],
+          d.P.map((p,i) => [`${i+1}`, fT(p,5), fT(d.Q[i],5), fT(d.PQ[i],5), fT(d.dQ[i],5), fT(d.dl[i],5)]),
+          `Somme de la colonne $P\\cdot Q$ : ${fT(d.sumPQ,5)}. Somme de la colonne $P\\cdot\\Delta Q$ : ${fT(d.sumDL,5)}.`);
+        s += `</div>`;
+
+        /* --- Question 3 --- */
+        s += `<div class="calc-box"><div class="sol-q">3. Valeur de la jambe de défaut</div>`;
+        s += `On calcule d'abord les probabilités de défaut marginales sur chaque période : ${d.dQ.map((x,i)=>`$Q(0,${i}) - Q(0,${i+1}) = ${i===0?'1':fT(d.Q[i-1],5)} - ${fT(d.Q[i],5)} = ${fT(x,5)}$`).join(', puis ')}. On en déduit la valeur de la jambe de défaut :`;
+        s += `<div class="math-formula">\\[ \\begin{aligned} \\mathrm{DL} &= ${fT(d.N,0)} \\times (1 - ${fT(d.R/100,2)}) \\times \\sum_{i=1}^{${d.M}} P(0,T_i)\\times\\bigl(Q(0,T_{i-1})-Q(0,T_i)\\bigr)\\\\ &= ${fT(d.N*(1-d.R/100),0)}\\times ${fT(d.sumDL,5)} \\approx ${fT(d.DL,0)}~\\text{EUR} \\end{aligned} \\]</div></div>`;
+
+        /* --- Question 4 --- */
+        s += `<div class="calc-box"><div class="sol-q">4. Paiement initial et interprétation</div>`;
+        s += `L'<em>upfront</em> est la valeur actuelle de l'écart entre la jambe de défaut et la jambe prime évaluée au coupon contractuel :`;
+        s += `<div class="math-formula">\\[ \\mathrm{Upfront} = \\mathrm{DL} - \\mathrm{PL}(${d.cpn}\\,\\text{pb}) = ${fT(d.DL,0)} - ${fT(d.PL,0)} \\approx ${d.upf>0?'+':'-'}${fT(Math.abs(d.upf),0)}~\\text{EUR} \\]</div>`;
+        if (d.upf > 0) {
+          s += `Le <em>fair spread</em> est de ${d.s} points de base alors que le coupon standardisé n'est que de ${d.cpn} points de base. Le vendeur de protection reçoit donc un coupon trop faible au regard du risque pris : il exige en compensation un paiement initial de la part de l'acheteur. L'<em>upfront</em> est positif : <span class="neg">l'acheteur de protection verse ${fN(Math.abs(d.upf),0)} EUR au vendeur</span> lors de la mise en place du contrat, puis ${d.cpn} points de base annuels pendant ${fW(d.M)} ans. Ce montant compense exactement le fait que le vendeur accepte un coupon de ${d.cpn} points de base alors que le risque de l'entité en justifierait ${d.s} : sans cet <em>upfront</em>, le vendeur subirait une perte certaine en valeur présente de ${fN(Math.abs(d.upf),0)} EUR.`;
+        } else {
+          s += `Le <em>fair spread</em> n'est que de ${d.s} points de base alors que le coupon standardisé s'élève à ${d.cpn} points de base. Le vendeur de protection reçoit donc un coupon supérieur au risque effectivement porté : c'est lui qui doit compenser l'acheteur à l'entrée. L'<em>upfront</em> est négatif : <span class="pos">le vendeur de protection verse ${fN(Math.abs(d.upf),0)} EUR à l'acheteur</span> lors de la mise en place du contrat, l'acheteur payant ensuite ${d.cpn} points de base annuels pendant ${fW(d.M)} ans. Ce montant compense exactement le fait que l'acheteur s'engage à servir un coupon de ${d.cpn} points de base alors que le risque de l'entité n'en justifierait que ${d.s}.`;
+        }
+        s += ` La cohérence se vérifie immédiatement : le signe de l'<em>upfront</em> est celui de $s^{*} - s_{\\text{std}}$, et l'<em>upfront</em> s'annulerait si le <em>fair spread</em> coïncidait avec le coupon standardisé.`;
+        s += `<br><br><strong>Remarque.</strong> La relation $h = s^{*}/(1-R)$ n'est qu'une approximation au premier ordre. En réinjectant $s^{*} = ${d.s}$ pb dans la jambe prime, on obtiendrait $\\mathrm{PL}(s^{*}) \\approx ${fT(d.PLfair,0)}$ EUR, montant proche de $\\mathrm{DL} \\approx ${fT(d.DL,0)}$ EUR sans lui être rigoureusement égal (écart de ${fPN(Math.abs(d.PLfair-d.DL)/d.DL*100,1)}). Cet écart provient de la discrétisation annuelle et de l'hypothèse d'un défaut réglé en fin de période ; une calibration exacte de $h$ par recherche du zéro de $\\mathrm{DL}-\\mathrm{PL}(s^{*})$ le ferait disparaître.</div>`;
+        return s;
+      }
+    },
+
+    /* ==================== 4. COMMODITY ==================== */
+    COM: {
+      context: function(d) {
+        return `Le 1<sup>er</sup> janvier N, un raffineur européen prévoit d'acheter ${fN(d.total,0)} barils de pétrole brut ${d.grade} (prix spot actuel ${fN(d.S0,2)} dollars le baril), répartis en trois livraisons trimestrielles égales de ${fN(d.q,0)} barils aux dates $T_1 = 3$ mois, $T_2 = 6$ mois et $T_3 = 9$ mois. Pour figer son coût d'approvisionnement, il conclut un <em>commodity swap</em> de neuf mois en position <em>payeur fixe / receveur variable</em> (prix spot ${d.index} constaté à chaque échéance). La courbe des prix <em>forward</em> observée à la date de mise en place est la suivante, la courbe d'actualisation étant supposée plate à ${fPN(d.rf,1)}.`;
+      },
+      table: function(d) {
+        const lbl = ["$T_1 = 3$ mois","$T_2 = 6$ mois","$T_3 = 9$ mois"];
+        const ten = ["0.25","0.50","0.75"];
+        return tbl("Courbe des prix forward au 1er janvier N",
+          ["Échéance","Prix <em>forward</em>","Facteur d'actualisation","$F(0,T_i)\\times P(0,T_i)$"],
+          [0,1,2].map(i => [lbl[i], `${fN(d.F[i],2)} dollars le baril`, `$P(0;${ten[i]}) = ${fT(d.P[i],5)}$`, fT(d.FP[i],3)]),
+          `Capitalisation continue au taux $r = ${fPT(d.rf,1)}$.`);
+      },
+      questions: function(d) {
+        return [
+          `Calculer le <em>prix fixe par</em> $K^{*}$ du <em>swap</em>.`,
+          `À l'échéance $T_1$, le prix spot ${d.grade} est de ${fN(d.ST1,2)} dollars le baril. Calculer le <em>flux net</em> échangé entre le raffineur et la banque, et déterminer le <em>prix effectif</em> du pétrole pour le raffineur.`,
+          `À cette même date ($t = T_1 = 3$ mois), la courbe <em>forward</em> résiduelle s'établit à $F(T_1,T_2) = ${fT(d.Fn[0],2)}$ dollars le baril et $F(T_1,T_3) = ${fT(d.Fn[1],2)}$ dollars le baril. Calculer la <em>valeur de marché</em> du <em>swap</em> résiduel (deux échéances restantes) pour le raffineur à cette date.`
+        ];
+      },
+      sol: function(d) {
+        let s = '';
+
+        /* --- Question 1 --- */
+        s += `<div class="calc-box"><div class="sol-q">1. Prix fixe par du <em>swap</em></div>`;
+        s += `Le prix fixe par est la moyenne des prix <em>forward</em> pondérée par les facteurs d'actualisation :`;
+        s += `<div class="math-formula">\\[ \\begin{aligned} K^{*} &= \\frac{F(0,T_1)P(0,T_1) + F(0,T_2)P(0,T_2) + F(0,T_3)P(0,T_3)}{P(0,T_1) + P(0,T_2) + P(0,T_3)}\\\\ &= \\frac{${fT(d.FP[0],3)} + ${fT(d.FP[1],3)} + ${fT(d.FP[2],3)}}{${fT(d.P[0],5)} + ${fT(d.P[1],5)} + ${fT(d.P[2],5)}} = \\frac{${fT(d.sumFP,3)}}{${fT(d.sumP,5)}} \\approx ${fT(d.K,2)} \\end{aligned} \\]</div>`;
+        s += `Le raffineur paiera donc un prix fixe de ${fN(d.K,2)} dollars le baril, `;
+        s += d.back
+          ? `légèrement inférieur au prix spot actuel de ${fN(d.S0,2)} dollars, ce qui reflète la structure en <em>backwardation</em> de la courbe : le marché anticipe une baisse des prix <em>forward</em> sur les neuf prochains mois.`
+          : `supérieur au prix spot actuel de ${fN(d.S0,2)} dollars, ce qui reflète la structure en <em>contango</em> de la courbe : le marché anticipe une hausse des prix <em>forward</em> sur les neuf prochains mois, laquelle intègre notamment les coûts de portage et de stockage.`;
+        s += `</div>`;
+
+        /* --- Question 2 --- */
+        s += `<div class="calc-box"><div class="sol-q">2. Flux net à l'échéance $T_1$ et prix effectif</div>`;
+        s += `À l'échéance $T_1$, le flux net dû par le raffineur payeur fixe s'écrit :`;
+        s += `<div class="math-formula">\\[ Q_1\\times(K^{*} - S_{T_1}) = ${fT(d.q,0)}\\times(${fT(d.K,2)} - ${fT(d.ST1,2)}) = ${d.net<0?'-':'+'}${fT(Math.abs(d.net),0)}~\\text{dollars} \\]</div>`;
+        if (d.net < 0) {
+          s += `Le flux est négatif pour le raffineur payeur fixe : il <span class="pos">reçoit ${fN(Math.abs(d.net),0)} dollars</span> de la banque, car le prix spot a dépassé le prix fixe. Son prix effectif d'approvisionnement est alors $S_{T_1} + (K^{*} - S_{T_1}) = ${fT(d.ST1,2)} - ${fT(Math.abs(d.K-d.ST1),2)} = ${fT(d.K,2)}$ dollars le baril. La couverture a parfaitement rempli son rôle : malgré une flambée du brut à ${fN(d.ST1,2)} dollars le baril, le raffineur n'aura effectivement payé que ${fN(d.K,2)} dollars le baril.`;
+        } else {
+          s += `Le flux est positif pour le raffineur payeur fixe : il <span class="neg">verse ${fN(Math.abs(d.net),0)} dollars</span> à la banque, car le prix spot est resté en deçà du prix fixe. Son prix effectif d'approvisionnement est alors $S_{T_1} + (K^{*} - S_{T_1}) = ${fT(d.ST1,2)} + ${fT(Math.abs(d.K-d.ST1),2)} = ${fT(d.K,2)}$ dollars le baril. La couverture a rempli son rôle, mais dans le sens défavorable : le raffineur aurait payé son brut moins cher sans <em>swap</em>. C'est le prix de la certitude, et non un échec de la couverture — un raffineur ne se couvre pas pour gagner, mais pour ne plus dépendre du marché.`;
+        }
+        s += `</div>`;
+
+        /* --- Question 3 --- */
+        s += `<div class="calc-box"><div class="sol-q">3. Valeur de marché du <em>swap</em> résiduel</div>`;
+        s += `À la date $T_1$, deux échéances restent à courir, à trois et six mois. La courbe d'actualisation étant plate à ${fPN(d.rf,1)}, les facteurs pertinents sont $P(T_1,T_2) = \\ee^{-${fPT(d.rf,1)}\\times 0.25} \\approx ${fT(d.Pn[0],5)}$ et $P(T_1,T_3) = \\ee^{-${fPT(d.rf,1)}\\times 0.50} \\approx ${fT(d.Pn[1],5)}$. La valeur du <em>swap</em> résiduel pour le <em>payeur fixe</em> est alors :`;
+        s += `<div class="math-formula">\\[ \\begin{aligned} V(T_1) &= Q\\,\\bigl((F(T_1,T_2) - K^{*})\\,P(T_1,T_2)+(F(T_1,T_3) - K^{*})\\,P(T_1,T_3)\\bigr)\\\\ &= ${fT(d.q,0)}\\times\\bigl((${fT(d.Fn[0],2)} - ${fT(d.K,2)})\\times ${fT(d.Pn[0],5)}+(${fT(d.Fn[1],2)} - ${fT(d.K,2)})\\times ${fT(d.Pn[1],5)}\\bigr)\\\\ &= ${fT(d.q,0)}\\times ${fTp(d.unit,3)} \\approx ${d.V>0?'+':'-'}${fT(Math.abs(d.V),0)}~\\text{dollars} \\end{aligned} \\]</div>`;
+        if (d.V > 0) {
+          s += `La hausse de la courbe <em>forward</em> résiduelle a créé une <span class="pos">valeur positive</span> pour le raffineur payeur fixe : son <em>swap</em>, initié à valeur nulle, vaut désormais près de ${fN(Math.abs(d.V),0)} dollars en <em>mark-to-market</em>, ce qui compense exactement le renchérissement de son approvisionnement physique futur.`;
+        } else {
+          s += `La baisse de la courbe <em>forward</em> résiduelle a créé une <span class="neg">valeur négative</span> pour le raffineur payeur fixe : son <em>swap</em>, initié à valeur nulle, affiche désormais une moins-value latente de près de ${fN(Math.abs(d.V),0)} dollars en <em>mark-to-market</em>. Cette perte est toutefois exactement compensée par l'allègement du coût de son approvisionnement physique futur : la position économique globale du raffineur demeure inchangée, ce qui est précisément l'objet de la couverture.`;
+        }
+        s += `</div>`;
+        return s;
+      }
+    }
+  },
+
+  en: {
+    htmlLang: 'en',
+    title: "Finance Simulator - Swaps",
+    badge: "DERIVATIVES AND HEDGING STRATEGIES",
+    h1: "Swaps and Hedging",
+    subtitle: "© Thomas Hossen – March 7, 2026 Version",
+    optTypeLabel: "Swap Type",
+    seedLabel: "Seed (Optional)",
+    btnGen: "Generate Exercise →",
+    welcome: "Configure the parameters and click Generate to create a new exercise on swaps.",
+    seedActive: "Active Seed:",
+    btnNew: "↺ New Statement",
+    btnPdf: "⬇ Export PDF",
+    btnDoc: "⬇ Export DOC",
+    tagEnonce: "Problem",
+    tagSol: "Solution",
+    showSol: "Show Solution",
+    hideSol: "Hide Solution",
+
+    optNames: {
+      IRS: "Interest rate swap (IRS)",
+      CCS: "Cross-currency swap (CCS)",
+      CDS: "Credit default swap (CDS)",
+      COM: "Commodity swap"
+    },
+    cardTitle: {
+      IRS: "Interest Rate Swap",
+      CCS: "Cross-Currency Swap",
+      CDS: "Credit Default Swap",
+      COM: "Commodity Swap"
+    },
+    docTitle: {
+      IRS: "Interest Rate Swap Exercise",
+      CCS: "Cross-Currency Swap Exercise",
+      CDS: "Credit Default Swap Exercise",
+      COM: "Commodity Swap Exercise"
+    },
+    docFile: {
+      IRS: "Interest_Rate_Swap_Exercise.doc",
+      CCS: "Cross_Currency_Swap_Exercise.doc",
+      CDS: "Credit_Default_Swap_Exercise.doc",
+      COM: "Commodity_Swap_Exercise.doc"
+    },
+
+    txtThousands: ",", texThousands: ",",
+    txtPct: "%",      texPct: "\\%",
+
+    ch: {
+      IRS:  { title:"Zero-coupon yield curve", y:"Rate (%)", s1:"Initial curve (date 0)", s2:"Shifted curve (date 1)", x:["1 year","2 years","3 years"] },
+      CCS:  { title:"EUR and USD zero-coupon curves", y:"Rate (%)", s1:"EUR curve (€STR)", s2:"USD curve (SOFR)", x:["1 year","2 years","3 years"] },
+      CDS:  { title:"Survival probability and cumulative default probability", y:"Probability", s1:"Survival Q(0,Tᵢ)", s2:"Cumulative default 1 − Q(0,Tᵢ)" },
+      COM:  { title:"Forward price curve", y:"Dollars per barrel", s1:"Initial curve (date 0)", s2:"Residual curve (date T₁)", s3:"Par fixed price K*", x:["T₁ = 3 months","T₂ = 6 months","T₃ = 9 months"] }
+    },
+
+    /* ==================== 1. IRS ==================== */
+    IRS: {
+      context: function(d) {
+        return `On January 1, N, a company took out a ${fN(d.N,0)} euro floating-rate loan (annual €STR plus ${d.spread} basis points), repayable <em>in fine</em> in three years, with annual interest payments. On that same date, €STR stands at ${fPN(d.estr0,2)}. In order to hedge against a rise in interest rates, the company simultaneously enters into a three-year IRS on a notional of ${fN(d.N,0)} euros, as a <em>fixed-rate payer / floating-rate receiver</em> (annual €STR). The OIS zero-coupon yield curve observed at inception is given below.`;
+      },
+      table: function(d) {
+        return tbl("OIS zero-coupon curve on January 1, N",
+          ["Maturity","Zero-coupon rate","Discount factor"],
+          [1,2,3].map(i => [`${i} year${i>1?'s':''}`, fPN(d.r[i-1],2), `$P(0,${i}) = ${fT(d.P[i-1],5)}$`],
+          ),
+          `Continuous compounding: $P(0,T)=\\ee^{-r_T\\,T}$.`);
+      },
+      questions: function(d) {
+        return [
+          `Compute the <em>par rate</em> of the three-year IRS (<em>swap rate</em> $S$). Verify that the value of the IRS is zero at inception.`,
+          `At the end of year N (one year after inception), the €STR observed on January 1, N was ${fPN(d.estr0,2)}. Compute the <em>net cash flow</em> exchanged between the company and the bank on January 1, N+1.`,
+          `The yield curve has shifted in parallel by ${sgn(d.shiftBp)}${Math.abs(d.shiftBp)} basis points one year after inception. Compute the <em>market value</em> of the residual (two-year) <em>swap</em> for the company at that date.`
+        ];
+      },
+      sol: function(d) {
+        let s = '';
+
+        s += `<div class="calc-box"><div class="sol-q">1. Par rate of the three-year IRS</div>`;
+        s += `By definition of the par rate $S$, with $T_0 = 0$, $P(0,0) = 1$ and $\\delta_i = 1$, we obtain:`;
+        s += `<div class="math-formula">\\[ S = \\frac{P(0,0) - P(0,3)}{\\delta_1 P(0,1)+ \\delta_2 P(0,2) + \\delta_3 P(0,3)} = \\frac{1 - ${fT(d.P[2],5)}}{${fT(d.P[0],5)} + ${fT(d.P[1],5)}+ ${fT(d.P[2],5)}}= \\frac{${fT(1-d.P[2],5)}}{${fT(d.A,5)}}\\approx ${fPT(d.S,3)} \\]</div>`;
+        s += `We then verify that the value of the fixed leg is $V_{\\mathrm{fix}}(0) = ${fT(d.N,0)} \\times ${fPT(d.S,3)}\\times ${fT(d.A,5)} \\approx ${fT(d.Vfix,0)}$ euros. Likewise, the value of the floating leg is $V_{\\mathrm{flt}}(0) = ${fT(d.N,0)} \\times(1 - ${fT(d.P[2],5)}) = ${fT(d.N,0)} \\times ${fT(1-d.P[2],5)} \\approx ${fT(d.Vflt,0)}$ euros. The residual difference of ${fN(d.gap,0)} euros stems solely from rounding the par rate to three decimals: the value of the <em>swap</em> is indeed zero at inception.</div>`;
+
+        s += `<div class="calc-box"><div class="sol-q">2. Net cash flow exchanged on January 1, N+1</div>`;
+        s += `The floating rate for the first period was set at inception, at the €STR observed on January 1, N, that is ${fPN(d.estr0,2)}. The company <em>pays fixed</em>: it pays $${fT(d.N,0)} \\times ${fPT(d.S,3)} = ${fT(d.fixPay,0)}$ euros. It <em>receives floating</em>: it collects $${fT(d.N,0)} \\times ${fPT(d.estr0,2)} = ${fT(d.fltRec,0)}$ euros. The net cash flow exchanged is therefore the difference between the two, namely $${fT(d.fixPay,0)} - ${fT(d.fltRec,0)} = ${fT(Math.abs(d.net),0)}$ euros. `;
+        if (d.net > 0) {
+          s += `This flow is <span class="neg">paid by the company</span> to the bank: it represents the immediate cost of the hedge, the company servicing a fixed rate above the floating rate, which has not (yet) risen. `;
+        } else {
+          s += `This flow is <span class="pos">received by the company</span>: the floating reference rate already exceeds the contractual fixed rate, so the hedge is immediately profitable in cash terms. `;
+        }
+        s += `Overall, and this is the entire purpose of the transaction, the cost of the hedged loan comes to $S + ${d.spread}\\text{ bp} = ${fPT(d.allIn,3)}$, locked in for three years whatever the future path of €STR.</div>`;
+
+        s += `<div class="calc-box"><div class="sol-q">3. Market value of the residual <em>swap</em></div>`;
+        s += `Since the curve has shifted in parallel by ${sgn(d.shiftBp)}${Math.abs(d.shiftBp)} basis points, the new curve in N+1 is $r'(1) = ${fPT(d.r[0],2)} ${sgn(d.shiftBp)} ${fPT(Math.abs(d.shiftBp)/100,2)} = ${fPT(d.nr[0],2)}$ and $r'(2) = ${fPT(d.r[1],2)} ${sgn(d.shiftBp)} ${fPT(Math.abs(d.shiftBp)/100,2)} = ${fPT(d.nr[1],2)}$. The new discount factors are then $P'(1) = \\ee^{-${fPT(d.nr[0],2)} \\times 1} \\approx ${fT(d.nP[0],5)}$ and $P'(2) = \\ee^{-${fPT(d.nr[1],2)} \\times 2} \\approx ${fT(d.nP[1],5)}$. The new two-year par rate is therefore:`;
+        s += `<div class="math-formula">\\[ S'_2 = \\frac{1 - ${fT(d.nP[1],5)}}{${fT(d.nP[0],5)} + ${fT(d.nP[1],5)}}= \\frac{${fT(1-d.nP[1],5)}}{${fT(d.A2,5)}} \\approx ${fPT(d.S2,3)} \\]</div>`;
+        s += `The value of the <em>swap</em> for the <em>fixed-rate payer</em> is the present value of the difference between the <em>forward</em> rate (the new par rate) and the contractual fixed rate, discounted over the residual <em>annuity factor</em>:`;
+        s += `<div class="math-formula">\\[ \\begin{aligned} V_{\\mathrm{swap}} &= N \\times (S'_2 - S)\\times A'_2 = N \\times (S'_2 - S)\\times (\\delta_2 P'(1)+\\delta_3 P'(2))\\\\ &= ${fT(d.N,0)} \\times (${fPT(d.S2,3)} - ${fPT(d.S,3)})\\times ${fT(d.A2,5)}\\\\ &= ${fT(d.N,0)} \\times ${fPTp(d.S2-d.S,3)} \\times ${fT(d.A2,5)} \\approx ${d.V>0?'+':'-'}${fT(Math.abs(d.V),0)}~\\text{euros} \\end{aligned} \\]</div>`;
+        if (d.shiftBp > 0) {
+          s += `The rise in rates has therefore created a <span class="pos">positive value</span> for the fixed-rate paying company: the <em>swap</em>, initially worth zero, is now worth about ${fN(Math.abs(d.V),0)} euros on a <em>mark-to-market</em> basis — exactly offsetting the increase in the financing cost of its floating-rate loan, which the hedge was precisely designed to neutralise.`;
+        } else {
+          s += `The fall in rates has, on the contrary, created a <span class="neg">negative value</span> for the fixed-rate paying company: the <em>swap</em>, initially worth zero, now shows an unrealised loss of about ${fN(Math.abs(d.V),0)} euros on a <em>mark-to-market</em> basis. That loss is only apparent, however: it is exactly offset by the reduction in the financing cost of the underlying floating-rate loan, the overall position remaining insensitive to the level of rates.`;
+        }
+        s += `</div>`;
+        return s;
+      }
+    },
+
+    /* ==================== 2. CCS ==================== */
+    CCS: {
+      context: function(d) {
+        return `On January 1, N, a French company issues a dollar-denominated bond for an amount of ${fN(d.NU,0)} USD, at a fixed rate of ${fPN(d.cU,2)}, with a three-year maturity, annual coupons and <em>in fine</em> redemption. The spot exchange rate is $S_0 = ${fT(d.S0,2)}$ USD/EUR, that is an equivalent notional of $N_{\\text{EUR}} = ${fT(d.NE,0)}$ euros. To fully hedge its currency risk, the company simultaneously enters into a three-year <em>fixed-fixed</em> CCS in which it <em>pays fixed in euros</em> at the rate $c_{\\text{EUR}}$ and <em>receives fixed in dollars</em> at ${fPN(d.cU,2)}, with exchange of notionals at inception and at maturity at the exchange rate $S_0$. The OIS zero-coupon curves observed at that date are as follows.`;
+      },
+      table: function(d) {
+        return tbl("OIS zero-coupon curves on January 1, N",
+          ["Maturity","EUR ZC rate","$P_{\\text{EUR}}(0,T_i)$","USD ZC rate","$P_{\\text{USD}}(0,T_i)$"],
+          [1,2,3].map(i => [`${i} year${i>1?'s':''}`, fPN(d.e[i-1],2), fT(d.PE[i-1],5), fPN(d.u[i-1],2), fT(d.PU[i-1],5)]),
+          `Continuous compounding: the EUR factors derive from the €STR curve, the USD factors from the SOFR curve.`);
+      },
+      questions: function(d) {
+        return [
+          `Compute the <em>EUR par rate</em> $c_{\\text{EUR}}^{*}$ of the CCS, that is the fixed rate in euros that sets the value of the <em>swap</em> to zero at inception.`,
+          `Compute the <em>annual net cash flow</em> in euros borne by the company under the <em>swap</em> (excluding the exchange of notionals).`,
+          `One year after inception ($t = 1$ year), the EUR curve has shifted by ${sgn(d.shiftBp)}${Math.abs(d.shiftBp)} basis points and the exchange rate has moved to $S_1 = ${fT(d.S1,2)}$ USD/EUR (the dollar has ${d.S1<d.S0?'strengthened':'weakened'}). Compute the <em>market value</em> of the residual (two-year) <em>swap</em> for the company, assuming the USD curves are unchanged.`
+        ];
+      },
+      sol: function(d) {
+        let s = '';
+
+        s += `<div class="calc-box"><div class="sol-q">1. EUR par rate of the CCS</div>`;
+        s += `At inception, the value of the CCS is zero: the USD leg received, valued at the spot rate $S_0$, exactly offsets the EUR leg paid. The USD leg amounts to receiving a fixed-rate bond paying ${fPN(d.cU,2)} on a notional of ${fN(d.NU,0)} USD; its value in dollars is:`;
+        s += `<div class="math-formula">\\[ \\begin{aligned} V_{\\text{USD}}(0) &= ${fT(d.NU,0)}\\times\\left(${fPT(d.cU,2)}\\times(${fT(d.PU[0],5)} + ${fT(d.PU[1],5)} + ${fT(d.PU[2],5)})+ ${fT(d.PU[2],5)}\\right)\\\\ &= ${fT(d.NU,0)}\\times\\left(${fPT(d.cU,2)}\\times ${fT(d.AU,5)}+ ${fT(d.PU[2],5)}\\right)\\\\ &= ${fT(d.NU,0)}\\times ${fT(d.kU,5)} \\approx ${fT(d.VU,0)}~\\text{USD} \\end{aligned} \\]</div>`;
+        s += `Converted into euros at the spot rate $S_0 = ${fT(d.S0,2)}$, we obtain $V_{\\text{USD}}^{\\text{in EUR}}(0)= \\frac{${fT(d.VU,0)}}{${fT(d.S0,2)}} \\approx ${fT(d.VUE,0)}$ EUR. The EUR leg paid must therefore be worth exactly that amount; now, for the EUR fixed-rate payer (who pays $c_{\\text{EUR}}$ and redeems the notional at maturity), its value is written $V_{\\text{EUR}}(0)= N_{\\text{EUR}}\\times\\left(c_{\\text{EUR}}\\times A_{\\text{EUR}} + P_{\\text{EUR}}(0,3)\\right)$, where $A_{\\text{EUR}} = ${fT(d.PE[0],5)} + ${fT(d.PE[1],5)} + ${fT(d.PE[2],5)} = ${fT(d.AE,5)}$. Setting $V_{\\text{EUR}}(0) = V_{\\text{USD}}(0)/S_0$, it follows that:`;
+        s += `<div class="math-formula">\\[ c_{\\text{EUR}}^{*} = \\frac{${fT(d.VUE,0)}\\,/\\,${fT(d.NE,0)} - ${fT(d.PE[2],5)}}{${fT(d.AE,5)}} \\approx ${fPT(d.cE,3)} \\]</div>`;
+        s += `The company therefore pays ${fPN(d.cE,3)} in euros against ${fPN(d.cU,2)} in dollars: the rate differential, roughly ${d.diffBp} basis points, precisely reflects the gap in level between the two curves (the SOFR curve being appreciably higher than the €STR curve), in line with covered interest parity (CIP).</div>`;
+
+        s += `<div class="calc-box"><div class="sol-q">2. Annual net cash flow in euros</div>`;
+        s += `The company receives the coupons of the USD leg, which serve to pay the bondholders: $${fT(d.NU,0)}\\times ${fPT(d.cU,2)} = ${fT(d.recU,0)}$ USD, that is $${fT(d.recU,0)}/${fT(d.S0,2)} = ${fT(d.recUE,0)}$ EUR at the contractual exchange rate. It pays the coupons of the EUR leg: $${fT(d.NE,0)}\\times ${fPT(d.cE,3)} = ${fT(d.payE,0)}$ EUR. The annual net cash flow borne by the company is therefore $${fT(d.payE,0)} - ${fT(d.recUE,0)} = ${d.net<0?'-':'+'}${fT(Math.abs(d.net),0)}$ EUR: <span class="pos">this is a favourable net flow, the company collecting ${fN(Math.abs(d.net),0)} EUR net per year</span>. `;
+        s += `This annual gain is not, however, an economic gain: it merely offsets the higher cost of the dollar-denominated debt (${fPN(d.cU,2)} in USD against ${fPN(d.cE,3)} in EUR). The overall transaction — bond issue plus <em>swap</em> — has zero present value at inception, and amounts economically to synthetic euro funding at a rate of ${fPN(d.cE,3)}.</div>`;
+
+        s += `<div class="calc-box"><div class="sol-q">3. Market value of the residual <em>swap</em></div>`;
+        s += `Let us first determine the new EUR curve after a shift of ${sgn(d.shiftBp)}${Math.abs(d.shiftBp)} basis points: $r'_{\\text{EUR}}(1) = ${fPT(d.ne[0],2)}$ and $r'_{\\text{EUR}}(2) = ${fPT(d.ne[1],2)}$, which gives as new discount factors $P'_{\\text{EUR}}(1,2) = \\ee^{-${fPT(d.ne[0],2)}\\times 1}\\approx ${fT(d.PEn[0],5)}$ and $P'_{\\text{EUR}}(1,3) = \\ee^{-${fPT(d.ne[1],2)}\\times 2}\\approx ${fT(d.PEn[1],5)}$. The residual value of the EUR leg paid (two years remaining, notional included) is therefore:`;
+        s += `<div class="math-formula">\\[ V'_{\\text{EUR}} = ${fT(d.NE,0)}\\times\\left(${fPT(d.cE,3)}\\times (${fT(d.PEn[0],5)} + ${fT(d.PEn[1],5)}) + ${fT(d.PEn[1],5)}\\right)\\approx ${fT(d.VE1,0)}~\\text{EUR} \\]</div>`;
+        s += `Since the USD curves are unchanged, the discount factors seen from $t=1$ for one- and two-year horizons are $P_{\\text{USD}}(1,2) = \\ee^{-${fPT(d.u[0],2)}\\times 1}\\approx ${fT(d.PUn[0],5)}$ and $P_{\\text{USD}}(1,3) = \\ee^{-${fPT(d.u[1],2)}\\times 2}\\approx ${fT(d.PUn[1],5)}$. The residual value of the USD leg received is then:`;
+        s += `<div class="math-formula">\\[ \\begin{aligned} V'_{\\text{USD}} &= ${fT(d.NU,0)}\\times\\left(${fPT(d.cU,2)}\\times(${fT(d.PUn[0],5)} + ${fT(d.PUn[1],5)}) + ${fT(d.PUn[1],5)}\\right)\\approx ${fT(d.VU1,0)}~\\text{USD}\\\\ {V'}_{\\text{USD}}^{\\text{in EUR}} &= \\frac{${fT(d.VU1,0)}}{${fT(d.S1,2)}} \\approx ${fT(d.VU1E,0)}~\\text{EUR} \\end{aligned} \\]</div>`;
+        s += `The market value of the <em>swap</em> for the company, which <em>receives</em> dollars and <em>pays</em> euros, therefore becomes:`;
+        s += `<div class="math-formula">\\[ V_{\\mathrm{CCS}}(1) = {V'}_{\\text{USD}}^{\\text{in EUR}} - V'_{\\text{EUR}} \\approx ${fT(d.VU1E,0)} - ${fT(d.VE1,0)} = ${d.V>0?'+':'-'}${fT(Math.abs(d.V),0)}~\\text{EUR} \\]</div>`;
+        s += `This result combines two effects that may work in opposite directions. On the one hand, `;
+        s += (d.shiftBp > 0)
+          ? `the rise in EUR rates has <span class="pos">reduced the value of the EUR leg paid</span>, which is favourable to the fixed-rate payer. `
+          : `the fall in EUR rates has <span class="neg">increased the value of the EUR leg paid</span>, which is unfavourable to the fixed-rate payer. `;
+        s += `On the other hand, `;
+        s += (d.S1 < d.S0)
+          ? `the appreciation of the dollar ($S$ moving from ${fT(d.S0,2)} to ${fT(d.S1,2)} USD/EUR, that is fewer dollars per euro) <span class="pos">increases</span>, once converted into euros, the value of the USD leg received. `
+          : `the depreciation of the dollar ($S$ moving from ${fT(d.S0,2)} to ${fT(d.S1,2)} USD/EUR, that is more dollars per euro) <span class="neg">reduces</span>, once converted into euros, the value of the USD leg received. `;
+        s += `On a net basis, the <em>swap</em> shows an unrealised ${d.V>0?'gain':'loss'} of ${fN(Math.abs(d.V),0)} EUR. This illustrates the residual currency risk carried by the <em>mark-to-market</em> of the <em>swap</em>, even though the notionals are contractually fixed at the initial rate $S_0$: the hedge is perfect in cash-flow terms, but not in instantaneous value.</div>`;
+        return s;
+      }
+    },
+
+    /* ==================== 3. CDS ==================== */
+    CDS: {
+      context: function(d) {
+        return `On January 1, N, a bond manager holds an <em>${d.cpn===100?'investment grade':'high yield'}</em> bond with a notional of ${fN(d.N,0)} euros and a maturity of ${fW(d.M)} years, and wishes to hedge its default risk by means of a standardised CDS (fixed coupon of ${d.cpn} basis points, <em>big bang</em> convention). The ${fW(d.M)}-year CDS on the reference entity trades at a <em>fair spread</em> of $s^{*} = ${d.s}$ basis points in the market. The conventional recovery rate is $R = ${fPT(d.R,0)}$. The OIS yield curve is flat at $r = ${fPT(d.rf,1)}$ (continuous compounding).`;
+      },
+      table: function(d) { return ''; },
+      questions: function(d) {
+        return [
+          `Using Duffie's approximation, compute the <em>implied hazard rate</em> $h$ and the <em>survival probability</em> at ${listYears(d.M,'en')} years.`,
+          `Compute the <em>value of the premium leg</em> $\\mathrm{PL}(${d.cpn}\\,\\mathrm{bp})$ at the standardised coupon of ${d.cpn} basis points (bp), discretising annually.`,
+          `Compute the <em>value of the default leg</em> $\\mathrm{DL}$.`,
+          `Deduce the <em>upfront payment</em> that the protection buyer must pay to the seller to enter into the standardised CDS. Interpret the sign.`
+        ];
+      },
+      sol: function(d) {
+        let s = '';
+
+        s += `<div class="calc-box"><div class="sol-q">1. Implied hazard rate and survival probabilities</div>`;
+        s += `According to Duffie's approximation, the implied hazard rate satisfies:`;
+        s += `<div class="math-formula">\\[ h = \\frac{s^{*}}{1-R} = \\frac{${fT(d.s/10000,4)}}{1 - ${fT(d.R/100,2)}}\\approx ${fPT(d.h*100,3)} \\]</div>`;
+        s += `per year. The survival probabilities in turn satisfy $Q(0,T_i) = \\ee^{-h\\,T_i}$, that is ${d.Q.map((q,i)=>`$Q(0,${i+1}) \\approx ${fT(q,5)}$`).join(', ')}. The cumulative default probability at the ${fW(d.M)}-year horizon therefore comes to $1 - ${fT(d.Q[d.M-1],5)} = ${fPT(d.defProb*100,2)}$.</div>`;
+
+        s += `<div class="calc-box"><div class="sol-q">2. Value of the premium leg</div>`;
+        s += `The discount factors for an interest rate $r = ${fPT(d.rf,1)}$ (continuous) satisfy $P(0,T_i) = \\ee^{-${fPT(d.rf,1)}\\times T_i}$, that is ${d.P.map((p,i)=>`$P(0,${i+1}) \\approx ${fT(p,5)}$`).join(', ')}. `;
+        if (d.coincide) {
+          s += `Note here that the values $P(0,T_i)$ and $Q(0,T_i)$ are very close, but this is a pure numerical coincidence arising from the fact that $r \\approx h$ in this exercise. `;
+        }
+        s += `We can then value the premium leg for a standardised coupon $s = ${d.cpn}$ basis points and $\\delta_i = 1$:`;
+        s += `<div class="math-formula">\\[ \\begin{aligned} \\mathrm{PL}(${d.cpn}\\,\\text{bp}) &= ${fT(d.N,0)} \\times ${fT(d.cpn/10000,4)} \\times \\sum_{i=1}^{${d.M}} P(0,T_i)\\,Q(0,T_i)\\\\ &= ${fT(d.N,0)} \\times ${fT(d.cpn/10000,4)} \\times ${fT(d.sumPQ,5)} \\approx ${fT(d.PL,0)}~\\text{EUR} \\end{aligned} \\]</div>`;
+        s += `The period-by-period detail is reported in the table below.`;
+        s += tbl("Period-by-period breakdown",
+          ["$i$","$P(0,T_i)$","$Q(0,T_i)$","$P\\cdot Q$","$Q_{i-1}-Q_i$","$P\\cdot\\Delta Q$"],
+          d.P.map((p,i) => [`${i+1}`, fT(p,5), fT(d.Q[i],5), fT(d.PQ[i],5), fT(d.dQ[i],5), fT(d.dl[i],5)]),
+          `Sum of the $P\\cdot Q$ column: ${fT(d.sumPQ,5)}. Sum of the $P\\cdot\\Delta Q$ column: ${fT(d.sumDL,5)}.`);
+        s += `</div>`;
+
+        s += `<div class="calc-box"><div class="sol-q">3. Value of the default leg</div>`;
+        s += `We first compute the marginal default probabilities over each period: ${d.dQ.map((x,i)=>`$Q(0,${i}) - Q(0,${i+1}) = ${i===0?'1':fT(d.Q[i-1],5)} - ${fT(d.Q[i],5)} = ${fT(x,5)}$`).join(', then ')}. We deduce the value of the default leg:`;
+        s += `<div class="math-formula">\\[ \\begin{aligned} \\mathrm{DL} &= ${fT(d.N,0)} \\times (1 - ${fT(d.R/100,2)}) \\times \\sum_{i=1}^{${d.M}} P(0,T_i)\\times\\bigl(Q(0,T_{i-1})-Q(0,T_i)\\bigr)\\\\ &= ${fT(d.N*(1-d.R/100),0)}\\times ${fT(d.sumDL,5)} \\approx ${fT(d.DL,0)}~\\text{EUR} \\end{aligned} \\]</div></div>`;
+
+        s += `<div class="calc-box"><div class="sol-q">4. Upfront payment and interpretation</div>`;
+        s += `The <em>upfront</em> is the present value of the gap between the default leg and the premium leg valued at the contractual coupon:`;
+        s += `<div class="math-formula">\\[ \\mathrm{Upfront} = \\mathrm{DL} - \\mathrm{PL}(${d.cpn}\\,\\text{bp}) = ${fT(d.DL,0)} - ${fT(d.PL,0)} \\approx ${d.upf>0?'+':'-'}${fT(Math.abs(d.upf),0)}~\\text{EUR} \\]</div>`;
+        if (d.upf > 0) {
+          s += `The <em>fair spread</em> is ${d.s} basis points whereas the standardised coupon is only ${d.cpn} basis points. The protection seller therefore receives a coupon that is too low relative to the risk taken: in compensation, he demands an upfront payment from the buyer. The <em>upfront</em> is positive: <span class="neg">the protection buyer pays ${fN(Math.abs(d.upf),0)} EUR to the seller</span> when the contract is struck, then ${d.cpn} basis points annually for ${fW(d.M)} years. This amount exactly compensates the fact that the seller accepts a coupon of ${d.cpn} basis points when the entity's risk would warrant ${d.s}: without this <em>upfront</em>, the seller would incur a certain present-value loss of ${fN(Math.abs(d.upf),0)} EUR.`;
+        } else {
+          s += `The <em>fair spread</em> is only ${d.s} basis points whereas the standardised coupon amounts to ${d.cpn} basis points. The protection seller therefore receives a coupon above the risk actually borne: it is he who must compensate the buyer at inception. The <em>upfront</em> is negative: <span class="pos">the protection seller pays ${fN(Math.abs(d.upf),0)} EUR to the buyer</span> when the contract is struck, the buyer then paying ${d.cpn} basis points annually for ${fW(d.M)} years. This amount exactly compensates the fact that the buyer undertakes to service a coupon of ${d.cpn} basis points when the entity's risk would warrant only ${d.s}.`;
+        }
+        s += ` Consistency is immediately verified: the sign of the <em>upfront</em> is that of $s^{*} - s_{\\text{std}}$, and the <em>upfront</em> would vanish if the <em>fair spread</em> coincided with the standardised coupon.`;
+        s += `<br><br><strong>Remark.</strong> The relation $h = s^{*}/(1-R)$ is only a first-order approximation. Substituting $s^{*} = ${d.s}$ bp back into the premium leg would give $\\mathrm{PL}(s^{*}) \\approx ${fT(d.PLfair,0)}$ EUR, an amount close to $\\mathrm{DL} \\approx ${fT(d.DL,0)}$ EUR without being rigorously equal to it (a gap of ${fPN(Math.abs(d.PLfair-d.DL)/d.DL*100,1)}). This gap stems from the annual discretisation and from the assumption that default is settled at period end; an exact calibration of $h$ by finding the root of $\\mathrm{DL}-\\mathrm{PL}(s^{*})$ would eliminate it.</div>`;
+        return s;
+      }
+    },
+
+    /* ==================== 4. COMMODITY ==================== */
+    COM: {
+      context: function(d) {
+        return `On January 1, N, a European refiner plans to buy ${fN(d.total,0)} barrels of ${d.grade} crude oil (current spot price ${fN(d.S0,2)} dollars per barrel), split into three equal quarterly deliveries of ${fN(d.q,0)} barrels at dates $T_1 = 3$ months, $T_2 = 6$ months and $T_3 = 9$ months. To lock in its procurement cost, it enters into a nine-month <em>commodity swap</em> as a <em>fixed payer / floating receiver</em> (${d.index} spot price observed at each settlement date). The <em>forward</em> price curve observed at inception is as follows, the discount curve being assumed flat at ${fPN(d.rf,1)}.`;
+      },
+      table: function(d) {
+        const lbl = ["$T_1 = 3$ months","$T_2 = 6$ months","$T_3 = 9$ months"];
+        const ten = ["0.25","0.50","0.75"];
+        return tbl("Forward price curve on January 1, N",
+          ["Maturity","<em>Forward</em> price","Discount factor","$F(0,T_i)\\times P(0,T_i)$"],
+          [0,1,2].map(i => [lbl[i], `${fN(d.F[i],2)} dollars per barrel`, `$P(0;${ten[i]}) = ${fT(d.P[i],5)}$`, fT(d.FP[i],3)]),
+          `Continuous compounding at the rate $r = ${fPT(d.rf,1)}$.`);
+      },
+      questions: function(d) {
+        return [
+          `Compute the <em>par fixed price</em> $K^{*}$ of the <em>swap</em>.`,
+          `At settlement date $T_1$, the ${d.grade} spot price is ${fN(d.ST1,2)} dollars per barrel. Compute the <em>net cash flow</em> exchanged between the refiner and the bank, and determine the <em>effective price</em> of oil for the refiner.`,
+          `At that same date ($t = T_1 = 3$ months), the residual <em>forward</em> curve stands at $F(T_1,T_2) = ${fT(d.Fn[0],2)}$ dollars per barrel and $F(T_1,T_3) = ${fT(d.Fn[1],2)}$ dollars per barrel. Compute the <em>market value</em> of the residual <em>swap</em> (two remaining settlements) for the refiner at that date.`
+        ];
+      },
+      sol: function(d) {
+        let s = '';
+
+        s += `<div class="calc-box"><div class="sol-q">1. Par fixed price of the <em>swap</em></div>`;
+        s += `The par fixed price is the average of the <em>forward</em> prices weighted by the discount factors:`;
+        s += `<div class="math-formula">\\[ \\begin{aligned} K^{*} &= \\frac{F(0,T_1)P(0,T_1) + F(0,T_2)P(0,T_2) + F(0,T_3)P(0,T_3)}{P(0,T_1) + P(0,T_2) + P(0,T_3)}\\\\ &= \\frac{${fT(d.FP[0],3)} + ${fT(d.FP[1],3)} + ${fT(d.FP[2],3)}}{${fT(d.P[0],5)} + ${fT(d.P[1],5)} + ${fT(d.P[2],5)}} = \\frac{${fT(d.sumFP,3)}}{${fT(d.sumP,5)}} \\approx ${fT(d.K,2)} \\end{aligned} \\]</div>`;
+        s += `The refiner will therefore pay a fixed price of ${fN(d.K,2)} dollars per barrel, `;
+        s += d.back
+          ? `slightly below the current spot price of ${fN(d.S0,2)} dollars, which reflects the <em>backwardation</em> structure of the curve: the market anticipates a decline in <em>forward</em> prices over the next nine months.`
+          : `above the current spot price of ${fN(d.S0,2)} dollars, which reflects the <em>contango</em> structure of the curve: the market anticipates a rise in <em>forward</em> prices over the next nine months, which notably incorporates carry and storage costs.`;
+        s += `</div>`;
+
+        s += `<div class="calc-box"><div class="sol-q">2. Net cash flow at settlement $T_1$ and effective price</div>`;
+        s += `At settlement date $T_1$, the net cash flow owed by the fixed-paying refiner is written:`;
+        s += `<div class="math-formula">\\[ Q_1\\times(K^{*} - S_{T_1}) = ${fT(d.q,0)}\\times(${fT(d.K,2)} - ${fT(d.ST1,2)}) = ${d.net<0?'-':'+'}${fT(Math.abs(d.net),0)}~\\text{dollars} \\]</div>`;
+        if (d.net < 0) {
+          s += `The flow is negative for the fixed-paying refiner: he <span class="pos">receives ${fN(Math.abs(d.net),0)} dollars</span> from the bank, because the spot price has exceeded the fixed price. His effective procurement price is then $S_{T_1} + (K^{*} - S_{T_1}) = ${fT(d.ST1,2)} - ${fT(Math.abs(d.K-d.ST1),2)} = ${fT(d.K,2)}$ dollars per barrel. The hedge has played its role perfectly: despite a surge in crude to ${fN(d.ST1,2)} dollars per barrel, the refiner will effectively have paid only ${fN(d.K,2)} dollars per barrel.`;
+        } else {
+          s += `The flow is positive for the fixed-paying refiner: he <span class="neg">pays ${fN(Math.abs(d.net),0)} dollars</span> to the bank, because the spot price has remained below the fixed price. His effective procurement price is then $S_{T_1} + (K^{*} - S_{T_1}) = ${fT(d.ST1,2)} + ${fT(Math.abs(d.K-d.ST1),2)} = ${fT(d.K,2)}$ dollars per barrel. The hedge has played its role, but in the unfavourable direction: the refiner would have bought his crude more cheaply without the <em>swap</em>. That is the price of certainty, not a failure of the hedge — a refiner does not hedge in order to win, but in order to stop depending on the market.`;
+        }
+        s += `</div>`;
+
+        s += `<div class="calc-box"><div class="sol-q">3. Market value of the residual <em>swap</em></div>`;
+        s += `At date $T_1$, two settlements remain, in three and six months. Since the discount curve is flat at ${fPN(d.rf,1)}, the relevant factors are $P(T_1,T_2) = \\ee^{-${fPT(d.rf,1)}\\times 0.25} \\approx ${fT(d.Pn[0],5)}$ and $P(T_1,T_3) = \\ee^{-${fPT(d.rf,1)}\\times 0.50} \\approx ${fT(d.Pn[1],5)}$. The value of the residual <em>swap</em> for the <em>fixed payer</em> is then:`;
+        s += `<div class="math-formula">\\[ \\begin{aligned} V(T_1) &= Q\\,\\bigl((F(T_1,T_2) - K^{*})\\,P(T_1,T_2)+(F(T_1,T_3) - K^{*})\\,P(T_1,T_3)\\bigr)\\\\ &= ${fT(d.q,0)}\\times\\bigl((${fT(d.Fn[0],2)} - ${fT(d.K,2)})\\times ${fT(d.Pn[0],5)}+(${fT(d.Fn[1],2)} - ${fT(d.K,2)})\\times ${fT(d.Pn[1],5)}\\bigr)\\\\ &= ${fT(d.q,0)}\\times ${fTp(d.unit,3)} \\approx ${d.V>0?'+':'-'}${fT(Math.abs(d.V),0)}~\\text{dollars} \\end{aligned} \\]</div>`;
+        if (d.V > 0) {
+          s += `The rise in the residual <em>forward</em> curve has created a <span class="pos">positive value</span> for the fixed-paying refiner: his <em>swap</em>, struck at zero value, is now worth close to ${fN(Math.abs(d.V),0)} dollars on a <em>mark-to-market</em> basis, which exactly offsets the increase in the cost of his future physical procurement.`;
+        } else {
+          s += `The fall in the residual <em>forward</em> curve has created a <span class="neg">negative value</span> for the fixed-paying refiner: his <em>swap</em>, struck at zero value, now shows an unrealised loss of close to ${fN(Math.abs(d.V),0)} dollars on a <em>mark-to-market</em> basis. That loss is nonetheless exactly offset by the reduction in the cost of his future physical procurement: the refiner's overall economic position remains unchanged, which is precisely the purpose of the hedge.`;
+        }
+        s += `</div>`;
+        return s;
+      }
+    }
+  }
+};
+
+/* ============================================================
+   OUTILS DE FORMATAGE  /  FORMATTING HELPERS
+   ============================================================ */
+function fmtNum(x, dec, sep) {
+    const neg = x < 0;
+    let str = Math.abs(x).toFixed(dec);
+    let parts = str.split('.');
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, sep);
+    return (neg ? '-' : '') + parts.join('.');
+}
+function fN(x, dec)  { return fmtNum(x, dec, I18N[LANG].txtThousands); }
+function fT(x, dec)  { return fmtNum(x, dec, I18N[LANG].texThousands); }
+function fPN(x, dec) { return fN(x, dec) + I18N[LANG].txtPct; }
+function fPT(x, dec) { return fT(x, dec) + I18N[LANG].texPct; }
+function sgn(x)      { return x >= 0 ? '+' : '-'; }
+/* Variantes parenthesees : evitent un "\\times -3.2" disgracieux en mode math */
+function fTp(x, dec)  { return x < 0 ? '(' + fT(x, dec) + ')'  : fT(x, dec); }
+function fPTp(x, dec) { return x < 0 ? '(' + fPT(x, dec) + ')' : fPT(x, dec); }
+
+function fW(n) {
+    const w = { fr: {3:'trois', 4:'quatre', 5:'cinq'}, en: {3:'three', 4:'four', 5:'five'} };
+    return (w[LANG] && w[LANG][n]) ? w[LANG][n] : String(n);
+}
+function listYears(M, lang) {
+    const a = []; for (let i = 1; i <= M; i++) a.push(i);
+    const last = a.pop();
+    return a.join(', ') + (lang === 'fr' ? ' et ' : ' and ') + last;
+}
+function yLbl(i) {
+    return LANG === 'fr' ? (i + (i > 1 ? ' ans' : ' an')) : (i + (i > 1 ? ' years' : ' year'));
+}
+
+/* Constructeur de tableau HTML */
+function tbl(caption, headers, rows, note) {
+    let h = `<div class="table-wrap"><table class="data-table">`;
+    if (caption) h += `<caption>${caption}</caption>`;
+    h += `<thead><tr>` + headers.map(x => `<th>${x}</th>`).join('') + `</tr></thead><tbody>`;
+    rows.forEach(r => { h += `<tr>` + r.map(c => `<td>${c}</td>`).join('') + `</tr>`; });
+    h += `</tbody></table></div>`;
+    if (note) h += `<p class="table-note">${note}</p>`;
+    return h;
+}
+
+/* ============================================================
+   GRAPHIQUE SVG  /  SVG CHART
+   ============================================================ */
+function lineChart(cfg) {
+    const W = 760, H = 390, mL = 84, mR = 26, mT = 62, mB = 56;
+    const FS = "font-family=\"'Source Serif 4', serif\"";
+    let vals = [];
+    cfg.series.forEach(s => s.values.forEach(v => { if (v !== null && v !== undefined) vals.push(v); }));
+    if (cfg.hline !== null && cfg.hline !== undefined) vals.push(cfg.hline);
+    let vmin = Math.min.apply(null, vals), vmax = Math.max.apply(null, vals);
+    let span = vmax - vmin;
+    if (span <= 1e-9) span = Math.abs(vmax) || 1;
+    vmin -= span * 0.20; vmax += span * 0.20;
+    if (cfg.clamp01) { vmin = Math.max(0, vmin); vmax = Math.min(1, vmax); }
+
+    const n = cfg.xLabels.length;
+    const X = i => mL + (n === 1 ? 0 : (i / (n - 1)) * (W - mL - mR));
+    const Y = v => H - mB - ((v - vmin) / (vmax - vmin)) * (H - mT - mB);
+
+    let g = `<div class="chart-container"><svg class="svg-chart" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+    g += `<text x="${W/2}" y="22" font-family="'Playfair Display', serif" font-size="15" font-weight="600" fill="#0d1b2a" text-anchor="middle">${cfg.title}</text>`;
+
+    /* Grille et graduations */
+    for (let k = 0; k <= 4; k++) {
+        const v = vmin + (vmax - vmin) * k / 4, y = Y(v);
+        g += `<line x1="${mL}" y1="${y}" x2="${W-mR}" y2="${y}" stroke="#d4cfc4" stroke-width="1" stroke-dasharray="3,4" opacity="0.75"/>`;
+        g += `<text x="${mL-10}" y="${y+4}" ${FS} font-size="11" fill="#5a5a5a" text-anchor="end">${cfg.yFmt(v)}</text>`;
+    }
+    /* Axes */
+    g += `<line x1="${mL}" y1="${mT-14}" x2="${mL}" y2="${H-mB}" stroke="#1a2e42" stroke-width="2"/>`;
+    g += `<line x1="${mL}" y1="${H-mB}" x2="${W-mR}" y2="${H-mB}" stroke="#1a2e42" stroke-width="2"/>`;
+    cfg.xLabels.forEach((l, i) => {
+        g += `<line x1="${X(i)}" y1="${H-mB}" x2="${X(i)}" y2="${H-mB+5}" stroke="#1a2e42" stroke-width="1.5"/>`;
+        g += `<text x="${X(i)}" y="${H-mB+22}" ${FS} font-size="12" fill="#1e1e1e" text-anchor="middle">${l}</text>`;
+    });
+    g += `<text x="20" y="${(mT + H - mB)/2}" ${FS} font-size="12" fill="#5a5a5a" text-anchor="middle" transform="rotate(-90 20 ${(mT + H - mB)/2})">${cfg.yLabel}</text>`;
+
+    /* Ligne horizontale de reference */
+    if (cfg.hline !== null && cfg.hline !== undefined) {
+        const y = Y(cfg.hline);
+        g += `<line x1="${mL}" y1="${y}" x2="${W-mR}" y2="${y}" stroke="#c9952a" stroke-width="2" stroke-dasharray="7,4"/>`;
+        g += `<text x="${W-mR-4}" y="${y-7}" ${FS} font-size="12" font-weight="600" fill="#c9952a" text-anchor="end">${cfg.hlineLabel}</text>`;
+    }
+
+    /* Series */
+    cfg.series.forEach(s => {
+        let pts = [];
+        s.values.forEach((v, i) => { if (v !== null && v !== undefined) pts.push([X(i), Y(v)]); });
+        if (pts.length > 1) {
+            g += `<polyline points="${pts.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ')}" fill="none" stroke="${s.color}" stroke-width="${s.dash ? 2.5 : 3}" ${s.dash ? 'stroke-dasharray="6,4"' : ''} stroke-linejoin="round"/>`;
+        }
+        pts.forEach(p => { g += `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="4.5" fill="#fcfcfc" stroke="${s.color}" stroke-width="2.5"/>`; });
+    });
+
+    /* Legende */
+    let lx = mL;
+    cfg.series.forEach(s => {
+        g += `<line x1="${lx}" y1="${mT-30}" x2="${lx+22}" y2="${mT-30}" stroke="${s.color}" stroke-width="3" ${s.dash ? 'stroke-dasharray="6,4"' : ''}/>`;
+        g += `<text x="${lx+28}" y="${mT-26}" ${FS} font-size="11.5" fill="#1e1e1e">${s.name}</text>`;
+        lx += 40 + s.name.length * 6.1;
+    });
+    g += `</svg></div>`;
+    return g;
+}
+
+function buildChart(type, d) {
+    const C = I18N[LANG].ch[type];
+    const navy = '#1a2e42', gold = '#c9952a', green = '#2d6b4a', red = '#b94040', blue = '#2a6bc9';
+    if (type === 'IRS') {
+        return lineChart({
+            title: C.title, xLabels: C.x, yLabel: C.y,
+            yFmt: v => v.toFixed(2) + '%', hline: null,
+            series: [
+                { name: C.s1, color: navy, values: d.r },
+                { name: C.s2, color: (d.shiftBp > 0 ? red : green), values: [d.nr[0], d.nr[1], null], dash: true }
+            ]
+        });
+    }
+    if (type === 'CCS') {
+        return lineChart({
+            title: C.title, xLabels: C.x, yLabel: C.y,
+            yFmt: v => v.toFixed(2) + '%', hline: null,
+            series: [
+                { name: C.s1, color: navy,  values: d.e },
+                { name: C.s2, color: blue, values: d.u, dash: true }
+            ]
+        });
+    }
+    if (type === 'CDS') {
+        const xs = []; for (let i = 1; i <= d.M; i++) xs.push(yLbl(i));
+        return lineChart({
+            title: C.title, xLabels: xs, yLabel: C.y, clamp01: false,
+            yFmt: v => v.toFixed(2), hline: null,
+            series: [
+                { name: C.s1, color: green, values: d.Q },
+                { name: C.s2, color: red,   values: d.Q.map(q => 1 - q), dash: true }
+            ]
+        });
+    }
+    /* COM */
+    return lineChart({
+        title: C.title, xLabels: C.x, yLabel: C.y,
+        yFmt: v => v.toFixed(1), hline: d.K, hlineLabel: C.s3,
+        series: [
+            { name: C.s1, color: navy, values: d.F },
+            { name: C.s2, color: (d.V > 0 ? red : green), values: [null, d.Fn[0], d.Fn[1]], dash: true }
+        ]
+    });
+}
+
+/* ============================================================
+   GESTION DE LA LANGUE  /  LANGUAGE HANDLING
+   ============================================================ */
+let LANG = 'fr';
+let currentType = null;
+let currentData = null;
+
+function detectLang() {
+    try {
+        const q = new URLSearchParams(window.location.search).get('lang');
+        if (q && I18N[q.toLowerCase()]) return q.toLowerCase();
+    } catch (e) {}
+    const h = (window.location.hash || '').replace('#', '').toLowerCase();
+    if (I18N[h]) return h;
+    return 'fr';
+}
+
+function setText(id, txt) {
+    const el = document.getElementById(id);
+    if (el) el.innerText = txt;
+}
+
+function applyLang() {
+    const T = I18N[LANG];
+    document.documentElement.lang = T.htmlLang;
+    document.title = T.title;
+
+    setText('lbl-badge', T.badge);
+    setText('lbl-h1', T.h1);
+    setText('lbl-subtitle', T.subtitle);
+    setText('lbl-opttype', T.optTypeLabel);
+    setText('lbl-seed', T.seedLabel);
+    setText('lbl-gen', T.btnGen);
+    setText('welcome', T.welcome);
+    setText('lbl-seed-active', T.seedActive);
+    setText('lbl-new', T.btnNew);
+    setText('lbl-pdf', T.btnPdf);
+    setText('lbl-doc', T.btnDoc);
+    setText('lbl-tag-enonce', T.tagEnonce);
+    setText('lbl-tag-sol', T.tagSol);
+
+    setText('opt-irs', T.optNames.IRS);
+    setText('opt-ccs', T.optNames.CCS);
+    setText('opt-cds', T.optNames.CDS);
+    setText('opt-com', T.optNames.COM);
+
+    const key = currentType || 'IRS';
+    setText('lbl-title-enonce', T.cardTitle[key]);
+    setText('lbl-title-sol', T.cardTitle[key]);
+
+    const btn = document.getElementById('toggle-btn');
+    btn.innerText = document.getElementById('sol-card').classList.contains('visible') ? T.hideSol : T.showSol;
+
+    document.getElementById('flag-fr').classList.toggle('active', LANG === 'fr');
+    document.getElementById('flag-en').classList.toggle('active', LANG === 'en');
+}
+
+function setLang(lang) {
+    if (!I18N[lang] || lang === LANG) return;
+    LANG = lang;
+
+    /* La langue est memorisee dans l'URL (partage / rechargement) */
+    try {
+        const u = new URL(window.location.href);
+        u.searchParams.set('lang', lang);
+        history.replaceState(null, '', u.toString());
+    } catch (e) {}
+
+    applyLang();
+
+    /* Si un exercice est affiche, on le reaffiche a l'identique :
+       les donnees numeriques ne sont PAS recalculees, seul le texte change. */
+    if (currentData) render();
+}
+
+/* ============================================================
+   GENERATION ET RENDU  /  GENERATION AND RENDERING
+   ============================================================ */
+function typeset() {
+    if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
+        MathJax.typesetPromise([document.getElementById('ex-area')]).catch(function (err) {
+            console.error('Erreur MathJax :', err);
+        });
+    }
+}
+
+function render() {
+    const T = I18N[LANG], M = T[currentType], d = currentData;
+    setText('lbl-title-enonce', T.cardTitle[currentType]);
+    setText('lbl-title-sol', T.cardTitle[currentType]);
+    document.getElementById('context-text').innerHTML   = M.context(d);
+    document.getElementById('enonce-table').innerHTML   = M.table(d);
+    document.getElementById('enonce-actions').innerHTML = M.questions(d).map(q => `<li>${q}</li>`).join('');
+    document.getElementById('sol-content').innerHTML    = M.sol(d) + buildChart(currentType, d);
+    typeset();
+}
+
+function generateExercise(forceNew = false) {
+    if (forceNew) document.getElementById('seed-input').value = "";
+    let seedVal = document.getElementById('seed-input').value;
+    currentSeed = seedVal ? parseInt(seedVal) : Math.floor(Math.random() * 99999999);
+    document.getElementById('seed-disp').innerText = currentSeed;
+    document.getElementById('seed-input').value = currentSeed;
+    random = seedPRNG(currentSeed);
+
+    currentType = document.getElementById('opt-select').value;
+    currentData = COMPUTERS[currentType]();
+
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('ex-area').style.display = 'block';
+    document.getElementById('sol-card').classList.remove('visible');
+    document.getElementById('toggle-btn').innerText = I18N[LANG].showSol;
+    document.getElementById('toggle-btn').classList.remove('shown');
+
+    render();
+}
+
+function toggleSol() {
+    let solCard = document.getElementById('sol-card');
+    let btn = document.getElementById('toggle-btn');
+    if (solCard.classList.contains('visible')) {
+        solCard.classList.remove('visible');
+        btn.innerText = I18N[LANG].showSol;
+        btn.classList.remove('shown');
+    } else {
+        solCard.classList.add('visible');
+        btn.innerText = I18N[LANG].hideSol;
+        btn.classList.add('shown');
+    }
+}
+
+function exportWord() {
+    let content = document.getElementById('ex-area').cloneNode(true);
+    let actions = content.querySelector('.top-actions');
+    if (actions) actions.parentNode.removeChild(actions);
+    let toggle = content.querySelector('.sol-toggle-wrap');
+    if (toggle) toggle.parentNode.removeChild(toggle);
+    let solCard = content.querySelector('#sol-card');
+    if (solCard) solCard.style.display = 'block';
+
+    const key = currentType || 'IRS';
+    let html = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <meta charset='utf-8'>
+            <title>${I18N[LANG].docTitle[key]}</title>
+            <style>
+                body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5; text-align: justify; }
+                .calc-box { border: 1px solid #000; padding: 10px; margin-bottom: 15px; background-color: #f9f9f9; text-align: justify; }
+                .math-formula { text-align: center; font-style: italic; margin: 10px 0; }
+                .chart-container { margin: 20px 0; text-align: center; }
+                .data-table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+                .data-table th, .data-table td { border: 1px solid #000; padding: 4px 8px; text-align: center; }
+                .sol-q { font-weight: bold; margin-bottom: 8px; }
+                .table-note { font-size: 9pt; font-style: italic; }
+            </style>
+        </head>
+        <body>
+            ${content.innerHTML}
+        </body>
+        </html>
+    `;
+
+    let blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    let url = URL.createObjectURL(blob);
+    let link = document.createElement('a');
+    link.href = url;
+    link.download = I18N[LANG].docFile[key];
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+/* Initialisation */
+LANG = detectLang();
+applyLang();
+</script>
+</body>
+</html>
