@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Générateur d'exercices - Modèle logistique</title>
+<script>
+window.MathJax = {
+  tex: { 
+    inlineMath: [['\\(','\\)']], 
+    displayMath: [['\\[','\\]']], 
+    packages: {'[+]': ['ams']},
+    macros: {
+      Var: ['\\textbf{Var}\\left(#1\\right)', 1],
+      Cov: ['\\textbf{Cov}\\left(#1\\right)', 1]
+    }
+  },
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] }
+};
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 0;border-bottom:3px solid var(--gold)}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+#controls-bar{border-top:1px solid rgba(255,255,255,.08);padding:1.1rem 0 1.3rem}
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.5)}
+.ctrl-inp{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.38rem .65rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.82rem;width:88px;outline:none;transition:border-color .2s}
+.ctrl-inp:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.ctrl-tip{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:rgba(250,247,240,.33);margin-top:2px}
+.seed-row{display:flex;align-items:flex-end;gap:.45rem}
+.btn-copy-seed{background:transparent;border:1px solid rgba(201,149,42,.4);color:rgba(250,247,240,.55);padding:.38rem .55rem;border-radius:3px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:.65rem;transition:all .18s;white-space:nowrap}
+.btn-copy-seed:hover{border-color:var(--gold-light);color:var(--gold-light)}
+.ctrl-vsep{width:1px;background:rgba(255,255,255,.1);align-self:stretch;margin:0 .2rem}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.3rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.9rem;font-weight:600;transition:background .18s;white-space:nowrap;align-self:flex-end}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.welcome-msg{text-align:center;padding:5rem 2rem;color:var(--text-muted);font-style:italic;font-size:1.05rem}
+.welcome-msg .arrow{font-size:2rem;display:block;margin-bottom:1rem;opacity:.4}
+
+/* TOP BAR */
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.top-bar-left{display:flex;gap:.6rem;align-items:center}
+.btn-sm{background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:'JetBrains Mono',monospace;font-size:.67rem;letter-spacing:.08em;text-transform:uppercase;padding:.4rem 1rem;border-radius:3px;cursor:pointer;transition:all .18s;white-space:nowrap}
+.btn-sm:hover{background:var(--gold);color:var(--navy)}
+.btn-sm.pdf{border-color:#7bafd4;color:#7bafd4}
+.btn-sm.pdf:hover{background:#7bafd4;color:var(--navy)}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.67rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:500}
+
+/* CARDS */
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);margin-bottom:1.5rem;border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+
+/* QUESTIONS */
+.questions ol{counter-reset:q;list-style:none}
+.questions ol>li{counter-increment:q;margin-bottom:1.4rem;display:flex;gap:1rem;align-items:flex-start}
+.questions ol>li::before{content:counter(q);min-width:28px;height:28px;background:var(--navy);color:var(--cream);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:500;flex-shrink:0;margin-top:.15rem}
+.questions ol>li .q-text{flex:1;font-size:.93rem;text-align:justify}
+
+/* SOLUTION */
+.sol-toggle-wrap{text-align:center;margin:1rem 0 0}
+.btn-toggle{background:transparent;border:2px solid var(--navy);color:var(--navy);font-family:'Source Serif 4',serif;font-size:.9rem;padding:.6rem 2rem;border-radius:4px;cursor:pointer;transition:all .2s}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--navy);color:var(--cream)}
+.sol-card{border-top:4px solid var(--green);display:none}
+.sol-card.visible{display:block;animation:fi .3s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+.st{font-size:.92rem;line-height:1.75;text-align:justify}
+.st p{margin-bottom:.7rem}
+.st ol{counter-reset:sq;list-style:none}
+.st>ol>li{counter-increment:sq;margin-bottom:1.6rem;display:flex;gap:1rem;align-items:flex-start}
+.st>ol>li::before{content:counter(sq);min-width:24px;height:24px;background:var(--green);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.68rem;flex-shrink:0;margin-top:.15rem}
+.st ul{list-style:disc;padding-left:1.5rem;margin-bottom:.7rem}
+.st ul li{margin-bottom:1rem}
+
+/* PDF MODAL */
+#pdf-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;backdrop-filter:blur(2px)}
+#pdf-modal{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:101;background:#fff;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.25);width:390px;max-width:95vw;border-top:4px solid #7bafd4;overflow:hidden}
+.mh{background:var(--navy);color:var(--cream);padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
+.mh h3{font-family:'Playfair Display',serif;font-size:1rem;font-weight:600}
+.mclose{background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:1.2rem;line-height:1;padding:2px 6px;border-radius:3px;transition:color .15s}
+.mclose:hover{color:#fff}
+.mb2{padding:1.5rem}
+.opt-row{display:flex;align-items:flex-start;gap:.75rem;margin-bottom:1rem;cursor:pointer}
+.opt-row input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--navy);flex-shrink:0;margin-top:3px}
+.opt-lbl{font-size:.93rem}
+.opt-desc{font-size:.75rem;color:var(--text-muted);display:block}
+.seed-note{font-family:'JetBrains Mono',monospace;font-size:.7rem;background:var(--cream-dark);border:1px solid var(--border);padding:.55rem .85rem;border-radius:3px;color:var(--text-muted);margin-bottom:1.2rem;line-height:1.5}
+.seed-note strong{color:var(--navy)}
+.mactions{display:flex;gap:.6rem}
+.btn-print{flex:1;background:var(--navy);color:var(--cream);border:none;padding:.7rem;border-radius:4px;font-family:'Source Serif 4',serif;font-size:.9rem;cursor:pointer;transition:background .2s}
+.btn-print:hover{background:var(--navy-mid)}
+.btn-cancel{background:transparent;border:1px solid var(--border);color:var(--text-muted);padding:.7rem 1rem;border-radius:4px;font-family:'Source Serif 4',serif;font-size:.9rem;cursor:pointer;transition:all .2s}
+.btn-cancel:hover{border-color:var(--text);color:var(--text)}
+
+/* PRINT */
+@media print{
+:root{--navy:#0d1b2a;--cream:#fff;--cream-dark:#f8f8f8;--gold:#c9952a;--green:#2d6b4a;--border:#ccc}
+body{background:#fff;font-size:11pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+header{padding:1rem 1.5rem .8rem}
+header .subtitle{display:none}
+#controls-bar,.top-bar,.sol-toggle-wrap,#pdf-ov,#pdf-modal{display:none!important}
+.card{box-shadow:none;border-radius:0;page-break-inside:avoid;margin-bottom:1rem}
+main{padding:1rem 1.5rem;max-width:100%}
+body.print-no-header header{display:none!important}
+body.print-no-solution .sol-card{display:none!important}
+body.print-force-solution .sol-card{display:block!important}
+}
+
+/* TABLEAUX DE DONNEES */
+.dtable-wrap{overflow-x:auto;margin:1.1rem 0}
+.dtable{width:100%;border-collapse:collapse;font-size:.82rem;font-family:'Source Serif 4',serif}
+.dtable th,.dtable td{border:1px solid var(--border);padding:.4rem .5rem;text-align:center;vertical-align:middle}
+.dtable th{background:var(--navy);color:var(--cream);font-weight:600;font-size:.78rem}
+.dtable tr:nth-child(even) td{background:#fbf9f4}
+.dtable td.num{font-family:'JetBrains Mono',monospace;font-size:.78rem;white-space:nowrap}
+.dtable tfoot td{font-weight:700;background:var(--cream-dark)}
+.dtable caption{caption-side:bottom;font-size:.76rem;color:var(--text-muted);font-style:italic;padding-top:.5rem;text-align:justify}
+
+/* ENCADRE AIDE AU CALCUL */
+.aide{background:#f7faf7;border:1px solid #c8e6c9;border-left:3px solid var(--green);padding:.9rem 1.2rem;border-radius:0 4px 4px 0;margin:1.2rem 0;font-size:.87rem;line-height:1.7;text-align:justify}
+.aide .aide-t{display:block;font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--green);margin-bottom:.45rem}
+.aide ul{list-style:disc;padding-left:1.4rem;margin:.4rem 0 0}
+.aide ul li{margin-bottom:.3rem}
+
+/* FIGURES */
+.fig-wrap{margin:1.2rem 0 .3rem;text-align:center;overflow-x:auto}
+.fig-wrap svg{width:100%;max-width:640px;height:auto;background:#fff;border:1px solid var(--border);border-radius:4px}
+.fig-cap{font-size:.78rem;color:var(--text-muted);font-style:italic;text-align:justify;margin-bottom:1rem;line-height:1.5}
+
+/* MISE EN AVANT D'UN RESULTAT */
+.res{background:var(--cream-dark);border:1px solid var(--border);border-radius:4px;padding:.6rem .9rem;margin:.8rem 0;font-size:.9rem;text-align:center}
+
+/* --- Selecteur de langue / Language switch --- */
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem}
+.header-top .header-badge{margin-bottom:0}
+.lang-switch{display:flex;gap:.45rem;flex-shrink:0}
+.flag-btn{background:rgba(255,255,255,.06);border:1px solid rgba(201,149,42,.35);border-radius:3px;padding:3px;cursor:pointer;line-height:0;opacity:.5;transition:opacity .2s,border-color .2s,transform .15s}
+.flag-btn:hover{opacity:1;transform:translateY(-1px)}
+.flag-btn.active{opacity:1;border-color:var(--gold-light);box-shadow:0 0 0 1px rgba(232,184,75,.35)}
+.flag-btn svg{display:block;width:30px;height:20px;border-radius:1px}
+@media print{ .lang-switch{display:none !important;} }
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-top">
+    <div class="header-badge" data-k="k-badge">ÉCONOMÉTRIE</div>
+    <div class="lang-switch">
+      <button type="button" class="flag-btn active" id="flag-fr" onclick="setLang('fr')" title="Français" aria-label="Français"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="20" height="40" fill="#002654"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ED2939"/></svg></button>
+      <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
+    </div>
+  </div>
+  <h1 data-k="k-h1">Le modèle logistique</h1>
+  <p class="subtitle" data-k="k-sub">© Thomas Hossen – Version du 29 août 2026</p>
+
+  <div id="controls-bar">
+    <div class="ctrls">
+      <div class="ctrl-g">
+        <span class="ctrl-lbl" data-k="k-seed">Seed de reproductibilité</span>
+        <div class="seed-row">
+          <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="0" max="99999999">
+          <button class="btn-copy-seed" id="btn-copy" onclick="copySeed()" title="Copier la seed active">⧉ Copier</button>
+        </div>
+        <span class="ctrl-tip" data-k="k-seedtip">Vide = aléatoire à chaque génération</span>
+      </div>
+      <div class="ctrl-vsep"></div>
+      <div class="ctrl-g">
+        <span class="ctrl-lbl" data-k="k-n">Observations <em>(n)</em></span>
+        <input class="ctrl-inp" type="number" id="param-n" min="5" max="7" step="2" placeholder="défaut">
+        <span class="ctrl-tip" data-k="k-ntip">5 ou 7, auto si vide</span>
+      </div>
+      <div class="ctrl-vsep"></div>
+      <button class="btn-gen" onclick="generateFromControls()"><span data-k="k-gen">Générer →</span></button>
+    </div>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" class="welcome-msg">
+    <span class="arrow">↑</span>
+    <span data-k="k-welcome">Configurez les paramètres (ou laissez vide pour de l'aléatoire), puis cliquez sur Générer.</span>
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="top-bar-left">
+        <button class="btn-sm" onclick="regen()"><span data-k="k-new">↺ Nouvel énoncé</span></button>
+        <button class="btn-sm pdf" onclick="openPdfModal()"><span data-k="k-pdf">⬇ Exporter PDF</span></button>
+      </div>
+      <div class="seed-badge"><span data-k="k-seedbadge">Seed&nbsp;:</span> <span id="seed-disp">—</span></div>
+    </div>
+
+    <div id="ex-card" class="card">
+      <div class="card-header"><span class="tag" data-k="k-tag-ex">Énoncé</span><h2 id="card-title" data-k="k-cardtitle">Modèle logistique et taux d'équipement</h2></div>
+      <div class="card-body" id="ex-content"></div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag" data-k="k-tag-sol">Corrigé</span><h2 data-k="k-cardtitle2">Modèle logistique et taux d'équipement</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+
+  </div>
+</main>
+
+<div id="pdf-ov" onclick="closePdfModal()"></div>
+<div id="pdf-modal">
+  <div class="mh">
+    <h3 data-k="k-modal">Exporter en PDF</h3>
+    <button class="mclose" onclick="closePdfModal()">✕</button>
+  </div>
+  <div class="mb2">
+    <div class="seed-note"><span data-k="k-mseed-pre">Seed&nbsp;:</span> <strong id="modal-seed">—</strong> <span data-k="k-mseed-post">— notez cette valeur pour reproduire exactement cet exercice.</span></div>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-header" checked>
+      <div><span class="opt-lbl" data-k="k-opth">Inclure l'en-tête de page</span>
+           <span class="opt-desc" data-k="k-opthd">Titre, badge « ÉCONOMÉTRIE » et intitulé de l'exercice</span></div>
+    </label>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-sol">
+      <div><span class="opt-lbl" data-k="k-opts">Inclure le corrigé complet</span>
+           <span class="opt-desc" data-k="k-optsd">Linéarisation, tableaux de calcul, estimations et commentaires</span></div>
+    </label>
+    <div class="mactions">
+      <button class="btn-print" onclick="doPrint()"><span data-k="k-print">🖨&nbsp;Imprimer / Sauvegarder PDF</span></button>
+      <button class="btn-cancel" onclick="closePdfModal()"><span data-k="k-cancel">Annuler</span></button>
+    </div>
+  </div>
+</div>
+
+<script>
+let solVisible = false;
+
+/* ============================================================
+   DICTIONNAIRE BILINGUE  /  BILINGUAL DICTIONARY
+   ============================================================ */
+const I18N = {
+
+  fr: {
+    "htmlLang": "fr",
+    "title": "Générateur d'exercices - Modèle logistique",
+    "k-badge": "ÉCONOMÉTRIE",
+    "k-h1": "Le modèle logistique",
+    "k-sub": "© Thomas Hossen – Version du 29 août 2026",
+    "k-seed": "Seed de reproductibilité",
+    "k-seedtip": "Vide = aléatoire à chaque génération",
+    "k-n": "Observations <em>(n)</em>",
+    "k-ntip": "5 ou 7, auto si vide",
+    "k-gen": "Générer →",
+    "k-welcome": "Configurez les paramètres (ou laissez vide pour de l'aléatoire), puis cliquez sur Générer.",
+    "k-new": "↺ Nouvel énoncé",
+    "k-pdf": "⬇ Exporter PDF",
+    "k-seedbadge": "Seed&nbsp;:",
+    "k-tag-ex": "Énoncé",
+    "k-cardtitle": "Modèle logistique et taux d'équipement",
+    "k-tag-sol": "Corrigé",
+    "k-cardtitle2": "Modèle logistique et taux d'équipement",
+    "k-modal": "Exporter en PDF",
+    "k-mseed-pre": "Seed&nbsp;:",
+    "k-mseed-post": "— notez cette valeur pour reproduire exactement cet exercice.",
+    "k-opth": "Inclure l'en-tête de page",
+    "k-opthd": "Titre, badge « ÉCONOMÉTRIE » et intitulé de l'exercice",
+    "k-opts": "Inclure le corrigé complet",
+    "k-optsd": "Linéarisation, tableaux de calcul, estimations et commentaires",
+    "k-print": "🖨&nbsp;Imprimer / Sauvegarder PDF",
+    "k-cancel": "Annuler",
+    "copy": "⧉ Copier",
+    "copyTitle": "Copier la seed active",
+    "copied": "✓ Copié",
+    "phSeed": "auto",
+    "phN": "défaut",
+    "showSol": "Afficher le corrigé",
+    "hideSol": "Masquer le corrigé",
+    pctSep: "&nbsp;%",
+
+    lbl: {
+      year: "Année \\(t\\)",
+      tau: "\\(\\tau_t\\)",
+      x: "\\(x_t=t-" ,
+      Y: "\\(Y_t\\)",
+      devx: "\\(x_t-\\overline{x}\\)",
+      devY: "\\(Y_t-\\overline{Y}\\)",
+      prod: "\\((x_t-\\overline{x})(Y_t-\\overline{Y})\\)",
+      sqx: "\\((x_t-\\overline{x})^2\\)",
+      sqY: "\\((Y_t-\\overline{Y})^2\\)",
+      Yhat: "\\(\\widehat{Y}_t\\)",
+      uhat: "\\(\\widehat{u}_t=Y_t-\\widehat{Y}_t\\)",
+      tauhat: "\\(\\widehat{\\tau}_t\\)",
+      ecart: "\\(\\tau_t-\\widehat{\\tau}_t\\)",
+      sum: "Somme",
+      capData: function(D){ return `Taux d'équipement des ménages ${D.country} en ${D.prodFull}, de ${D.t0} à ${D.t1}. Données annuelles, en pourcentage du nombre de ménages.`; },
+      capCalc: "Tableau de calcul des estimateurs des moindres carrés ordinaires (valeurs arrondies au millième).",
+      capFit: "Valeurs ajustées et résidus du modèle logistique estimé (valeurs arrondies au millième ; taux en points de pourcentage).",
+      capLin: "Nuage de points de la série linéarisée et droite des moindres carrés ordinaires.",
+      capLog: "Taux d'équipement observés (points) et courbe logistique estimée (trait plein). La droite en pointillés figure le taux de saturation.",
+      figLinX: "Année",
+      figLinY: "Y",
+      figLogX: "Année",
+      figLogY: "Taux d'équipement (%)",
+      legObs: "Observations",
+      legFit: "Ajustement MCO",
+      legCurve: "Courbe estimée",
+      legSat: "Saturation"
+    },
+
+    ex: function(D) {
+      return `
+      <div class="context-block">
+        Comment modéliser des phénomènes dont l'évolution n'est pas constante au fil du temps ? Pour la diffusion d'un produit nouveau, on distingue en effet trois phases : une phase de décollage durant laquelle le produit est mal connu et où les ventes progressent faiblement, une phase de croissance accélérée marquée par la diffusion du produit sur le marché, puis une période de freinage due à la saturation du marché ou à la lassitude des consommateurs. Il existe donc un taux d'équipement minimal en produit \\(\\tau_{\\min}\\) et un taux de saturation du marché \\(\\tau_{\\max}\\), tous deux estimés à partir d'études de marché. Le <strong>modèle logistique</strong> permet dès lors de modéliser l'évolution du taux d'équipement au fil du temps : en notant \\(\\tau_t\\) le taux d'équipement du marché à l'instant \\(t\\), il s'agit de déterminer deux réels \\(a\\) et \\(b\\) vérifiant, pour tout instant \\(t\\), la relation
+        \\[\\tau_t=\\tau_{\\min}+\\frac{\\tau_{\\max}-\\tau_{\\min}}{1+e^{a+bt+u_t}}\\]
+        où \\(u_t\\) est une variable aléatoire satisfaisant les hypothèses de Gauss-Markov. L'enjeu du modèle est de permettre la <em>prédiction</em> : du point de vue de l'entreprise qui commercialise son innovation, il est capital d'estimer quelles seront ses ventes afin d'évaluer la rentabilité espérée de son projet.
+        <br><br>
+        Le tableau ci-dessous retrace l'évolution du taux d'équipement des ménages ${D.country} en ${D.prodFull} entre ${D.t0} et ${D.t1}. Comme il fut un temps où ${D.prodShort} n'existai${D.prodPlural ? "ent" : "t"} pas, on suppose \\(\\tau_{\\min}=0\\). Les études de marché menées à l'étranger conduisent à retenir un taux de saturation \\(\\tau_{\\max}=${D.taumaxTxt}\\).
+        ${tblData(D)}
+      </div>
+      <div class="questions"><ol>
+        <li><div class="q-text">Montrer que le modèle logistique peut se réécrire, à tout instant \\(t\\), sous la forme \\(\\ln\\left(\\dfrac{\\tau_{\\max}-\\tau_t}{\\tau_t-\\tau_{\\min}}\\right)=a+bt+u_t\\), modèle linéaire en les paramètres \\(a\\) et \\(b\\).</div></li>
+        <li><div class="q-text">Pour chaque année \\(t\\) de la période, calculer la valeur \\(Y_t:=\\ln\\left(\\dfrac{\\tau_{\\max}-\\tau_t}{\\tau_t-\\tau_{\\min}}\\right)\\) de la variable expliquée du modèle linéarisé. On arrondira les résultats au millième.</div></li>
+        <li><div class="q-text">Déterminer les estimateurs des moindres carrés ordinaires \\(\\widehat{a}\\) et \\(\\widehat{b}\\) des paramètres \\(a\\) et \\(b\\) de la régression de \\(\\textbf{Y}\\) sur la variable de temps recentrée \\(x_t=t-${D.t0}\\). Interpréter le signe et la valeur de \\(\\widehat{b}\\).</div></li>
+        <li><div class="q-text">Déterminer les valeurs estimées \\(\\widehat{\\tau}_{${D.t0}},\\ldots,\\widehat{\\tau}_{${D.t1}}\\) du taux d'équipement en ${D.prodFull} des ménages ${D.country} sur la période. En déduire les résidus \\(\\widehat{u}_t\\) issus de ces estimations.</div></li>
+        <li><div class="q-text">Calculer la somme des carrés expliquée par le modèle (SCE) et la somme des carrés totale (SCT). Quelle est alors la valeur du coefficient de détermination \\(R^2\\) d'un tel modèle ? Commenter.</div></li>
+        <li><div class="q-text">Prévoir le taux d'équipement des ménages ${D.country} en ${D.prodFull} pour l'année ${D.tpred}. Déterminer par ailleurs l'année à partir de laquelle la moitié du marché potentiel est équipée. Quelles limites voyez-vous à de telles prévisions ?</div></li>
+      </ol></div>`;
+    },
+
+    sol: function(D) {
+      return `<div class="st"><ol>
+
+      <li><div>
+        Soit \\(t\\) un entier compris entre ${D.t0} et ${D.t1}. Comme le taux d'équipement \\(\\tau_t\\) est strictement compris entre \\(\\tau_{\\min}\\) et \\(\\tau_{\\max}\\), les quantités \\(\\tau_t-\\tau_{\\min}\\) et \\(\\tau_{\\max}-\\tau_t\\) sont strictement positives : toutes les divisions et le logarithme ci-dessous sont donc licites. On a alors :
+        \\[\\begin{aligned}
+        \\tau_t=\\tau_{\\min}+\\frac{\\tau_{\\max}-\\tau_{\\min}}{1+e^{a+bt+u_t}}
+        &\\iff \\tau_t-\\tau_{\\min}=\\frac{\\tau_{\\max}-\\tau_{\\min}}{1+e^{a+bt+u_t}} \\\\
+        &\\iff 1+e^{a+bt+u_t}=\\frac{\\tau_{\\max}-\\tau_{\\min}}{\\tau_t-\\tau_{\\min}} \\\\
+        &\\iff e^{a+bt+u_t}=\\frac{\\tau_{\\max}-\\tau_{\\min}}{\\tau_t-\\tau_{\\min}}-1 \\\\
+        &\\iff e^{a+bt+u_t}=\\frac{(\\tau_{\\max}-\\tau_{\\min})-(\\tau_t-\\tau_{\\min})}{\\tau_t-\\tau_{\\min}} \\\\
+        &\\iff e^{a+bt+u_t}=\\frac{\\tau_{\\max}-\\tau_t}{\\tau_t-\\tau_{\\min}} \\\\
+        &\\iff \\ln\\left(\\frac{\\tau_{\\max}-\\tau_t}{\\tau_t-\\tau_{\\min}}\\right)=a+bt+u_t
+        \\end{aligned}\\]
+        En posant \\(Y_t:=\\ln\\left(\\frac{\\tau_{\\max}-\\tau_t}{\\tau_t-\\tau_{\\min}}\\right)\\), le modèle logistique devient donc le modèle de régression linéaire simple \\(Y_t=a+bt+u_t\\), estimable par la méthode des moindres carrés ordinaires. La transformation opérée est fondamentale : le modèle de départ est non linéaire en \\(t\\), mais il est <em>linéarisable</em>, c'est-à-dire qu'un changement de variable bien choisi le ramène au cadre de Gauss-Markov. On notera que le rapport \\(\\frac{\\tau_{\\max}-\\tau_t}{\\tau_t-\\tau_{\\min}}\\) s'interprète comme le rapport entre la part du marché qu'il reste à conquérir et la part déjà conquise : c'est le logarithme de ce rapport, et non le taux d'équipement lui-même, qui évolue linéairement dans le temps.
+      </div></li>
+
+      <li><div>
+        On a ici \\(\\tau_{\\min}=0\\) et \\(\\tau_{\\max}=${D.taumaxTxt}\\), de sorte que la variable expliquée du modèle linéarisé s'écrit simplement \\(Y_t=\\ln\\left(\\frac{${D.taumaxNum}-\\tau_t}{\\tau_t}\\right)\\). Pour la première année de la période, on obtient par exemple :
+        \\[Y_{${D.t0}}=\\ln\\left(\\frac{${D.taumaxNum}-${D.tauNum[0]}}{${D.tauNum[0]}}\\right)=\\ln\\left(${nb(D.taumax - D.tau[0], 4)}\\div ${D.tauNum[0]}\\right)=\\ln\\left(${nb((D.taumax - D.tau[0]) / D.tau[0], 3)}\\right)\\approx ${nb(D.Y[0], 3)}\\]
+        En répétant le calcul pour chacune des ${D.n} années de la période, on obtient les valeurs suivantes (arrondies au millième) :
+        ${tblY(D)}
+        On vérifie que la série \\(\\textbf{Y}\\) est strictement décroissante, ce qui est cohérent : le taux d'équipement croissant, la part du marché restant à conquérir diminue relativement à la part déjà conquise. C'est bien un coefficient \\(b\\) négatif qu'il faut donc s'attendre à estimer.
+      </div></li>
+
+      <li><div>
+        On régresse la série \\(\\textbf{Y}=(Y_{${D.t0}},\\ldots,Y_{${D.t1}})\\) sur la série de temps recentrée \\(\\textbf{x}=(0,1,\\ldots,${D.n - 1})\\). Ce recentrage ne change rien à la pente estimée (il s'agit d'une simple translation de l'origine des temps), mais il allège considérablement les calculs. On a immédiatement \\(\\overline{x}=${nb(D.xbar, 0)}\\), et la moyenne empirique de la série \\(\\textbf{Y}\\) vaut
+        \\[\\overline{Y}=\\frac{1}{${D.n}}\\sum_{t=${D.t0}}^{${D.t1}}Y_t=\\frac{${nb(D.sumY, 3)}}{${D.n}}\\approx ${nb(D.Ybar, 3)}\\]
+        On dresse alors le tableau de calcul suivant :
+        ${tblCalc(D)}
+        L'estimateur des moindres carrés ordinaires de la pente est le rapport de la covariance empirique de \\(\\textbf{x}\\) et \\(\\textbf{Y}\\) sur la variance empirique de \\(\\textbf{x}\\), c'est-à-dire le rapport des deux dernières sommes du tableau :
+        \\[\\widehat{b}=\\frac{\\sum_{t}(x_t-\\overline{x})(Y_t-\\overline{Y})}{\\sum_{t}(x_t-\\overline{x})^2}=\\frac{${nb(D.Sxy, 3)}}{${nb(D.Sxx, 0)}}\\approx ${nb(D.bhat, 3)}\\]
+        L'estimateur de la constante s'en déduit par la relation \\(\\widehat{a}=\\overline{Y}-\\widehat{b}\\,\\overline{x}\\), qui traduit le fait que la droite des moindres carrés passe toujours par le point moyen \\((\\overline{x},\\overline{Y})\\) :
+        \\[\\widehat{a}=\\overline{Y}-\\widehat{b}\\,\\overline{x}\\approx ${nb(D.Ybar, 3)}-(${nb(D.bhat, 3)})\\times ${nb(D.xbar, 0)}\\approx ${nb(D.ahat, 3)}\\]
+        Le modèle linéarisé estimé s'écrit donc \\(\\widehat{Y}_t=${nb(D.ahat, 3)}${sgn(D.bhat, 3)}\\,x_t\\), soit, en revenant au temps calendaire \\(t=x_t+${D.t0}\\), \\(\\widehat{Y}_t=${nb(D.ahat, 3)}${sgn(D.bhat, 3)}(t-${D.t0})\\), c'est-à-dire \\(\\widehat{Y}_t\\approx ${nb(D.Ahat, 3)}${sgn(D.bhat, 3)}\\,t\\). C'est cette dernière écriture, aux constantes gigantesques, qu'aurait directement produite un tableur : elle montre l'intérêt du recentrage, la constante \\(\\widehat{a}\\) n'ayant d'interprétation que relativement à l'origine des temps retenue.
+        ${figLin(D)}
+        <strong>Interprétation.</strong> On a \\(\\widehat{b}\\approx ${nb(D.bhat, 3)}&lt;0\\) : conformément à l'intuition, la part du marché restant à conquérir décroît au fil du temps relativement à la part déjà conquise. Plus précisément, comme \\(Y_t\\) est le logarithme du rapport \\(\\frac{\\tau_{\\max}-\\tau_t}{\\tau_t}\\), ce rapport est multiplié chaque année par \\(e^{\\widehat{b}}\\approx ${nb(Math.exp(D.bhat), 3)}\\) : le « potentiel de marché résiduel », rapporté au marché déjà équipé, diminue donc d'environ ${nb((1 - Math.exp(D.bhat)) * 100, 1)}${D.pct} par an. La constante \\(\\widehat{a}\\approx ${nb(D.ahat, 3)}\\), quant à elle, donne la valeur ajustée de \\(Y\\) en ${D.t0} : elle correspond à un taux d'équipement ajusté de \\(\\frac{${D.taumaxNum}}{1+e^{${nb(D.ahat, 3)}}}\\approx ${pctT(D.tauhat[0], 2)}\\) pour la première année.
+      </div></li>
+
+      <li><div>
+        Pour tout entier \\(t\\) compris entre ${D.t0} et ${D.t1}, on pose \\(\\widehat{Y}_t:=\\widehat{a}+\\widehat{b}\\,x_t\\) la valeur ajustée de la variable linéarisée, puis
+        \\[\\widehat{\\tau}_t:=\\tau_{\\min}+\\frac{\\tau_{\\max}-\\tau_{\\min}}{1+e^{\\widehat{Y}_t}}=\\frac{${D.taumaxNum}}{1+e^{\\widehat{Y}_t}}\\]
+        la valeur estimée par le modèle logistique du taux d'équipement à l'année \\(t\\). Le résidu associé à l'observation de l'année \\(t\\) est enfin défini par \\(\\widehat{u}_t:=Y_t-\\widehat{Y}_t\\). Pour la première année, on obtient par exemple \\(\\widehat{Y}_{${D.t0}}=${nb(D.ahat, 3)}${sgn(D.bhat, 3)}\\times 0=${nb(D.Yhat[0], 3)}\\), puis \\(\\widehat{\\tau}_{${D.t0}}=\\frac{${D.taumaxNum}}{1+e^{${nb(D.Yhat[0], 3)}}}\\approx ${nb(D.tauhat[0], 4)}\\), soit ${pctT(D.tauhat[0], 2)}, et enfin \\(\\widehat{u}_{${D.t0}}=${nb(D.Y[0], 3)}-${nb(D.Yhat[0], 3)}=${nb(D.u[0], 3)}\\). En procédant de même pour les autres années, on obtient :
+        ${tblFit(D)}
+        ${figLog(D)}
+        L'ajustement est de très bonne qualité : les résidus \\(\\widehat{u}_t\\) sont d'ordre ${nb(D.maxAbsU, 3)} au maximum, et l'écart entre taux observé et taux ajusté n'excède jamais ${nb(D.maxAbsEcart * 100, 2)} point${D.maxAbsEcart * 100 >= 2 ? "s" : ""} de pourcentage. On notera par ailleurs que la somme des résidus est nulle (aux arrondis près), propriété générale des moindres carrés ordinaires dès lors que le modèle comporte une constante.
+      </div></li>
+
+      <li><div>
+        La somme des carrés expliquée (SCE) est la somme des carrés des écarts des valeurs ajustées à la moyenne, c'est-à-dire la somme des éléments de la série \\(\\left((\\widehat{Y}_{${D.t0}}-\\overline{Y})^2,\\ldots,(\\widehat{Y}_{${D.t1}}-\\overline{Y})^2\\right)\\) ; la somme des carrés totale (SCT) est quant à elle la somme des éléments de la série \\(\\left((Y_{${D.t0}}-\\overline{Y})^2,\\ldots,(Y_{${D.t1}}-\\overline{Y})^2\\right)\\). Comme la droite de régression passe par le point moyen, on a \\(\\widehat{Y}_t-\\overline{Y}=\\widehat{b}(x_t-\\overline{x})\\), d'où l'on tire directement, sans nouveau tableau :
+        \\[\\text{SCE}=\\sum_{t}\\left(\\widehat{Y}_t-\\overline{Y}\\right)^2=\\widehat{b}^{\\,2}\\sum_{t}(x_t-\\overline{x})^2\\approx (${nb(D.bhat, 3)})^2\\times ${nb(D.Sxx, 0)}\\approx ${nb(D.SCE, 3)}\\]
+        La somme des carrés totale a déjà été calculée dans le tableau de la question 3, en sommant la colonne \\((Y_t-\\overline{Y})^2\\) : on a \\(\\text{SCT}\\approx ${nb(D.SCT, 3)}\\). Le coefficient de détermination du modèle est alors le quotient de la première sur la seconde :
+        <div class="res">\\(R^2=\\dfrac{\\text{SCE}}{\\text{SCT}}\\approx\\dfrac{${nb(D.SCE, 3)}}{${nb(D.SCT, 3)}}\\approx ${nb(D.R2, 3)}\\)</div>
+        Cela signifie que ${nb(D.R2 * 100, 1)}${D.pct} de la variation observée de la série statistique \\(\\textbf{Y}\\) est expliquée par la variation de la série \\(\\textbf{x}\\). On a donc mis en évidence — de façon indirecte, certes, puisque le \\(R^2\\) s'interprète ici comme un pourcentage de variation expliquée de \\(\\textbf{Y}\\) et non de la série des taux d'équipement \\((\\tau_{${D.t0}},\\ldots,\\tau_{${D.t1}})\\) — une très forte corrélation entre le temps et le taux d'équipement en ${D.prodFull}. On prendra garde toutefois à ne pas rechercher systématiquement le modèle au \\(R^2\\) le plus élevé : un modèle qui « colle » trop aux données passées peut n'avoir aucune capacité prédictive dès que survient une légère déviation par rapport à celles-ci. C'est le phénomène de <em>surapprentissage</em> (<em>overfitting</em>), redouté de tous les concepteurs de modèles d'apprentissage statistique.
+      </div></li>
+
+      <li><div>
+        <strong>Prévision pour ${D.tpred}.</strong> L'année ${D.tpred} correspond à \\(x=${D.xpred}\\). La valeur ajustée de la variable linéarisée est donc \\(\\widehat{Y}_{${D.tpred}}=${nb(D.ahat, 3)}${sgn(D.bhat, 3)}\\times ${D.xpred}\\approx ${nb(D.Ypred, 3)}\\), d'où le taux d'équipement prévu :
+        \\[\\widehat{\\tau}_{${D.tpred}}=\\frac{${D.taumaxNum}}{1+e^{${nb(D.Ypred, 3)}}}\\approx ${nb(D.taupred, 4)}\\]
+        soit environ ${pctT(D.taupred, 1)} des ménages ${D.country} équipés en ${D.prodFull} à l'horizon ${D.tpred}, contre ${pctT(D.tau[D.n - 1], 2)} en ${D.t1}.
+        <br><br>
+        <strong>Franchissement de la moitié du marché.</strong> La moitié du marché potentiel est atteinte lorsqu'on a \\(\\tau_t=\\frac{\\tau_{\\max}}{2}\\), c'est-à-dire lorsque le dénominateur \\(1+e^{a+bt}\\) vaut 2, soit encore lorsque \\(e^{a+bt}=1\\), c'est-à-dire lorsque \\(Y_t=0\\). On résout donc :
+        \\[\\widehat{a}+\\widehat{b}\\,x=0\\iff x=-\\frac{\\widehat{a}}{\\widehat{b}}\\approx -\\frac{${nb(D.ahat, 3)}}{${nb(D.bhat, 3)}}\\approx ${nb(D.xstar, 2)}\\]
+        ce qui correspond à l'année \\(${D.t0}+${nb(D.xstar, 2)}\\approx ${nb(D.tstar, 1)}\\) : le seuil des ${pctT(D.taumax / 2, 1)} d'équipement serait donc franchi au cours de l'année ${Math.floor(D.tstar)}. Ce point est remarquable : c'est le <em>point d'inflexion</em> de la courbe logistique, celui où la diffusion du produit est la plus rapide. Avant lui, la croissance du taux d'équipement s'accélère ; après lui, elle ralentit — c'est la phase de freinage évoquée en introduction.
+        <br><br>
+        <strong>Limites.</strong> Ces prévisions appellent plusieurs réserves. Premièrement, elles reposent entièrement sur la valeur retenue pour le taux de saturation \\(\\tau_{\\max}=${D.taumaxTxt}\\), qui n'est pas estimée mais <em>postulée</em> à partir d'études de marché : une erreur sur \\(\\tau_{\\max}\\) déforme mécaniquement toute la trajectoire prévue. Deuxièmement, il s'agit d'une extrapolation hors de l'échantillon, d'autant plus fragile que l'horizon est éloigné et que l'échantillon est court (\\(n=${D.n}\\) observations seulement). Troisièmement, le modèle suppose la stabilité des paramètres \\(a\\) et \\(b\\) sur toute la période de prévision : l'apparition d'un produit de substitution, un choc de revenu ou une modification de la réglementation invalideraient cette hypothèse. Enfin, les hypothèses de Gauss-Markov portent sur les aléas \\(u_t\\) du modèle linéarisé, et non sur ceux du modèle logistique initial : la linéarisation déplace la structure des erreurs, ce qui rend l'interprétation probabiliste des intervalles de prévision délicate.
+      </div></li>
+
+      </ol></div>`;
+    }
+  },
+
+  en: {
+    "htmlLang": "en",
+    "title": "Exercise Generator - Logistic Model",
+    "k-badge": "ECONOMETRICS",
+    "k-h1": "The Logistic Model",
+    "k-sub": "© Thomas Hossen – August 29, 2026 Version",
+    "k-seed": "Reproducibility seed",
+    "k-seedtip": "Empty = random at each generation",
+    "k-n": "Observations <em>(n)</em>",
+    "k-ntip": "5 or 7, auto if empty",
+    "k-gen": "Generate →",
+    "k-welcome": "Set the parameters (or leave empty for random values), then click Generate.",
+    "k-new": "↺ New statement",
+    "k-pdf": "⬇ Export PDF",
+    "k-seedbadge": "Seed:",
+    "k-tag-ex": "Problem",
+    "k-cardtitle": "Logistic Model and Ownership Rate",
+    "k-tag-sol": "Solution",
+    "k-cardtitle2": "Logistic Model and Ownership Rate",
+    "k-modal": "Export to PDF",
+    "k-mseed-pre": "Seed:",
+    "k-mseed-post": "— write down this value to reproduce this exercise exactly.",
+    "k-opth": "Include page header",
+    "k-opthd": "Title, \"ECONOMETRICS\" badge and exercise heading",
+    "k-opts": "Include the full solution",
+    "k-optsd": "Linearisation, computation tables, estimates and comments",
+    "k-print": "🖨&nbsp;Print / Save as PDF",
+    "k-cancel": "Cancel",
+    "copy": "⧉ Copy",
+    "copyTitle": "Copy the active seed",
+    "copied": "✓ Copied",
+    "phSeed": "auto",
+    "phN": "default",
+    "showSol": "Show Solution",
+    "hideSol": "Hide Solution",
+    pctSep: "%",
+
+    lbl: {
+      year: "Year \\(t\\)",
+      tau: "\\(\\tau_t\\)",
+      x: "\\(x_t=t-",
+      Y: "\\(Y_t\\)",
+      devx: "\\(x_t-\\overline{x}\\)",
+      devY: "\\(Y_t-\\overline{Y}\\)",
+      prod: "\\((x_t-\\overline{x})(Y_t-\\overline{Y})\\)",
+      sqx: "\\((x_t-\\overline{x})^2\\)",
+      sqY: "\\((Y_t-\\overline{Y})^2\\)",
+      Yhat: "\\(\\widehat{Y}_t\\)",
+      uhat: "\\(\\widehat{u}_t=Y_t-\\widehat{Y}_t\\)",
+      tauhat: "\\(\\widehat{\\tau}_t\\)",
+      ecart: "\\(\\tau_t-\\widehat{\\tau}_t\\)",
+      sum: "Sum",
+      capData: function(D){ return `Ownership rate of ${D.country} households for ${D.prodFull}, from ${D.t0} to ${D.t1}. Annual data, as a percentage of the number of households.`; },
+      capCalc: "Computation table for the ordinary least squares estimators (values rounded to three decimal places).",
+      capFit: "Fitted values and residuals of the estimated logistic model (values rounded to three decimal places; rates in percentage points).",
+      capLin: "Scatter plot of the linearised series and ordinary least squares line.",
+      capLog: "Observed ownership rates (dots) and estimated logistic curve (solid line). The dashed line shows the saturation rate.",
+      figLinX: "Year",
+      figLinY: "Y",
+      figLogX: "Year",
+      figLogY: "Ownership rate (%)",
+      legObs: "Observations",
+      legFit: "OLS fit",
+      legCurve: "Estimated curve",
+      legSat: "Saturation"
+    },
+
+    ex: function(D) {
+      return `
+      <div class="context-block">
+        How can we model phenomena whose evolution is not constant over time? For the diffusion of a new product, three phases can be distinguished: a take-off phase during which the product is little known and sales grow slowly, a phase of accelerated growth marked by the spread of the product across the market, and finally a slowdown period caused by market saturation or consumer weariness. There is therefore a minimum ownership rate \\(\\tau_{\\min}\\) and a market saturation rate \\(\\tau_{\\max}\\), both estimated from market research. The <strong>logistic model</strong> then makes it possible to model the evolution of the ownership rate over time: denoting by \\(\\tau_t\\) the ownership rate of the market at time \\(t\\), the aim is to determine two real numbers \\(a\\) and \\(b\\) satisfying, at any time \\(t\\), the relation
+        \\[\\tau_t=\\tau_{\\min}+\\frac{\\tau_{\\max}-\\tau_{\\min}}{1+e^{a+bt+u_t}}\\]
+        where \\(u_t\\) is a random variable satisfying the Gauss-Markov assumptions. The purpose of the model is to allow <em>prediction</em>: from the point of view of the firm marketing its innovation, it is crucial to estimate future sales in order to assess the expected profitability of the project.
+        <br><br>
+        The table below traces the evolution of the ownership rate of ${D.country} households for ${D.prodFull} between ${D.t0} and ${D.t1}. Since there was a time when ${D.prodShortEn} did not exist, we assume \\(\\tau_{\\min}=0\\). Market research carried out abroad leads us to adopt a saturation rate \\(\\tau_{\\max}=${D.taumaxTxtEn}\\).
+        ${tblData(D)}
+      </div>
+      <div class="questions"><ol>
+        <li><div class="q-text">Show that the logistic model can be rewritten, at any time \\(t\\), as \\(\\ln\\left(\\dfrac{\\tau_{\\max}-\\tau_t}{\\tau_t-\\tau_{\\min}}\\right)=a+bt+u_t\\), a model which is linear in the parameters \\(a\\) and \\(b\\).</div></li>
+        <li><div class="q-text">For each year \\(t\\) of the period, compute the value \\(Y_t:=\\ln\\left(\\dfrac{\\tau_{\\max}-\\tau_t}{\\tau_t-\\tau_{\\min}}\\right)\\) of the dependent variable of the linearised model. Round your results to three decimal places.</div></li>
+        <li><div class="q-text">Determine the ordinary least squares estimators \\(\\widehat{a}\\) and \\(\\widehat{b}\\) of the parameters \\(a\\) and \\(b\\) in the regression of \\(\\textbf{Y}\\) on the recentred time variable \\(x_t=t-${D.t0}\\). Interpret the sign and the magnitude of \\(\\widehat{b}\\).</div></li>
+        <li><div class="q-text">Determine the fitted values \\(\\widehat{\\tau}_{${D.t0}},\\ldots,\\widehat{\\tau}_{${D.t1}}\\) of the ownership rate of ${D.country} households for ${D.prodFull} over the period. Deduce the residuals \\(\\widehat{u}_t\\) resulting from these estimates.</div></li>
+        <li><div class="q-text">Compute the explained sum of squares (ESS) and the total sum of squares (TSS). What is then the value of the coefficient of determination \\(R^2\\) of such a model? Comment.</div></li>
+        <li><div class="q-text">Forecast the ownership rate of ${D.country} households for ${D.prodFull} in ${D.tpred}. Determine as well the year from which half of the potential market is equipped. What limitations do you see in such forecasts?</div></li>
+      </ol></div>`;
+    },
+
+    sol: function(D) {
+      return `<div class="st"><ol>
+
+      <li><div>
+        Let \\(t\\) be an integer between ${D.t0} and ${D.t1}. Since the ownership rate \\(\\tau_t\\) lies strictly between \\(\\tau_{\\min}\\) and \\(\\tau_{\\max}\\), the quantities \\(\\tau_t-\\tau_{\\min}\\) and \\(\\tau_{\\max}-\\tau_t\\) are strictly positive: all the divisions and the logarithm below are therefore legitimate. We then have:
+        \\[\\begin{aligned}
+        \\tau_t=\\tau_{\\min}+\\frac{\\tau_{\\max}-\\tau_{\\min}}{1+e^{a+bt+u_t}}
+        &\\iff \\tau_t-\\tau_{\\min}=\\frac{\\tau_{\\max}-\\tau_{\\min}}{1+e^{a+bt+u_t}} \\\\
+        &\\iff 1+e^{a+bt+u_t}=\\frac{\\tau_{\\max}-\\tau_{\\min}}{\\tau_t-\\tau_{\\min}} \\\\
+        &\\iff e^{a+bt+u_t}=\\frac{\\tau_{\\max}-\\tau_{\\min}}{\\tau_t-\\tau_{\\min}}-1 \\\\
+        &\\iff e^{a+bt+u_t}=\\frac{(\\tau_{\\max}-\\tau_{\\min})-(\\tau_t-\\tau_{\\min})}{\\tau_t-\\tau_{\\min}} \\\\
+        &\\iff e^{a+bt+u_t}=\\frac{\\tau_{\\max}-\\tau_t}{\\tau_t-\\tau_{\\min}} \\\\
+        &\\iff \\ln\\left(\\frac{\\tau_{\\max}-\\tau_t}{\\tau_t-\\tau_{\\min}}\\right)=a+bt+u_t
+        \\end{aligned}\\]
+        Setting \\(Y_t:=\\ln\\left(\\frac{\\tau_{\\max}-\\tau_t}{\\tau_t-\\tau_{\\min}}\\right)\\), the logistic model therefore becomes the simple linear regression model \\(Y_t=a+bt+u_t\\), which can be estimated by ordinary least squares. The transformation carried out is fundamental: the initial model is non-linear in \\(t\\), but it is <em>linearisable</em>, that is, a well-chosen change of variable brings it back into the Gauss-Markov framework. Note that the ratio \\(\\frac{\\tau_{\\max}-\\tau_t}{\\tau_t-\\tau_{\\min}}\\) can be interpreted as the ratio of the share of the market still to be conquered to the share already conquered: it is the logarithm of this ratio, and not the ownership rate itself, which evolves linearly over time.
+      </div></li>
+
+      <li><div>
+        Here we have \\(\\tau_{\\min}=0\\) and \\(\\tau_{\\max}=${D.taumaxTxtEn}\\), so that the dependent variable of the linearised model is simply \\(Y_t=\\ln\\left(\\frac{${D.taumaxNum}-\\tau_t}{\\tau_t}\\right)\\). For the first year of the period, we obtain for instance:
+        \\[Y_{${D.t0}}=\\ln\\left(\\frac{${D.taumaxNum}-${D.tauNum[0]}}{${D.tauNum[0]}}\\right)=\\ln\\left(${nb(D.taumax - D.tau[0], 4)}\\div ${D.tauNum[0]}\\right)=\\ln\\left(${nb((D.taumax - D.tau[0]) / D.tau[0], 3)}\\right)\\approx ${nb(D.Y[0], 3)}\\]
+        Repeating the computation for each of the ${D.n} years of the period, we obtain the following values (rounded to three decimal places):
+        ${tblY(D)}
+        We check that the series \\(\\textbf{Y}\\) is strictly decreasing, which is consistent: as the ownership rate increases, the share of the market still to be conquered falls relative to the share already conquered. We must therefore expect to estimate a negative coefficient \\(b\\).
+      </div></li>
+
+      <li><div>
+        We regress the series \\(\\textbf{Y}=(Y_{${D.t0}},\\ldots,Y_{${D.t1}})\\) on the recentred time series \\(\\textbf{x}=(0,1,\\ldots,${D.n - 1})\\). This recentring changes nothing to the estimated slope (it is a mere translation of the time origin), but it considerably lightens the computations. We immediately have \\(\\overline{x}=${nb(D.xbar, 0)}\\), and the empirical mean of the series \\(\\textbf{Y}\\) is
+        \\[\\overline{Y}=\\frac{1}{${D.n}}\\sum_{t=${D.t0}}^{${D.t1}}Y_t=\\frac{${nb(D.sumY, 3)}}{${D.n}}\\approx ${nb(D.Ybar, 3)}\\]
+        We then draw up the following computation table:
+        ${tblCalc(D)}
+        The ordinary least squares estimator of the slope is the ratio of the empirical covariance of \\(\\textbf{x}\\) and \\(\\textbf{Y}\\) to the empirical variance of \\(\\textbf{x}\\), that is the ratio of the last two sums of the table:
+        \\[\\widehat{b}=\\frac{\\sum_{t}(x_t-\\overline{x})(Y_t-\\overline{Y})}{\\sum_{t}(x_t-\\overline{x})^2}=\\frac{${nb(D.Sxy, 3)}}{${nb(D.Sxx, 0)}}\\approx ${nb(D.bhat, 3)}\\]
+        The estimator of the constant follows from the relation \\(\\widehat{a}=\\overline{Y}-\\widehat{b}\\,\\overline{x}\\), which expresses the fact that the least squares line always passes through the mean point \\((\\overline{x},\\overline{Y})\\):
+        \\[\\widehat{a}=\\overline{Y}-\\widehat{b}\\,\\overline{x}\\approx ${nb(D.Ybar, 3)}-(${nb(D.bhat, 3)})\\times ${nb(D.xbar, 0)}\\approx ${nb(D.ahat, 3)}\\]
+        The estimated linearised model is therefore \\(\\widehat{Y}_t=${nb(D.ahat, 3)}${sgn(D.bhat, 3)}\\,x_t\\), that is, going back to calendar time \\(t=x_t+${D.t0}\\), \\(\\widehat{Y}_t=${nb(D.ahat, 3)}${sgn(D.bhat, 3)}(t-${D.t0})\\), namely \\(\\widehat{Y}_t\\approx ${nb(D.Ahat, 3)}${sgn(D.bhat, 3)}\\,t\\). It is this last expression, with its gigantic constants, that a spreadsheet would have produced directly: it shows the value of recentring, the constant \\(\\widehat{a}\\) having an interpretation only relative to the chosen time origin.
+        ${figLin(D)}
+        <strong>Interpretation.</strong> We have \\(\\widehat{b}\\approx ${nb(D.bhat, 3)}&lt;0\\): in line with intuition, the share of the market still to be conquered decreases over time relative to the share already conquered. More precisely, since \\(Y_t\\) is the logarithm of the ratio \\(\\frac{\\tau_{\\max}-\\tau_t}{\\tau_t}\\), that ratio is multiplied each year by \\(e^{\\widehat{b}}\\approx ${nb(Math.exp(D.bhat), 3)}\\): the "residual market potential", relative to the already equipped market, therefore falls by about ${nb((1 - Math.exp(D.bhat)) * 100, 1)}${D.pct} per year. The constant \\(\\widehat{a}\\approx ${nb(D.ahat, 3)}\\), for its part, gives the fitted value of \\(Y\\) in ${D.t0}: it corresponds to a fitted ownership rate of \\(\\frac{${D.taumaxNum}}{1+e^{${nb(D.ahat, 3)}}}\\approx ${pctT(D.tauhat[0], 2)}\\) for the first year.
+      </div></li>
+
+      <li><div>
+        For every integer \\(t\\) between ${D.t0} and ${D.t1}, we set \\(\\widehat{Y}_t:=\\widehat{a}+\\widehat{b}\\,x_t\\) the fitted value of the linearised variable, and then
+        \\[\\widehat{\\tau}_t:=\\tau_{\\min}+\\frac{\\tau_{\\max}-\\tau_{\\min}}{1+e^{\\widehat{Y}_t}}=\\frac{${D.taumaxNum}}{1+e^{\\widehat{Y}_t}}\\]
+        the value of the ownership rate at year \\(t\\) estimated by the logistic model. The residual associated with the observation of year \\(t\\) is finally defined by \\(\\widehat{u}_t:=Y_t-\\widehat{Y}_t\\). For the first year, we obtain for instance \\(\\widehat{Y}_{${D.t0}}=${nb(D.ahat, 3)}${sgn(D.bhat, 3)}\\times 0=${nb(D.Yhat[0], 3)}\\), then \\(\\widehat{\\tau}_{${D.t0}}=\\frac{${D.taumaxNum}}{1+e^{${nb(D.Yhat[0], 3)}}}\\approx ${nb(D.tauhat[0], 4)}\\), that is ${pctT(D.tauhat[0], 2)}, and finally \\(\\widehat{u}_{${D.t0}}=${nb(D.Y[0], 3)}-${nb(D.Yhat[0], 3)}=${nb(D.u[0], 3)}\\). Proceeding in the same way for the other years, we obtain:
+        ${tblFit(D)}
+        ${figLog(D)}
+        The fit is of very good quality: the residuals \\(\\widehat{u}_t\\) are at most of order ${nb(D.maxAbsU, 3)}, and the gap between observed and fitted rates never exceeds ${nb(D.maxAbsEcart * 100, 2)} percentage point${D.maxAbsEcart * 100 >= 2 ? "s" : ""}. Note moreover that the sum of the residuals is zero (up to rounding), a general property of ordinary least squares as soon as the model includes a constant.
+      </div></li>
+
+      <li><div>
+        The explained sum of squares (ESS) is the sum of the squared deviations of the fitted values from the mean, that is the sum of the elements of the series \\(\\left((\\widehat{Y}_{${D.t0}}-\\overline{Y})^2,\\ldots,(\\widehat{Y}_{${D.t1}}-\\overline{Y})^2\\right)\\); the total sum of squares (TSS) is the sum of the elements of the series \\(\\left((Y_{${D.t0}}-\\overline{Y})^2,\\ldots,(Y_{${D.t1}}-\\overline{Y})^2\\right)\\). Since the regression line passes through the mean point, we have \\(\\widehat{Y}_t-\\overline{Y}=\\widehat{b}(x_t-\\overline{x})\\), from which we obtain directly, without any new table:
+        \\[\\text{ESS}=\\sum_{t}\\left(\\widehat{Y}_t-\\overline{Y}\\right)^2=\\widehat{b}^{\\,2}\\sum_{t}(x_t-\\overline{x})^2\\approx (${nb(D.bhat, 3)})^2\\times ${nb(D.Sxx, 0)}\\approx ${nb(D.SCE, 3)}\\]
+        The total sum of squares has already been computed in the table of question 3, by summing the column \\((Y_t-\\overline{Y})^2\\): we have \\(\\text{TSS}\\approx ${nb(D.SCT, 3)}\\). The coefficient of determination of the model is then the ratio of the former to the latter:
+        <div class="res">\\(R^2=\\dfrac{\\text{ESS}}{\\text{TSS}}\\approx\\dfrac{${nb(D.SCE, 3)}}{${nb(D.SCT, 3)}}\\approx ${nb(D.R2, 3)}\\)</div>
+        This means that ${nb(D.R2 * 100, 1)}${D.pct} of the observed variation of the statistical series \\(\\textbf{Y}\\) is explained by the variation of the series \\(\\textbf{x}\\). We have therefore established — indirectly, admittedly, since \\(R^2\\) is interpreted here as a percentage of explained variation of \\(\\textbf{Y}\\) and not of the series of ownership rates \\((\\tau_{${D.t0}},\\ldots,\\tau_{${D.t1}})\\) — a very strong correlation between time and the ownership rate for ${D.prodFull}. Care should be taken, however, not to systematically seek the model with the highest \\(R^2\\): a model that fits past data too closely may have no predictive ability whatsoever as soon as a slight deviation from those data occurs. This is the phenomenon of <em>overfitting</em>, feared by all designers of statistical learning models.
+      </div></li>
+
+      <li><div>
+        <strong>Forecast for ${D.tpred}.</strong> The year ${D.tpred} corresponds to \\(x=${D.xpred}\\). The fitted value of the linearised variable is therefore \\(\\widehat{Y}_{${D.tpred}}=${nb(D.ahat, 3)}${sgn(D.bhat, 3)}\\times ${D.xpred}\\approx ${nb(D.Ypred, 3)}\\), from which the forecast ownership rate follows:
+        \\[\\widehat{\\tau}_{${D.tpred}}=\\frac{${D.taumaxNum}}{1+e^{${nb(D.Ypred, 3)}}}\\approx ${nb(D.taupred, 4)}\\]
+        that is about ${pctT(D.taupred, 1)} of ${D.country} households equipped with ${D.prodFull} by ${D.tpred}, against ${pctT(D.tau[D.n - 1], 2)} in ${D.t1}.
+        <br><br>
+        <strong>Reaching half of the market.</strong> Half of the potential market is reached when \\(\\tau_t=\\frac{\\tau_{\\max}}{2}\\), that is when the denominator \\(1+e^{a+bt}\\) equals 2, hence when \\(e^{a+bt}=1\\), that is when \\(Y_t=0\\). We therefore solve:
+        \\[\\widehat{a}+\\widehat{b}\\,x=0\\iff x=-\\frac{\\widehat{a}}{\\widehat{b}}\\approx -\\frac{${nb(D.ahat, 3)}}{${nb(D.bhat, 3)}}\\approx ${nb(D.xstar, 2)}\\]
+        which corresponds to the year \\(${D.t0}+${nb(D.xstar, 2)}\\approx ${nb(D.tstar, 1)}\\): the threshold of ${pctT(D.taumax / 2, 1)} ownership would therefore be crossed during the year ${Math.floor(D.tstar)}. This point is remarkable: it is the <em>inflection point</em> of the logistic curve, the one at which the diffusion of the product is fastest. Before it, the growth of the ownership rate accelerates; after it, it slows down — this is the braking phase mentioned in the introduction.
+        <br><br>
+        <strong>Limitations.</strong> These forecasts call for several reservations. First, they rest entirely on the value adopted for the saturation rate \\(\\tau_{\\max}=${D.taumaxTxtEn}\\), which is not estimated but <em>postulated</em> from market research: an error on \\(\\tau_{\\max}\\) mechanically distorts the whole predicted trajectory. Second, this is an out-of-sample extrapolation, all the more fragile as the horizon is distant and the sample short (\\(n=${D.n}\\) observations only). Third, the model assumes the stability of the parameters \\(a\\) and \\(b\\) over the whole forecast period: the appearance of a substitute product, an income shock or a change in regulation would invalidate this assumption. Finally, the Gauss-Markov assumptions bear on the disturbances \\(u_t\\) of the linearised model, not on those of the initial logistic model: linearisation shifts the error structure, which makes the probabilistic interpretation of prediction intervals delicate.
+      </div></li>
+
+      </ol></div>`;
+    }
+  }
+};
+
+/* ============================================================
+   OUTILS DE FORMATAGE  /  FORMATTING HELPERS
+   ============================================================ */
+function nb(x, d) { if (Math.abs(x) < 5e-10) x = 0; return x.toFixed(d); }
+function sgn(x, d) { return (x < 0 ? "-" : "+") + Math.abs(x).toFixed(d); }
+function pctT(x, d) { return (x * 100).toFixed(d === undefined ? 2 : d) + I18N[LANG].pctSep; }
+
+/* ============================================================
+   TABLEAUX  /  TABLES
+   ============================================================ */
+function tblData(D) {
+  const L = I18N[LANG].lbl;
+  let r1 = "", r2 = "";
+  for (let i = 0; i < D.n; i++) {
+    r1 += `<td>${D.years[i]}</td>`;
+    r2 += `<td class="num">${pctT(D.tau[i], 2)}</td>`;
+  }
+  return `<div class="dtable-wrap"><table class="dtable"><caption>${L.capData(D)}</caption>
+    <tr><th scope="row">${L.year}</th>${r1}</tr>
+    <tr><th scope="row">${L.tau}</th>${r2}</tr></table></div>`;
+}
+
+function tblY(D) {
+  const L = I18N[LANG].lbl;
+  let r1 = "", r2 = "", r3 = "";
+  for (let i = 0; i < D.n; i++) {
+    r1 += `<td>${D.years[i]}</td>`;
+    r2 += `<td class="num">${pctT(D.tau[i], 2)}</td>`;
+    r3 += `<td class="num">${nb(D.Y[i], 3)}</td>`;
+  }
+  return `<div class="dtable-wrap"><table class="dtable">
+    <tr><th scope="row">${L.year}</th>${r1}</tr>
+    <tr><th scope="row">${L.tau}</th>${r2}</tr>
+    <tr><th scope="row">${L.Y}</th>${r3}</tr></table></div>`;
+}
+
+function tblCalc(D) {
+  const L = I18N[LANG].lbl;
+  let rows = "";
+  for (let i = 0; i < D.n; i++) {
+    rows += `<tr><td>${D.years[i]}</td><td class="num">${D.x[i]}</td><td class="num">${nb(D.Y[i], 3)}</td>
+      <td class="num">${nb(D.devx[i], 0)}</td><td class="num">${nb(D.devY[i], 3)}</td>
+      <td class="num">${nb(D.prod[i], 3)}</td><td class="num">${nb(D.sqx[i], 0)}</td><td class="num">${nb(D.sqY[i], 3)}</td></tr>`;
+  }
+  return `<div class="dtable-wrap"><table class="dtable"><caption>${L.capCalc}</caption>
+    <tr><th>${L.year}</th><th>${L.x}${D.t0}\\)</th><th>${L.Y}</th><th>${L.devx}</th><th>${L.devY}</th><th>${L.prod}</th><th>${L.sqx}</th><th>${L.sqY}</th></tr>
+    ${rows}
+    <tfoot><tr><td>${L.sum}</td><td class="num">${nb(D.sumx, 0)}</td><td class="num">${nb(D.sumY, 3)}</td><td class="num">0</td><td class="num">${nb(D.sumDevY, 3)}</td><td class="num">${nb(D.Sxy, 3)}</td><td class="num">${nb(D.Sxx, 0)}</td><td class="num">${nb(D.SCT, 3)}</td></tr></tfoot>
+    </table></div>`;
+}
+
+function tblFit(D) {
+  const L = I18N[LANG].lbl;
+  let rows = "";
+  for (let i = 0; i < D.n; i++) {
+    rows += `<tr><td>${D.years[i]}</td><td class="num">${nb(D.Y[i], 3)}</td><td class="num">${nb(D.Yhat[i], 3)}</td>
+      <td class="num">${nb(D.u[i], 3)}</td><td class="num">${pctT(D.tau[i], 2)}</td><td class="num">${pctT(D.tauhat[i], 2)}</td>
+      <td class="num">${sgn((D.tau[i] - D.tauhat[i]) * 100, 2)}</td></tr>`;
+  }
+  return `<div class="dtable-wrap"><table class="dtable"><caption>${L.capFit}</caption>
+    <tr><th>${L.year}</th><th>${L.Y}</th><th>${L.Yhat}</th><th>${L.uhat}</th><th>${L.tau}</th><th>${L.tauhat}</th><th>${L.ecart}</th></tr>
+    ${rows}
+    <tfoot><tr><td>${L.sum}</td><td class="num">${nb(D.sumY, 3)}</td><td class="num">${nb(D.sumYhat, 3)}</td><td class="num">${nb(D.sumU, 3)}</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr></tfoot>
+    </table></div>`;
+}
+
+/* ============================================================
+   FIGURES  /  CHARTS
+   ============================================================ */
+function figLin(D) {
+  const L = I18N[LANG].lbl;
+  const W = 620, H = 360, x0 = 58, x1 = 596, y0 = 22, y1 = 292;
+  const xmax = D.n - 1;
+  let vals = D.Y.concat(D.Yhat);
+  let ylo = Math.floor((Math.min.apply(null, vals) - 0.25) * 2) / 2;
+  let yhi = Math.ceil((Math.max.apply(null, vals) + 0.25) * 2) / 2;
+  const SX = v => x0 + (v / xmax) * (x1 - x0);
+  const SY = v => y1 - ((v - ylo) / (yhi - ylo)) * (y1 - y0);
+  let g = "";
+  for (let i = 0; i <= xmax; i++) {
+    g += `<line x1="${SX(i).toFixed(1)}" y1="${y0}" x2="${SX(i).toFixed(1)}" y2="${y1}" stroke="#e2ded5" stroke-width="1"/>`;
+    g += `<text x="${SX(i).toFixed(1)}" y="${y1 + 18}" text-anchor="middle" font-size="10.5" fill="#5a5a5a">${D.years[i]}</text>`;
+  }
+  for (let v = ylo; v <= yhi + 1e-9; v += 0.5) {
+    g += `<line x1="${x0}" y1="${SY(v).toFixed(1)}" x2="${x1}" y2="${SY(v).toFixed(1)}" stroke="#e2ded5" stroke-width="1"/>`;
+    g += `<text x="${x0 - 8}" y="${(SY(v) + 4).toFixed(1)}" text-anchor="end" font-size="10.5" fill="#5a5a5a">${v.toFixed(1)}</text>`;
+  }
+  g += `<line x1="${x0}" y1="${y1}" x2="${x1}" y2="${y1}" stroke="#0d1b2a" stroke-width="1.3"/>`;
+  g += `<line x1="${x0}" y1="${y0}" x2="${x0}" y2="${y1}" stroke="#0d1b2a" stroke-width="1.3"/>`;
+  g += `<text x="${((x0 + x1) / 2).toFixed(0)}" y="${y1 + 40}" text-anchor="middle" font-size="12" fill="#1e1e1e">${L.figLinX}</text>`;
+  g += `<text x="16" y="${((y0 + y1) / 2).toFixed(0)}" text-anchor="middle" font-size="12" fill="#1e1e1e" transform="rotate(-90 16 ${((y0 + y1) / 2).toFixed(0)})">${L.figLinY}</text>`;
+  g += `<line x1="${SX(0).toFixed(2)}" y1="${SY(D.ahat).toFixed(2)}" x2="${SX(xmax).toFixed(2)}" y2="${SY(D.ahat + D.bhat * xmax).toFixed(2)}" stroke="#b94040" stroke-width="2"/>`;
+  for (let i = 0; i <= xmax; i++) {
+    g += `<line x1="${SX(i).toFixed(2)}" y1="${SY(D.Y[i]).toFixed(2)}" x2="${SX(i).toFixed(2)}" y2="${SY(D.Yhat[i]).toFixed(2)}" stroke="#9a9a9a" stroke-width="1" stroke-dasharray="2 2"/>`;
+    g += `<circle cx="${SX(i).toFixed(2)}" cy="${SY(D.Y[i]).toFixed(2)}" r="4" fill="#0d1b2a"/>`;
+  }
+  let lx = x1 - 168, ly = y0 + 6;
+  g += `<rect x="${lx}" y="${ly}" width="160" height="48" fill="#fff" stroke="#d4cfc4" rx="3"/>`;
+  g += `<circle cx="${lx + 20}" cy="${ly + 16}" r="4" fill="#0d1b2a"/><text x="${lx + 34}" y="${ly + 20}" font-size="10.5" fill="#1e1e1e">${L.legObs}</text>`;
+  g += `<line x1="${lx + 10}" y1="${ly + 34}" x2="${lx + 30}" y2="${ly + 34}" stroke="#b94040" stroke-width="2"/><text x="${lx + 34}" y="${ly + 38}" font-size="10.5" fill="#1e1e1e">${L.legFit}</text>`;
+  return `<div class="fig-wrap"><svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" font-family="Source Serif 4, serif">${g}</svg></div><p class="fig-cap">${L.capLin}</p>`;
+}
+
+function figLog(D) {
+  const L = I18N[LANG].lbl;
+  const W = 620, H = 370, x0 = 52, x1 = 596, y0 = 22, y1 = 296;
+  const xmax = D.xpred;
+  const ymax = Math.ceil((D.taumax * 100 + 6) / 10) * 10;
+  const SX = v => x0 + (v / xmax) * (x1 - x0);
+  const SY = v => y1 - (v / ymax) * (y1 - y0);
+  const f = x => D.taumax * 100 / (1 + Math.exp(D.ahat + D.bhat * x));
+  let step = xmax > 10 ? 2 : 1;
+  let g = "";
+  for (let i = 0; i <= xmax; i += step) {
+    g += `<line x1="${SX(i).toFixed(1)}" y1="${y0}" x2="${SX(i).toFixed(1)}" y2="${y1}" stroke="#e2ded5" stroke-width="1"/>`;
+    g += `<text x="${SX(i).toFixed(1)}" y="${y1 + 18}" text-anchor="middle" font-size="10" fill="#5a5a5a">${D.t0 + i}</text>`;
+  }
+  for (let v = 0; v <= ymax; v += 10) {
+    g += `<line x1="${x0}" y1="${SY(v).toFixed(1)}" x2="${x1}" y2="${SY(v).toFixed(1)}" stroke="#e2ded5" stroke-width="1"/>`;
+    g += `<text x="${x0 - 8}" y="${(SY(v) + 4).toFixed(1)}" text-anchor="end" font-size="10.5" fill="#5a5a5a">${v}</text>`;
+  }
+  g += `<line x1="${x0}" y1="${y1}" x2="${x1}" y2="${y1}" stroke="#0d1b2a" stroke-width="1.3"/>`;
+  g += `<line x1="${x0}" y1="${y0}" x2="${x0}" y2="${y1}" stroke="#0d1b2a" stroke-width="1.3"/>`;
+  g += `<text x="${((x0 + x1) / 2).toFixed(0)}" y="${y1 + 40}" text-anchor="middle" font-size="12" fill="#1e1e1e">${L.figLogX}</text>`;
+  g += `<text x="14" y="${((y0 + y1) / 2).toFixed(0)}" text-anchor="middle" font-size="12" fill="#1e1e1e" transform="rotate(-90 14 ${((y0 + y1) / 2).toFixed(0)})">${L.figLogY}</text>`;
+  g += `<line x1="${x0}" y1="${SY(D.taumax * 100).toFixed(2)}" x2="${x1}" y2="${SY(D.taumax * 100).toFixed(2)}" stroke="#c9952a" stroke-width="1.6" stroke-dasharray="6 4"/>`;
+  let pts = [];
+  for (let k = 0; k <= 200; k++) {
+    let xx = xmax * k / 200;
+    pts.push((k === 0 ? "M" : "L") + SX(xx).toFixed(2) + "," + SY(f(xx)).toFixed(2));
+  }
+  g += `<path d="${pts.join(" ")}" fill="none" stroke="#b94040" stroke-width="2.2"/>`;
+  if (D.xstar <= xmax) {
+    g += `<line x1="${SX(D.xstar).toFixed(2)}" y1="${y1}" x2="${SX(D.xstar).toFixed(2)}" y2="${SY(D.taumax * 50).toFixed(2)}" stroke="#5a5a5a" stroke-width="1" stroke-dasharray="3 3"/>`;
+    g += `<circle cx="${SX(D.xstar).toFixed(2)}" cy="${SY(D.taumax * 50).toFixed(2)}" r="4.5" fill="none" stroke="#2d6b4a" stroke-width="2"/>`;
+  }
+  for (let i = 0; i < D.n; i++) {
+    g += `<circle cx="${SX(i).toFixed(2)}" cy="${SY(D.tau[i] * 100).toFixed(2)}" r="4" fill="#0d1b2a"/>`;
+  }
+  g += `<circle cx="${SX(D.xpred).toFixed(2)}" cy="${SY(D.taupred * 100).toFixed(2)}" r="5" fill="#fff" stroke="#b94040" stroke-width="2"/>`;
+  let lx = x0 + 12, ly = y0 + 6;
+  g += `<rect x="${lx}" y="${ly}" width="168" height="66" fill="#fff" stroke="#d4cfc4" rx="3"/>`;
+  g += `<circle cx="${lx + 20}" cy="${ly + 16}" r="4" fill="#0d1b2a"/><text x="${lx + 34}" y="${ly + 20}" font-size="10.5" fill="#1e1e1e">${L.legObs}</text>`;
+  g += `<line x1="${lx + 10}" y1="${ly + 34}" x2="${lx + 30}" y2="${ly + 34}" stroke="#b94040" stroke-width="2.2"/><text x="${lx + 34}" y="${ly + 38}" font-size="10.5" fill="#1e1e1e">${L.legCurve}</text>`;
+  g += `<line x1="${lx + 10}" y1="${ly + 52}" x2="${lx + 30}" y2="${ly + 52}" stroke="#c9952a" stroke-width="1.6" stroke-dasharray="6 4"/><text x="${lx + 34}" y="${ly + 56}" font-size="10.5" fill="#1e1e1e">${L.legSat}</text>`;
+  return `<div class="fig-wrap"><svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" font-family="Source Serif 4, serif">${g}</svg></div><p class="fig-cap">${L.capLog}</p>`;
+}
+
+/* ============================================================
+   PRODUITS ET PAYS  /  PRODUCTS AND COUNTRIES
+   ============================================================ */
+const PRODUITS = [
+  { base: 1979, fr: "magnétoscopes",                    frShort: "les magnétoscopes",              plur: true,  en: "VCRs",                        enShort: "VCRs" },
+  { base: 1994, fr: "téléphones mobiles",               frShort: "les téléphones mobiles",         plur: true,  en: "mobile phones",               enShort: "mobile phones" },
+  { base: 1990, fr: "micro-ordinateurs",                frShort: "les micro-ordinateurs",          plur: true,  en: "personal computers",          enShort: "personal computers" },
+  { base: 2000, fr: "accès à Internet haut débit",      frShort: "l'accès à Internet haut débit",  plur: false, en: "broadband Internet access",   enShort: "broadband Internet access" },
+  { base: 2004, fr: "téléviseurs à écran plat",         frShort: "les téléviseurs à écran plat",   plur: true,  en: "flat-screen televisions",     enShort: "flat-screen televisions" },
+  { base: 2008, fr: "smartphones",                      frShort: "les smartphones",                plur: true,  en: "smartphones",                 enShort: "smartphones" },
+  { base: 2011, fr: "tablettes tactiles",               frShort: "les tablettes tactiles",         plur: true,  en: "tablet computers",            enShort: "tablet computers" },
+  { base: 2013, fr: "abonnements à la fibre optique",   frShort: "la fibre optique",               plur: false, en: "fibre-optic subscriptions",   enShort: "fibre-optic subscriptions" },
+  { base: 2016, fr: "enceintes connectées",             frShort: "les enceintes connectées",       plur: true,  en: "smart speakers",              enShort: "smart speakers" },
+  { base: 2015, fr: "véhicules électriques",            frShort: "les véhicules électriques",      plur: true,  en: "electric vehicles",           enShort: "electric vehicles" }
+];
+const PAYS = [
+  { fr: "français",     en: "French" },
+  { fr: "allemands",    en: "German" },
+  { fr: "italiens",     en: "Italian" },
+  { fr: "espagnols",    en: "Spanish" },
+  { fr: "britanniques", en: "British" },
+  { fr: "canadiens",    en: "Canadian" }
+];
+
+/* ============================================================
+   PRNG (mulberry32)
+   ============================================================ */
+let _rand, _activeSeed = 0;
+function initRand(seed) {
+  _activeSeed = seed >>> 0;
+  let s = _activeSeed;
+  _rand = () => {
+    s = (s + 0x6D2B79F5) >>> 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const rI = (a, b) => Math.floor(_rand() * (b - a + 1)) + a;
+const rA = arr => arr[Math.floor(_rand() * arr.length)];
+const r3 = x => Math.round(x * 1000) / 1000;
+
+/* ============================================================
+   GENERATION DES DONNEES  /  DATA GENERATION
+   ============================================================ */
+function buildData(n) {
+  let D = null;
+  let guard = 0;
+  while (D === null && guard++ < 4000) {
+    const ip = rI(0, PRODUITS.length - 1);
+    const ic = rI(0, PAYS.length - 1);
+    const prod = PRODUITS[ip], pays = PAYS[ic];
+    const t0 = prod.base + rI(-1, 2);
+    const taumax = rA([0.70, 0.75, 0.80, 0.85, 0.90]);
+
+    /* Parametres "vrais" du processus generateur, sur le temps recentre */
+    const a = rI(18, 32) / 10;
+    const b = -rI(6, 14) * 5 / 100;
+    const Ylast = a + b * (n - 1);
+    if (Ylast < 0.20 || Ylast > 1.05) continue;
+
+    /* Aleas : petites deviations, arrondies au centieme */
+    const eps = [];
+    for (let i = 0; i < n; i++) eps.push(rA([-0.08, -0.05, -0.03, 0, 0.03, 0.05, 0.08]));
+
+    /* Taux d'equipement observes, arrondis a 0.01 point de pourcentage */
+    const tau = [], years = [], x = [];
+    let ok = true;
+    for (let i = 0; i < n; i++) {
+      const Yi = a + b * i + eps[i];
+      const ti = Math.round(taumax / (1 + Math.exp(Yi)) * 10000) / 10000;
+      if (i > 0 && ti <= tau[i - 1] + 0.0015) { ok = false; break; }
+      tau.push(ti); years.push(t0 + i); x.push(i);
+    }
+    if (!ok) continue;
+    if (tau[0] < 0.02 || tau[n - 1] > 0.48 * taumax) continue;
+
+    /* Serie linearisee, arrondie au millieme (tau_min = 0) */
+    const Y = tau.map(t => r3(Math.log((taumax - t) / t)));
+    if (Y[n - 1] < 0.15) continue;
+
+    /* MCO sur le temps recentre : tous les calculs se font sur les valeurs
+       arrondies au millieme, exactement comme le ferait un etudiant. */
+    const xbar = (n - 1) / 2;
+    const sumx = x.reduce((s, v) => s + v, 0);
+    const sumY = r3(Y.reduce((s, v) => s + v, 0));
+    const Ybar = r3(sumY / n);
+    const devx = x.map(v => v - xbar);
+    const devY = Y.map(v => r3(v - Ybar));
+    const prodxy = devx.map((v, i) => r3(v * devY[i]));
+    const sqx = devx.map(v => v * v);
+    const sqY = devY.map(v => r3(v * v));
+    const Sxy = r3(prodxy.reduce((s, v) => s + v, 0));
+    const Sxx = sqx.reduce((s, v) => s + v, 0);
+    const SCT = r3(sqY.reduce((s, v) => s + v, 0));
+    const sumDevY = r3(devY.reduce((s, v) => s + v, 0));
+
+    const bhat = r3(Sxy / Sxx);
+    const ahat = r3(Ybar - bhat * xbar);
+    if (bhat >= -0.10) continue;
+
+    const Yhat = x.map(v => r3(ahat + bhat * v));
+    const u = Y.map((v, i) => r3(v - Yhat[i]));
+    const sumYhat = r3(Yhat.reduce((s, v) => s + v, 0));
+    const sumU = r3(u.reduce((s, v) => s + v, 0));
+    const tauhat = Yhat.map(v => taumax / (1 + Math.exp(v)));
+
+    const SCE = r3(bhat * bhat * Sxx);
+    const R2 = SCE / SCT;
+    if (R2 < 0.96 || R2 > 0.9992) continue;
+
+    /* Point d'inflexion et horizon de prevision */
+    const xstar = -ahat / bhat;
+    if (xstar < n - 0.5 || xstar > n + 9) continue;
+    const xpred = Math.round(xstar) + rI(1, 3);
+    const Ypred = r3(ahat + bhat * xpred);
+    const taupred = taumax / (1 + Math.exp(Ypred));
+    if (taupred > 0.90 * taumax) continue;
+
+    const maxAbsU = Math.max.apply(null, u.map(Math.abs));
+    const maxAbsEcart = Math.max.apply(null, tau.map((v, i) => Math.abs(v - tauhat[i])));
+
+    const L = (LANG === 'fr');
+    D = {
+      n: n, years: years, x: x, t0: t0, t1: t0 + n - 1,
+      taumax: taumax,
+      taumaxNum: taumax.toFixed(2),
+      taumaxTxt: (taumax * 100).toFixed(0) + "\\,\\%",
+      taumaxTxtEn: (taumax * 100).toFixed(0) + "\\,\\%",
+      tau: tau, tauNum: tau.map(v => v.toFixed(4)),
+      Y: Y, xbar: xbar, sumx: sumx, sumY: sumY, Ybar: Ybar,
+      devx: devx, devY: devY, prod: prodxy, sqx: sqx, sqY: sqY,
+      Sxy: Sxy, Sxx: Sxx, SCT: SCT, sumDevY: sumDevY,
+      bhat: bhat, ahat: ahat, Ahat: r3(ahat - bhat * t0),
+      Yhat: Yhat, u: u, sumYhat: sumYhat, sumU: sumU, tauhat: tauhat,
+      SCE: SCE, R2: R2,
+      xstar: xstar, tstar: t0 + xstar,
+      xpred: xpred, tpred: t0 + xpred, Ypred: Ypred, taupred: taupred,
+      maxAbsU: maxAbsU, maxAbsEcart: maxAbsEcart,
+      prodFull: L ? prod.fr : prod.en,
+      prodShort: prod.frShort,
+      prodShortEn: prod.enShort,
+      prodPlural: prod.plur,
+      country: L ? pays.fr : pays.en,
+      pct: I18N[LANG].pctSep
+    };
+  }
+  return D;
+}
+
+/* ============================================================
+   GENERATION / RENDU
+   ============================================================ */
+function regen() {
+  document.getElementById('seed-input').value = '';
+  generateFromControls();
+}
+
+function generateFromControls() {
+  const seedInp = document.getElementById('seed-input').value;
+  const seed = seedInp ? parseInt(seedInp) : Math.floor(Math.random() * 10000000);
+  initRand(seed);
+  document.getElementById('seed-disp').textContent = seed;
+  document.getElementById('modal-seed').textContent = seed;
+
+  const nInp = document.getElementById('param-n').value;
+  let n = nInp ? parseInt(nInp) : rA([5, 7]);
+  if (n < 5) n = 5;
+  if (n > 7) n = 7;
+  if (n % 2 === 0) n = n + 1 > 7 ? 5 : n + 1;
+
+  const D = buildData(n);
+  if (!D) return;
+
+  document.getElementById('ex-content').innerHTML = I18N[LANG].ex(D);
+  document.getElementById('sol-content').innerHTML = I18N[LANG].sol(D);
+
+  document.getElementById('welcome').style.display = 'none';
+  document.getElementById('ex-area').style.display = 'block';
+  solVisible = false;
+  let solC = document.getElementById('sol-card'), btn = document.getElementById('toggle-btn');
+  solC.classList.remove('visible'); btn.classList.remove('shown'); btn.textContent = I18N[LANG].showSol;
+
+  if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise();
+}
+
+/* ============================================================
+   LANGUE / UI / EXPORT PDF
+   ============================================================ */
+let LANG = 'fr';
+
+function detectLang() {
+    try {
+        const q = new URLSearchParams(window.location.search).get('lang');
+        if (q && I18N[q.toLowerCase()]) return q.toLowerCase();
+    } catch (e) {}
+    const h = (window.location.hash || '').replace('#', '').toLowerCase();
+    if (I18N[h]) return h;
+    return 'fr';
+}
+
+function applyLang() {
+    const D = I18N[LANG];
+    document.documentElement.lang = D.htmlLang;
+    document.title = D.title;
+
+    document.querySelectorAll('[data-k]').forEach(function (el) {
+        const key = el.getAttribute('data-k');
+        if (D[key] !== undefined) el.innerHTML = D[key];
+    });
+
+    const cp = document.getElementById('btn-copy');
+    if (cp) { cp.textContent = D.copy; cp.title = D.copyTitle; }
+    const si = document.getElementById('seed-input');
+    if (si) si.placeholder = D.phSeed;
+    const ni = document.getElementById('param-n');
+    if (ni) ni.placeholder = D.phN;
+
+    const tb = document.getElementById('toggle-btn');
+    if (tb) tb.textContent = solVisible ? D.hideSol : D.showSol;
+
+    document.getElementById('flag-fr').classList.toggle('active', LANG === 'fr');
+    document.getElementById('flag-en').classList.toggle('active', LANG === 'en');
+}
+
+function setLang(lang) {
+    if (!I18N[lang] || lang === LANG) return;
+    LANG = lang;
+
+    try {
+        const u = new URL(window.location.href);
+        u.searchParams.set('lang', lang);
+        history.replaceState(null, '', u.toString());
+    } catch (e) {}
+
+    applyLang();
+
+    if (document.getElementById('ex-area').style.display !== 'none') {
+        const wasVis = solVisible;
+        document.getElementById('seed-input').value = _activeSeed;
+        generateFromControls();
+        if (wasVis) toggleSol();
+    }
+}
+
+function toggleSol(){
+  solVisible = !solVisible;
+  const sol = document.getElementById('sol-card'), btn = document.getElementById('toggle-btn');
+  if(solVisible){sol.classList.add('visible'); btn.classList.add('shown'); btn.textContent = I18N[LANG].hideSol;}
+  else{sol.classList.remove('visible'); btn.classList.remove('shown'); btn.textContent = I18N[LANG].showSol;}
+}
+
+function copySeed(){
+  const s = document.getElementById('seed-disp').textContent;
+  if(s && s !== '—'){
+    navigator.clipboard.writeText(s).then(() => {
+      const b = event.target, o = b.textContent;
+      b.textContent = I18N[LANG].copied; setTimeout(()=>b.textContent=o,1500);
+    });
+  }
+}
+
+function openPdfModal(){
+  document.getElementById('pdf-ov').style.display = 'block';
+  document.getElementById('pdf-modal').style.display = 'block';
+  document.getElementById('opt-sol').checked = solVisible;
+}
+function closePdfModal(){
+  document.getElementById('pdf-ov').style.display = 'none';
+  document.getElementById('pdf-modal').style.display = 'none';
+}
+function doPrint(){
+  const noHdr = !document.getElementById('opt-header').checked;
+  const inclSol = document.getElementById('opt-sol').checked;
+  const body = document.body;
+  if(noHdr) body.classList.add('print-no-header');
+  if(inclSol){body.classList.add('print-force-solution');body.classList.remove('print-no-solution');}
+  else{body.classList.add('print-no-solution');body.classList.remove('print-force-solution');}
+  closePdfModal();
+  setTimeout(() => {
+    window.print();
+    setTimeout(() => { body.classList.remove('print-no-header','print-force-solution','print-no-solution'); }, 500);
+  }, 100);
+}
+
+/* Initialisation */
+LANG = detectLang();
+applyLang();
+</script>
+
+</body>
+</html>
