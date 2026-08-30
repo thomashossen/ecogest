@@ -1,0 +1,1816 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Finance d'Entreprise - Coût du Capital</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['\\[', '\\]']]
+    }
+  };
+</script>
+<script>window.MathJax=window.MathJax||{};window.MathJax.options=window.MathJax.options||{};window.MathJax.options.enableAssistiveMml=true;</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7;text-align:justify;}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 1.5rem;border-bottom:3px solid var(--gold);text-align:left;}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end;background:rgba(255,255,255,.03);padding:1rem 1.5rem;border-radius:6px;border:1px solid rgba(255,255,255,.1)}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.6)}
+.ctrl-inp, .ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.4rem .7rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none;transition:border-color .2s}
+.ctrl-inp:focus, .ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.5rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;transition:background .18s;margin-left:auto}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN & CARDS */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:700}
+
+.top-actions{display:flex;gap:.5rem;}
+.btn-action{background:#fff;border:1px solid var(--border);color:var(--navy);padding:.4rem .8rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.85rem;font-weight:600;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.btn-action:hover{border-color:var(--navy);background:var(--cream-dark);}
+
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem;text-align:left;}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+.event-list{list-style:none;}
+.event-list > li{margin-bottom:1.5rem;padding-left:1.5rem;position:relative;font-size:.95rem;text-align:justify}
+.event-list > li::before{content:"•";position:absolute;left:0;color:var(--gold);font-size:1.5rem;line-height:1}
+
+.sub-list { list-style-type: none; padding-left: 1rem; margin-top: 0.8rem; text-align:justify;}
+.sub-list li { margin-bottom: 0.5rem; }
+
+/* EXAM TABLE */
+.exam-table-wrap { overflow-x: auto; margin: 1.5rem 0; }
+.exam-table{width:100%;border-collapse:collapse;font-size:.85rem;font-family:'Source Serif 4',serif; margin: 0;}
+.exam-table th, .exam-table td{border:1px solid var(--border);padding:.6rem;text-align:center;vertical-align:middle;}
+.exam-table th{background:var(--navy);color:var(--cream);font-weight:600;}
+.exam-table .txt-left{text-align:left;font-weight:600;color:var(--navy);}
+.exam-table .amt{font-family:'JetBrains Mono',monospace;text-align:right;white-space:nowrap;}
+
+.two-col-table { width: 100%; display: flex; gap: 2rem; margin: 1.5rem 0; }
+.col-half { flex: 1; }
+
+/* SOLUTION TOGGLE */
+.sol-toggle-wrap{text-align:left; margin: 1.5rem 0 0 0;}
+.btn-toggle{background:transparent;border:2px solid var(--green);border-bottom:none;color:var(--green);font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;padding:.5rem 1.5rem;border-radius:4px 4px 0 0;cursor:pointer;transition:all .2s; position:relative; z-index:2; top:2px;}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--green);color:var(--cream)}
+.sol-card{border-top:2px solid var(--green);display:none; border-radius: 0 6px 6px 6px; position:relative; z-index:1;}
+.sol-card.visible{display:block;animation:fi .4s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+
+.calc-box{background:#f9fcf9;border:1px solid #c8e6c9;padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.9rem;color:var(--text);line-height:1.6;text-align:justify;}
+
+@media print{
+  body{background:#fff;}
+  header, .ctrls, .sol-toggle-wrap, .top-actions {display:none !important;}
+  .card{box-shadow:none; border:1px solid var(--border); margin-bottom:2rem;}
+  .sol-card{display:block !important; border-top:2px solid var(--green);}
+  #ex-area {display:block !important;}
+}
+
+/* --- Selecteur de langue / Language switch --- */
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem}
+.header-top .header-badge{margin-bottom:0}
+.lang-switch{display:flex;gap:.45rem;flex-shrink:0}
+.flag-btn{background:rgba(255,255,255,.06);border:1px solid rgba(201,149,42,.35);border-radius:3px;padding:3px;cursor:pointer;line-height:0;opacity:.5;transition:opacity .2s,border-color .2s,transform .15s}
+.flag-btn:hover{opacity:1;transform:translateY(-1px)}
+.flag-btn.active{opacity:1;border-color:var(--gold-light);box-shadow:0 0 0 1px rgba(232,184,75,.35)}
+.flag-btn svg{display:block;width:30px;height:20px;border-radius:1px}
+@media print{ .lang-switch{display:none !important;} }
+</style>
+<!-- KIT:CSS:START v1 --><style id="kit-css">
+/* ============================================================
+   KIT D'UNIFORMISATION — bloc partagé, identique sur toutes les pages.
+   Ne rien modifier ici fichier par fichier : régénérer le kit.
+   ============================================================ */
+
+/* --- 1. Mathématiques : jamais de débordement --- */
+mjx-container[display="true"]{
+  overflow-x:auto; overflow-y:hidden; max-width:100%;
+  padding:.15rem 0; margin:1rem 0 !important;
+}
+mjx-container[display="true"]::-webkit-scrollbar{height:5px}
+mjx-container[display="true"]::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+mjx-container{ max-width:100%; }
+.math-formula{ text-align:center; margin:1.2rem 0; overflow-x:auto; max-width:100%; }
+@media (max-width:640px){
+  mjx-container[display="true"]{ font-size:88% }
+}
+
+/* --- 2. Listes à puces entourées (questions ET données de contexte) --- */
+.kit-list, .st > ol,
+.questions > ol,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list), .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list),
+.question-list, .enum-list, .q-list{
+  counter-reset:kitq; list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem;
+}
+.kit-list > li, .st > ol > li,
+.questions > ol > li,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li, .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li,
+.question-list > li, .enum-list > li, .q-list > li{
+  counter-increment:kitq; position:relative;
+  padding-left:2.6rem; margin-bottom:1.3rem;
+  font-size:.95rem; line-height:1.7; text-align:justify;
+  font-weight:400; color:var(--text);
+  display:block;
+}
+.kit-list > li::before, .st > ol > li::before,
+.questions > ol > li::before,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li::before, .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li::before,
+.question-list > li::before, .enum-list > li::before, .q-list > li::before{
+  content:counter(kitq);
+  position:absolute; left:0; top:.1rem;
+  width:28px; min-width:28px; height:28px;
+  background:var(--navy); color:var(--cream);
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.72rem; font-weight:500;
+  flex-shrink:0;
+}
+.questions ol > li .q-text{ flex:1; font-size:.95rem; text-align:justify }
+/* sous-listes : cercle creux, plus discret */
+.enum-sublist, .kit-sublist, .sub-list, .sub-ol, .alpha-list, .enum-subsublist,
+.st ol.sub-ol, .questions ol ol, .st ol ol, .kit-list ol, .q-list ol, .question-list ol{
+  counter-reset:kitsq; list-style:none !important; padding-left:0 !important;
+  margin:.9rem 0 .9rem 0;
+}
+.enum-sublist > li, .kit-sublist > li, .sub-list > li, .sub-ol > li, .alpha-list > li, .enum-subsublist > li,
+.st ol.sub-ol > li, .questions ol ol > li, .st ol ol > li, .kit-list ol > li, .q-list ol > li, .question-list ol > li{
+  counter-increment:kitsq; position:relative;
+  padding-left:2.1rem; margin-bottom:.7rem; font-size:.92rem; text-align:justify;
+}
+.enum-sublist > li::before, .kit-sublist > li::before, .sub-list > li::before, .sub-ol > li::before, .alpha-list > li::before, .enum-subsublist > li::before,
+.st ol.sub-ol > li::before, .questions ol ol > li::before, .st ol ol > li::before, .kit-list ol > li::before, .q-list ol > li::before, .question-list ol > li::before{
+  content:counter(kitsq,lower-alpha);
+  min-width:22px;
+  position:absolute; left:0; top:.05rem;
+  width:22px; height:22px;
+  background:transparent; color:var(--navy);
+  border:1px solid var(--gold);
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.65rem;
+}
+
+/* variante : puces simples non numérotées (listes de données) */
+.kit-simple{ list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem }
+.kit-simple > li{
+  position:relative; padding-left:1.5rem; margin-bottom:1.1rem;
+  font-size:.95rem; line-height:1.7; text-align:justify;
+}
+.kit-simple > li::before{
+  content:"\2022"; position:absolute; left:0; top:-.15rem;
+  color:var(--gold); font-size:1.5rem; line-height:1; background:none;
+  width:auto; height:auto; border:none; border-radius:0;
+}
+/* variante : liste à un seul élément, sans puce */
+.kit-nobullet{ list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem }
+.kit-nobullet > li{
+  padding-left:0; margin-bottom:1rem; font-size:.95rem; line-height:1.7; text-align:justify;
+}
+.kit-nobullet > li::before{ content:none !important; display:none !important }
+/* variante : titres de section numérotés (contenu intercalé entre les puces) */
+.kit-num-scope{ counter-reset:kitn }
+p.kit-num{
+  counter-increment:kitn; position:relative;
+  padding-left:2.6rem; margin:1.8rem 0 1rem;
+  font-weight:600; color:var(--navy); text-align:left;
+  min-height:28px; display:flex; align-items:center;
+}
+p.kit-num:first-of-type{ margin-top:0 }
+p.kit-num::before{
+  content:counter(kitn); position:absolute; left:0; top:0;
+  width:28px; height:28px; background:var(--navy); color:var(--cream);
+  border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.72rem; font-weight:500;
+}
+
+/* titres de dossier */
+.dossier-title{
+  margin:2rem 0 1rem; font-weight:600; color:var(--navy); font-size:1.02rem;
+  border-bottom:1px solid var(--border); padding-bottom:.4rem; text-align:left;
+}
+.dossier-title:first-of-type{ margin-top:0 }
+.dossier-body{ margin-bottom:.5rem }
+
+/* --- 3. Corrigé sobre : plus de multiplication de fonds verts --- */
+.sol-card .calc-box, .sol-card .concl{
+  background:transparent !important;
+  border:none !important;
+  border-left:none !important;
+  padding:0 !important;
+  border-radius:0 !important;
+  margin:0 0 1.6rem 0 !important;
+  font-size:.95rem;
+  line-height:1.7;
+  text-align:justify;
+}
+.sol-card .sol-sub{
+  color:var(--navy); font-weight:600; display:block;
+  margin:0 0 .5rem 0; font-size:1rem;
+}
+/* seuls encadrés conservés : les perspectives « Pour aller plus loin » */
+.sol-card .persp-box{
+  background:#f7f9fc !important;
+  border:1px solid #ccd8e6 !important;
+  border-left:3px solid var(--navy-mid) !important;
+  padding:1.2rem !important;
+  border-radius:4px !important;
+  margin:2rem 0 1rem 0 !important;
+  font-size:.9rem; line-height:1.7; text-align:justify;
+}
+
+.btn-toggle{
+  background:transparent; border:2px solid var(--green); border-bottom:none;
+  color:var(--green); font-family:'Source Serif 4',serif; font-size:.95rem;
+  font-weight:600; padding:.5rem 1.5rem; border-radius:4px 4px 0 0; cursor:pointer;
+  transition:all .2s; position:relative; z-index:2; top:2px;
+}
+.btn-toggle:hover{ background:var(--green); color:var(--cream) }
+
+/* --- 4. Bouton « Afficher le corrigé » (modèle der) --- */
+.sol-toggle-wrap{ text-align:left; margin:1.5rem 0 0 0; }
+.sol-card{
+  border-top:2px solid var(--green); display:none;
+  border-radius:0 6px 6px 6px; position:relative; z-index:1;
+}
+.sol-card.visible{ display:block; animation:kitfi .35s ease }
+.sol-card .card-header{ background:var(--green) }
+.sol-card .card-header .tag{ border-color:rgba(200,240,200,.4); color:#a8d8b0 }
+@keyframes kitfi{ from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+
+/* --- 5. Barre d'actions unifiée --- */
+.top-bar{ display:flex; flex-wrap:wrap; gap:.8rem; align-items:center; justify-content:space-between; margin-bottom:1.2rem }
+.top-bar-left{ display:flex; flex-wrap:wrap; gap:.55rem; order:1 }
+.top-bar .seed-badge{ order:2 }
+.btn-sm{ background:transparent; border:1px solid var(--gold); color:var(--gold); font-family:'JetBrains Mono',monospace; font-size:.67rem; letter-spacing:.08em; text-transform:uppercase; padding:.4rem 1rem; border-radius:3px; cursor:pointer; transition:all .18s; white-space:nowrap }
+.btn-sm:hover{ background:var(--gold); color:var(--navy) }
+.btn-sm.pdf{ border-color:#7bafd4; color:#7bafd4 }
+.btn-sm.pdf:hover{ background:#7bafd4; color:var(--navy) }
+.btn-sm.doc{ border-color:#8fa8c4; color:#8fa8c4 }
+.seed-row{ display:flex; gap:.4rem; align-items:center }
+.btn-copy-seed{
+  background:transparent; border:1px solid rgba(201,149,42,.4); color:rgba(250,247,240,.55);
+  padding:.38rem .55rem; border-radius:3px; cursor:pointer;
+  font-family:'JetBrains Mono',monospace; font-size:.65rem; transition:all .18s; white-space:nowrap;
+}
+.btn-copy-seed:hover{ border-color:var(--gold-light); color:var(--gold-light) }
+.btn-sm.doc:hover{ background:#8fa8c4; color:var(--navy) }
+
+/* --- 6. Modale d'export PDF --- */
+#pdf-ov{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:100; backdrop-filter:blur(2px) }
+#pdf-modal{ display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:101; background:#fff; border-radius:8px; box-shadow:0 20px 60px rgba(0,0,0,.25); width:390px; max-width:95vw; border-top:4px solid #7bafd4; overflow:hidden }
+#pdf-ov.open,#pdf-modal.open{ display:block }
+.mh{ background:var(--navy); color:var(--cream); padding:1rem 1.5rem; display:flex; align-items:center; justify-content:space-between }
+.mh h3{ font-family:'Playfair Display',serif; font-size:1rem; font-weight:600; margin:0 }
+.mclose{ background:none; border:none; color:rgba(255,255,255,.6); cursor:pointer; font-size:1.2rem; line-height:1; padding:2px 6px; border-radius:3px; transition:color .15s }
+.mclose:hover{ color:#fff }
+.mb2{ padding:1.5rem }
+.opt-row{ display:flex; align-items:flex-start; gap:.75rem; margin-bottom:1rem; cursor:pointer }
+.opt-row input[type=checkbox]{ width:16px; height:16px; cursor:pointer; accent-color:var(--navy); flex-shrink:0; margin-top:3px }
+.opt-txt{ display:block }
+.opt-lbl{ font-size:.93rem; display:block }
+.opt-desc{ font-size:.75rem; color:var(--text-muted); display:block }
+.seed-note{ font-family:'JetBrains Mono',monospace; font-size:.7rem; background:var(--cream-dark); border:1px solid var(--border); padding:.55rem .85rem; border-radius:3px; color:var(--text-muted); margin-bottom:1.2rem; line-height:1.5 }
+.mactions{ display:flex; gap:.6rem }
+.btn-print{ flex:1; background:var(--navy); color:var(--cream); border:none; padding:.7rem; border-radius:4px; font-family:'Source Serif 4',serif; font-size:.9rem; cursor:pointer; transition:background .2s }
+.btn-print:hover{ background:var(--navy-mid) }
+.btn-cancel{ background:transparent; border:1px solid var(--border); color:var(--text-muted); padding:.7rem 1rem; border-radius:4px; font-family:'Source Serif 4',serif; font-size:.9rem; cursor:pointer; transition:all .2s }
+.btn-cancel:hover{ border-color:var(--text); color:var(--text) }
+
+/* --- 7. Impression --- */
+@media print{
+  body{ background:#fff; font-size:11pt; -webkit-print-color-adjust:exact; print-color-adjust:exact }
+  header{ display:block !important; padding:1rem 1.5rem .8rem }
+  header .subtitle{ display:none }
+  .ctrls, #controls-bar, .top-actions, .top-bar-left, .sol-toggle-wrap,
+  .lang-switch, #pdf-ov, #pdf-modal{ display:none !important }
+  .top-bar{ display:block !important; margin-bottom:.8rem }
+  .top-bar .seed-badge{
+    display:inline-block !important; background:none; border:1px solid var(--border);
+    color:var(--text-muted); font-family:'JetBrains Mono',monospace; font-size:8.5pt;
+    padding:2pt 6pt; border-radius:2px;
+  }
+  body.print-no-header .top-bar{ display:none !important }
+  main{ padding:1rem 1.5rem; max-width:100% }
+  .card{ box-shadow:none; border-radius:0; page-break-inside:avoid; margin-bottom:1rem }
+  #ex-area{ display:block !important }
+  .sol-card{ display:block !important; border-top:2px solid var(--green) }
+  mjx-container[display="true"]{ overflow:visible !important }
+  body.print-no-header header{ display:none !important }
+  body.print-no-header .ctrls{ display:none !important }
+  body.print-no-solution .sol-card,
+  body.print-no-solution .sol-toggle-wrap{ display:none !important }
+  body.print-force-solution .sol-card{ display:block !important }
+}
+</style><!-- KIT:CSS:END -->
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-top">
+    <div class="header-badge" data-k="k-badge">MÉTHODE D'ÉVALUATION DES ACTIFS FINANCIERS</div>
+    <div class="lang-switch">
+      <button type="button" class="flag-btn active" id="flag-fr" onclick="setLang('fr')" title="Français" aria-label="Français"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="20" height="40" fill="#002654"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ED2939"/></svg></button>
+      <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
+    </div>
+  </div>
+  <h1 data-k="k-h1">Coût moyen pondéré du capital et effet de levier</h1>
+  <p class="subtitle" data-k="k-sub">© Thomas Hossen – Version du 30 août 2026</p>
+
+  <div class="ctrls">
+    <div class="ctrl-g">
+      <span class="ctrl-lbl" data-k="k-seed">Seed de reproductibilité</span>
+      <div class="seed-row"><input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999"><button type="button" class="btn-copy-seed" id="btn-copy-seed" onclick="copySeed(this)" title="Copier la seed active"><span data-kit="btnCopy">&#10697; Copier</span></button></div>
+    </div>
+    <button class="btn-gen" onclick="generateExercise(false)"><span data-k="k-gen">Générer</span></button>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" style="text-align:center; padding:4rem; color:var(--text-muted); font-style:italic;">
+    <span data-k="k-welcome">Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.</span>
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="seed-badge"><span data-k="k-seedbadge">Seed active :</span> <span id="seed-disp"></span></div>
+      <div class="top-bar-left">
+        <button type="button" class="btn-sm" onclick="generateExercise(true)"><span data-kit="btnNew">&#8634; Nouvel &eacute;nonc&eacute;</span></button>
+        <button type="button" class="btn-sm pdf" onclick="openPdfModal()"><span data-kit="btnPdf">&#11015; Exporter PDF</span></button>
+        <button type="button" class="btn-sm doc" onclick="exportWord()"><span data-kit="btnDoc">&#11015; Exporter Word</span></button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="tag" data-k="k-tag-ex">Énoncé</span><h2 data-k="k-cardtitle">Coût du capital de Héliode Énergie</h2></div>
+      <div class="card-body">
+        <div class="context-block" id="context-text"></div>
+        <div id="enonce-table-container"></div>
+        <div class="context-block" id="additional-info" style="margin-top:1.5rem; background:#fff; border-left:3px solid var(--navy); border-radius:0;"></div>
+
+        <p style="margin-bottom:1rem; font-weight:600; color:var(--red); text-align:left;" data-k="k-work">Travail à faire</p>
+        <ul class="event-list" id="events-list"></ul>
+      </div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag" data-k="k-tag-sol">Corrigé</span><h2 data-k="k-cardtitle2">Coût du capital de Héliode Énergie</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+/* ============================================================
+   DICTIONNAIRE BILINGUE  /  BILINGUAL DICTIONARY
+   ============================================================ */
+const I18N = {
+
+  fr: {
+    "htmlLang": "fr",
+    "title": "Simulateur Finance d'Entreprise - Coût du Capital",
+    "locale": "fr-FR",
+    "k-badge": "MÉTHODE D'ÉVALUATION DES ACTIFS FINANCIERS",
+    "k-h1": "Coût moyen pondéré du capital et effet de levier",
+    "k-sub": "© Thomas Hossen – Version du 30 août 2026",
+    "k-seed": "Seed de reproductibilité",
+    "k-gen": "Générer",
+    "k-welcome": "Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.",
+    "k-seedbadge": "Seed active :",
+    "k-tag-ex": "Énoncé",
+    "k-cardtitle": "Coût du capital de Héliode Énergie",
+    "k-tag-sol": "Corrigé",
+    "k-cardtitle2": "Coût du capital de Héliode Énergie",
+    "k-work": "Travail à faire",
+    "showSol": "Afficher le corrigé",
+    "hideSol": "Masquer le corrigé",
+    thousands: "\\,",
+    decimal: "{,}",
+
+    context: function(D) {
+      const {E, D: dette, rfPct, prmPct, beta} = D;
+      return `
+        Héliode Énergie est une entreprise du secteur des énergies renouvelables, cotée en bourse, qui cherche à déterminer le taux de rentabilité minimal exigé par l'ensemble de ses bailleurs de fonds afin de fixer le taux d'actualisation de ses futurs projets d'investissement. Sa capitalisation boursière s'élève à ${fmtNb(E,0)} millions d'euros et sa dette financière nette à ${fmtNb(dette,0)} millions d'euros ; par simplification, on assimilera ces montants comptables à leurs valeurs de marché respectives. Sur les marchés financiers, le taux d'intérêt sans risque s'établit à ${fmtNb(rfPct,1)} % et la prime de risque de marché est estimée à ${fmtNb(prmPct,1)} %. Le bêta de l'action Héliode Énergie, qui mesure la sensibilité de son cours aux fluctuations du marché, est évalué à ${fmtNb(beta,2)}.
+      `;
+    },
+    table: function(D) {
+      const {E, D: dette, rfPct, prmPct, beta, kdPct, EBIT, AE} = D;
+      return `<div class="exam-table-wrap">
+        <table class="exam-table">
+            <tr><th style="width:65%;">Donnée</th><th style="width:35%;">Valeur</th></tr>
+            <tr><td class="txt-left">Capitalisation boursière (capitaux propres)</td><td class="amt">${texI(E)} M€</td></tr>
+            <tr><td class="txt-left">Dette financière nette</td><td class="amt">${texI(dette)} M€</td></tr>
+            <tr><td class="txt-left">Taux d'intérêt sans risque</td><td class="amt">${fmtNb(rfPct,1)} %</td></tr>
+            <tr><td class="txt-left">Prime de risque de marché</td><td class="amt">${fmtNb(prmPct,1)} %</td></tr>
+            <tr><td class="txt-left">Bêta de l'action</td><td class="amt">${fmtNb(beta,2)}</td></tr>
+            <tr><td class="txt-left">Coût de la dette (taux moyen, avant impôt)</td><td class="amt">${fmtNb(kdPct,1)} %</td></tr>
+            <tr><td class="txt-left">Résultat d'exploitation du dernier exercice</td><td class="amt">${texI(EBIT)} M€</td></tr>
+            <tr><td class="txt-left">Actif économique</td><td class="amt">${texI(AE)} M€</td></tr>
+        </table>
+      </div>`;
+    },
+    info: function(D) {
+      return `
+        <strong>Hypothèses de travail.</strong> Le taux normal de l'impôt sur les sociétés est de 25 %. L'actif économique correspond à la somme des capitaux propres et de la dette financière nette, c'est-à-dire au montant total des capitaux investis dans l'exploitation. Sauf mention contraire, tous les montants sont exprimés en millions d'euros et tous les résultats intermédiaires doivent être conservés avec leur pleine précision, seul le résultat final étant arrondi à deux décimales.
+      `;
+    },
+    enonce: function(D) {
+      let h = "";
+      h += `<li><strong>Coût des capitaux propres.</strong> À l'aide du modèle d'évaluation des actifs financiers (MEDAF), calculez le coût des capitaux propres de Héliode Énergie.</li>`;
+      h += `<li><strong>Coût de la dette après impôt.</strong> Calculez le coût de la dette de Héliode Énergie, net de l'économie d'impôt qu'elle procure.</li>`;
+      h += `<li><strong>Coût moyen pondéré du capital.</strong> En déduire le coût moyen pondéré du capital (CMPC) de Héliode Énergie.</li>`;
+      h += `<li><strong>Effet de levier financier.</strong> Calculez la rentabilité économique nette d'impôt de Héliode Énergie, puis sa rentabilité financière à l'aide de la formule de l'effet de levier. Vérifiez ce résultat par un calcul direct du résultat net.</li>`;
+      h += `<li><strong>Interprétation.</strong> L'endettement de Héliode Énergie profite-t-il à ses actionnaires ? Justifiez votre réponse à l'aide du signe de l'effet de levier.</li>`;
+      return h;
+    },
+    sol: function(D) {
+      const {E, D: dette, rfPct, prmPct, beta, kdPct, EBIT, AE,
+             ke, kdAT, we, wd, wacc, Re, i, DCP, RfLev, netIncome, interestExpense, RfDirect, levierPositif} = D;
+
+      const kePct = ke*100, kdATPct = kdAT*100, wePct = we*100, wdPct = wd*100, waccPct = wacc*100;
+      const RePct = Re*100, iPct = i*100, RfPct = RfLev*100, RfDirectPct = RfDirect*100;
+
+      let s = "";
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">1. Coût des capitaux propres</span>
+        Le modèle d'évaluation des actifs financiers détermine le coût des capitaux propres $k_e$ comme la somme du taux sans risque et d'une prime de risque proportionnelle au bêta du titre : $k_e = r_f + \\beta \\times PRM$. Avec un taux sans risque de $r_f = ${texM(rfPct)}\\,\\%$, un bêta de $\\beta = ${texBeta(beta)}$ et une prime de risque de marché de $PRM = ${texM(prmPct)}\\,\\%$, il vient $k_e = ${texM(rfPct)}\\,\\% + ${texBeta(beta)} \\times ${texM(prmPct)}\\,\\% = ${texM(kePct)}\\,\\%$.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">2. Coût de la dette après impôt</span>
+        Les intérêts d'emprunt étant fiscalement déductibles du résultat imposable, ils procurent à Héliode Énergie une économie d'impôt sur les sociétés qui vient réduire le coût réellement supporté par l'entreprise. Le coût de la dette net d'impôt s'écrit donc $k_d^{\\text{net}} = k_d \\times (1 - \\text{IS})$, soit $k_d^{\\text{net}} = ${texM(kdPct)}\\,\\% \\times (1 - 25\\,\\%) = ${texM(kdATPct)}\\,\\%$ : c'est ce taux, et non le taux facial de $${texM(kdPct)}\\,\\%$, qui doit entrer dans le calcul du coût moyen pondéré du capital.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">3. Coût moyen pondéré du capital</span>
+        Le coût moyen pondéré du capital pondère le coût de chaque source de financement par son poids dans le financement total de l'entreprise, exprimé en valeur de marché. Le financement total s'élève à $E + D = ${texI(E)} + ${texI(dette)} = ${texI(E+dette)}$ millions d'euros, si bien que les capitaux propres pèsent pour $w_e = \\frac{E}{E+D} = \\frac{${texI(E)}}{${texI(E+dette)}} = ${texM(wePct)}\\,\\%$ et la dette pour $w_d = \\frac{D}{E+D} = ${texM(wdPct)}\\,\\%$. Le coût moyen pondéré du capital s'établit donc à
+        <div class="math-formula">\\[CMPC = w_e \\times k_e + w_d \\times k_d^{\\text{net}} = ${texM(wePct)}\\,\\% \\times ${texM(kePct)}\\,\\% + ${texM(wdPct)}\\,\\% \\times ${texM(kdATPct)}\\,\\% = ${texM(waccPct)}\\,\\%\\]</div>
+        C'est ce taux de $${texM(waccPct)}\\,\\%$ que Héliode Énergie devrait retenir pour actualiser les flux de trésorerie d'un nouveau projet d'investissement dont le risque et le mode de financement seraient comparables à ceux de son activité actuelle.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">4. Effet de levier financier</span>
+        La rentabilité économique nette d'impôt rapporte le résultat d'exploitation, une fois l'impôt sur les sociétés acquitté, à l'actif économique qu'il a fallu engager pour l'obtenir : $R_e = \\frac{EBIT \\times (1-\\text{IS})}{\\text{Actif économique}} = \\frac{${texI(EBIT)} \\times (1 - 25\\,\\%)}{${texI(AE)}} = ${texM(RePct)}\\,\\%$.<br><br>
+        La formule de l'effet de levier relie cette rentabilité économique à la rentabilité financière — celle que perçoivent effectivement les actionnaires — par l'intermédiaire du ratio d'endettement $\\frac{D}{CP}$ et du coût de la dette net d'impôt $i$ calculé à la question 2 :
+        <div class="math-formula">\\[R_f = R_e + (R_e - i) \\times \\frac{D}{CP}\\]</div>
+        Avec $\\frac{D}{CP} = \\frac{${texI(dette)}}{${texI(E)}} = ${texBeta(DCP)}$, il vient $R_f = ${texM(RePct)}\\,\\% + (${texM(RePct)}\\,\\% - ${texM(iPct)}\\,\\%) \\times ${texBeta(DCP)} = ${texM(RfPct)}\\,\\%$.<br><br>
+        On vérifie ce résultat par un calcul direct. Les frais financiers de l'exercice s'élèvent à $k_d \\times D = ${texM(kdPct)}\\,\\% \\times ${texI(dette)} = ${texM(interestExpense)}$ millions d'euros, ce qui donne un résultat net de $(EBIT - \\text{frais financiers}) \\times (1-\\text{IS}) = (${texI(EBIT)} - ${texM(interestExpense)}) \\times (1-25\\,\\%) = ${texM(netIncome)}$ millions d'euros, soit une rentabilité financière directe de $\\frac{${texM(netIncome)}}{${texI(E)}} = ${texM(RfDirectPct)}\\,\\%$ : un résultat rigoureusement identique à celui obtenu par la formule de l'effet de levier, aux arrondis d'affichage près.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">5. Interprétation</span>
+        ${levierPositif
+          ? `L'effet de levier est ici <strong>positif</strong>, puisque la rentabilité économique nette d'impôt (${fmtNb(RePct,2)} %) excède le coût de la dette net d'impôt (${fmtNb(iPct,2)} %) : chaque euro supplémentaire emprunté rapporte donc davantage qu'il ne coûte à l'entreprise. C'est cet écart favorable qui tire la rentabilité financière (${fmtNb(RfPct,2)} %) au-dessus de la rentabilité économique. L'endettement profite ainsi aux actionnaires de Héliode Énergie, et cet effet est d'autant plus marqué que le ratio d'endettement $D/CP=${texBeta(DCP)}$ est élevé.`
+          : `L'effet de levier est ici <strong>négatif</strong>, puisque la rentabilité économique nette d'impôt (${fmtNb(RePct,2)} %) est inférieure au coût de la dette net d'impôt (${fmtNb(iPct,2)} %) : chaque euro supplémentaire emprunté coûte alors plus qu'il ne rapporte à l'entreprise. C'est cet écart défavorable qui abaisse la rentabilité financière (${fmtNb(RfPct,2)} %) en dessous de la rentabilité économique. L'endettement nuit ainsi aux actionnaires de Héliode Énergie, et cette pénalisation est d'autant plus forte que le ratio d'endettement $D/CP=${texBeta(DCP)}$ est élevé : un désendettement partiel serait ici préférable.`}
+      </div>`;
+
+      s += `<div class="persp-box">
+        <span class="sol-sub">Pour aller plus loin</span>
+        Trois nuances méritent d'être apportées. D'abord, le CMPC calculé ici n'est un taux d'actualisation pertinent que pour des projets dont le risque économique et le mode de financement sont comparables à ceux de l'activité existante de Héliode Énergie : un projet plus risqué, ou financé selon une structure très différente, appellerait un taux propre.
+        <p style="margin-top:.8rem;">Ensuite, le théorème de Modigliani-Miller, une fois l'impôt sur les sociétés introduit, montre que la dette réduit mécaniquement le CMPC grâce à l'économie d'impôt qu'elle procure : poussé à l'extrême, ce raisonnement inciterait l'entreprise à se financer presque exclusivement par emprunt.</p>
+        <p style="margin-top:.8rem;">Enfin, c'est précisément ce que corrige la théorie du compromis (<em>trade-off theory</em>) : au-delà d'un certain seuil d'endettement, le risque de défaillance financière et les coûts de faillite qui lui sont associés viennent contrebalancer, puis annuler, l'avantage fiscal de la dette. Il existe donc, en théorie, une structure financière optimale qui minimise le CMPC — et que le modèle simplifié de cet exercice ne permet pas, à lui seul, de déterminer.</p>
+      </div>`;
+
+      return s;
+    }
+  },
+
+  en: {
+    "htmlLang": "en",
+    "title": "Corporate Finance Simulator - Cost of Capital",
+    "locale": "en-GB",
+    "k-badge": "FINANCIAL ASSET VALUATION METHODS",
+    "k-h1": "Weighted average cost of capital and financial leverage",
+    "k-sub": "© Thomas Hossen – Version of 30 August 2026",
+    "k-seed": "Reproducibility seed",
+    "k-gen": "Generate",
+    "k-welcome": "Set the parameters and click Generate to create a new exercise.",
+    "k-seedbadge": "Active seed:",
+    "k-tag-ex": "Statement",
+    "k-cardtitle": "The cost of capital of Héliode Énergie",
+    "k-tag-sol": "Solution",
+    "k-cardtitle2": "The cost of capital of Héliode Énergie",
+    "k-work": "Required work",
+    "showSol": "Show solution",
+    "hideSol": "Hide solution",
+    thousands: ",",
+    decimal: ".",
+
+    context: function(D) {
+      const {E, D: debt, rfPct, prmPct, beta} = D;
+      return `
+        Héliode Énergie is a listed renewable-energy company seeking to determine the minimum rate of return required by all of its capital providers, in order to set the discount rate for its future investment projects. Its market capitalisation stands at ${fmtNb(E,0)} million euros and its net financial debt at ${fmtNb(debt,0)} million euros; for simplicity, these book figures will be taken as equal to their respective market values. On financial markets, the risk-free interest rate stands at ${fmtNb(rfPct,1)} % and the market risk premium is estimated at ${fmtNb(prmPct,1)} %. The beta of the Héliode Énergie share, which measures the sensitivity of its price to market fluctuations, is estimated at ${fmtNb(beta,2)}.
+      `;
+    },
+    table: function(D) {
+      const {E, D: debt, rfPct, prmPct, beta, kdPct, EBIT, AE} = D;
+      return `<div class="exam-table-wrap">
+        <table class="exam-table">
+            <tr><th style="width:65%;">Item</th><th style="width:35%;">Value</th></tr>
+            <tr><td class="txt-left">Market capitalisation (equity)</td><td class="amt">€${texI(E)}m</td></tr>
+            <tr><td class="txt-left">Net financial debt</td><td class="amt">€${texI(debt)}m</td></tr>
+            <tr><td class="txt-left">Risk-free interest rate</td><td class="amt">${fmtNb(rfPct,1)} %</td></tr>
+            <tr><td class="txt-left">Market risk premium</td><td class="amt">${fmtNb(prmPct,1)} %</td></tr>
+            <tr><td class="txt-left">Beta of the share</td><td class="amt">${fmtNb(beta,2)}</td></tr>
+            <tr><td class="txt-left">Cost of debt (average rate, pre-tax)</td><td class="amt">${fmtNb(kdPct,1)} %</td></tr>
+            <tr><td class="txt-left">Operating profit (last financial year)</td><td class="amt">€${texI(EBIT)}m</td></tr>
+            <tr><td class="txt-left">Capital employed</td><td class="amt">€${texI(AE)}m</td></tr>
+        </table>
+      </div>`;
+    },
+    info: function(D) {
+      return `
+        <strong>Working assumptions.</strong> The standard corporate income tax rate is 25%. Capital employed is defined as the sum of equity and net financial debt, that is, the total capital invested in operations. Unless stated otherwise, all amounts are expressed in millions of euros, and every intermediate result should be kept at full precision, with only the final answer rounded to two decimal places.
+      `;
+    },
+    enonce: function(D) {
+      let h = "";
+      h += `<li><strong>Cost of equity.</strong> Using the capital asset pricing model (CAPM), compute the cost of equity of Héliode Énergie.</li>`;
+      h += `<li><strong>After-tax cost of debt.</strong> Compute the cost of debt of Héliode Énergie, net of the tax shield it generates.</li>`;
+      h += `<li><strong>Weighted average cost of capital.</strong> Deduce the weighted average cost of capital (WACC) of Héliode Énergie.</li>`;
+      h += `<li><strong>Financial leverage.</strong> Compute the after-tax return on capital employed of Héliode Énergie, then its return on equity using the financial leverage formula. Check this result with a direct computation of net income.</li>`;
+      h += `<li><strong>Interpretation.</strong> Does the debt of Héliode Énergie benefit its shareholders? Justify your answer using the sign of the leverage effect.</li>`;
+      return h;
+    },
+    sol: function(D) {
+      const {E, D: debt, rfPct, prmPct, beta, kdPct, EBIT, AE,
+             ke, kdAT, we, wd, wacc, Re, i, DCP, RfLev, netIncome, interestExpense, RfDirect, levierPositif} = D;
+
+      const kePct = ke*100, kdATPct = kdAT*100, wePct = we*100, wdPct = wd*100, waccPct = wacc*100;
+      const RePct = Re*100, iPct = i*100, RfPct = RfLev*100, RfDirectPct = RfDirect*100;
+
+      let s = "";
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">1. Cost of equity</span>
+        The capital asset pricing model sets the cost of equity $k_e$ as the risk-free rate plus a risk premium proportional to the share's beta: $k_e = r_f + \\beta \\times MRP$. With a risk-free rate $r_f = ${texM(rfPct)}\\,\\%$, a beta $\\beta = ${texBeta(beta)}$ and a market risk premium $MRP = ${texM(prmPct)}\\,\\%$, this gives $k_e = ${texM(rfPct)}\\,\\% + ${texBeta(beta)} \\times ${texM(prmPct)}\\,\\% = ${texM(kePct)}\\,\\%$.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">2. After-tax cost of debt</span>
+        Since interest expense is tax-deductible, it generates a corporate tax saving that lowers the cost actually borne by Héliode Énergie. The after-tax cost of debt is therefore $k_d^{\\text{net}} = k_d \\times (1 - t)$, that is $k_d^{\\text{net}} = ${texM(kdPct)}\\,\\% \\times (1 - 25\\,\\%) = ${texM(kdATPct)}\\,\\%$: it is this rate, not the headline rate of $${texM(kdPct)}\\,\\%$, that should enter the computation of the weighted average cost of capital.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">3. Weighted average cost of capital</span>
+        The weighted average cost of capital weights the cost of each source of financing by its share in total financing, measured at market value. Total financing amounts to $E + D = ${texI(E)} + ${texI(debt)} = ${texI(E+debt)}$ million euros, so that equity accounts for $w_e = \\frac{E}{E+D} = \\frac{${texI(E)}}{${texI(E+debt)}} = ${texM(wePct)}\\,\\%$ and debt for $w_d = \\frac{D}{E+D} = ${texM(wdPct)}\\,\\%$. The weighted average cost of capital is therefore
+        <div class="math-formula">\\[WACC = w_e \\times k_e + w_d \\times k_d^{\\text{net}} = ${texM(wePct)}\\,\\% \\times ${texM(kePct)}\\,\\% + ${texM(wdPct)}\\,\\% \\times ${texM(kdATPct)}\\,\\% = ${texM(waccPct)}\\,\\%\\]</div>
+        It is this rate of $${texM(waccPct)}\\,\\%$ that Héliode Énergie should use to discount the cash flows of a new investment project whose risk and financing mix are comparable to those of its current operations.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">4. Financial leverage</span>
+        The after-tax return on capital employed relates operating profit, once corporate tax has been paid, to the capital employed needed to generate it: $R_e = \\frac{EBIT \\times (1-t)}{\\text{Capital employed}} = \\frac{${texI(EBIT)} \\times (1 - 25\\,\\%)}{${texI(AE)}} = ${texM(RePct)}\\,\\%$.<br><br>
+        The leverage-effect formula links this return on capital employed to the return on equity — the return actually earned by shareholders — through the debt-to-equity ratio $\\frac{D}{E}$ and the after-tax cost of debt $i$ computed in question 2:
+        <div class="math-formula">\\[R_{eq} = R_e + (R_e - i) \\times \\frac{D}{E}\\]</div>
+        With $\\frac{D}{E} = \\frac{${texI(debt)}}{${texI(E)}} = ${texBeta(DCP)}$, this gives $R_{eq} = ${texM(RePct)}\\,\\% + (${texM(RePct)}\\,\\% - ${texM(iPct)}\\,\\%) \\times ${texBeta(DCP)} = ${texM(RfPct)}\\,\\%$.<br><br>
+        This result is checked with a direct computation. Interest expense for the year amounts to $k_d \\times D = ${texM(kdPct)}\\,\\% \\times ${texI(debt)} = ${texM(interestExpense)}$ million euros, which gives net income of $(EBIT - \\text{interest expense}) \\times (1-t) = (${texI(EBIT)} - ${texM(interestExpense)}) \\times (1-25\\,\\%) = ${texM(netIncome)}$ million euros, that is a direct return on equity of $\\frac{${texM(netIncome)}}{${texI(E)}} = ${texM(RfDirectPct)}\\,\\%$: a result strictly identical to the one obtained from the leverage-effect formula, up to display rounding.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">5. Interpretation</span>
+        ${levierPositif
+          ? `Financial leverage is <strong>positive</strong> here, since the after-tax return on capital employed (${fmtNb(RePct,2)} %) exceeds the after-tax cost of debt (${fmtNb(iPct,2)} %): every additional euro borrowed earns more than it costs the firm. It is this favourable gap that pulls the return on equity (${fmtNb(RfPct,2)} %) above the return on capital employed. Debt therefore benefits Héliode Énergie's shareholders, and this effect is stronger the higher the debt-to-equity ratio $D/E=${texBeta(DCP)}$.`
+          : `Financial leverage is <strong>negative</strong> here, since the after-tax return on capital employed (${fmtNb(RePct,2)} %) is lower than the after-tax cost of debt (${fmtNb(iPct,2)} %): every additional euro borrowed costs more than it earns the firm. It is this unfavourable gap that pulls the return on equity (${fmtNb(RfPct,2)} %) below the return on capital employed. Debt therefore harms Héliode Énergie's shareholders here, and this penalty is stronger the higher the debt-to-equity ratio $D/E=${texBeta(DCP)}$: a partial deleveraging would be preferable in this case.`}
+      </div>`;
+
+      s += `<div class="persp-box">
+        <span class="sol-sub">Going further</span>
+        Three qualifications are worth making. First, the WACC computed here is only an appropriate discount rate for projects whose economic risk and financing mix are comparable to Héliode Énergie's existing operations: a riskier project, or one financed very differently, would call for its own discount rate.
+        <p style="margin-top:.8rem;">Second, the Modigliani-Miller theorem, once corporate tax is introduced, shows that debt mechanically lowers the WACC through the tax shield it generates: taken to its extreme, this reasoning would push a firm to finance itself almost entirely with debt.</p>
+        <p style="margin-top:.8rem;">Third, this is precisely what trade-off theory corrects: beyond a certain level of debt, the risk of financial distress and the associated bankruptcy costs come to offset, and eventually outweigh, debt's tax advantage. There therefore exists, in theory, an optimal capital structure that minimises the WACC — one which the simplified model used in this exercise cannot, on its own, pin down.</p>
+      </div>`;
+
+      return s;
+    }
+  }
+};
+
+/* ============================================================
+   GESTION DE LA LANGUE  /  LANGUAGE HANDLING
+   ============================================================ */
+let LANG = 'fr';
+
+function detectLang() {
+    try {
+        const q = new URLSearchParams(window.location.search).get('lang');
+        if (q && I18N[q.toLowerCase()]) return q.toLowerCase();
+    } catch (e) {}
+    const h = (window.location.hash || '').replace('#', '').toLowerCase();
+    if (I18N[h]) return h;
+    return 'fr';
+}
+
+function applyLang() {
+    const D = I18N[LANG];
+    document.documentElement.lang = D.htmlLang;
+    document.title = D.title;
+
+    document.querySelectorAll('[data-k]').forEach(function (el) {
+        const key = el.getAttribute('data-k');
+        if (D[key] !== undefined) el.innerHTML = D[key];
+    });
+
+    const btn = document.getElementById('toggle-btn');
+    if (btn) btn.innerText = document.getElementById('sol-card').classList.contains('visible') ? D.hideSol : D.showSol;
+
+    document.getElementById('flag-fr').classList.toggle('active', LANG === 'fr');
+    document.getElementById('flag-en').classList.toggle('active', LANG === 'en');
+}
+
+function setLang(lang) {
+    if (!I18N[lang] || lang === LANG) return;
+    LANG = lang;
+
+    try {
+        const u = new URL(window.location.href);
+        u.searchParams.set('lang', lang);
+        history.replaceState(null, '', u.toString());
+    } catch (e) {}
+
+    applyLang();
+
+    if (document.getElementById('ex-area').style.display !== 'none') {
+        const solWasVisible = document.getElementById('sol-card').classList.contains('visible');
+        generateExercise(false);
+        if (solWasVisible) toggleSol();
+    }
+}
+
+// --- PRNG (Mulberry32) ---
+let currentSeed = 0;
+function seedPRNG(seed) {
+    return function() {
+      let t = seed += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+let random = Math.random;
+
+function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
+
+function texI(num) {
+    let sign = num < 0 ? "-" : "";
+    let absNum = Math.round(Math.abs(num));
+    return sign + absNum.toString().replace(/\B(?=(\d{3})+(?!\d))/g, I18N[LANG].thousands);
+}
+function texM(num) {
+    let sign = num < 0 ? "-" : "";
+    let absNum = Math.abs(num);
+    absNum = Math.round(absNum * 100) / 100;
+    let parts = absNum.toFixed(2).split('.');
+    let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, I18N[LANG].thousands);
+    return sign + intPart + I18N[LANG].decimal + parts[1];
+}
+function texBeta(num) {
+    let sign = num < 0 ? "-" : "";
+    let absNum = Math.abs(num);
+    absNum = Math.round(absNum * 100) / 100;
+    let parts = absNum.toString().split('.');
+    let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, I18N[LANG].thousands);
+    if (parts.length > 1) return sign + intPart + I18N[LANG].decimal + parts[1];
+    return sign + intPart;
+}
+function fmtNb(num, dec) {
+    return num.toLocaleString(I18N[LANG].locale, {minimumFractionDigits: dec, maximumFractionDigits: dec});
+}
+
+function computeModel() {
+    // --- Bilan (valeurs de marché) ---
+    const E = randInt(12, 28) * 5;              // 60..140 M€, pas de 5
+    const D = randInt(4, 14) * 5;                // 20..70 M€, pas de 5
+
+    // --- Coût des capitaux propres (MEDAF) ---
+    const rfPct = randInt(25, 35) / 10;          // 2.5..3.5 %
+    const prmPct = randInt(50, 65) / 10;         // 5.0..6.5 %
+    const beta = randInt(16, 34) * 5 / 100;      // 0.80..1.70, pas de 0.05
+
+    // --- Coût de la dette ---
+    const kdPct = randInt(30, 80) / 10;          // 3.0..8.0 %
+    const ISPct = 25;
+
+    // --- Rentabilité économique AVANT impôt, cible (détermine l'EBIT) ---
+    const targetRePct = randInt(45, 120) / 10;   // 4.5..12.0 %
+
+    const AE = E + D;
+    const EBIT = Math.round(targetRePct / 100 * AE);
+
+    const rf = rfPct / 100, prm = prmPct / 100, kd = kdPct / 100, IS = ISPct / 100;
+    const ke = rf + beta * prm;
+    const kdAT = kd * (1 - IS);
+    const we = E / (E + D), wd = D / (E + D);
+    const wacc = we * ke + wd * kdAT;
+
+    const Re = EBIT * (1 - IS) / AE;
+    const i = kdAT;
+    const DCP = D / E;
+    const RfLev = Re + (Re - i) * DCP;
+    const interestExpense = kd * D;
+    const netIncome = (EBIT - interestExpense) * (1 - IS);
+    const RfDirect = netIncome / E;
+    const levierPositif = Re > i;
+
+    return {
+        E, D, rfPct, prmPct, beta, kdPct, ISPct, targetRePct, AE, EBIT,
+        ke, kdAT, we, wd, wacc, Re, i, DCP, RfLev, interestExpense, netIncome, RfDirect, levierPositif
+    };
+}
+
+function generateExercise(forceNew = false) {
+    if (forceNew) {
+        document.getElementById('seed-input').value = "";
+    }
+    let seedVal = document.getElementById('seed-input').value;
+    currentSeed = seedVal ? parseInt(seedVal) : Math.floor(Math.random() * 99999999);
+    document.getElementById('seed-disp').innerText = currentSeed;
+    document.getElementById('seed-input').value = currentSeed;
+    random = seedPRNG(currentSeed);
+
+    const DIC = I18N[LANG];
+    const D = computeModel();
+
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('ex-area').style.display = 'block';
+    document.getElementById('sol-card').classList.remove('visible');
+    document.getElementById('toggle-btn').innerText = DIC.showSol;
+    document.getElementById('toggle-btn').classList.remove('shown');
+
+    document.getElementById('context-text').innerHTML = DIC.context(D);
+    document.getElementById('enonce-table-container').innerHTML = DIC.table(D);
+    document.getElementById('additional-info').innerHTML = DIC.info(D);
+    document.getElementById('events-list').innerHTML = DIC.enonce(D);
+    document.getElementById('sol-content').innerHTML = DIC.sol(D);
+
+    if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
+        MathJax.typesetPromise().catch(function (err) { console.error('MathJax :', err); });
+    }
+}
+
+function toggleSol() {
+    let solCard = document.getElementById('sol-card');
+    let btn = document.getElementById('toggle-btn');
+    if (solCard.classList.contains('visible')) {
+        solCard.classList.remove('visible');
+        btn.innerText = I18N[LANG].showSol;
+        btn.classList.remove('shown');
+    } else {
+        solCard.classList.add('visible');
+        btn.innerText = I18N[LANG].hideSol;
+        btn.classList.add('shown');
+        solCard.scrollIntoView({behavior: 'smooth', block: 'start'});
+    }
+}
+
+/* Initialisation */
+LANG = detectLang();
+applyLang();
+</script>
+<!-- KIT:JS:START v1 -->
+<div id="pdf-ov" onclick="closePdfModal()"></div>
+<div id="pdf-modal">
+  <div class="mh">
+    <h3 data-kit="modalTitle">Exporter en PDF</h3>
+    <button type="button" class="mclose" onclick="closePdfModal()">&#10005;</button>
+  </div>
+  <div class="mb2">
+    <div class="seed-note"><span data-kit="seedPre">Seed&nbsp;:</span> <strong id="modal-seed">&mdash;</strong> <span data-kit="seedPost">&mdash; notez cette valeur pour reproduire exactement cet exercice.</span></div>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-header" checked>
+      <span class="opt-txt"><span class="opt-lbl" data-kit="optHeader">Inclure l'en-t&ecirc;te de page</span>
+           <span class="opt-desc" data-kit="optHeaderD">Titre, badge de mati&egrave;re et intitul&eacute; de l'exercice</span></span>
+    </label>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-sol">
+      <span class="opt-txt"><span class="opt-lbl" data-kit="optSol">Inclure le corrig&eacute; complet</span>
+           <span class="opt-desc" data-kit="optSolD">L'ensemble des d&eacute;veloppements et commentaires du corrig&eacute;</span></span>
+    </label>
+    <div class="mactions">
+      <button type="button" class="btn-print" onclick="doPrint()"><span data-kit="print">&#128424;&nbsp;Imprimer / Sauvegarder PDF</span></button>
+      <button type="button" class="btn-cancel" onclick="closePdfModal()"><span data-kit="cancel">Annuler</span></button>
+    </div>
+  </div>
+</div>
+
+<script id="kit-docx">
+/* =============================================================================
+   EXPORT WORD NATIF (.docx)
+   Trois briques, sans aucune dépendance externe :
+     1. mml2omml  — MathML -> OMML, le format d'équation natif de Word
+     2. zip       — écriture d'une archive ZIP (entrées « stored » + CRC32)
+     3. html2wml  — HTML de la page -> WordprocessingML
+   ============================================================================= */
+(function (root) {
+'use strict';
+
+/* --------------------------------------------------------------- utilitaires */
+function esc(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                  .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function kids(n) {
+  var out = [], c = n.firstChild;
+  while (c) { if (c.nodeType === 1) out.push(c); c = c.nextSibling; }
+  return out;
+}
+function txt(n) { return (n.textContent || '').replace(/\u200b/g, '').trim(); }
+
+/* ============================================================================
+   1. MathML -> OMML
+   ========================================================================== */
+var OPEN = '([{\u27e8\u2308\u230a|\u2016';
+var CLOSE = ')]}\u27e9\u2309\u230b|\u2016';
+var BIGOPS = '\u2211\u220f\u222b\u222c\u222d\u222e\u22c3\u22c2\u2210';
+var ACCENTS = {
+  '\u005e': '\u0302', '\u02c6': '\u0302', '^': '\u0302',
+  '\u00af': '\u0304', '\u2015': '\u0304', '\u2212': '\u0304', '_': '\u0304',
+  '~': '\u0303', '\u02dc': '\u0303', '\u02d9': '\u0307',
+  '\u2192': '\u20d7', '\u21c0': '\u20d1', '\u02c7': '\u030c', '\u02d8': '\u0306'
+};
+
+function run(text, style) {
+  if (text === '') return '';
+  var rPr = '<w:rPr><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/></w:rPr>';
+  var mPr = style ? '<m:rPr><m:sty m:val="' + style + '"/></m:rPr>' : '';
+  return '<m:r>' + mPr + rPr + '<m:t xml:space="preserve">' + esc(text) + '</m:t></m:r>';
+}
+
+/* Un grand opérateur (somme, intégrale…) absorbe la suite de la ligne comme
+   opérande : sans cela Word affiche un cadre vide à la place de l'argument. */
+function naryHere(n) {
+  if (!n || n.nodeType !== 1) return null;
+  var t = n.nodeName.toLowerCase().replace(/^.*:/, ''), k = kids(n);
+  if (t === 'munderover' || t === 'msubsup') return { base: k[0], sub: k[1], sup: k[2] };
+  if (t === 'munder' || t === 'msub') return { base: k[0], sub: k[1], sup: null };
+  if (t === 'mover' || t === 'msup') return { base: k[0], sub: null, sup: k[1] };
+  if (t === 'mo') return { base: n, sub: null, sup: null };
+  return null;
+}
+function isBigOp(n) {
+  if (!n || n.nodeType !== 1) return false;
+  var c = txt(n);
+  return n.nodeName.toLowerCase().replace(/^.*:/, '') === 'mo' &&
+         c.length === 1 && BIGOPS.indexOf(c) !== -1;
+}
+
+function seq(nodes) {
+  var s = '';
+  for (var i = 0; i < nodes.length; i++) {
+    var info = naryHere(nodes[i]);
+    if (info && isBigOp(info.base) && i + 1 < nodes.length) {
+      s += naryFull(info, nodes.slice(i + 1));
+      return s;
+    }
+    s += mml(nodes[i]);
+  }
+  return s;
+}
+
+function naryFull(info, rest) {
+  return '<m:nary><m:naryPr><m:chr m:val="' + esc(txt(info.base)) + '"/>' +
+         '<m:limLoc m:val="undOvr"/>' +
+         '<m:subHide m:val="' + (info.sub ? '0' : '1') + '"/>' +
+         '<m:supHide m:val="' + (info.sup ? '0' : '1') + '"/><m:ctrlPr/></m:naryPr>' +
+         '<m:sub>' + (info.sub ? mml(info.sub) : '') + '</m:sub>' +
+         '<m:sup>' + (info.sup ? mml(info.sup) : '') + '</m:sup>' +
+         '<m:e>' + seq(rest) + '</m:e></m:nary>';
+}
+
+/* mrow entouré de délimiteurs -> m:d, pour des parenthèses étirables natives */
+function fenced(ks) {
+  if (ks.length < 2) return null;
+  var a = ks[0], b = ks[ks.length - 1];
+  if (a.nodeName.toLowerCase() !== 'mo' || b.nodeName.toLowerCase() !== 'mo') return null;
+  var o = txt(a), c = txt(b);
+  if (o.length !== 1 || c.length !== 1) return null;
+  if (OPEN.indexOf(o) === -1 || CLOSE.indexOf(c) === -1) return null;
+  var inner = ks.slice(1, -1);
+  /* séparateurs de premier niveau -> plusieurs m:e */
+  var parts = [[]];
+  for (var i = 0; i < inner.length; i++) {
+    if (inner[i].nodeName.toLowerCase() === 'mo' && txt(inner[i]) === ',' && parts.length < 8) {
+      parts.push([]);
+    } else { parts[parts.length - 1].push(inner[i]); }
+  }
+  var sep = parts.length > 1 ? ',' : '';
+  var body = '';
+  for (var j = 0; j < parts.length; j++) body += '<m:e>' + seq(parts[j]) + '</m:e>';
+  return '<m:d><m:dPr><m:begChr m:val="' + esc(o) + '"/><m:sepChr m:val="' + esc(sep) +
+         '"/><m:endChr m:val="' + esc(c) + '"/><m:ctrlPr/></m:dPr>' + body + '</m:d>';
+}
+
+function naryOf(base, sub, sup) {
+  var ch = txt(base);
+  if (ch.length !== 1 || BIGOPS.indexOf(ch) === -1) return null;
+  return '<m:nary><m:naryPr><m:chr m:val="' + esc(ch) + '"/><m:limLoc m:val="undOvr"/>' +
+         '<m:subHide m:val="' + (sub ? '0' : '1') + '"/>' +
+         '<m:supHide m:val="' + (sup ? '0' : '1') + '"/><m:ctrlPr/></m:naryPr>' +
+         '<m:sub>' + (sub ? mml(sub) : '') + '</m:sub>' +
+         '<m:sup>' + (sup ? mml(sup) : '') + '</m:sup>' +
+         '<m:e></m:e></m:nary>';
+}
+
+function mml(n) {
+  if (!n) return '';
+  if (n.nodeType === 3) return run(n.nodeValue);
+  if (n.nodeType !== 1) return '';
+  var t = n.nodeName.toLowerCase().replace(/^.*:/, '');
+  var k = kids(n), s;
+
+  switch (t) {
+    case 'math':
+    case 'semantics':
+    case 'mstyle':
+    case 'mpadded':
+    case 'menclose':
+      return seq(k);
+
+    case 'annotation':
+    case 'annotation-xml':
+    case 'mphantom':
+      return '';
+
+    case 'mrow':
+      s = fenced(k);
+      return s !== null ? s : seq(k);
+
+    case 'mi':      return run(txt(n), txt(n).length === 1 ? 'i' : 'p');
+    case 'mn':      return run(txt(n), 'p');
+    case 'mo':      return run(txt(n), 'p');
+    case 'merror':  return run(txt(n), 'p');
+    case 'ms':      return run(txt(n), 'p');
+
+    case 'mtext':
+      var v = n.textContent || '';
+      return v === '' ? '' :
+        '<m:r><m:rPr><m:nor/></m:rPr><w:rPr><w:rFonts w:ascii="Cambria" w:hAnsi="Cambria"/></w:rPr>' +
+        '<m:t xml:space="preserve">' + esc(v) + '</m:t></m:r>';
+
+    case 'mspace':
+      return run(' ', 'p');
+
+    case 'mfrac':
+      return '<m:f><m:fPr><m:type m:val="' +
+             (n.getAttribute('linethickness') === '0' ? 'noBar' : 'bar') +
+             '"/><m:ctrlPr/></m:fPr><m:num>' + mml(k[0]) + '</m:num><m:den>' +
+             mml(k[1]) + '</m:den></m:f>';
+
+    case 'msup':
+      s = naryOf(k[0], null, k[1]); if (s) return s;
+      return '<m:sSup><m:sSupPr><m:ctrlPr/></m:sSupPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sup>' + mml(k[1]) + '</m:sup></m:sSup>';
+
+    case 'msub':
+      s = naryOf(k[0], k[1], null); if (s) return s;
+      return '<m:sSub><m:sSubPr><m:ctrlPr/></m:sSubPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sub>' + mml(k[1]) + '</m:sub></m:sSub>';
+
+    case 'msubsup':
+      s = naryOf(k[0], k[1], k[2]); if (s) return s;
+      return '<m:sSubSup><m:sSubSupPr><m:ctrlPr/></m:sSubSupPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sub>' + mml(k[1]) + '</m:sub><m:sup>' + mml(k[2]) +
+             '</m:sup></m:sSubSup>';
+
+    case 'msqrt':
+      return '<m:rad><m:radPr><m:degHide m:val="1"/><m:ctrlPr/></m:radPr>' +
+             '<m:deg/><m:e>' + seq(k) + '</m:e></m:rad>';
+
+    case 'mroot':
+      return '<m:rad><m:radPr><m:degHide m:val="0"/><m:ctrlPr/></m:radPr><m:deg>' +
+             mml(k[1]) + '</m:deg><m:e>' + mml(k[0]) + '</m:e></m:rad>';
+
+    case 'mover':
+      var ao = txt(k[1]);
+      if (ACCENTS[ao]) {
+        return '<m:acc><m:accPr><m:chr m:val="' + esc(ACCENTS[ao]) +
+               '"/><m:ctrlPr/></m:accPr><m:e>' + mml(k[0]) + '</m:e></m:acc>';
+      }
+      s = naryOf(k[0], null, k[1]); if (s) return s;
+      return '<m:limUpp><m:limUppPr><m:ctrlPr/></m:limUppPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limUpp>';
+
+    case 'munder':
+      s = naryOf(k[0], k[1], null); if (s) return s;
+      return '<m:limLow><m:limLowPr><m:ctrlPr/></m:limLowPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limLow>';
+
+    case 'munderover':
+      s = naryOf(k[0], k[1], k[2]); if (s) return s;
+      return '<m:limUpp><m:limUppPr><m:ctrlPr/></m:limUppPr><m:e>' +
+             '<m:limLow><m:limLowPr><m:ctrlPr/></m:limLowPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limLow></m:e><m:lim>' +
+             mml(k[2]) + '</m:lim></m:limUpp>';
+
+    case 'mtable':
+      var rows = k.filter(function (r) { return /mtr$/.test(r.nodeName.toLowerCase()); });
+      var ncol = 0;
+      rows.forEach(function (r) { ncol = Math.max(ncol, kids(r).length); });
+      var props = '<m:mPr><m:baseJc m:val="center"/><m:plcHide m:val="1"/><m:mcs><m:mc><m:mcPr>' +
+                  '<m:count m:val="' + (ncol || 1) + '"/><m:mcJc m:val="center"/></m:mcPr></m:mc></m:mcs>' +
+                  '<m:ctrlPr/></m:mPr>';
+      var body = '';
+      rows.forEach(function (r) {
+        body += '<m:mr>';
+        var cells = kids(r);
+        for (var i = 0; i < (ncol || 1); i++) body += '<m:e>' + (cells[i] ? seq(kids(cells[i])) : '') + '</m:e>';
+        body += '</m:mr>';
+      });
+      return '<m:m>' + props + body + '</m:m>';
+
+    case 'mtr':
+    case 'mtd':
+      return seq(k);
+
+    default:
+      return k.length ? seq(k) : run(txt(n), 'p');
+  }
+}
+
+function mathmlToOmml(mathEl) { return mml(mathEl); }
+
+/* ============================================================================
+   2. Écriture ZIP (entrées non compressées + CRC32)
+   ========================================================================== */
+var CRCT = (function () {
+  var t = new Int32Array(256);
+  for (var i = 0; i < 256; i++) {
+    var c = i;
+    for (var j = 0; j < 8; j++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[i] = c;
+  }
+  return t;
+})();
+function crc32(buf) {
+  var c = -1;
+  for (var i = 0; i < buf.length; i++) c = CRCT[(c ^ buf[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ -1) >>> 0;
+}
+function utf8(str) {
+  if (typeof TextEncoder !== 'undefined') return new TextEncoder().encode(str);
+  var b = unescape(encodeURIComponent(str)), a = new Uint8Array(b.length);
+  for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i);
+  return a;
+}
+function zip(files) {
+  var parts = [], central = [], offset = 0;
+  function u16(v) { return [v & 0xFF, (v >>> 8) & 0xFF]; }
+  function u32(v) { return [v & 0xFF, (v >>> 8) & 0xFF, (v >>> 16) & 0xFF, (v >>> 24) & 0xFF]; }
+
+  files.forEach(function (f) {
+    var name = utf8(f.name), data = f.bin ? f.bin : utf8(f.data), c = crc32(data);
+    var local = [].concat(u32(0x04034b50), u16(20), u16(0x0800), u16(0), u16(0), u16(0),
+                          u32(c), u32(data.length), u32(data.length),
+                          u16(name.length), u16(0));
+    parts.push(new Uint8Array(local), name, data);
+    central.push({ name: name, crc: c, size: data.length, off: offset });
+    offset += local.length + name.length + data.length;
+  });
+
+  var cd = [];
+  central.forEach(function (e) {
+    cd = cd.concat(u32(0x02014b50), u16(20), u16(20), u16(0x0800), u16(0), u16(0), u16(0),
+                   u32(e.crc), u32(e.size), u32(e.size),
+                   u16(e.name.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(e.off));
+    cd = cd.concat(Array.prototype.slice.call(e.name));
+  });
+  var cdArr = new Uint8Array(cd);
+  var eocd = new Uint8Array([].concat(u32(0x06054b50), u16(0), u16(0),
+                                      u16(files.length), u16(files.length),
+                                      u32(cdArr.length), u32(offset), u16(0)));
+  parts.push(cdArr, eocd);
+
+  var total = parts.reduce(function (n, p) { return n + p.length; }, 0);
+  var out = new Uint8Array(total), pos = 0;
+  parts.forEach(function (p) { out.set(p, pos); pos += p.length; });
+  return out;
+}
+
+/* ============================================================================
+   3. HTML -> WordprocessingML
+   ========================================================================== */
+var SKIP = { script: 1, style: 1, button: 1, input: 1, noscript: 1 };
+var IMAGES = [];           /* { bin, w, h } collectées pendant le parcours */
+var EMU = 9525;            /* EMU par pixel */
+var MAXW = 5760000;        /* largeur utile de la page, en EMU */
+
+function b64bin(b64) {
+  var raw = atob(b64), a = new Uint8Array(raw.length);
+  for (var i = 0; i < raw.length; i++) a[i] = raw.charCodeAt(i);
+  return a;
+}
+
+function imageXml(dataUrl, wpx, hpx) {
+  var m = /^data:image\/png;base64,(.*)$/.exec(dataUrl || '');
+  if (!m) return '';
+  var cx = Math.round(wpx * EMU), cy = Math.round(hpx * EMU);
+  if (cx > MAXW) { cy = Math.round(cy * MAXW / cx); cx = MAXW; }
+  IMAGES.push({ bin: b64bin(m[1]) });
+  var id = IMAGES.length, rid = 'rIdImg' + id;
+  return '<w:p><w:pPr><w:pStyle w:val="Figure"/><w:jc w:val="center"/></w:pPr><w:r><w:drawing>' +
+    '<wp:inline distT="0" distB="0" distL="0" distR="0">' +
+    '<wp:extent cx="' + cx + '" cy="' + cy + '"/>' +
+    '<wp:effectExtent l="0" t="0" r="0" b="0"/>' +
+    '<wp:docPr id="' + id + '" name="Graphique ' + id + '"/>' +
+    '<wp:cNvGraphicFramePr><a:graphicFrameLocks ' +
+      'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/>' +
+    '</wp:cNvGraphicFramePr>' +
+    '<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">' +
+    '<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+    '<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+    '<pic:nvPicPr><pic:cNvPr id="' + id + '" name="Graphique ' + id + '"/><pic:cNvPicPr/></pic:nvPicPr>' +
+    '<pic:blipFill><a:blip r:embed="' + rid + '"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>' +
+    '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' + cx + '" cy="' + cy + '"/></a:xfrm>' +
+    '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>' +
+    '</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>';
+}
+var BLOCK = { p: 1, div: 1, h1: 1, h2: 1, h3: 1, h4: 1, li: 1, tr: 1, td: 1, th: 1,
+              table: 1, ul: 1, ol: 1, section: 1, article: 1, header: 1, blockquote: 1 };
+
+function W() {
+  this.body = '';
+  this.para = null;      /* { style, runs, numId, ilvl } */
+}
+W.prototype.open = function (style, numId, ilvl) {
+  this.close();
+  this.para = { style: style || 'Corps', runs: '', numId: numId || 0, ilvl: ilvl || 0 };
+};
+W.prototype.close = function () {
+  var p = this.para;
+  this.para = null;
+  if (!p || (p.runs === '' && !p.numId)) return;
+  if (p.runs === '') return;
+  var pPr = '<w:pPr><w:pStyle w:val="' + p.style + '"/>';
+  if (p.numId) pPr += '<w:numPr><w:ilvl w:val="' + p.ilvl + '"/><w:numId w:val="' + p.numId + '"/></w:numPr>';
+  pPr += '</w:pPr>';
+  this.body += '<w:p>' + pPr + p.runs + '</w:p>';
+};
+W.prototype.add = function (xml) {
+  if (!this.para) this.open('Corps');
+  this.para.runs += xml;
+};
+W.prototype.raw = function (xml) { this.close(); this.body += xml; };
+
+function textRun(s, fmt) {
+  if (!s) return '';
+  var rPr = '';
+  if (fmt.b) rPr += '<w:b/>';
+  if (fmt.i) rPr += '<w:i/>';
+  if (fmt.sup) rPr += '<w:vertAlign w:val="superscript"/>';
+  if (fmt.sub) rPr += '<w:vertAlign w:val="subscript"/>';
+  if (fmt.mono) rPr += '<w:rFonts w:ascii="Consolas" w:hAnsi="Consolas"/>';
+  return '<w:r>' + (rPr ? '<w:rPr>' + rPr + '</w:rPr>' : '') +
+         '<w:t xml:space="preserve">' + esc(s) + '</w:t></w:r>';
+}
+
+function walk(node, w, fmt, list) {
+  var i, cs = node.childNodes;
+  for (i = 0; i < cs.length; i++) {
+    var n = cs[i];
+
+    if (n.nodeType === 3) {
+      var s = n.nodeValue.replace(/\s+/g, ' ');
+      if (s.trim() === '' && !/\S/.test(s)) { if (w.para && w.para.runs) w.add(textRun(' ', fmt)); continue; }
+      w.add(textRun(s, fmt));
+      continue;
+    }
+    if (n.nodeType !== 1) continue;
+
+    var tag = n.nodeName.toLowerCase();
+    if (SKIP[tag]) continue;
+    if (n.classList && (n.classList.contains('top-bar') || n.classList.contains('top-actions') ||
+                        n.classList.contains('sol-toggle-wrap'))) continue;
+
+    /* --- équations --- */
+    if (tag === 'mjx-container') {
+      var math = n.querySelector('mjx-assistive-mml math, math');
+      var display = n.getAttribute('display') === 'true';
+      if (math) {
+        var omml = mathmlToOmml(math);
+        if (display) {
+          w.close();
+          w.body += '<w:p><w:pPr><w:pStyle w:val="Formule"/>' +
+                    '<w:jc w:val="center"/></w:pPr>' +
+                    '<m:oMath>' + omml + '</m:oMath></w:p>';
+        } else {
+          w.add('<m:oMath>' + omml + '</m:oMath>');
+        }
+      } else {
+        w.add(textRun(txt(n), fmt));
+      }
+      continue;
+    }
+    if (tag === 'mjx-assistive-mml' || tag === 'math') continue;
+
+    /* --- graphiques --- */
+    if (tag === 'svg' || tag === 'img') {
+      var png = n.getAttribute('data-kit-png');
+      if (png) {
+        w.close();
+        w.body += imageXml(png, +n.getAttribute('data-kit-w') || 600,
+                                +n.getAttribute('data-kit-h') || 380);
+      }
+      continue;
+    }
+
+    /* --- tableaux --- */
+    if (tag === 'table') { w.close(); w.body += table(n); continue; }
+
+    /* --- listes --- */
+    if (tag === 'ul' || tag === 'ol') {
+      w.close();
+      var nid = tag === 'ol' ? 2 : 1;
+      var lvl = list ? Math.min(list.ilvl + 1, 2) : 0;
+      var items = kids(n).filter(function (x) { return x.nodeName.toLowerCase() === 'li'; });
+      items.forEach(function (li) {
+        /* L'item est composé à part : son numéro doit se poser sur le premier
+           paragraphe produit, même si le <li> enveloppe son texte dans un <div>. */
+        var wb = new W();
+        walk(li, wb, fmt, { ilvl: lvl });
+        wb.close();
+        var xml = wb.body;
+        if (!xml) return;
+        var numPr = '<w:pStyle w:val="Liste"/><w:numPr><w:ilvl w:val="' + lvl +
+                    '"/><w:numId w:val="' + nid + '"/></w:numPr>';
+        if (xml.indexOf('<w:pStyle w:val="Corps"/>') !== -1) {
+          xml = xml.replace('<w:pStyle w:val="Corps"/>', numPr);
+        } else {
+          xml = '<w:p><w:pPr>' + numPr + '</w:pPr></w:p>' + xml;
+        }
+        w.body += xml;
+      });
+      continue;
+    }
+
+    /* --- titres --- */
+    if (tag === 'h1' || tag === 'h2') { w.close(); w.open('Titre1'); walk(n, w, fmt, list); w.close(); continue; }
+    if (tag === 'h3' || tag === 'h4') { w.close(); w.open('Titre2'); walk(n, w, fmt, list); w.close(); continue; }
+
+    /* --- titres internes du corrigé --- */
+    if (n.classList && (n.classList.contains('sol-sub') || n.classList.contains('sol-q') ||
+                        n.classList.contains('dossier-title'))) {
+      w.close(); w.open('Titre2'); walk(n, w, { b: true }, list); w.close(); continue;
+    }
+    if (n.classList && n.classList.contains('persp-box')) {
+      w.close();
+      var wb = new W();
+      walk(n, wb, fmt, list);
+      wb.close();
+      w.body += wb.body.replace(/w:val="Corps"/g, 'w:val="Encadre"')
+                       .replace(/w:val="Titre2"/g, 'w:val="EncadreTitre"');
+      continue;
+    }
+
+    /* --- mise en forme inline --- */
+    var f2 = { b: fmt.b, i: fmt.i, sup: fmt.sup, sub: fmt.sub, mono: fmt.mono };
+    if (tag === 'strong' || tag === 'b') f2.b = true;
+    if (tag === 'em' || tag === 'i') f2.i = true;
+    if (tag === 'sup') f2.sup = true;
+    if (tag === 'sub') f2.sub = true;
+    if (tag === 'code' || tag === 'kbd') f2.mono = true;
+
+    /* intertitre écrit en style en ligne (span display:block + gras) */
+    var st = n.getAttribute && n.getAttribute('style');
+    if (st && /display\s*:\s*block/.test(st) && /font-weight\s*:\s*(6|7|8|9|bold)/.test(st)) {
+      w.close(); w.open('Titre3');
+      walk(n, w, { b: true }, list);
+      w.close();
+      continue;
+    }
+
+    if ((tag === 'strong' || tag === 'b') &&
+        (!w.para || w.para.runs === '') &&
+        n.nextElementSibling && n.nextElementSibling.nodeName.toLowerCase() === 'br') {
+      w.close(); w.open('Titre3');
+      walk(n, w, { b: true }, list);
+      w.close();
+      i++;                       /* le <br> qui suit devient inutile */
+      continue;
+    }
+
+    if (tag === 'br') { w.add('<w:r><w:br/></w:r>'); continue; }
+    if (tag === 'hr') { w.close(); continue; }
+
+    if (BLOCK[tag]) { w.close(); w.open('Corps'); walk(n, w, f2, list); w.close(); }
+    else { walk(n, w, f2, list); }
+  }
+}
+
+function cellXml(td, isHead) {
+  var w2 = new W();
+  walk(td, w2, { b: !!isHead }, null);
+  w2.close();
+  var content = w2.body || '<w:p><w:pPr><w:pStyle w:val="Cellule"/></w:pPr></w:p>';
+  content = content.replace(/w:val="Corps"/g, 'w:val="Cellule"');
+  var span = parseInt(td.getAttribute('colspan') || '1', 10);
+  var shd = isHead ? '<w:shd w:val="clear" w:fill="EDE9DF"/>' : '';
+  return '<w:tc><w:tcPr>' + (span > 1 ? '<w:gridSpan w:val="' + span + '"/>' : '') +
+         shd + '<w:vAlign w:val="center"/></w:tcPr>' + content + '</w:tc>';
+}
+
+function table(tbl) {
+  var rows = tbl.querySelectorAll('tr'), out = '', ncol = 0, i, j;
+  for (i = 0; i < rows.length; i++) {
+    var c = rows[i].children, n = 0;
+    for (j = 0; j < c.length; j++) n += parseInt(c[j].getAttribute('colspan') || '1', 10);
+    ncol = Math.max(ncol, n);
+  }
+  if (!ncol) return '';
+  var grid = '<w:tblGrid>';
+  for (i = 0; i < ncol; i++) grid += '<w:gridCol w:w="' + Math.floor(9360 / ncol) + '"/>';
+  grid += '</w:tblGrid>';
+
+  for (i = 0; i < rows.length; i++) {
+    var cells = rows[i].children, xml = '';
+    var head = rows[i].parentNode.nodeName.toLowerCase() === 'thead' ||
+               (cells.length && cells[0].nodeName.toLowerCase() === 'th');
+    for (j = 0; j < cells.length; j++) xml += cellXml(cells[j], head);
+    out += '<w:tr>' + (head ? '<w:trPr><w:tblHeader/></w:trPr>' : '') + xml + '</w:tr>';
+  }
+  return '<w:tbl><w:tblPr><w:tblStyle w:val="Grille"/>' +
+         '<w:tblW w:w="5000" w:type="pct"/><w:tblLayout w:type="fixed"/></w:tblPr>' +
+         grid + out + '</w:tbl><w:p><w:pPr><w:pStyle w:val="Apres"/></w:pPr></w:p>';
+}
+
+/* ============================================================================
+   Assemblage du fichier
+   ========================================================================== */
+var NS =
+  'xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" ' +
+  'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
+  'xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" ' +
+  'xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" ' +
+  'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+  'xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture" ' +
+  'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+  'xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" ' +
+  'mc:Ignorable="w14"';
+
+function style(id, name, opts) {
+  var o = opts || {};
+  return '<w:style w:type="paragraph" w:styleId="' + id + '"><w:name w:val="' + name + '"/>' +
+         '<w:basedOn w:val="Corps"/><w:pPr>' +
+         (o.keep ? '<w:keepNext/>' : '') +
+         '<w:spacing w:before="' + (o.before || 0) + '" w:after="' + (o.after || 120) +
+         '" w:line="' + (o.line || 276) + '" w:lineRule="auto"/>' +
+         (o.jc ? '<w:jc w:val="' + o.jc + '"/>' : '') +
+         (o.ind ? '<w:ind w:left="' + o.ind + '"/>' : '') +
+         (o.border ? '<w:pBdr><w:left w:val="single" w:sz="18" w:space="8" w:color="1A2E42"/></w:pBdr>' : '') +
+         '</w:pPr><w:rPr>' +
+         (o.font ? '<w:rFonts w:ascii="' + o.font + '" w:hAnsi="' + o.font + '"/>' : '') +
+         (o.b ? '<w:b/>' : '') + (o.i ? '<w:i/>' : '') +
+         (o.sz ? '<w:sz w:val="' + o.sz + '"/>' : '') +
+         (o.color ? '<w:color w:val="' + o.color + '"/>' : '') +
+         '</w:rPr></w:style>';
+}
+
+function stylesXml() {
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles ' + NS + '>' +
+    '<w:docDefaults><w:rPrDefault><w:rPr>' +
+      '<w:rFonts w:ascii="Cambria" w:hAnsi="Cambria" w:cs="Cambria"/>' +
+      '<w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="fr-FR"/>' +
+    '</w:rPr></w:rPrDefault><w:pPrDefault><w:pPr>' +
+      '<w:spacing w:after="120" w:line="276" w:lineRule="auto"/><w:jc w:val="both"/>' +
+    '</w:pPr></w:pPrDefault></w:docDefaults>' +
+    '<w:style w:type="paragraph" w:default="1" w:styleId="Corps"><w:name w:val="Normal"/>' +
+      '<w:pPr><w:spacing w:after="120" w:line="276" w:lineRule="auto"/><w:jc w:val="both"/></w:pPr>' +
+      '<w:rPr><w:rFonts w:ascii="Cambria" w:hAnsi="Cambria"/><w:sz w:val="22"/></w:rPr></w:style>' +
+    style('TitreDoc', 'Title', { font: 'Cambria', b: true, sz: 40, color: '0D1B2A', jc: 'left', after: 60, line: 240 }) +
+    style('SousTitre', 'Subtitle', { i: true, sz: 20, color: '5A5A5A', jc: 'left', after: 280, line: 240 }) +
+    style('Titre1', 'heading 1', { b: true, sz: 28, color: '0D1B2A', before: 320, after: 140, jc: 'left', keep: true, line: 240 }) +
+    style('Titre2', 'heading 2', { b: true, sz: 23, color: '1A2E42', before: 240, after: 100, jc: 'left', keep: true, line: 240 }) +
+    style('Formule', 'Formula', { jc: 'center', before: 120, after: 120, line: 240 }) +
+    style('Liste', 'List Paragraph', { after: 100, ind: 360 }) +
+    style('Cellule', 'Table Text', { sz: 20, after: 40, jc: 'left', line: 240 }) +
+    style('Encadre', 'Aside', { ind: 240, border: true, sz: 21, before: 200, after: 200 }) +
+    style('Apres', 'After Table', { after: 200, sz: 12 }) +
+    style('Figure', 'Figure', { jc: 'center', before: 160, after: 200, line: 240 }) +
+    style('Titre3', 'heading 3', { b: true, sz: 22, color: '1A2E42', before: 200,
+                                   after: 60, jc: 'left', keep: true, line: 240 }) +
+    style('EncadreTitre', 'Aside Heading', { ind: 240, border: true, b: true, sz: 22,
+                                             color: '1A2E42', before: 200, after: 60, jc: 'left' }) +
+    '<w:style w:type="table" w:styleId="Grille"><w:name w:val="Table Grid"/><w:tblPr>' +
+      '<w:tblBorders>' +
+      ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(function (b) {
+        return '<w:' + b + ' w:val="single" w:sz="4" w:space="0" w:color="9A9A9A"/>';
+      }).join('') +
+      '</w:tblBorders><w:tblCellMar>' +
+      '<w:top w:w="60" w:type="dxa"/><w:left w:w="90" w:type="dxa"/>' +
+      '<w:bottom w:w="60" w:type="dxa"/><w:right w:w="90" w:type="dxa"/>' +
+      '</w:tblCellMar></w:tblPr></w:style>' +
+    '</w:styles>';
+}
+
+function numberingXml() {
+  function lvl(i, fmt, txtv, ind) {
+    return '<w:lvl w:ilvl="' + i + '"><w:start w:val="1"/><w:numFmt w:val="' + fmt + '"/>' +
+           '<w:lvlText w:val="' + txtv + '"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="' +
+           ind + '" w:hanging="360"/></w:pPr>' +
+           (fmt === 'bullet' ? '<w:rPr><w:rFonts w:ascii="Symbol" w:hAnsi="Symbol"/></w:rPr>' : '') +
+           '</w:lvl>';
+  }
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:numbering ' + NS + '>' +
+    '<w:abstractNum w:abstractNumId="1"><w:multiLevelType w:val="hybridMultilevel"/>' +
+      lvl(0, 'bullet', '\uF0B7', 360) + lvl(1, 'bullet', 'o', 720) + lvl(2, 'bullet', '\uF0A7', 1080) +
+    '</w:abstractNum>' +
+    '<w:abstractNum w:abstractNumId="2"><w:multiLevelType w:val="hybridMultilevel"/>' +
+      lvl(0, 'decimal', '%1.', 360) + lvl(1, 'lowerLetter', '%2.', 720) + lvl(2, 'lowerRoman', '%3.', 1080) +
+    '</w:abstractNum>' +
+    '<w:num w:numId="1"><w:abstractNumId w:val="1"/></w:num>' +
+    '<w:num w:numId="2"><w:abstractNumId w:val="2"/></w:num>' +
+    '</w:numbering>';
+}
+
+function buildDocx(opts) {
+  IMAGES = [];
+  var w = new W();
+
+  if (opts.title) {
+    w.body += '<w:p><w:pPr><w:pStyle w:val="TitreDoc"/></w:pPr>' +
+              textRun(opts.title, {}) + '</w:p>';
+  }
+  if (opts.subtitle) {
+    w.body += '<w:p><w:pPr><w:pStyle w:val="SousTitre"/></w:pPr>' +
+              textRun(opts.subtitle, {}) + '</w:p>';
+  }
+  opts.sections.forEach(function (sec) {
+    if (sec.heading) {
+      w.body += '<w:p><w:pPr><w:pStyle w:val="Titre1"/></w:pPr>' + textRun(sec.heading, {}) + '</w:p>';
+    }
+    walk(sec.node, w, {}, null);
+    w.close();
+  });
+  w.close();
+
+  var doc = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ' + NS + '><w:body>' +
+    w.body +
+    '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/>' +
+    '<w:pgMar w:top="1247" w:right="1247" w:bottom="1247" w:left="1247" ' +
+    'w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>';
+
+  var media = [], rels = '', ctypes = '';
+  IMAGES.forEach(function (im, i) {
+    media.push({ name: 'word/media/image' + (i + 1) + '.png', bin: im.bin });
+    rels += '<Relationship Id="rIdImg' + (i + 1) + '" Type="http://schemas.openxmlformats.org/' +
+            'officeDocument/2006/relationships/image" Target="media/image' + (i + 1) + '.png"/>';
+  });
+  if (IMAGES.length) ctypes = '<Default Extension="png" ContentType="image/png"/>';
+
+  return zip([
+    { name: '[Content_Types].xml',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+        '<Default Extension="xml" ContentType="application/xml"/>' + ctypes +
+        '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+        '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>' +
+        '<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>' +
+        '</Types>' },
+    { name: '_rels/.rels',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+        '</Relationships>' },
+    { name: 'word/_rels/document.xml.rels',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' +
+        '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>' +
+        rels + '</Relationships>' },
+    { name: 'word/document.xml', data: doc },
+    { name: 'word/styles.xml', data: stylesXml() },
+    { name: 'word/numbering.xml', data: numberingXml() }
+  ].concat(media));
+}
+
+root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: W, _walk: walk };
+
+})(window);
+
+</script>
+<script id="kit-js">
+/* ============================================================
+   KIT D'UNIFORMISATION — logique partagée (modale PDF, export Word,
+   libellés de la barre d'actions). Autonome : ne dépend d'aucun
+   dictionnaire I18N propre à la page.
+   ============================================================ */
+(function(){
+  var T = {
+    fr:{ modalTitle:"Exporter en PDF", seedPre:"Seed\u00a0:",
+         seedPost:"\u2014 notez cette valeur pour reproduire exactement cet exercice.",
+         optHeader:"Inclure l'en-t\u00eate de page",
+         optHeaderD:"Titre, badge de mati\u00e8re et intitul\u00e9 de l'exercice",
+         optSol:"Inclure le corrig\u00e9 complet",
+         optSolD:"L'ensemble des d\u00e9veloppements et commentaires du corrig\u00e9",
+         print:"\uD83D\uDDA8\u00a0Imprimer / Sauvegarder PDF", cancel:"Annuler",
+         btnNew:"\u21ba Nouvel \u00e9nonc\u00e9", btnPdf:"\u2b07 Exporter PDF", btnDoc:"\u2b07 Exporter Word",
+         btnCopy:"\u29c9 Copier", copied:"\u2713 Copi\u00e9e", seedLabel:"Seed de reproductibilit\u00e9",
+         docFile:"exercice.doc" },
+    en:{ modalTitle:"Export to PDF", seedPre:"Seed:",
+         seedPost:"\u2014 note this value to reproduce this exact exercise.",
+         optHeader:"Include the page header",
+         optHeaderD:"Title, subject badge and exercise heading",
+         optSol:"Include the full solution",
+         optSolD:"All the workings and comments of the solution",
+         print:"\uD83D\uDDA8\u00a0Print / Save as PDF", cancel:"Cancel",
+         btnNew:"\u21ba New exercise", btnPdf:"\u2b07 Export PDF", btnDoc:"\u2b07 Export Word",
+         btnCopy:"\u29c9 Copy", copied:"\u2713 Copied", seedLabel:"Reproducibility seed",
+         docFile:"exercise.doc" }
+  };
+
+  function lang(){
+    var l = (window.LANG || document.documentElement.lang || 'fr').toLowerCase();
+    return (l.indexOf('en') === 0) ? 'en' : 'fr';
+  }
+  function t(k){ return T[lang()][k]; }
+
+  window.KIT = { T:T, lang:lang, t:t };
+
+  /* --- libellés du kit (modale + barre d'actions) --- */
+  function paint(){
+    var d = T[lang()];
+    document.querySelectorAll('[data-kit]').forEach(function(el){
+      var k = el.getAttribute('data-kit');
+      if (d[k] !== undefined) el.innerHTML = d[k];
+    });
+  }
+  window.KIT.paint = paint;
+
+  /* Se raccroche au changement de langue de la page sans la modifier. */
+  function hookLang(){
+    if (typeof window.setLang === 'function' && !window.setLang.__kit){
+      var orig = window.setLang;
+      var wrapped = function(){ var r = orig.apply(this, arguments); paint(); return r; };
+      wrapped.__kit = true;
+      window.setLang = wrapped;
+    }
+  }
+
+  /* --- Copie de la seed active --- */
+  window.copySeed = function(btn){
+    var el = document.getElementById('seed-disp');
+    if (!el) return;
+    var v = (el.textContent || '').trim();
+    if (!v || v === '\u2014') return;
+    var done = function(){
+      var b = btn || document.getElementById('btn-copy-seed');
+      if (!b) return;
+      var old = b.innerHTML;
+      b.innerHTML = t('copied');
+      setTimeout(function(){ b.innerHTML = old; paint(); }, 1400);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(v).then(done, done);
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = v; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch(e){}
+      document.body.removeChild(ta); done();
+    }
+  };
+
+  /* --- Modale PDF --- */
+  window.openPdfModal = function(){
+    var s = document.getElementById('modal-seed');
+    var src = document.getElementById('seed-disp');
+    if (s && src) s.textContent = (src.textContent || '\u2014').trim();
+    /* la case « corrigé » reflète l'état d'affichage courant */
+    var sol = document.getElementById('sol-card');
+    var box = document.getElementById('opt-sol');
+    if (box) box.checked = !!(window.solVisible ||
+        (sol && (sol.classList.contains('visible') || sol.style.display === 'block')));
+    paint();
+    document.getElementById('pdf-ov').classList.add('open');
+    document.getElementById('pdf-modal').classList.add('open');
+  };
+  window.closePdfModal = function(){
+    document.getElementById('pdf-ov').classList.remove('open');
+    document.getElementById('pdf-modal').classList.remove('open');
+  };
+  var PRINTCLS = ['print-no-header', 'print-force-solution', 'print-no-solution'];
+
+  function clearPrintClasses() {
+    var b = document.body;
+    for (var i = 0; i < PRINTCLS.length; i++) b.classList.remove(PRINTCLS[i]);
+  }
+
+  window.doPrint = function () {
+    var noHdr   = !document.getElementById('opt-header').checked;
+    var inclSol =  document.getElementById('opt-sol').checked;
+    var b = document.body;
+
+    clearPrintClasses();
+    if (noHdr) b.classList.add('print-no-header');
+    b.classList.add(inclSol ? 'print-force-solution' : 'print-no-solution');
+    closePdfModal();
+
+    /* Le nettoyage doit attendre la fin réelle de l'impression. Un simple
+       minuteur ne convient pas : selon le navigateur, window.print() rend la
+       main avant que l'aperçu ne soit composé, et les options seraient alors
+       déjà effacées au moment où le PDF est produit. */
+    var done = false;
+    function finish() {
+      if (done) return;
+      done = true;
+      clearPrintClasses();
+      window.removeEventListener('afterprint', finish);
+      if (mq && mq.removeListener) mq.removeListener(onMq);
+      if (mq && mq.removeEventListener) mq.removeEventListener('change', onMq);
+    }
+    function onMq(e) { if (!e.matches) finish(); }
+
+    var mq = window.matchMedia ? window.matchMedia('print') : null;
+    window.addEventListener('afterprint', finish);
+    if (mq && mq.addEventListener) mq.addEventListener('change', onMq);
+    else if (mq && mq.addListener) mq.addListener(onMq);
+    /* filet de sécurité si le navigateur n'émet aucun de ces signaux */
+    setTimeout(finish, 120000);
+
+    setTimeout(function () { window.print(); }, 120);
+  };
+
+  /* --- Rasterisation des graphiques SVG ---
+     Word ne sait pas lire le SVG. On le convertit en PNG en recopiant d'abord
+     les styles calculés, sinon les couleurs héritées de la feuille disparaissent. */
+  var SVGPROPS = ['fill', 'stroke', 'stroke-width', 'stroke-dasharray', 'stroke-linecap',
+                  'stroke-linejoin', 'opacity', 'fill-opacity', 'stroke-opacity',
+                  'font-family', 'font-size', 'font-weight', 'font-style',
+                  'text-anchor', 'dominant-baseline'];
+
+  function inlineStyles(src, dst) {
+    var a = src.querySelectorAll('*'), b = dst.querySelectorAll('*'), i, j;
+    for (i = 0; i < a.length && i < b.length; i++) {
+      var cs = window.getComputedStyle(a[i]);
+      for (j = 0; j < SVGPROPS.length; j++) {
+        var v = cs.getPropertyValue(SVGPROPS[j]);
+        if (v) b[i].setAttribute(SVGPROPS[j], v);
+      }
+    }
+  }
+
+  function svgSize(svg) {
+    var vb = svg.viewBox && svg.viewBox.baseVal;
+    if (vb && vb.width) return { w: vb.width, h: vb.height };
+    var r = svg.getBoundingClientRect();
+    if (r.width) return { w: r.width, h: r.height };
+    return { w: 600, h: 380 };
+  }
+
+  function svgToPng(svg) {
+    return new Promise(function (resolve) {
+      var done = false;
+      var res = function (v) { if (!done) { done = true; resolve(v); } };
+      /* garde-fou : un graphique qui ne se charge pas ne doit jamais
+         bloquer l'export, on l'omet et le reste du document part quand même */
+      setTimeout(function () { res(null); }, 5000);
+      try {
+        var d = svgSize(svg), SC = 2;
+        var c = svg.cloneNode(true);
+        c.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        c.setAttribute('width', d.w);
+        c.setAttribute('height', d.h);
+        inlineStyles(svg, c);
+        var bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        bg.setAttribute('x', 0); bg.setAttribute('y', 0);
+        bg.setAttribute('width', '100%'); bg.setAttribute('height', '100%');
+        bg.setAttribute('fill', '#ffffff');
+        c.insertBefore(bg, c.firstChild);
+        var xml = new XMLSerializer().serializeToString(c);
+        var img = new Image();
+        img.onload = function () {
+          try {
+            var cv = document.createElement('canvas');
+            cv.width = Math.round(d.w * SC); cv.height = Math.round(d.h * SC);
+            var ctx = cv.getContext('2d');
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, cv.width, cv.height);
+            ctx.drawImage(img, 0, 0, cv.width, cv.height);
+            res({ png: cv.toDataURL('image/png'), w: d.w, h: d.h });
+          } catch (e) { res(null); }
+        };
+        img.onerror = function () { res(null); };
+        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml);
+      } catch (e) { res(null); }
+    });
+  }
+
+  /* --- Export Word natif (.docx) ---
+     Les formules sont converties en OMML, le format d'équation natif de Word :
+     elles restent éditables et se composent avec Cambria Math. */
+  window.exportWord = function () {
+    var area = document.getElementById('ex-area');
+    if (!area || !window.DocxExport) { return; }
+
+    var btn = document.querySelector('.btn-sm.doc');
+    if (btn) { btn.disabled = true; btn.style.opacity = '.5'; }
+
+    var svgs = Array.prototype.slice.call(area.querySelectorAll('svg'));
+    Promise.all(svgs.map(svgToPng)).then(function (pngs) {
+      svgs.forEach(function (sv, i) {
+        if (!pngs[i]) return;
+        sv.setAttribute('data-kit-png', pngs[i].png);
+        sv.setAttribute('data-kit-w', pngs[i].w);
+        sv.setAttribute('data-kit-h', pngs[i].h);
+      });
+      try { writeDocx(area); } finally {
+        svgs.forEach(function (sv) {
+          sv.removeAttribute('data-kit-png');
+          sv.removeAttribute('data-kit-w');
+          sv.removeAttribute('data-kit-h');
+        });
+        if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+      }
+    });
+  };
+
+  function writeDocx(area) {
+
+    var h1 = document.querySelector('header h1');
+    var badge = document.querySelector('.header-badge, #lbl-badge');
+    var seed = document.getElementById('seed-disp');
+    var bits = [];
+    if (badge && badge.textContent.trim()) bits.push(badge.textContent.trim());
+    if (seed && seed.textContent.trim() && seed.textContent.trim() !== '\u2014') {
+      bits.push('seed ' + seed.textContent.trim());
+    }
+    bits.push('Thomas Hossen');
+
+    var sections = [];
+    var cards = area.querySelectorAll('.card');
+    for (var i = 0; i < cards.length; i++) {
+      var body = cards[i].querySelector('.card-body');
+      if (!body) continue;
+      var tag = cards[i].querySelector('.card-header .tag');
+      var h2 = cards[i].querySelector('.card-header h2');
+      var head = [tag ? tag.textContent.trim() : '', h2 ? h2.textContent.trim() : '']
+                   .filter(Boolean).join(' \u2014 ');
+      sections.push({ heading: head, node: body });
+    }
+    if (!sections.length) sections = [{ heading: '', node: area }];
+
+    var bytes = window.DocxExport.build({
+      title: h1 ? h1.textContent.trim() : document.title,
+      subtitle: bits.join(' \u00b7 '),
+      sections: sections
+    });
+
+    var name = (h1 ? h1.textContent : 'exercice').normalize('NFD')
+                 .replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9]+/g, '_')
+                 .replace(/^_|_$/g, '').slice(0, 60) || 'exercice';
+    var blob = new Blob([bytes], {
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = name + '.docx';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){ hookLang(); paint(); });
+  if (document.readyState !== 'loading'){ hookLang(); paint(); }
+})();
+</script>
+<!-- KIT:JS:END -->
+
+</body>
+</html>
