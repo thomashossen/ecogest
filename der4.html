@@ -1837,20 +1837,46 @@ root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: 
     document.getElementById('pdf-ov').classList.remove('open');
     document.getElementById('pdf-modal').classList.remove('open');
   };
-  window.doPrint = function(){
+  var PRINTCLS = ['print-no-header', 'print-force-solution', 'print-no-solution'];
+
+  function clearPrintClasses() {
+    var b = document.body;
+    for (var i = 0; i < PRINTCLS.length; i++) b.classList.remove(PRINTCLS[i]);
+  }
+
+  window.doPrint = function () {
     var noHdr   = !document.getElementById('opt-header').checked;
     var inclSol =  document.getElementById('opt-sol').checked;
     var b = document.body;
-    b.classList.remove('print-no-header','print-force-solution','print-no-solution');
+
+    clearPrintClasses();
     if (noHdr) b.classList.add('print-no-header');
     b.classList.add(inclSol ? 'print-force-solution' : 'print-no-solution');
     closePdfModal();
-    setTimeout(function(){
-      window.print();
-      setTimeout(function(){
-        b.classList.remove('print-no-header','print-force-solution','print-no-solution');
-      }, 600);
-    }, 120);
+
+    /* Le nettoyage doit attendre la fin réelle de l'impression. Un simple
+       minuteur ne convient pas : selon le navigateur, window.print() rend la
+       main avant que l'aperçu ne soit composé, et les options seraient alors
+       déjà effacées au moment où le PDF est produit. */
+    var done = false;
+    function finish() {
+      if (done) return;
+      done = true;
+      clearPrintClasses();
+      window.removeEventListener('afterprint', finish);
+      if (mq && mq.removeListener) mq.removeListener(onMq);
+      if (mq && mq.removeEventListener) mq.removeEventListener('change', onMq);
+    }
+    function onMq(e) { if (!e.matches) finish(); }
+
+    var mq = window.matchMedia ? window.matchMedia('print') : null;
+    window.addEventListener('afterprint', finish);
+    if (mq && mq.addEventListener) mq.addEventListener('change', onMq);
+    else if (mq && mq.addListener) mq.addListener(onMq);
+    /* filet de sécurité si le navigateur n'émet aucun de ces signaux */
+    setTimeout(finish, 120000);
+
+    setTimeout(function () { window.print(); }, 120);
   };
 
   /* --- Rasterisation des graphiques SVG ---
