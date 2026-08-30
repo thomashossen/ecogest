@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Générateur d'exercices - Économétrie</title>
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['\\(','\\)']],
+    displayMath: [['\\[','\\]']],
+    packages: {'[+]': ['ams']},
+    macros: {
+      Var: ['\\textbf{Var}\\left(#1\\right)', 1],
+      Cov: ['\\textbf{Cov}\\left(#1\\right)', 1]
+    }
+  },
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] }
+};
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 0;border-bottom:3px solid var(--gold)}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+#controls-bar{border-top:1px solid rgba(255,255,255,.08);padding:1.1rem 0 1.3rem}
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.5)}
+.ctrl-inp,.ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.38rem .65rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.82rem;width:88px;outline:none;transition:border-color .2s}
+.ctrl-sel{width:auto}
+.ctrl-sel option{background:var(--navy);color:var(--cream)}
+.ctrl-inp:focus,.ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.ctrl-tip{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:rgba(250,247,240,.33);margin-top:2px}
+.seed-row{display:flex;align-items:flex-end;gap:.45rem}
+.btn-copy-seed{background:transparent;border:1px solid rgba(201,149,42,.4);color:rgba(250,247,240,.55);padding:.38rem .55rem;border-radius:3px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:.65rem;transition:all .18s;white-space:nowrap}
+.btn-copy-seed:hover{border-color:var(--gold-light);color:var(--gold-light)}
+.ctrl-vsep{width:1px;background:rgba(255,255,255,.1);align-self:stretch;margin:0 .2rem}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.3rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.9rem;font-weight:600;transition:background .18s;white-space:nowrap;align-self:flex-end}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.welcome-msg{text-align:center;padding:5rem 2rem;color:var(--text-muted);font-style:italic;font-size:1.05rem}
+.welcome-msg .arrow{font-size:2rem;display:block;margin-bottom:1rem;opacity:.4}
+
+/* TOP BAR */
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.top-bar-left{display:flex;gap:.6rem;align-items:center}
+.btn-sm{background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:'JetBrains Mono',monospace;font-size:.67rem;letter-spacing:.08em;text-transform:uppercase;padding:.4rem 1rem;border-radius:3px;cursor:pointer;transition:all .18s;white-space:nowrap}
+.btn-sm:hover{background:var(--gold);color:var(--navy)}
+.btn-sm.pdf{border-color:#7bafd4;color:#7bafd4}
+.btn-sm.pdf:hover{background:#7bafd4;color:var(--navy)}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.67rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:500}
+
+/* CARDS */
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);margin-bottom:1.5rem;border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.4rem;font-size:.93rem;line-height:1.75;text-align:justify}
+
+/* SORTIES DE REGRESSION */
+.reg-wrap{margin:1.4rem 0 1.2rem}
+.reg-col{width:100%;overflow-x:auto}
+.reg-col + .reg-col{margin-top:1.3rem}
+.reg-title{font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--navy);background:var(--cream-dark);border:1px solid var(--border);border-bottom:none;padding:.45rem .6rem;text-align:center}
+.reg-table{width:100%;border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:.7rem}
+.reg-table th,.reg-table td{border:1px solid var(--border);padding:.3rem .4rem;text-align:right;white-space:nowrap}
+.reg-table th{background:var(--navy);color:var(--cream);text-align:center;font-weight:500;font-size:.65rem;letter-spacing:.03em}
+.reg-table td.v{text-align:left}
+.reg-table tr.stat td{background:#fbf9f4}
+.reg-table tr.stat td.v{color:var(--navy)}
+.reg-note{font-size:.78rem;color:var(--text-muted);font-style:italic;text-align:center;margin-top:.3rem}
+.st mjx-container[display="true"],.context-block mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%}
+.st>ol>li>div{overflow-wrap:break-word}
+
+/* QUESTIONS */
+.questions ol{counter-reset:q;list-style:none}
+.questions ol>li{counter-increment:q;margin-bottom:1.4rem;display:flex;gap:1rem;align-items:flex-start}
+.questions ol>li::before{content:counter(q);min-width:28px;height:28px;background:var(--navy);color:var(--cream);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:500;flex-shrink:0;margin-top:.15rem}
+.questions ol>li .q-text{flex:1;font-size:.93rem;text-align:justify}
+
+/* SOLUTION */
+.sol-toggle-wrap{text-align:center;margin:1rem 0 0}
+.btn-toggle{background:transparent;border:2px solid var(--navy);color:var(--navy);font-family:'Source Serif 4',serif;font-size:.9rem;padding:.6rem 2rem;border-radius:4px;cursor:pointer;transition:all .2s}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--navy);color:var(--cream)}
+.sol-card{border-top:4px solid var(--green);display:none}
+.sol-card.visible{display:block;animation:fi .3s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+.st{font-size:.92rem;line-height:1.75;text-align:justify}
+.st p{margin-bottom:.7rem}
+.st ol{counter-reset:sq;list-style:none}
+.st>ol>li{counter-increment:sq;margin-bottom:1.6rem;display:flex;gap:1rem;align-items:flex-start}
+.st>ol>li::before{content:counter(sq);min-width:24px;height:24px;background:var(--green);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.68rem;flex-shrink:0;margin-top:.15rem}
+.st>ol>li>div{flex:1;min-width:0}
+.st ul{list-style:disc;padding-left:1.5rem;margin-bottom:.7rem}
+.st ul li{margin-bottom:.6rem}
+.st .concl{background:#f4f8f4;border-left:3px solid var(--green);padding:.6rem .9rem;border-radius:0 3px 3px 0;margin:.7rem 0}
+
+/* PDF MODAL */
+#pdf-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;backdrop-filter:blur(2px)}
+#pdf-modal{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:101;background:#fff;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.25);width:390px;max-width:95vw;border-top:4px solid #7bafd4;overflow:hidden}
+.mh{background:var(--navy);color:var(--cream);padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
+.mh h3{font-family:'Playfair Display',serif;font-size:1rem;font-weight:600}
+.mclose{background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:1.2rem;line-height:1;padding:2px 6px;border-radius:3px;transition:color .15s}
+.mclose:hover{color:#fff}
+.mb2{padding:1.5rem}
+.opt-row{display:flex;align-items:flex-start;gap:.75rem;margin-bottom:1rem;cursor:pointer}
+.opt-row input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--navy);flex-shrink:0;margin-top:3px}
+.opt-lbl{font-size:.93rem}
+.opt-desc{font-size:.75rem;color:var(--text-muted);display:block}
+.seed-note{font-family:'JetBrains Mono',monospace;font-size:.7rem;background:var(--cream-dark);border:1px solid var(--border);padding:.55rem .85rem;border-radius:3px;color:var(--text-muted);margin-bottom:1.2rem;line-height:1.5}
+.seed-note strong{color:var(--navy)}
+.mactions{display:flex;gap:.6rem}
+.btn-print{flex:1;background:var(--navy);color:var(--cream);border:none;padding:.7rem;border-radius:4px;font-family:'Source Serif 4',serif;font-size:.9rem;cursor:pointer;transition:background .2s}
+.btn-print:hover{background:var(--navy-mid)}
+.btn-cancel{background:transparent;border:1px solid var(--border);color:var(--text-muted);padding:.7rem 1rem;border-radius:4px;font-family:'Source Serif 4',serif;font-size:.9rem;cursor:pointer;transition:all .2s}
+.btn-cancel:hover{border-color:var(--text);color:var(--text)}
+
+/* PRINT */
+@media print{
+:root{--navy:#0d1b2a;--cream:#fff;--cream-dark:#f8f8f8;--gold:#c9952a;--green:#2d6b4a;--border:#ccc}
+body{background:#fff;font-size:11pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+header{padding:1rem 1.5rem .8rem}
+header .subtitle{display:none}
+#controls-bar,.top-bar,.sol-toggle-wrap,#pdf-ov,#pdf-modal{display:none!important}
+.card{box-shadow:none;border-radius:0;page-break-inside:avoid;margin-bottom:1rem}
+main{padding:1rem 1.5rem;max-width:100%}
+body.print-no-header header{display:none!important}
+body.print-no-solution .sol-card{display:none!important}
+body.print-force-solution .sol-card{display:block!important}
+}
+
+/* --- Selecteur de langue / Language switch --- */
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem}
+.header-top .header-badge{margin-bottom:0}
+.lang-switch{display:flex;gap:.45rem;flex-shrink:0}
+.flag-btn{background:rgba(255,255,255,.06);border:1px solid rgba(201,149,42,.35);border-radius:3px;padding:3px;cursor:pointer;line-height:0;opacity:.5;transition:opacity .2s,border-color .2s,transform .15s}
+.flag-btn:hover{opacity:1;transform:translateY(-1px)}
+.flag-btn.active{opacity:1;border-color:var(--gold-light);box-shadow:0 0 0 1px rgba(232,184,75,.35)}
+.flag-btn svg{display:block;width:30px;height:20px;border-radius:1px}
+@media print{ .lang-switch{display:none !important;} }
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-top">
+    <div class="header-badge" data-k="k-badge">ÉCONOMÉTRIE</div>
+    <div class="lang-switch">
+      <button type="button" class="flag-btn active" id="flag-fr" onclick="setLang('fr')" title="Français" aria-label="Français"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="20" height="40" fill="#002654"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ED2939"/></svg></button>
+      <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
+    </div>
+  </div>
+  <h1 data-k="k-h1">Comparaison de modèles emboîtés</h1>
+  <p class="subtitle" data-k="k-sub">© Thomas Hossen – Version du 7 mars 2026</p>
+
+  <div id="controls-bar">
+    <div class="ctrls">
+      <div class="ctrl-g">
+        <span class="ctrl-lbl" data-k="k-seed">Seed de reproductibilité</span>
+        <div class="seed-row">
+          <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="0" max="99999999">
+          <button class="btn-copy-seed" id="btn-copy" onclick="copySeed()" title="Copier la seed active">⧉ Copier</button>
+        </div>
+        <span class="ctrl-tip" data-k="k-seedtip">Vide = aléatoire à chaque génération</span>
+      </div>
+      <div class="ctrl-vsep"></div>
+      <div class="ctrl-g">
+        <span class="ctrl-lbl" data-k="k-n">Observations <em>(n)</em></span>
+        <input class="ctrl-inp" type="number" id="param-n" min="150" max="900" placeholder="défaut">
+        <span class="ctrl-tip" data-k="k-ntip">150 – 900, auto si vide</span>
+      </div>
+      <div class="ctrl-vsep"></div>
+      <div class="ctrl-g">
+        <span class="ctrl-lbl" data-k="k-lvl">Niveau de confiance</span>
+        <select class="ctrl-sel" id="param-level">
+          <option value="auto" data-k="k-lvl-auto">Aléatoire</option>
+          <option value="90">90 %</option>
+          <option value="95">95 %</option>
+          <option value="99">99 %</option>
+        </select>
+        <span class="ctrl-tip" data-k="k-lvltip">Seuil des tests et de l'intervalle</span>
+      </div>
+      <div class="ctrl-vsep"></div>
+      <button class="btn-gen" onclick="generateFromControls()"><span data-k="k-gen">Générer →</span></button>
+    </div>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" class="welcome-msg">
+    <span class="arrow">↑</span>
+    <span data-k="k-welcome">Configurez les paramètres (ou laissez vide pour de l'aléatoire), puis cliquez sur Générer.</span>
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="top-bar-left">
+        <button class="btn-sm" onclick="regen()"><span data-k="k-new">↺ Nouvel énoncé</span></button>
+        <button class="btn-sm pdf" onclick="openPdfModal()"><span data-k="k-pdf">⬇ Exporter PDF</span></button>
+      </div>
+      <div class="seed-badge"><span data-k="k-seedbadge">Seed&nbsp;:</span> <span id="seed-disp">—</span></div>
+    </div>
+
+    <div id="ex-card" class="card">
+      <div class="card-header"><span class="tag" data-k="k-tag-ex">Énoncé</span><h2 id="card-title" data-k="k-cardtitle">Comparaison de modèles emboîtés</h2></div>
+      <div class="card-body" id="ex-content"></div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag" data-k="k-tag-sol">Corrigé</span><h2 data-k="k-cardtitle2">Comparaison de modèles emboîtés</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+
+  </div>
+</main>
+
+<div id="pdf-ov" onclick="closePdfModal()"></div>
+<div id="pdf-modal">
+  <div class="mh">
+    <h3 data-k="k-modal">Exporter en PDF</h3>
+    <button class="mclose" onclick="closePdfModal()">✕</button>
+  </div>
+  <div class="mb2">
+    <div class="seed-note"><span data-k="k-mseed-pre">Seed&nbsp;:</span> <strong id="modal-seed">—</strong> <span data-k="k-mseed-post">— notez cette valeur pour reproduire exactement cet exercice.</span></div>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-header" checked>
+      <div><span class="opt-lbl" data-k="k-opth">Inclure l'en-tête de page</span>
+           <span class="opt-desc" data-k="k-opthd">Titre, badge « ÉCONOMÉTRIE » et intitulé de l'exercice</span></div>
+    </label>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-sol">
+      <div><span class="opt-lbl" data-k="k-opts">Inclure le corrigé complet</span>
+           <span class="opt-desc" data-k="k-optsd">Tests de Fisher, intervalle de confiance et choix de modèle</span></div>
+    </label>
+    <div class="mactions">
+      <button class="btn-print" onclick="doPrint()"><span data-k="k-print">🖨&nbsp;Imprimer / Sauvegarder PDF</span></button>
+      <button class="btn-cancel" onclick="closePdfModal()"><span data-k="k-cancel">Annuler</span></button>
+    </div>
+  </div>
+</div>
+
+<script>
+let solVisible = false;
+
+/* ============================================================
+   DICTIONNAIRE BILINGUE  /  BILINGUAL DICTIONARY
+   ============================================================ */
+const I18N = {
+
+  fr: {
+    "htmlLang": "fr",
+    "title": "Générateur d'exercices - Comparaison de modèles",
+    "k-badge": "ÉCONOMÉTRIE",
+    "k-h1": "Comparaison de modèles emboîtés",
+    "k-sub": "© Thomas Hossen – Version du 7 mars 2026",
+    "k-seed": "Seed de reproductibilité",
+    "k-seedtip": "Vide = aléatoire à chaque génération",
+    "k-n": "Observations <em>(n)</em>",
+    "k-ntip": "150 – 900, auto si vide",
+    "k-lvl": "Niveau de confiance",
+    "k-lvl-auto": "Aléatoire",
+    "k-lvltip": "Seuil des tests et de l'intervalle",
+    "k-gen": "Générer →",
+    "k-welcome": "Configurez les paramètres (ou laissez vide pour de l'aléatoire), puis cliquez sur Générer.",
+    "k-new": "↺ Nouvel énoncé",
+    "k-pdf": "⬇ Exporter PDF",
+    "k-seedbadge": "Seed&nbsp;:",
+    "k-tag-ex": "Énoncé",
+    "k-cardtitle": "Comparaison de modèles emboîtés",
+    "k-tag-sol": "Corrigé",
+    "k-cardtitle2": "Comparaison de modèles emboîtés",
+    "k-modal": "Exporter en PDF",
+    "k-mseed-pre": "Seed&nbsp;:",
+    "k-mseed-post": "— notez cette valeur pour reproduire exactement cet exercice.",
+    "k-opth": "Inclure l'en-tête de page",
+    "k-opthd": "Titre, badge « ÉCONOMÉTRIE » et intitulé de l'exercice",
+    "k-opts": "Inclure le corrigé complet",
+    "k-optsd": "Tests de Fisher, intervalle de confiance et choix de modèle",
+    "k-print": "🖨&nbsp;Imprimer / Sauvegarder PDF",
+    "k-cancel": "Annuler",
+    "copy": "⧉ Copier",
+    "copyTitle": "Copier la seed active",
+    "copied": "✓ Copié",
+    "phSeed": "auto",
+    "phN": "défaut",
+    "showSol": "Afficher le corrigé",
+    "hideSol": "Masquer le corrigé",
+
+    tCoef: "Coefficient", tSe: "Erreur-type", tT: "Stat. t", tP: "Prob.",
+    tVar: "Variable", tConst: "Constante",
+    tR2: "R²", tR2a: "R² ajusté", tSCR: "Somme des carrés des résidus",
+    tSER: "Écart-type de la régression", tF: "Statistique F", tPF: "Prob. (F)", tN: "Observations",
+    tM1: "Modèle 1 — spécification de base", tM2: "Modèle 2 — spécification étendue",
+    regNote: "Estimations par les moindres carrés ordinaires. Variable expliquée : ",
+
+    themes: [
+      { unit: "bassins d'emploi métropolitains", who: "un économètre", pron: "Il", topic: "l'impact de la recherche et développement sur la productivité en France",
+        Y: "la productivité du travail", Ys: "\\text{PROD}",
+        X1: "le niveau d'emploi", X1s: "L", X2: "le stock de capital", X2s: "K",
+        X3: "les dépenses de recherche et développement", X3s: "R", X3short: "la R&D" },
+      { unit: "zones d'emploi", who: "une chercheuse", pron: "Elle", topic: "le rendement des dépenses de formation sur les salaires",
+        Y: "le salaire horaire médian", Ys: "\\text{SAL}",
+        X1: "la population active", X1s: "P", X2: "le capital productif", X2s: "K",
+        X3: "les dépenses de formation professionnelle", X3s: "F", X3short: "la formation" },
+      { unit: "entreprises industrielles", who: "un cabinet d'études", pron: "Il", topic: "l'effet de l'effort d'innovation sur les exportations",
+        Y: "la valeur exportée", Ys: "\\text{EXP}",
+        X1: "l'effectif salarié", X1s: "N", X2: "le capital immobilisé", X2s: "K",
+        X3: "les dépenses d'innovation", X3s: "I", X3short: "l'innovation" },
+      { unit: "départements français", who: "une agence sanitaire", pron: "Elle", topic: "le rendement des dépenses de prévention",
+        Y: "la dépense de santé par habitant", Ys: "\\text{DEP}",
+        X1: "la population", X1s: "P", X2: "la densité d'équipements hospitaliers", X2s: "E",
+        X3: "les dépenses de prévention", X3s: "V", X3short: "la prévention" },
+      { unit: "exploitations céréalières", who: "un institut technique agricole", pron: "Il", topic: "l'effet de l'irrigation sur les rendements",
+        Y: "le rendement à l'hectare", Ys: "\\text{REND}",
+        X1: "la surface cultivée", X1s: "S", X2: "le capital matériel", X2s: "K",
+        X3: "les dépenses d'irrigation", X3s: "A", X3short: "l'irrigation" }
+    ],
+
+    ex: function(D) {
+      const t = I18N['fr'].themes[D.th];
+      return `
+      <div class="context-block">
+        ${cap(t.who)} veut mesurer ${t.topic}. ${t.pron} dispose pour cela de données portant sur \\(n=${D.n}\\) ${t.unit} pour l'année ${D.year}. Le modèle est estimé sous forme logarithmique, de sorte que, pour tout ${D.obsWord} \\(i\\), le premier modèle s'écrit
+        \\[\\ln(${t.Ys}_i)=a_0+a_1\\ln(${t.X1s}_i)+a_2\\ln(${t.X2s}_i)+a_3\\ln(${t.X3s}_i)+u_i\\]
+        où \\(${t.Ys}\\) désigne ${t.Y}, \\(${t.X1s}\\) ${t.X1}, \\(${t.X2s}\\) ${t.X2}, \\(${t.X3s}\\) ${t.X3}, et où \\(u_i\\) est une variable aléatoire vérifiant les hypothèses de Gauss-Markov étendues. Afin de tenir compte d'une éventuelle non-linéarité de l'effet de ${t.X3short} et d'une interaction entre ${t.X2} et ${t.X3}, un second modèle est estimé sur les mêmes données :
+        \\[\\ln(${t.Ys}_i)=b_0+b_1\\ln(${t.X1s}_i)+b_2\\ln(${t.X2s}_i)+b_3\\ln(${t.X3s}_i)+b_4\\left(\\ln(${t.X3s}_i)\\right)^2+b_5\\ln(${t.X3s}_i)\\ln(${t.X2s}_i)${D.p === 3 ? `+b_6\\left(\\ln(${t.X2s}_i)\\right)^2` : ''}+v_i\\]
+        où \\(v_i\\) vérifie les mêmes hypothèses. Les moyennes d'échantillon des variables intervenant dans les termes additionnels valent \\(\\overline{\\ln(${t.X3s})}=${D.mX3}\\) et \\(\\overline{\\ln(${t.X2s})}=${D.mX2}\\). L'estimation des deux modèles fournit les résultats suivants.
+      </div>
+      ${D.tables}
+      <div class="questions"><ol>
+        <li><div class="q-text">Étudier la qualité statistique de l'estimation des deux régressions.</div></li>
+        <li><div class="q-text">Donner un intervalle de confiance à ${D.CL}&nbsp;% pour l'effet de ${t.X3short} dans le premier modèle. Interpréter économiquement la valeur de votre estimation.</div></li>
+        <li><div class="q-text">Tester la significativité conjointe des ${D.p === 2 ? 'deux' : 'trois'} variables supplémentaires du modèle étendu. Peut-on dire que le second modèle améliore significativement les résultats du premier&nbsp;?</div></li>
+        <li><div class="q-text">Dans le modèle étendu, calculer l'élasticité de ${t.Y} par rapport à ${t.X3}, évaluée aux moyennes de l'échantillon. Comparer à l'estimation du premier modèle et conclure sur la spécification à retenir.</div></li>
+      </ol></div>
+      `;
+    },
+
+    sol: function(D) {
+      const t = I18N['fr'].themes[D.th];
+      const f = D.f;
+      let s = `<div class="st"><ol>`;
+
+      /* ---------- 1 ---------- */
+      s += `<li><div>
+        <p>Le premier modèle explique ${f.R1pc}&nbsp;% de la variation observée du logarithme de ${t.Y} au sein de l'échantillon : c'est la lecture du coefficient de détermination \\(R^2\\). Cette valeur est de ${f.R2pc}&nbsp;% pour le second modèle. On pourrait donc <em>a priori</em> penser que le second modèle est le meilleur, puisqu'il présente le \\(R^2\\) le plus élevé. Mais il ne faut pas oublier que le coefficient de détermination augmente mécaniquement avec l'ajout de variables : il est donc logique que le \\(R^2\\) du second modèle soit supérieur à celui du premier, et cette comparaison ne prouve rien.</p>
+        <p>Pour comparer le pouvoir explicatif de modèles estimés sur le même jeu de données mais comportant un nombre différent de régresseurs, on utilise le critère du \\(R^2\\) ajusté, qui pénalise le \\(R^2\\) d'autant plus que le nombre de régresseurs est important : \\(\\overline{R}^2=1-(1-R^2)\\frac{n-1}{n-(k+1)}\\). Ici, on obtient ${f.R1a} pour le premier modèle et ${f.R2a} pour le second. ${D.r2aUp
+          ? `L'ordre des modèles selon le critère du \\(R^2\\) ajusté demeure donc le même que selon le critère du \\(R^2\\) : c'est bien le second modèle, le plus complet, qui présente le plus grand pouvoir explicatif une fois la pénalisation appliquée.`
+          : `L'ordre des modèles s'inverse : une fois la pénalisation appliquée, le premier modèle l'emporte. C'est le signe que les variables ajoutées apportent moins d'information qu'elles ne coûtent de degrés de liberté, ce que le test de la troisième question confirmera.`}</p>
+        <p>Précisons enfin la significativité globale de chaque régression. On veut tester l'hypothèse nulle \\((H_0)\\) selon laquelle les coefficients associés à chaque variable explicative (constante exclue) sont tous nuls — les régresseurs n'auraient alors aucun impact sur la formation de la variable expliquée, et le modèle serait dit non significatif — contre l'hypothèse alternative \\((H_1)\\) selon laquelle au moins un de ces coefficients est non nul. Pour arbitrer entre \\((H_0)\\) et \\((H_1)\\), on réalise un test de Fisher de significativité globale. Sous l'hypothèse nulle, la statistique \\(\\widehat{F}:=\\frac{R^2}{1-R^2}\\times\\frac{n-(k+1)}{k}\\) suit une loi de Fisher à \\(k\\) et \\(n-(k+1)\\) degrés de liberté, où \\(k\\) est le nombre de régresseurs et \\(n\\) le nombre d'observations.</p>
+        <p>Pour le second modèle, les degrés de liberté sont \\(k=${D.k2}\\) et \\(n-(k+1)=${D.n}-${D.k2 + 1}=${D.d2}\\). Le quantile à ${D.CL}&nbsp;% d'une loi de Fisher à ${D.k2} et 120 degrés de liberté vaut ${f.qGlobal2} ; comme le quantile décroît avec le second degré de liberté et que \\(${D.d2}>120\\), la valeur critique \\(q\\) du test est inférieure à ${f.qGlobal2}. Or \\(\\widehat{F}=\\frac{${f.R2}}{1-${f.R2}}\\times\\frac{${D.d2}}{${D.k2}}\\approx ${f.F2}\\). On a donc \\(\\widehat{F}>q\\) : on rejette l'hypothèse nulle au seuil de confiance ${D.CL}&nbsp;% et l'on conclut que la régression est globalement significative. Le même calcul appliqué au premier modèle donne \\(\\widehat{F}\\approx ${f.F1}\\), très largement supérieur à la valeur critique : les deux régressions sont globalement significatives.</p>
+      </div></li>`;
+
+      /* ---------- 2 ---------- */
+      s += `<li><div>
+        <p>Soit \\(\\widehat{a}_3\\) l'estimateur des moindres carrés ordinaires de \\(a_3\\) et \\(s_3\\) l'erreur-type de cet estimateur. Sous les hypothèses de Gauss-Markov étendues, \\((\\widehat{a}_3-a_3)/s_3\\) suit une loi de Student à \\(n-(k+1)=${D.d1}\\) degrés de liberté. Comme ce nombre de degrés de liberté est supérieur à 120, on peut assimiler cette loi à une loi normale centrée réduite. Soit \\(q\\) le quantile à ${f.halfLevel}&nbsp;% d'une loi normale centrée réduite, qui vaut ${f.z}. Alors \\(\\mathbb{P}\\left(-${f.z}\\leq (\\widehat{a}_3-a_3)/s_3\\leq ${f.z}\\right)=${f.levDec}\\). Or :</p>
+        \\[\\begin{aligned}
+        \\mathbb{P}\\left(-${f.z}\\leq \\frac{\\widehat{a}_3-a_3}{s_3}\\leq ${f.z}\\right)=${f.levDec}
+        &\\iff \\mathbb{P}\\left(-${f.z}\\,s_3\\leq\\widehat{a}_3-a_3\\leq ${f.z}\\,s_3\\right)=${f.levDec}\\\\
+        &\\iff \\mathbb{P}\\left(-\\widehat{a}_3-${f.z}\\,s_3\\leq -a_3\\leq -\\widehat{a}_3+${f.z}\\,s_3\\right)=${f.levDec}\\\\
+        &\\iff \\mathbb{P}\\left(\\widehat{a}_3-${f.z}\\,s_3\\leq a_3\\leq \\widehat{a}_3+${f.z}\\,s_3\\right)=${f.levDec}
+        \\end{aligned}\\]
+        <p>Un intervalle de confiance à ${D.CL}&nbsp;% pour le coefficient \\(a_3\\) est donc \\(\\left[\\widehat{a}_3-${f.z}\\,s_3,\\ \\widehat{a}_3+${f.z}\\,s_3\\right]\\), c'est-à-dire \\(\\left[${f.a3}-${f.z}\\times ${f.sa3},\\ ${f.a3}+${f.z}\\times ${f.sa3}\\right]\\approx\\left[${f.ciLo},\\ ${f.ciHi}\\right]\\).</p>
+        <div class="concl">${D.ciExcludesZero
+          ? `Autrement dit, avec un niveau de confiance de ${D.CL}&nbsp;%, un accroissement toutes choses égales par ailleurs de ${t.X3} de 1&nbsp;% est corrélé à une variation de ${t.Y} comprise entre ${f.ciLo}&nbsp;% et ${f.ciHi}&nbsp;% (soit ${f.a3}&nbsp;% en moyenne) : c'est l'interprétation usuelle d'un modèle log-log, où les coefficients s'interprètent directement comme des élasticités. L'intervalle ne contient pas zéro, ce qui confirme que ${t.X3short} a un effet significativement ${D.a3 > 0 ? 'positif' : 'négatif'} sur ${t.Y}.`
+          : `L'intervalle contient zéro : au seuil retenu, on ne peut pas rejeter l'hypothèse selon laquelle ${t.X3short} n'a aucun effet sur ${t.Y}. L'estimation ponctuelle de ${f.a3}&nbsp;% d'élasticité — un accroissement de 1&nbsp;% de ${t.X3} serait associé à une variation de ${f.a3}&nbsp;% de ${t.Y} — est donc trop imprécise pour être exploitée telle quelle. Ce résultat n'établit pas l'absence d'effet : il établit que les données ne permettent pas de le distinguer de zéro.`}</div>
+      </div></li>`;
+
+      /* ---------- 3 ---------- */
+      s += `<li><div>
+        <p>Le premier modèle correspond exactement à l'estimation du second sous les \\(p:=${D.p}\\) contraintes \\((H_0):${D.h0}\\). Notons \\(\\text{SCR}_{\\text{NC}}\\) la somme des carrés des résidus du modèle 2 (modèle non contraint) et \\(\\text{SCR}_{\\text{C}}\\) celle du modèle 1 (modèle contraint). On teste \\((H_0)\\) contre l'hypothèse alternative \\((H_1)\\) selon laquelle au moins un des ${D.p === 2 ? 'deux' : 'trois'} coefficients ajoutés est non nul. Sous \\((H_0)\\), la statistique</p>
+        \\[\\widehat{F}:=\\frac{\\text{SCR}_{\\text{C}}-\\text{SCR}_{\\text{NC}}}{\\text{SCR}_{\\text{NC}}}\\times\\frac{n-(k+1)}{p}\\]
+        <p>suit une loi de Fisher à \\(p=${D.p}\\) et \\(n-(k+1)=${D.d2}\\) degrés de liberté. Le quantile à ${D.CL}&nbsp;% d'une loi de Fisher à ${D.p} et 120 degrés de liberté vaut ${f.qJoint} : la valeur critique \\(q\\) du test est donc inférieure à ${f.qJoint}. Or ici</p>
+        \\[\\widehat{F}=\\frac{${f.scrC}-${f.scrNC}}{${f.scrNC}}\\times\\frac{${D.d2}}{${D.p}}\\approx ${f.Fj}\\]
+        <div class="concl">${D.rejectJoint
+          ? `On a \\(\\widehat{F}>q\\) : on rejette l'hypothèse nulle avec un risque d'erreur de ${100 - D.CL}&nbsp;%. Les ${D.p === 2 ? 'deux' : 'trois'} variables ajoutées ont donc, prises ensemble, un impact significatif sur la formation de ${t.Y} : le second modèle apparaît <em>in fine</em> meilleur que le premier.`
+          : `On a \\(\\widehat{F} &lt; q\\) : on ne peut pas rejeter l'hypothèse nulle au seuil retenu. Les ${D.p === 2 ? 'deux' : 'trois'} variables ajoutées n'apportent pas, prises ensemble, d'amélioration significative de l'ajustement. Le gain de \\(R^2\\) observé à la première question n'était donc que le reflet mécanique de l'ajout de régresseurs : au nom de la parcimonie, on conserve le premier modèle.`}</div>
+        <p>On notera que ce test peut aussi s'écrire directement à partir des coefficients de détermination, puisque les deux modèles portent sur la même variable expliquée et donc sur la même somme des carrés totaux : \\(\\widehat{F}=\\frac{R^2_{\\text{NC}}-R^2_{\\text{C}}}{1-R^2_{\\text{NC}}}\\times\\frac{n-(k+1)}{p}=\\frac{${f.R2}-${f.R1}}{1-${f.R2}}\\times\\frac{${D.d2}}{${D.p}}\\approx ${f.Fj}\\), ce qui redonne bien la même valeur.</p>
+        <p>Une remarque de méthode pour finir : ce test conjoint ne se déduit pas des tests de Student individuels. ${D.indivNote}</p>
+      </div></li>`;
+
+      /* ---------- 4 ---------- */
+      s += `<li><div>
+        <p>Dans le modèle étendu, ${t.X3s} n'intervient plus par un seul terme : l'élasticité de ${t.Y} par rapport à ${t.X3} s'obtient en dérivant l'équation par rapport à \\(\\ln(${t.X3s})\\), soit</p>
+        \\[\\frac{\\partial \\ln(${t.Ys})}{\\partial \\ln(${t.X3s})}=b_3+2b_4\\ln(${t.X3s})+b_5\\ln(${t.X2s})\\]
+        <p>Cette élasticité n'est donc plus constante : elle dépend du niveau de ${t.X3} atteint et du niveau de ${t.X2}. Évaluée aux moyennes de l'échantillon, elle vaut \\(${f.b3}+2\\times(${f.b4})\\times ${D.mX3}+(${f.b5})\\times ${D.mX2}\\approx ${f.me}\\). ${D.b4 < 0
+          ? `Le coefficient du terme quadratique étant négatif, l'effet de ${t.X3short} est décroissant avec son niveau : les rendements sont décroissants. L'élasticité s'annulerait pour \\(\\ln(${t.X3s})\\approx ${f.thr}\\), au-delà duquel un effort supplémentaire deviendrait contre-productif à ${t.X2} donné.`
+          : `Le coefficient du terme quadratique étant positif, l'effet de ${t.X3short} est croissant avec son niveau : les rendements sont croissants, ce qui suggère un effet de seuil ou de masse critique.`}</p>
+        <div class="concl">${D.rejectJoint
+          ? `La comparaison avec le premier modèle est instructive : celui-ci imposait une élasticité constante estimée à ${f.a3}, alors que le modèle étendu donne ${f.me} au point moyen — une valeur ${Math.abs(D.me - D.a3) < 0.01 ? `voisine` : (D.me > D.a3 ? `supérieure` : `inférieure`)}, mais surtout variable d'un ${D.obsWord} à l'autre. Le test de la question précédente ayant rejeté les contraintes, c'est bien la spécification étendue qu'il faut retenir : la lecture en élasticité constante du premier modèle masquait l'hétérogénéité de l'effet.`
+          : `La comparaison avec le premier modèle invite ici à la prudence : le modèle étendu donne ${f.me} au point moyen contre ${f.a3} pour l'élasticité constante du premier modèle, mais le test de la question précédente n'a pas permis de rejeter les contraintes. Les termes non linéaires n'étant pas conjointement significatifs, on retient la spécification parcimonieuse, dont l'élasticité constante ${f.a3} constitue l'estimation à commenter. Interpréter finement une non-linéarité que les données ne valident pas serait une surinterprétation.`}</div>
+      </div></li>`;
+
+      s += `</ol></div>`;
+      return s;
+    }
+  },
+
+  en: {
+    "htmlLang": "en",
+    "title": "Exercise generator - Model comparison",
+    "k-badge": "ECONOMETRICS",
+    "k-h1": "Comparing nested models",
+    "k-sub": "© Thomas Hossen – March 7, 2026 Version",
+    "k-seed": "Reproducibility seed",
+    "k-seedtip": "Empty = random at each generation",
+    "k-n": "Observations <em>(n)</em>",
+    "k-ntip": "150 – 900, auto if empty",
+    "k-lvl": "Confidence level",
+    "k-lvl-auto": "Random",
+    "k-lvltip": "Level of the tests and interval",
+    "k-gen": "Generate →",
+    "k-welcome": "Set the parameters (or leave empty for random values), then click Generate.",
+    "k-new": "↺ New problem",
+    "k-pdf": "⬇ Export PDF",
+    "k-seedbadge": "Seed:",
+    "k-tag-ex": "Problem",
+    "k-cardtitle": "Comparing nested models",
+    "k-tag-sol": "Solution",
+    "k-cardtitle2": "Comparing nested models",
+    "k-modal": "Export to PDF",
+    "k-mseed-pre": "Seed:",
+    "k-mseed-post": "— write this value down to reproduce this exact problem.",
+    "k-opth": "Include the page header",
+    "k-opthd": "Title, \"ECONOMETRICS\" badge and problem heading",
+    "k-opts": "Include the full solution",
+    "k-optsd": "F tests, confidence interval and model choice",
+    "k-print": "🖨&nbsp;Print / Save as PDF",
+    "k-cancel": "Cancel",
+    "copy": "⧉ Copy",
+    "copyTitle": "Copy the active seed",
+    "copied": "✓ Copied",
+    "phSeed": "auto",
+    "phN": "default",
+    "showSol": "Show the solution",
+    "hideSol": "Hide the solution",
+
+    tCoef: "Coefficient", tSe: "Std. error", tT: "t-stat.", tP: "Prob.",
+    tVar: "Variable", tConst: "Constant",
+    tR2: "R²", tR2a: "Adjusted R²", tSCR: "Sum of squared residuals",
+    tSER: "S.E. of regression", tF: "F-statistic", tPF: "Prob. (F)", tN: "Observations",
+    tM1: "Model 1 — baseline specification", tM2: "Model 2 — extended specification",
+    regNote: "Ordinary least squares estimates. Dependent variable: ",
+
+    themes: [
+      { unit: "metropolitan employment areas", who: "an econometrician", topic: "the impact of research and development on productivity in France",
+        Y: "labour productivity", Ys: "\\text{PROD}",
+        X1: "employment", X1s: "L", X2: "the capital stock", X2s: "K",
+        X3: "research and development spending", X3s: "R", X3short: "R&D" },
+      { unit: "employment zones", who: "a researcher", topic: "the return of training expenditure on wages",
+        Y: "the median hourly wage", Ys: "\\text{WAG}",
+        X1: "the labour force", X1s: "P", X2: "productive capital", X2s: "K",
+        X3: "vocational training expenditure", X3s: "F", X3short: "training" },
+      { unit: "manufacturing firms", who: "a consultancy", topic: "the effect of innovation effort on exports",
+        Y: "the value exported", Ys: "\\text{EXP}",
+        X1: "the workforce", X1s: "N", X2: "fixed capital", X2s: "K",
+        X3: "innovation expenditure", X3s: "I", X3short: "innovation" },
+      { unit: "French départements", who: "a public health agency", topic: "the return of prevention expenditure",
+        Y: "health spending per capita", Ys: "\\text{HEA}",
+        X1: "population", X1s: "P", X2: "the density of hospital equipment", X2s: "E",
+        X3: "prevention expenditure", X3s: "V", X3short: "prevention" },
+      { unit: "cereal farms", who: "an agricultural research institute", topic: "the effect of irrigation on yields",
+        Y: "the yield per hectare", Ys: "\\text{YLD}",
+        X1: "the cultivated area", X1s: "S", X2: "equipment capital", X2s: "K",
+        X3: "irrigation expenditure", X3s: "A", X3short: "irrigation" }
+    ],
+
+    ex: function(D) {
+      const t = I18N['en'].themes[D.th];
+      return `
+      <div class="context-block">
+        ${cap(t.who)} wishes to measure ${t.topic}. Data are available for \\(n=${D.n}\\) ${t.unit} in ${D.year}. The model is estimated in logarithmic form, so that for every ${D.obsWord} \\(i\\) the first model reads
+        \\[\\ln(${t.Ys}_i)=a_0+a_1\\ln(${t.X1s}_i)+a_2\\ln(${t.X2s}_i)+a_3\\ln(${t.X3s}_i)+u_i\\]
+        where \\(${t.Ys}\\) denotes ${t.Y}, \\(${t.X1s}\\) ${t.X1}, \\(${t.X2s}\\) ${t.X2}, \\(${t.X3s}\\) ${t.X3}, and \\(u_i\\) is a random variable satisfying the extended Gauss-Markov assumptions. To allow for a possible non-linearity in the effect of ${t.X3short} and for an interaction between ${t.X2} and ${t.X3}, a second model is estimated on the same data:
+        \\[\\ln(${t.Ys}_i)=b_0+b_1\\ln(${t.X1s}_i)+b_2\\ln(${t.X2s}_i)+b_3\\ln(${t.X3s}_i)+b_4\\left(\\ln(${t.X3s}_i)\\right)^2+b_5\\ln(${t.X3s}_i)\\ln(${t.X2s}_i)${D.p === 3 ? `+b_6\\left(\\ln(${t.X2s}_i)\\right)^2` : ''}+v_i\\]
+        where \\(v_i\\) satisfies the same assumptions. The sample means of the variables entering the additional terms are \\(\\overline{\\ln(${t.X3s})}=${D.mX3}\\) and \\(\\overline{\\ln(${t.X2s})}=${D.mX2}\\). Estimating both models yields the following results.
+      </div>
+      ${D.tables}
+      <div class="questions"><ol>
+        <li><div class="q-text">Assess the statistical quality of both regressions.</div></li>
+        <li><div class="q-text">Give a ${D.CL}% confidence interval for the effect of ${t.X3short} in the first model. Interpret your estimate economically.</div></li>
+        <li><div class="q-text">Test the joint significance of the ${D.p === 2 ? 'two' : 'three'} additional variables of the extended model. Can we say that the second model significantly improves on the first?</div></li>
+        <li><div class="q-text">In the extended model, compute the elasticity of ${t.Y} with respect to ${t.X3}, evaluated at the sample means. Compare it with the estimate of the first model and conclude on the specification to be retained.</div></li>
+      </ol></div>
+      `;
+    },
+
+    sol: function(D) {
+      const t = I18N['en'].themes[D.th];
+      const f = D.f;
+      let s = `<div class="st"><ol>`;
+
+      s += `<li><div>
+        <p>The first model explains ${f.R1pc}% of the observed variation in the logarithm of ${t.Y} within the sample: this is how the coefficient of determination \\(R^2\\) is read. That figure is ${f.R2pc}% for the second model. One might therefore think <em>a priori</em> that the second model is the better one, since its \\(R^2\\) is higher. But the coefficient of determination increases mechanically as variables are added: it is only natural that the \\(R^2\\) of the second model exceeds that of the first, and the comparison proves nothing.</p>
+        <p>To compare the explanatory power of models estimated on the same data but with different numbers of regressors, we use the adjusted \\(R^2\\), which penalises \\(R^2\\) all the more as the number of regressors grows: \\(\\overline{R}^2=1-(1-R^2)\\frac{n-1}{n-(k+1)}\\). Here we obtain ${f.R1a} for the first model and ${f.R2a} for the second. ${D.r2aUp
+          ? `The ranking of the models under the adjusted \\(R^2\\) is therefore the same as under the raw \\(R^2\\): the second, fuller model does have the greater explanatory power once the penalty is applied.`
+          : `The ranking is reversed: once the penalty is applied, the first model wins. This signals that the added variables bring less information than they cost in degrees of freedom, as the test of question three will confirm.`}</p>
+        <p>Let us finally assess the overall significance of each regression. We test the null hypothesis \\((H_0)\\) that the coefficients on all explanatory variables (excluding the constant) are zero — the regressors would then have no impact on the dependent variable, and the model would be said to be insignificant — against the alternative \\((H_1)\\) that at least one of these coefficients is non-zero. To choose between \\((H_0)\\) and \\((H_1)\\) we run an F test of overall significance. Under the null, the statistic \\(\\widehat{F}:=\\frac{R^2}{1-R^2}\\times\\frac{n-(k+1)}{k}\\) follows an F distribution with \\(k\\) and \\(n-(k+1)\\) degrees of freedom, where \\(k\\) is the number of regressors and \\(n\\) the number of observations.</p>
+        <p>For the second model the degrees of freedom are \\(k=${D.k2}\\) and \\(n-(k+1)=${D.n}-${D.k2 + 1}=${D.d2}\\). The ${D.CL}% quantile of an F distribution with ${D.k2} and 120 degrees of freedom equals ${f.qGlobal2}; since the quantile decreases in the second degree of freedom and \\(${D.d2}>120\\), the critical value \\(q\\) is below ${f.qGlobal2}. Now \\(\\widehat{F}=\\frac{${f.R2}}{1-${f.R2}}\\times\\frac{${D.d2}}{${D.k2}}\\approx ${f.F2}\\). Hence \\(\\widehat{F}>q\\): we reject the null at the ${D.CL}% confidence level and conclude that the regression is jointly significant. The same computation for the first model gives \\(\\widehat{F}\\approx ${f.F1}\\), far above the critical value: both regressions are jointly significant.</p>
+      </div></li>`;
+
+      s += `<li><div>
+        <p>Let \\(\\widehat{a}_3\\) be the OLS estimator of \\(a_3\\) and \\(s_3\\) its standard error. Under the extended Gauss-Markov assumptions, \\((\\widehat{a}_3-a_3)/s_3\\) follows a Student distribution with \\(n-(k+1)=${D.d1}\\) degrees of freedom. Since that figure exceeds 120, the distribution may be treated as a standard normal. Let \\(q\\) be the ${f.halfLevel}% quantile of the standard normal, equal to ${f.z}. Then \\(\\mathbb{P}\\left(-${f.z}\\leq (\\widehat{a}_3-a_3)/s_3\\leq ${f.z}\\right)=${f.levDec}\\). Now:</p>
+        \\[\\begin{aligned}
+        \\mathbb{P}\\left(-${f.z}\\leq \\frac{\\widehat{a}_3-a_3}{s_3}\\leq ${f.z}\\right)=${f.levDec}
+        &\\iff \\mathbb{P}\\left(-${f.z}\\,s_3\\leq\\widehat{a}_3-a_3\\leq ${f.z}\\,s_3\\right)=${f.levDec}\\\\
+        &\\iff \\mathbb{P}\\left(-\\widehat{a}_3-${f.z}\\,s_3\\leq -a_3\\leq -\\widehat{a}_3+${f.z}\\,s_3\\right)=${f.levDec}\\\\
+        &\\iff \\mathbb{P}\\left(\\widehat{a}_3-${f.z}\\,s_3\\leq a_3\\leq \\widehat{a}_3+${f.z}\\,s_3\\right)=${f.levDec}
+        \\end{aligned}\\]
+        <p>A ${D.CL}% confidence interval for \\(a_3\\) is therefore \\(\\left[\\widehat{a}_3-${f.z}\\,s_3,\\ \\widehat{a}_3+${f.z}\\,s_3\\right]\\), that is \\(\\left[${f.a3}-${f.z}\\times ${f.sa3},\\ ${f.a3}+${f.z}\\times ${f.sa3}\\right]\\approx\\left[${f.ciLo},\\ ${f.ciHi}\\right]\\).</p>
+        <div class="concl">${D.ciExcludesZero
+          ? `In other words, with ${D.CL}% confidence, a 1% increase in ${t.X3}, all else equal, is associated with a change in ${t.Y} of between ${f.ciLo}% and ${f.ciHi}% (${f.a3}% on average): this is the usual reading of a log-log model, in which coefficients are directly elasticities. The interval excludes zero, confirming that ${t.X3short} has a significantly ${D.a3 > 0 ? 'positive' : 'negative'} effect on ${t.Y}.`
+          : `The interval contains zero: at the chosen level we cannot reject the hypothesis that ${t.X3short} has no effect on ${t.Y}. The point estimate of ${f.a3} — a 1% increase in ${t.X3} being associated with a ${f.a3}% change in ${t.Y} — is thus too imprecise to be used as such. This does not establish the absence of an effect: it establishes that the data cannot distinguish it from zero.`}</div>
+      </div></li>`;
+
+      s += `<li><div>
+        <p>The first model is exactly the second estimated under the \\(p:=${D.p}\\) restrictions \\((H_0):${D.h0}\\). Let \\(\\text{SSR}_{\\text{U}}\\) denote the sum of squared residuals of model 2 (unrestricted) and \\(\\text{SSR}_{\\text{R}}\\) that of model 1 (restricted). We test \\((H_0)\\) against the alternative \\((H_1)\\) that at least one of the ${D.p === 2 ? 'two' : 'three'} added coefficients is non-zero. Under \\((H_0)\\), the statistic</p>
+        \\[\\widehat{F}:=\\frac{\\text{SSR}_{\\text{R}}-\\text{SSR}_{\\text{U}}}{\\text{SSR}_{\\text{U}}}\\times\\frac{n-(k+1)}{p}\\]
+        <p>follows an F distribution with \\(p=${D.p}\\) and \\(n-(k+1)=${D.d2}\\) degrees of freedom. The ${D.CL}% quantile of an F distribution with ${D.p} and 120 degrees of freedom equals ${f.qJoint}: the critical value \\(q\\) is therefore below ${f.qJoint}. Now</p>
+        \\[\\widehat{F}=\\frac{${f.scrC}-${f.scrNC}}{${f.scrNC}}\\times\\frac{${D.d2}}{${D.p}}\\approx ${f.Fj}\\]
+        <div class="concl">${D.rejectJoint
+          ? `We have \\(\\widehat{F}>q\\): the null is rejected with a ${100 - D.CL}% risk of error. Taken together, the ${D.p === 2 ? 'two' : 'three'} added variables therefore have a significant impact on ${t.Y}: the second model turns out to be the better one.`
+          : `We have \\(\\widehat{F} &lt; q\\): the null cannot be rejected at the chosen level. Taken together, the ${D.p === 2 ? 'two' : 'three'} added variables bring no significant improvement in fit. The gain in \\(R^2\\) observed in question one merely reflected the mechanical effect of adding regressors: on grounds of parsimony, the first model is retained.`}</div>
+        <p>Note that the test can also be written directly from the coefficients of determination, since both models share the same dependent variable and hence the same total sum of squares: \\(\\widehat{F}=\\frac{R^2_{\\text{U}}-R^2_{\\text{R}}}{1-R^2_{\\text{U}}}\\times\\frac{n-(k+1)}{p}=\\frac{${f.R2}-${f.R1}}{1-${f.R2}}\\times\\frac{${D.d2}}{${D.p}}\\approx ${f.Fj}\\), which gives the same value.</p>
+        <p>One methodological remark to close: the joint test does not follow from the individual t tests. ${D.indivNote}</p>
+      </div></li>`;
+
+      s += `<li><div>
+        <p>In the extended model ${t.X3s} no longer enters through a single term: the elasticity of ${t.Y} with respect to ${t.X3} is obtained by differentiating with respect to \\(\\ln(${t.X3s})\\), that is</p>
+        \\[\\frac{\\partial \\ln(${t.Ys})}{\\partial \\ln(${t.X3s})}=b_3+2b_4\\ln(${t.X3s})+b_5\\ln(${t.X2s})\\]
+        <p>The elasticity is therefore no longer constant: it depends on the level of ${t.X3} reached and on the level of ${t.X2}. Evaluated at the sample means it equals \\(${f.b3}+2\\times(${f.b4})\\times ${D.mX3}+(${f.b5})\\times ${D.mX2}\\approx ${f.me}\\). ${D.b4 < 0
+          ? `The quadratic term being negative, the effect of ${t.X3short} decreases with its level: returns are diminishing. The elasticity would vanish at \\(\\ln(${t.X3s})\\approx ${f.thr}\\), beyond which further effort would become counterproductive at a given level of ${t.X2}.`
+          : `The quadratic term being positive, the effect of ${t.X3short} increases with its level: returns are increasing, which suggests a threshold or critical-mass effect.`}</p>
+        <div class="concl">${D.rejectJoint
+          ? `The comparison with the first model is instructive: it imposed a constant elasticity estimated at ${f.a3}, whereas the extended model gives ${f.me} at the mean point — a ${Math.abs(D.me - D.a3) < 0.01 ? `close` : (D.me > D.a3 ? `higher` : `lower`)} figure, but above all one that varies across ${D.obsWordPl}. Since the previous question rejected the restrictions, the extended specification is the one to retain: reading the first model as a constant elasticity concealed the heterogeneity of the effect.`
+          : `The comparison with the first model calls for caution here: the extended model gives ${f.me} at the mean point against ${f.a3} for the constant elasticity of the first model, but the previous question did not allow the restrictions to be rejected. Since the non-linear terms are not jointly significant, the parsimonious specification is retained, and its constant elasticity of ${f.a3} is the estimate to comment on. Reading a non-linearity that the data do not support would be over-interpretation.`}</div>
+      </div></li>`;
+
+      s += `</ol></div>`;
+      return s;
+    }
+  }
+};
+
+/* ============================================================
+   LANGUE
+   ============================================================ */
+let LANG = 'fr';
+
+function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+function detectLang() {
+    try {
+        const q = new URLSearchParams(window.location.search).get('lang');
+        if (q && I18N[q.toLowerCase()]) return q.toLowerCase();
+    } catch (e) {}
+    const h = (window.location.hash || '').replace('#', '').toLowerCase();
+    if (I18N[h]) return h;
+    return 'fr';
+}
+
+function applyLang() {
+    const D = I18N[LANG];
+    document.documentElement.lang = D.htmlLang;
+    document.title = D.title;
+
+    document.querySelectorAll('[data-k]').forEach(function (el) {
+        const key = el.getAttribute('data-k');
+        if (D[key] !== undefined) el.innerHTML = D[key];
+    });
+
+    const cp = document.getElementById('btn-copy');
+    if (cp) { cp.textContent = D.copy; cp.title = D.copyTitle; }
+    const si = document.getElementById('seed-input');
+    if (si) si.placeholder = D.phSeed;
+    const ni = document.getElementById('param-n');
+    if (ni) ni.placeholder = D.phN;
+
+    const tb = document.getElementById('toggle-btn');
+    if (tb) tb.textContent = solVisible ? D.hideSol : D.showSol;
+
+    document.getElementById('flag-fr').classList.toggle('active', LANG === 'fr');
+    document.getElementById('flag-en').classList.toggle('active', LANG === 'en');
+}
+
+function setLang(lang) {
+    if (!I18N[lang] || lang === LANG) return;
+    LANG = lang;
+    try {
+        const u = new URL(window.location.href);
+        u.searchParams.set('lang', lang);
+        history.replaceState(null, '', u.toString());
+    } catch (e) {}
+    applyLang();
+    if (document.getElementById('ex-area').style.display !== 'none') {
+        const wasVis = solVisible;
+        document.getElementById('seed-input').value = _activeSeed;
+        generateFromControls();
+        if (wasVis) toggleSol();
+    }
+}
+
+// ════════════════════════════════════════
+// PRNG — mulberry32
+// ════════════════════════════════════════
+let _rand, _activeSeed = 0;
+function initRand(seed) {
+  _activeSeed = seed >>> 0;
+  let s = _activeSeed;
+  _rand = () => {
+    s = (s + 0x6D2B79F5) >>> 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const rI = (a,b) => Math.floor(_rand()*(b-a+1))+a;
+const rA = arr => arr[Math.floor(_rand()*arr.length)];
+
+// ════════════════════════════════════════
+// LOIS DE PROBABILITE
+// ════════════════════════════════════════
+function lgamma(z){
+  const g=[76.18009172947146,-86.50532032941677,24.01409824083091,-1.231739572450155,0.1208650973866179e-2,-0.5395239384953e-5];
+  let x=z,y=z,tmp=x+5.5; tmp-=(x+0.5)*Math.log(tmp);
+  let ser=1.000000000190015;
+  for(let j=0;j<6;j++) ser+=g[j]/++y;
+  return -tmp+Math.log(2.5066282746310005*ser/x);
+}
+function betacf(a,b,x){
+  const MAXIT=200,EPS=3e-12,FPMIN=1e-300;
+  let qab=a+b,qap=a+1,qam=a-1,c=1,d=1-qab*x/qap;
+  if(Math.abs(d)<FPMIN)d=FPMIN; d=1/d; let h=d;
+  for(let m=1;m<=MAXIT;m++){
+    const m2=2*m;
+    let aa=m*(b-m)*x/((qam+m2)*(a+m2));
+    d=1+aa*d; if(Math.abs(d)<FPMIN)d=FPMIN;
+    c=1+aa/c; if(Math.abs(c)<FPMIN)c=FPMIN;
+    d=1/d; h*=d*c;
+    aa=-(a+m)*(qab+m)*x/((a+m2)*(qap+m2));
+    d=1+aa*d; if(Math.abs(d)<FPMIN)d=FPMIN;
+    c=1+aa/c; if(Math.abs(c)<FPMIN)c=FPMIN;
+    d=1/d; const del=d*c; h*=del;
+    if(Math.abs(del-1)<EPS)break;
+  }
+  return h;
+}
+function betai(a,b,x){
+  if(x<=0)return 0; if(x>=1)return 1;
+  const bt=Math.exp(lgamma(a+b)-lgamma(a)-lgamma(b)+a*Math.log(x)+b*Math.log(1-x));
+  return x<(a+1)/(a+b+2) ? bt*betacf(a,b,x)/a : 1-bt*betacf(b,a,1-x)/b;
+}
+/* probabilite critique bilaterale d'une statistique de Student */
+function tPvalue(t,df){ return betai(df/2,0.5,df/(df+t*t)); }
+
+/* quantiles tabules d'une loi de Fisher a df1 et 120 degres de liberte */
+const FQ120 = {
+  90: [null,2.7478,2.3473,2.1300,1.9923,1.8959,1.8238,1.7675,1.7220],
+  95: [null,3.9201,3.0718,2.6802,2.4472,2.2899,2.1750,2.0868,2.0164],
+  99: [null,6.8509,4.7865,3.9491,3.4796,3.1735,2.9559,2.7918,2.6629]
+};
+const ZQ = { 90: 1.645, 95: 1.96, 99: 2.576 };
+
+// ════════════════════════════════════════
+// GENERATION
+// ════════════════════════════════════════
+const f4 = x => x.toFixed(4);
+const fP = x => x < 0.00005 ? "0.0000" : x.toFixed(4);
+
+function regen() {
+  document.getElementById('seed-input').value = '';
+  generateFromControls();
+}
+
+function generateFromControls() {
+  const seedInp = document.getElementById('seed-input').value;
+  const seed = seedInp ? parseInt(seedInp) : Math.floor(Math.random()*10000000);
+  initRand(seed);
+  document.getElementById('seed-disp').textContent = seed;
+  document.getElementById('modal-seed').textContent = seed;
+
+  const nInp = document.getElementById('param-n').value;
+  const lvlInp = document.getElementById('param-level').value;
+
+  let n, CL, p, k1, k2, d1, d2, SCT, R1, R2, Fj, th, year;
+  let a0,a1,a2,a3, ta0,ta1,ta2,ta3, sa0,sa1,sa2,sa3;
+  let b0,b1,b2,b3,b4,b5,b6, sb=[], tb=[], bs=[];
+  let mX3, mX2, me, thr;
+  let ok = false, guard = 0;
+
+  do {
+    guard++; ok = true;
+
+    n = nInp ? Math.min(900, Math.max(150, parseInt(nInp))) : rI(160, 620);
+    CL = (lvlInp === 'auto') ? rA([90, 95, 99, 95]) : parseInt(lvlInp);
+    p = rA([2, 2, 3]);
+    k1 = 3; k2 = 3 + p; d1 = n - k1 - 1; d2 = n - k2 - 1;
+    if (d2 <= 125) { ok = false; continue; }
+
+    th = rI(0, 4);
+    year = rI(2015, 2023);
+    SCT = rI(6, 40);
+
+    /* --- coefficients de determination et statistique du test joint --- */
+    const qJ = FQ120[CL][p];
+    const signif = _rand() < 0.62;
+    const Ft = signif ? qJ * (1.5 + _rand() * 6) : qJ * (0.06 + _rand() * 0.75);
+    R1 = rI(3200, 7400) / 10000;
+    let r2 = R1 + Ft * p * (1 - R1) / d2;
+    r2 = R1 + Ft * p * (1 - r2) / d2;
+    R2 = Math.round(r2 * 10000) / 10000;
+    if (R2 <= R1 || R2 > 0.96) { ok = false; continue; }
+    Fj = ((R2 - R1) / p) / ((1 - R2) / d2);
+    if ((Fj > qJ) !== signif) { ok = false; continue; }
+    if (Math.abs(Fj - qJ) / qJ < 0.18) { ok = false; continue; }
+
+    /* --- coefficients du modele 1 --- */
+    a0 = rI(-25000, 40000) / 10000;
+    a1 = rI(2000, 9000) / 10000;
+    a2 = rI(1000, 6000) / 10000;
+    a3 = rI(200, 1500) / 10000;
+    ta0 = rI(15, 80) / 10; ta1 = rI(35, 150) / 10; ta2 = rI(28, 120) / 10;
+    ta3 = rI(11, 62) / 10;
+    sa0 = Math.round(Math.abs(a0) / ta0 * 10000) / 10000;
+    sa1 = Math.round(a1 / ta1 * 10000) / 10000;
+    sa2 = Math.round(a2 / ta2 * 10000) / 10000;
+    sa3 = Math.round(a3 / ta3 * 10000) / 10000;
+    if (sa0 < 0.0005 || sa1 < 0.0005 || sa2 < 0.0005 || sa3 < 0.0005) { ok = false; continue; }
+
+    /* --- moyennes d'echantillon et coefficients du modele 2 --- */
+    mX3 = rI(15, 50) / 10;
+    mX2 = rI(40, 85) / 10;
+    b4 = (_rand() < 0.75 ? -1 : 1) * rI(20, 200) / 10000;
+    b5 = (_rand() < 0.5 ? -1 : 1) * rI(10, 150) / 10000;
+    b6 = (_rand() < 0.5 ? -1 : 1) * rI(10, 120) / 10000;
+    const meT = a3 + rI(-45, 65) / 10000;
+    b3 = Math.round((meT - 2 * b4 * mX3 - b5 * mX2) * 10000) / 10000;
+    if (Math.abs(b3) < 0.02 || Math.abs(b3) > 1.6) { ok = false; continue; }
+    me = Math.round((b3 + 2 * b4 * mX3 + b5 * mX2) * 10000) / 10000;
+    if (me < -0.03 || me > 0.30) { ok = false; continue; }
+    if (b4 < 0) {
+      thr = -(b3 + b5 * mX2) / (2 * b4);
+      if (thr < mX3 * 1.02 || thr > mX3 * 6) { ok = false; continue; }
+    }
+
+    b0 = Math.round((a0 + rI(-4000, 4000) / 10000) * 10000) / 10000;
+    b1 = Math.round((a1 + rI(-600, 600) / 10000) * 10000) / 10000;
+    b2 = Math.round((a2 + rI(-600, 600) / 10000) * 10000) / 10000;
+    if (b1 <= 0.05 || b2 <= 0.05) { ok = false; continue; }
+
+    /* statistiques t des variables ajoutees, coherentes avec le test joint */
+    const ratio = 0.65 + _rand() * 0.7;
+    let w = [];
+    for (let j = 0; j < p; j++) w.push(0.45 + _rand() * 1.3);
+    const sw = w.reduce((x, y) => x + y, 0);
+    w = w.map(x => x * p / sw);
+    bs = p === 2 ? [b4, b5] : [b4, b5, b6];
+    tb = []; sb = [];
+    for (let j = 0; j < p; j++) {
+      const tt = Math.sqrt(Math.max(0.02, w[j] * Fj * ratio));
+      const se = Math.round(Math.abs(bs[j]) / tt * 10000) / 10000;
+      if (se < 0.0005) { ok = false; break; }
+      sb.push(se); tb.push(bs[j] / se);
+    }
+    if (!ok) continue;
+
+    /* erreurs-types des autres coefficients du modele 2 */
+    const tb0 = rI(15, 80) / 10, tb1 = rI(35, 150) / 10, tb2 = rI(28, 120) / 10, tb3 = rI(15, 80) / 10;
+    const sb0 = Math.round(Math.abs(b0) / tb0 * 10000) / 10000;
+    const sb1 = Math.round(b1 / tb1 * 10000) / 10000;
+    const sb2 = Math.round(b2 / tb2 * 10000) / 10000;
+    const sb3 = Math.round(Math.abs(b3) / tb3 * 10000) / 10000;
+    if (sb0 < 0.0005 || sb1 < 0.0005 || sb2 < 0.0005 || sb3 < 0.0005) { ok = false; continue; }
+    sb.unshift(sb3); sb.unshift(sb2); sb.unshift(sb1); sb.unshift(sb0);
+  } while (!ok && guard < 3000);
+
+  /* --- grandeurs derivees --- */
+  const scrC = Math.round(SCT * (1 - R1) * 10000) / 10000;
+  const scrNC = Math.round(SCT * (1 - R2) * 10000) / 10000;
+  const R1a = 1 - (1 - R1) * (n - 1) / d1;
+  const R2a = 1 - (1 - R2) * (n - 1) / d2;
+  const F1 = R1 / (1 - R1) * d1 / k1;
+  const F2 = R2 / (1 - R2) * d2 / k2;
+  const ser1 = Math.sqrt(scrC / d1), ser2 = Math.sqrt(scrNC / d2);
+  const z = ZQ[CL];
+  const ciLo = Math.round((a3 - z * sa3) * 10000) / 10000;
+  const ciHi = Math.round((a3 + z * sa3) * 10000) / 10000;
+  const qJoint = FQ120[CL][p], qGlobal2 = FQ120[CL][k2], qGlobal1 = FQ120[CL][k1];
+  const rejectJoint = Fj > qJoint;
+
+  /* t recalcules a partir des valeurs affichees */
+  const t_a = [a0 / sa0, a1 / sa1, a2 / sa2, a3 / sa3];
+  const bAll = p === 2 ? [b0, b1, b2, b3, b4, b5] : [b0, b1, b2, b3, b4, b5, b6];
+  const t_b = bAll.map((v, j) => v / sb[j]);
+
+  const DIC = I18N[LANG];
+  const th_ = DIC.themes[th];
+  const obsWord = (LANG === 'fr')
+    ? (th === 2 ? "entreprise" : (th === 4 ? "exploitation" : (th === 3 ? "département" : (th === 1 ? "zone d'emploi" : "bassin d'emploi"))))
+    : (th === 2 ? "firm" : (th === 4 ? "farm" : (th === 3 ? "département" : (th === 1 ? "zone" : "area"))));
+  const obsWordPl = (LANG === 'fr') ? obsWord + "s" : obsWord + "s";
+
+  /* --- tableaux de sortie --- */
+  const lnv = sym => `ln(${sym})`;
+  const names1 = [DIC.tConst, lnv(th_.X1s), lnv(th_.X2s), lnv(th_.X3s)];
+  const names2 = [DIC.tConst, lnv(th_.X1s), lnv(th_.X2s), lnv(th_.X3s),
+                  `ln(${th_.X3s})²`, `ln(${th_.X3s})·ln(${th_.X2s})`];
+  if (p === 3) names2.push(`ln(${th_.X2s})²`);
+
+  const rowsOf = (names, coefs, ses, ts, df) => names.map((nm, j) =>
+    `<tr><td class="v">${nm}</td><td>${f4(coefs[j])}</td><td>${f4(ses[j])}</td><td>${ts[j].toFixed(4)}</td><td>${fP(tPvalue(Math.abs(ts[j]), df))}</td></tr>`).join('');
+
+  const statRows = (r2v, r2a, scr, ser, F, k, d) =>
+    `<tr class="stat"><td class="v">${DIC.tR2}</td><td colspan="2">${f4(r2v)}</td><td class="v">${DIC.tR2a}</td><td>${f4(r2a)}</td></tr>
+     <tr class="stat"><td class="v">${DIC.tSCR}</td><td colspan="2">${f4(scr)}</td><td class="v">${DIC.tSER}</td><td>${f4(ser)}</td></tr>
+     <tr class="stat"><td class="v">${DIC.tF}</td><td colspan="2">${F.toFixed(4)}</td><td class="v">${DIC.tPF}</td><td>${fP(betai(d / 2, k / 2, d / (d + k * F)))}</td></tr>
+     <tr class="stat"><td class="v">${DIC.tN}</td><td colspan="2">${n}</td><td class="v">df</td><td>${d}</td></tr>`;
+
+  const head = `<tr><th>${DIC.tVar}</th><th>${DIC.tCoef}</th><th>${DIC.tSe}</th><th>${DIC.tT}</th><th>${DIC.tP}</th></tr>`;
+
+  const tables = `<div class="reg-wrap">
+    <div class="reg-col">
+      <div class="reg-title">${DIC.tM1}</div>
+      <table class="reg-table">${head}
+        ${rowsOf(names1, [a0, a1, a2, a3], [sa0, sa1, sa2, sa3], t_a, d1)}
+        ${statRows(R1, R1a, scrC, ser1, F1, k1, d1)}
+      </table>
+    </div>
+    <div class="reg-col">
+      <div class="reg-title">${DIC.tM2}</div>
+      <table class="reg-table">${head}
+        ${rowsOf(names2, bAll, sb, t_b, d2)}
+        ${statRows(R2, R2a, scrNC, ser2, F2, k2, d2)}
+      </table>
+    </div>
+  </div>
+  <div class="reg-note">${DIC.regNote}\\(\\ln(${th_.Ys})\\)</div>`;
+
+  /* --- commentaire sur les tests individuels --- */
+  const nSig = tb.filter(x => Math.abs(x) > z).length;
+  let indivNote;
+  if (LANG === 'fr') {
+    indivNote = nSig === 0
+      ? `Ici aucune des variables ajoutées n'est individuellement significative au seuil retenu, ce qui est cohérent avec ${rejectJoint ? `le rejet global — situation classique lorsque les régresseurs ajoutés sont fortement corrélés entre eux, chaque coefficient étant alors mal identifié isolément alors que leur effet conjoint ne l'est pas` : `la non-significativité conjointe`}.`
+      : (nSig === p
+        ? `Ici toutes les variables ajoutées sont individuellement significatives, ce qui va dans le même sens que le test conjoint.`
+        : `Ici ${nSig} des ${p} variables ajoutées ${nSig > 1 ? 'sont' : 'est'} individuellement significative${nSig > 1 ? 's' : ''} : la conclusion conjointe ne se lit donc pas ligne à ligne, et c'est bien le test de Fisher qui tranche.`);
+  } else {
+    indivNote = nSig === 0
+      ? `Here none of the added variables is individually significant at the chosen level, which is consistent with ${rejectJoint ? `the joint rejection — a classic situation when the added regressors are strongly correlated with one another, each coefficient then being poorly identified in isolation while their joint effect is not` : `the joint insignificance`}.`
+      : (nSig === p
+        ? `Here every added variable is individually significant, which points the same way as the joint test.`
+        : `Here ${nSig} of the ${p} added variables ${nSig > 1 ? 'are' : 'is'} individually significant: the joint conclusion therefore cannot be read row by row, and it is the F test that settles the matter.`);
+  }
+
+  const h0 = p === 2 ? `b_4=b_5=0` : `b_4=b_5=b_6=0`;
+
+  const D = {
+    n, CL, p, k1, k2, d1, d2, th, year, obsWord, obsWordPl,
+    a3, b4, me, mX3: mX3.toFixed(1), mX2: mX2.toFixed(1),
+    r2aUp: R2a > R1a, rejectJoint, ciExcludesZero: (ciLo > 0 && ciHi > 0) || (ciLo < 0 && ciHi < 0),
+    indivNote, h0, tables,
+    f: {
+      R1: f4(R1), R2: f4(R2), R1a: f4(R1a), R2a: f4(R2a),
+      R1pc: (R1 * 100).toFixed(2), R2pc: (R2 * 100).toFixed(2),
+      F1: F1.toFixed(2), F2: F2.toFixed(2), Fj: Fj.toFixed(3),
+      scrC: f4(scrC), scrNC: f4(scrNC),
+      qJoint: qJoint.toFixed(3), qGlobal1: qGlobal1.toFixed(3), qGlobal2: qGlobal2.toFixed(3),
+      z: z.toString(), halfLevel: (100 - (100 - CL) / 2).toFixed(1), levDec: (CL / 100).toFixed(2),
+      a3: f4(a3), sa3: f4(sa3), ciLo: f4(ciLo), ciHi: f4(ciHi),
+      b3: f4(b3), b4: f4(b4), b5: f4(b5), me: f4(me),
+      thr: (b4 < 0 ? thr.toFixed(2) : "")
+    }
+  };
+
+  document.getElementById('ex-content').innerHTML = DIC.ex(D);
+  document.getElementById('sol-content').innerHTML = DIC.sol(D);
+
+  document.getElementById('welcome').style.display = 'none';
+  document.getElementById('ex-area').style.display = 'block';
+  solVisible = false;
+  let solC = document.getElementById('sol-card'), btn = document.getElementById('toggle-btn');
+  solC.classList.remove('visible'); btn.classList.remove('shown'); btn.textContent = I18N[LANG].showSol;
+
+  if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise();
+}
+
+// ════════════════════════════════════════
+// UI / PDF
+// ════════════════════════════════════════
+function toggleSol(){
+  solVisible = !solVisible;
+  const sol = document.getElementById('sol-card'), btn = document.getElementById('toggle-btn');
+  if(solVisible){sol.classList.add('visible'); btn.classList.add('shown'); btn.textContent = I18N[LANG].hideSol;}
+  else{sol.classList.remove('visible'); btn.classList.remove('shown'); btn.textContent = I18N[LANG].showSol;}
+}
+
+function copySeed(){
+  const s = document.getElementById('seed-disp').textContent;
+  if(s && s !== '—'){
+    navigator.clipboard.writeText(s).then(() => {
+      const b = event.target, o = b.textContent;
+      b.textContent = I18N[LANG].copied; setTimeout(()=>b.textContent=o,1500);
+    });
+  }
+}
+
+function openPdfModal(){
+  document.getElementById('pdf-ov').style.display = 'block';
+  document.getElementById('pdf-modal').style.display = 'block';
+  document.getElementById('opt-sol').checked = solVisible;
+}
+function closePdfModal(){
+  document.getElementById('pdf-ov').style.display = 'none';
+  document.getElementById('pdf-modal').style.display = 'none';
+}
+function doPrint(){
+  const noHdr = !document.getElementById('opt-header').checked;
+  const inclSol = document.getElementById('opt-sol').checked;
+  const body = document.body;
+  if(noHdr) body.classList.add('print-no-header');
+  if(inclSol){body.classList.add('print-force-solution');body.classList.remove('print-no-solution');}
+  else{body.classList.add('print-no-solution');body.classList.remove('print-force-solution');}
+  closePdfModal();
+  setTimeout(() => {
+    window.print();
+    setTimeout(() => { body.classList.remove('print-no-header','print-force-solution','print-no-solution'); }, 500);
+  }, 100);
+}
+
+/* Initialisation */
+LANG = detectLang();
+applyLang();
+</script>
+
+</body>
+</html>
