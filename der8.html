@@ -1,0 +1,2239 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Dérivés - Couverture en delta et P&amp;L par les grecques</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['\\[', '\\]']],
+      macros: {
+        E: ['\\mathbb{E}\\left[#1\\right]', 1],
+        P: ['\\mathbb{P}\\left(#1\\right)', 1],
+        ee: '\\text{e}',
+        Vega: '\\mathcal{V}'
+      }
+    }
+  };
+</script>
+<script>window.MathJax=window.MathJax||{};window.MathJax.options=window.MathJax.options||{};window.MathJax.options.enableAssistiveMml=true;</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7;text-align:justify;}
+
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 1.5rem;border-bottom:3px solid var(--gold);text-align:left;}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end;background:rgba(255,255,255,.03);padding:1rem 1.5rem;border-radius:6px;border:1px solid rgba(255,255,255,.1)}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.6)}
+.ctrl-inp, .ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.4rem .7rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none;transition:border-color .2s}
+.ctrl-inp:focus, .ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.ctrl-sel option{background:var(--navy);color:var(--cream)}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.5rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;transition:background .18s;margin-left:auto}
+.btn-gen:hover{background:var(--gold-light)}
+
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:700}
+
+.top-actions{display:flex;gap:.5rem;}
+.btn-action{background:#fff;border:1px solid var(--border);color:var(--navy);padding:.4rem .8rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.85rem;font-weight:600;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.btn-action:hover{border-color:var(--navy);background:var(--cream-dark);}
+
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem;text-align:left;}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+
+.sol-toggle-wrap{text-align:left; margin: 1.5rem 0 0 0;}
+.btn-toggle{background:transparent;border:2px solid var(--green);border-bottom:none;color:var(--green);font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;padding:.5rem 1.5rem;border-radius:4px 4px 0 0;cursor:pointer;transition:all .2s; position:relative; z-index:2; top:2px;}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--green);color:var(--cream)}
+.sol-card{border-top:2px solid var(--green);display:none; border-radius: 0 6px 6px 6px; position:relative; z-index:1;}
+.sol-card.visible{display:block;animation:fi .4s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+
+.calc-box{background:#f9fcf9;border:1px solid #c8e6c9;padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.9rem;color:var(--text);line-height:1.6;text-align:justify;}
+.math-formula { text-align: center; margin: 1.2rem 0; overflow-x: auto; }
+
+/* TABLEAUX */
+.exam-table-wrap { overflow-x: auto; margin: 1.3rem 0; }
+.exam-table{width:100%;border-collapse:collapse;font-size:.82rem;font-family:'Source Serif 4',serif; margin: 0;}
+.exam-table th, .exam-table td{border:1px solid var(--border);padding:.5rem .6rem;text-align:center;vertical-align:middle;}
+.exam-table th{background:var(--navy);color:var(--cream);font-weight:600;font-size:.78rem;}
+.exam-table .txt-left{text-align:left;font-weight:600;color:var(--navy);}
+.exam-table .amt{font-family:'JetBrains Mono',monospace;text-align:right;white-space:nowrap;font-size:.8rem;}
+.exam-table tbody tr:nth-child(even){background:rgba(13,27,42,.025)}
+.exam-table .row-tot{background:var(--cream-dark) !important;font-weight:700}
+.pos{color:var(--green);font-weight:600}
+.neg{color:var(--red);font-weight:600}
+
+.chart-wrap{margin:1.4rem 0;overflow-x:auto;text-align:center}
+.chart-cap{font-size:.78rem;color:var(--text-muted);font-style:italic;text-align:center;margin-top:.3rem}
+
+@media print{
+  body{background:#fff;}
+  header, .ctrls, .sol-toggle-wrap, .top-actions {display:none !important;}
+  .card{box-shadow:none; border:1px solid var(--border); margin-bottom:2rem;}
+  .sol-card{display:block !important; border-top:2px solid var(--green);}
+  #ex-area {display:block !important;}
+}
+
+/* --- Selecteur de langue / Language switch --- */
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem}
+.header-top .header-badge{margin-bottom:0}
+.lang-switch{display:flex;gap:.45rem;flex-shrink:0}
+.flag-btn{background:rgba(255,255,255,.06);border:1px solid rgba(201,149,42,.35);border-radius:3px;padding:3px;cursor:pointer;line-height:0;opacity:.5;transition:opacity .2s,border-color .2s,transform .15s}
+.flag-btn:hover{opacity:1;transform:translateY(-1px)}
+.flag-btn.active{opacity:1;border-color:var(--gold-light);box-shadow:0 0 0 1px rgba(232,184,75,.35)}
+.flag-btn svg{display:block;width:30px;height:20px;border-radius:1px}
+@media print{ .lang-switch{display:none !important;} }
+</style>
+<!-- KIT:CSS:START v1 --><style id="kit-css">
+/* ============================================================
+   KIT D'UNIFORMISATION — bloc partagé, identique sur toutes les pages.
+   Ne rien modifier ici fichier par fichier : régénérer le kit.
+   ============================================================ */
+
+/* --- 1. Mathématiques : jamais de débordement --- */
+mjx-container[display="true"]{
+  overflow-x:auto; overflow-y:hidden; max-width:100%;
+  padding:.15rem 0; margin:1rem 0 !important;
+}
+mjx-container[display="true"]::-webkit-scrollbar{height:5px}
+mjx-container[display="true"]::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+mjx-container{ max-width:100%; }
+.math-formula{ text-align:center; margin:1.2rem 0; overflow-x:auto; max-width:100%; }
+@media (max-width:640px){
+  mjx-container[display="true"]{ font-size:88% }
+}
+
+/* --- 2. Listes à puces entourées (questions ET données de contexte) --- */
+.kit-list, .st > ol,
+.questions > ol,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list), .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list),
+.question-list, .enum-list, .q-list{
+  counter-reset:kitq; list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem;
+}
+.kit-list > li, .st > ol > li,
+.questions > ol > li,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li, .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li,
+.question-list > li, .enum-list > li, .q-list > li{
+  counter-increment:kitq; position:relative;
+  padding-left:2.6rem; margin-bottom:1.3rem;
+  font-size:.95rem; line-height:1.7; text-align:justify;
+  font-weight:400; color:var(--text);
+  display:block;
+}
+.kit-list > li::before, .st > ol > li::before,
+.questions > ol > li::before,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li::before, .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li::before,
+.question-list > li::before, .enum-list > li::before, .q-list > li::before{
+  content:counter(kitq);
+  position:absolute; left:0; top:.1rem;
+  width:28px; min-width:28px; height:28px;
+  background:var(--navy); color:var(--cream);
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.72rem; font-weight:500;
+  flex-shrink:0;
+}
+.questions ol > li .q-text{ flex:1; font-size:.95rem; text-align:justify }
+/* sous-listes : cercle creux, plus discret */
+.enum-sublist, .kit-sublist, .sub-list, .sub-ol, .alpha-list, .enum-subsublist,
+.st ol.sub-ol, .questions ol ol, .st ol ol, .kit-list ol, .q-list ol, .question-list ol{
+  counter-reset:kitsq; list-style:none !important; padding-left:0 !important;
+  margin:.9rem 0 .9rem 0;
+}
+.enum-sublist > li, .kit-sublist > li, .sub-list > li, .sub-ol > li, .alpha-list > li, .enum-subsublist > li,
+.st ol.sub-ol > li, .questions ol ol > li, .st ol ol > li, .kit-list ol > li, .q-list ol > li, .question-list ol > li{
+  counter-increment:kitsq; position:relative;
+  padding-left:2.1rem; margin-bottom:.7rem; font-size:.92rem; text-align:justify;
+}
+.enum-sublist > li::before, .kit-sublist > li::before, .sub-list > li::before, .sub-ol > li::before, .alpha-list > li::before, .enum-subsublist > li::before,
+.st ol.sub-ol > li::before, .questions ol ol > li::before, .st ol ol > li::before, .kit-list ol > li::before, .q-list ol > li::before, .question-list ol > li::before{
+  content:counter(kitsq,lower-alpha);
+  min-width:22px;
+  position:absolute; left:0; top:.05rem;
+  width:22px; height:22px;
+  background:transparent; color:var(--navy);
+  border:1px solid var(--gold);
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.65rem;
+}
+
+/* variante : puces simples non numérotées (listes de données) */
+.kit-simple{ list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem }
+.kit-simple > li{
+  position:relative; padding-left:1.5rem; margin-bottom:1.1rem;
+  font-size:.95rem; line-height:1.7; text-align:justify;
+}
+.kit-simple > li::before{
+  content:"\2022"; position:absolute; left:0; top:-.15rem;
+  color:var(--gold); font-size:1.5rem; line-height:1; background:none;
+  width:auto; height:auto; border:none; border-radius:0;
+}
+/* variante : liste à un seul élément, sans puce */
+.kit-nobullet{ list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem }
+.kit-nobullet > li{
+  padding-left:0; margin-bottom:1rem; font-size:.95rem; line-height:1.7; text-align:justify;
+}
+.kit-nobullet > li::before{ content:none !important; display:none !important }
+/* variante : titres de section numérotés (contenu intercalé entre les puces) */
+.kit-num-scope{ counter-reset:kitn }
+p.kit-num{
+  counter-increment:kitn; position:relative;
+  padding-left:2.6rem; margin:1.8rem 0 1rem;
+  font-weight:600; color:var(--navy); text-align:left;
+  min-height:28px; display:flex; align-items:center;
+}
+p.kit-num:first-of-type{ margin-top:0 }
+p.kit-num::before{
+  content:counter(kitn); position:absolute; left:0; top:0;
+  width:28px; height:28px; background:var(--navy); color:var(--cream);
+  border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.72rem; font-weight:500;
+}
+
+/* titres de dossier */
+.dossier-title{
+  margin:2rem 0 1rem; font-weight:600; color:var(--navy); font-size:1.02rem;
+  border-bottom:1px solid var(--border); padding-bottom:.4rem; text-align:left;
+}
+.dossier-title:first-of-type{ margin-top:0 }
+.dossier-body{ margin-bottom:.5rem }
+
+/* --- 3. Corrigé sobre : plus de multiplication de fonds verts --- */
+.sol-card .calc-box, .sol-card .concl{
+  background:transparent !important;
+  border:none !important;
+  border-left:none !important;
+  padding:0 !important;
+  border-radius:0 !important;
+  margin:0 0 1.6rem 0 !important;
+  font-size:.95rem;
+  line-height:1.7;
+  text-align:justify;
+}
+.sol-card .sol-sub{
+  color:var(--navy); font-weight:600; display:block;
+  margin:0 0 .5rem 0; font-size:1rem;
+}
+/* seuls encadrés conservés : les perspectives « Pour aller plus loin » */
+.sol-card .persp-box{
+  background:#f7f9fc !important;
+  border:1px solid #ccd8e6 !important;
+  border-left:3px solid var(--navy-mid) !important;
+  padding:1.2rem !important;
+  border-radius:4px !important;
+  margin:2rem 0 1rem 0 !important;
+  font-size:.9rem; line-height:1.7; text-align:justify;
+}
+
+.btn-toggle{
+  background:transparent; border:2px solid var(--green); border-bottom:none;
+  color:var(--green); font-family:'Source Serif 4',serif; font-size:.95rem;
+  font-weight:600; padding:.5rem 1.5rem; border-radius:4px 4px 0 0; cursor:pointer;
+  transition:all .2s; position:relative; z-index:2; top:2px;
+}
+.btn-toggle:hover{ background:var(--green); color:var(--cream) }
+
+/* --- 4. Bouton « Afficher le corrigé » (modèle der) --- */
+.sol-toggle-wrap{ text-align:left; margin:1.5rem 0 0 0; }
+.sol-card{
+  border-top:2px solid var(--green); display:none;
+  border-radius:0 6px 6px 6px; position:relative; z-index:1;
+}
+.sol-card.visible{ display:block; animation:kitfi .35s ease }
+.sol-card .card-header{ background:var(--green) }
+.sol-card .card-header .tag{ border-color:rgba(200,240,200,.4); color:#a8d8b0 }
+@keyframes kitfi{ from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+
+/* --- 5. Barre d'actions unifiée --- */
+.top-bar{ display:flex; flex-wrap:wrap; gap:.8rem; align-items:center; justify-content:space-between; margin-bottom:1.2rem }
+.top-bar-left{ display:flex; flex-wrap:wrap; gap:.55rem; order:1 }
+.top-bar .seed-badge{ order:2 }
+.btn-sm{ background:transparent; border:1px solid var(--gold); color:var(--gold); font-family:'JetBrains Mono',monospace; font-size:.67rem; letter-spacing:.08em; text-transform:uppercase; padding:.4rem 1rem; border-radius:3px; cursor:pointer; transition:all .18s; white-space:nowrap }
+.btn-sm:hover{ background:var(--gold); color:var(--navy) }
+.btn-sm.pdf{ border-color:#7bafd4; color:#7bafd4 }
+.btn-sm.pdf:hover{ background:#7bafd4; color:var(--navy) }
+.btn-sm.doc{ border-color:#8fa8c4; color:#8fa8c4 }
+.seed-row{ display:flex; gap:.4rem; align-items:center }
+.btn-copy-seed{
+  background:transparent; border:1px solid rgba(201,149,42,.4); color:rgba(250,247,240,.55);
+  padding:.38rem .55rem; border-radius:3px; cursor:pointer;
+  font-family:'JetBrains Mono',monospace; font-size:.65rem; transition:all .18s; white-space:nowrap;
+}
+.btn-copy-seed:hover{ border-color:var(--gold-light); color:var(--gold-light) }
+.btn-sm.doc:hover{ background:#8fa8c4; color:var(--navy) }
+
+/* --- 6. Modale d'export PDF --- */
+#pdf-ov{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:100; backdrop-filter:blur(2px) }
+#pdf-modal{ display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:101; background:#fff; border-radius:8px; box-shadow:0 20px 60px rgba(0,0,0,.25); width:390px; max-width:95vw; border-top:4px solid #7bafd4; overflow:hidden }
+#pdf-ov.open,#pdf-modal.open{ display:block }
+.mh{ background:var(--navy); color:var(--cream); padding:1rem 1.5rem; display:flex; align-items:center; justify-content:space-between }
+.mh h3{ font-family:'Playfair Display',serif; font-size:1rem; font-weight:600; margin:0 }
+.mclose{ background:none; border:none; color:rgba(255,255,255,.6); cursor:pointer; font-size:1.2rem; line-height:1; padding:2px 6px; border-radius:3px; transition:color .15s }
+.mclose:hover{ color:#fff }
+.mb2{ padding:1.5rem }
+.opt-row{ display:flex; align-items:flex-start; gap:.75rem; margin-bottom:1rem; cursor:pointer }
+.opt-row input[type=checkbox]{ width:16px; height:16px; cursor:pointer; accent-color:var(--navy); flex-shrink:0; margin-top:3px }
+.opt-txt{ display:block }
+.opt-lbl{ font-size:.93rem; display:block }
+.opt-desc{ font-size:.75rem; color:var(--text-muted); display:block }
+.seed-note{ font-family:'JetBrains Mono',monospace; font-size:.7rem; background:var(--cream-dark); border:1px solid var(--border); padding:.55rem .85rem; border-radius:3px; color:var(--text-muted); margin-bottom:1.2rem; line-height:1.5 }
+.mactions{ display:flex; gap:.6rem }
+.btn-print{ flex:1; background:var(--navy); color:var(--cream); border:none; padding:.7rem; border-radius:4px; font-family:'Source Serif 4',serif; font-size:.9rem; cursor:pointer; transition:background .2s }
+.btn-print:hover{ background:var(--navy-mid) }
+.btn-cancel{ background:transparent; border:1px solid var(--border); color:var(--text-muted); padding:.7rem 1rem; border-radius:4px; font-family:'Source Serif 4',serif; font-size:.9rem; cursor:pointer; transition:all .2s }
+.btn-cancel:hover{ border-color:var(--text); color:var(--text) }
+
+/* --- 7. Impression --- */
+@media print{
+  body{ background:#fff; font-size:11pt; -webkit-print-color-adjust:exact; print-color-adjust:exact }
+  header{ display:block !important; padding:1rem 1.5rem .8rem }
+  header .subtitle{ display:none }
+  .ctrls, #controls-bar, .top-actions, .top-bar-left, .sol-toggle-wrap,
+  .lang-switch, #pdf-ov, #pdf-modal{ display:none !important }
+  .top-bar{ display:block !important; margin-bottom:.8rem }
+  .top-bar .seed-badge{
+    display:inline-block !important; background:none; border:1px solid var(--border);
+    color:var(--text-muted); font-family:'JetBrains Mono',monospace; font-size:8.5pt;
+    padding:2pt 6pt; border-radius:2px;
+  }
+  body.print-no-header .top-bar{ display:none !important }
+  main{ padding:1rem 1.5rem; max-width:100% }
+  .card{ box-shadow:none; border-radius:0; page-break-inside:avoid; margin-bottom:1rem }
+  #ex-area{ display:block !important }
+  .sol-card{ display:block !important; border-top:2px solid var(--green) }
+  mjx-container[display="true"]{ overflow:visible !important }
+  body.print-no-header header{ display:none !important }
+  body.print-no-header .ctrls{ display:none !important }
+  body.print-no-solution .sol-card,
+  body.print-no-solution .sol-toggle-wrap{ display:none !important }
+  body.print-force-solution .sol-card{ display:block !important }
+}
+</style><!-- KIT:CSS:END -->
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-top">
+    <div class="header-badge" data-k="k-badge">PRODUITS DÉRIVÉS ET STRATÉGIES DE COUVERTURE</div>
+    <div class="lang-switch">
+      <button type="button" class="flag-btn active" id="flag-fr" onclick="setLang('fr')" title="Français" aria-label="Français"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="20" height="40" fill="#002654"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ED2939"/></svg></button>
+      <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
+    </div>
+  </div>
+  <h1 data-k="k-h1">Couverture en delta et décomposition du P&amp;L par les grecques</h1>
+  <p class="subtitle" data-k="k-sub">© Thomas Hossen – Version du 30 août 2026</p>
+
+  <div class="ctrls">
+    <div class="ctrl-g">
+      <span class="ctrl-lbl" data-k="k-days">Horizon de couverture</span>
+      <select class="ctrl-sel" id="days-select">
+        <option value="2" data-k="k-d2">2 jours ouvrés</option>
+        <option value="3" selected data-k="k-d3">3 jours ouvrés</option>
+        <option value="4" data-k="k-d4">4 jours ouvrés</option>
+      </select>
+    </div>
+    <div class="ctrl-g">
+      <span class="ctrl-lbl" data-k="k-pos">Sens de la position</span>
+      <select class="ctrl-sel" id="pos-select">
+        <option value="auto" data-k="k-p-auto">Aléatoire</option>
+        <option value="short" data-k="k-p-short">Vendeuse (gamma négatif)</option>
+        <option value="long" data-k="k-p-long">Acheteuse (gamma positif)</option>
+      </select>
+    </div>
+    <div class="ctrl-g">
+      <span class="ctrl-lbl" data-k="k-seed">Seed de reproductibilité</span>
+      <div class="seed-row"><input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999"><button type="button" class="btn-copy-seed" id="btn-copy-seed" onclick="copySeed(this)" title="Copier la seed active"><span data-kit="btnCopy">&#10697; Copier</span></button></div>
+    </div>
+    <button class="btn-gen" onclick="generateExercise(false)"><span data-k="k-gen">Générer</span></button>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" style="text-align:center; padding:4rem; color:var(--text-muted); font-style:italic;">
+    <span data-k="k-welcome">Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice de couverture dynamique.</span>
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="seed-badge"><span data-k="k-seedbadge">Seed active :</span> <span id="seed-disp"></span></div>
+      <div class="top-bar-left">
+        <button type="button" class="btn-sm" onclick="generateExercise(true)"><span data-kit="btnNew">&#8634; Nouvel &eacute;nonc&eacute;</span></button>
+        <button type="button" class="btn-sm pdf" onclick="openPdfModal()"><span data-kit="btnPdf">&#11015; Exporter PDF</span></button>
+        <button type="button" class="btn-sm doc" onclick="exportWord()"><span data-kit="btnDoc">&#11015; Exporter Word</span></button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="tag" data-k="k-tag-ex">Énoncé</span><h2 data-k="k-cardtitle">Gestion dynamique d'une position optionnelle</h2></div>
+      <div class="card-body">
+        <div class="context-block" id="context-text"></div>
+        <div id="mkt-table"></div>
+        <div class="context-block" id="additional-info" style="margin-top:1.5rem; background:#fff; border-left:3px solid var(--navy); border-radius:0;"></div>
+
+        <p style="margin-bottom:1rem; font-weight:600; color:var(--red); text-align:left;" data-k="k-work">Travail à faire</p>
+        <ol id="events-list"></ol>
+      </div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag" data-k="k-tag-sol">Corrigé</span><h2 data-k="k-cardtitle2">Gestion dynamique d'une position optionnelle</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+/* ============================================================
+   DICTIONNAIRE BILINGUE  /  BILINGUAL DICTIONARY
+   ============================================================ */
+const I18N = {
+
+  fr: {
+    "htmlLang": "fr",
+    "locale": "fr-FR",
+    "title": "Simulateur Dérivés - Couverture en delta et P&L par les grecques",
+    "k-badge": "PRODUITS DÉRIVÉS ET STRATÉGIES DE COUVERTURE",
+    "k-h1": "Couverture en delta et décomposition du P&amp;L par les grecques",
+    "k-sub": "© Thomas Hossen – Version du 30 août 2026",
+    "k-days": "Horizon de couverture",
+    "k-d2": "2 jours ouvrés", "k-d3": "3 jours ouvrés", "k-d4": "4 jours ouvrés",
+    "k-pos": "Sens de la position",
+    "k-p-auto": "Aléatoire", "k-p-short": "Vendeuse (gamma négatif)", "k-p-long": "Acheteuse (gamma positif)",
+    "k-seed": "Seed de reproductibilité",
+    "k-gen": "Générer",
+    "k-welcome": "Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice de couverture dynamique.",
+    "k-seedbadge": "Seed active :",
+    "k-tag-ex": "Énoncé",
+    "k-cardtitle": "Gestion dynamique d'une position optionnelle",
+    "k-tag-sol": "Corrigé",
+    "k-cardtitle2": "Gestion dynamique d'une position optionnelle",
+    "k-work": "Travail à faire",
+    "showSol": "Afficher le corrigé",
+    "hideSol": "Masquer le corrigé",
+    thousands: "\\,",
+    decimal: "{,}",
+
+    /* --- libelles courts utilises dans les tableaux et le graphique --- */
+    L: {
+      date: "Date", jour: "Jour", future: "Future $F_t$", volImp: "Vol. implicite",
+      jRest: "Jours restants", leg: "Jambe", strike: "Strike", sens: "Sens",
+      qte: "Quantité", prix: "Prix (pts)", valeur: "Valeur (€)",
+      delta: "Delta (€/pt)", gamma: "Gamma (€/pt²)", theta: "Thêta (€/jour)",
+      vega: "Véga (€/pt de vol)", total: "Total", futures: "Futures détenus",
+      deltaNet: "Delta net (€/pt)", pnlOpt: "P&L options (€)", pnlFut: "P&L futures (€)",
+      pnlTot: "P&L total (€)", varF: "δF (pts)", varSig: "δσ (pts de vol)",
+      cDelta: "Delta (€)", cGamma: "Gamma (€)", cTheta: "Thêta (€)", cVega: "Véga (€)",
+      resid: "Résidu (€)", call: "Call", put: "Put",
+      achat: "Achat", vente: "Vente", cumul: "Cumul",
+      chartTitle: "Décomposition du P&L quotidien par les grecques",
+      chartNote: "Barres : contribution de chaque grecque. Losange : P&L total constaté."
+    },
+
+    posWord: function(s) { return s > 0 ? "acheteuse" : "vendeuse"; },
+    strucWord: function(isStr) { return isStr ? "strangle" : "straddle"; },
+    buySell: function(s) { return s > 0 ? "achat" : "vente"; },
+
+    context: function(D) {
+      const sens = D.sgn > 0 ? "acheteuse" : "vendeuse";
+      const struc = D.isStrangle ? "strangle" : "straddle";
+      const verbe = D.sgn > 0 ? "a acheté" : "a vendu";
+      const desc = D.isStrangle
+        ? `${fmtNb(D.N,0)} calls de prix d'exercice ${fmtNb(D.Kc,0)} et ${fmtNb(D.N,0)} puts de prix d'exercice ${fmtNb(D.Kp,0)}`
+        : `${fmtNb(D.N,0)} calls et ${fmtNb(D.N,0)} puts de même prix d'exercice ${fmtNb(D.Kc,0)}`;
+      return `
+        Vous êtes opérateur sur le desk de dérivés actions d'une banque d'investissement. Votre position porte sur des options européennes écrites sur le contrat <em>future</em> EUROPA&nbsp;50, dont le multiplicateur est de ${fmtNb(D.M,0)} € par point d'indice. À la date $t=0$, le desk ${verbe} un ${struc} : ${desc}. Toutes ces options viennent à échéance dans ${fmtNb(D.nb0,0)} jours ouvrés, soit la même échéance que le contrat <em>future</em> support.
+        <p style="margin-top:.8rem;">Le <em>future</em> cote ${fmtNb(D.F0,0)} points à la date $t=0$ et la volatilité implicite de marché, commune aux deux jambes, ressort à ${fmtNb(D.sig0*100,1)}&nbsp;%. Le taux sans risque continu s'établit à ${fmtNb(D.r*100,1)}&nbsp;%. Votre mandat vous impose de maintenir la position <strong>neutre en delta</strong> : chaque soir, à la clôture, vous ajustez une couverture constituée de contrats <em>futures</em> EUROPA&nbsp;50. Les ${fmtNb(D.nDays,0)} séances suivantes se déroulent comme indiqué ci-dessous.</p>
+      `;
+    },
+
+    mkt: function(D) {
+      let h = `<div class="exam-table-wrap"><table class="exam-table"><thead><tr>
+        <th style="width:34%;">Clôture</th>`;
+      for (let t = 0; t <= D.nDays; t++) h += `<th>$t=${t}$</th>`;
+      h += `</tr></thead><tbody>`;
+      h += `<tr><td class="txt-left">Cours du <em>future</em> (points)</td>`;
+      for (let t = 0; t <= D.nDays; t++) h += `<td class="amt">${fmtNb(D.F[t],0)}</td>`;
+      h += `</tr>`;
+      h += `<tr><td class="txt-left">Volatilité implicite (%)</td>`;
+      for (let t = 0; t <= D.nDays; t++) h += `<td class="amt">${fmtNb(D.sig[t]*100,1)}</td>`;
+      h += `</tr>`;
+      h += `<tr><td class="txt-left">Jours ouvrés jusqu'à l'échéance</td>`;
+      for (let t = 0; t <= D.nDays; t++) h += `<td class="amt">${fmtNb(D.nb0-t,0)}</td>`;
+      h += `</tr></tbody></table></div>`;
+      return h;
+    },
+
+    info: function(D) {
+      return `
+        <strong>Conventions de calcul.</strong> Les options sur <em>future</em> sont évaluées par le modèle de Black (1976), dans lequel le prix d'un call vaut $c=\\ee^{-rT}\\left[F\\,N(d_1)-K\\,N(d_2)\\right]$ et celui d'un put $p=\\ee^{-rT}\\left[K\\,N(-d_2)-F\\,N(-d_1)\\right]$, avec $d_1=\\frac{\\ln(F/K)+\\tfrac12\\sigma^2T}{\\sigma\\sqrt{T}}$ et $d_2=d_1-\\sigma\\sqrt{T}$. L'année financière compte 252 jours ouvrés, de sorte qu'une séance correspond à $\\delta t = 1/252$. Le nombre de contrats <em>futures</em> de couverture est nécessairement entier et l'on retiendra l'entier le plus proche. Les grecques sont exprimées en euros, pour l'ensemble de la position : le delta en euros par point d'indice, le gamma en euros par point au carré, le thêta en euros par séance et le véga en euros par point de volatilité. Sauf mention contraire, les résultats intermédiaires sont conservés en pleine précision et seuls les affichages sont arrondis.
+      `;
+    },
+
+    enonce: function(D) {
+      let h = "";
+      h += `<li><strong>Valorisation initiale.</strong> À la date $t=0$, calculez pour chaque jambe de la stratégie les quantités $d_1$, $d_2$, $N(d_1)$ et $N(d_2)$, puis le prix unitaire de l'option. Déduisez-en la valeur de marché totale de la position, exprimée en euros.</li>`;
+      h += `<li><strong>Grecques initiales.</strong> Calculez le delta, le gamma, le thêta et le véga de la position à la date $t=0$, dans les unités précisées ci-dessus. Commentez en particulier le signe du gamma et celui du thêta, et expliquez pourquoi ces deux signes sont nécessairement opposés.</li>`;
+      h += `<li><strong>Mise en place de la couverture.</strong> Déterminez le nombre de contrats <em>futures</em> à négocier à la clôture de $t=0$ pour annuler le delta de la position. Précisez le sens de l'opération et évaluez le delta résiduel qui subsiste après arrondi au contrat entier.</li>`;
+      h += `<li><strong>Suivi quotidien.</strong> Pour chacune des ${fmtNb(D.nDays,0)} séances suivantes, recalculez la valeur de la stratégie et ses grecques, puis déterminez le P&amp;L quotidien du portefeuille couvert en distinguant la contribution des options de celle des <em>futures</em>. Indiquez le rééquilibrage à effectuer à chaque clôture.</li>`;
+      h += `<li><strong>Décomposition du P&amp;L.</strong> Pour chaque séance, décomposez le P&amp;L total en une contribution de delta, une contribution de gamma, une contribution de thêta et une contribution de véga, selon le développement
+        <div class="math-formula">\\[\\delta\\Pi \\;\\simeq\\; \\Delta_{\\text{net}}\\,\\delta F \\;+\\; \\tfrac{1}{2}\\,\\Gamma\\,(\\delta F)^2 \\;+\\; \\Theta\\,\\delta t \\;+\\; \\Vega\\,\\delta\\sigma \\;+\\; \\varepsilon\\]</div>
+        Chiffrez le résidu $\\varepsilon$ et expliquez son origine.</li>`;
+      h += `<li><strong>Interprétation.</strong> Calculez la volatilité réalisée du <em>future</em> sur la période et comparez-la à la volatilité implicite initiale. Expliquez le résultat cumulé de la stratégie à la lumière du signe du gamma. Déterminez enfin l'amplitude quotidienne du mouvement du <em>future</em> pour laquelle le gain de gamma compenserait exactement la perte de thêta.</li>`;
+      return h;
+    },
+
+    sol: function(D) {
+      const L = I18N.fr.L;
+      const r0 = D.rows[0];
+      const sensMot = D.sgn > 0 ? "acheteuse" : "vendeuse";
+      const struc = D.isStrangle ? "strangle" : "straddle";
+      let s = "";
+
+      /* ---------- 1. Valorisation initiale ---------- */
+      s += `<div class="calc-box">
+        <span class="sol-sub">1. Valorisation de la stratégie à $t=0$</span>
+        L'échéance résiduelle vaut $T=${fmtNb(D.nb0,0)}/252=${fmtNb(D.nb0/252,4)}$ an, le facteur d'actualisation $\\ee^{-rT}=${fmtNb(r0.detail[0].df,6)}$ et l'écart-type intégré $\\sigma\\sqrt{T}=${fmtNb(D.sig[0]*Math.sqrt(r0.T),4)}$. Le modèle de Black s'applique jambe par jambe :
+        ${legTable(D, 0)}
+        Chaque option porte sur ${fmtNb(D.M,0)} € par point d'indice et la position compte ${fmtNb(D.N,0)} contrats par jambe. La valeur de marché de la position s'établit donc à <strong>${fmtNb(r0.V,0)} €</strong>${D.sgn < 0 ? `, montant négatif puisque la position est ${sensMot} : il s'agit d'une dette envers la contrepartie, en contrepartie de laquelle le desk a encaissé la prime` : `, montant positif correspondant à la prime décaissée par le desk`}.
+      </div>`;
+
+      /* ---------- 2. Grecques initiales ---------- */
+      const bepMove = Math.sqrt(Math.abs(2 * r0.Theta * D.dt / r0.G));
+      s += `<div class="calc-box">
+        <span class="sol-sub">2. Grecques de la position à $t=0$</span>
+        Les grecques unitaires du modèle de Black sont $\\Delta_c=\\ee^{-rT}N(d_1)$ et $\\Delta_p=-\\ee^{-rT}N(-d_1)$ pour le delta, $\\Gamma=\\frac{\\ee^{-rT}n(d_1)}{F\\sigma\\sqrt{T}}$ pour le gamma, $\\Vega=\\ee^{-rT}F\\,n(d_1)\\sqrt{T}$ pour le véga et $\\Theta=r\\,V-\\frac{\\ee^{-rT}F\\,n(d_1)\\,\\sigma}{2\\sqrt{T}}$ pour le thêta, où $n(\\cdot)$ désigne la densité de la loi normale centrée réduite. En les agrégeant sur la position — c'est-à-dire en les multipliant par la quantité signée et par le multiplicateur — on obtient :
+        ${greekTable(D, 0)}
+        La position étant ${sensMot}, son gamma est <strong>${r0.G < 0 ? "négatif" : "positif"}</strong> et son thêta <strong>${r0.Theta > 0 ? "positif" : "négatif"}</strong>. Ces deux signes sont nécessairement opposés : c'est le contenu même de l'équation de Black-Scholes, qui impose pour un portefeuille neutre en delta la relation $\\Theta+\\tfrac12\\sigma^2F^2\\Gamma=rV$. ${r0.G < 0
+          ? `Le desk est donc payé à attendre — il encaisse ${fmtNb(Math.abs(r0.Theta*D.dt),0)} € de valeur temps par séance — mais il perd dès que le sous-jacent bouge, dans un sens comme dans l'autre.`
+          : `Le desk paie donc ${fmtNb(Math.abs(r0.Theta*D.dt),0)} € de valeur temps par séance, prix de l'option d'encaisser un gain dès que le sous-jacent bouge, dans un sens comme dans l'autre.`}
+      </div>`;
+
+      /* ---------- 3. Couverture initiale ---------- */
+      const senSpot = r0.h > 0 ? "achète" : (r0.h < 0 ? "vend" : "ne négocie aucun");
+      s += `<div class="calc-box">
+        <span class="sol-sub">3. Mise en place de la couverture en delta</span>
+        Un contrat <em>future</em> a une valeur nulle à l'initiation, mais son appel de marge quotidien vaut ${fmtNb(D.M,0)} € par point de variation : son delta est donc exactement ${fmtNb(D.M,0)} € par point, par contrat détenu. Annuler le delta de la position revient à résoudre $\\Delta_{\\text{options}}+h\\times ${fmtNb(D.M,0)}=0$, soit
+        <div class="math-formula">\\[h^{\\ast}=-\\frac{\\Delta_{\\text{options}}}{${fmtNb(D.M,0)}}=-\\frac{${fmtNb(r0.D,2)}}{${fmtNb(D.M,0)}}=${fmtNb(-r0.D/D.M,3)}\\ \\text{contrats}\\]</div>
+        Le nombre de contrats devant être entier, on retient $h_0=${fmtNb(r0.h,0)}$ : le desk ${senSpot}${r0.h !== 0 ? ` ${fmtNb(Math.abs(r0.h),0)} contrats <em>futures</em>` : " contrat"}. Le delta résiduel après couverture s'élève à $\\Delta_{\\text{net}}=${fmtNb(r0.D,2)}+(${fmtNb(r0.h,0)})\\times${fmtNb(D.M,0)}=${fmtNb(r0.Dnet,2)}$ € par point, soit l'équivalent d'une exposition de ${fmtNb(Math.abs(r0.Dnet/D.M),3)} contrat : cette imperfection est la contrepartie inévitable de l'indivisibilité du contrat.
+      </div>`;
+
+      /* ---------- 4. Suivi quotidien ---------- */
+      s += `<div class="calc-box">
+        <span class="sol-sub">4. Suivi quotidien de la position couverte</span>
+        On répète à chaque clôture le calcul des questions 1 à 3, avec le nouveau cours du <em>future</em>, la nouvelle volatilité implicite et une échéance raccourcie d'une séance :
+        ${pathTable(D)}
+        Le P&amp;L d'une séance se lit alors comme la somme de la variation de valeur du portefeuille d'options et du résultat de la couverture, cette dernière valant $h_{t-1}\\times ${fmtNb(D.M,0)}\\times(F_t-F_{t-1})$ puisque la couverture mise en place la veille reste en place toute la journée :
+        ${pnlTable(D)}
+        Sur l'ensemble de la période, le portefeuille couvert dégage un résultat cumulé de <strong>${fmtNb(D.pnlTotal,0)} €</strong>.
+      </div>`;
+
+      /* ---------- 5. Decomposition ---------- */
+      s += `<div class="calc-box">
+        <span class="sol-sub">5. Décomposition du P&amp;L par les grecques</span>
+        Un développement de Taylor de la valeur du portefeuille à l'ordre deux en $F$ et à l'ordre un en $t$ et en $\\sigma$ donne la décomposition demandée. Les grecques employées sont celles de la <em>veille</em>, puisque ce sont elles qui décrivent le portefeuille tel qu'il était au moment où le mouvement s'est produit :
+        <div class="math-formula">\\[\\delta\\Pi \\;\\simeq\\; \\underbrace{\\Delta_{\\text{net}}\\,\\delta F}_{\\text{delta}} \\;+\\; \\underbrace{\\tfrac{1}{2}\\,\\Gamma\\,(\\delta F)^2}_{\\text{gamma}} \\;+\\; \\underbrace{\\Theta\\,\\delta t}_{\\text{thêta}} \\;+\\; \\underbrace{\\Vega\\,\\delta\\sigma}_{\\text{véga}} \\;+\\; \\varepsilon\\]</div>
+        ${attribTable(D)}
+        ${pnlChart(D)}
+        Le résidu $\\varepsilon$ reste ${D.residSmall ? "d'un ordre de grandeur nettement inférieur" : "modeste au regard"} aux quatre contributions principales. Il ne traduit aucune erreur de calcul : il recueille les termes d'ordre supérieur que la décomposition retenue laisse de côté, au premier rang desquels le <em>vanna</em> $\\partial^2 V/\\partial F\\partial\\sigma$, qui capte l'interaction entre le mouvement du sous-jacent et celui de la volatilité implicite, le <em>charm</em> $\\partial^2 V/\\partial F\\partial t$, qui mesure la dérive du delta avec le seul écoulement du temps, ainsi que le <em>speed</em> $\\partial^3 V/\\partial F^3$, sensible lorsque le mouvement quotidien est ample.
+      </div>`;
+
+      /* ---------- 6. Interpretation ---------- */
+      const cmp = D.volReal > D.sig[0];
+      const gagne = D.pnlTotal > 0;
+      s += `<div class="calc-box">
+        <span class="sol-sub">6. Interprétation</span>
+        La volatilité réalisée se déduit des rendements logarithmiques quotidiens du <em>future</em> par $\\hat\\sigma=\\sqrt{\\frac{252}{n}\\sum_{t=1}^{n}\\ln^2\\!\\left(\\frac{F_t}{F_{t-1}}\\right)}$, soit $\\hat\\sigma=${fmtNb(D.volReal*100,1)}\\,\\%$ sur la période, à comparer à la volatilité implicite initiale de $${fmtNb(D.sig[0]*100,1)}\\,\\%$.
+        <p style="margin-top:.8rem;">${cmp
+          ? `Le marché a donc <strong>davantage bougé</strong> que ce que la volatilité implicite anticipait. `
+          : `Le marché a donc bougé <strong>moins</strong> que ce que la volatilité implicite anticipait. `}${r0.G < 0
+          ? (cmp
+            ? `Or la position est vendeuse d'optionalité, donc à gamma négatif : chaque mouvement du sous-jacent lui coûte, et la valeur temps encaissée au titre du thêta n'a pas suffi à financer ces pertes de gamma. C'est bien ce que confirme la décomposition, dont la colonne gamma cumule ${fmtNb(D.sumGamma,0)} € face à ${fmtNb(D.sumTheta,0)} € de thêta.`
+            : `Comme la position est vendeuse d'optionalité, donc à gamma négatif, cette configuration lui est favorable : les pertes de gamma, limitées par la faiblesse des mouvements, n'absorbent pas la valeur temps encaissée. La décomposition le confirme, avec ${fmtNb(D.sumGamma,0)} € de gamma face à ${fmtNb(D.sumTheta,0)} € de thêta.`)
+          : (cmp
+            ? `Comme la position est acheteuse d'optionalité, donc à gamma positif, cette configuration lui est favorable : les gains de gamma engrangés à chaque mouvement dépassent le coût du temps qui passe. La décomposition le confirme, avec ${fmtNb(D.sumGamma,0)} € de gamma face à ${fmtNb(D.sumTheta,0)} € de thêta.`
+            : `Or la position est acheteuse d'optionalité, donc à gamma positif : elle paie du thêta chaque jour sans que les mouvements du sous-jacent ne produisent un gain de gamma suffisant pour le compenser. La décomposition le confirme, avec ${fmtNb(D.sumGamma,0)} € de gamma face à ${fmtNb(D.sumTheta,0)} € de thêta.`)}</p>
+        <p style="margin-top:.8rem;">Le point mort quotidien s'obtient en annulant la somme des contributions de gamma et de thêta, $\\tfrac12\\Gamma(\\delta F)^2+\\Theta\\,\\delta t=0$, ce qui donne
+        <div class="math-formula">\\[|\\delta F^{\\ast}|=\\sqrt{\\frac{-2\\,\\Theta\\,\\delta t}{\\Gamma}}=\\sqrt{\\frac{-2\\times(${fmtNb(r0.Theta,0)})\\times ${fmtNb(D.dt,6)}}{${fmtNb(r0.G,4)}}}\\approx ${fmtNb(bepMove,0)}\\ \\text{points}\\]</div>
+        Autrement dit, tant que le <em>future</em> varie de moins de ${fmtNb(bepMove,0)} points par séance — soit environ ${fmtNb(bepMove/D.F0*100,2)}&nbsp;% —, ${r0.G < 0 ? "la position vendeuse gagne ; au-delà, elle perd" : "la position acheteuse perd ; au-delà, elle gagne"}. Ce seuil correspond très exactement à un mouvement d'une volatilité implicite de ${fmtNb(D.sig[0]*100,1)}&nbsp;% rapportée à une séance, ce qui n'est pas une coïncidence : c'est la traduction, en termes de P&amp;L, de l'égalité entre volatilité implicite et volatilité réalisée.</p>
+      </div>`;
+
+      s += `<div class="persp-box">
+        <span class="sol-sub">Pour aller plus loin</span>
+        Trois prolongements méritent d'être signalés. D'abord, la couverture retenue ici est rééquilibrée une fois par jour ; à la limite d'un rééquilibrage continu, l'erreur de réplication tendrait vers zéro dans le cadre de Black-Scholes, mais les coûts de transaction croîtraient sans borne. La fréquence optimale résulte donc d'un arbitrage entre le risque de gamma laissé ouvert entre deux ajustements et le coût des allers-retours, question traitée notamment par les modèles de couverture sous coûts de transaction de Leland.
+        <p style="margin-top:.8rem;">Ensuite, la stratégie décrite est le mécanisme du <em>gamma scalping</em> : un opérateur acheteur de gamma qui rééquilibre sa couverture achète mécaniquement le sous-jacent quand il baisse et le vend quand il monte, et monétise ainsi la volatilité réalisée. Son résultat est, au premier ordre, proportionnel à l'écart entre variance réalisée et variance implicite, ce qui fait de la position d'options delta-neutre un pur pari sur la volatilité.</p>
+        <p style="margin-top:.8rem;">Enfin, l'exercice suppose une volatilité implicite unique pour les deux jambes. En pratique, le marché des options sur indice présente un <em>skew</em> marqué : les puts hors de la monnaie s'échangent à des volatilités implicites nettement supérieures à celles des calls. La position devrait alors être valorisée strike par strike, et sa sensibilité à une déformation de la surface de volatilité — et non à son seul déplacement parallèle — devrait être suivie séparément.</p>
+      </div>`;
+
+      return s;
+    }
+  },
+
+
+  en: {
+    "htmlLang": "en",
+    "locale": "en-GB",
+    "title": "Derivatives Simulator - Delta hedging and Greek P&L attribution",
+    "k-badge": "DERIVATIVES AND HEDGING STRATEGIES",
+    "k-h1": "Delta hedging and Greek P&amp;L attribution",
+    "k-sub": "© Thomas Hossen – Version of 30 August 2026",
+    "k-days": "Hedging horizon",
+    "k-d2": "2 business days", "k-d3": "3 business days", "k-d4": "4 business days",
+    "k-pos": "Direction of the position",
+    "k-p-auto": "Random", "k-p-short": "Short (negative gamma)", "k-p-long": "Long (positive gamma)",
+    "k-seed": "Reproducibility seed",
+    "k-gen": "Generate",
+    "k-welcome": "Set the parameters and click Generate to create a new dynamic hedging exercise.",
+    "k-seedbadge": "Active seed:",
+    "k-tag-ex": "Statement",
+    "k-cardtitle": "Dynamic management of an option position",
+    "k-tag-sol": "Solution",
+    "k-cardtitle2": "Dynamic management of an option position",
+    "k-work": "Required work",
+    "showSol": "Show solution",
+    "hideSol": "Hide solution",
+    thousands: ",",
+    decimal: ".",
+
+    L: {
+      date: "Date", jour: "Day", future: "Future $F_t$", volImp: "Implied vol.",
+      jRest: "Days to expiry", leg: "Leg", strike: "Strike", sens: "Side",
+      qte: "Quantity", prix: "Price (pts)", valeur: "Value (€)",
+      delta: "Delta (€/pt)", gamma: "Gamma (€/pt²)", theta: "Theta (€/day)",
+      vega: "Vega (€/vol pt)", total: "Total", futures: "Futures held",
+      deltaNet: "Net delta (€/pt)", pnlOpt: "Options P&L (€)", pnlFut: "Futures P&L (€)",
+      pnlTot: "Total P&L (€)", varF: "δF (pts)", varSig: "δσ (vol pts)",
+      cDelta: "Delta (€)", cGamma: "Gamma (€)", cTheta: "Theta (€)", cVega: "Vega (€)",
+      resid: "Residual (€)", call: "Call", put: "Put",
+      achat: "Buy", vente: "Sell", cumul: "Total",
+      chartTitle: "Daily P&L attribution by Greek",
+      chartNote: "Bars: contribution of each Greek. Diamond: actual total P&L."
+    },
+
+    context: function(D) {
+      const verbe = D.sgn > 0 ? "bought" : "sold";
+      const struc = D.isStrangle ? "strangle" : "straddle";
+      const desc = D.isStrangle
+        ? `${fmtNb(D.N,0)} calls struck at ${fmtNb(D.Kc,0)} and ${fmtNb(D.N,0)} puts struck at ${fmtNb(D.Kp,0)}`
+        : `${fmtNb(D.N,0)} calls and ${fmtNb(D.N,0)} puts, both struck at ${fmtNb(D.Kc,0)}`;
+      return `
+        You are a trader on the equity derivatives desk of an investment bank. Your position consists of European options written on the EUROPA&nbsp;50 <em>future</em>, whose contract multiplier is ${fmtNb(D.M,0)} € per index point. At date $t=0$ the desk ${verbe} a ${struc}: ${desc}. All these options expire in ${fmtNb(D.nb0,0)} business days, the same expiry as the underlying <em>future</em>.
+        <p style="margin-top:.8rem;">The <em>future</em> trades at ${fmtNb(D.F0,0)} points at date $t=0$ and the market implied volatility, common to both legs, stands at ${fmtNb(D.sig0*100,1)}%. The continuously compounded risk-free rate is ${fmtNb(D.r*100,1)}%. Your mandate requires the position to be kept <strong>delta neutral</strong>: every evening, at the close, you adjust a hedge made of EUROPA&nbsp;50 <em>futures</em> contracts. The following ${fmtNb(D.nDays,0)} sessions unfold as shown below.</p>
+      `;
+    },
+
+    mkt: function(D) {
+      let h = `<div class="exam-table-wrap"><table class="exam-table"><thead><tr>
+        <th style="width:34%;">Close</th>`;
+      for (let t = 0; t <= D.nDays; t++) h += `<th>$t=${t}$</th>`;
+      h += `</tr></thead><tbody>`;
+      h += `<tr><td class="txt-left"><em>Future</em> price (points)</td>`;
+      for (let t = 0; t <= D.nDays; t++) h += `<td class="amt">${fmtNb(D.F[t],0)}</td>`;
+      h += `</tr>`;
+      h += `<tr><td class="txt-left">Implied volatility (%)</td>`;
+      for (let t = 0; t <= D.nDays; t++) h += `<td class="amt">${fmtNb(D.sig[t]*100,1)}</td>`;
+      h += `</tr>`;
+      h += `<tr><td class="txt-left">Business days to expiry</td>`;
+      for (let t = 0; t <= D.nDays; t++) h += `<td class="amt">${fmtNb(D.nb0-t,0)}</td>`;
+      h += `</tr></tbody></table></div>`;
+      return h;
+    },
+
+    info: function(D) {
+      return `
+        <strong>Calculation conventions.</strong> Options on the <em>future</em> are priced with the Black (1976) model, in which a call is worth $c=\\ee^{-rT}\\left[F\\,N(d_1)-K\\,N(d_2)\\right]$ and a put $p=\\ee^{-rT}\\left[K\\,N(-d_2)-F\\,N(-d_1)\\right]$, with $d_1=\\frac{\\ln(F/K)+\\tfrac12\\sigma^2T}{\\sigma\\sqrt{T}}$ and $d_2=d_1-\\sigma\\sqrt{T}$. The financial year has 252 business days, so one session corresponds to $\\delta t = 1/252$. The number of hedging <em>futures</em> contracts must be an integer and the nearest integer is used. Greeks are expressed in euros, for the whole position: delta in euros per index point, gamma in euros per squared point, theta in euros per session and vega in euros per volatility point. Unless stated otherwise, intermediate results are kept at full precision and only displayed figures are rounded.
+      `;
+    },
+
+    enonce: function(D) {
+      let h = "";
+      h += `<li><strong>Initial valuation.</strong> At date $t=0$, compute for each leg of the strategy the quantities $d_1$, $d_2$, $N(d_1)$ and $N(d_2)$, then the unit price of the option. Deduce the total market value of the position, in euros.</li>`;
+      h += `<li><strong>Initial Greeks.</strong> Compute the delta, gamma, theta and vega of the position at date $t=0$, in the units specified above. Comment in particular on the sign of the gamma and of the theta, and explain why these two signs are necessarily opposite.</li>`;
+      h += `<li><strong>Setting up the hedge.</strong> Determine the number of <em>futures</em> contracts to trade at the close of $t=0$ in order to cancel the delta of the position. State the direction of the trade and assess the residual delta left after rounding to the nearest whole contract.</li>`;
+      h += `<li><strong>Daily monitoring.</strong> For each of the following ${fmtNb(D.nDays,0)} sessions, recompute the value of the strategy and its Greeks, then determine the daily P&amp;L of the hedged portfolio, separating the contribution of the options from that of the <em>futures</em>. State the rebalancing required at each close.</li>`;
+      h += `<li><strong>P&amp;L attribution.</strong> For each session, break down the total P&amp;L into a delta contribution, a gamma contribution, a theta contribution and a vega contribution, following the expansion
+        <div class="math-formula">\\[\\delta\\Pi \\;\\simeq\\; \\Delta_{\\text{net}}\\,\\delta F \\;+\\; \\tfrac{1}{2}\\,\\Gamma\\,(\\delta F)^2 \\;+\\; \\Theta\\,\\delta t \\;+\\; \\Vega\\,\\delta\\sigma \\;+\\; \\varepsilon\\]</div>
+        Quantify the residual $\\varepsilon$ and explain where it comes from.</li>`;
+      h += `<li><strong>Interpretation.</strong> Compute the realised volatility of the <em>future</em> over the period and compare it with the initial implied volatility. Explain the cumulative result of the strategy in the light of the sign of the gamma. Finally, determine the daily move of the <em>future</em> for which the gamma gain would exactly offset the theta loss.</li>`;
+      return h;
+    },
+
+    sol: function(D) {
+      const r0 = D.rows[0];
+      const sensMot = D.sgn > 0 ? "long" : "short";
+      let s = "";
+
+      s += `<div class="calc-box">
+        <span class="sol-sub">1. Valuation of the strategy at $t=0$</span>
+        The remaining maturity is $T=${fmtNb(D.nb0,0)}/252=${fmtNb(D.nb0/252,4)}$ year, the discount factor $\\ee^{-rT}=${fmtNb(r0.detail[0].df,6)}$ and the integrated standard deviation $\\sigma\\sqrt{T}=${fmtNb(D.sig[0]*Math.sqrt(r0.T),4)}$. The Black model applies leg by leg:
+        ${legTable(D, 0)}
+        Each option covers ${fmtNb(D.M,0)} € per index point and the position holds ${fmtNb(D.N,0)} contracts per leg. The market value of the position therefore amounts to <strong>${fmtNb(r0.V,0)} €</strong>${D.sgn < 0 ? `, a negative figure since the position is ${sensMot}: it is a liability towards the counterparty, against which the desk collected the premium` : `, a positive figure corresponding to the premium paid out by the desk`}.
+      </div>`;
+
+      const bepMove = Math.sqrt(Math.abs(2 * r0.Theta * D.dt / r0.G));
+      s += `<div class="calc-box">
+        <span class="sol-sub">2. Greeks of the position at $t=0$</span>
+        The unit Greeks of the Black model are $\\Delta_c=\\ee^{-rT}N(d_1)$ and $\\Delta_p=-\\ee^{-rT}N(-d_1)$ for the delta, $\\Gamma=\\frac{\\ee^{-rT}n(d_1)}{F\\sigma\\sqrt{T}}$ for the gamma, $\\Vega=\\ee^{-rT}F\\,n(d_1)\\sqrt{T}$ for the vega and $\\Theta=r\\,V-\\frac{\\ee^{-rT}F\\,n(d_1)\\,\\sigma}{2\\sqrt{T}}$ for the theta, where $n(\\cdot)$ is the standard normal density. Aggregating them over the position — that is, multiplying by the signed quantity and by the multiplier — gives:
+        ${greekTable(D, 0)}
+        As the position is ${sensMot}, its gamma is <strong>${r0.G < 0 ? "negative" : "positive"}</strong> and its theta <strong>${r0.Theta > 0 ? "positive" : "negative"}</strong>. These two signs are necessarily opposite: this is the very content of the Black-Scholes equation, which for a delta-neutral portfolio imposes $\\Theta+\\tfrac12\\sigma^2F^2\\Gamma=rV$. ${r0.G < 0
+          ? `The desk is therefore paid to wait — it collects ${fmtNb(Math.abs(r0.Theta*D.dt),0)} € of time value per session — but it loses as soon as the underlying moves, in either direction.`
+          : `The desk therefore pays ${fmtNb(Math.abs(r0.Theta*D.dt),0)} € of time value per session, the price of being able to book a gain as soon as the underlying moves, in either direction.`}
+      </div>`;
+
+      const senSpot = r0.h > 0 ? "buys" : (r0.h < 0 ? "sells" : "trades no");
+      s += `<div class="calc-box">
+        <span class="sol-sub">3. Setting up the delta hedge</span>
+        A <em>futures</em> contract has zero value at inception, but its daily margin call is worth ${fmtNb(D.M,0)} € per point of variation: its delta is therefore exactly ${fmtNb(D.M,0)} € per point, per contract held. Cancelling the delta of the position amounts to solving $\\Delta_{\\text{options}}+h\\times ${fmtNb(D.M,0)}=0$, that is
+        <div class="math-formula">\\[h^{\\ast}=-\\frac{\\Delta_{\\text{options}}}{${fmtNb(D.M,0)}}=-\\frac{${fmtNb(r0.D,2)}}{${fmtNb(D.M,0)}}=${fmtNb(-r0.D/D.M,3)}\\ \\text{contracts}\\]</div>
+        Since the number of contracts must be an integer, we take $h_0=${fmtNb(r0.h,0)}$: the desk ${senSpot}${r0.h !== 0 ? ` ${fmtNb(Math.abs(r0.h),0)} <em>futures</em> contracts` : " contract"}. The residual delta after hedging is $\\Delta_{\\text{net}}=${fmtNb(r0.D,2)}+(${fmtNb(r0.h,0)})\\times${fmtNb(D.M,0)}=${fmtNb(r0.Dnet,2)}$ € per point, the equivalent of a ${fmtNb(Math.abs(r0.Dnet/D.M),3)} contract exposure: this imperfection is the unavoidable price of contract indivisibility.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span class="sol-sub">4. Daily monitoring of the hedged position</span>
+        The calculations of questions 1 to 3 are repeated at each close, with the new <em>future</em> price, the new implied volatility and a maturity shortened by one session:
+        ${pathTable(D)}
+        The P&amp;L of a session then reads as the sum of the change in value of the option portfolio and the result of the hedge, the latter being $h_{t-1}\\times ${fmtNb(D.M,0)}\\times(F_t-F_{t-1})$ since the hedge set up the day before stays in place all day:
+        ${pnlTable(D)}
+        Over the whole period, the hedged portfolio generates a cumulative result of <strong>${fmtNb(D.pnlTotal,0)} €</strong>.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span class="sol-sub">5. P&amp;L attribution by Greek</span>
+        A Taylor expansion of the portfolio value to second order in $F$ and first order in $t$ and $\\sigma$ gives the required attribution. The Greeks used are <em>yesterday's</em>, since they describe the portfolio as it stood when the move occurred:
+        <div class="math-formula">\\[\\delta\\Pi \\;\\simeq\\; \\underbrace{\\Delta_{\\text{net}}\\,\\delta F}_{\\text{delta}} \\;+\\; \\underbrace{\\tfrac{1}{2}\\,\\Gamma\\,(\\delta F)^2}_{\\text{gamma}} \\;+\\; \\underbrace{\\Theta\\,\\delta t}_{\\text{theta}} \\;+\\; \\underbrace{\\Vega\\,\\delta\\sigma}_{\\text{vega}} \\;+\\; \\varepsilon\\]</div>
+        ${attribTable(D)}
+        ${pnlChart(D)}
+        The residual $\\varepsilon$ stays ${D.residSmall ? "an order of magnitude below" : "modest relative to"} the four main contributions. It reflects no computational error: it collects the higher-order terms the chosen attribution leaves aside, chiefly the <em>vanna</em> $\\partial^2 V/\\partial F\\partial\\sigma$, which captures the interaction between the move of the underlying and that of implied volatility, the <em>charm</em> $\\partial^2 V/\\partial F\\partial t$, which measures the drift of the delta with the mere passage of time, and the <em>speed</em> $\\partial^3 V/\\partial F^3$, which matters when the daily move is large.
+      </div>`;
+
+      const cmp = D.volReal > D.sig[0];
+      s += `<div class="calc-box">
+        <span class="sol-sub">6. Interpretation</span>
+        Realised volatility follows from the daily log returns of the <em>future</em> through $\\hat\\sigma=\\sqrt{\\frac{252}{n}\\sum_{t=1}^{n}\\ln^2\\!\\left(\\frac{F_t}{F_{t-1}}\\right)}$, that is $\\hat\\sigma=${fmtNb(D.volReal*100,1)}\\,\\%$ over the period, to be compared with the initial implied volatility of $${fmtNb(D.sig[0]*100,1)}\\,\\%$.
+        <p style="margin-top:.8rem;">${cmp
+          ? `The market therefore moved <strong>more</strong> than implied volatility was anticipating. `
+          : `The market therefore moved <strong>less</strong> than implied volatility was anticipating. `}${r0.G < 0
+          ? (cmp
+            ? `But the position is short optionality, hence short gamma: every move of the underlying costs it money, and the time value collected through theta was not enough to fund those gamma losses. This is exactly what the attribution shows, its gamma column totalling ${fmtNb(D.sumGamma,0)} € against ${fmtNb(D.sumTheta,0)} € of theta.`
+            : `Since the position is short optionality, hence short gamma, this configuration favours it: gamma losses, kept small by the muted moves, do not absorb the time value collected. The attribution confirms this, with ${fmtNb(D.sumGamma,0)} € of gamma against ${fmtNb(D.sumTheta,0)} € of theta.`)
+          : (cmp
+            ? `Since the position is long optionality, hence long gamma, this configuration favours it: the gamma gains banked on each move exceed the cost of the passing time. The attribution confirms this, with ${fmtNb(D.sumGamma,0)} € of gamma against ${fmtNb(D.sumTheta,0)} € of theta.`
+            : `But the position is long optionality, hence long gamma: it pays theta every day without the moves of the underlying producing enough gamma gain to offset it. The attribution confirms this, with ${fmtNb(D.sumGamma,0)} € of gamma against ${fmtNb(D.sumTheta,0)} € of theta.`)}</p>
+        <p style="margin-top:.8rem;">The daily break-even follows from setting the sum of the gamma and theta contributions to zero, $\\tfrac12\\Gamma(\\delta F)^2+\\Theta\\,\\delta t=0$, which gives
+        <div class="math-formula">\\[|\\delta F^{\\ast}|=\\sqrt{\\frac{-2\\,\\Theta\\,\\delta t}{\\Gamma}}=\\sqrt{\\frac{-2\\times(${fmtNb(r0.Theta,0)})\\times ${fmtNb(D.dt,6)}}{${fmtNb(r0.G,4)}}}\\approx ${fmtNb(bepMove,0)}\\ \\text{points}\\]</div>
+        In other words, as long as the <em>future</em> moves by less than ${fmtNb(bepMove,0)} points per session — roughly ${fmtNb(bepMove/D.F0*100,2)}% —, ${r0.G < 0 ? "the short position gains; beyond that, it loses" : "the long position loses; beyond that, it gains"}. This threshold corresponds precisely to a move of one implied volatility of ${fmtNb(D.sig[0]*100,1)}% scaled to a single session, which is no coincidence: it is the P&amp;L translation of the equality between implied and realised volatility.</p>
+      </div>`;
+
+      s += `<div class="persp-box">
+        <span class="sol-sub">Going further</span>
+        Three extensions are worth flagging. First, the hedge used here is rebalanced once a day; in the limit of continuous rebalancing, the replication error would tend to zero within the Black-Scholes framework, but transaction costs would grow without bound. The optimal frequency therefore results from a trade-off between the gamma risk left open between two adjustments and the cost of the round trips, a question addressed in particular by Leland's hedging models under transaction costs.
+        <p style="margin-top:.8rem;">Second, the strategy described is the mechanism of <em>gamma scalping</em>: a trader long gamma who rebalances the hedge mechanically buys the underlying when it falls and sells it when it rises, thereby monetising realised volatility. To first order the result is proportional to the gap between realised and implied variance, which makes a delta-neutral option position a pure bet on volatility.</p>
+        <p style="margin-top:.8rem;">Third, the exercise assumes a single implied volatility for both legs. In practice the index option market displays a marked <em>skew</em>: out-of-the-money puts trade at implied volatilities well above those of calls. The position would then have to be valued strike by strike, and its sensitivity to a deformation of the volatility surface — not merely to a parallel shift — would have to be monitored separately.</p>
+      </div>`;
+
+      return s;
+    }
+  }
+
+};
+
+/* ============================================================
+   GESTION DE LA LANGUE  /  LANGUAGE HANDLING
+   ============================================================ */
+let LANG = 'fr';
+
+function detectLang() {
+    try {
+        const q = new URLSearchParams(window.location.search).get('lang');
+        if (q && I18N[q.toLowerCase()]) return q.toLowerCase();
+    } catch (e) {}
+    const h = (window.location.hash || '').replace('#', '').toLowerCase();
+    if (I18N[h]) return h;
+    return 'fr';
+}
+
+function applyLang() {
+    const D = I18N[LANG];
+    document.documentElement.lang = D.htmlLang;
+    document.title = D.title;
+
+    document.querySelectorAll('[data-k]').forEach(function (el) {
+        const key = el.getAttribute('data-k');
+        if (D[key] !== undefined) el.innerHTML = D[key];
+    });
+
+    const btn = document.getElementById('toggle-btn');
+    if (btn) btn.innerText = document.getElementById('sol-card').classList.contains('visible') ? D.hideSol : D.showSol;
+
+    document.getElementById('flag-fr').classList.toggle('active', LANG === 'fr');
+    document.getElementById('flag-en').classList.toggle('active', LANG === 'en');
+}
+
+function setLang(lang) {
+    if (!I18N[lang] || lang === LANG) return;
+    LANG = lang;
+    try {
+        const u = new URL(window.location.href);
+        u.searchParams.set('lang', lang);
+        history.replaceState(null, '', u.toString());
+    } catch (e) {}
+    applyLang();
+    if (document.getElementById('ex-area').style.display !== 'none') {
+        const solWasVisible = document.getElementById('sol-card').classList.contains('visible');
+        generateExercise(false);
+        if (solWasVisible) toggleSol();
+    }
+}
+
+/* ============================================================
+   PRNG (Mulberry32) ET FORMATAGE
+   ============================================================ */
+let currentSeed = 0;
+function seedPRNG(seed) {
+    return function () {
+        let t = seed += 0x6D2B79F5;
+        t = Math.imul(t ^ t >>> 15, t | 1);
+        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+}
+let random = Math.random;
+function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
+
+/* fmtNb : formatage LISIBLE, pour la prose et les tableaux (jamais de LaTeX) */
+function fmtNb(num, dec) {
+    if (!isFinite(num)) return "—";
+    return num.toLocaleString(I18N[LANG].locale, { minimumFractionDigits: dec, maximumFractionDigits: dec });
+}
+/* texN : formatage LaTeX, a n'employer QU'A L'INTERIEUR d'un mode mathematique */
+function texN(num, dec) {
+    const sign = num < 0 ? "-" : "";
+    const parts = Math.abs(num).toFixed(dec).split('.');
+    const intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, I18N[LANG].thousands);
+    return dec > 0 ? sign + intPart + I18N[LANG].decimal + parts[1] : sign + intPart;
+}
+/* cellule de tableau coloree selon le signe */
+function sgnCell(v, dec) {
+    const cls = v > 0 ? 'pos' : (v < 0 ? 'neg' : '');
+    return `<td class="amt ${cls}">${fmtNb(v, dec)}</td>`;
+}
+
+/* ============================================================
+   MODELE DE BLACK (1976) SUR CONTRAT FUTURE
+   ============================================================ */
+function normPdf(x) { return Math.exp(-x * x / 2) / Math.sqrt(2 * Math.PI); }
+
+/* Abramowitz & Stegun 26.2.17 — precision ~7.5e-8 */
+function normCdf(x) {
+    const b1 = 0.319381530, b2 = -0.356563782, b3 = 1.781477937,
+          b4 = -1.821255978, b5 = 1.330274429, pp = 0.2316419, c = 0.39894228;
+    if (x >= 0) {
+        const t = 1 / (1 + pp * x);
+        return 1 - c * Math.exp(-x * x / 2) * t * (t * (t * (t * (t * b5 + b4) + b3) + b2) + b1);
+    }
+    const t2 = 1 / (1 - pp * x);
+    return c * Math.exp(-x * x / 2) * t2 * (t2 * (t2 * (t2 * (t2 * b5 + b4) + b3) + b2) + b1);
+}
+
+function black76(F, K, T, sigma, r, type) {
+    const df = Math.exp(-r * T);
+    const vs = sigma * Math.sqrt(T);
+    const d1 = (Math.log(F / K) + 0.5 * sigma * sigma * T) / vs;
+    const d2 = d1 - vs;
+    let price, delta;
+    if (type === 'C') {
+        price = df * (F * normCdf(d1) - K * normCdf(d2));
+        delta = df * normCdf(d1);
+    } else {
+        price = df * (K * normCdf(-d2) - F * normCdf(-d1));
+        delta = -df * normCdf(-d1);
+    }
+    return {
+        price: price, delta: delta,
+        gamma: df * normPdf(d1) / (F * vs),
+        vega: df * F * normPdf(d1) * Math.sqrt(T),
+        theta: r * price - df * F * normPdf(d1) * sigma / (2 * Math.sqrt(T)),
+        d1: d1, d2: d2, df: df, Nd1: normCdf(d1), Nd2: normCdf(d2)
+    };
+}
+
+function bookGreeks(legs, F, T, sigma, r, M) {
+    let V = 0, Dl = 0, G = 0, Ve = 0, Th = 0; const detail = [];
+    for (let i = 0; i < legs.length; i++) {
+        const g = black76(F, legs[i].K, T, sigma, r, legs[i].type);
+        const q = legs[i].qty * M;
+        V += q * g.price; Dl += q * g.delta; G += q * g.gamma;
+        Ve += q * g.vega; Th += q * g.theta;
+        detail.push(g);
+    }
+    return { V: V, D: Dl, G: G, Vega: Ve, Theta: Th, detail: detail };
+}
+
+/* ============================================================
+   CONSTRUCTION DU SCENARIO
+   ============================================================ */
+function computeModel(nDays, posMode) {
+    const M = 10;
+    const F0 = randInt(92, 112) * 50;
+    const r = randInt(20, 40) / 1000;
+    const nb0 = randInt(30, 60);
+    const sig0 = randInt(120, 280) / 1000;
+    const N = randInt(2, 8) * 25;
+
+    let sgn;
+    if (posMode === 'short') sgn = -1;
+    else if (posMode === 'long') sgn = 1;
+    else sgn = random() < 0.5 ? -1 : 1;
+
+    const isStrangle = random() < 0.6;
+    let Kp, Kc;
+    if (isStrangle) {
+        let ap = randInt(1, 4), ac = randInt(1, 4);
+        if (ap === ac) ac = (ac === 4) ? ac - 1 : ac + 1;
+        Kp = F0 - 50 * ap;
+        Kc = F0 + 50 * ac;
+    } else {
+        const off = (random() < 0.5 ? -1 : 1) * 50 * randInt(1, 2);
+        Kp = F0 + off; Kc = F0 + off;
+    }
+
+    const legs = [{ type: 'C', K: Kc, qty: sgn * N }, { type: 'P', K: Kp, qty: sgn * N }];
+
+    const calm = random() < 0.5;
+    const sigReal = calm ? sig0 * (0.50 + random() * 0.30) : sig0 * (1.20 + random() * 0.50);
+    const dailyPt = F0 * sigReal / Math.sqrt(252);
+
+    const F = [F0], sig = [sig0];
+    for (let t = 1; t <= nDays; t++) {
+        const z = (random() < 0.5 ? -1 : 1) * (randInt(4, 17) / 10);
+        let nf = F[t - 1] + Math.round(dailyPt * z / 5) * 5;
+        if (nf === F[t - 1]) nf += 5;
+        F.push(nf);
+        let ns = sig[t - 1] + randInt(-4, 4) / 1000;
+        ns = Math.min(0.45, Math.max(0.08, Math.round(ns * 1000) / 1000));
+        sig.push(ns);
+    }
+
+    const dt = 1 / 252;
+    const rows = [];
+    for (let t = 0; t <= nDays; t++) {
+        const T = (nb0 - t) / 252;
+        const g = bookGreeks(legs, F[t], T, sig[t], r, M);
+        const h = -Math.round(g.D / M);
+        rows.push({ t: t, F: F[t], sig: sig[t], T: T, nb: nb0 - t,
+                    V: g.V, D: g.D, G: g.G, Vega: g.Vega, Theta: g.Theta,
+                    detail: g.detail, h: h, Dnet: g.D + h * M });
+    }
+
+    const pnl = [];
+    let sumGamma = 0, sumTheta = 0, sumVega = 0, sumDelta = 0, sumResid = 0, pnlTotal = 0;
+    for (let t = 1; t <= nDays; t++) {
+        const a = rows[t - 1], b = rows[t];
+        const dF = b.F - a.F, dS = b.sig - a.sig;
+        const pnlOpt = b.V - a.V;
+        const pnlFut = a.h * M * dF;
+        const total = pnlOpt + pnlFut;
+        const cDelta = a.Dnet * dF;
+        const cGamma = 0.5 * a.G * dF * dF;
+        const cTheta = a.Theta * dt;
+        const cVega = a.Vega * dS;
+        const resid = total - (cDelta + cGamma + cTheta + cVega);
+        pnl.push({ t: t, dF: dF, dS: dS, pnlOpt: pnlOpt, pnlFut: pnlFut, total: total,
+                   cDelta: cDelta, cGamma: cGamma, cTheta: cTheta, cVega: cVega, resid: resid });
+        sumDelta += cDelta; sumGamma += cGamma; sumTheta += cTheta;
+        sumVega += cVega; sumResid += resid; pnlTotal += total;
+    }
+
+    let s2 = 0;
+    for (let t = 1; t <= nDays; t++) { const u = Math.log(F[t] / F[t - 1]); s2 += u * u; }
+    const volReal = Math.sqrt(252 * s2 / nDays);
+
+    const maxContrib = Math.max(Math.abs(sumDelta), Math.abs(sumGamma), Math.abs(sumTheta), Math.abs(sumVega), 1);
+
+    return { M: M, F0: F0, r: r, nb0: nb0, sig0: sig0, N: N, sgn: sgn, isStrangle: isStrangle,
+             Kp: Kp, Kc: Kc, legs: legs, F: F, sig: sig, rows: rows, pnl: pnl,
+             volReal: volReal, nDays: nDays, dt: dt, calm: calm,
+             sumDelta: sumDelta, sumGamma: sumGamma, sumTheta: sumTheta, sumVega: sumVega,
+             sumResid: sumResid, pnlTotal: pnlTotal,
+             residSmall: Math.abs(sumResid) < 0.15 * maxContrib };
+}
+
+/* ============================================================
+   TABLEAUX DU CORRIGE
+   ============================================================ */
+function legTable(D, t) {
+    const L = I18N[LANG].L, row = D.rows[t];
+    const noms = [L.call, L.put];
+    let h = `<div class="exam-table-wrap"><table class="exam-table"><thead><tr>
+      <th>${L.leg}</th><th>${L.strike}</th><th>$d_1$</th><th>$d_2$</th>
+      <th>$N(d_1)$</th><th>$N(d_2)$</th><th>${L.prix}</th><th>${L.qte}</th><th>${L.valeur}</th></tr></thead><tbody>`;
+    for (let i = 0; i < D.legs.length; i++) {
+        const g = row.detail[i], q = D.legs[i].qty;
+        h += `<tr><td class="txt-left">${noms[i]}</td><td class="amt">${fmtNb(D.legs[i].K, 0)}</td>
+          <td class="amt">${fmtNb(g.d1, 4)}</td><td class="amt">${fmtNb(g.d2, 4)}</td>
+          <td class="amt">${fmtNb(g.Nd1, 4)}</td><td class="amt">${fmtNb(g.Nd2, 4)}</td>
+          <td class="amt">${fmtNb(g.price, 2)}</td><td class="amt">${fmtNb(q, 0)}</td>
+          ${sgnCell(q * D.M * g.price, 0)}</tr>`;
+    }
+    h += `<tr class="row-tot"><td class="txt-left" colspan="8">${L.total}</td>${sgnCell(row.V, 0)}</tr>`;
+    h += `</tbody></table></div>`;
+    return h;
+}
+
+function greekTable(D, t) {
+    const L = I18N[LANG].L, row = D.rows[t];
+    const noms = [L.call, L.put];
+    let h = `<div class="exam-table-wrap"><table class="exam-table"><thead><tr>
+      <th>${L.leg}</th><th>${L.delta}</th><th>${L.gamma}</th><th>${L.theta}</th><th>${L.vega}</th></tr></thead><tbody>`;
+    for (let i = 0; i < D.legs.length; i++) {
+        const g = row.detail[i], q = D.legs[i].qty * D.M;
+        h += `<tr><td class="txt-left">${noms[i]}</td>
+          ${sgnCell(q * g.delta, 2)}${sgnCell(q * g.gamma, 4)}
+          ${sgnCell(q * g.theta / 252, 0)}${sgnCell(q * g.vega / 100, 0)}</tr>`;
+    }
+    h += `<tr class="row-tot"><td class="txt-left">${L.total}</td>
+      ${sgnCell(row.D, 2)}${sgnCell(row.G, 4)}${sgnCell(row.Theta / 252, 0)}${sgnCell(row.Vega / 100, 0)}</tr>`;
+    h += `</tbody></table></div>`;
+    return h;
+}
+
+function pathTable(D) {
+    const L = I18N[LANG].L;
+    let h = `<div class="exam-table-wrap"><table class="exam-table"><thead><tr><th style="width:26%;">${L.date}</th>`;
+    for (let t = 0; t <= D.nDays; t++) h += `<th>$t=${t}$</th>`;
+    h += `</tr></thead><tbody>`;
+    const lignes = [
+        [L.future, function (r) { return fmtNb(r.F, 0); }],
+        [L.volImp + " (%)", function (r) { return fmtNb(r.sig * 100, 1); }],
+        [L.jRest, function (r) { return fmtNb(r.nb, 0); }],
+        [L.valeur, function (r) { return fmtNb(r.V, 0); }],
+        [L.delta, function (r) { return fmtNb(r.D, 2); }],
+        [L.gamma, function (r) { return fmtNb(r.G, 4); }],
+        [L.theta, function (r) { return fmtNb(r.Theta / 252, 0); }],
+        [L.vega, function (r) { return fmtNb(r.Vega / 100, 0); }],
+        [L.futures, function (r) { return fmtNb(r.h, 0); }],
+        [L.deltaNet, function (r) { return fmtNb(r.Dnet, 2); }]
+    ];
+    for (let i = 0; i < lignes.length; i++) {
+        h += `<tr><td class="txt-left">${lignes[i][0]}</td>`;
+        for (let t = 0; t <= D.nDays; t++) h += `<td class="amt">${lignes[i][1](D.rows[t])}</td>`;
+        h += `</tr>`;
+    }
+    h += `</tbody></table></div>`;
+    return h;
+}
+
+function pnlTable(D) {
+    const L = I18N[LANG].L;
+    let h = `<div class="exam-table-wrap"><table class="exam-table"><thead><tr><th style="width:26%;">${L.jour}</th>`;
+    for (let t = 1; t <= D.nDays; t++) h += `<th>$${t - 1}\\to${t}$</th>`;
+    h += `<th>${L.cumul}</th></tr></thead><tbody>`;
+    const defs = [
+        [L.varF, function (p) { return fmtNb(p.dF, 0); }, null],
+        [L.varSig, function (p) { return fmtNb(p.dS * 100, 1); }, null],
+        [L.pnlOpt, null, 'pnlOpt'],
+        [L.pnlFut, null, 'pnlFut'],
+        [L.pnlTot, null, 'total']
+    ];
+    for (let i = 0; i < defs.length; i++) {
+        const isTot = defs[i][0] === L.pnlTot;
+        h += `<tr${isTot ? ' class="row-tot"' : ''}><td class="txt-left">${defs[i][0]}</td>`;
+        let cum = 0;
+        for (let t = 0; t < D.nDays; t++) {
+            const p = D.pnl[t];
+            if (defs[i][2]) { cum += p[defs[i][2]]; h += sgnCell(p[defs[i][2]], 0); }
+            else h += `<td class="amt">${defs[i][1](p)}</td>`;
+        }
+        h += defs[i][2] ? sgnCell(cum, 0) : `<td class="amt">—</td>`;
+        h += `</tr>`;
+    }
+    h += `</tbody></table></div>`;
+    return h;
+}
+
+function attribTable(D) {
+    const L = I18N[LANG].L;
+    let h = `<div class="exam-table-wrap"><table class="exam-table"><thead><tr><th style="width:26%;">${L.jour}</th>`;
+    for (let t = 1; t <= D.nDays; t++) h += `<th>$${t - 1}\\to${t}$</th>`;
+    h += `<th>${L.cumul}</th></tr></thead><tbody>`;
+    const defs = [[L.cDelta, 'cDelta', D.sumDelta], [L.cGamma, 'cGamma', D.sumGamma],
+                  [L.cTheta, 'cTheta', D.sumTheta], [L.cVega, 'cVega', D.sumVega],
+                  [L.resid, 'resid', D.sumResid], [L.pnlTot, 'total', D.pnlTotal]];
+    for (let i = 0; i < defs.length; i++) {
+        const isTot = defs[i][1] === 'total';
+        h += `<tr${isTot ? ' class="row-tot"' : ''}><td class="txt-left">${defs[i][0]}</td>`;
+        for (let t = 0; t < D.nDays; t++) h += sgnCell(D.pnl[t][defs[i][1]], 0);
+        h += sgnCell(defs[i][2], 0);
+        h += `</tr>`;
+    }
+    h += `</tbody></table></div>`;
+    return h;
+}
+
+/* ============================================================
+   GRAPHIQUE SVG : contributions quotidiennes
+   ============================================================ */
+function pnlChart(D) {
+    const L = I18N[LANG].L;
+    const W = 760, H = 320, padL = 62, padR = 16, padT = 34, padB = 54;
+    const iw = W - padL - padR, ih = H - padT - padB;
+
+    const series = [
+        { k: 'cDelta', lbl: L.cDelta.replace(/ \(€\)/, ''), col: '#7bafd4' },
+        { k: 'cGamma', lbl: L.cGamma.replace(/ \(€\)/, ''), col: '#b94040' },
+        { k: 'cTheta', lbl: L.cTheta.replace(/ \(€\)/, ''), col: '#2d6b4a' },
+        { k: 'cVega',  lbl: L.cVega.replace(/ \(€\)/, ''),  col: '#c9952a' },
+        { k: 'resid',  lbl: L.resid.replace(/ \(€\)/, ''),  col: '#9a9a9a' }
+    ];
+
+    let mx = 1;
+    for (let t = 0; t < D.nDays; t++) {
+        for (let s = 0; s < series.length; s++) mx = Math.max(mx, Math.abs(D.pnl[t][series[s].k]));
+        mx = Math.max(mx, Math.abs(D.pnl[t].total));
+    }
+    /* echelle arrondie a un pas lisible */
+    const raw = mx * 1.15;
+    const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const top = Math.ceil(raw / mag) * mag;
+
+    const y0 = padT + ih / 2;
+    const yOf = function (v) { return y0 - (v / top) * (ih / 2); };
+
+    let svg = `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px;font-family:'Source Serif 4',serif" xmlns="http://www.w3.org/2000/svg">`;
+    svg += `<rect x="0" y="0" width="${W}" height="${H}" fill="#ffffff"/>`;
+    svg += `<text x="${W / 2}" y="18" text-anchor="middle" font-size="13" font-weight="600" fill="#0d1b2a">${L.chartTitle}</text>`;
+
+    /* grille horizontale */
+    for (let g = -2; g <= 2; g++) {
+        const v = top * g / 2, y = yOf(v);
+        svg += `<line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="${g === 0 ? '#0d1b2a' : '#e4e0d7'}" stroke-width="${g === 0 ? 1.4 : 1}"/>`;
+        svg += `<text x="${padL - 8}" y="${y + 4}" text-anchor="end" font-size="10" fill="#5a5a5a" font-family="'JetBrains Mono',monospace">${fmtNb(v, 0)}</text>`;
+    }
+
+    const bw = iw / D.nDays;
+    const gw = bw * 0.72, barW = gw / series.length;
+
+    for (let t = 0; t < D.nDays; t++) {
+        const cx = padL + bw * t + bw / 2;
+        const x0 = cx - gw / 2;
+        for (let s = 0; s < series.length; s++) {
+            const v = D.pnl[t][series[s].k];
+            const y = yOf(Math.max(v, 0)), hh = Math.abs(yOf(v) - y0);
+            svg += `<rect x="${(x0 + s * barW + 1).toFixed(1)}" y="${y.toFixed(1)}" width="${(barW - 2).toFixed(1)}" height="${Math.max(hh, 0.6).toFixed(1)}" fill="${series[s].col}" opacity="0.88"/>`;
+        }
+        /* losange : P&L total constate */
+        const yt = yOf(D.pnl[t].total);
+        svg += `<polygon points="${cx},${(yt - 6).toFixed(1)} ${(cx + 6).toFixed(1)},${yt.toFixed(1)} ${cx},${(yt + 6).toFixed(1)} ${(cx - 6).toFixed(1)},${yt.toFixed(1)}" fill="#0d1b2a"/>`;
+        svg += `<text x="${cx}" y="${H - padB + 18}" text-anchor="middle" font-size="11" fill="#1e1e1e">${L.jour} ${t + 1}</text>`;
+    }
+
+    /* legende */
+    const lgY = H - 16;
+    let lx = padL;
+    for (let s = 0; s < series.length; s++) {
+        svg += `<rect x="${lx}" y="${lgY - 8}" width="10" height="10" fill="${series[s].col}"/>`;
+        svg += `<text x="${lx + 14}" y="${lgY + 1}" font-size="10.5" fill="#1e1e1e">${series[s].lbl}</text>`;
+        lx += 26 + series[s].lbl.length * 6.1;
+    }
+    svg += `<polygon points="${lx + 5},${lgY - 8} ${lx + 11},${lgY - 3} ${lx + 5},${lgY + 2} ${lx - 1},${lgY - 3}" fill="#0d1b2a"/>`;
+    svg += `<text x="${lx + 16}" y="${lgY + 1}" font-size="10.5" fill="#1e1e1e">${L.pnlTot.replace(/ \(€\)/, '')}</text>`;
+    svg += `</svg>`;
+
+    return `<div class="chart-wrap">${svg}<div class="chart-cap">${L.chartNote}</div></div>`;
+}
+
+/* ============================================================
+   GENERATION
+   ============================================================ */
+function generateExercise(forceNew) {
+    if (forceNew) document.getElementById('seed-input').value = "";
+    const seedVal = document.getElementById('seed-input').value;
+    currentSeed = seedVal ? parseInt(seedVal) : Math.floor(Math.random() * 99999999);
+    document.getElementById('seed-disp').innerText = currentSeed;
+    document.getElementById('seed-input').value = currentSeed;
+    random = seedPRNG(currentSeed);
+
+    const nDays = parseInt(document.getElementById('days-select').value);
+    const posMode = document.getElementById('pos-select').value;
+
+    const DIC = I18N[LANG];
+    const D = computeModel(nDays, posMode);
+
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('ex-area').style.display = 'block';
+    document.getElementById('sol-card').classList.remove('visible');
+    document.getElementById('toggle-btn').innerText = DIC.showSol;
+    document.getElementById('toggle-btn').classList.remove('shown');
+
+    document.getElementById('context-text').innerHTML = DIC.context(D);
+    document.getElementById('mkt-table').innerHTML = DIC.mkt(D);
+    document.getElementById('additional-info').innerHTML = DIC.info(D);
+    document.getElementById('events-list').innerHTML = DIC.enonce(D);
+    document.getElementById('sol-content').innerHTML = DIC.sol(D);
+
+    if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
+        MathJax.typesetPromise().catch(function (err) { console.error('MathJax :', err); });
+    }
+}
+
+function toggleSol() {
+    const solCard = document.getElementById('sol-card');
+    const btn = document.getElementById('toggle-btn');
+    if (solCard.classList.contains('visible')) {
+        solCard.classList.remove('visible');
+        btn.innerText = I18N[LANG].showSol;
+        btn.classList.remove('shown');
+    } else {
+        solCard.classList.add('visible');
+        btn.innerText = I18N[LANG].hideSol;
+        btn.classList.add('shown');
+        solCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
+/* Initialisation */
+LANG = detectLang();
+applyLang();
+
+</script>
+<!-- KIT:JS:START v1 -->
+<div id="pdf-ov" onclick="closePdfModal()"></div>
+<div id="pdf-modal">
+  <div class="mh">
+    <h3 data-kit="modalTitle">Exporter en PDF</h3>
+    <button type="button" class="mclose" onclick="closePdfModal()">&#10005;</button>
+  </div>
+  <div class="mb2">
+    <div class="seed-note"><span data-kit="seedPre">Seed&nbsp;:</span> <strong id="modal-seed">&mdash;</strong> <span data-kit="seedPost">&mdash; notez cette valeur pour reproduire exactement cet exercice.</span></div>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-header" checked>
+      <span class="opt-txt"><span class="opt-lbl" data-kit="optHeader">Inclure l'en-t&ecirc;te de page</span>
+           <span class="opt-desc" data-kit="optHeaderD">Titre, badge de mati&egrave;re et intitul&eacute; de l'exercice</span></span>
+    </label>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-sol">
+      <span class="opt-txt"><span class="opt-lbl" data-kit="optSol">Inclure le corrig&eacute; complet</span>
+           <span class="opt-desc" data-kit="optSolD">L'ensemble des d&eacute;veloppements et commentaires du corrig&eacute;</span></span>
+    </label>
+    <div class="mactions">
+      <button type="button" class="btn-print" onclick="doPrint()"><span data-kit="print">&#128424;&nbsp;Imprimer / Sauvegarder PDF</span></button>
+      <button type="button" class="btn-cancel" onclick="closePdfModal()"><span data-kit="cancel">Annuler</span></button>
+    </div>
+  </div>
+</div>
+
+<script id="kit-docx">
+/* =============================================================================
+   EXPORT WORD NATIF (.docx)
+   Trois briques, sans aucune dépendance externe :
+     1. mml2omml  — MathML -> OMML, le format d'équation natif de Word
+     2. zip       — écriture d'une archive ZIP (entrées « stored » + CRC32)
+     3. html2wml  — HTML de la page -> WordprocessingML
+   ============================================================================= */
+(function (root) {
+'use strict';
+
+/* --------------------------------------------------------------- utilitaires */
+function esc(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                  .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function kids(n) {
+  var out = [], c = n.firstChild;
+  while (c) { if (c.nodeType === 1) out.push(c); c = c.nextSibling; }
+  return out;
+}
+function txt(n) { return (n.textContent || '').replace(/\u200b/g, '').trim(); }
+
+/* ============================================================================
+   1. MathML -> OMML
+   ========================================================================== */
+var OPEN = '([{\u27e8\u2308\u230a|\u2016';
+var CLOSE = ')]}\u27e9\u2309\u230b|\u2016';
+var BIGOPS = '\u2211\u220f\u222b\u222c\u222d\u222e\u22c3\u22c2\u2210';
+var ACCENTS = {
+  '\u005e': '\u0302', '\u02c6': '\u0302', '^': '\u0302',
+  '\u00af': '\u0304', '\u2015': '\u0304', '\u2212': '\u0304', '_': '\u0304',
+  '~': '\u0303', '\u02dc': '\u0303', '\u02d9': '\u0307',
+  '\u2192': '\u20d7', '\u21c0': '\u20d1', '\u02c7': '\u030c', '\u02d8': '\u0306'
+};
+
+function run(text, style) {
+  if (text === '') return '';
+  var rPr = '<w:rPr><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/></w:rPr>';
+  var mPr = style ? '<m:rPr><m:sty m:val="' + style + '"/></m:rPr>' : '';
+  return '<m:r>' + mPr + rPr + '<m:t xml:space="preserve">' + esc(text) + '</m:t></m:r>';
+}
+
+/* Un grand opérateur (somme, intégrale…) absorbe la suite de la ligne comme
+   opérande : sans cela Word affiche un cadre vide à la place de l'argument. */
+function naryHere(n) {
+  if (!n || n.nodeType !== 1) return null;
+  var t = n.nodeName.toLowerCase().replace(/^.*:/, ''), k = kids(n);
+  if (t === 'munderover' || t === 'msubsup') return { base: k[0], sub: k[1], sup: k[2] };
+  if (t === 'munder' || t === 'msub') return { base: k[0], sub: k[1], sup: null };
+  if (t === 'mover' || t === 'msup') return { base: k[0], sub: null, sup: k[1] };
+  if (t === 'mo') return { base: n, sub: null, sup: null };
+  return null;
+}
+function isBigOp(n) {
+  if (!n || n.nodeType !== 1) return false;
+  var c = txt(n);
+  return n.nodeName.toLowerCase().replace(/^.*:/, '') === 'mo' &&
+         c.length === 1 && BIGOPS.indexOf(c) !== -1;
+}
+
+function seq(nodes) {
+  var s = '';
+  for (var i = 0; i < nodes.length; i++) {
+    var info = naryHere(nodes[i]);
+    if (info && isBigOp(info.base) && i + 1 < nodes.length) {
+      s += naryFull(info, nodes.slice(i + 1));
+      return s;
+    }
+    s += mml(nodes[i]);
+  }
+  return s;
+}
+
+function naryFull(info, rest) {
+  return '<m:nary><m:naryPr><m:chr m:val="' + esc(txt(info.base)) + '"/>' +
+         '<m:limLoc m:val="undOvr"/>' +
+         '<m:subHide m:val="' + (info.sub ? '0' : '1') + '"/>' +
+         '<m:supHide m:val="' + (info.sup ? '0' : '1') + '"/><m:ctrlPr/></m:naryPr>' +
+         '<m:sub>' + (info.sub ? mml(info.sub) : '') + '</m:sub>' +
+         '<m:sup>' + (info.sup ? mml(info.sup) : '') + '</m:sup>' +
+         '<m:e>' + seq(rest) + '</m:e></m:nary>';
+}
+
+/* mrow entouré de délimiteurs -> m:d, pour des parenthèses étirables natives */
+function fenced(ks) {
+  if (ks.length < 2) return null;
+  var a = ks[0], b = ks[ks.length - 1];
+  if (a.nodeName.toLowerCase() !== 'mo' || b.nodeName.toLowerCase() !== 'mo') return null;
+  var o = txt(a), c = txt(b);
+  if (o.length !== 1 || c.length !== 1) return null;
+  if (OPEN.indexOf(o) === -1 || CLOSE.indexOf(c) === -1) return null;
+  var inner = ks.slice(1, -1);
+  /* séparateurs de premier niveau -> plusieurs m:e */
+  var parts = [[]];
+  for (var i = 0; i < inner.length; i++) {
+    if (inner[i].nodeName.toLowerCase() === 'mo' && txt(inner[i]) === ',' && parts.length < 8) {
+      parts.push([]);
+    } else { parts[parts.length - 1].push(inner[i]); }
+  }
+  var sep = parts.length > 1 ? ',' : '';
+  var body = '';
+  for (var j = 0; j < parts.length; j++) body += '<m:e>' + seq(parts[j]) + '</m:e>';
+  return '<m:d><m:dPr><m:begChr m:val="' + esc(o) + '"/><m:sepChr m:val="' + esc(sep) +
+         '"/><m:endChr m:val="' + esc(c) + '"/><m:ctrlPr/></m:dPr>' + body + '</m:d>';
+}
+
+function naryOf(base, sub, sup) {
+  var ch = txt(base);
+  if (ch.length !== 1 || BIGOPS.indexOf(ch) === -1) return null;
+  return '<m:nary><m:naryPr><m:chr m:val="' + esc(ch) + '"/><m:limLoc m:val="undOvr"/>' +
+         '<m:subHide m:val="' + (sub ? '0' : '1') + '"/>' +
+         '<m:supHide m:val="' + (sup ? '0' : '1') + '"/><m:ctrlPr/></m:naryPr>' +
+         '<m:sub>' + (sub ? mml(sub) : '') + '</m:sub>' +
+         '<m:sup>' + (sup ? mml(sup) : '') + '</m:sup>' +
+         '<m:e></m:e></m:nary>';
+}
+
+function mml(n) {
+  if (!n) return '';
+  if (n.nodeType === 3) return run(n.nodeValue);
+  if (n.nodeType !== 1) return '';
+  var t = n.nodeName.toLowerCase().replace(/^.*:/, '');
+  var k = kids(n), s;
+
+  switch (t) {
+    case 'math':
+    case 'semantics':
+    case 'mstyle':
+    case 'mpadded':
+    case 'menclose':
+      return seq(k);
+
+    case 'annotation':
+    case 'annotation-xml':
+    case 'mphantom':
+      return '';
+
+    case 'mrow':
+      s = fenced(k);
+      return s !== null ? s : seq(k);
+
+    case 'mi':      return run(txt(n), txt(n).length === 1 ? 'i' : 'p');
+    case 'mn':      return run(txt(n), 'p');
+    case 'mo':      return run(txt(n), 'p');
+    case 'merror':  return run(txt(n), 'p');
+    case 'ms':      return run(txt(n), 'p');
+
+    case 'mtext':
+      var v = n.textContent || '';
+      return v === '' ? '' :
+        '<m:r><m:rPr><m:nor/></m:rPr><w:rPr><w:rFonts w:ascii="Cambria" w:hAnsi="Cambria"/></w:rPr>' +
+        '<m:t xml:space="preserve">' + esc(v) + '</m:t></m:r>';
+
+    case 'mspace':
+      return run(' ', 'p');
+
+    case 'mfrac':
+      return '<m:f><m:fPr><m:type m:val="' +
+             (n.getAttribute('linethickness') === '0' ? 'noBar' : 'bar') +
+             '"/><m:ctrlPr/></m:fPr><m:num>' + mml(k[0]) + '</m:num><m:den>' +
+             mml(k[1]) + '</m:den></m:f>';
+
+    case 'msup':
+      s = naryOf(k[0], null, k[1]); if (s) return s;
+      return '<m:sSup><m:sSupPr><m:ctrlPr/></m:sSupPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sup>' + mml(k[1]) + '</m:sup></m:sSup>';
+
+    case 'msub':
+      s = naryOf(k[0], k[1], null); if (s) return s;
+      return '<m:sSub><m:sSubPr><m:ctrlPr/></m:sSubPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sub>' + mml(k[1]) + '</m:sub></m:sSub>';
+
+    case 'msubsup':
+      s = naryOf(k[0], k[1], k[2]); if (s) return s;
+      return '<m:sSubSup><m:sSubSupPr><m:ctrlPr/></m:sSubSupPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sub>' + mml(k[1]) + '</m:sub><m:sup>' + mml(k[2]) +
+             '</m:sup></m:sSubSup>';
+
+    case 'msqrt':
+      return '<m:rad><m:radPr><m:degHide m:val="1"/><m:ctrlPr/></m:radPr>' +
+             '<m:deg/><m:e>' + seq(k) + '</m:e></m:rad>';
+
+    case 'mroot':
+      return '<m:rad><m:radPr><m:degHide m:val="0"/><m:ctrlPr/></m:radPr><m:deg>' +
+             mml(k[1]) + '</m:deg><m:e>' + mml(k[0]) + '</m:e></m:rad>';
+
+    case 'mover':
+      var ao = txt(k[1]);
+      if (ACCENTS[ao]) {
+        return '<m:acc><m:accPr><m:chr m:val="' + esc(ACCENTS[ao]) +
+               '"/><m:ctrlPr/></m:accPr><m:e>' + mml(k[0]) + '</m:e></m:acc>';
+      }
+      s = naryOf(k[0], null, k[1]); if (s) return s;
+      return '<m:limUpp><m:limUppPr><m:ctrlPr/></m:limUppPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limUpp>';
+
+    case 'munder':
+      s = naryOf(k[0], k[1], null); if (s) return s;
+      return '<m:limLow><m:limLowPr><m:ctrlPr/></m:limLowPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limLow>';
+
+    case 'munderover':
+      s = naryOf(k[0], k[1], k[2]); if (s) return s;
+      return '<m:limUpp><m:limUppPr><m:ctrlPr/></m:limUppPr><m:e>' +
+             '<m:limLow><m:limLowPr><m:ctrlPr/></m:limLowPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limLow></m:e><m:lim>' +
+             mml(k[2]) + '</m:lim></m:limUpp>';
+
+    case 'mtable':
+      var rows = k.filter(function (r) { return /mtr$/.test(r.nodeName.toLowerCase()); });
+      var ncol = 0;
+      rows.forEach(function (r) { ncol = Math.max(ncol, kids(r).length); });
+      var props = '<m:mPr><m:baseJc m:val="center"/><m:plcHide m:val="1"/><m:mcs><m:mc><m:mcPr>' +
+                  '<m:count m:val="' + (ncol || 1) + '"/><m:mcJc m:val="center"/></m:mcPr></m:mc></m:mcs>' +
+                  '<m:ctrlPr/></m:mPr>';
+      var body = '';
+      rows.forEach(function (r) {
+        body += '<m:mr>';
+        var cells = kids(r);
+        for (var i = 0; i < (ncol || 1); i++) body += '<m:e>' + (cells[i] ? seq(kids(cells[i])) : '') + '</m:e>';
+        body += '</m:mr>';
+      });
+      return '<m:m>' + props + body + '</m:m>';
+
+    case 'mtr':
+    case 'mtd':
+      return seq(k);
+
+    default:
+      return k.length ? seq(k) : run(txt(n), 'p');
+  }
+}
+
+function mathmlToOmml(mathEl) { return mml(mathEl); }
+
+/* ============================================================================
+   2. Écriture ZIP (entrées non compressées + CRC32)
+   ========================================================================== */
+var CRCT = (function () {
+  var t = new Int32Array(256);
+  for (var i = 0; i < 256; i++) {
+    var c = i;
+    for (var j = 0; j < 8; j++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[i] = c;
+  }
+  return t;
+})();
+function crc32(buf) {
+  var c = -1;
+  for (var i = 0; i < buf.length; i++) c = CRCT[(c ^ buf[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ -1) >>> 0;
+}
+function utf8(str) {
+  if (typeof TextEncoder !== 'undefined') return new TextEncoder().encode(str);
+  var b = unescape(encodeURIComponent(str)), a = new Uint8Array(b.length);
+  for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i);
+  return a;
+}
+function zip(files) {
+  var parts = [], central = [], offset = 0;
+  function u16(v) { return [v & 0xFF, (v >>> 8) & 0xFF]; }
+  function u32(v) { return [v & 0xFF, (v >>> 8) & 0xFF, (v >>> 16) & 0xFF, (v >>> 24) & 0xFF]; }
+
+  files.forEach(function (f) {
+    var name = utf8(f.name), data = f.bin ? f.bin : utf8(f.data), c = crc32(data);
+    var local = [].concat(u32(0x04034b50), u16(20), u16(0x0800), u16(0), u16(0), u16(0),
+                          u32(c), u32(data.length), u32(data.length),
+                          u16(name.length), u16(0));
+    parts.push(new Uint8Array(local), name, data);
+    central.push({ name: name, crc: c, size: data.length, off: offset });
+    offset += local.length + name.length + data.length;
+  });
+
+  var cd = [];
+  central.forEach(function (e) {
+    cd = cd.concat(u32(0x02014b50), u16(20), u16(20), u16(0x0800), u16(0), u16(0), u16(0),
+                   u32(e.crc), u32(e.size), u32(e.size),
+                   u16(e.name.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(e.off));
+    cd = cd.concat(Array.prototype.slice.call(e.name));
+  });
+  var cdArr = new Uint8Array(cd);
+  var eocd = new Uint8Array([].concat(u32(0x06054b50), u16(0), u16(0),
+                                      u16(files.length), u16(files.length),
+                                      u32(cdArr.length), u32(offset), u16(0)));
+  parts.push(cdArr, eocd);
+
+  var total = parts.reduce(function (n, p) { return n + p.length; }, 0);
+  var out = new Uint8Array(total), pos = 0;
+  parts.forEach(function (p) { out.set(p, pos); pos += p.length; });
+  return out;
+}
+
+/* ============================================================================
+   3. HTML -> WordprocessingML
+   ========================================================================== */
+var SKIP = { script: 1, style: 1, button: 1, input: 1, noscript: 1 };
+var IMAGES = [];           /* { bin, w, h } collectées pendant le parcours */
+var EMU = 9525;            /* EMU par pixel */
+var MAXW = 5760000;        /* largeur utile de la page, en EMU */
+
+function b64bin(b64) {
+  var raw = atob(b64), a = new Uint8Array(raw.length);
+  for (var i = 0; i < raw.length; i++) a[i] = raw.charCodeAt(i);
+  return a;
+}
+
+function imageXml(dataUrl, wpx, hpx) {
+  var m = /^data:image\/png;base64,(.*)$/.exec(dataUrl || '');
+  if (!m) return '';
+  var cx = Math.round(wpx * EMU), cy = Math.round(hpx * EMU);
+  if (cx > MAXW) { cy = Math.round(cy * MAXW / cx); cx = MAXW; }
+  IMAGES.push({ bin: b64bin(m[1]) });
+  var id = IMAGES.length, rid = 'rIdImg' + id;
+  return '<w:p><w:pPr><w:pStyle w:val="Figure"/><w:jc w:val="center"/></w:pPr><w:r><w:drawing>' +
+    '<wp:inline distT="0" distB="0" distL="0" distR="0">' +
+    '<wp:extent cx="' + cx + '" cy="' + cy + '"/>' +
+    '<wp:effectExtent l="0" t="0" r="0" b="0"/>' +
+    '<wp:docPr id="' + id + '" name="Graphique ' + id + '"/>' +
+    '<wp:cNvGraphicFramePr><a:graphicFrameLocks ' +
+      'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/>' +
+    '</wp:cNvGraphicFramePr>' +
+    '<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">' +
+    '<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+    '<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+    '<pic:nvPicPr><pic:cNvPr id="' + id + '" name="Graphique ' + id + '"/><pic:cNvPicPr/></pic:nvPicPr>' +
+    '<pic:blipFill><a:blip r:embed="' + rid + '"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>' +
+    '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' + cx + '" cy="' + cy + '"/></a:xfrm>' +
+    '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>' +
+    '</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>';
+}
+var BLOCK = { p: 1, div: 1, h1: 1, h2: 1, h3: 1, h4: 1, li: 1, tr: 1, td: 1, th: 1,
+              table: 1, ul: 1, ol: 1, section: 1, article: 1, header: 1, blockquote: 1 };
+
+function W() {
+  this.body = '';
+  this.para = null;      /* { style, runs, numId, ilvl } */
+}
+W.prototype.open = function (style, numId, ilvl) {
+  this.close();
+  this.para = { style: style || 'Corps', runs: '', numId: numId || 0, ilvl: ilvl || 0 };
+};
+W.prototype.close = function () {
+  var p = this.para;
+  this.para = null;
+  if (!p || (p.runs === '' && !p.numId)) return;
+  if (p.runs === '') return;
+  var pPr = '<w:pPr><w:pStyle w:val="' + p.style + '"/>';
+  if (p.numId) pPr += '<w:numPr><w:ilvl w:val="' + p.ilvl + '"/><w:numId w:val="' + p.numId + '"/></w:numPr>';
+  pPr += '</w:pPr>';
+  this.body += '<w:p>' + pPr + p.runs + '</w:p>';
+};
+W.prototype.add = function (xml) {
+  if (!this.para) this.open('Corps');
+  this.para.runs += xml;
+};
+W.prototype.raw = function (xml) { this.close(); this.body += xml; };
+
+function textRun(s, fmt) {
+  if (!s) return '';
+  var rPr = '';
+  if (fmt.b) rPr += '<w:b/>';
+  if (fmt.i) rPr += '<w:i/>';
+  if (fmt.sup) rPr += '<w:vertAlign w:val="superscript"/>';
+  if (fmt.sub) rPr += '<w:vertAlign w:val="subscript"/>';
+  if (fmt.mono) rPr += '<w:rFonts w:ascii="Consolas" w:hAnsi="Consolas"/>';
+  return '<w:r>' + (rPr ? '<w:rPr>' + rPr + '</w:rPr>' : '') +
+         '<w:t xml:space="preserve">' + esc(s) + '</w:t></w:r>';
+}
+
+function walk(node, w, fmt, list) {
+  var i, cs = node.childNodes;
+  for (i = 0; i < cs.length; i++) {
+    var n = cs[i];
+
+    if (n.nodeType === 3) {
+      var s = n.nodeValue.replace(/\s+/g, ' ');
+      if (s.trim() === '' && !/\S/.test(s)) { if (w.para && w.para.runs) w.add(textRun(' ', fmt)); continue; }
+      w.add(textRun(s, fmt));
+      continue;
+    }
+    if (n.nodeType !== 1) continue;
+
+    var tag = n.nodeName.toLowerCase();
+    if (SKIP[tag]) continue;
+    if (n.classList && (n.classList.contains('top-bar') || n.classList.contains('top-actions') ||
+                        n.classList.contains('sol-toggle-wrap'))) continue;
+
+    /* --- équations --- */
+    if (tag === 'mjx-container') {
+      var math = n.querySelector('mjx-assistive-mml math, math');
+      var display = n.getAttribute('display') === 'true';
+      if (math) {
+        var omml = mathmlToOmml(math);
+        if (display) {
+          w.close();
+          w.body += '<w:p><w:pPr><w:pStyle w:val="Formule"/>' +
+                    '<w:jc w:val="center"/></w:pPr>' +
+                    '<m:oMath>' + omml + '</m:oMath></w:p>';
+        } else {
+          w.add('<m:oMath>' + omml + '</m:oMath>');
+        }
+      } else {
+        w.add(textRun(txt(n), fmt));
+      }
+      continue;
+    }
+    if (tag === 'mjx-assistive-mml' || tag === 'math') continue;
+
+    /* --- graphiques --- */
+    if (tag === 'svg' || tag === 'img') {
+      var png = n.getAttribute('data-kit-png');
+      if (png) {
+        w.close();
+        w.body += imageXml(png, +n.getAttribute('data-kit-w') || 600,
+                                +n.getAttribute('data-kit-h') || 380);
+      }
+      continue;
+    }
+
+    /* --- tableaux --- */
+    if (tag === 'table') { w.close(); w.body += table(n); continue; }
+
+    /* --- listes --- */
+    if (tag === 'ul' || tag === 'ol') {
+      w.close();
+      var nid = tag === 'ol' ? 2 : 1;
+      var lvl = list ? Math.min(list.ilvl + 1, 2) : 0;
+      var items = kids(n).filter(function (x) { return x.nodeName.toLowerCase() === 'li'; });
+      items.forEach(function (li) {
+        /* L'item est composé à part : son numéro doit se poser sur le premier
+           paragraphe produit, même si le <li> enveloppe son texte dans un <div>. */
+        var wb = new W();
+        walk(li, wb, fmt, { ilvl: lvl });
+        wb.close();
+        var xml = wb.body;
+        if (!xml) return;
+        var numPr = '<w:pStyle w:val="Liste"/><w:numPr><w:ilvl w:val="' + lvl +
+                    '"/><w:numId w:val="' + nid + '"/></w:numPr>';
+        if (xml.indexOf('<w:pStyle w:val="Corps"/>') !== -1) {
+          xml = xml.replace('<w:pStyle w:val="Corps"/>', numPr);
+        } else {
+          xml = '<w:p><w:pPr>' + numPr + '</w:pPr></w:p>' + xml;
+        }
+        w.body += xml;
+      });
+      continue;
+    }
+
+    /* --- titres --- */
+    if (tag === 'h1' || tag === 'h2') { w.close(); w.open('Titre1'); walk(n, w, fmt, list); w.close(); continue; }
+    if (tag === 'h3' || tag === 'h4') { w.close(); w.open('Titre2'); walk(n, w, fmt, list); w.close(); continue; }
+
+    /* --- titres internes du corrigé --- */
+    if (n.classList && (n.classList.contains('sol-sub') || n.classList.contains('sol-q') ||
+                        n.classList.contains('dossier-title'))) {
+      w.close(); w.open('Titre2'); walk(n, w, { b: true }, list); w.close(); continue;
+    }
+    if (n.classList && n.classList.contains('persp-box')) {
+      w.close();
+      var wb = new W();
+      walk(n, wb, fmt, list);
+      wb.close();
+      w.body += wb.body.replace(/w:val="Corps"/g, 'w:val="Encadre"')
+                       .replace(/w:val="Titre2"/g, 'w:val="EncadreTitre"');
+      continue;
+    }
+
+    /* --- mise en forme inline --- */
+    var f2 = { b: fmt.b, i: fmt.i, sup: fmt.sup, sub: fmt.sub, mono: fmt.mono };
+    if (tag === 'strong' || tag === 'b') f2.b = true;
+    if (tag === 'em' || tag === 'i') f2.i = true;
+    if (tag === 'sup') f2.sup = true;
+    if (tag === 'sub') f2.sub = true;
+    if (tag === 'code' || tag === 'kbd') f2.mono = true;
+
+    /* intertitre écrit en style en ligne (span display:block + gras) */
+    var st = n.getAttribute && n.getAttribute('style');
+    if (st && /display\s*:\s*block/.test(st) && /font-weight\s*:\s*(6|7|8|9|bold)/.test(st)) {
+      w.close(); w.open('Titre3');
+      walk(n, w, { b: true }, list);
+      w.close();
+      continue;
+    }
+
+    if ((tag === 'strong' || tag === 'b') &&
+        (!w.para || w.para.runs === '') &&
+        n.nextElementSibling && n.nextElementSibling.nodeName.toLowerCase() === 'br') {
+      w.close(); w.open('Titre3');
+      walk(n, w, { b: true }, list);
+      w.close();
+      i++;                       /* le <br> qui suit devient inutile */
+      continue;
+    }
+
+    if (tag === 'br') { w.add('<w:r><w:br/></w:r>'); continue; }
+    if (tag === 'hr') { w.close(); continue; }
+
+    if (BLOCK[tag]) { w.close(); w.open('Corps'); walk(n, w, f2, list); w.close(); }
+    else { walk(n, w, f2, list); }
+  }
+}
+
+function cellXml(td, isHead) {
+  var w2 = new W();
+  walk(td, w2, { b: !!isHead }, null);
+  w2.close();
+  var content = w2.body || '<w:p><w:pPr><w:pStyle w:val="Cellule"/></w:pPr></w:p>';
+  content = content.replace(/w:val="Corps"/g, 'w:val="Cellule"');
+  var span = parseInt(td.getAttribute('colspan') || '1', 10);
+  var shd = isHead ? '<w:shd w:val="clear" w:fill="EDE9DF"/>' : '';
+  return '<w:tc><w:tcPr>' + (span > 1 ? '<w:gridSpan w:val="' + span + '"/>' : '') +
+         shd + '<w:vAlign w:val="center"/></w:tcPr>' + content + '</w:tc>';
+}
+
+function table(tbl) {
+  var rows = tbl.querySelectorAll('tr'), out = '', ncol = 0, i, j;
+  for (i = 0; i < rows.length; i++) {
+    var c = rows[i].children, n = 0;
+    for (j = 0; j < c.length; j++) n += parseInt(c[j].getAttribute('colspan') || '1', 10);
+    ncol = Math.max(ncol, n);
+  }
+  if (!ncol) return '';
+  var grid = '<w:tblGrid>';
+  for (i = 0; i < ncol; i++) grid += '<w:gridCol w:w="' + Math.floor(9360 / ncol) + '"/>';
+  grid += '</w:tblGrid>';
+
+  for (i = 0; i < rows.length; i++) {
+    var cells = rows[i].children, xml = '';
+    var head = rows[i].parentNode.nodeName.toLowerCase() === 'thead' ||
+               (cells.length && cells[0].nodeName.toLowerCase() === 'th');
+    for (j = 0; j < cells.length; j++) xml += cellXml(cells[j], head);
+    out += '<w:tr>' + (head ? '<w:trPr><w:tblHeader/></w:trPr>' : '') + xml + '</w:tr>';
+  }
+  return '<w:tbl><w:tblPr><w:tblStyle w:val="Grille"/>' +
+         '<w:tblW w:w="5000" w:type="pct"/><w:tblLayout w:type="fixed"/></w:tblPr>' +
+         grid + out + '</w:tbl><w:p><w:pPr><w:pStyle w:val="Apres"/></w:pPr></w:p>';
+}
+
+/* ============================================================================
+   Assemblage du fichier
+   ========================================================================== */
+var NS =
+  'xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" ' +
+  'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
+  'xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" ' +
+  'xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" ' +
+  'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+  'xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture" ' +
+  'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+  'xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" ' +
+  'mc:Ignorable="w14"';
+
+function style(id, name, opts) {
+  var o = opts || {};
+  return '<w:style w:type="paragraph" w:styleId="' + id + '"><w:name w:val="' + name + '"/>' +
+         '<w:basedOn w:val="Corps"/><w:pPr>' +
+         (o.keep ? '<w:keepNext/>' : '') +
+         '<w:spacing w:before="' + (o.before || 0) + '" w:after="' + (o.after || 120) +
+         '" w:line="' + (o.line || 276) + '" w:lineRule="auto"/>' +
+         (o.jc ? '<w:jc w:val="' + o.jc + '"/>' : '') +
+         (o.ind ? '<w:ind w:left="' + o.ind + '"/>' : '') +
+         (o.border ? '<w:pBdr><w:left w:val="single" w:sz="18" w:space="8" w:color="1A2E42"/></w:pBdr>' : '') +
+         '</w:pPr><w:rPr>' +
+         (o.font ? '<w:rFonts w:ascii="' + o.font + '" w:hAnsi="' + o.font + '"/>' : '') +
+         (o.b ? '<w:b/>' : '') + (o.i ? '<w:i/>' : '') +
+         (o.sz ? '<w:sz w:val="' + o.sz + '"/>' : '') +
+         (o.color ? '<w:color w:val="' + o.color + '"/>' : '') +
+         '</w:rPr></w:style>';
+}
+
+function stylesXml() {
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles ' + NS + '>' +
+    '<w:docDefaults><w:rPrDefault><w:rPr>' +
+      '<w:rFonts w:ascii="Cambria" w:hAnsi="Cambria" w:cs="Cambria"/>' +
+      '<w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="fr-FR"/>' +
+    '</w:rPr></w:rPrDefault><w:pPrDefault><w:pPr>' +
+      '<w:spacing w:after="120" w:line="276" w:lineRule="auto"/><w:jc w:val="both"/>' +
+    '</w:pPr></w:pPrDefault></w:docDefaults>' +
+    '<w:style w:type="paragraph" w:default="1" w:styleId="Corps"><w:name w:val="Normal"/>' +
+      '<w:pPr><w:spacing w:after="120" w:line="276" w:lineRule="auto"/><w:jc w:val="both"/></w:pPr>' +
+      '<w:rPr><w:rFonts w:ascii="Cambria" w:hAnsi="Cambria"/><w:sz w:val="22"/></w:rPr></w:style>' +
+    style('TitreDoc', 'Title', { font: 'Cambria', b: true, sz: 40, color: '0D1B2A', jc: 'left', after: 60, line: 240 }) +
+    style('SousTitre', 'Subtitle', { i: true, sz: 20, color: '5A5A5A', jc: 'left', after: 280, line: 240 }) +
+    style('Titre1', 'heading 1', { b: true, sz: 28, color: '0D1B2A', before: 320, after: 140, jc: 'left', keep: true, line: 240 }) +
+    style('Titre2', 'heading 2', { b: true, sz: 23, color: '1A2E42', before: 240, after: 100, jc: 'left', keep: true, line: 240 }) +
+    style('Formule', 'Formula', { jc: 'center', before: 120, after: 120, line: 240 }) +
+    style('Liste', 'List Paragraph', { after: 100, ind: 360 }) +
+    style('Cellule', 'Table Text', { sz: 20, after: 40, jc: 'left', line: 240 }) +
+    style('Encadre', 'Aside', { ind: 240, border: true, sz: 21, before: 200, after: 200 }) +
+    style('Apres', 'After Table', { after: 200, sz: 12 }) +
+    style('Figure', 'Figure', { jc: 'center', before: 160, after: 200, line: 240 }) +
+    style('Titre3', 'heading 3', { b: true, sz: 22, color: '1A2E42', before: 200,
+                                   after: 60, jc: 'left', keep: true, line: 240 }) +
+    style('EncadreTitre', 'Aside Heading', { ind: 240, border: true, b: true, sz: 22,
+                                             color: '1A2E42', before: 200, after: 60, jc: 'left' }) +
+    '<w:style w:type="table" w:styleId="Grille"><w:name w:val="Table Grid"/><w:tblPr>' +
+      '<w:tblBorders>' +
+      ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(function (b) {
+        return '<w:' + b + ' w:val="single" w:sz="4" w:space="0" w:color="9A9A9A"/>';
+      }).join('') +
+      '</w:tblBorders><w:tblCellMar>' +
+      '<w:top w:w="60" w:type="dxa"/><w:left w:w="90" w:type="dxa"/>' +
+      '<w:bottom w:w="60" w:type="dxa"/><w:right w:w="90" w:type="dxa"/>' +
+      '</w:tblCellMar></w:tblPr></w:style>' +
+    '</w:styles>';
+}
+
+function numberingXml() {
+  function lvl(i, fmt, txtv, ind) {
+    return '<w:lvl w:ilvl="' + i + '"><w:start w:val="1"/><w:numFmt w:val="' + fmt + '"/>' +
+           '<w:lvlText w:val="' + txtv + '"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="' +
+           ind + '" w:hanging="360"/></w:pPr>' +
+           (fmt === 'bullet' ? '<w:rPr><w:rFonts w:ascii="Symbol" w:hAnsi="Symbol"/></w:rPr>' : '') +
+           '</w:lvl>';
+  }
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:numbering ' + NS + '>' +
+    '<w:abstractNum w:abstractNumId="1"><w:multiLevelType w:val="hybridMultilevel"/>' +
+      lvl(0, 'bullet', '\uF0B7', 360) + lvl(1, 'bullet', 'o', 720) + lvl(2, 'bullet', '\uF0A7', 1080) +
+    '</w:abstractNum>' +
+    '<w:abstractNum w:abstractNumId="2"><w:multiLevelType w:val="hybridMultilevel"/>' +
+      lvl(0, 'decimal', '%1.', 360) + lvl(1, 'lowerLetter', '%2.', 720) + lvl(2, 'lowerRoman', '%3.', 1080) +
+    '</w:abstractNum>' +
+    '<w:num w:numId="1"><w:abstractNumId w:val="1"/></w:num>' +
+    '<w:num w:numId="2"><w:abstractNumId w:val="2"/></w:num>' +
+    '</w:numbering>';
+}
+
+function buildDocx(opts) {
+  IMAGES = [];
+  var w = new W();
+
+  if (opts.title) {
+    w.body += '<w:p><w:pPr><w:pStyle w:val="TitreDoc"/></w:pPr>' +
+              textRun(opts.title, {}) + '</w:p>';
+  }
+  if (opts.subtitle) {
+    w.body += '<w:p><w:pPr><w:pStyle w:val="SousTitre"/></w:pPr>' +
+              textRun(opts.subtitle, {}) + '</w:p>';
+  }
+  opts.sections.forEach(function (sec) {
+    if (sec.heading) {
+      w.body += '<w:p><w:pPr><w:pStyle w:val="Titre1"/></w:pPr>' + textRun(sec.heading, {}) + '</w:p>';
+    }
+    walk(sec.node, w, {}, null);
+    w.close();
+  });
+  w.close();
+
+  var doc = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ' + NS + '><w:body>' +
+    w.body +
+    '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/>' +
+    '<w:pgMar w:top="1247" w:right="1247" w:bottom="1247" w:left="1247" ' +
+    'w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>';
+
+  var media = [], rels = '', ctypes = '';
+  IMAGES.forEach(function (im, i) {
+    media.push({ name: 'word/media/image' + (i + 1) + '.png', bin: im.bin });
+    rels += '<Relationship Id="rIdImg' + (i + 1) + '" Type="http://schemas.openxmlformats.org/' +
+            'officeDocument/2006/relationships/image" Target="media/image' + (i + 1) + '.png"/>';
+  });
+  if (IMAGES.length) ctypes = '<Default Extension="png" ContentType="image/png"/>';
+
+  return zip([
+    { name: '[Content_Types].xml',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+        '<Default Extension="xml" ContentType="application/xml"/>' + ctypes +
+        '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+        '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>' +
+        '<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>' +
+        '</Types>' },
+    { name: '_rels/.rels',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+        '</Relationships>' },
+    { name: 'word/_rels/document.xml.rels',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' +
+        '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>' +
+        rels + '</Relationships>' },
+    { name: 'word/document.xml', data: doc },
+    { name: 'word/styles.xml', data: stylesXml() },
+    { name: 'word/numbering.xml', data: numberingXml() }
+  ].concat(media));
+}
+
+root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: W, _walk: walk };
+
+})(window);
+
+</script>
+<script id="kit-js">
+/* ============================================================
+   KIT D'UNIFORMISATION — logique partagée (modale PDF, export Word,
+   libellés de la barre d'actions). Autonome : ne dépend d'aucun
+   dictionnaire I18N propre à la page.
+   ============================================================ */
+(function(){
+  var T = {
+    fr:{ modalTitle:"Exporter en PDF", seedPre:"Seed\u00a0:",
+         seedPost:"\u2014 notez cette valeur pour reproduire exactement cet exercice.",
+         optHeader:"Inclure l'en-t\u00eate de page",
+         optHeaderD:"Titre, badge de mati\u00e8re et intitul\u00e9 de l'exercice",
+         optSol:"Inclure le corrig\u00e9 complet",
+         optSolD:"L'ensemble des d\u00e9veloppements et commentaires du corrig\u00e9",
+         print:"\uD83D\uDDA8\u00a0Imprimer / Sauvegarder PDF", cancel:"Annuler",
+         btnNew:"\u21ba Nouvel \u00e9nonc\u00e9", btnPdf:"\u2b07 Exporter PDF", btnDoc:"\u2b07 Exporter Word",
+         btnCopy:"\u29c9 Copier", copied:"\u2713 Copi\u00e9e", seedLabel:"Seed de reproductibilit\u00e9",
+         docFile:"exercice.doc" },
+    en:{ modalTitle:"Export to PDF", seedPre:"Seed:",
+         seedPost:"\u2014 note this value to reproduce this exact exercise.",
+         optHeader:"Include the page header",
+         optHeaderD:"Title, subject badge and exercise heading",
+         optSol:"Include the full solution",
+         optSolD:"All the workings and comments of the solution",
+         print:"\uD83D\uDDA8\u00a0Print / Save as PDF", cancel:"Cancel",
+         btnNew:"\u21ba New exercise", btnPdf:"\u2b07 Export PDF", btnDoc:"\u2b07 Export Word",
+         btnCopy:"\u29c9 Copy", copied:"\u2713 Copied", seedLabel:"Reproducibility seed",
+         docFile:"exercise.doc" }
+  };
+
+  function lang(){
+    var l = (window.LANG || document.documentElement.lang || 'fr').toLowerCase();
+    return (l.indexOf('en') === 0) ? 'en' : 'fr';
+  }
+  function t(k){ return T[lang()][k]; }
+
+  window.KIT = { T:T, lang:lang, t:t };
+
+  /* --- libellés du kit (modale + barre d'actions) --- */
+  function paint(){
+    var d = T[lang()];
+    document.querySelectorAll('[data-kit]').forEach(function(el){
+      var k = el.getAttribute('data-kit');
+      if (d[k] !== undefined) el.innerHTML = d[k];
+    });
+  }
+  window.KIT.paint = paint;
+
+  /* Se raccroche au changement de langue de la page sans la modifier. */
+  function hookLang(){
+    if (typeof window.setLang === 'function' && !window.setLang.__kit){
+      var orig = window.setLang;
+      var wrapped = function(){ var r = orig.apply(this, arguments); paint(); return r; };
+      wrapped.__kit = true;
+      window.setLang = wrapped;
+    }
+  }
+
+  /* --- Copie de la seed active --- */
+  window.copySeed = function(btn){
+    var el = document.getElementById('seed-disp');
+    if (!el) return;
+    var v = (el.textContent || '').trim();
+    if (!v || v === '\u2014') return;
+    var done = function(){
+      var b = btn || document.getElementById('btn-copy-seed');
+      if (!b) return;
+      var old = b.innerHTML;
+      b.innerHTML = t('copied');
+      setTimeout(function(){ b.innerHTML = old; paint(); }, 1400);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(v).then(done, done);
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = v; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch(e){}
+      document.body.removeChild(ta); done();
+    }
+  };
+
+  /* --- Modale PDF --- */
+  window.openPdfModal = function(){
+    var s = document.getElementById('modal-seed');
+    var src = document.getElementById('seed-disp');
+    if (s && src) s.textContent = (src.textContent || '\u2014').trim();
+    /* la case « corrigé » reflète l'état d'affichage courant */
+    var sol = document.getElementById('sol-card');
+    var box = document.getElementById('opt-sol');
+    if (box) box.checked = !!(window.solVisible ||
+        (sol && (sol.classList.contains('visible') || sol.style.display === 'block')));
+    paint();
+    document.getElementById('pdf-ov').classList.add('open');
+    document.getElementById('pdf-modal').classList.add('open');
+  };
+  window.closePdfModal = function(){
+    document.getElementById('pdf-ov').classList.remove('open');
+    document.getElementById('pdf-modal').classList.remove('open');
+  };
+  var PRINTCLS = ['print-no-header', 'print-force-solution', 'print-no-solution'];
+
+  function clearPrintClasses() {
+    var b = document.body;
+    for (var i = 0; i < PRINTCLS.length; i++) b.classList.remove(PRINTCLS[i]);
+  }
+
+  window.doPrint = function () {
+    var noHdr   = !document.getElementById('opt-header').checked;
+    var inclSol =  document.getElementById('opt-sol').checked;
+    var b = document.body;
+
+    clearPrintClasses();
+    if (noHdr) b.classList.add('print-no-header');
+    b.classList.add(inclSol ? 'print-force-solution' : 'print-no-solution');
+    closePdfModal();
+
+    /* Le nettoyage doit attendre la fin réelle de l'impression. Un simple
+       minuteur ne convient pas : selon le navigateur, window.print() rend la
+       main avant que l'aperçu ne soit composé, et les options seraient alors
+       déjà effacées au moment où le PDF est produit. */
+    var done = false;
+    function finish() {
+      if (done) return;
+      done = true;
+      clearPrintClasses();
+      window.removeEventListener('afterprint', finish);
+      if (mq && mq.removeListener) mq.removeListener(onMq);
+      if (mq && mq.removeEventListener) mq.removeEventListener('change', onMq);
+    }
+    function onMq(e) { if (!e.matches) finish(); }
+
+    var mq = window.matchMedia ? window.matchMedia('print') : null;
+    window.addEventListener('afterprint', finish);
+    if (mq && mq.addEventListener) mq.addEventListener('change', onMq);
+    else if (mq && mq.addListener) mq.addListener(onMq);
+    /* filet de sécurité si le navigateur n'émet aucun de ces signaux */
+    setTimeout(finish, 120000);
+
+    setTimeout(function () { window.print(); }, 120);
+  };
+
+  /* --- Rasterisation des graphiques SVG ---
+     Word ne sait pas lire le SVG. On le convertit en PNG en recopiant d'abord
+     les styles calculés, sinon les couleurs héritées de la feuille disparaissent. */
+  var SVGPROPS = ['fill', 'stroke', 'stroke-width', 'stroke-dasharray', 'stroke-linecap',
+                  'stroke-linejoin', 'opacity', 'fill-opacity', 'stroke-opacity',
+                  'font-family', 'font-size', 'font-weight', 'font-style',
+                  'text-anchor', 'dominant-baseline'];
+
+  function inlineStyles(src, dst) {
+    var a = src.querySelectorAll('*'), b = dst.querySelectorAll('*'), i, j;
+    for (i = 0; i < a.length && i < b.length; i++) {
+      var cs = window.getComputedStyle(a[i]);
+      for (j = 0; j < SVGPROPS.length; j++) {
+        var v = cs.getPropertyValue(SVGPROPS[j]);
+        if (v) b[i].setAttribute(SVGPROPS[j], v);
+      }
+    }
+  }
+
+  function svgSize(svg) {
+    var vb = svg.viewBox && svg.viewBox.baseVal;
+    if (vb && vb.width) return { w: vb.width, h: vb.height };
+    var r = svg.getBoundingClientRect();
+    if (r.width) return { w: r.width, h: r.height };
+    return { w: 600, h: 380 };
+  }
+
+  function svgToPng(svg) {
+    return new Promise(function (resolve) {
+      var done = false;
+      var res = function (v) { if (!done) { done = true; resolve(v); } };
+      /* garde-fou : un graphique qui ne se charge pas ne doit jamais
+         bloquer l'export, on l'omet et le reste du document part quand même */
+      setTimeout(function () { res(null); }, 5000);
+      try {
+        var d = svgSize(svg), SC = 2;
+        var c = svg.cloneNode(true);
+        c.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        c.setAttribute('width', d.w);
+        c.setAttribute('height', d.h);
+        inlineStyles(svg, c);
+        var bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        bg.setAttribute('x', 0); bg.setAttribute('y', 0);
+        bg.setAttribute('width', '100%'); bg.setAttribute('height', '100%');
+        bg.setAttribute('fill', '#ffffff');
+        c.insertBefore(bg, c.firstChild);
+        var xml = new XMLSerializer().serializeToString(c);
+        var img = new Image();
+        img.onload = function () {
+          try {
+            var cv = document.createElement('canvas');
+            cv.width = Math.round(d.w * SC); cv.height = Math.round(d.h * SC);
+            var ctx = cv.getContext('2d');
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, cv.width, cv.height);
+            ctx.drawImage(img, 0, 0, cv.width, cv.height);
+            res({ png: cv.toDataURL('image/png'), w: d.w, h: d.h });
+          } catch (e) { res(null); }
+        };
+        img.onerror = function () { res(null); };
+        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml);
+      } catch (e) { res(null); }
+    });
+  }
+
+  /* --- Export Word natif (.docx) ---
+     Les formules sont converties en OMML, le format d'équation natif de Word :
+     elles restent éditables et se composent avec Cambria Math. */
+  window.exportWord = function () {
+    var area = document.getElementById('ex-area');
+    if (!area || !window.DocxExport) { return; }
+
+    var btn = document.querySelector('.btn-sm.doc');
+    if (btn) { btn.disabled = true; btn.style.opacity = '.5'; }
+
+    var svgs = Array.prototype.slice.call(area.querySelectorAll('svg'));
+    Promise.all(svgs.map(svgToPng)).then(function (pngs) {
+      svgs.forEach(function (sv, i) {
+        if (!pngs[i]) return;
+        sv.setAttribute('data-kit-png', pngs[i].png);
+        sv.setAttribute('data-kit-w', pngs[i].w);
+        sv.setAttribute('data-kit-h', pngs[i].h);
+      });
+      try { writeDocx(area); } finally {
+        svgs.forEach(function (sv) {
+          sv.removeAttribute('data-kit-png');
+          sv.removeAttribute('data-kit-w');
+          sv.removeAttribute('data-kit-h');
+        });
+        if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+      }
+    });
+  };
+
+  function writeDocx(area) {
+
+    var h1 = document.querySelector('header h1');
+    var badge = document.querySelector('.header-badge, #lbl-badge');
+    var seed = document.getElementById('seed-disp');
+    var bits = [];
+    if (badge && badge.textContent.trim()) bits.push(badge.textContent.trim());
+    if (seed && seed.textContent.trim() && seed.textContent.trim() !== '\u2014') {
+      bits.push('seed ' + seed.textContent.trim());
+    }
+    bits.push('Thomas Hossen');
+
+    var sections = [];
+    var cards = area.querySelectorAll('.card');
+    for (var i = 0; i < cards.length; i++) {
+      var body = cards[i].querySelector('.card-body');
+      if (!body) continue;
+      var tag = cards[i].querySelector('.card-header .tag');
+      var h2 = cards[i].querySelector('.card-header h2');
+      var head = [tag ? tag.textContent.trim() : '', h2 ? h2.textContent.trim() : '']
+                   .filter(Boolean).join(' \u2014 ');
+      sections.push({ heading: head, node: body });
+    }
+    if (!sections.length) sections = [{ heading: '', node: area }];
+
+    var bytes = window.DocxExport.build({
+      title: h1 ? h1.textContent.trim() : document.title,
+      subtitle: bits.join(' \u00b7 '),
+      sections: sections
+    });
+
+    var name = (h1 ? h1.textContent : 'exercice').normalize('NFD')
+                 .replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9]+/g, '_')
+                 .replace(/^_|_$/g, '').slice(0, 60) || 'exercice';
+    var blob = new Blob([bytes], {
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = name + '.docx';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){ hookLang(); paint(); });
+  if (document.readyState !== 'loading'){ hookLang(); paint(); }
+})();
+</script>
+<!-- KIT:JS:END -->
+
+</body>
+</html>
