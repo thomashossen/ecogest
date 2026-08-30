@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Finance - Agrégats monétaires</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['\\[', '\\]']]
+    }
+  };
+</script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7;text-align:justify;}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 1.5rem;border-bottom:3px solid var(--gold);text-align:left;}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end;background:rgba(255,255,255,.03);padding:1rem 1.5rem;border-radius:6px;border:1px solid rgba(255,255,255,.1)}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.6)}
+.ctrl-inp, .ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.4rem .7rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none;transition:border-color .2s}
+.ctrl-inp:focus, .ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.5rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;transition:background .18s;margin-left:auto}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN & CARDS */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:700}
+
+.top-actions{display:flex;gap:.5rem;}
+.btn-action{background:#fff;border:1px solid var(--border);color:var(--navy);padding:.4rem .8rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.85rem;font-weight:600;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.btn-action:hover{border-color:var(--navy);background:var(--cream-dark);}
+
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem;text-align:left;}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+.event-list{list-style:none;}
+.event-list > li{margin-bottom:1.5rem;padding-left:1.5rem;position:relative;font-size:.95rem;text-align:justify}
+.event-list > li::before{content:"•";position:absolute;left:0;color:var(--gold);font-size:1.5rem;line-height:1}
+
+.sub-list { list-style-type: none; padding-left: 1rem; margin-top: 0.8rem; text-align:justify;}
+.sub-list li { margin-bottom: 0.5rem; }
+
+/* EXAM TABLE */
+.exam-table-wrap { overflow-x: auto; margin: 1.5rem 0; }
+.exam-table{width:100%;border-collapse:collapse;font-size:.85rem;font-family:'Source Serif 4',serif; margin: 0;}
+.exam-table th, .exam-table td{border:1px solid var(--border);padding:.6rem;text-align:center;vertical-align:middle;}
+.exam-table th{background:var(--navy);color:var(--cream);font-weight:600;}
+.exam-table .txt-left{text-align:left;font-weight:600;color:var(--navy);}
+.exam-table .amt{font-family:'JetBrains Mono',monospace;text-align:right;white-space:nowrap;}
+
+.two-col-table { width: 100%; display: flex; gap: 2rem; margin: 1.5rem 0; }
+.col-half { flex: 1; }
+
+/* SOLUTION TOGGLE */
+.sol-toggle-wrap{text-align:left; margin: 1.5rem 0 0 0;}
+.btn-toggle{background:transparent;border:2px solid var(--green);border-bottom:none;color:var(--green);font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;padding:.5rem 1.5rem;border-radius:4px 4px 0 0;cursor:pointer;transition:all .2s; position:relative; z-index:2; top:2px;}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--green);color:var(--cream)}
+.sol-card{border-top:2px solid var(--green);display:none; border-radius: 0 6px 6px 6px; position:relative; z-index:1;}
+.sol-card.visible{display:block;animation:fi .4s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+
+.calc-box{background:#f9fcf9;border:1px solid #c8e6c9;padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.9rem;color:var(--text);line-height:1.6;text-align:justify;}
+
+@media print{
+  body{background:#fff;}
+  header, .ctrls, .sol-toggle-wrap, .top-actions {display:none !important;}
+  .card{box-shadow:none; border:1px solid var(--border); margin-bottom:2rem;}
+  .sol-card{display:block !important; border-top:2px solid var(--green);}
+  #ex-area {display:block !important;}
+}
+
+/* --- Selecteur de langue / Language switch --- */
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem}
+.header-top .header-badge{margin-bottom:0}
+.lang-switch{display:flex;gap:.45rem;flex-shrink:0}
+.flag-btn{background:rgba(255,255,255,.06);border:1px solid rgba(201,149,42,.35);border-radius:3px;padding:3px;cursor:pointer;line-height:0;opacity:.5;transition:opacity .2s,border-color .2s,transform .15s}
+.flag-btn:hover{opacity:1;transform:translateY(-1px)}
+.flag-btn.active{opacity:1;border-color:var(--gold-light);box-shadow:0 0 0 1px rgba(232,184,75,.35)}
+.flag-btn svg{display:block;width:30px;height:20px;border-radius:1px}
+@media print{ .lang-switch{display:none !important;} }
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-top">
+    <div class="header-badge" data-k="k-badge">MÉTHODE D'ÉVALUATION DES ACTIFS FINANCIERS</div>
+    <div class="lang-switch">
+      <button type="button" class="flag-btn active" id="flag-fr" onclick="setLang('fr')" title="Français" aria-label="Français"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="20" height="40" fill="#002654"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ED2939"/></svg></button>
+      <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
+    </div>
+  </div>
+  <h1 data-k="k-h1">Agrégats monétaires et base monétaire</h1>
+  <p class="subtitle" data-k="k-sub">© Thomas Hossen – Version du 7 mars 2026</p>
+  
+  <div class="ctrls">
+    <div class="ctrl-g">
+      <span class="ctrl-lbl" data-k="k-seed">Seed (Optionnel)</span>
+      <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999">
+    </div>
+    <button class="btn-gen" onclick="generateExercise(false)"><span data-k="k-gen">Générer l'exercice →</span></button>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" style="text-align:center; padding:4rem; color:var(--text-muted); font-style:italic;">
+    <span data-k="k-welcome">Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.</span>
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="seed-badge"><span data-k="k-seedbadge">Seed active :</span> <span id="seed-disp"></span></div>
+      <div class="top-actions">
+        <button class="btn-action" onclick="generateExercise(true)"><span data-k="k-new">↺ Nouvel énoncé</span></button>
+        <button class="btn-action" onclick="window.print()"><span data-k="k-pdf">⬇ Exporter PDF</span></button>
+        <button class="btn-action" onclick="exportWord()"><span data-k="k-doc">⬇ Exporter DOC</span></button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="tag" data-k="k-tag-ex">Énoncé</span><h2 data-k="k-cardtitle">Calcul d'agrégats monétaires</h2></div>
+      <div class="card-body">
+        <div class="context-block" id="context-text"></div>
+        <div id="enonce-table-container"></div>
+        <div class="context-block" id="additional-info" style="margin-top:1.5rem; background:#fff; border-left:3px solid var(--navy); border-radius:0;"></div>
+        
+        <p style="margin-bottom:1rem; font-weight:600; color:var(--red); text-align:left;" data-k="k-work">Travail à faire</p>
+        <ul class="event-list" id="events-list"></ul>
+      </div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag" data-k="k-tag-sol">Corrigé</span><h2 data-k="k-cardtitle2">Calcul d'agrégats monétaires</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+/* ============================================================
+   DICTIONNAIRE BILINGUE  /  BILINGUAL DICTIONARY
+   ============================================================ */
+const I18N = {
+
+  fr: {
+    "htmlLang": "fr",
+    "title": "Simulateur Finance - Agrégats monétaires",
+    "locale": "fr-FR",
+    "k-badge": "MÉTHODE D'ÉVALUATION DES ACTIFS FINANCIERS",
+    "k-h1": "Agrégats monétaires et base monétaire",
+    "k-sub": "© Thomas Hossen – Version du 7 mars 2026",
+    "k-seed": "Seed (Optionnel)",
+    "k-gen": "Générer l'exercice →",
+    "k-welcome": "Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.",
+    "k-seedbadge": "Seed active :",
+    "k-new": "↺ Nouvel énoncé",
+    "k-pdf": "⬇ Exporter PDF",
+    "k-doc": "⬇ Exporter DOC",
+    "k-tag-ex": "Énoncé",
+    "k-cardtitle": "Calcul d'agrégats monétaires",
+    "k-tag-sol": "Corrigé",
+    "k-cardtitle2": "Calcul d'agrégats monétaires",
+    "k-work": "Travail à faire",
+    "showSol": "Afficher le corrigé",
+    "hideSol": "Masquer le corrigé",
+    "docTitle": "Exercice Agrégats Monétaires",
+    "docFile": "Exercice_Agregats_Monetaires.doc",
+    thousands: "\\,",
+    decimal: "{,}",
+    context: function(D) {
+      const {annee, fid, vue, notice, terme, pension, opc, titres, reserves, facilite, M1, M2, M3, M0} = D;
+      return `
+      En décembre ${annee}, la Banque centrale européenne (BCE) publie, pour la zone euro, les encours suivants (en milliards d'euros, GEUR) : le montant des billets et pièces en circulation détenus par le secteur privé (hors institutions financières monétaires) et les administrations publiques (hors administrations centrales), celui des dépôts à vue, des dépôts remboursables avec un préavis de trois mois, des dépôts à terme de deux ans, des titres de créance à deux ans, des titres donnés en pension livrée et des titres d'organismes de placement collectif (OPC) monétaires. Sont également fournis les encours de réserves obligatoires et excédentaires déposées par les banques commerciales auprès de la banque centrale, ainsi que celui des facilités de dépôt.
+    `;
+    },
+    table: function(D) {
+      const {annee, fid, vue, notice, terme, pension, opc, titres, reserves, facilite, M1, M2, M3, M0} = D;
+      return `<div class="exam-table-wrap">
+        <table class="exam-table" style="width:80%; margin:0 auto;">
+            <tr><th style="width:70%;">Encours en décembre ${annee}</th><th style="width:30%;">Montant (GEUR)</th></tr>
+            <tr><td class="txt-left">Billets et pièces en circulation</td><td class="amt">${fmt(fid)}</td></tr>
+            <tr><td class="txt-left">Dépôts à vue</td><td class="amt">${fmt(vue)}</td></tr>
+            <tr><td class="txt-left">Dépôts remboursables avec préavis de trois mois</td><td class="amt">${fmt(notice)}</td></tr>
+            <tr><td class="txt-left">Dépôts à terme de deux ans</td><td class="amt">${fmt(terme)}</td></tr>
+            <tr><td class="txt-left">Titres de créance à deux ans</td><td class="amt">${fmt(titres)}</td></tr>
+            <tr><td class="txt-left">Titres donnés en pension livrée</td><td class="amt">${fmt(pension)}</td></tr>
+            <tr><td class="txt-left">Titres d'organismes de placement collectif (OPC) monétaires</td><td class="amt">${fmt(opc)}</td></tr>
+            <tr><td class="txt-left">Réserves obligatoires et excédentaires</td><td class="amt">${fmt(reserves)}</td></tr>
+            <tr><td class="txt-left">Facilités de dépôt</td><td class="amt">${fmt(facilite)}</td></tr>
+        </table>
+    </div>`;
+    },
+    info: function(D) {
+      const {annee, fid, vue, notice, terme, pension, opc, titres, reserves, facilite, M1, M2, M3, M0} = D;
+      return `
+        <em>Ordres de grandeur calibrés sur les statistiques de bilan des institutions financières monétaires publiées par la BCE. Les montants sont arrondis et légèrement stylisés pour les besoins de l'exercice : ils ne doivent pas être cités comme la série officielle.</em>
+    `;
+    },
+    enonce: function(D) {
+      const {annee, fid, vue, notice, terme, pension, opc, titres, reserves, facilite, M1, M2, M3, M0} = D;
+    let htmlEnonce = "";
+    htmlEnonce += `<li>Définir puis calculer les différents agrégats monétaires définis par la Banque centrale européenne (BCE), ainsi que la base monétaire de la zone euro.</li>`;
+
+      return htmlEnonce;
+    },
+    sol: function(D) {
+      const {annee, fid, vue, notice, terme, pension, opc, titres, reserves, facilite, M1, M2, M3, M0} = D;
+
+    let htmlSol = `<div class="calc-box">
+        La <strong>masse monétaire</strong> de la zone euro représente la quantité de monnaie en circulation au sein de l'économie de l'eurozone, utilisée par les acteurs économiques pour leurs transactions et financements. Elle englobe également des placements financiers facilement convertibles en liquidités, prêts à être utilisés par les acteurs économiques sans dépréciation de valeur. Cette masse monétaire, qu'elle soit en circulation ou sous forme de placements liquides, constitue un stock détenu par les acteurs économiques à un instant donné. Sa mesure est effectuée à travers une série de trois principaux <strong>agrégats monétaires</strong> :
+        <ul class="enum-list" style="margin-top:1rem; margin-bottom:0;">
+            <li>L'<strong>agrégat M1</strong> englobe les formes de monnaie les plus liquides, notamment la monnaie fiduciaire (billets et pièces en circulation) et la monnaie scripturale (monnaie enregistrée sous forme de chiffres sur un compte de dépôt à vue) utilisable immédiatement grâce à divers moyens de paiement. En décembre ${annee}, l'agrégat M1 correspond donc à la somme des billets et pièces en circulation (${fmt(fid)} GEUR) et des dépôts à vue (${fmt(vue)} GEUR), soit $${texI(fid)} + ${texI(vue)} = ${texI(M1)}$ GEUR.</li>
+
+            <li>L'<strong>agrégat M2</strong> englobe M1 et y ajoute des dépôts rémunérés (comme les livrets A, les comptes d'épargne-logement, les livrets de développement durable et solidaire, et les dépôts à terme de jusqu'à deux ans, par exemple) considérés comme liquides, c'est-à-dire facilement transférables sur un compte de dépôt à vue pour une utilisation dans l'économie. En décembre ${annee}, l'agrégat M2 totalise donc la somme de M1 (${fmt(M1)} GEUR), des dépôts remboursables avec préavis de trois mois (${fmt(notice)} GEUR) et des dépôts à terme de deux ans (${fmt(terme)} GEUR), soit $${texI(M1)} + ${texI(notice)} + ${texI(terme)} = ${texI(M2)}$ GEUR.</li>
+
+            <li>Quant à l'<strong>agrégat M3</strong>, il représente l'agrégat le plus large, englobant M2 et des instruments financiers émis par des établissements financiers et souscrits par des épargnants et investisseurs pour des durées inférieures à deux ans. Ces actifs sont considérés comme relativement disponibles et transférables sur un compte de dépôt à vue pour être utilisés par les acteurs économiques. En décembre ${annee}, l'agrégat M3 agrège donc la somme de M2 (${fmt(M2)} GEUR), des titres d'OPC monétaires (${fmt(opc)} GEUR), des titres donnés en pension livrée (${fmt(pension)} GEUR) et des titres de créance à deux ans (${fmt(titres)} GEUR), soit $${texI(M2)} + ${texI(opc)} + ${texI(pension)} + ${texI(titres)} = ${texI(M3)}$ GEUR.</li>
+
+            <li>En parallèle de cette monnaie détenue par les acteurs économiques, il existe également la base monétaire, également connue sous le nom d'<strong>agrégat M0</strong> ou monnaie de banque centrale. Cette base monétaire est composée de la monnaie fiduciaire (${fmt(fid)} GEUR), à laquelle s'ajoutent les réserves obligatoires et excédentaires que les banques commerciales déposent auprès de la banque centrale (${fmt(reserves)} GEUR), ainsi que les facilités de dépôt (${fmt(facilite)} GEUR). La base monétaire, qui représente donc $${texI(fid)} + ${texI(reserves)} + ${texI(facilite)} = ${texI(M0)}$ GEUR en décembre ${annee}, alimente la masse monétaire par l'intermédiaire de la monnaie fiduciaire et influence la création de monnaie scripturale par les banques commerciales.</li>
+        </ul>
+    </div>`;
+
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Récapitulatif</span>
+        <div class="exam-table-wrap">
+            <table class="exam-table" style="width:70%; margin:0 auto;">
+                <tr><th style="width:50%;">Agrégat</th><th style="width:50%;">Montant (GEUR)</th></tr>
+                <tr><td class="txt-left">Base monétaire M0</td><td class="amt">${fmt(M0)}</td></tr>
+                <tr><td class="txt-left">M1 — monnaie au sens étroit</td><td class="amt">${fmt(M1)}</td></tr>
+                <tr><td class="txt-left">M2 — monnaie intermédiaire</td><td class="amt">${fmt(M2)}</td></tr>
+                <tr style="background:var(--cream-dark); border-top:2px solid var(--navy);"><td class="txt-left"><strong>M3 — monnaie au sens large</strong></td><td class="amt"><strong>${fmt(M3)}</strong></td></tr>
+            </table>
+        </div>
+        On notera que les agrégats sont emboîtés ($M1 \\subset M2 \\subset M3$) et que la base monétaire n'en fait pas partie : M0 est un passif de la banque centrale, tandis que M1, M2 et M3 mesurent des engagements du système bancaire vis-à-vis des agents non financiers. En décembre ${annee}, le rapport $M3/M0 \\approx ${texM(M3 / M0, 2)}$ donne une image grossière du multiplicateur monétaire.
+    </div>`;
+
+      return htmlSol;
+    }
+  },
+
+  en: {
+    "htmlLang": "en",
+    "title": "Finance Simulator - Monetary Aggregates",
+    "locale": "en-GB",
+    "k-badge": "FINANCIAL ASSET VALUATION METHODS",
+    "k-h1": "Monetary Aggregates and the Monetary Base",
+    "k-sub": "© Thomas Hossen – March 7, 2026 Version",
+    "k-seed": "Seed (Optional)",
+    "k-gen": "Generate Exercise →",
+    "k-welcome": "Configure the parameters and click Generate to create a new exercise.",
+    "k-seedbadge": "Active Seed:",
+    "k-new": "↺ New Statement",
+    "k-pdf": "⬇ Export PDF",
+    "k-doc": "⬇ Export DOC",
+    "k-tag-ex": "Problem",
+    "k-cardtitle": "Computing monetary aggregates",
+    "k-tag-sol": "Solution",
+    "k-cardtitle2": "Computing monetary aggregates",
+    "k-work": "Assignment",
+    "showSol": "Show the solution",
+    "hideSol": "Hide the solution",
+    "docTitle": "Monetary Aggregates Exercise",
+    "docFile": "Monetary_Aggregates_Exercise.doc",
+    thousands: ",",
+    decimal: ".",
+    context: function(D) {
+      const {annee, fid, vue, notice, terme, pension, opc, titres, reserves, facilite, M1, M2, M3, M0} = D;
+      return `
+      In December ${annee}, the European Central Bank (ECB) publishes the following outstanding amounts for the euro area (in billions of euros, EURbn): currency in circulation held by the private sector (excluding monetary financial institutions) and general government (excluding central government), overnight deposits, deposits redeemable at three months' notice, deposits with an agreed maturity of two years, debt securities with a maturity of two years, repurchase agreements and shares in money market funds (MMFs). Also provided are the outstanding amounts of required and excess reserves placed by commercial banks with the central bank, and of the deposit facility.
+    `;
+    },
+    table: function(D) {
+      const {annee, fid, vue, notice, terme, pension, opc, titres, reserves, facilite, M1, M2, M3, M0} = D;
+      return `<div class="exam-table-wrap">
+        <table class="exam-table" style="width:80%; margin:0 auto;">
+            <tr><th style="width:70%;">Outstanding amounts in December ${annee}</th><th style="width:30%;">Amount (EURbn)</th></tr>
+            <tr><td class="txt-left">Currency in circulation</td><td class="amt">${fmt(fid)}</td></tr>
+            <tr><td class="txt-left">Overnight deposits</td><td class="amt">${fmt(vue)}</td></tr>
+            <tr><td class="txt-left">Deposits redeemable at three months' notice</td><td class="amt">${fmt(notice)}</td></tr>
+            <tr><td class="txt-left">Deposits with an agreed maturity of two years</td><td class="amt">${fmt(terme)}</td></tr>
+            <tr><td class="txt-left">Debt securities with a maturity of two years</td><td class="amt">${fmt(titres)}</td></tr>
+            <tr><td class="txt-left">Repurchase agreements</td><td class="amt">${fmt(pension)}</td></tr>
+            <tr><td class="txt-left">Money market fund (MMF) shares/units</td><td class="amt">${fmt(opc)}</td></tr>
+            <tr><td class="txt-left">Required and excess reserves</td><td class="amt">${fmt(reserves)}</td></tr>
+            <tr><td class="txt-left">Deposit facility</td><td class="amt">${fmt(facilite)}</td></tr>
+        </table>
+    </div>`;
+    },
+    info: function(D) {
+      const {annee, fid, vue, notice, terme, pension, opc, titres, reserves, facilite, M1, M2, M3, M0} = D;
+      return `
+        <em>Orders of magnitude calibrated on the balance sheet statistics of monetary financial institutions published by the ECB. The amounts are rounded and slightly stylised for the purposes of the exercise: they should not be quoted as the official series.</em>
+    `;
+    },
+    enonce: function(D) {
+      const {annee, fid, vue, notice, terme, pension, opc, titres, reserves, facilite, M1, M2, M3, M0} = D;
+    let htmlEnonce = "";
+    htmlEnonce += `<li>Define and then compute the various monetary aggregates defined by the European Central Bank (ECB), as well as the monetary base of the euro area.</li>`;
+
+      return htmlEnonce;
+    },
+    sol: function(D) {
+      const {annee, fid, vue, notice, terme, pension, opc, titres, reserves, facilite, M1, M2, M3, M0} = D;
+
+    let htmlSol = `<div class="calc-box">
+        The <strong>money supply</strong> of the euro area represents the quantity of money circulating within the economy of the euro zone, used by economic agents for their transactions and their financing. It also encompasses financial investments that are easily convertible into cash, ready to be used by economic agents without any loss of value. This money supply, whether in circulation or held in the form of liquid investments, constitutes a stock held by economic agents at a given point in time. It is measured through a series of three main <strong>monetary aggregates</strong>:
+        <ul class="enum-list" style="margin-top:1rem; margin-bottom:0;">
+            <li>The <strong>M1 aggregate</strong> covers the most liquid forms of money, namely currency (banknotes and coins in circulation) and scriptural money (money recorded as figures on an overnight deposit account), immediately usable through various means of payment. In December ${annee}, the M1 aggregate therefore corresponds to the sum of currency in circulation (${fmt(fid)} EURbn) and overnight deposits (${fmt(vue)} EURbn), that is $${texI(fid)} + ${texI(vue)} = ${texI(M1)}$ EURbn.</li>
+
+            <li>The <strong>M2 aggregate</strong> covers M1 and adds interest-bearing deposits (such as regulated savings accounts, home savings accounts and deposits with an agreed maturity of up to two years) regarded as liquid, that is to say easily transferable to an overnight deposit account for use in the economy. In December ${annee}, the M2 aggregate therefore totals the sum of M1 (${fmt(M1)} EURbn), deposits redeemable at three months' notice (${fmt(notice)} EURbn) and deposits with an agreed maturity of two years (${fmt(terme)} EURbn), that is $${texI(M1)} + ${texI(notice)} + ${texI(terme)} = ${texI(M2)}$ EURbn.</li>
+
+            <li>As for the <strong>M3 aggregate</strong>, it is the broadest aggregate, covering M2 together with financial instruments issued by financial institutions and subscribed by savers and investors for maturities of less than two years. These assets are regarded as relatively available and transferable to an overnight deposit account so as to be used by economic agents. In December ${annee}, the M3 aggregate therefore adds up M2 (${fmt(M2)} EURbn), money market fund shares/units (${fmt(opc)} EURbn), repurchase agreements (${fmt(pension)} EURbn) and debt securities with a maturity of two years (${fmt(titres)} EURbn), that is $${texI(M2)} + ${texI(opc)} + ${texI(pension)} + ${texI(titres)} = ${texI(M3)}$ EURbn.</li>
+
+            <li>Alongside this money held by economic agents, there is also the monetary base, also known as the <strong>M0 aggregate</strong> or central bank money. This monetary base is composed of currency (${fmt(fid)} EURbn), to which are added the required and excess reserves that commercial banks place with the central bank (${fmt(reserves)} EURbn), as well as the deposit facility (${fmt(facilite)} EURbn). The monetary base, which therefore amounts to $${texI(fid)} + ${texI(reserves)} + ${texI(facilite)} = ${texI(M0)}$ EURbn in December ${annee}, feeds the money supply through currency in circulation and influences the creation of scriptural money by commercial banks.</li>
+        </ul>
+    </div>`;
+
+    htmlSol += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Summary</span>
+        <div class="exam-table-wrap">
+            <table class="exam-table" style="width:70%; margin:0 auto;">
+                <tr><th style="width:50%;">Aggregate</th><th style="width:50%;">Amount (EURbn)</th></tr>
+                <tr><td class="txt-left">Monetary base M0</td><td class="amt">${fmt(M0)}</td></tr>
+                <tr><td class="txt-left">M1 — narrow money</td><td class="amt">${fmt(M1)}</td></tr>
+                <tr><td class="txt-left">M2 — intermediate money</td><td class="amt">${fmt(M2)}</td></tr>
+                <tr style="background:var(--cream-dark); border-top:2px solid var(--navy);"><td class="txt-left"><strong>M3 — broad money</strong></td><td class="amt"><strong>${fmt(M3)}</strong></td></tr>
+            </table>
+        </div>
+        Note that the aggregates are nested ($M1 \\subset M2 \\subset M3$) and that the monetary base is not part of them: M0 is a liability of the central bank, whereas M1, M2 and M3 measure the liabilities of the banking system towards non-financial agents. In December ${annee}, the ratio $M3/M0 \\approx ${texM(M3 / M0, 2)}$ gives a rough picture of the money multiplier.
+    </div>`;
+
+      return htmlSol;
+    }
+  }
+};
+/* ============================================================
+   GESTION DE LA LANGUE  /  LANGUAGE HANDLING
+   ============================================================ */
+let LANG = 'fr';
+
+function detectLang() {
+    try {
+        const q = new URLSearchParams(window.location.search).get('lang');
+        if (q && I18N[q.toLowerCase()]) return q.toLowerCase();
+    } catch (e) {}
+    const h = (window.location.hash || '').replace('#', '').toLowerCase();
+    if (I18N[h]) return h;
+    return 'fr';
+}
+
+function applyLang() {
+    const D = I18N[LANG];
+    document.documentElement.lang = D.htmlLang;
+    document.title = D.title;
+
+    document.querySelectorAll('[data-k]').forEach(function (el) {
+        const key = el.getAttribute('data-k');
+        if (D[key] !== undefined) el.innerHTML = D[key];
+    });
+
+    const btn = document.getElementById('toggle-btn');
+    if (btn) btn.innerText = document.getElementById('sol-card').classList.contains('visible') ? D.hideSol : D.showSol;
+
+    document.getElementById('flag-fr').classList.toggle('active', LANG === 'fr');
+    document.getElementById('flag-en').classList.toggle('active', LANG === 'en');
+}
+
+function setLang(lang) {
+    if (!I18N[lang] || lang === LANG) return;
+    LANG = lang;
+
+    /* La langue est memorisee dans l'URL (partage / rechargement) */
+    try {
+        const u = new URL(window.location.href);
+        u.searchParams.set('lang', lang);
+        history.replaceState(null, '', u.toString());
+    } catch (e) {}
+
+    applyLang();
+
+    /* Si un exercice est affiche, on le regenere a l'identique (meme seed) */
+    if (document.getElementById('ex-area').style.display !== 'none') {
+        const solWasVisible = document.getElementById('sol-card').classList.contains('visible');
+        generateExercise(false);
+        if (solWasVisible) toggleSol();
+    }
+}
+
+// --- PRNG (Mulberry32) ---
+let currentSeed = 0;
+function seedPRNG(seed) {
+    return function() {
+      let t = seed += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+let random = Math.random;
+
+function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
+
+function texI(num) {
+    let sign = num < 0 ? "-" : "";
+    let absNum = Math.round(Math.abs(num));
+    return sign + absNum.toString().replace(/\B(?=(\d{3})+(?!\d))/g, I18N[LANG].thousands);
+}
+function texM(num, dec) {
+    let sign = num < 0 ? "-" : "";
+    let parts = Math.abs(num).toFixed(dec).split('.');
+    let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, I18N[LANG].thousands);
+    return sign + intPart + I18N[LANG].decimal + parts[1];
+}
+function fmt(num) {
+    return num.toLocaleString(I18N[LANG].locale);
+}
+
+
+function generateExercise(forceNew = false) {
+    if(forceNew) {
+        document.getElementById('seed-input').value = "";
+    }
+    let seedVal = document.getElementById('seed-input').value;
+    currentSeed = seedVal ? parseInt(seedVal) : Math.floor(Math.random() * 99999999);
+    document.getElementById('seed-disp').innerText = currentSeed;
+    document.getElementById('seed-input').value = currentSeed;
+    random = seedPRNG(currentSeed);
+
+    const DIC = I18N[LANG];
+
+    /* Table d'ancrage : decembre de chaque annee, en milliards d'euros.
+       Les valeurs reproduisent la trajectoire reelle de M1, M2, M3, de la monnaie
+       fiduciaire et de la base monetaire ; la ventilation fine est reconstituee. */
+    const ANCRES = {
+        2019: {fid: 1290, vue: 7660, notice: 2400, terme: 1050, pension:  80, opc: 480, titres: 30, reserves: 1390, facilite:  590},
+        2020: {fid: 1430, vue: 8840, notice: 2480, terme: 1020, pension: 100, opc: 580, titres: 30, reserves: 2900, facilite:  640},
+        2021: {fid: 1540, vue: 9760, notice: 2540, terme:  950, pension: 100, opc: 590, titres: 30, reserves: 3900, facilite:  700},
+        2022: {fid: 1545, vue: 9859, notice: 2555, terme: 1377, pension: 110, opc: 655, titres: 50, reserves:  214, facilite: 4521},
+        2023: {fid: 1540, vue: 8860, notice: 2480, terme: 2620, pension: 130, opc: 500, titres: 70, reserves:  190, facilite: 3500},
+        2024: {fid: 1560, vue: 8990, notice: 2400, terme: 2800, pension: 150, opc: 780, titres: 80, reserves:  165, facilite: 2900},
+        2025: {fid: 1600, vue: 9440, notice: 2450, terme: 2650, pension: 160, opc: 850, titres: 80, reserves:  160, facilite: 2700}
+    };
+
+    let annee = 2019 + randInt(0, 6);
+    let a = ANCRES[annee];
+
+    // Alea de +/- 2 % sur chaque poste (les agregats restent des sommes exactes)
+    function jitter(x) { return Math.round(x * (0.98 + random() * 0.04)); }
+
+    let fid      = jitter(a.fid);
+    let vue      = jitter(a.vue);
+    let notice   = jitter(a.notice);
+    let terme    = jitter(a.terme);
+    let pension  = jitter(a.pension);
+    let opc      = jitter(a.opc);
+    let titres   = jitter(a.titres);
+    let reserves = jitter(a.reserves);
+    let facilite = jitter(a.facilite);
+
+    let M1 = fid + vue;
+    let M2 = M1 + notice + terme;
+    let M3 = M2 + opc + pension + titres;
+    let M0 = fid + reserves + facilite;
+
+    const D = {annee, fid, vue, notice, terme, pension, opc, titres, reserves, facilite,
+               M1, M2, M3, M0};
+
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('ex-area').style.display = 'block';
+    document.getElementById('sol-card').classList.remove('visible');
+    document.getElementById('toggle-btn').innerText = DIC.showSol;
+    document.getElementById('toggle-btn').classList.remove('shown');
+
+    document.getElementById('context-text').innerHTML = DIC.context(D);
+    document.getElementById('enonce-table-container').innerHTML = DIC.table(D);
+    document.getElementById('additional-info').innerHTML = DIC.info(D);
+    document.getElementById('events-list').innerHTML = DIC.enonce(D);
+    document.getElementById('sol-content').innerHTML = DIC.sol(D);
+
+    if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
+        MathJax.typesetPromise().catch(function (err) { console.error('MathJax :', err); });
+    }
+}
+
+function toggleSol() {
+    let solCard = document.getElementById('sol-card');
+    let btn = document.getElementById('toggle-btn');
+    if(solCard.classList.contains('visible')) {
+        solCard.classList.remove('visible');
+        btn.innerText = I18N[LANG].showSol;
+        btn.classList.remove('shown');
+    } else {
+        solCard.classList.add('visible');
+        btn.innerText = I18N[LANG].hideSol;
+        btn.classList.add('shown');
+    }
+}
+
+function exportWord() {
+    let content = document.getElementById('ex-area').cloneNode(true);
+    let actions = content.querySelector('.top-actions');
+    if(actions) actions.parentNode.removeChild(actions);
+    let toggle = content.querySelector('.sol-toggle-wrap');
+    if(toggle) toggle.parentNode.removeChild(toggle);
+    let solCard = content.querySelector('#sol-card');
+    if(solCard) solCard.style.display = 'block';
+
+    let html = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <meta charset='utf-8'>
+            <title>${I18N[LANG].docTitle}</title>
+            <style>
+                body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5; text-align: justify; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 10pt; }
+                th, td { border: 1px solid #000; padding: 4px; }
+                th { background-color: #f2f2f2; text-align: center; font-weight: bold; }
+                .txt-left { text-align: left; font-weight: bold; }
+                .amt { text-align: right; white-space: nowrap; }
+                .two-col-table { width: 100%; }
+                .col-half { width: 48%; display: inline-block; vertical-align: top; margin-right: 2%; }
+                .calc-box { border: 1px solid #000; padding: 10px; margin-bottom: 15px; background-color: #f9f9f9; text-align: justify; }
+                .math-formula { text-align: center; font-style: italic; margin: 10px 0; }
+                ul { text-align: justify; }
+                li { margin-bottom: 5px; }
+            </style>
+        </head>
+        <body>
+            ${content.innerHTML}
+        </body>
+        </html>
+    `;
+    
+    let blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    let url = URL.createObjectURL(blob);
+    let link = document.createElement('a');
+    link.href = url;
+    link.download = I18N[LANG].docFile;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+/* Initialisation */
+LANG = detectLang();
+applyLang();
+</script>
+</body>
+</html>
