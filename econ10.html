@@ -1,0 +1,2334 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Générateur d'exercices - Modèle logit</title>
+<script>
+window.MathJax = {
+  tex: { 
+    inlineMath: [['\\(','\\)']], 
+    displayMath: [['\\[','\\]']], 
+    packages: {'[+]': ['ams']},
+    macros: {
+      Var: ['\\textbf{Var}\\left(#1\\right)', 1],
+      Cov: ['\\textbf{Cov}\\left(#1\\right)', 1],
+      dsum: ['\\sum_{#1}^{#2}', 2]
+    }
+  },
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] }
+};
+</script>
+<script>window.MathJax=window.MathJax||{};window.MathJax.options=window.MathJax.options||{};window.MathJax.options.enableAssistiveMml=true;</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 0;border-bottom:3px solid var(--gold)}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+#controls-bar{border-top:1px solid rgba(255,255,255,.08);padding:1.1rem 0 1.3rem}
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.5)}
+.ctrl-inp{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.38rem .65rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.82rem;width:88px;outline:none;transition:border-color .2s}
+.ctrl-inp:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.ctrl-tip{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:rgba(250,247,240,.33);margin-top:2px}
+.seed-row{display:flex;align-items:flex-end;gap:.45rem}
+.btn-copy-seed{background:transparent;border:1px solid rgba(201,149,42,.4);color:rgba(250,247,240,.55);padding:.38rem .55rem;border-radius:3px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:.65rem;transition:all .18s;white-space:nowrap}
+.btn-copy-seed:hover{border-color:var(--gold-light);color:var(--gold-light)}
+.ctrl-vsep{width:1px;background:rgba(255,255,255,.1);align-self:stretch;margin:0 .2rem}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.3rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.9rem;font-weight:600;transition:background .18s;white-space:nowrap;align-self:flex-end}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.welcome-msg{text-align:center;padding:5rem 2rem;color:var(--text-muted);font-style:italic;font-size:1.05rem}
+.welcome-msg .arrow{font-size:2rem;display:block;margin-bottom:1rem;opacity:.4}
+
+/* TOP BAR */
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.top-bar-left{display:flex;gap:.6rem;align-items:center}
+.btn-sm{background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:'JetBrains Mono',monospace;font-size:.67rem;letter-spacing:.08em;text-transform:uppercase;padding:.4rem 1rem;border-radius:3px;cursor:pointer;transition:all .18s;white-space:nowrap}
+.btn-sm:hover{background:var(--gold);color:var(--navy)}
+.btn-sm.pdf{border-color:#7bafd4;color:#7bafd4}
+.btn-sm.pdf:hover{background:#7bafd4;color:var(--navy)}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.67rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:500}
+
+/* CARDS */
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);margin-bottom:1.5rem;border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+
+/* QUESTIONS */
+.questions ol{counter-reset:q;list-style:none}
+.questions ol>li{counter-increment:q;margin-bottom:1.4rem;display:flex;gap:1rem;align-items:flex-start}
+.questions ol>li::before{content:counter(q);min-width:28px;height:28px;background:var(--navy);color:var(--cream);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:500;flex-shrink:0;margin-top:.15rem}
+.questions ol>li .q-text{flex:1;font-size:.93rem;text-align:justify}
+
+/* SOLUTION */
+.sol-toggle-wrap{text-align:center;margin:1rem 0 0}
+.btn-toggle{background:transparent;border:2px solid var(--navy);color:var(--navy);font-family:'Source Serif 4',serif;font-size:.9rem;padding:.6rem 2rem;border-radius:4px;cursor:pointer;transition:all .2s}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--navy);color:var(--cream)}
+.sol-card{border-top:4px solid var(--green);display:none}
+.sol-card.visible{display:block;animation:fi .3s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+.st{font-size:.92rem;line-height:1.75;text-align:justify}
+.st p{margin-bottom:.7rem}
+.st ol{counter-reset:sq;list-style:none}
+.st>ol>li{counter-increment:sq;margin-bottom:1.6rem;display:flex;gap:1rem;align-items:flex-start}
+.st>ol>li::before{content:counter(sq);min-width:24px;height:24px;background:var(--green);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.68rem;flex-shrink:0;margin-top:.15rem}
+.st ul{list-style:disc;padding-left:1.5rem;margin-bottom:.7rem}
+.st ul li{margin-bottom:1rem}
+.st .q-content{flex:1;} /* Assure que le texte prend toute la largeur restante */
+
+/* PDF MODAL */
+#pdf-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;backdrop-filter:blur(2px)}
+#pdf-modal{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:101;background:#fff;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.25);width:390px;max-width:95vw;border-top:4px solid #7bafd4;overflow:hidden}
+.mh{background:var(--navy);color:var(--cream);padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
+.mh h3{font-family:'Playfair Display',serif;font-size:1rem;font-weight:600}
+.mclose{background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:1.2rem;line-height:1;padding:2px 6px;border-radius:3px;transition:color .15s}
+.mclose:hover{color:#fff}
+.mb2{padding:1.5rem}
+.opt-row{display:flex;align-items:flex-start;gap:.75rem;margin-bottom:1rem;cursor:pointer}
+.opt-row input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--navy);flex-shrink:0;margin-top:3px}
+.opt-lbl{font-size:.93rem}
+.opt-desc{font-size:.75rem;color:var(--text-muted);display:block}
+.seed-note{font-family:'JetBrains Mono',monospace;font-size:.7rem;background:var(--cream-dark);border:1px solid var(--border);padding:.55rem .85rem;border-radius:3px;color:var(--text-muted);margin-bottom:1.2rem;line-height:1.5}
+.seed-note strong{color:var(--navy)}
+.mactions{display:flex;gap:.6rem}
+.btn-print{flex:1;background:var(--navy);color:var(--cream);border:none;padding:.7rem;border-radius:4px;font-family:'Source Serif 4',serif;font-size:.9rem;cursor:pointer;transition:background .2s}
+.btn-print:hover{background:var(--navy-mid)}
+.btn-cancel{background:transparent;border:1px solid var(--border);color:var(--text-muted);padding:.7rem 1rem;border-radius:4px;font-family:'Source Serif 4',serif;font-size:.9rem;cursor:pointer;transition:all .2s}
+.btn-cancel:hover{border-color:var(--text);color:var(--text)}
+
+/* PRINT */
+@media print{
+:root{--navy:#0d1b2a;--cream:#fff;--cream-dark:#f8f8f8;--gold:#c9952a;--green:#2d6b4a;--border:#ccc}
+body{background:#fff;font-size:11pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+header{padding:1rem 1.5rem .8rem}
+header .subtitle{display:none}
+#controls-bar,.top-bar,.sol-toggle-wrap,#pdf-ov,#pdf-modal{display:none!important}
+.card{box-shadow:none;border-radius:0;page-break-inside:avoid;margin-bottom:1rem}
+main{padding:1rem 1.5rem;max-width:100%}
+body.print-no-header header{display:none!important}
+body.print-no-solution .sol-card{display:none!important}
+body.print-force-solution .sol-card{display:block!important}
+}
+
+/* --- Selecteur de langue / Language switch --- */
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem}
+.header-top .header-badge{margin-bottom:0}
+.lang-switch{display:flex;gap:.45rem;flex-shrink:0}
+.flag-btn{background:rgba(255,255,255,.06);border:1px solid rgba(201,149,42,.35);border-radius:3px;padding:3px;cursor:pointer;line-height:0;opacity:.5;transition:opacity .2s,border-color .2s,transform .15s}
+.flag-btn:hover{opacity:1;transform:translateY(-1px)}
+.flag-btn.active{opacity:1;border-color:var(--gold-light);box-shadow:0 0 0 1px rgba(232,184,75,.35)}
+.flag-btn svg{display:block;width:30px;height:20px;border-radius:1px}
+@media print{ .lang-switch{display:none !important;} }
+
+/* TABLEAUX DE DONNEES */
+.dtable-wrap{overflow-x:auto;margin:1.1rem 0}
+.dtable{width:100%;border-collapse:collapse;font-size:.82rem;font-family:'Source Serif 4',serif}
+.dtable th,.dtable td{border:1px solid var(--border);padding:.4rem .5rem;text-align:center;vertical-align:middle}
+.dtable th{background:var(--navy);color:var(--cream);font-weight:600;font-size:.78rem}
+.dtable tr:nth-child(even) td{background:#fbf9f4}
+.dtable td.num{font-family:'JetBrains Mono',monospace;font-size:.78rem;white-space:nowrap}
+.dtable tfoot td{font-weight:700;background:var(--cream-dark)}
+.dtable caption{caption-side:bottom;font-size:.76rem;color:var(--text-muted);font-style:italic;padding-top:.5rem;text-align:justify}
+.dtable-narrow{max-width:560px;margin:0 auto}
+.context-block .dtable-wrap{margin:1rem 0 1.1rem}
+.questions ol ol > li{display:block}
+.q-text .dtable-wrap{margin:.9rem 0 .8rem}
+
+/* FIGURES */
+.fig-wrap{margin:1.2rem 0 .3rem;text-align:center;overflow-x:auto}
+.fig-wrap svg{width:100%;max-width:640px;height:auto;background:#fff;border:1px solid var(--border);border-radius:4px}
+.fig-cap{font-size:.78rem;color:var(--text-muted);font-style:italic;text-align:center;margin-bottom:1rem;line-height:1.5}
+</style>
+<!-- KIT:CSS:START v1 --><style id="kit-css">
+/* ============================================================
+   KIT D'UNIFORMISATION — bloc partagé, identique sur toutes les pages.
+   Ne rien modifier ici fichier par fichier : régénérer le kit.
+   ============================================================ */
+
+/* --- 1. Mathématiques : jamais de débordement --- */
+mjx-container[display="true"]{
+  overflow-x:auto; overflow-y:hidden; max-width:100%;
+  padding:.15rem 0; margin:1rem 0 !important;
+}
+mjx-container[display="true"]::-webkit-scrollbar{height:5px}
+mjx-container[display="true"]::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+mjx-container{ max-width:100%; }
+.math-formula{ text-align:center; margin:1.2rem 0; overflow-x:auto; max-width:100%; }
+@media (max-width:640px){
+  mjx-container[display="true"]{ font-size:88% }
+}
+
+/* --- 2. Listes à puces entourées (questions ET données de contexte) --- */
+.kit-list, .st > ol,
+.questions > ol,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list), .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list),
+.question-list, .enum-list, .q-list{
+  counter-reset:kitq; list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem;
+}
+.kit-list > li, .st > ol > li,
+.questions > ol > li,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li, .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li,
+.question-list > li, .enum-list > li, .q-list > li{
+  counter-increment:kitq; position:relative;
+  padding-left:2.6rem; margin-bottom:1.3rem;
+  font-size:.95rem; line-height:1.7; text-align:justify;
+  font-weight:400; color:var(--text);
+  display:block;
+}
+.kit-list > li::before, .st > ol > li::before,
+.questions > ol > li::before,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li::before, .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li::before,
+.question-list > li::before, .enum-list > li::before, .q-list > li::before{
+  content:counter(kitq);
+  position:absolute; left:0; top:.1rem;
+  width:28px; min-width:28px; height:28px;
+  background:var(--navy); color:var(--cream);
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.72rem; font-weight:500;
+  flex-shrink:0;
+}
+.questions ol > li .q-text{ flex:1; font-size:.95rem; text-align:justify }
+/* sous-listes : cercle creux, plus discret */
+.enum-sublist, .kit-sublist, .sub-list, .sub-ol, .alpha-list, .enum-subsublist,
+.st ol.sub-ol, .questions ol ol, .st ol ol, .kit-list ol, .q-list ol, .question-list ol{
+  counter-reset:kitsq; list-style:none !important; padding-left:0 !important;
+  margin:.9rem 0 .9rem 0;
+}
+.enum-sublist > li, .kit-sublist > li, .sub-list > li, .sub-ol > li, .alpha-list > li, .enum-subsublist > li,
+.st ol.sub-ol > li, .questions ol ol > li, .st ol ol > li, .kit-list ol > li, .q-list ol > li, .question-list ol > li{
+  counter-increment:kitsq; position:relative;
+  padding-left:2.1rem; margin-bottom:.7rem; font-size:.92rem; text-align:justify;
+}
+.enum-sublist > li::before, .kit-sublist > li::before, .sub-list > li::before, .sub-ol > li::before, .alpha-list > li::before, .enum-subsublist > li::before,
+.st ol.sub-ol > li::before, .questions ol ol > li::before, .st ol ol > li::before, .kit-list ol > li::before, .q-list ol > li::before, .question-list ol > li::before{
+  content:counter(kitsq,lower-alpha);
+  min-width:22px;
+  position:absolute; left:0; top:.05rem;
+  width:22px; height:22px;
+  background:transparent; color:var(--navy);
+  border:1px solid var(--gold);
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.65rem;
+}
+
+/* variante : puces simples non numérotées (listes de données) */
+.kit-simple{ list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem }
+.kit-simple > li{
+  position:relative; padding-left:1.5rem; margin-bottom:1.1rem;
+  font-size:.95rem; line-height:1.7; text-align:justify;
+}
+.kit-simple > li::before{
+  content:"\2022"; position:absolute; left:0; top:-.15rem;
+  color:var(--gold); font-size:1.5rem; line-height:1; background:none;
+  width:auto; height:auto; border:none; border-radius:0;
+}
+/* variante : liste à un seul élément, sans puce */
+.kit-nobullet{ list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem }
+.kit-nobullet > li{
+  padding-left:0; margin-bottom:1rem; font-size:.95rem; line-height:1.7; text-align:justify;
+}
+.kit-nobullet > li::before{ content:none !important; display:none !important }
+/* variante : titres de section numérotés (contenu intercalé entre les puces) */
+.kit-num-scope{ counter-reset:kitn }
+p.kit-num{
+  counter-increment:kitn; position:relative;
+  padding-left:2.6rem; margin:1.8rem 0 1rem;
+  font-weight:600; color:var(--navy); text-align:left;
+  min-height:28px; display:flex; align-items:center;
+}
+p.kit-num:first-of-type{ margin-top:0 }
+p.kit-num::before{
+  content:counter(kitn); position:absolute; left:0; top:0;
+  width:28px; height:28px; background:var(--navy); color:var(--cream);
+  border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.72rem; font-weight:500;
+}
+
+/* titres de dossier */
+.dossier-title{
+  margin:2rem 0 1rem; font-weight:600; color:var(--navy); font-size:1.02rem;
+  border-bottom:1px solid var(--border); padding-bottom:.4rem; text-align:left;
+}
+.dossier-title:first-of-type{ margin-top:0 }
+.dossier-body{ margin-bottom:.5rem }
+
+/* --- 3. Corrigé sobre : plus de multiplication de fonds verts --- */
+.sol-card .calc-box, .sol-card .concl{
+  background:transparent !important;
+  border:none !important;
+  border-left:none !important;
+  padding:0 !important;
+  border-radius:0 !important;
+  margin:0 0 1.6rem 0 !important;
+  font-size:.95rem;
+  line-height:1.7;
+  text-align:justify;
+}
+.sol-card .sol-sub{
+  color:var(--navy); font-weight:600; display:block;
+  margin:0 0 .5rem 0; font-size:1rem;
+}
+/* seuls encadrés conservés : les perspectives « Pour aller plus loin » */
+.sol-card .persp-box{
+  background:#f7f9fc !important;
+  border:1px solid #ccd8e6 !important;
+  border-left:3px solid var(--navy-mid) !important;
+  padding:1.2rem !important;
+  border-radius:4px !important;
+  margin:2rem 0 1rem 0 !important;
+  font-size:.9rem; line-height:1.7; text-align:justify;
+}
+
+.btn-toggle{
+  background:transparent; border:2px solid var(--green); border-bottom:none;
+  color:var(--green); font-family:'Source Serif 4',serif; font-size:.95rem;
+  font-weight:600; padding:.5rem 1.5rem; border-radius:4px 4px 0 0; cursor:pointer;
+  transition:all .2s; position:relative; z-index:2; top:2px;
+}
+.btn-toggle:hover{ background:var(--green); color:var(--cream) }
+
+/* --- 4. Bouton « Afficher le corrigé » (modèle der) --- */
+.sol-toggle-wrap{ text-align:left; margin:1.5rem 0 0 0; }
+.sol-card{
+  border-top:2px solid var(--green); display:none;
+  border-radius:0 6px 6px 6px; position:relative; z-index:1;
+}
+.sol-card.visible{ display:block; animation:kitfi .35s ease }
+.sol-card .card-header{ background:var(--green) }
+.sol-card .card-header .tag{ border-color:rgba(200,240,200,.4); color:#a8d8b0 }
+@keyframes kitfi{ from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+
+/* --- 5. Barre d'actions unifiée --- */
+.top-bar{ display:flex; flex-wrap:wrap; gap:.8rem; align-items:center; justify-content:space-between; margin-bottom:1.2rem }
+.top-bar-left{ display:flex; flex-wrap:wrap; gap:.55rem; order:1 }
+.top-bar .seed-badge{ order:2 }
+.btn-sm{ background:transparent; border:1px solid var(--gold); color:var(--gold); font-family:'JetBrains Mono',monospace; font-size:.67rem; letter-spacing:.08em; text-transform:uppercase; padding:.4rem 1rem; border-radius:3px; cursor:pointer; transition:all .18s; white-space:nowrap }
+.btn-sm:hover{ background:var(--gold); color:var(--navy) }
+.btn-sm.pdf{ border-color:#7bafd4; color:#7bafd4 }
+.btn-sm.pdf:hover{ background:#7bafd4; color:var(--navy) }
+.btn-sm.doc{ border-color:#8fa8c4; color:#8fa8c4 }
+.seed-row{ display:flex; gap:.4rem; align-items:center }
+.btn-copy-seed{
+  background:transparent; border:1px solid rgba(201,149,42,.4); color:rgba(250,247,240,.55);
+  padding:.38rem .55rem; border-radius:3px; cursor:pointer;
+  font-family:'JetBrains Mono',monospace; font-size:.65rem; transition:all .18s; white-space:nowrap;
+}
+.btn-copy-seed:hover{ border-color:var(--gold-light); color:var(--gold-light) }
+.btn-sm.doc:hover{ background:#8fa8c4; color:var(--navy) }
+
+/* --- 6. Modale d'export PDF --- */
+#pdf-ov{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:100; backdrop-filter:blur(2px) }
+#pdf-modal{ display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:101; background:#fff; border-radius:8px; box-shadow:0 20px 60px rgba(0,0,0,.25); width:390px; max-width:95vw; border-top:4px solid #7bafd4; overflow:hidden }
+#pdf-ov.open,#pdf-modal.open{ display:block }
+.mh{ background:var(--navy); color:var(--cream); padding:1rem 1.5rem; display:flex; align-items:center; justify-content:space-between }
+.mh h3{ font-family:'Playfair Display',serif; font-size:1rem; font-weight:600; margin:0 }
+.mclose{ background:none; border:none; color:rgba(255,255,255,.6); cursor:pointer; font-size:1.2rem; line-height:1; padding:2px 6px; border-radius:3px; transition:color .15s }
+.mclose:hover{ color:#fff }
+.mb2{ padding:1.5rem }
+.opt-row{ display:flex; align-items:flex-start; gap:.75rem; margin-bottom:1rem; cursor:pointer }
+.opt-row input[type=checkbox]{ width:16px; height:16px; cursor:pointer; accent-color:var(--navy); flex-shrink:0; margin-top:3px }
+.opt-txt{ display:block }
+.opt-lbl{ font-size:.93rem; display:block }
+.opt-desc{ font-size:.75rem; color:var(--text-muted); display:block }
+.seed-note{ font-family:'JetBrains Mono',monospace; font-size:.7rem; background:var(--cream-dark); border:1px solid var(--border); padding:.55rem .85rem; border-radius:3px; color:var(--text-muted); margin-bottom:1.2rem; line-height:1.5 }
+.mactions{ display:flex; gap:.6rem }
+.btn-print{ flex:1; background:var(--navy); color:var(--cream); border:none; padding:.7rem; border-radius:4px; font-family:'Source Serif 4',serif; font-size:.9rem; cursor:pointer; transition:background .2s }
+.btn-print:hover{ background:var(--navy-mid) }
+.btn-cancel{ background:transparent; border:1px solid var(--border); color:var(--text-muted); padding:.7rem 1rem; border-radius:4px; font-family:'Source Serif 4',serif; font-size:.9rem; cursor:pointer; transition:all .2s }
+.btn-cancel:hover{ border-color:var(--text); color:var(--text) }
+
+/* --- 7. Impression --- */
+@media print{
+  body{ background:#fff; font-size:11pt; -webkit-print-color-adjust:exact; print-color-adjust:exact }
+  header{ display:block !important; padding:1rem 1.5rem .8rem }
+  header .subtitle{ display:none }
+  .ctrls, #controls-bar, .top-actions, .top-bar-left, .sol-toggle-wrap,
+  .lang-switch, #pdf-ov, #pdf-modal{ display:none !important }
+  .top-bar{ display:block !important; margin-bottom:.8rem }
+  .top-bar .seed-badge{
+    display:inline-block !important; background:none; border:1px solid var(--border);
+    color:var(--text-muted); font-family:'JetBrains Mono',monospace; font-size:8.5pt;
+    padding:2pt 6pt; border-radius:2px;
+  }
+  body.print-no-header .top-bar{ display:none !important }
+  main{ padding:1rem 1.5rem; max-width:100% }
+  .card{ box-shadow:none; border-radius:0; page-break-inside:avoid; margin-bottom:1rem }
+  #ex-area{ display:block !important }
+  .sol-card{ display:block !important; border-top:2px solid var(--green) }
+  mjx-container[display="true"]{ overflow:visible !important }
+  body.print-no-header header{ display:none !important }
+  body.print-no-header .ctrls{ display:none !important }
+  body.print-no-solution .sol-card,
+  body.print-no-solution .sol-toggle-wrap{ display:none !important }
+  body.print-force-solution .sol-card{ display:block !important }
+}
+</style><!-- KIT:CSS:END -->
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-top">
+    <div class="header-badge" data-k="k-badge">ÉCONOMÉTRIE</div>
+    <div class="lang-switch">
+      <button type="button" class="flag-btn active" id="flag-fr" onclick="setLang('fr')" title="Français" aria-label="Français"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="20" height="40" fill="#002654"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ED2939"/></svg></button>
+      <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
+    </div>
+  </div>
+  <h1 data-k="k-h1">Modèle logit et rapport de cotes</h1>
+  <p class="subtitle" data-k="k-sub">© Thomas Hossen – Version du 16 septembre 2026</p>
+
+  <div id="controls-bar">
+    <div class="ctrls">
+      <div class="ctrl-g">
+        <span class="ctrl-lbl" data-k="k-seed">Seed de reproductibilité</span>
+        <div class="seed-row">
+          <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="0" max="99999999">
+          <button type="button" class="btn-copy-seed" id="btn-copy-seed" onclick="copySeed(this)" title="Copier la seed active"><span data-kit="btnCopy">&#10697; Copier</span></button>
+        </div>
+        <span class="ctrl-tip" data-k="k-seedtip">Vide = aléatoire à chaque génération</span>
+      </div>
+      <div class="ctrl-vsep"></div>
+      <div class="ctrl-g">
+        <span class="ctrl-lbl" data-k="k-n">Individus <em>(n)</em></span>
+        <input class="ctrl-inp" type="number" id="param-n" min="6" max="30" placeholder="auto">
+        <span class="ctrl-tip" data-k="k-ntip">6 – 30, auto si vide</span>
+      </div>
+      <div class="ctrl-vsep"></div>
+      <button class="btn-gen" onclick="generateFromControls()"><span data-k="k-gen">Générer</span></button>
+    </div>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" class="welcome-msg">
+    <span class="arrow">↑</span>
+    <span data-k="k-welcome">Configurez les paramètres (ou laissez vide pour de l'aléatoire), puis cliquez sur Générer.</span>
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="top-bar-left">
+        <button type="button" class="btn-sm" onclick="regen()"><span data-kit="btnNew">&#8634; Nouvel &eacute;nonc&eacute;</span></button>
+        <button type="button" class="btn-sm pdf" onclick="openPdfModal()"><span data-kit="btnPdf">&#11015; Exporter PDF</span></button>
+        <button type="button" class="btn-sm doc" onclick="exportWord()"><span data-kit="btnDoc">&#11015; Exporter Word</span></button>
+      </div>
+      <div class="seed-badge"><span data-k="k-seedbadge">Seed&nbsp;:</span> <span id="seed-disp">—</span></div>
+    </div>
+
+    <div id="ex-card" class="card">
+      <div class="card-header"><span class="tag" data-k="k-tag-ex">Énoncé</span><h2 id="card-title" data-k="k-cardtitle">Du modèle de probabilité linéaire au modèle logit</h2></div>
+      <div class="card-body" id="ex-content"></div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag" data-k="k-tag-sol">Corrigé</span><h2 id="card-title2" data-k="k-cardtitle2">Du modèle de probabilité linéaire au modèle logit</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+let solVisible = false;
+
+/* ============================================================
+   OUTILS NUMERIQUES  /  NUMERIC HELPERS
+   ============================================================ */
+const P10 = [1, 10, 100, 1000, 10000, 100000, 1000000];
+
+/* entier v exprime en 10^-d  ->  chaine ; m = mode mathematique */
+function fx(v, d, m) {
+  const neg = v < 0;
+  let s = String(Math.abs(Math.round(v)));
+  let ip = s, fp = '';
+  if (d > 0) { s = s.padStart(d + 1, '0'); ip = s.slice(0, -d); fp = s.slice(-d); }
+  if (ip.length >= 5) {
+    const sep = m ? '\\,' : '\u202F';
+    let out = '';
+    while (ip.length > 3) { out = sep + ip.slice(-3) + out; ip = ip.slice(0, -3); }
+    ip = ip + out;
+  }
+  return (neg ? (m ? '-' : '\u2212') : '') + ip + (d > 0 ? '.' + fp : '');
+}
+function fxf(x, d, m) { return fx(Math.round(x * P10[d]), d, m); }
+function gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { const t = a % b; a = b; b = t; } return a; }
+function red(p, q) { const g = gcd(p, q) || 1; return { p: p / g, q: q / g }; }
+/* fraction reduite en TeX */
+function frT(p, q) { const r = red(p, q); return r.q === 1 ? String(r.p) : `\\frac{${r.p}}{${r.q}}`; }
+/* ecriture decimale d'un rationnel positif : exacte si elle tombe juste (<= 4 decimales), sinon arrondie a dd decimales */
+function rd(p, q, dd) {
+  const r = red(p, q);
+  for (let k = 0; k <= 4; k++) {
+    if ((r.p * P10[k]) % r.q === 0) return { s: fx(r.p * P10[k] / r.q, k, true), t: fx(r.p * P10[k] / r.q, k, false), eq: '=' };
+  }
+  return { s: fxf(p / q, dd, true), t: fxf(p / q, dd, false), eq: '\\approx' };
+}
+/* nombre de decimales pour afficher trois chiffres significatifs (au moins deux decimales) */
+function sd(x) { return Math.min(5, Math.max(2, 2 - Math.floor(Math.log10(x)))); }
+/* logarithme d'un rationnel positif, arrondi au millieme (exact si le rationnel vaut 1) */
+function lnR(p, q) {
+  const v = Math.log(p / q);
+  return p === q ? { s: '0', eq: '=', v: 0 } : { s: fxf(v, 3, true), eq: '\\approx', v };
+}
+
+/* ============================================================
+   CONTEXTES (sens attendu du rapport de cotes, independant de la langue)
+   ============================================================ */
+const CTX = [
+  { id: 'covid',   dir: 1 },
+  { id: 'defaut',  dir: 1 },
+  { id: 'achat',   dir: 1 },
+  { id: 'churn',   dir: -1 },
+  { id: 'fraude',  dir: 1 },
+  { id: 'concours', dir: 1 },
+  { id: 'ceinture', dir: -1 },
+  { id: 'emploi',  dir: 1 },
+  { id: 'grippe',  dir: -1 }
+];
+
+/* ============================================================
+   DICTIONNAIRE BILINGUE  /  BILINGUAL DICTIONARY
+   ============================================================ */
+const I18N = {
+
+  fr: {
+    "htmlLang": "fr",
+    "title": "Générateur d'exercices - Modèle logit",
+    "k-badge": "ÉCONOMÉTRIE",
+    "k-h1": "Modèle logit et rapport de cotes",
+    "k-sub": "© Thomas Hossen – Version du 16 septembre 2026",
+    "k-seed": "Seed de reproductibilité",
+    "k-seedtip": "Vide = aléatoire à chaque génération",
+    "k-n": "Individus <em>(n)</em>",
+    "k-ntip": "6 – 30, auto si vide",
+    "k-gen": "Générer",
+    "k-welcome": "Configurez les paramètres (ou laissez vide pour de l'aléatoire), puis cliquez sur Générer.",
+    "k-seedbadge": "Seed&nbsp;:",
+    "k-tag-ex": "Énoncé",
+    "k-cardtitle": "Du modèle de probabilité linéaire au modèle logit",
+    "k-tag-sol": "Corrigé",
+    "k-cardtitle2": "Du modèle de probabilité linéaire au modèle logit",
+    "phSeed": "auto",
+    "phN": "auto",
+    "showSol": "Afficher le corrigé",
+    "hideSol": "Masquer le corrigé",
+    lbl: {
+      total: "Total", conv: "convexe", conc: "concave", infl: "point d'inflexion (0, 1/2)",
+      obsRow: n => `Échantillon observé (n = ${n})`, tenRow: n => `Mêmes fréquences (n = ${n})`,
+      capInd: "Observations de l'étude pilote.",
+      capCont: "Tableau de contingence des effectifs croisés.",
+      capL: "Allure de la fonction de répartition \\(\\Lambda\\) de la loi logistique.",
+      capG: "Position des deux groupes sur la courbe \\(\\Lambda\\) : passer du groupe \\(X_i=0\\) au groupe \\(X_i=1\\) revient à se déplacer de \\(\\widehat{b}_1=\\ln(\\widehat{\\text{OR}})\\) sur l'axe des abscisses.",
+      capF: "Rapport de cotes estimé et intervalle de confiance à 95 % (échelle logarithmique).",
+      gLab: (x, p) => `X = ${x} : p̂ ≈ ${p}`,
+      axisX: "log-cote z", axisY: "probabilité Λ(z)"
+    },
+    ctx: {
+      covid: { goal: "détecter si une personne est atteinte du Covid", yDef: "l'individu \\(i\\) a le Covid", xDef: "l'individu \\(i\\) présente les symptômes du Covid",
+        unit: "Individu", pop: "personnes s'étant présentées dans un centre de dépistage", yShort: "avoir le Covid",
+        g1: "les individus présentant des symptômes", g0: "ceux qui n'en présentent pas",
+        why: "les symptômes étant précisément la manifestation clinique de la maladie, la cote d'être malade devrait être nettement plus élevée chez les personnes symptomatiques, même si des maladies voisines (grippe, rhume) produisent des symptômes proches et si certains porteurs du virus restent asymptomatiques" },
+      defaut: { goal: "prévoir le défaut de paiement des emprunteurs d'une banque", yDef: "l'emprunteur \\(i\\) fait défaut sur son crédit", xDef: "l'emprunteur \\(i\\) a déjà connu un incident de paiement par le passé",
+        unit: "Emprunteur", pop: "emprunteurs", yShort: "faire défaut",
+        g1: "les emprunteurs ayant déjà connu un incident", g0: "ceux qui n'en ont jamais connu",
+        why: "un incident de paiement passé signale une fragilité financière ou un comportement de remboursement moins rigoureux, et c'est précisément pour cette raison que les banques consultent les fichiers d'incidents avant d'accorder un crédit" },
+      achat: { goal: "mesurer l'efficacité de la campagne publicitaire ciblée d'un site marchand", yDef: "le visiteur \\(i\\) achète le produit", xDef: "le visiteur \\(i\\) a été exposé à la campagne",
+        unit: "Visiteur", pop: "visiteurs du site", yShort: "acheter le produit",
+        g1: "les visiteurs exposés à la campagne", g0: "les visiteurs non exposés",
+        why: "une campagne ciblée atteint des internautes au profil d'acheteurs et cherche à accroître leur propension à acheter : si elle est efficace, la cote d'achat doit être plus élevée chez les visiteurs exposés (sans que l'on puisse toutefois séparer l'effet propre de la publicité de celui du ciblage)" },
+      churn: { goal: "anticiper la résiliation des abonnés d'un opérateur de télécommunications", yDef: "l'abonné \\(i\\) résilie son abonnement dans l'année", xDef: "l'abonné \\(i\\) adhère au programme de fidélité de l'opérateur",
+        unit: "Abonné", pop: "abonnés", yShort: "résilier l'abonnement",
+        g1: "les adhérents au programme de fidélité", g0: "les non-adhérents",
+        why: "un programme de fidélité accroît le coût de sortie (perte des avantages accumulés) et attire des clients déjà attachés à l'opérateur : la cote de résiliation devrait donc être plus faible chez ses adhérents" },
+      fraude: { goal: "détecter les transactions frauduleuses par carte bancaire", yDef: "la transaction \\(i\\) est frauduleuse", xDef: "la transaction \\(i\\) est réalisée à l'étranger",
+        unit: "Transaction", pop: "transactions (issues d'un échantillon volontairement enrichi en fraudes)", yShort: "être frauduleuse",
+        g1: "les transactions réalisées à l'étranger", g0: "les transactions nationales",
+        why: "les fraudes exploitent souvent des données de carte volées et utilisées depuis un autre pays, et une localisation inhabituelle est justement l'un des signaux que surveillent les systèmes de détection : la cote de fraude devrait être plus élevée pour les transactions à l'étranger" },
+      concours: { goal: "évaluer l'effet d'une préparation sur la réussite à un concours administratif", yDef: "le candidat \\(i\\) est admis", xDef: "le candidat \\(i\\) a suivi une préparation",
+        unit: "Candidat", pop: "candidats", yShort: "être admis",
+        g1: "les candidats préparés", g0: "les candidats non préparés",
+        why: "une préparation entraîne aux épreuves et à leur méthodologie, si bien que la cote de réussite devrait être plus élevée chez les candidats préparés ; on ne peut toutefois exclure un effet de sélection, les candidats les plus motivés étant aussi les plus enclins à se préparer" },
+      ceinture: { goal: "étudier la gravité des accidents de la route", yDef: "l'occupant \\(i\\) d'un véhicule accidenté est grièvement blessé", xDef: "l'occupant \\(i\\) portait sa ceinture de sécurité",
+        unit: "Occupant", pop: "occupants de véhicules accidentés", yShort: "être grièvement blessé",
+        g1: "les occupants ceinturés", g0: "les occupants non ceinturés",
+        why: "la ceinture de sécurité réduit fortement le risque d'éjection et de choc contre l'habitacle : la cote de blessure grave devrait être nettement plus faible chez les occupants ceinturés" },
+      emploi: { goal: "étudier l'insertion professionnelle des jeunes", yDef: "le jeune \\(i\\) occupe un emploi six mois après la fin de ses études", xDef: "le jeune \\(i\\) est diplômé de l'enseignement supérieur",
+        unit: "Jeune", pop: "jeunes sortis de formation initiale", yShort: "être en emploi",
+        g1: "les diplômés du supérieur", g0: "les non-diplômés du supérieur",
+        why: "le diplôme atteste d'un niveau de compétences (théorie du capital humain) et le signale aux employeurs (théorie du signal) : la cote d'emploi devrait être plus élevée chez les diplômés du supérieur, ce que confirment régulièrement les enquêtes d'insertion" },
+      grippe: { goal: "évaluer l'efficacité de la vaccination antigrippale au sein d'une entreprise", yDef: "le salarié \\(i\\) contracte la grippe au cours de l'hiver", xDef: "le salarié \\(i\\) a été vacciné",
+        unit: "Salarié", pop: "salariés", yShort: "contracter la grippe",
+        g1: "les salariés vaccinés", g0: "les salariés non vaccinés",
+        why: "le vaccin a précisément pour objet de réduire le risque d'infection : s'il est efficace, la cote de contracter la grippe doit être plus faible chez les salariés vaccinés" }
+    },
+
+    ex: function (D) {
+      const C = D.C;
+      return `
+      <div class="context-block">
+        On considère \\(n\\) individus et, pour tout entier \\(i\\) compris entre 1 et \\(n\\), une variable dichotomique \\(Y_i\\) (à valeurs dans \\(\\{0,1\\}\\)) que l'on cherche à expliquer par \\(k\\) variables \\(X_{1,i},\\ldots,X_{k,i}\\), supposées déterministes. On note \\(\\Lambda\\) la fonction définie sur \\(\\mathbb{R}\\) par \\(\\Lambda(x)=\\frac{1}{1+\\exp(-x)}\\), fonction de répartition de la loi logistique.
+      </div>
+      <div class="questions"><ol>
+        <li><div class="q-text">On considère le modèle \\(Y_i=b_0+b_1X_{1,i}+\\cdots+b_kX_{k,i}+u_i\\), où les perturbations \\(u_i\\) vérifient les hypothèses de Gauss-Markov et où \\(Y_i\\) est une variable dichotomique. Ce modèle, dit « modèle de probabilité linéaire » (MPL), est estimé à l'aune de \\(n\\) observations. Prouver qu'on a \\(\\mathbb{P}([Y_i=1])=b_0+b_1X_{1,i}+\\cdots+b_kX_{k,i}\\). Quel sens donner au coefficient \\(b_j\\) et quels sont les problèmes majeurs posés par un tel modèle ?</div></li>
+        <li><div class="q-text">On considère le modèle \\(Y_i=\\mathbb{1}_{[b_0+b_1X_{1,i}+\\cdots+b_kX_{k,i}+u_i\\geq 0]}\\), où \\(\\mathbb{1}_{[x\\geq 0]}\\) vaut 0 si \\(x\\) est strictement négatif et 1 si \\(x\\) est positif ou nul, et où les \\(u_i\\) sont des variables aléatoires suivant la loi logistique, de fonction de répartition \\(\\Lambda\\) (on admet qu'une telle variable aléatoire est d'espérance nulle). En déduire qu'on a \\(\\mathbb{P}([Y_i=1])=\\Lambda(b_0+b_1X_{1,i}+\\cdots+b_kX_{k,i})\\). <em>Indication : vérifier que la densité \\(\\lambda:=\\Lambda'\\) de \\(u_i\\) est une fonction paire (c'est-à-dire qu'elle vérifie \\(\\lambda(-x)=\\lambda(x)\\) pour tout réel \\(x\\)), puis en déduire que la loi de \\(u_i\\) est symétrique.</em></div></li>
+        <li><div class="q-text">Quelle est la limite de \\(\\Lambda(x)\\) lorsque \\(x\\) tend vers \\(-\\infty\\) ? Et lorsque \\(x\\) tend vers \\(+\\infty\\) ? Montrer que la fonction \\(\\Lambda\\) est strictement croissante sur \\(\\mathbb{R}\\), convexe sur \\(\\mathbb{R}_-\\) et concave sur \\(\\mathbb{R}_+\\). Tracer l'allure de la fonction \\(\\Lambda\\) sur \\(\\mathbb{R}\\), et en déduire que le modèle logit permet de pallier les limites du modèle de probabilité linéaire.</div></li>
+        <li><div class="q-text">Montrer rigoureusement qu'on a
+        \\[\\ln\\left(\\frac{\\mathbb{P}([Y_i=1])}{1-\\mathbb{P}([Y_i=1])}\\right)=b_0+b_1X_{1,i}+\\cdots+b_kX_{k,i}\\]
+        En déduire qu'on a
+        \\[\\frac{\\mathbb{P}([Y_i=1])}{\\mathbb{P}([Y_i=0])}=\\exp(b_0+b_1X_{1,i}+\\cdots+b_kX_{k,i})\\]</div></li>
+        <li><div class="q-text">On simplifie le modèle en le réduisant à un seul régresseur binaire : \\(Y_i=\\mathbb{1}_{[b_0+b_1X_i+u_i\\geq 0]}\\), où \\(Y_i\\) et \\(X_i\\) sont des variables dichotomiques et où les \\(u_i\\) suivent la loi logistique. On pose
+        \\[\\text{OR}:=\\frac{\\mathbb{P}([Y_i=1]\\,|\\,[X_i=1])\\,/\\,\\mathbb{P}([Y_i=0]\\,|\\,[X_i=1])}{\\mathbb{P}([Y_i=1]\\,|\\,[X_i=0])\\,/\\,\\mathbb{P}([Y_i=0]\\,|\\,[X_i=0])}\\]
+        Ce ratio se nomme « rapport de cotes » (<em>odds ratio</em>). Montrer qu'on a \\(\\text{OR}=\\exp(b_1)\\).</div></li>
+        <li><div class="q-text">Imaginons que l'on cherche à ${C.goal} : \\(Y_i=1\\) si ${C.yDef}, \\(Y_i=0\\) sinon ; \\(X_i=1\\) si ${C.xDef}, \\(X_i=0\\) sinon. Comment interpréter le rapport de cotes ? On distinguera les cas \\(\\text{OR}<1\\), \\(\\text{OR}=1\\) et \\(\\text{OR}>1\\). <em>A priori</em>, lequel des trois cas paraît le plus probable dans ce contexte ?</div></li>
+        <li><div class="q-text">Une étude pilote portant sur seulement ${D.n} ${C.pop} a fourni les observations suivantes, sur lesquelles on estime le modèle de la question 5 :
+        ${tblInd(D)}
+        Pour \\(x\\) et \\(y\\) dans \\(\\{0,1\\}\\), on note \\(n_{xy}\\) le nombre d'observations telles que \\(X_i=x\\) et \\(Y_i=y\\).
+        <ol>
+          <li>Dresser le tableau de contingence croisant \\(X\\) et \\(Y\\).</li>
+          <li>Calculer, dans chacun des deux groupes \\([X_i=1]\\) et \\([X_i=0]\\), la fréquence empirique \\(\\widehat{p}_1\\) (respectivement \\(\\widehat{p}_0\\)) de l'événement \\([Y_i=1]\\) ainsi que la cote correspondante. En déduire le rapport de cotes empirique \\(\\widehat{\\text{OR}}\\).</li>
+          <li>On admet que les estimateurs du maximum de vraisemblance \\(\\widehat{b}_0\\) et \\(\\widehat{b}_1\\) vérifient \\(\\Lambda(\\widehat{b}_0)=\\widehat{p}_0\\) et \\(\\Lambda(\\widehat{b}_0+\\widehat{b}_1)=\\widehat{p}_1\\). En déduire \\(\\widehat{b}_0\\) et \\(\\widehat{b}_1\\), et vérifier que \\(\\exp(\\widehat{b}_1)=\\widehat{\\text{OR}}\\).</li>
+          <li>Représenter la courbe de \\(\\Lambda\\) en y plaçant les deux groupes. Commenter les résultats en termes de rapport de cotes, puis comparer \\(\\widehat{\\text{OR}}\\) au rapport des fréquences \\(\\widehat{p}_1/\\widehat{p}_0\\).</li>
+          <li>On admet que l'écart-type estimé de \\(\\ln(\\widehat{\\text{OR}})\\) vaut \\(\\sqrt{\\frac{1}{n_{11}}+\\frac{1}{n_{10}}+\\frac{1}{n_{01}}+\\frac{1}{n_{00}}}\\). Construire un intervalle de confiance à 95 % du rapport de cotes, le représenter et commenter. Qu'obtiendrait-on avec les mêmes fréquences observées sur un échantillon dix fois plus grand ?</li>
+        </ol></div></li>
+      </ol></div>`;
+    },
+
+    sol: function (D) {
+      const C = D.C, L = I18N.fr.lbl, s = D.S;
+      const z = 'b_0+b_1X_{1,i}+\\cdots+b_kX_{k,i}';
+      const P1 = '\\mathbb{P}([Y_i=1])';
+      const orTxt = D.dirObs > 0
+        ? `les cotes de l'événement « ${C.yShort} » sont ${s.orAbout}${s.orT} fois plus élevées pour ${C.g1} que pour ${C.g0}`
+        : `les cotes de l'événement « ${C.yShort} » sont ${s.invAbout}${s.invT} fois plus faibles pour ${C.g1} que pour ${C.g0} (elles sont multipliées par \\(\\widehat{\\text{OR}}${s.or.eq}${s.or.s}\\))`;
+      const ciTxt = D.c1
+        ? `L'intervalle contient la valeur 1 : au seuil de 5 %, on ne peut pas rejeter l'hypothèse \\(b_1=0\\), c'est-à-dire l'absence de lien entre \\(X\\) et \\(Y\\), et ce malgré un rapport de cotes ponctuel de ${s.orT}. Avec si peu d'observations, l'estimation est en effet extrêmement imprécise : la borne supérieure de l'intervalle est environ ${s.ratioT} fois plus grande que sa borne inférieure. L'étude pilote suggère un lien, mais ne permet pas de le démontrer.`
+        : `L'intervalle ne contient pas la valeur 1 : au seuil de 5 %, on rejette l'hypothèse \\(b_1=0\\), l'association entre \\(X\\) et \\(Y\\) étant suffisamment marquée pour ressortir malgré la petite taille de l'échantillon. L'estimation reste toutefois très imprécise : la borne supérieure de l'intervalle est environ ${s.ratioT} fois plus grande que sa borne inférieure, si bien que l'ampleur du lien demeure très mal connue.`;
+      const tenTxt = `Avec les mêmes fréquences observées sur ${D.n * 10} ${C.pop}, chaque effectif \\(n_{xy}\\) serait multiplié par dix : le rapport de cotes estimé serait inchangé, mais l'écart-type de \\(\\ln(\\widehat{\\text{OR}})\\) serait divisé par \\(\\sqrt{10}\\), soit \\(\\sqrt{\\frac{1}{10}\\times ${s.sumF}}${s.se10eq}${s.se10}\\). On aurait alors \\(1.96\\times ${s.se10}\\approx ${s.m10}\\), d'où l'intervalle \\([${s.L}-${s.m10}\\,;\\,${s.L}+${s.m10}]=[${s.lo10}\\,;\\,${s.hi10}]\\) pour \\(\\ln(\\text{OR})\\), et \\([${s.elo10}\\,;\\,${s.ehi10}]\\) pour OR, qui ${D.c10 ? "contiendrait encore la valeur 1 : même avec dix fois plus d'observations, le lien resterait statistiquement incertain" : "exclurait la valeur 1"}${D.c1 && !D.c10 ? " : ce qui n'était qu'une intuition deviendrait un résultat statistiquement significatif" : ""}. C'est tout l'enjeu de la taille d'échantillon : l'estimation ponctuelle d'un rapport de cotes ne dit rien de sa fiabilité. On notera enfin que, sur un échantillon aussi petit, il suffirait qu'une case du tableau de contingence soit vide pour que \\(\\widehat{\\text{OR}}\\) soit nul ou infini : le maximum de vraisemblance n'existerait alors plus (phénomène de <em>séparation</em>).`;
+      return `<div class="st"><ol>
+
+      <li><div class="q-content">
+        <p>Un tel cadre a-t-il un sens ? La quantité \\(${z}\\) prend <em>a priori</em> ses valeurs dans \\(\\mathbb{R}\\), et non dans \\(\\{0,1\\}\\). Pour se convaincre que cette modélisation n'est pas absurde, passons la relation à l'espérance. D'une part, on a \\(\\mathbb{E}[Y_i]=${z}\\), du fait de l'hypothèse \\(\\mathbb{E}[u_i]=0\\) (les régresseurs étant déterministes). D'autre part, comme \\(Y_i\\) est une variable dichotomique, elle suit une loi de Bernoulli de paramètre \\(${P1}\\), d'où \\(\\mathbb{E}[Y_i]=1\\times ${P1}+0\\times\\mathbb{P}([Y_i=0])=${P1}\\). En combinant ces deux relations, il vient :
+        \\[${P1}=${z}\\]</p>
+        <p>Cette relation a davantage de sens : une variation d'une unité de la variable \\(X_{j,i}\\), toutes choses égales par ailleurs, fait varier la probabilité \\(${P1}\\) de \\(b_j\\), soit de \\(100\\,b_j\\) points de pourcentage. Plutôt que de commenter la variation de la réponse elle-même (\\(Y_i=1\\) ou \\(Y_i=0\\)), on commente donc la variation de la probabilité de choisir \\(Y_i=1\\) à la suite d'un stimulus de la variable \\(X_{j,i}\\).</p>
+        <p>Ce modèle pose cependant deux problèmes majeurs. D'abord, rien ne garantit que la probabilité prédite \\(\\widehat{\\mathbb{P}}([Y_i=1])=\\widehat{b}_0+\\widehat{b}_1X_{1,i}+\\cdots+\\widehat{b}_kX_{k,i}\\), où \\(\\widehat{b}_0,\\ldots,\\widehat{b}_k\\) sont les estimateurs des MCO, soit comprise entre 0 et 1 : pour des valeurs extrêmes des régresseurs, elle peut être négative ou supérieure à 1, ce qui n'a aucun sens. De façon liée, l'effet marginal \\(b_j\\) est supposé constant, alors qu'une probabilité déjà proche de 0 ou de 1 ne peut presque plus varier dans un sens. Ensuite, les perturbations ne peuvent pas être homoscédastiques : en notant \\(p_i:=${P1}\\), la perturbation \\(u_i=Y_i-p_i\\) ne prend que les deux valeurs \\(1-p_i\\) et \\(-p_i\\), et l'on a \\(\\textbf{Var}(u_i)=\\textbf{Var}(Y_i)=p_i(1-p_i)\\), quantité qui dépend des régresseurs. L'hypothèse d'homoscédasticité est donc nécessairement violée : les estimateurs des MCO restent sans biais, mais ne sont plus les plus efficaces et leurs écarts-types usuels sont erronés ; la normalité des perturbations est, quant à elle, exclue.</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <p>Par définition du modèle, \\(Y_i\\) vaut 1 si et seulement si \\(${z}+u_i\\geq 0\\). On a donc :
+        \\[${P1}=\\mathbb{P}([${z}+u_i\\geq 0])=\\mathbb{P}([-u_i\\leq ${z}])\\]
+        Vérifions que la densité \\(\\lambda:=\\Lambda'\\) de la loi logistique est paire. La fonction \\(\\Lambda\\) est de classe \\(\\mathcal{C}^{\\infty}\\) sur \\(\\mathbb{R}\\), en tant qu'inverse d'une fonction de classe \\(\\mathcal{C}^{\\infty}\\) ne s'annulant pas sur \\(\\mathbb{R}\\), et pour tout réel \\(x\\), on a :
+        \\[\\lambda(x)=\\Lambda'(x)=\\frac{\\exp(-x)}{(1+\\exp(-x))^2}\\]
+        En particulier, \\(\\lambda(x)\\) est strictement positif pour tout réel \\(x\\), ce qui autorise le calcul suivant :
+        \\[\\begin{aligned}
+        \\frac{\\lambda(x)}{\\lambda(-x)}
+        &=\\frac{\\exp(-x)\\,/\\,(1+\\exp(-x))^2}{\\exp(x)\\,/\\,(1+\\exp(x))^2}
+        =\\frac{\\exp(-x)(1+\\exp(x))^2}{\\exp(x)(1+\\exp(-x))^2}\\\\
+        &=\\frac{\\exp(-x)(1+2\\exp(x)+\\exp(2x))}{\\exp(x)(1+2\\exp(-x)+\\exp(-2x))}
+        =\\frac{\\exp(-x)+2+\\exp(x)}{\\exp(x)+2+\\exp(-x)}=1
+        \\end{aligned}\\]
+        On a donc \\(\\lambda(-x)=\\lambda(x)\\) pour tout réel \\(x\\) : la densité de \\(u_i\\) est paire. La loi de \\(u_i\\) est par conséquent symétrique, c'est-à-dire que \\(u_i\\) et \\(-u_i\\) suivent la même loi : pour tout réel \\(t\\), le changement de variable \\(v=-s\\) donne en effet
+        \\[\\mathbb{P}([-u_i\\leq t])=\\mathbb{P}([u_i\\geq -t])=\\int_{-t}^{+\\infty}\\lambda(v)\\,\\mathrm{d}v=\\int_{-\\infty}^{t}\\lambda(-s)\\,\\mathrm{d}s=\\int_{-\\infty}^{t}\\lambda(s)\\,\\mathrm{d}s=\\Lambda(t)\\]
+        En appliquant cette égalité à \\(t=${z}\\), on obtient comme annoncé :
+        \\[${P1}=\\Lambda(${z})\\]</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <p>La fonction exponentielle tend vers 0 en \\(-\\infty\\) et vers \\(+\\infty\\) en \\(+\\infty\\). D'une part, lorsque \\(x\\) tend vers \\(-\\infty\\), \\(\\exp(-x)\\) tend vers \\(+\\infty\\), donc \\(1+\\exp(-x)\\) aussi par somme, puis \\(\\Lambda(x)\\) tend vers 0 par passage à l'inverse. D'autre part, lorsque \\(x\\) tend vers \\(+\\infty\\), \\(\\exp(-x)\\) tend vers 0, donc \\(1+\\exp(-x)\\) tend vers 1, puis \\(\\Lambda(x)\\) tend vers 1. On a vu à la question précédente que \\(\\Lambda'(x)=\\lambda(x)>0\\) pour tout réel \\(x\\) : la fonction \\(\\Lambda\\) est donc strictement croissante sur \\(\\mathbb{R}\\). Par suite, pour tout réel \\(x\\), on a :
+        \\[\\begin{aligned}
+        \\Lambda''(x)=\\lambda'(x)
+        &=\\frac{-\\exp(-x)(1+\\exp(-x))^2+2\\exp(-x)^2(1+\\exp(-x))}{(1+\\exp(-x))^4}\\\\
+        &=\\frac{\\exp(-x)(1+\\exp(-x))\\left(2\\exp(-x)-(1+\\exp(-x))\\right)}{(1+\\exp(-x))^4}
+        =\\frac{\\exp(-x)\\left(\\exp(-x)-1\\right)}{(1+\\exp(-x))^3}
+        \\end{aligned}\\]
+        Cette valeur est du signe de \\(\\exp(-x)-1\\). Or la fonction exponentielle prend des valeurs strictement supérieures à 1 sur \\(\\mathbb{R}_+^*\\) et strictement inférieures à 1 sur \\(\\mathbb{R}_-^*\\). Par conséquent, \\(\\exp(-x)-1\\), donc \\(\\Lambda''(x)\\), est strictement positif pour tout réel \\(x\\) strictement négatif, et strictement négatif pour tout réel \\(x\\) strictement positif. La fonction \\(\\Lambda\\) est donc strictement convexe sur \\(\\mathbb{R}_-\\) et strictement concave sur \\(\\mathbb{R}_+\\), le point \\((0,\\Lambda(0))=(0,\\frac{1}{2})\\) étant un point d'inflexion. On remarque en outre que \\(\\Lambda(-x)=1-\\Lambda(x)\\) pour tout réel \\(x\\) : la courbe est symétrique par rapport à ce point. On en déduit l'allure suivante :</p>
+        ${figLambda(D)}
+        <p><em>In fine</em>, la fonction \\(\\Lambda\\) prend toutes ses valeurs dans \\(]0,1[\\). Par conséquent, la probabilité \\(${P1}=\\Lambda(${z})\\) est elle aussi toujours comprise entre 0 et 1, ce qui pallie le principal défaut du modèle de probabilité linéaire. De plus, l'effet marginal d'une variation de \\(X_{j,i}\\) sur cette probabilité vaut \\(b_j\\,\\lambda(${z})\\) : il n'est plus constant, maximal lorsque la probabilité vaut \\(\\frac{1}{2}\\) (il vaut alors \\(\\frac{b_j}{4}\\)) et d'autant plus faible que la probabilité est proche de 0 ou de 1.</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <p>Notons \\(z_i:=${z}\\). D'après la question 2, on a \\(${P1}=\\Lambda(z_i)\\in\\,]0,1[\\), de sorte que :
+        \\[\\frac{${P1}}{1-${P1}}=\\frac{\\Lambda(z_i)}{1-\\Lambda(z_i)}
+        =\\frac{1\\,/\\,(1+\\exp(-z_i))}{1-1\\,/\\,(1+\\exp(-z_i))}
+        =\\frac{1\\,/\\,(1+\\exp(-z_i))}{\\exp(-z_i)\\,/\\,(1+\\exp(-z_i))}
+        =\\frac{1}{\\exp(-z_i)}=\\exp(z_i)\\]
+        Ce rapport étant strictement positif, on peut en prendre le logarithme, et l'on obtient bien :
+        \\[\\ln\\left(\\frac{${P1}}{1-${P1}}\\right)=${z}\\]
+        Le rapport \\(\\frac{p}{1-p}\\) se nomme la <em>cote</em> associée à la probabilité \\(p\\), et son logarithme la <em>log-cote</em> ou <em>logit</em>, d'où le nom du modèle : la log-cote est une fonction affine des régresseurs. Enfin, comme \\(Y_i\\) est dichotomique, on a \\(\\mathbb{P}([Y_i=0])=1-${P1}\\), d'où l'égalité annoncée :
+        \\[\\frac{${P1}}{\\mathbb{P}([Y_i=0])}=\\exp(${z})\\]</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <p>Dans ce modèle, conditionnellement à l'événement \\([X_i=x]\\), où \\(x\\in\\{0,1\\}\\), la question précédente s'applique avec \\(z_i=b_0+b_1x\\). On a donc :
+        \\[\\frac{\\mathbb{P}([Y_i=1]\\,|\\,[X_i=1])}{\\mathbb{P}([Y_i=0]\\,|\\,[X_i=1])}=\\exp(b_0+b_1)\\quad\\text{et}\\quad\\frac{\\mathbb{P}([Y_i=1]\\,|\\,[X_i=0])}{\\mathbb{P}([Y_i=0]\\,|\\,[X_i=0])}=\\exp(b_0)\\]
+        Il vient alors :
+        \\[\\text{OR}=\\frac{\\exp(b_0+b_1)}{\\exp(b_0)}=\\exp(b_1)\\]
+        Le rapport de cotes ne dépend donc pas de \\(b_0\\), et l'on a \\(b_1=\\ln(\\text{OR})\\). Plus généralement, dans le modèle logit à \\(k\\) régresseurs, \\(\\exp(b_j)\\) est le rapport de cotes associé à une hausse d'une unité de \\(X_{j,i}\\), toutes choses égales par ailleurs : c'est ainsi que l'on interprète usuellement les coefficients d'un modèle logit.</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <p>Le rapport de cotes est ici le quotient de la cote de l'événement « ${C.yShort} » pour ${C.g1} par cette même cote pour ${C.g0}. Comme la cote \\(p\\mapsto\\frac{p}{1-p}\\) est une fonction strictement croissante de la probabilité \\(p\\) sur \\([0,1[\\), comparer les cotes revient à comparer les probabilités :</p>
+        <ul>
+          <li>si \\(\\text{OR}=1\\), c'est-à-dire \\(b_1=0\\), les deux cotes sont égales, donc \\(\\mathbb{P}([Y_i=1]\\,|\\,[X_i=1])=\\mathbb{P}([Y_i=1]\\,|\\,[X_i=0])\\) : l'événement « ${C.yShort} » est indépendant de \\(X\\), qui n'apporte aucune information ;</li>
+          <li>si \\(\\text{OR}<1\\), c'est-à-dire \\(b_1<0\\), l'événement « ${C.yShort} » est moins probable pour ${C.g1} que pour ${C.g0} ;</li>
+          <li>si \\(\\text{OR}>1\\), c'est-à-dire \\(b_1>0\\), l'événement « ${C.yShort} » est plus probable pour ${C.g1} que pour ${C.g0}.</li>
+        </ul>
+        <p>Dans ce contexte, on s'attend <em>a priori</em> au cas \\(\\text{OR}${D.dir > 0 ? '>' : '<'}1\\) : ${C.why}. On gardera à l'esprit qu'un rapport de cotes mesure une association et n'établit pas, à lui seul, une relation de causalité.</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <ol>
+        <li><p>En dénombrant les observations selon les valeurs de \\(X_i\\) et de \\(Y_i\\), on obtient le tableau de contingence suivant :</p>
+        ${tblCont(D)}</li>
+
+        <li><p>Parmi les ${D.n1} observations telles que \\(X_i=1\\), la fréquence empirique de l'événement \\([Y_i=1]\\) et la cote correspondante valent :
+        \\[\\widehat{p}_1=\\frac{n_{11}}{n_{11}+n_{10}}=${s.p1F}\\qquad\\text{et}\\qquad\\frac{\\widehat{p}_1}{1-\\widehat{p}_1}=\\frac{n_{11}}{n_{10}}=${s.o1F}\\]
+        De même, parmi les ${D.n0} observations telles que \\(X_i=0\\), on a :
+        \\[\\widehat{p}_0=\\frac{n_{01}}{n_{01}+n_{00}}=${s.p0F}\\qquad\\text{et}\\qquad\\frac{\\widehat{p}_0}{1-\\widehat{p}_0}=\\frac{n_{01}}{n_{00}}=${s.o0F}\\]
+        Le rapport de cotes empirique est le quotient de ces deux cotes, c'est-à-dire le « produit en croix » du tableau de contingence :
+        \\[\\widehat{\\text{OR}}=\\frac{n_{11}/n_{10}}{n_{01}/n_{00}}=\\frac{n_{11}\\times n_{00}}{n_{10}\\times n_{01}}=\\frac{${D.n11}\\times ${D.n00}}{${D.n10}\\times ${D.n01}}=${s.orF}\\]</p></li>
+
+        <li><p>Justifions d'abord le résultat admis. Posons \\(p_1:=\\Lambda(b_0+b_1)\\) et \\(p_0:=\\Lambda(b_0)\\). Comme \\(\\Lambda\\) est une bijection strictement croissante de \\(\\mathbb{R}\\) sur \\(]0,1[\\), l'application \\((b_0,b_1)\\mapsto(p_0,p_1)\\) est une bijection de \\(\\mathbb{R}^2\\) sur \\(]0,1[^2\\). Les observations étant indépendantes, la log-vraisemblance s'écrit :
+        \\[\\ell=n_{11}\\ln(p_1)+n_{10}\\ln(1-p_1)+n_{01}\\ln(p_0)+n_{00}\\ln(1-p_0)\\]
+        Pour \\(\\alpha,\\beta>0\\), la fonction \\(p\\mapsto\\alpha\\ln(p)+\\beta\\ln(1-p)\\) a pour dérivée \\(p\\mapsto\\frac{\\alpha}{p}-\\frac{\\beta}{1-p}\\), qui s'annule en \\(\\frac{\\alpha}{\\alpha+\\beta}\\) en passant du positif au négatif : elle atteint son maximum sur \\(]0,1[\\) en ce point. Aucune case du tableau n'étant vide, la vraisemblance est donc maximale pour \\(p_1=\\widehat{p}_1\\) et \\(p_0=\\widehat{p}_0\\), ce qui donne bien \\(\\Lambda(\\widehat{b}_0)=\\widehat{p}_0\\) et \\(\\Lambda(\\widehat{b}_0+\\widehat{b}_1)=\\widehat{p}_1\\).</p>
+        <p>D'après la question 4, pour tout \\(p\\in\\,]0,1[\\) et tout réel \\(z\\), on a \\(\\Lambda(z)=p\\) si et seulement si \\(z=\\ln\\left(\\frac{p}{1-p}\\right)\\). On en déduit :
+        \\[\\widehat{b}_0=\\ln\\left(\\frac{\\widehat{p}_0}{1-\\widehat{p}_0}\\right)=\\ln\\left(${frT(D.n01, D.n00)}\\right)${s.b0.eq}${s.b0.s}\\qquad\\text{et}\\qquad\\widehat{b}_0+\\widehat{b}_1=\\ln\\left(\\frac{\\widehat{p}_1}{1-\\widehat{p}_1}\\right)=\\ln\\left(${frT(D.n11, D.n10)}\\right)${s.b01.eq}${s.b01.s}\\]
+        d'où, par différence :
+        \\[\\widehat{b}_1=\\ln\\left(${frT(D.n11, D.n10)}\\right)-\\ln\\left(${frT(D.n01, D.n00)}\\right)=\\ln\\left(${frT(D.n11 * D.n00, D.n10 * D.n01)}\\right)\\approx ${s.b1}\\]
+        On a donc bien \\(\\exp(\\widehat{b}_1)=\\widehat{\\text{OR}}\\) : l'estimateur du rapport de cotes fourni par le modèle logit, \\(\\exp(\\widehat{b}_1)\\), coïncide exactement avec le rapport de cotes empirique du tableau de contingence, conformément à la question 5.</p></li>
+
+        <li><p>Les deux groupes se placent sur la courbe de \\(\\Lambda\\) aux points d'abscisses \\(\\widehat{b}_0\\) et \\(\\widehat{b}_0+\\widehat{b}_1\\), d'ordonnées respectives \\(\\widehat{p}_0\\) et \\(\\widehat{p}_1\\) :</p>
+        ${figGroups(D)}
+        <p>On a \\(\\widehat{\\text{OR}}${s.or.eq}${s.or.s}${D.dirObs > 0 ? '>' : '<'}1\\) : ${orTxt}. Ce résultat va dans le sens attendu à la question 6. Sur le graphique, le passage du groupe \\([X_i=0]\\) au groupe \\([X_i=1]\\) correspond à un déplacement de \\(\\widehat{b}_1\\approx ${s.b1}\\) le long de l'axe des abscisses : l'effet de \\(X\\) est constant sur l'échelle des log-cotes, mais son effet sur la probabilité dépend du point de départ, la courbe étant plus pentue au voisinage de \\(\\frac{1}{2}\\) qu'aux extrémités.</p>
+        <p>Le rapport des fréquences vaut quant à lui \\(\\frac{\\widehat{p}_1}{\\widehat{p}_0}=${s.rrF}\\), valeur plus proche de 1 que \\(\\widehat{\\text{OR}}\\). C'est une propriété générale : \\(\\widehat{\\text{OR}}=\\frac{\\widehat{p}_1}{\\widehat{p}_0}\\times\\frac{1-\\widehat{p}_0}{1-\\widehat{p}_1}\\), et le second facteur accentue l'écart à 1. Un rapport de cotes ne doit donc pas être lu comme un rapport de probabilités : dire que « la probabilité est ${D.dirObs > 0 ? s.orT : s.invT} fois ${D.dirObs > 0 ? 'plus élevée' : 'plus faible'} » serait ici erroné. Les deux mesures ne se rapprochent que lorsque l'événement étudié est rare, cas où cote et probabilité se confondent.</p></li>
+
+        <li><p>L'écart-type estimé de \\(\\ln(\\widehat{\\text{OR}})\\), qui n'est autre que l'écart-type asymptotique de \\(\\widehat{b}_1\\) fourni par le maximum de vraisemblance, vaut :
+        \\[\\widehat{\\sigma}=\\sqrt{\\frac{1}{${D.n11}}+\\frac{1}{${D.n10}}+\\frac{1}{${D.n01}}+\\frac{1}{${D.n00}}}=\\sqrt{${s.sumF}}${s.seeq}${s.se}\\]
+        En utilisant l'approximation normale de \\(\\widehat{b}_1\\), on a \\(1.96\\times ${s.se}\\approx ${s.m}\\). Un intervalle de confiance à 95 % de \\(\\ln(\\text{OR})\\) est donc \\([${s.L}-${s.m}\\,;\\,${s.L}+${s.m}]=[${s.lo}\\,;\\,${s.hi}]\\). La fonction exponentielle étant strictement croissante, on en déduit un intervalle de confiance à 95 % du rapport de cotes :
+        \\[\\text{IC}_{95\\,\\%}(\\text{OR})\\approx\\left[\\exp(${s.lo})\\,;\\,\\exp(${s.hi})\\right]\\approx\\left[${s.elo}\\,;\\,${s.ehi}\\right]\\]
+        Cet intervalle n'est pas symétrique autour de \\(\\widehat{\\text{OR}}\\) : il l'est sur l'échelle logarithmique, que l'on utilise pour le représenter.</p>
+        ${figForest(D)}
+        <p>${ciTxt}</p>
+        <p>${tenTxt}</p></li>
+        </ol>
+      </div></li>
+
+      </ol></div>`;
+    }
+  },
+
+  en: {
+    "htmlLang": "en",
+    "title": "Exercise generator - Logit model",
+    "k-badge": "ECONOMETRICS",
+    "k-h1": "The Logit Model and Odds Ratios",
+    "k-sub": "© Thomas Hossen – September 16, 2026 Version",
+    "k-seed": "Reproducibility seed",
+    "k-seedtip": "Empty = random at each generation",
+    "k-n": "Individuals <em>(n)</em>",
+    "k-ntip": "6 – 30, auto if left empty",
+    "k-gen": "Generate",
+    "k-welcome": "Configure the parameters (or leave them empty for random values), then click Generate.",
+    "k-seedbadge": "Seed:",
+    "k-tag-ex": "Problem",
+    "k-cardtitle": "From the linear probability model to the logit model",
+    "k-tag-sol": "Solution",
+    "k-cardtitle2": "From the linear probability model to the logit model",
+    "phSeed": "auto",
+    "phN": "auto",
+    "showSol": "Show the solution",
+    "hideSol": "Hide the solution",
+    lbl: {
+      total: "Total", conv: "convex", conc: "concave", infl: "inflection point (0, 1/2)",
+      obsRow: n => `Observed sample (n = ${n})`, tenRow: n => `Same frequencies (n = ${n})`,
+      capInd: "Observations from the pilot study.",
+      capCont: "Contingency table of cross-tabulated counts.",
+      capL: "Shape of the cumulative distribution function \\(\\Lambda\\) of the logistic distribution.",
+      capG: "Position of the two groups on the curve \\(\\Lambda\\): moving from group \\(X_i=0\\) to group \\(X_i=1\\) amounts to a shift of \\(\\widehat{b}_1=\\ln(\\widehat{\\text{OR}})\\) along the horizontal axis.",
+      capF: "Estimated odds ratio and 95% confidence interval (logarithmic scale).",
+      gLab: (x, p) => `X = ${x}: p̂ ≈ ${p}`,
+      axisX: "log-odds z", axisY: "probability Λ(z)"
+    },
+    ctx: {
+      covid: { goal: "detect whether a person has Covid", yDef: "individual \\(i\\) has Covid", xDef: "individual \\(i\\) shows Covid symptoms",
+        unit: "Individual", pop: "people who came to a testing centre", yShort: "having Covid",
+        g1: "individuals with symptoms", g0: "those without symptoms",
+        why: "since symptoms are precisely the clinical manifestation of the disease, the odds of being infected should be much higher among symptomatic people, even though similar illnesses (flu, colds) produce comparable symptoms and some carriers of the virus remain asymptomatic" },
+      defaut: { goal: "predict loan default among a bank's borrowers", yDef: "borrower \\(i\\) defaults on the loan", xDef: "borrower \\(i\\) has had a payment incident in the past",
+        unit: "Borrower", pop: "borrowers", yShort: "defaulting",
+        g1: "borrowers with a past incident", g0: "those who never had one",
+        why: "a past payment incident signals financial fragility or less rigorous repayment behaviour, which is precisely why banks check incident registers before granting a loan" },
+      achat: { goal: "measure the effectiveness of an online shop's targeted advertising campaign", yDef: "visitor \\(i\\) buys the product", xDef: "visitor \\(i\\) was exposed to the campaign",
+        unit: "Visitor", pop: "website visitors", yShort: "buying the product",
+        g1: "visitors exposed to the campaign", g0: "non-exposed visitors",
+        why: "a targeted campaign reaches web users with a buyer profile and seeks to raise their propensity to buy: if it works, the odds of purchase should be higher among exposed visitors (although the proper effect of advertising cannot be separated from that of targeting)" },
+      churn: { goal: "anticipate subscriber churn at a telecommunications operator", yDef: "subscriber \\(i\\) cancels the subscription within the year", xDef: "subscriber \\(i\\) belongs to the operator's loyalty programme",
+        unit: "Subscriber", pop: "subscribers", yShort: "cancelling the subscription",
+        g1: "loyalty-programme members", g0: "non-members",
+        why: "a loyalty programme raises switching costs (loss of accumulated benefits) and attracts customers who are already attached to the operator: the odds of cancelling should therefore be lower among its members" },
+      fraude: { goal: "detect fraudulent card transactions", yDef: "transaction \\(i\\) is fraudulent", xDef: "transaction \\(i\\) is made abroad",
+        unit: "Transaction", pop: "transactions (drawn from a sample deliberately enriched in frauds)", yShort: "being fraudulent",
+        g1: "transactions made abroad", g0: "domestic transactions",
+        why: "fraud often relies on stolen card details used from another country, and an unusual location is precisely one of the signals that detection systems monitor: the odds of fraud should be higher for transactions made abroad" },
+      concours: { goal: "assess the effect of a preparation course on success in a civil-service competitive exam", yDef: "candidate \\(i\\) passes", xDef: "candidate \\(i\\) followed a preparation course",
+        unit: "Candidate", pop: "candidates", yShort: "passing the exam",
+        g1: "prepared candidates", g0: "unprepared candidates",
+        why: "a preparation course trains candidates for the tests and their methodology, so the odds of success should be higher among prepared candidates; a selection effect cannot be ruled out, however, since the most motivated candidates are also the most likely to prepare" },
+      ceinture: { goal: "study the severity of road accidents", yDef: "occupant \\(i\\) of a crashed vehicle is seriously injured", xDef: "occupant \\(i\\) was wearing a seat belt",
+        unit: "Occupant", pop: "occupants of crashed vehicles", yShort: "being seriously injured",
+        g1: "belted occupants", g0: "unbelted occupants",
+        why: "seat belts sharply reduce the risk of ejection and of impact against the passenger compartment: the odds of serious injury should be much lower among belted occupants" },
+      emploi: { goal: "study young people's entry into the labour market", yDef: "young person \\(i\\) is in employment six months after leaving education", xDef: "young person \\(i\\) holds a higher-education degree",
+        unit: "Young person", pop: "young people who have left initial education", yShort: "being in employment",
+        g1: "higher-education graduates", g0: "non-graduates",
+        why: "a degree certifies a level of skills (human capital theory) and signals it to employers (signalling theory): the odds of being employed should be higher among higher-education graduates, as school-to-work surveys regularly confirm" },
+      grippe: { goal: "assess the effectiveness of flu vaccination within a company", yDef: "employee \\(i\\) catches the flu during the winter", xDef: "employee \\(i\\) was vaccinated",
+        unit: "Employee", pop: "employees", yShort: "catching the flu",
+        g1: "vaccinated employees", g0: "unvaccinated employees",
+        why: "the very purpose of the vaccine is to reduce the risk of infection: if it is effective, the odds of catching the flu must be lower among vaccinated employees" }
+    },
+
+    ex: function (D) {
+      const C = D.C;
+      return `
+      <div class="context-block">
+        We consider \\(n\\) individuals and, for every integer \\(i\\) between 1 and \\(n\\), a dichotomous variable \\(Y_i\\) (taking values in \\(\\{0,1\\}\\)) that we seek to explain by \\(k\\) variables \\(X_{1,i},\\ldots,X_{k,i}\\), assumed deterministic. We write \\(\\Lambda\\) for the function defined on \\(\\mathbb{R}\\) by \\(\\Lambda(x)=\\frac{1}{1+\\exp(-x)}\\), the cumulative distribution function of the logistic distribution.
+      </div>
+      <div class="questions"><ol>
+        <li><div class="q-text">Consider the model \\(Y_i=b_0+b_1X_{1,i}+\\cdots+b_kX_{k,i}+u_i\\), where the disturbances \\(u_i\\) satisfy the Gauss-Markov assumptions and where \\(Y_i\\) is a dichotomous variable. This model, known as the “linear probability model” (LPM), is estimated from \\(n\\) observations. Prove that \\(\\mathbb{P}([Y_i=1])=b_0+b_1X_{1,i}+\\cdots+b_kX_{k,i}\\). How should the coefficient \\(b_j\\) be interpreted, and what are the main problems raised by such a model?</div></li>
+        <li><div class="q-text">Consider the model \\(Y_i=\\mathbb{1}_{[b_0+b_1X_{1,i}+\\cdots+b_kX_{k,i}+u_i\\geq 0]}\\), where \\(\\mathbb{1}_{[x\\geq 0]}\\) equals 0 if \\(x\\) is strictly negative and 1 if \\(x\\) is non-negative, and where the \\(u_i\\) are random variables following the logistic distribution, with cumulative distribution function \\(\\Lambda\\) (we admit that such a random variable has zero expectation). Deduce that \\(\\mathbb{P}([Y_i=1])=\\Lambda(b_0+b_1X_{1,i}+\\cdots+b_kX_{k,i})\\). <em>Hint: check that the density \\(\\lambda:=\\Lambda'\\) of \\(u_i\\) is an even function (that is, \\(\\lambda(-x)=\\lambda(x)\\) for every real \\(x\\)), then deduce that the distribution of \\(u_i\\) is symmetric.</em></div></li>
+        <li><div class="q-text">What is the limit of \\(\\Lambda(x)\\) as \\(x\\) tends to \\(-\\infty\\)? And as \\(x\\) tends to \\(+\\infty\\)? Show that \\(\\Lambda\\) is strictly increasing on \\(\\mathbb{R}\\), convex on \\(\\mathbb{R}_-\\) and concave on \\(\\mathbb{R}_+\\). Sketch the graph of \\(\\Lambda\\) on \\(\\mathbb{R}\\), and deduce that the logit model overcomes the limitations of the linear probability model.</div></li>
+        <li><div class="q-text">Prove rigorously that
+        \\[\\ln\\left(\\frac{\\mathbb{P}([Y_i=1])}{1-\\mathbb{P}([Y_i=1])}\\right)=b_0+b_1X_{1,i}+\\cdots+b_kX_{k,i}\\]
+        Deduce that
+        \\[\\frac{\\mathbb{P}([Y_i=1])}{\\mathbb{P}([Y_i=0])}=\\exp(b_0+b_1X_{1,i}+\\cdots+b_kX_{k,i})\\]</div></li>
+        <li><div class="q-text">We simplify the model by reducing it to a single binary regressor: \\(Y_i=\\mathbb{1}_{[b_0+b_1X_i+u_i\\geq 0]}\\), where \\(Y_i\\) and \\(X_i\\) are dichotomous variables and the \\(u_i\\) follow the logistic distribution. We set
+        \\[\\text{OR}:=\\frac{\\mathbb{P}([Y_i=1]\\,|\\,[X_i=1])\\,/\\,\\mathbb{P}([Y_i=0]\\,|\\,[X_i=1])}{\\mathbb{P}([Y_i=1]\\,|\\,[X_i=0])\\,/\\,\\mathbb{P}([Y_i=0]\\,|\\,[X_i=0])}\\]
+        This ratio is called the <em>odds ratio</em>. Show that \\(\\text{OR}=\\exp(b_1)\\).</div></li>
+        <li><div class="q-text">Suppose we seek to ${C.goal}: \\(Y_i=1\\) if ${C.yDef}, \\(Y_i=0\\) otherwise; \\(X_i=1\\) if ${C.xDef}, \\(X_i=0\\) otherwise. How should the odds ratio be interpreted? Distinguish between the cases \\(\\text{OR}<1\\), \\(\\text{OR}=1\\) and \\(\\text{OR}>1\\). <em>A priori</em>, which of the three cases seems the most likely in this context?</div></li>
+        <li><div class="q-text">A pilot study covering only ${D.n} ${C.pop} yielded the following observations, on which the model of question 5 is estimated:
+        ${tblInd(D)}
+        For \\(x\\) and \\(y\\) in \\(\\{0,1\\}\\), we write \\(n_{xy}\\) for the number of observations such that \\(X_i=x\\) and \\(Y_i=y\\).
+        <ol>
+          <li>Draw up the contingency table cross-tabulating \\(X\\) and \\(Y\\).</li>
+          <li>Compute, in each of the two groups \\([X_i=1]\\) and \\([X_i=0]\\), the empirical frequency \\(\\widehat{p}_1\\) (respectively \\(\\widehat{p}_0\\)) of the event \\([Y_i=1]\\) and the corresponding odds. Deduce the empirical odds ratio \\(\\widehat{\\text{OR}}\\).</li>
+          <li>We admit that the maximum likelihood estimators \\(\\widehat{b}_0\\) and \\(\\widehat{b}_1\\) satisfy \\(\\Lambda(\\widehat{b}_0)=\\widehat{p}_0\\) and \\(\\Lambda(\\widehat{b}_0+\\widehat{b}_1)=\\widehat{p}_1\\). Deduce \\(\\widehat{b}_0\\) and \\(\\widehat{b}_1\\), and check that \\(\\exp(\\widehat{b}_1)=\\widehat{\\text{OR}}\\).</li>
+          <li>Plot the curve of \\(\\Lambda\\) and place the two groups on it. Comment on the results in terms of odds ratio, then compare \\(\\widehat{\\text{OR}}\\) with the ratio of frequencies \\(\\widehat{p}_1/\\widehat{p}_0\\).</li>
+          <li>We admit that the estimated standard deviation of \\(\\ln(\\widehat{\\text{OR}})\\) is \\(\\sqrt{\\frac{1}{n_{11}}+\\frac{1}{n_{10}}+\\frac{1}{n_{01}}+\\frac{1}{n_{00}}}\\). Build a 95% confidence interval for the odds ratio, represent it and comment. What would we obtain with the same observed frequencies on a sample ten times larger?</li>
+        </ol></div></li>
+      </ol></div>`;
+    },
+
+    sol: function (D) {
+      const C = D.C, L = I18N.en.lbl, s = D.S;
+      const z = 'b_0+b_1X_{1,i}+\\cdots+b_kX_{k,i}';
+      const P1 = '\\mathbb{P}([Y_i=1])';
+      const orTxt = D.dirObs > 0
+        ? `the odds of the event “${C.yShort}” are ${s.orAboutEn}${s.orT} times higher for ${C.g1} than for ${C.g0}`
+        : `the odds of the event “${C.yShort}” are ${s.invAboutEn}${s.invT} times lower for ${C.g1} than for ${C.g0} (they are multiplied by \\(\\widehat{\\text{OR}}${s.or.eq}${s.or.s}\\))`;
+      const ciTxt = D.c1
+        ? `The interval contains the value 1: at the 5% level, we cannot reject the hypothesis \\(b_1=0\\), that is the absence of any link between \\(X\\) and \\(Y\\), despite a point odds ratio of ${s.orT}. With so few observations, the estimate is extremely imprecise: the upper bound of the interval is about ${s.ratioT} times larger than its lower bound. The pilot study suggests a link but cannot establish it.`
+        : `The interval does not contain the value 1: at the 5% level, we reject the hypothesis \\(b_1=0\\), the association between \\(X\\) and \\(Y\\) being strong enough to stand out despite the small sample size. The estimate nonetheless remains very imprecise: the upper bound of the interval is about ${s.ratioT} times larger than its lower bound, so that the magnitude of the link remains very poorly known.`;
+      const tenTxt = `With the same observed frequencies on ${D.n * 10} ${C.pop}, each count \\(n_{xy}\\) would be multiplied by ten: the estimated odds ratio would be unchanged, but the standard deviation of \\(\\ln(\\widehat{\\text{OR}})\\) would be divided by \\(\\sqrt{10}\\), giving \\(\\sqrt{\\frac{1}{10}\\times ${s.sumF}}${s.se10eq}${s.se10}\\). We would then have \\(1.96\\times ${s.se10}\\approx ${s.m10}\\), hence the interval \\([${s.L}-${s.m10}\\,;\\,${s.L}+${s.m10}]=[${s.lo10}\\,;\\,${s.hi10}]\\) for \\(\\ln(\\text{OR})\\), and \\([${s.elo10}\\,;\\,${s.ehi10}]\\) for OR, which ${D.c10 ? "would still contain the value 1: even with ten times more observations, the link would remain statistically uncertain" : "would exclude the value 1"}${D.c1 && !D.c10 ? ": what was only a hunch would become a statistically significant result" : ""}. This is the whole point of sample size: the point estimate of an odds ratio says nothing about its reliability. Note finally that, on such a small sample, a single empty cell in the contingency table would make \\(\\widehat{\\text{OR}}\\) zero or infinite: the maximum likelihood estimator would then no longer exist (a phenomenon known as <em>separation</em>).`;
+      return `<div class="st"><ol>
+
+      <li><div class="q-content">
+        <p>Does such a framework make sense? The quantity \\(${z}\\) takes its values in \\(\\mathbb{R}\\) <em>a priori</em>, not in \\(\\{0,1\\}\\). To convince ourselves that this modelling is not absurd, let us take expectations. On the one hand, \\(\\mathbb{E}[Y_i]=${z}\\), because of the assumption \\(\\mathbb{E}[u_i]=0\\) (the regressors being deterministic). On the other hand, since \\(Y_i\\) is dichotomous, it follows a Bernoulli distribution with parameter \\(${P1}\\), so that \\(\\mathbb{E}[Y_i]=1\\times ${P1}+0\\times\\mathbb{P}([Y_i=0])=${P1}\\). Combining these two relations, we get:
+        \\[${P1}=${z}\\]</p>
+        <p>This relation makes more sense: a one-unit change in the variable \\(X_{j,i}\\), all else being equal, changes the probability \\(${P1}\\) by \\(b_j\\), that is by \\(100\\,b_j\\) percentage points. Rather than commenting on the change in the response itself (\\(Y_i=1\\) or \\(Y_i=0\\)), we therefore comment on the change in the probability of choosing \\(Y_i=1\\) following a stimulus on the variable \\(X_{j,i}\\).</p>
+        <p>This model nevertheless raises two major problems. First, nothing guarantees that the predicted probability \\(\\widehat{\\mathbb{P}}([Y_i=1])=\\widehat{b}_0+\\widehat{b}_1X_{1,i}+\\cdots+\\widehat{b}_kX_{k,i}\\), where \\(\\widehat{b}_0,\\ldots,\\widehat{b}_k\\) are the OLS estimators, lies between 0 and 1: for extreme values of the regressors, it may be negative or greater than 1, which makes no sense. Relatedly, the marginal effect \\(b_j\\) is assumed constant, whereas a probability already close to 0 or 1 can hardly move any further in one direction. Second, the disturbances cannot be homoscedastic: writing \\(p_i:=${P1}\\), the disturbance \\(u_i=Y_i-p_i\\) takes only the two values \\(1-p_i\\) and \\(-p_i\\), and \\(\\textbf{Var}(u_i)=\\textbf{Var}(Y_i)=p_i(1-p_i)\\), a quantity that depends on the regressors. The homoscedasticity assumption is therefore necessarily violated: the OLS estimators remain unbiased, but they are no longer the most efficient and their usual standard errors are wrong; normality of the disturbances is ruled out altogether.</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <p>By definition of the model, \\(Y_i\\) equals 1 if and only if \\(${z}+u_i\\geq 0\\). Hence:
+        \\[${P1}=\\mathbb{P}([${z}+u_i\\geq 0])=\\mathbb{P}([-u_i\\leq ${z}])\\]
+        Let us check that the density \\(\\lambda:=\\Lambda'\\) of the logistic distribution is even. The function \\(\\Lambda\\) is of class \\(\\mathcal{C}^{\\infty}\\) on \\(\\mathbb{R}\\), as the reciprocal of a \\(\\mathcal{C}^{\\infty}\\) function that never vanishes on \\(\\mathbb{R}\\), and for every real \\(x\\), we have:
+        \\[\\lambda(x)=\\Lambda'(x)=\\frac{\\exp(-x)}{(1+\\exp(-x))^2}\\]
+        In particular, \\(\\lambda(x)\\) is strictly positive for every real \\(x\\), which allows the following computation:
+        \\[\\begin{aligned}
+        \\frac{\\lambda(x)}{\\lambda(-x)}
+        &=\\frac{\\exp(-x)\\,/\\,(1+\\exp(-x))^2}{\\exp(x)\\,/\\,(1+\\exp(x))^2}
+        =\\frac{\\exp(-x)(1+\\exp(x))^2}{\\exp(x)(1+\\exp(-x))^2}\\\\
+        &=\\frac{\\exp(-x)(1+2\\exp(x)+\\exp(2x))}{\\exp(x)(1+2\\exp(-x)+\\exp(-2x))}
+        =\\frac{\\exp(-x)+2+\\exp(x)}{\\exp(x)+2+\\exp(-x)}=1
+        \\end{aligned}\\]
+        Hence \\(\\lambda(-x)=\\lambda(x)\\) for every real \\(x\\): the density of \\(u_i\\) is even. The distribution of \\(u_i\\) is therefore symmetric, that is \\(u_i\\) and \\(-u_i\\) have the same distribution: for every real \\(t\\), the change of variable \\(v=-s\\) indeed gives
+        \\[\\mathbb{P}([-u_i\\leq t])=\\mathbb{P}([u_i\\geq -t])=\\int_{-t}^{+\\infty}\\lambda(v)\\,\\mathrm{d}v=\\int_{-\\infty}^{t}\\lambda(-s)\\,\\mathrm{d}s=\\int_{-\\infty}^{t}\\lambda(s)\\,\\mathrm{d}s=\\Lambda(t)\\]
+        Applying this equality with \\(t=${z}\\), we obtain, as claimed:
+        \\[${P1}=\\Lambda(${z})\\]</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <p>The exponential function tends to 0 at \\(-\\infty\\) and to \\(+\\infty\\) at \\(+\\infty\\). On the one hand, as \\(x\\) tends to \\(-\\infty\\), \\(\\exp(-x)\\) tends to \\(+\\infty\\), so does \\(1+\\exp(-x)\\) by summation, and \\(\\Lambda(x)\\) then tends to 0 by taking reciprocals. On the other hand, as \\(x\\) tends to \\(+\\infty\\), \\(\\exp(-x)\\) tends to 0, so \\(1+\\exp(-x)\\) tends to 1, and \\(\\Lambda(x)\\) tends to 1. We saw in the previous question that \\(\\Lambda'(x)=\\lambda(x)>0\\) for every real \\(x\\): the function \\(\\Lambda\\) is therefore strictly increasing on \\(\\mathbb{R}\\). Next, for every real \\(x\\), we have:
+        \\[\\begin{aligned}
+        \\Lambda''(x)=\\lambda'(x)
+        &=\\frac{-\\exp(-x)(1+\\exp(-x))^2+2\\exp(-x)^2(1+\\exp(-x))}{(1+\\exp(-x))^4}\\\\
+        &=\\frac{\\exp(-x)(1+\\exp(-x))\\left(2\\exp(-x)-(1+\\exp(-x))\\right)}{(1+\\exp(-x))^4}
+        =\\frac{\\exp(-x)\\left(\\exp(-x)-1\\right)}{(1+\\exp(-x))^3}
+        \\end{aligned}\\]
+        This value has the sign of \\(\\exp(-x)-1\\). Now the exponential function takes values strictly greater than 1 on \\(\\mathbb{R}_+^*\\) and strictly less than 1 on \\(\\mathbb{R}_-^*\\). Consequently, \\(\\exp(-x)-1\\), hence \\(\\Lambda''(x)\\), is strictly positive for every strictly negative real \\(x\\), and strictly negative for every strictly positive real \\(x\\). The function \\(\\Lambda\\) is therefore strictly convex on \\(\\mathbb{R}_-\\) and strictly concave on \\(\\mathbb{R}_+\\), the point \\((0,\\Lambda(0))=(0,\\frac{1}{2})\\) being an inflection point. Note also that \\(\\Lambda(-x)=1-\\Lambda(x)\\) for every real \\(x\\): the curve is symmetric about this point. We deduce the following shape:</p>
+        ${figLambda(D)}
+        <p>Ultimately, the function \\(\\Lambda\\) takes all its values in \\(]0,1[\\). Consequently, the probability \\(${P1}=\\Lambda(${z})\\) also always lies between 0 and 1, which overcomes the main shortcoming of the linear probability model. Moreover, the marginal effect of a change in \\(X_{j,i}\\) on this probability is \\(b_j\\,\\lambda(${z})\\): it is no longer constant, it is largest when the probability equals \\(\\frac{1}{2}\\) (it is then \\(\\frac{b_j}{4}\\)) and it gets smaller as the probability approaches 0 or 1.</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <p>Let \\(z_i:=${z}\\). By question 2, \\(${P1}=\\Lambda(z_i)\\in\\,]0,1[\\), so that:
+        \\[\\frac{${P1}}{1-${P1}}=\\frac{\\Lambda(z_i)}{1-\\Lambda(z_i)}
+        =\\frac{1\\,/\\,(1+\\exp(-z_i))}{1-1\\,/\\,(1+\\exp(-z_i))}
+        =\\frac{1\\,/\\,(1+\\exp(-z_i))}{\\exp(-z_i)\\,/\\,(1+\\exp(-z_i))}
+        =\\frac{1}{\\exp(-z_i)}=\\exp(z_i)\\]
+        Since this ratio is strictly positive, we may take its logarithm, and we do obtain:
+        \\[\\ln\\left(\\frac{${P1}}{1-${P1}}\\right)=${z}\\]
+        The ratio \\(\\frac{p}{1-p}\\) is called the <em>odds</em> associated with the probability \\(p\\), and its logarithm the <em>log-odds</em> or <em>logit</em>, hence the name of the model: the log-odds is an affine function of the regressors. Finally, since \\(Y_i\\) is dichotomous, \\(\\mathbb{P}([Y_i=0])=1-${P1}\\), which yields the stated equality:
+        \\[\\frac{${P1}}{\\mathbb{P}([Y_i=0])}=\\exp(${z})\\]</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <p>In this model, conditionally on the event \\([X_i=x]\\), where \\(x\\in\\{0,1\\}\\), the previous question applies with \\(z_i=b_0+b_1x\\). Hence:
+        \\[\\frac{\\mathbb{P}([Y_i=1]\\,|\\,[X_i=1])}{\\mathbb{P}([Y_i=0]\\,|\\,[X_i=1])}=\\exp(b_0+b_1)\\quad\\text{and}\\quad\\frac{\\mathbb{P}([Y_i=1]\\,|\\,[X_i=0])}{\\mathbb{P}([Y_i=0]\\,|\\,[X_i=0])}=\\exp(b_0)\\]
+        It follows that:
+        \\[\\text{OR}=\\frac{\\exp(b_0+b_1)}{\\exp(b_0)}=\\exp(b_1)\\]
+        The odds ratio therefore does not depend on \\(b_0\\), and \\(b_1=\\ln(\\text{OR})\\). More generally, in the logit model with \\(k\\) regressors, \\(\\exp(b_j)\\) is the odds ratio associated with a one-unit increase in \\(X_{j,i}\\), all else being equal: this is how the coefficients of a logit model are usually interpreted.</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <p>The odds ratio is here the quotient of the odds of the event “${C.yShort}” for ${C.g1} by the same odds for ${C.g0}. Since the odds \\(p\\mapsto\\frac{p}{1-p}\\) is a strictly increasing function of the probability \\(p\\) on \\([0,1[\\), comparing odds amounts to comparing probabilities:</p>
+        <ul>
+          <li>if \\(\\text{OR}=1\\), that is \\(b_1=0\\), the two odds are equal, hence \\(\\mathbb{P}([Y_i=1]\\,|\\,[X_i=1])=\\mathbb{P}([Y_i=1]\\,|\\,[X_i=0])\\): the event “${C.yShort}” is independent of \\(X\\), which carries no information;</li>
+          <li>if \\(\\text{OR}<1\\), that is \\(b_1<0\\), the event “${C.yShort}” is less likely for ${C.g1} than for ${C.g0};</li>
+          <li>if \\(\\text{OR}>1\\), that is \\(b_1>0\\), the event “${C.yShort}” is more likely for ${C.g1} than for ${C.g0}.</li>
+        </ul>
+        <p>In this context, we expect <em>a priori</em> the case \\(\\text{OR}${D.dir > 0 ? '>' : '<'}1\\): ${C.why}. Bear in mind that an odds ratio measures an association and does not, on its own, establish a causal relationship.</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <ol>
+        <li><p>Counting the observations according to the values of \\(X_i\\) and \\(Y_i\\), we obtain the following contingency table:</p>
+        ${tblCont(D)}</li>
+
+        <li><p>Among the ${D.n1} observations such that \\(X_i=1\\), the empirical frequency of the event \\([Y_i=1]\\) and the corresponding odds are:
+        \\[\\widehat{p}_1=\\frac{n_{11}}{n_{11}+n_{10}}=${s.p1F}\\qquad\\text{and}\\qquad\\frac{\\widehat{p}_1}{1-\\widehat{p}_1}=\\frac{n_{11}}{n_{10}}=${s.o1F}\\]
+        Likewise, among the ${D.n0} observations such that \\(X_i=0\\), we have:
+        \\[\\widehat{p}_0=\\frac{n_{01}}{n_{01}+n_{00}}=${s.p0F}\\qquad\\text{and}\\qquad\\frac{\\widehat{p}_0}{1-\\widehat{p}_0}=\\frac{n_{01}}{n_{00}}=${s.o0F}\\]
+        The empirical odds ratio is the quotient of these two odds, that is the “cross product” of the contingency table:
+        \\[\\widehat{\\text{OR}}=\\frac{n_{11}/n_{10}}{n_{01}/n_{00}}=\\frac{n_{11}\\times n_{00}}{n_{10}\\times n_{01}}=\\frac{${D.n11}\\times ${D.n00}}{${D.n10}\\times ${D.n01}}=${s.orF}\\]</p></li>
+
+        <li><p>Let us first justify the admitted result. Set \\(p_1:=\\Lambda(b_0+b_1)\\) and \\(p_0:=\\Lambda(b_0)\\). Since \\(\\Lambda\\) is a strictly increasing bijection from \\(\\mathbb{R}\\) onto \\(]0,1[\\), the map \\((b_0,b_1)\\mapsto(p_0,p_1)\\) is a bijection from \\(\\mathbb{R}^2\\) onto \\(]0,1[^2\\). The observations being independent, the log-likelihood reads:
+        \\[\\ell=n_{11}\\ln(p_1)+n_{10}\\ln(1-p_1)+n_{01}\\ln(p_0)+n_{00}\\ln(1-p_0)\\]
+        For \\(\\alpha,\\beta>0\\), the function \\(p\\mapsto\\alpha\\ln(p)+\\beta\\ln(1-p)\\) has derivative \\(p\\mapsto\\frac{\\alpha}{p}-\\frac{\\beta}{1-p}\\), which vanishes at \\(\\frac{\\alpha}{\\alpha+\\beta}\\), changing from positive to negative: the function reaches its maximum on \\(]0,1[\\) at that point. Since no cell of the table is empty, the likelihood is therefore maximal for \\(p_1=\\widehat{p}_1\\) and \\(p_0=\\widehat{p}_0\\), which indeed gives \\(\\Lambda(\\widehat{b}_0)=\\widehat{p}_0\\) and \\(\\Lambda(\\widehat{b}_0+\\widehat{b}_1)=\\widehat{p}_1\\).</p>
+        <p>By question 4, for every \\(p\\in\\,]0,1[\\) and every real \\(z\\), \\(\\Lambda(z)=p\\) if and only if \\(z=\\ln\\left(\\frac{p}{1-p}\\right)\\). We deduce:
+        \\[\\widehat{b}_0=\\ln\\left(\\frac{\\widehat{p}_0}{1-\\widehat{p}_0}\\right)=\\ln\\left(${frT(D.n01, D.n00)}\\right)${s.b0.eq}${s.b0.s}\\qquad\\text{and}\\qquad\\widehat{b}_0+\\widehat{b}_1=\\ln\\left(\\frac{\\widehat{p}_1}{1-\\widehat{p}_1}\\right)=\\ln\\left(${frT(D.n11, D.n10)}\\right)${s.b01.eq}${s.b01.s}\\]
+        hence, by difference:
+        \\[\\widehat{b}_1=\\ln\\left(${frT(D.n11, D.n10)}\\right)-\\ln\\left(${frT(D.n01, D.n00)}\\right)=\\ln\\left(${frT(D.n11 * D.n00, D.n10 * D.n01)}\\right)\\approx ${s.b1}\\]
+        We do have \\(\\exp(\\widehat{b}_1)=\\widehat{\\text{OR}}\\): the odds-ratio estimator provided by the logit model, \\(\\exp(\\widehat{b}_1)\\), coincides exactly with the empirical odds ratio of the contingency table, in line with question 5.</p></li>
+
+        <li><p>The two groups lie on the curve of \\(\\Lambda\\) at the points with abscissae \\(\\widehat{b}_0\\) and \\(\\widehat{b}_0+\\widehat{b}_1\\), and ordinates \\(\\widehat{p}_0\\) and \\(\\widehat{p}_1\\) respectively:</p>
+        ${figGroups(D)}
+        <p>We have \\(\\widehat{\\text{OR}}${s.or.eq}${s.or.s}${D.dirObs > 0 ? '>' : '<'}1\\): ${orTxt}. This result goes in the direction expected in question 6. On the graph, moving from group \\([X_i=0]\\) to group \\([X_i=1]\\) corresponds to a shift of \\(\\widehat{b}_1\\approx ${s.b1}\\) along the horizontal axis: the effect of \\(X\\) is constant on the log-odds scale, but its effect on the probability depends on the starting point, since the curve is steeper around \\(\\frac{1}{2}\\) than at the extremes.</p>
+        <p>The ratio of frequencies is \\(\\frac{\\widehat{p}_1}{\\widehat{p}_0}=${s.rrF}\\), a value closer to 1 than \\(\\widehat{\\text{OR}}\\). This is a general property: \\(\\widehat{\\text{OR}}=\\frac{\\widehat{p}_1}{\\widehat{p}_0}\\times\\frac{1-\\widehat{p}_0}{1-\\widehat{p}_1}\\), and the second factor widens the gap from 1. An odds ratio must therefore not be read as a ratio of probabilities: saying that “the probability is ${D.dirObs > 0 ? s.orT : s.invT} times ${D.dirObs > 0 ? 'higher' : 'lower'}” would be wrong here. The two measures only get close when the event studied is rare, in which case odds and probability almost coincide.</p></li>
+
+        <li><p>The estimated standard deviation of \\(\\ln(\\widehat{\\text{OR}})\\), which is none other than the asymptotic standard deviation of \\(\\widehat{b}_1\\) given by maximum likelihood, is:
+        \\[\\widehat{\\sigma}=\\sqrt{\\frac{1}{${D.n11}}+\\frac{1}{${D.n10}}+\\frac{1}{${D.n01}}+\\frac{1}{${D.n00}}}=\\sqrt{${s.sumF}}${s.seeq}${s.se}\\]
+        Using the normal approximation for \\(\\widehat{b}_1\\), we have \\(1.96\\times ${s.se}\\approx ${s.m}\\). A 95% confidence interval for \\(\\ln(\\text{OR})\\) is therefore \\([${s.L}-${s.m}\\,;\\,${s.L}+${s.m}]=[${s.lo}\\,;\\,${s.hi}]\\). Since the exponential function is strictly increasing, we deduce a 95% confidence interval for the odds ratio:
+        \\[\\text{CI}_{95\\,\\%}(\\text{OR})\\approx\\left[\\exp(${s.lo})\\,;\\,\\exp(${s.hi})\\right]\\approx\\left[${s.elo}\\,;\\,${s.ehi}\\right]\\]
+        This interval is not symmetric around \\(\\widehat{\\text{OR}}\\): it is symmetric on the logarithmic scale, which is the one used to represent it.</p>
+        ${figForest(D)}
+        <p>${ciTxt}</p>
+        <p>${tenTxt}</p></li>
+        </ol>
+      </div></li>
+
+      </ol></div>`;
+    }
+  }
+};
+
+/* ============================================================
+   GESTION DE LA LANGUE  /  LANGUAGE HANDLING
+   ============================================================ */
+let LANG = 'fr';
+
+function detectLang() {
+    try {
+        const q = new URLSearchParams(window.location.search).get('lang');
+        if (q && I18N[q.toLowerCase()]) return q.toLowerCase();
+    } catch (e) {}
+    const h = (window.location.hash || '').replace('#', '').toLowerCase();
+    if (I18N[h]) return h;
+    return 'fr';
+}
+
+function applyLang() {
+    const D = I18N[LANG];
+    document.documentElement.lang = D.htmlLang;
+    document.title = D.title;
+
+    document.querySelectorAll('[data-k]').forEach(function (el) {
+        const key = el.getAttribute('data-k');
+        if (D[key] !== undefined) el.innerHTML = D[key];
+    });
+
+    const si = document.getElementById('seed-input');
+    if (si) si.placeholder = D.phSeed;
+    const ni = document.getElementById('param-n');
+    if (ni) ni.placeholder = D.phN;
+
+    const tb = document.getElementById('toggle-btn');
+    if (tb) tb.textContent = solVisible ? D.hideSol : D.showSol;
+
+    document.getElementById('flag-fr').classList.toggle('active', LANG === 'fr');
+    document.getElementById('flag-en').classList.toggle('active', LANG === 'en');
+}
+
+function setLang(lang) {
+    if (!I18N[lang] || lang === LANG) return;
+    LANG = lang;
+
+    /* La langue est memorisee dans l'URL (partage / rechargement) */
+    try {
+        const u = new URL(window.location.href);
+        u.searchParams.set('lang', lang);
+        history.replaceState(null, '', u.toString());
+    } catch (e) {}
+
+    applyLang();
+
+    /* Si un exercice est affiche, on le regenere a l'identique (meme seed) */
+    if (document.getElementById('ex-area').style.display !== 'none') {
+        const wasVis = solVisible;
+        document.getElementById('seed-input').value = _activeSeed;
+        generateFromControls();
+        if (wasVis) toggleSol();
+    }
+}
+
+// ════════════════════════════════════════
+// SEEDED PRNG — mulberry32
+// ════════════════════════════════════════
+let _rand, _activeSeed = 0;
+function initRand(seed) {
+  _activeSeed = seed >>> 0;
+  let s = _activeSeed;
+  _rand = () => {
+    s = (s + 0x6D2B79F5) >>> 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const rI = (a,b) => Math.floor(_rand()*(b-a+1))+a;
+
+// ════════════════════════════════════════
+// GENERATION DES DONNEES
+// Tableau 2x2 sans case vide, rapport de cotes dans le sens attendu
+// pour le contexte et nettement different de 1 (OR >= 2 ou OR <= 1/2).
+// ════════════════════════════════════════
+function computeD(seed, nIn) {
+  initRand(seed);
+  const ci = rI(0, CTX.length - 1);
+  const nAuto = rI(8, 12);
+  const n = nIn || nAuto;
+  const dir = CTX[ci].dir;
+  let n1, n0, n11, n10, n01, n00;
+  for (let guard = 0; ; guard++) {
+    n1 = rI(2, n - 2); n0 = n - n1;
+    n11 = rI(1, n1 - 1); n10 = n1 - n11;
+    n01 = rI(1, n0 - 1); n00 = n0 - n01;
+    const num = n11 * n00, den = n10 * n01;
+    if (dir > 0 ? num >= 2 * den : 2 * num <= den) break;
+    if (guard > 100000) throw new Error('generation');
+  }
+  /* liste des observations, melangee */
+  const obs = [];
+  for (let k = 0; k < n11; k++) obs.push([1, 1]);
+  for (let k = 0; k < n10; k++) obs.push([1, 0]);
+  for (let k = 0; k < n01; k++) obs.push([0, 1]);
+  for (let k = 0; k < n00; k++) obs.push([0, 0]);
+  for (let i = obs.length - 1; i > 0; i--) {
+    const j = rI(0, i);
+    const t = obs[i]; obs[i] = obs[j]; obs[j] = t;
+  }
+
+  const D = { id: CTX[ci].id, dir, n, n1, n0, n11, n10, n01, n00, obs };
+  const ORv = (n11 * n00) / (n10 * n01);
+  D.OR = ORv;
+  D.dirObs = ORv > 1 ? 1 : -1;
+  D.p1 = n11 / n1; D.p0 = n01 / n0;
+  D.b0 = Math.log(n01 / n00); D.b01 = Math.log(n11 / n10); D.b1 = Math.log(ORv);
+
+  /* intervalle de confiance (chaine de calcul menee sur les valeurs affichees) */
+  const sp = n10 * n01 * n00 + n11 * n01 * n00 + n11 * n10 * n00 + n11 * n10 * n01;
+  const sq = n11 * n10 * n01 * n00;
+  const seV = Math.sqrt(sp / sq), se10V = Math.sqrt(sp / sq / 10);
+  const s3 = Math.round(seV * 1000), s10 = Math.round(se10V * 1000);
+  const L3 = Math.round(D.b1 * 1000);
+  const m3 = Math.round(196 * s3 / 100), m10 = Math.round(196 * s10 / 100);
+  const lo = L3 - m3, hi = L3 + m3, lo10 = L3 - m10, hi10 = L3 + m10;
+  D.ci = { s3, s10, L3, m3, m10, lo, hi, lo10, hi10 };
+  D.elo = Math.exp(lo / 1000); D.ehi = Math.exp(hi / 1000);
+  D.elo10 = Math.exp(lo10 / 1000); D.ehi10 = Math.exp(hi10 / 1000);
+  D.c1 = lo <= 0 && hi >= 0;
+  D.c10 = lo10 <= 0 && hi10 >= 0;
+
+  const sumR = red(sp, sq);
+  const exactSe = (v, r) => Math.abs(v * 1000 - r) < 1e-9 ? '=' : '\\approx';
+  const e3 = (v) => fxf(v, sd(v), true);
+  const ratio = D.ehi / D.elo;
+  /* fraction reduite suivie de son ecriture decimale (omise si la fraction est entiere) */
+  const fd = (pp, qq, o) => red(pp, qq).q === 1 ? frT(pp, qq) : `${frT(pp, qq)}${o.eq}${o.s}`;
+  D.S = {
+    p1: rd(n11, n1, 3), p0: rd(n01, n0, 3),
+    o1: rd(n11, n10, 3), o0: rd(n01, n00, 3),
+    or: rd(n11 * n00, n10 * n01, sd(ORv)),
+    orT: rd(n11 * n00, n10 * n01, sd(ORv)).t,
+    invT: rd(n10 * n01, n11 * n00, sd(1 / ORv)).t,
+    orAbout: rd(n11 * n00, n10 * n01, 2).eq === '=' ? '' : 'environ ',
+    invAbout: rd(n10 * n01, n11 * n00, 2).eq === '=' ? '' : 'environ ',
+    orAboutEn: rd(n11 * n00, n10 * n01, 2).eq === '=' ? '' : 'about ',
+    invAboutEn: rd(n10 * n01, n11 * n00, 2).eq === '=' ? '' : 'about ',
+    rr: rd(n11 * n0, n1 * n01, sd((n11 * n0) / (n1 * n01))),
+    b0: lnR(n01, n00), b01: lnR(n11, n10), b1: fxf(D.b1, 3, true),
+    sumF: sumR.q === 1 ? String(sumR.p) : `\\frac{${sumR.p}}{${sumR.q}}`,
+    se: fx(s3, 3, true), seeq: exactSe(seV, s3),
+    se10: fx(s10, 3, true), se10eq: exactSe(se10V, s10),
+    L: fx(L3, 3, true), m: fx(m3, 3, true), m10: fx(m10, 3, true),
+    lo: fx(lo, 3, true), hi: fx(hi, 3, true), lo10: fx(lo10, 3, true), hi10: fx(hi10, 3, true),
+    elo: e3(D.elo), ehi: e3(D.ehi), elo10: e3(D.elo10), ehi10: e3(D.ehi10),
+    ratioT: ratio >= 10 ? fxf(ratio, 0, false) : fxf(ratio, 1, false),
+    p1T: fxf(D.p1, 3, false), p0T: fxf(D.p0, 3, false)
+  };
+  const S = D.S;
+  S.p1F = fd(n11, n1, S.p1); S.p0F = fd(n01, n0, S.p0);
+  S.o1F = fd(n11, n10, S.o1); S.o0F = fd(n01, n00, S.o0);
+  S.orF = fd(n11 * n00, n10 * n01, S.or);
+  S.rrF = fd(n11 * n0, n1 * n01, S.rr);
+  return D;
+}
+
+/* ============================================================
+   TABLEAUX  /  TABLES
+   ============================================================ */
+function tblInd(D) {
+  const C = D.C, L = I18N[LANG].lbl;
+  const per = 10;
+  let rows = '';
+  for (let start = 0; start < D.n; start += per) {
+    let r0 = '', r1 = '', r2 = '';
+    const end = Math.min(D.n, start + per);
+    for (let i = start; i < end; i++) {
+      r0 += `<td>${i + 1}</td>`;
+      r1 += `<td class="num">${D.obs[i][0]}</td>`;
+      r2 += `<td class="num">${D.obs[i][1]}</td>`;
+    }
+    for (let i = end; i < start + per && D.n > per; i++) { r0 += '<td></td>'; r1 += '<td></td>'; r2 += '<td></td>'; }
+    rows += `<tr><th>${C.unit} \\(i\\)</th>${r0}</tr><tr><td><strong>\\(X_i\\)</strong></td>${r1}</tr><tr><td><strong>\\(Y_i\\)</strong></td>${r2}</tr>`;
+  }
+  return `<div class="dtable-wrap"><table class="dtable"><caption>${L.capInd}</caption>${rows}</table></div>`;
+}
+
+function tblCont(D) {
+  const L = I18N[LANG].lbl;
+  const c = v => `<td class="num">${v}</td>`;
+  return `<div class="dtable-wrap"><table class="dtable dtable-narrow"><caption>${L.capCont}</caption>
+    <tr><th></th><th>\\(Y_i=1\\)</th><th>\\(Y_i=0\\)</th><th>${L.total}</th></tr>
+    <tr><td><strong>\\(X_i=1\\)</strong></td>${c(`\\(n_{11}=${D.n11}\\)`)}${c(`\\(n_{10}=${D.n10}\\)`)}${c(D.n1)}</tr>
+    <tr><td><strong>\\(X_i=0\\)</strong></td>${c(`\\(n_{01}=${D.n01}\\)`)}${c(`\\(n_{00}=${D.n00}\\)`)}${c(D.n0)}</tr>
+    <tfoot><tr><td>${L.total}</td>${c(D.n11 + D.n01)}${c(D.n10 + D.n00)}${c(D.n)}</tr></tfoot>
+    </table></div>`;
+}
+
+/* ============================================================
+   FIGURES  /  CHARTS
+   ============================================================ */
+const LAM = x => 1 / (1 + Math.exp(-x));
+
+function curveAxes(W, H, x0, x1, y0, y1, R, L, tdy) {
+  tdy = tdy || 40;
+  const SX = v => x0 + (v + R) / (2 * R) * (x1 - x0);
+  const SY = v => y1 - v * (y1 - y0);
+  let g = '';
+  const step = R > 5 ? 2 : 1;
+  for (let v = -R; v <= R; v += step) {
+    g += `<line x1="${SX(v).toFixed(1)}" y1="${y0}" x2="${SX(v).toFixed(1)}" y2="${y1}" stroke="#e2ded5" stroke-width="1"/>`;
+    g += `<text x="${SX(v).toFixed(1)}" y="${y1 + 18}" text-anchor="middle" font-size="10.5" fill="#5a5a5a">${v < 0 ? '\u2212' + (-v) : v}</text>`;
+  }
+  for (const v of [0, 0.25, 0.5, 0.75, 1]) {
+    g += `<line x1="${x0}" y1="${SY(v).toFixed(1)}" x2="${x1}" y2="${SY(v).toFixed(1)}" stroke="#e2ded5" stroke-width="1"/>`;
+    g += `<text x="${x0 - 8}" y="${(SY(v) + 4).toFixed(1)}" text-anchor="end" font-size="10.5" fill="#5a5a5a">${v}</text>`;
+  }
+  g += `<line x1="${x0}" y1="${SY(1).toFixed(1)}" x2="${x1}" y2="${SY(1).toFixed(1)}" stroke="#c9952a" stroke-width="1.4" stroke-dasharray="6 4"/>`;
+  g += `<line x1="${x0}" y1="${y1}" x2="${x1}" y2="${y1}" stroke="#0d1b2a" stroke-width="1.3"/>`;
+  g += `<line x1="${SX(0).toFixed(1)}" y1="${y0 - 8}" x2="${SX(0).toFixed(1)}" y2="${y1}" stroke="#0d1b2a" stroke-width="1.1"/>`;
+  g += `<text x="${((x0 + x1) / 2).toFixed(0)}" y="${y1 + tdy}" text-anchor="middle" font-size="12" fill="#1e1e1e">${L.axisX}</text>`;
+  const ym = ((y0 + y1) / 2).toFixed(0);
+  g += `<text x="16" y="${ym}" text-anchor="middle" font-size="12" fill="#1e1e1e" transform="rotate(-90 16 ${ym})">${L.axisY}</text>`;
+  const pts = [];
+  for (let k = 0; k <= 240; k++) {
+    const xx = -R + 2 * R * k / 240;
+    pts.push((k === 0 ? 'M' : 'L') + SX(xx).toFixed(2) + ',' + SY(LAM(xx)).toFixed(2));
+  }
+  g += `<path d="${pts.join(' ')}" fill="none" stroke="#b94040" stroke-width="2.2"/>`;
+  return { g, SX, SY };
+}
+
+function figLambda(D) {
+  const L = I18N[LANG].lbl;
+  const W = 620, H = 360, x0 = 56, x1 = 596, y0 = 24, y1 = 290;
+  const A = curveAxes(W, H, x0, x1, y0, y1, 6, L);
+  let g = A.g;
+  g += `<circle cx="${A.SX(0).toFixed(2)}" cy="${A.SY(0.5).toFixed(2)}" r="4.5" fill="#fff" stroke="#0d1b2a" stroke-width="2"/>`;
+  g += `<text x="${(A.SX(0) + 10).toFixed(1)}" y="${(A.SY(0.5) + 16).toFixed(1)}" font-size="10.5" fill="#1e1e1e">${L.infl}</text>`;
+  g += `<text x="${A.SX(-3.4).toFixed(1)}" y="${(A.SY(0.2)).toFixed(1)}" text-anchor="middle" font-size="12" font-style="italic" fill="#2d6b4a">${L.conv}</text>`;
+  g += `<text x="${A.SX(3.4).toFixed(1)}" y="${(A.SY(0.84)).toFixed(1)}" text-anchor="middle" font-size="12" font-style="italic" fill="#2d6b4a">${L.conc}</text>`;
+  return `<div class="fig-wrap"><svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" font-family="Source Serif 4, serif">${g}</svg></div><p class="fig-cap">${L.capL}</p>`;
+}
+
+function figGroups(D) {
+  const L = I18N[LANG].lbl;
+  const W = 620, H = 396, x0 = 56, x1 = 596, y0 = 24, y1 = 290;
+  const R = Math.min(8, Math.max(4, Math.ceil(Math.max(Math.abs(D.b0), Math.abs(D.b01))) + 1));
+  const A = curveAxes(W, H, x0, x1, y0, y1, R, L, 88);
+  let g = A.g;
+  const grp = [[0, D.b0, D.p0, D.S.p0T], [1, D.b01, D.p1, D.S.p1T]];
+  const colr = ['#5a5a5a', '#0d1b2a'];
+  for (const [x, zz, p, pt] of grp) {
+    const cx = A.SX(zz), cy = A.SY(p);
+    g += `<line x1="${cx.toFixed(2)}" y1="${cy.toFixed(2)}" x2="${cx.toFixed(2)}" y2="${y1 + 58}" stroke="#9a9a9a" stroke-width="1" stroke-dasharray="3 3"/>`;
+    g += `<line x1="${x0}" y1="${cy.toFixed(2)}" x2="${cx.toFixed(2)}" y2="${cy.toFixed(2)}" stroke="#9a9a9a" stroke-width="1" stroke-dasharray="3 3"/>`;
+    g += `<circle cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="5.5" fill="${colr[x]}"/>`;
+    /* etiquette du cote ou la courbe laisse de la place : a gauche au-dessus de 1/2, a droite en dessous */
+    const right = p < 0.5;
+    g += `<text x="${(cx + (right ? 10 : -10)).toFixed(1)}" y="${(cy + (right ? 4 : -8)).toFixed(1)}" text-anchor="${right ? 'start' : 'end'}" font-size="11" fill="${colr[x]}" font-weight="600" paint-order="stroke" stroke="#ffffff" stroke-width="3.5" stroke-linejoin="round">${L.gLab(x, pt)}</text>`;
+  }
+  /* fleche horizontale representant b1 */
+  const ya = y1 + 52, xa = A.SX(D.b0), xb = A.SX(D.b01), sgn = xb > xa ? 1 : -1;
+  g += `<line x1="${xa.toFixed(2)}" y1="${ya}" x2="${(xb - sgn * 7).toFixed(2)}" y2="${ya}" stroke="#c9952a" stroke-width="2"/>`;
+  g += `<polygon points="${xb.toFixed(2)},${ya} ${(xb - sgn * 9).toFixed(2)},${ya - 4.5} ${(xb - sgn * 9).toFixed(2)},${ya + 4.5}" fill="#c9952a"/>`;
+  g += `<text x="${((xa + xb) / 2).toFixed(1)}" y="${ya - 8}" text-anchor="middle" font-size="11" fill="#8a6a1e" paint-order="stroke" stroke="#ffffff" stroke-width="3.5" stroke-linejoin="round">b\u0302\u2081 = ln(OR) \u2248 ${fxf(D.b1, 3, false)}</text>`;
+  return `<div class="fig-wrap"><svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" font-family="Source Serif 4, serif">${g}</svg></div><p class="fig-cap">${L.capG}</p>`;
+}
+
+function figForest(D) {
+  const L = I18N[LANG].lbl;
+  const W = 620, H = 210, x0 = 200, x1 = 596, yTop = 30, yBot = 160;
+  const lo = Math.min(D.elo, D.elo10, 1) / 1.6, hi = Math.max(D.ehi, D.ehi10, 1) * 1.6;
+  const la = Math.log10(lo), lb = Math.log10(hi);
+  const SX = v => x0 + (Math.log10(v) - la) / (lb - la) * (x1 - x0);
+  const cands = [0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000];
+  let ticks = cands.filter(v => v >= lo && v <= hi);
+  if (ticks.length > 9) ticks = ticks.filter(v => Math.abs(Math.log10(v) - Math.round(Math.log10(v))) < 1e-9);
+  let g = '';
+  for (const v of ticks) {
+    const X = SX(v).toFixed(1);
+    const dec = Math.max(0, -Math.floor(Math.log10(v) + 1e-9));
+    g += `<line x1="${X}" y1="${yTop}" x2="${X}" y2="${yBot}" stroke="#e2ded5" stroke-width="1"/>`;
+    g += `<text x="${X}" y="${yBot + 18}" text-anchor="middle" font-size="10.5" fill="#5a5a5a">${fxf(v, dec, false)}</text>`;
+  }
+  g += `<line x1="${x0}" y1="${yBot}" x2="${x1}" y2="${yBot}" stroke="#0d1b2a" stroke-width="1.3"/>`;
+  g += `<line x1="${SX(1).toFixed(1)}" y1="${yTop - 10}" x2="${SX(1).toFixed(1)}" y2="${yBot}" stroke="#b94040" stroke-width="1.4" stroke-dasharray="5 4"/>`;
+  g += `<text x="${SX(1).toFixed(1)}" y="${yTop - 14}" text-anchor="middle" font-size="10.5" fill="#b94040">OR = 1</text>`;
+  g += `<text x="${((x0 + x1) / 2).toFixed(0)}" y="${yBot + 40}" text-anchor="middle" font-size="12" fill="#1e1e1e">OR</text>`;
+  const rows = [[L.obsRow(D.n), D.elo, D.ehi, 68, '#0d1b2a'], [L.tenRow(D.n * 10), D.elo10, D.ehi10, 124, '#5a5a5a']];
+  for (const [lab, a, b, y, col] of rows) {
+    const xa = SX(a), xb = SX(b), xm = SX(D.OR);
+    g += `<text x="${x0 - 14}" y="${y + 4}" text-anchor="end" font-size="11.5" fill="#1e1e1e">${lab}</text>`;
+    g += `<line x1="${xa.toFixed(2)}" y1="${y}" x2="${xb.toFixed(2)}" y2="${y}" stroke="${col}" stroke-width="2"/>`;
+    g += `<line x1="${xa.toFixed(2)}" y1="${y - 7}" x2="${xa.toFixed(2)}" y2="${y + 7}" stroke="${col}" stroke-width="2"/>`;
+    g += `<line x1="${xb.toFixed(2)}" y1="${y - 7}" x2="${xb.toFixed(2)}" y2="${y + 7}" stroke="${col}" stroke-width="2"/>`;
+    g += `<rect x="${(xm - 6).toFixed(2)}" y="${y - 6}" width="12" height="12" fill="${col}"/>`;
+    g += `<text x="${xm.toFixed(2)}" y="${y - 12}" text-anchor="middle" font-size="10" fill="#5a5a5a">[${fxf(a, sd(a), false)} ; ${fxf(b, sd(b), false)}]</text>`;
+  }
+  return `<div class="fig-wrap"><svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" font-family="Source Serif 4, serif">${g}</svg></div><p class="fig-cap">${L.capF}</p>`;
+}
+
+// ════════════════════════════════════════
+// GENERATION  /  RENDERING
+// ════════════════════════════════════════
+function regen() {
+  document.getElementById('seed-input').value = '';
+  generateFromControls();
+}
+
+function readN() {
+  const v = parseInt(document.getElementById('param-n').value, 10);
+  if (isNaN(v)) return 0;
+  return Math.min(30, Math.max(6, v));
+}
+
+function generateFromControls() {
+  const seedInp = document.getElementById('seed-input').value;
+  const seed = seedInp ? parseInt(seedInp, 10) : Math.floor(Math.random() * 10000000);
+  const D = computeD(seed, readN());
+  D.C = I18N[LANG].ctx[D.id];
+
+  document.getElementById('seed-disp').textContent = _activeSeed;
+  document.getElementById('modal-seed').textContent = _activeSeed;
+
+  document.getElementById('ex-content').innerHTML = I18N[LANG].ex(D);
+  document.getElementById('sol-content').innerHTML = I18N[LANG].sol(D);
+
+  document.getElementById('welcome').style.display = 'none';
+  document.getElementById('ex-area').style.display = 'block';
+  solVisible = false;
+  const solC = document.getElementById('sol-card'), btn = document.getElementById('toggle-btn');
+  solC.classList.remove('visible'); btn.classList.remove('shown'); btn.textContent = I18N[LANG].showSol;
+
+  if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise();
+}
+
+// ════════════════════════════════════════
+// UI
+// ════════════════════════════════════════
+function toggleSol(){
+  solVisible = !solVisible;
+  const sol = document.getElementById('sol-card'), btn = document.getElementById('toggle-btn');
+  if(solVisible){sol.classList.add('visible'); btn.classList.add('shown'); btn.textContent = I18N[LANG].hideSol;}
+  else{sol.classList.remove('visible'); btn.classList.remove('shown'); btn.textContent = I18N[LANG].showSol;}
+}
+
+/* Initialisation */
+LANG = detectLang();
+applyLang();
+</script>
+
+
+<!-- KIT:JS:START v1 -->
+<div id="pdf-ov" onclick="closePdfModal()"></div>
+<div id="pdf-modal">
+  <div class="mh">
+    <h3 data-kit="modalTitle">Exporter en PDF</h3>
+    <button type="button" class="mclose" onclick="closePdfModal()">&#10005;</button>
+  </div>
+  <div class="mb2">
+    <div class="seed-note"><span data-kit="seedPre">Seed&nbsp;:</span> <strong id="modal-seed">&mdash;</strong> <span data-kit="seedPost">&mdash; notez cette valeur pour reproduire exactement cet exercice.</span></div>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-header" checked>
+      <span class="opt-txt"><span class="opt-lbl" data-kit="optHeader">Inclure l'en-t&ecirc;te de page</span>
+           <span class="opt-desc" data-kit="optHeaderD">Titre, badge de mati&egrave;re et intitul&eacute; de l'exercice</span></span>
+    </label>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-sol">
+      <span class="opt-txt"><span class="opt-lbl" data-kit="optSol">Inclure le corrig&eacute; complet</span>
+           <span class="opt-desc" data-kit="optSolD">L'ensemble des d&eacute;veloppements et commentaires du corrig&eacute;</span></span>
+    </label>
+    <div class="mactions">
+      <button type="button" class="btn-print" onclick="doPrint()"><span data-kit="print">&#128424;&nbsp;Imprimer / Sauvegarder PDF</span></button>
+      <button type="button" class="btn-cancel" onclick="closePdfModal()"><span data-kit="cancel">Annuler</span></button>
+    </div>
+  </div>
+</div>
+
+<script id="kit-docx">
+/* =============================================================================
+   EXPORT WORD NATIF (.docx)
+   Trois briques, sans aucune dépendance externe :
+     1. mml2omml  — MathML -> OMML, le format d'équation natif de Word
+     2. zip       — écriture d'une archive ZIP (entrées « stored » + CRC32)
+     3. html2wml  — HTML de la page -> WordprocessingML
+   ============================================================================= */
+(function (root) {
+'use strict';
+
+/* --------------------------------------------------------------- utilitaires */
+function esc(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                  .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function kids(n) {
+  var out = [], c = n.firstChild;
+  while (c) { if (c.nodeType === 1) out.push(c); c = c.nextSibling; }
+  return out;
+}
+function txt(n) { return (n.textContent || '').replace(/\u200b/g, '').trim(); }
+
+/* ============================================================================
+   1. MathML -> OMML
+   ========================================================================== */
+var OPEN = '([{\u27e8\u2308\u230a|\u2016';
+var CLOSE = ')]}\u27e9\u2309\u230b|\u2016';
+var BIGOPS = '\u2211\u220f\u222b\u222c\u222d\u222e\u22c3\u22c2\u2210';
+var ACCENTS = {
+  '\u005e': '\u0302', '\u02c6': '\u0302', '^': '\u0302',
+  '\u00af': '\u0304', '\u2015': '\u0304', '\u2212': '\u0304', '_': '\u0304',
+  '~': '\u0303', '\u02dc': '\u0303', '\u02d9': '\u0307',
+  '\u2192': '\u20d7', '\u21c0': '\u20d1', '\u02c7': '\u030c', '\u02d8': '\u0306'
+};
+
+function run(text, style) {
+  if (text === '') return '';
+  var rPr = '<w:rPr><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/></w:rPr>';
+  var mPr = style ? '<m:rPr><m:sty m:val="' + style + '"/></m:rPr>' : '';
+  return '<m:r>' + mPr + rPr + '<m:t xml:space="preserve">' + esc(text) + '</m:t></m:r>';
+}
+
+/* Un grand opérateur (somme, intégrale…) absorbe la suite de la ligne comme
+   opérande : sans cela Word affiche un cadre vide à la place de l'argument. */
+function naryHere(n) {
+  if (!n || n.nodeType !== 1) return null;
+  var t = n.nodeName.toLowerCase().replace(/^.*:/, ''), k = kids(n);
+  if (t === 'munderover' || t === 'msubsup') return { base: k[0], sub: k[1], sup: k[2] };
+  if (t === 'munder' || t === 'msub') return { base: k[0], sub: k[1], sup: null };
+  if (t === 'mover' || t === 'msup') return { base: k[0], sub: null, sup: k[1] };
+  if (t === 'mo') return { base: n, sub: null, sup: null };
+  return null;
+}
+function isBigOp(n) {
+  if (!n || n.nodeType !== 1) return false;
+  var c = txt(n);
+  return n.nodeName.toLowerCase().replace(/^.*:/, '') === 'mo' &&
+         c.length === 1 && BIGOPS.indexOf(c) !== -1;
+}
+
+function seq(nodes) {
+  var s = '';
+  for (var i = 0; i < nodes.length; i++) {
+    var info = naryHere(nodes[i]);
+    if (info && isBigOp(info.base) && i + 1 < nodes.length) {
+      s += naryFull(info, nodes.slice(i + 1));
+      return s;
+    }
+    s += mml(nodes[i]);
+  }
+  return s;
+}
+
+function naryFull(info, rest) {
+  return '<m:nary><m:naryPr><m:chr m:val="' + esc(txt(info.base)) + '"/>' +
+         '<m:limLoc m:val="undOvr"/>' +
+         '<m:subHide m:val="' + (info.sub ? '0' : '1') + '"/>' +
+         '<m:supHide m:val="' + (info.sup ? '0' : '1') + '"/><m:ctrlPr/></m:naryPr>' +
+         '<m:sub>' + (info.sub ? mml(info.sub) : '') + '</m:sub>' +
+         '<m:sup>' + (info.sup ? mml(info.sup) : '') + '</m:sup>' +
+         '<m:e>' + seq(rest) + '</m:e></m:nary>';
+}
+
+/* mrow entouré de délimiteurs -> m:d, pour des parenthèses étirables natives */
+function fenced(ks) {
+  if (ks.length < 2) return null;
+  var a = ks[0], b = ks[ks.length - 1];
+  if (a.nodeName.toLowerCase() !== 'mo' || b.nodeName.toLowerCase() !== 'mo') return null;
+  var o = txt(a), c = txt(b);
+  if (o.length !== 1 || c.length !== 1) return null;
+  if (OPEN.indexOf(o) === -1 || CLOSE.indexOf(c) === -1) return null;
+  var inner = ks.slice(1, -1);
+  /* séparateurs de premier niveau -> plusieurs m:e */
+  var parts = [[]];
+  for (var i = 0; i < inner.length; i++) {
+    if (inner[i].nodeName.toLowerCase() === 'mo' && txt(inner[i]) === ',' && parts.length < 8) {
+      parts.push([]);
+    } else { parts[parts.length - 1].push(inner[i]); }
+  }
+  var sep = parts.length > 1 ? ',' : '';
+  var body = '';
+  for (var j = 0; j < parts.length; j++) body += '<m:e>' + seq(parts[j]) + '</m:e>';
+  return '<m:d><m:dPr><m:begChr m:val="' + esc(o) + '"/><m:sepChr m:val="' + esc(sep) +
+         '"/><m:endChr m:val="' + esc(c) + '"/><m:ctrlPr/></m:dPr>' + body + '</m:d>';
+}
+
+function naryOf(base, sub, sup) {
+  var ch = txt(base);
+  if (ch.length !== 1 || BIGOPS.indexOf(ch) === -1) return null;
+  return '<m:nary><m:naryPr><m:chr m:val="' + esc(ch) + '"/><m:limLoc m:val="undOvr"/>' +
+         '<m:subHide m:val="' + (sub ? '0' : '1') + '"/>' +
+         '<m:supHide m:val="' + (sup ? '0' : '1') + '"/><m:ctrlPr/></m:naryPr>' +
+         '<m:sub>' + (sub ? mml(sub) : '') + '</m:sub>' +
+         '<m:sup>' + (sup ? mml(sup) : '') + '</m:sup>' +
+         '<m:e></m:e></m:nary>';
+}
+
+function mml(n) {
+  if (!n) return '';
+  if (n.nodeType === 3) return run(n.nodeValue);
+  if (n.nodeType !== 1) return '';
+  var t = n.nodeName.toLowerCase().replace(/^.*:/, '');
+  var k = kids(n), s;
+
+  switch (t) {
+    case 'math':
+    case 'semantics':
+    case 'mstyle':
+    case 'mpadded':
+    case 'menclose':
+      return seq(k);
+
+    case 'annotation':
+    case 'annotation-xml':
+    case 'mphantom':
+      return '';
+
+    case 'mrow':
+      s = fenced(k);
+      return s !== null ? s : seq(k);
+
+    case 'mi':      return run(txt(n), txt(n).length === 1 ? 'i' : 'p');
+    case 'mn':      return run(txt(n), 'p');
+    case 'mo':      return run(txt(n), 'p');
+    case 'merror':  return run(txt(n), 'p');
+    case 'ms':      return run(txt(n), 'p');
+
+    case 'mtext':
+      var v = n.textContent || '';
+      return v === '' ? '' :
+        '<m:r><m:rPr><m:nor/></m:rPr><w:rPr><w:rFonts w:ascii="Cambria" w:hAnsi="Cambria"/></w:rPr>' +
+        '<m:t xml:space="preserve">' + esc(v) + '</m:t></m:r>';
+
+    case 'mspace':
+      return run(' ', 'p');
+
+    case 'mfrac':
+      return '<m:f><m:fPr><m:type m:val="' +
+             (n.getAttribute('linethickness') === '0' ? 'noBar' : 'bar') +
+             '"/><m:ctrlPr/></m:fPr><m:num>' + mml(k[0]) + '</m:num><m:den>' +
+             mml(k[1]) + '</m:den></m:f>';
+
+    case 'msup':
+      s = naryOf(k[0], null, k[1]); if (s) return s;
+      return '<m:sSup><m:sSupPr><m:ctrlPr/></m:sSupPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sup>' + mml(k[1]) + '</m:sup></m:sSup>';
+
+    case 'msub':
+      s = naryOf(k[0], k[1], null); if (s) return s;
+      return '<m:sSub><m:sSubPr><m:ctrlPr/></m:sSubPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sub>' + mml(k[1]) + '</m:sub></m:sSub>';
+
+    case 'msubsup':
+      s = naryOf(k[0], k[1], k[2]); if (s) return s;
+      return '<m:sSubSup><m:sSubSupPr><m:ctrlPr/></m:sSubSupPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sub>' + mml(k[1]) + '</m:sub><m:sup>' + mml(k[2]) +
+             '</m:sup></m:sSubSup>';
+
+    case 'msqrt':
+      return '<m:rad><m:radPr><m:degHide m:val="1"/><m:ctrlPr/></m:radPr>' +
+             '<m:deg/><m:e>' + seq(k) + '</m:e></m:rad>';
+
+    case 'mroot':
+      return '<m:rad><m:radPr><m:degHide m:val="0"/><m:ctrlPr/></m:radPr><m:deg>' +
+             mml(k[1]) + '</m:deg><m:e>' + mml(k[0]) + '</m:e></m:rad>';
+
+    case 'mover':
+      var ao = txt(k[1]);
+      if (ACCENTS[ao]) {
+        return '<m:acc><m:accPr><m:chr m:val="' + esc(ACCENTS[ao]) +
+               '"/><m:ctrlPr/></m:accPr><m:e>' + mml(k[0]) + '</m:e></m:acc>';
+      }
+      s = naryOf(k[0], null, k[1]); if (s) return s;
+      return '<m:limUpp><m:limUppPr><m:ctrlPr/></m:limUppPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limUpp>';
+
+    case 'munder':
+      s = naryOf(k[0], k[1], null); if (s) return s;
+      return '<m:limLow><m:limLowPr><m:ctrlPr/></m:limLowPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limLow>';
+
+    case 'munderover':
+      s = naryOf(k[0], k[1], k[2]); if (s) return s;
+      return '<m:limUpp><m:limUppPr><m:ctrlPr/></m:limUppPr><m:e>' +
+             '<m:limLow><m:limLowPr><m:ctrlPr/></m:limLowPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limLow></m:e><m:lim>' +
+             mml(k[2]) + '</m:lim></m:limUpp>';
+
+    case 'mtable':
+      var rows = k.filter(function (r) { return /mtr$/.test(r.nodeName.toLowerCase()); });
+      var ncol = 0;
+      rows.forEach(function (r) { ncol = Math.max(ncol, kids(r).length); });
+      var props = '<m:mPr><m:baseJc m:val="center"/><m:plcHide m:val="1"/><m:mcs><m:mc><m:mcPr>' +
+                  '<m:count m:val="' + (ncol || 1) + '"/><m:mcJc m:val="center"/></m:mcPr></m:mc></m:mcs>' +
+                  '<m:ctrlPr/></m:mPr>';
+      var body = '';
+      rows.forEach(function (r) {
+        body += '<m:mr>';
+        var cells = kids(r);
+        for (var i = 0; i < (ncol || 1); i++) body += '<m:e>' + (cells[i] ? seq(kids(cells[i])) : '') + '</m:e>';
+        body += '</m:mr>';
+      });
+      return '<m:m>' + props + body + '</m:m>';
+
+    case 'mtr':
+    case 'mtd':
+      return seq(k);
+
+    default:
+      return k.length ? seq(k) : run(txt(n), 'p');
+  }
+}
+
+function mathmlToOmml(mathEl) { return mml(mathEl); }
+
+/* ============================================================================
+   2. Écriture ZIP (entrées non compressées + CRC32)
+   ========================================================================== */
+var CRCT = (function () {
+  var t = new Int32Array(256);
+  for (var i = 0; i < 256; i++) {
+    var c = i;
+    for (var j = 0; j < 8; j++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[i] = c;
+  }
+  return t;
+})();
+function crc32(buf) {
+  var c = -1;
+  for (var i = 0; i < buf.length; i++) c = CRCT[(c ^ buf[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ -1) >>> 0;
+}
+function utf8(str) {
+  if (typeof TextEncoder !== 'undefined') return new TextEncoder().encode(str);
+  var b = unescape(encodeURIComponent(str)), a = new Uint8Array(b.length);
+  for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i);
+  return a;
+}
+function zip(files) {
+  var parts = [], central = [], offset = 0;
+  function u16(v) { return [v & 0xFF, (v >>> 8) & 0xFF]; }
+  function u32(v) { return [v & 0xFF, (v >>> 8) & 0xFF, (v >>> 16) & 0xFF, (v >>> 24) & 0xFF]; }
+
+  files.forEach(function (f) {
+    var name = utf8(f.name), data = f.bin ? f.bin : utf8(f.data), c = crc32(data);
+    var local = [].concat(u32(0x04034b50), u16(20), u16(0x0800), u16(0), u16(0), u16(0),
+                          u32(c), u32(data.length), u32(data.length),
+                          u16(name.length), u16(0));
+    parts.push(new Uint8Array(local), name, data);
+    central.push({ name: name, crc: c, size: data.length, off: offset });
+    offset += local.length + name.length + data.length;
+  });
+
+  var cd = [];
+  central.forEach(function (e) {
+    cd = cd.concat(u32(0x02014b50), u16(20), u16(20), u16(0x0800), u16(0), u16(0), u16(0),
+                   u32(e.crc), u32(e.size), u32(e.size),
+                   u16(e.name.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(e.off));
+    cd = cd.concat(Array.prototype.slice.call(e.name));
+  });
+  var cdArr = new Uint8Array(cd);
+  var eocd = new Uint8Array([].concat(u32(0x06054b50), u16(0), u16(0),
+                                      u16(files.length), u16(files.length),
+                                      u32(cdArr.length), u32(offset), u16(0)));
+  parts.push(cdArr, eocd);
+
+  var total = parts.reduce(function (n, p) { return n + p.length; }, 0);
+  var out = new Uint8Array(total), pos = 0;
+  parts.forEach(function (p) { out.set(p, pos); pos += p.length; });
+  return out;
+}
+
+/* ============================================================================
+   3. HTML -> WordprocessingML
+   ========================================================================== */
+var SKIP = { script: 1, style: 1, button: 1, input: 1, noscript: 1 };
+var IMAGES = [];           /* { bin, w, h } collectées pendant le parcours */
+var EMU = 9525;            /* EMU par pixel */
+var MAXW = 5760000;        /* largeur utile de la page, en EMU */
+
+function b64bin(b64) {
+  var raw = atob(b64), a = new Uint8Array(raw.length);
+  for (var i = 0; i < raw.length; i++) a[i] = raw.charCodeAt(i);
+  return a;
+}
+
+function imageXml(dataUrl, wpx, hpx) {
+  var m = /^data:image\/png;base64,(.*)$/.exec(dataUrl || '');
+  if (!m) return '';
+  var cx = Math.round(wpx * EMU), cy = Math.round(hpx * EMU);
+  if (cx > MAXW) { cy = Math.round(cy * MAXW / cx); cx = MAXW; }
+  IMAGES.push({ bin: b64bin(m[1]) });
+  var id = IMAGES.length, rid = 'rIdImg' + id;
+  return '<w:p><w:pPr><w:pStyle w:val="Figure"/><w:jc w:val="center"/></w:pPr><w:r><w:drawing>' +
+    '<wp:inline distT="0" distB="0" distL="0" distR="0">' +
+    '<wp:extent cx="' + cx + '" cy="' + cy + '"/>' +
+    '<wp:effectExtent l="0" t="0" r="0" b="0"/>' +
+    '<wp:docPr id="' + id + '" name="Graphique ' + id + '"/>' +
+    '<wp:cNvGraphicFramePr><a:graphicFrameLocks ' +
+      'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/>' +
+    '</wp:cNvGraphicFramePr>' +
+    '<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">' +
+    '<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+    '<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+    '<pic:nvPicPr><pic:cNvPr id="' + id + '" name="Graphique ' + id + '"/><pic:cNvPicPr/></pic:nvPicPr>' +
+    '<pic:blipFill><a:blip r:embed="' + rid + '"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>' +
+    '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' + cx + '" cy="' + cy + '"/></a:xfrm>' +
+    '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>' +
+    '</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>';
+}
+var BLOCK = { p: 1, div: 1, h1: 1, h2: 1, h3: 1, h4: 1, li: 1, tr: 1, td: 1, th: 1,
+              table: 1, ul: 1, ol: 1, section: 1, article: 1, header: 1, blockquote: 1 };
+
+function W() {
+  this.body = '';
+  this.para = null;      /* { style, runs, numId, ilvl } */
+}
+W.prototype.open = function (style, numId, ilvl) {
+  this.close();
+  this.para = { style: style || 'Corps', runs: '', numId: numId || 0, ilvl: ilvl || 0 };
+};
+W.prototype.close = function () {
+  var p = this.para;
+  this.para = null;
+  if (!p || (p.runs === '' && !p.numId)) return;
+  if (p.runs === '') return;
+  var pPr = '<w:pPr><w:pStyle w:val="' + p.style + '"/>';
+  if (p.numId) pPr += '<w:numPr><w:ilvl w:val="' + p.ilvl + '"/><w:numId w:val="' + p.numId + '"/></w:numPr>';
+  pPr += '</w:pPr>';
+  this.body += '<w:p>' + pPr + p.runs + '</w:p>';
+};
+W.prototype.add = function (xml) {
+  if (!this.para) this.open('Corps');
+  this.para.runs += xml;
+};
+W.prototype.raw = function (xml) { this.close(); this.body += xml; };
+
+function textRun(s, fmt) {
+  if (!s) return '';
+  var rPr = '';
+  if (fmt.b) rPr += '<w:b/>';
+  if (fmt.i) rPr += '<w:i/>';
+  if (fmt.sup) rPr += '<w:vertAlign w:val="superscript"/>';
+  if (fmt.sub) rPr += '<w:vertAlign w:val="subscript"/>';
+  if (fmt.mono) rPr += '<w:rFonts w:ascii="Consolas" w:hAnsi="Consolas"/>';
+  return '<w:r>' + (rPr ? '<w:rPr>' + rPr + '</w:rPr>' : '') +
+         '<w:t xml:space="preserve">' + esc(s) + '</w:t></w:r>';
+}
+
+function walk(node, w, fmt, list) {
+  var i, cs = node.childNodes;
+  for (i = 0; i < cs.length; i++) {
+    var n = cs[i];
+
+    if (n.nodeType === 3) {
+      var s = n.nodeValue.replace(/\s+/g, ' ');
+      if (s.trim() === '' && !/\S/.test(s)) { if (w.para && w.para.runs) w.add(textRun(' ', fmt)); continue; }
+      w.add(textRun(s, fmt));
+      continue;
+    }
+    if (n.nodeType !== 1) continue;
+
+    var tag = n.nodeName.toLowerCase();
+    if (SKIP[tag]) continue;
+    if (n.classList && (n.classList.contains('top-bar') || n.classList.contains('top-actions') ||
+                        n.classList.contains('sol-toggle-wrap'))) continue;
+
+    /* --- équations --- */
+    if (tag === 'mjx-container') {
+      var math = n.querySelector('mjx-assistive-mml math, math');
+      var display = n.getAttribute('display') === 'true';
+      if (math) {
+        var omml = mathmlToOmml(math);
+        if (display) {
+          w.close();
+          w.body += '<w:p><w:pPr><w:pStyle w:val="Formule"/>' +
+                    '<w:jc w:val="center"/></w:pPr>' +
+                    '<m:oMath>' + omml + '</m:oMath></w:p>';
+        } else {
+          w.add('<m:oMath>' + omml + '</m:oMath>');
+        }
+      } else {
+        w.add(textRun(txt(n), fmt));
+      }
+      continue;
+    }
+    if (tag === 'mjx-assistive-mml' || tag === 'math') continue;
+
+    /* --- graphiques --- */
+    if (tag === 'svg' || tag === 'img') {
+      var png = n.getAttribute('data-kit-png');
+      if (png) {
+        w.close();
+        w.body += imageXml(png, +n.getAttribute('data-kit-w') || 600,
+                                +n.getAttribute('data-kit-h') || 380);
+      }
+      continue;
+    }
+
+    /* --- tableaux --- */
+    if (tag === 'table') { w.close(); w.body += table(n); continue; }
+
+    /* --- listes --- */
+    if (tag === 'ul' || tag === 'ol') {
+      w.close();
+      var nid = tag === 'ol' ? 2 : 1;
+      var lvl = list ? Math.min(list.ilvl + 1, 2) : 0;
+      var items = kids(n).filter(function (x) { return x.nodeName.toLowerCase() === 'li'; });
+      items.forEach(function (li) {
+        /* L'item est composé à part : son numéro doit se poser sur le premier
+           paragraphe produit, même si le <li> enveloppe son texte dans un <div>. */
+        var wb = new W();
+        walk(li, wb, fmt, { ilvl: lvl });
+        wb.close();
+        var xml = wb.body;
+        if (!xml) return;
+        var numPr = '<w:pStyle w:val="Liste"/><w:numPr><w:ilvl w:val="' + lvl +
+                    '"/><w:numId w:val="' + nid + '"/></w:numPr>';
+        if (xml.indexOf('<w:pStyle w:val="Corps"/>') !== -1) {
+          xml = xml.replace('<w:pStyle w:val="Corps"/>', numPr);
+        } else {
+          xml = '<w:p><w:pPr>' + numPr + '</w:pPr></w:p>' + xml;
+        }
+        w.body += xml;
+      });
+      continue;
+    }
+
+    /* --- titres --- */
+    if (tag === 'h1' || tag === 'h2') { w.close(); w.open('Titre1'); walk(n, w, fmt, list); w.close(); continue; }
+    if (tag === 'h3' || tag === 'h4') { w.close(); w.open('Titre2'); walk(n, w, fmt, list); w.close(); continue; }
+
+    /* --- titres internes du corrigé --- */
+    if (n.classList && (n.classList.contains('sol-sub') || n.classList.contains('sol-q') ||
+                        n.classList.contains('dossier-title'))) {
+      w.close(); w.open('Titre2'); walk(n, w, { b: true }, list); w.close(); continue;
+    }
+    if (n.classList && n.classList.contains('persp-box')) {
+      w.close();
+      var wb = new W();
+      walk(n, wb, fmt, list);
+      wb.close();
+      w.body += wb.body.replace(/w:val="Corps"/g, 'w:val="Encadre"')
+                       .replace(/w:val="Titre2"/g, 'w:val="EncadreTitre"');
+      continue;
+    }
+
+    /* --- mise en forme inline --- */
+    var f2 = { b: fmt.b, i: fmt.i, sup: fmt.sup, sub: fmt.sub, mono: fmt.mono };
+    if (tag === 'strong' || tag === 'b') f2.b = true;
+    if (tag === 'em' || tag === 'i') f2.i = true;
+    if (tag === 'sup') f2.sup = true;
+    if (tag === 'sub') f2.sub = true;
+    if (tag === 'code' || tag === 'kbd') f2.mono = true;
+
+    /* intertitre écrit en style en ligne (span display:block + gras) */
+    var st = n.getAttribute && n.getAttribute('style');
+    if (st && /display\s*:\s*block/.test(st) && /font-weight\s*:\s*(6|7|8|9|bold)/.test(st)) {
+      w.close(); w.open('Titre3');
+      walk(n, w, { b: true }, list);
+      w.close();
+      continue;
+    }
+
+    if ((tag === 'strong' || tag === 'b') &&
+        (!w.para || w.para.runs === '') &&
+        n.nextElementSibling && n.nextElementSibling.nodeName.toLowerCase() === 'br') {
+      w.close(); w.open('Titre3');
+      walk(n, w, { b: true }, list);
+      w.close();
+      i++;                       /* le <br> qui suit devient inutile */
+      continue;
+    }
+
+    if (tag === 'br') { w.add('<w:r><w:br/></w:r>'); continue; }
+    if (tag === 'hr') { w.close(); continue; }
+
+    if (BLOCK[tag]) { w.close(); w.open('Corps'); walk(n, w, f2, list); w.close(); }
+    else { walk(n, w, f2, list); }
+  }
+}
+
+function cellXml(td, isHead) {
+  var w2 = new W();
+  walk(td, w2, { b: !!isHead }, null);
+  w2.close();
+  var content = w2.body || '<w:p><w:pPr><w:pStyle w:val="Cellule"/></w:pPr></w:p>';
+  content = content.replace(/w:val="Corps"/g, 'w:val="Cellule"');
+  var span = parseInt(td.getAttribute('colspan') || '1', 10);
+  var shd = isHead ? '<w:shd w:val="clear" w:fill="EDE9DF"/>' : '';
+  return '<w:tc><w:tcPr>' + (span > 1 ? '<w:gridSpan w:val="' + span + '"/>' : '') +
+         shd + '<w:vAlign w:val="center"/></w:tcPr>' + content + '</w:tc>';
+}
+
+function table(tbl) {
+  var rows = tbl.querySelectorAll('tr'), out = '', ncol = 0, i, j;
+  for (i = 0; i < rows.length; i++) {
+    var c = rows[i].children, n = 0;
+    for (j = 0; j < c.length; j++) n += parseInt(c[j].getAttribute('colspan') || '1', 10);
+    ncol = Math.max(ncol, n);
+  }
+  if (!ncol) return '';
+  var grid = '<w:tblGrid>';
+  for (i = 0; i < ncol; i++) grid += '<w:gridCol w:w="' + Math.floor(9360 / ncol) + '"/>';
+  grid += '</w:tblGrid>';
+
+  for (i = 0; i < rows.length; i++) {
+    var cells = rows[i].children, xml = '';
+    var head = rows[i].parentNode.nodeName.toLowerCase() === 'thead' ||
+               (cells.length && cells[0].nodeName.toLowerCase() === 'th');
+    for (j = 0; j < cells.length; j++) xml += cellXml(cells[j], head);
+    out += '<w:tr>' + (head ? '<w:trPr><w:tblHeader/></w:trPr>' : '') + xml + '</w:tr>';
+  }
+  return '<w:tbl><w:tblPr><w:tblStyle w:val="Grille"/>' +
+         '<w:tblW w:w="5000" w:type="pct"/><w:tblLayout w:type="fixed"/></w:tblPr>' +
+         grid + out + '</w:tbl><w:p><w:pPr><w:pStyle w:val="Apres"/></w:pPr></w:p>';
+}
+
+/* ============================================================================
+   Assemblage du fichier
+   ========================================================================== */
+var NS =
+  'xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" ' +
+  'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
+  'xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" ' +
+  'xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" ' +
+  'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+  'xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture" ' +
+  'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+  'xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" ' +
+  'mc:Ignorable="w14"';
+
+function style(id, name, opts) {
+  var o = opts || {};
+  return '<w:style w:type="paragraph" w:styleId="' + id + '"><w:name w:val="' + name + '"/>' +
+         '<w:basedOn w:val="Corps"/><w:pPr>' +
+         (o.keep ? '<w:keepNext/>' : '') +
+         '<w:spacing w:before="' + (o.before || 0) + '" w:after="' + (o.after || 120) +
+         '" w:line="' + (o.line || 276) + '" w:lineRule="auto"/>' +
+         (o.jc ? '<w:jc w:val="' + o.jc + '"/>' : '') +
+         (o.ind ? '<w:ind w:left="' + o.ind + '"/>' : '') +
+         (o.border ? '<w:pBdr><w:left w:val="single" w:sz="18" w:space="8" w:color="1A2E42"/></w:pBdr>' : '') +
+         '</w:pPr><w:rPr>' +
+         (o.font ? '<w:rFonts w:ascii="' + o.font + '" w:hAnsi="' + o.font + '"/>' : '') +
+         (o.b ? '<w:b/>' : '') + (o.i ? '<w:i/>' : '') +
+         (o.sz ? '<w:sz w:val="' + o.sz + '"/>' : '') +
+         (o.color ? '<w:color w:val="' + o.color + '"/>' : '') +
+         '</w:rPr></w:style>';
+}
+
+function stylesXml() {
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles ' + NS + '>' +
+    '<w:docDefaults><w:rPrDefault><w:rPr>' +
+      '<w:rFonts w:ascii="Cambria" w:hAnsi="Cambria" w:cs="Cambria"/>' +
+      '<w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="fr-FR"/>' +
+    '</w:rPr></w:rPrDefault><w:pPrDefault><w:pPr>' +
+      '<w:spacing w:after="120" w:line="276" w:lineRule="auto"/><w:jc w:val="both"/>' +
+    '</w:pPr></w:pPrDefault></w:docDefaults>' +
+    '<w:style w:type="paragraph" w:default="1" w:styleId="Corps"><w:name w:val="Normal"/>' +
+      '<w:pPr><w:spacing w:after="120" w:line="276" w:lineRule="auto"/><w:jc w:val="both"/></w:pPr>' +
+      '<w:rPr><w:rFonts w:ascii="Cambria" w:hAnsi="Cambria"/><w:sz w:val="22"/></w:rPr></w:style>' +
+    style('TitreDoc', 'Title', { font: 'Cambria', b: true, sz: 40, color: '0D1B2A', jc: 'left', after: 60, line: 240 }) +
+    style('SousTitre', 'Subtitle', { i: true, sz: 20, color: '5A5A5A', jc: 'left', after: 280, line: 240 }) +
+    style('Titre1', 'heading 1', { b: true, sz: 28, color: '0D1B2A', before: 320, after: 140, jc: 'left', keep: true, line: 240 }) +
+    style('Titre2', 'heading 2', { b: true, sz: 23, color: '1A2E42', before: 240, after: 100, jc: 'left', keep: true, line: 240 }) +
+    style('Formule', 'Formula', { jc: 'center', before: 120, after: 120, line: 240 }) +
+    style('Liste', 'List Paragraph', { after: 100, ind: 360 }) +
+    style('Cellule', 'Table Text', { sz: 20, after: 40, jc: 'left', line: 240 }) +
+    style('Encadre', 'Aside', { ind: 240, border: true, sz: 21, before: 200, after: 200 }) +
+    style('Apres', 'After Table', { after: 200, sz: 12 }) +
+    style('Figure', 'Figure', { jc: 'center', before: 160, after: 200, line: 240 }) +
+    style('Titre3', 'heading 3', { b: true, sz: 22, color: '1A2E42', before: 200,
+                                   after: 60, jc: 'left', keep: true, line: 240 }) +
+    style('EncadreTitre', 'Aside Heading', { ind: 240, border: true, b: true, sz: 22,
+                                             color: '1A2E42', before: 200, after: 60, jc: 'left' }) +
+    '<w:style w:type="table" w:styleId="Grille"><w:name w:val="Table Grid"/><w:tblPr>' +
+      '<w:tblBorders>' +
+      ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(function (b) {
+        return '<w:' + b + ' w:val="single" w:sz="4" w:space="0" w:color="9A9A9A"/>';
+      }).join('') +
+      '</w:tblBorders><w:tblCellMar>' +
+      '<w:top w:w="60" w:type="dxa"/><w:left w:w="90" w:type="dxa"/>' +
+      '<w:bottom w:w="60" w:type="dxa"/><w:right w:w="90" w:type="dxa"/>' +
+      '</w:tblCellMar></w:tblPr></w:style>' +
+    '</w:styles>';
+}
+
+function numberingXml() {
+  function lvl(i, fmt, txtv, ind) {
+    return '<w:lvl w:ilvl="' + i + '"><w:start w:val="1"/><w:numFmt w:val="' + fmt + '"/>' +
+           '<w:lvlText w:val="' + txtv + '"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="' +
+           ind + '" w:hanging="360"/></w:pPr>' +
+           (fmt === 'bullet' ? '<w:rPr><w:rFonts w:ascii="Symbol" w:hAnsi="Symbol"/></w:rPr>' : '') +
+           '</w:lvl>';
+  }
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:numbering ' + NS + '>' +
+    '<w:abstractNum w:abstractNumId="1"><w:multiLevelType w:val="hybridMultilevel"/>' +
+      lvl(0, 'bullet', '\uF0B7', 360) + lvl(1, 'bullet', 'o', 720) + lvl(2, 'bullet', '\uF0A7', 1080) +
+    '</w:abstractNum>' +
+    '<w:abstractNum w:abstractNumId="2"><w:multiLevelType w:val="hybridMultilevel"/>' +
+      lvl(0, 'decimal', '%1.', 360) + lvl(1, 'lowerLetter', '%2.', 720) + lvl(2, 'lowerRoman', '%3.', 1080) +
+    '</w:abstractNum>' +
+    '<w:num w:numId="1"><w:abstractNumId w:val="1"/></w:num>' +
+    '<w:num w:numId="2"><w:abstractNumId w:val="2"/></w:num>' +
+    '</w:numbering>';
+}
+
+function buildDocx(opts) {
+  IMAGES = [];
+  var w = new W();
+
+  if (opts.title) {
+    w.body += '<w:p><w:pPr><w:pStyle w:val="TitreDoc"/></w:pPr>' +
+              textRun(opts.title, {}) + '</w:p>';
+  }
+  if (opts.subtitle) {
+    w.body += '<w:p><w:pPr><w:pStyle w:val="SousTitre"/></w:pPr>' +
+              textRun(opts.subtitle, {}) + '</w:p>';
+  }
+  opts.sections.forEach(function (sec) {
+    if (sec.heading) {
+      w.body += '<w:p><w:pPr><w:pStyle w:val="Titre1"/></w:pPr>' + textRun(sec.heading, {}) + '</w:p>';
+    }
+    walk(sec.node, w, {}, null);
+    w.close();
+  });
+  w.close();
+
+  var doc = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ' + NS + '><w:body>' +
+    w.body +
+    '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/>' +
+    '<w:pgMar w:top="1247" w:right="1247" w:bottom="1247" w:left="1247" ' +
+    'w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>';
+
+  var media = [], rels = '', ctypes = '';
+  IMAGES.forEach(function (im, i) {
+    media.push({ name: 'word/media/image' + (i + 1) + '.png', bin: im.bin });
+    rels += '<Relationship Id="rIdImg' + (i + 1) + '" Type="http://schemas.openxmlformats.org/' +
+            'officeDocument/2006/relationships/image" Target="media/image' + (i + 1) + '.png"/>';
+  });
+  if (IMAGES.length) ctypes = '<Default Extension="png" ContentType="image/png"/>';
+
+  return zip([
+    { name: '[Content_Types].xml',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+        '<Default Extension="xml" ContentType="application/xml"/>' + ctypes +
+        '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+        '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>' +
+        '<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>' +
+        '</Types>' },
+    { name: '_rels/.rels',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+        '</Relationships>' },
+    { name: 'word/_rels/document.xml.rels',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' +
+        '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>' +
+        rels + '</Relationships>' },
+    { name: 'word/document.xml', data: doc },
+    { name: 'word/styles.xml', data: stylesXml() },
+    { name: 'word/numbering.xml', data: numberingXml() }
+  ].concat(media));
+}
+
+root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: W, _walk: walk };
+
+})(window);
+
+</script>
+<script id="kit-js">
+/* ============================================================
+   KIT D'UNIFORMISATION — logique partagée (modale PDF, export Word,
+   libellés de la barre d'actions). Autonome : ne dépend d'aucun
+   dictionnaire I18N propre à la page.
+   ============================================================ */
+(function(){
+  var T = {
+    fr:{ modalTitle:"Exporter en PDF", seedPre:"Seed\u00a0:",
+         seedPost:"\u2014 notez cette valeur pour reproduire exactement cet exercice.",
+         optHeader:"Inclure l'en-t\u00eate de page",
+         optHeaderD:"Titre, badge de mati\u00e8re et intitul\u00e9 de l'exercice",
+         optSol:"Inclure le corrig\u00e9 complet",
+         optSolD:"L'ensemble des d\u00e9veloppements et commentaires du corrig\u00e9",
+         print:"\uD83D\uDDA8\u00a0Imprimer / Sauvegarder PDF", cancel:"Annuler",
+         btnNew:"\u21ba Nouvel \u00e9nonc\u00e9", btnPdf:"\u2b07 Exporter PDF", btnDoc:"\u2b07 Exporter Word",
+         btnCopy:"\u29c9 Copier", copied:"\u2713 Copi\u00e9e", seedLabel:"Seed de reproductibilit\u00e9",
+         docFile:"exercice.doc" },
+    en:{ modalTitle:"Export to PDF", seedPre:"Seed:",
+         seedPost:"\u2014 note this value to reproduce this exact exercise.",
+         optHeader:"Include the page header",
+         optHeaderD:"Title, subject badge and exercise heading",
+         optSol:"Include the full solution",
+         optSolD:"All the workings and comments of the solution",
+         print:"\uD83D\uDDA8\u00a0Print / Save as PDF", cancel:"Cancel",
+         btnNew:"\u21ba New exercise", btnPdf:"\u2b07 Export PDF", btnDoc:"\u2b07 Export Word",
+         btnCopy:"\u29c9 Copy", copied:"\u2713 Copied", seedLabel:"Reproducibility seed",
+         docFile:"exercise.doc" }
+  };
+
+  function lang(){
+    var l = (window.LANG || document.documentElement.lang || 'fr').toLowerCase();
+    return (l.indexOf('en') === 0) ? 'en' : 'fr';
+  }
+  function t(k){ return T[lang()][k]; }
+
+  window.KIT = { T:T, lang:lang, t:t };
+
+  /* --- libellés du kit (modale + barre d'actions) --- */
+  function paint(){
+    var d = T[lang()];
+    document.querySelectorAll('[data-kit]').forEach(function(el){
+      var k = el.getAttribute('data-kit');
+      if (d[k] !== undefined) el.innerHTML = d[k];
+    });
+  }
+  window.KIT.paint = paint;
+
+  /* Se raccroche au changement de langue de la page sans la modifier. */
+  function hookLang(){
+    if (typeof window.setLang === 'function' && !window.setLang.__kit){
+      var orig = window.setLang;
+      var wrapped = function(){ var r = orig.apply(this, arguments); paint(); return r; };
+      wrapped.__kit = true;
+      window.setLang = wrapped;
+    }
+  }
+
+  /* --- Copie de la seed active --- */
+  window.copySeed = function(btn){
+    var el = document.getElementById('seed-disp');
+    if (!el) return;
+    var v = (el.textContent || '').trim();
+    if (!v || v === '\u2014') return;
+    var done = function(){
+      var b = btn || document.getElementById('btn-copy-seed');
+      if (!b) return;
+      var old = b.innerHTML;
+      b.innerHTML = t('copied');
+      setTimeout(function(){ b.innerHTML = old; paint(); }, 1400);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(v).then(done, done);
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = v; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch(e){}
+      document.body.removeChild(ta); done();
+    }
+  };
+
+  /* --- Modale PDF --- */
+  window.openPdfModal = function(){
+    var s = document.getElementById('modal-seed');
+    var src = document.getElementById('seed-disp');
+    if (s && src) s.textContent = (src.textContent || '\u2014').trim();
+    /* la case « corrigé » reflète l'état d'affichage courant */
+    var sol = document.getElementById('sol-card');
+    var box = document.getElementById('opt-sol');
+    if (box) box.checked = !!(window.solVisible ||
+        (sol && (sol.classList.contains('visible') || sol.style.display === 'block')));
+    paint();
+    document.getElementById('pdf-ov').classList.add('open');
+    document.getElementById('pdf-modal').classList.add('open');
+  };
+  window.closePdfModal = function(){
+    document.getElementById('pdf-ov').classList.remove('open');
+    document.getElementById('pdf-modal').classList.remove('open');
+  };
+  var PRINTCLS = ['print-no-header', 'print-force-solution', 'print-no-solution'];
+
+  function clearPrintClasses() {
+    var b = document.body;
+    for (var i = 0; i < PRINTCLS.length; i++) b.classList.remove(PRINTCLS[i]);
+  }
+
+  window.doPrint = function () {
+    var noHdr   = !document.getElementById('opt-header').checked;
+    var inclSol =  document.getElementById('opt-sol').checked;
+    var b = document.body;
+
+    clearPrintClasses();
+    if (noHdr) b.classList.add('print-no-header');
+    b.classList.add(inclSol ? 'print-force-solution' : 'print-no-solution');
+    closePdfModal();
+
+    /* Le nettoyage doit attendre la fin réelle de l'impression. Un simple
+       minuteur ne convient pas : selon le navigateur, window.print() rend la
+       main avant que l'aperçu ne soit composé, et les options seraient alors
+       déjà effacées au moment où le PDF est produit. */
+    var done = false;
+    function finish() {
+      if (done) return;
+      done = true;
+      clearPrintClasses();
+      window.removeEventListener('afterprint', finish);
+      if (mq && mq.removeListener) mq.removeListener(onMq);
+      if (mq && mq.removeEventListener) mq.removeEventListener('change', onMq);
+    }
+    function onMq(e) { if (!e.matches) finish(); }
+
+    var mq = window.matchMedia ? window.matchMedia('print') : null;
+    window.addEventListener('afterprint', finish);
+    if (mq && mq.addEventListener) mq.addEventListener('change', onMq);
+    else if (mq && mq.addListener) mq.addListener(onMq);
+    /* filet de sécurité si le navigateur n'émet aucun de ces signaux */
+    setTimeout(finish, 120000);
+
+    setTimeout(function () { window.print(); }, 120);
+  };
+
+  /* --- Rasterisation des graphiques SVG ---
+     Word ne sait pas lire le SVG. On le convertit en PNG en recopiant d'abord
+     les styles calculés, sinon les couleurs héritées de la feuille disparaissent. */
+  var SVGPROPS = ['fill', 'stroke', 'stroke-width', 'stroke-dasharray', 'stroke-linecap',
+                  'stroke-linejoin', 'opacity', 'fill-opacity', 'stroke-opacity',
+                  'font-family', 'font-size', 'font-weight', 'font-style',
+                  'text-anchor', 'dominant-baseline'];
+
+  function inlineStyles(src, dst) {
+    var a = src.querySelectorAll('*'), b = dst.querySelectorAll('*'), i, j;
+    for (i = 0; i < a.length && i < b.length; i++) {
+      var cs = window.getComputedStyle(a[i]);
+      for (j = 0; j < SVGPROPS.length; j++) {
+        var v = cs.getPropertyValue(SVGPROPS[j]);
+        if (v) b[i].setAttribute(SVGPROPS[j], v);
+      }
+    }
+  }
+
+  function svgSize(svg) {
+    var vb = svg.viewBox && svg.viewBox.baseVal;
+    if (vb && vb.width) return { w: vb.width, h: vb.height };
+    var r = svg.getBoundingClientRect();
+    if (r.width) return { w: r.width, h: r.height };
+    return { w: 600, h: 380 };
+  }
+
+  function svgToPng(svg) {
+    return new Promise(function (resolve) {
+      var done = false;
+      var res = function (v) { if (!done) { done = true; resolve(v); } };
+      /* garde-fou : un graphique qui ne se charge pas ne doit jamais
+         bloquer l'export, on l'omet et le reste du document part quand même */
+      setTimeout(function () { res(null); }, 5000);
+      try {
+        var d = svgSize(svg), SC = 2;
+        var c = svg.cloneNode(true);
+        c.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        c.setAttribute('width', d.w);
+        c.setAttribute('height', d.h);
+        inlineStyles(svg, c);
+        var bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        bg.setAttribute('x', 0); bg.setAttribute('y', 0);
+        bg.setAttribute('width', '100%'); bg.setAttribute('height', '100%');
+        bg.setAttribute('fill', '#ffffff');
+        c.insertBefore(bg, c.firstChild);
+        var xml = new XMLSerializer().serializeToString(c);
+        var img = new Image();
+        img.onload = function () {
+          try {
+            var cv = document.createElement('canvas');
+            cv.width = Math.round(d.w * SC); cv.height = Math.round(d.h * SC);
+            var ctx = cv.getContext('2d');
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, cv.width, cv.height);
+            ctx.drawImage(img, 0, 0, cv.width, cv.height);
+            res({ png: cv.toDataURL('image/png'), w: d.w, h: d.h });
+          } catch (e) { res(null); }
+        };
+        img.onerror = function () { res(null); };
+        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml);
+      } catch (e) { res(null); }
+    });
+  }
+
+  /* --- Export Word natif (.docx) ---
+     Les formules sont converties en OMML, le format d'équation natif de Word :
+     elles restent éditables et se composent avec Cambria Math. */
+  window.exportWord = function () {
+    var area = document.getElementById('ex-area');
+    if (!area || !window.DocxExport) { return; }
+
+    var btn = document.querySelector('.btn-sm.doc');
+    if (btn) { btn.disabled = true; btn.style.opacity = '.5'; }
+
+    var svgs = Array.prototype.slice.call(area.querySelectorAll('svg'));
+    Promise.all(svgs.map(svgToPng)).then(function (pngs) {
+      svgs.forEach(function (sv, i) {
+        if (!pngs[i]) return;
+        sv.setAttribute('data-kit-png', pngs[i].png);
+        sv.setAttribute('data-kit-w', pngs[i].w);
+        sv.setAttribute('data-kit-h', pngs[i].h);
+      });
+      try { writeDocx(area); } finally {
+        svgs.forEach(function (sv) {
+          sv.removeAttribute('data-kit-png');
+          sv.removeAttribute('data-kit-w');
+          sv.removeAttribute('data-kit-h');
+        });
+        if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+      }
+    });
+  };
+
+  function writeDocx(area) {
+
+    var h1 = document.querySelector('header h1');
+    var badge = document.querySelector('.header-badge, #lbl-badge');
+    var seed = document.getElementById('seed-disp');
+    var bits = [];
+    if (badge && badge.textContent.trim()) bits.push(badge.textContent.trim());
+    if (seed && seed.textContent.trim() && seed.textContent.trim() !== '\u2014') {
+      bits.push('seed ' + seed.textContent.trim());
+    }
+    bits.push('Thomas Hossen');
+
+    var sections = [];
+    var cards = area.querySelectorAll('.card');
+    for (var i = 0; i < cards.length; i++) {
+      var body = cards[i].querySelector('.card-body');
+      if (!body) continue;
+      var tag = cards[i].querySelector('.card-header .tag');
+      var h2 = cards[i].querySelector('.card-header h2');
+      var head = [tag ? tag.textContent.trim() : '', h2 ? h2.textContent.trim() : '']
+                   .filter(Boolean).join(' \u2014 ');
+      sections.push({ heading: head, node: body });
+    }
+    if (!sections.length) sections = [{ heading: '', node: area }];
+
+    var bytes = window.DocxExport.build({
+      title: h1 ? h1.textContent.trim() : document.title,
+      subtitle: bits.join(' \u00b7 '),
+      sections: sections
+    });
+
+    var name = (h1 ? h1.textContent : 'exercice').normalize('NFD')
+                 .replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9]+/g, '_')
+                 .replace(/^_|_$/g, '').slice(0, 60) || 'exercice';
+    var blob = new Blob([bytes], {
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = name + '.docx';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){ hookLang(); paint(); });
+  if (document.readyState !== 'loading'){ hookLang(); paint(); }
+})();
+</script>
+<!-- KIT:JS:END -->
+</body>
+</html>
