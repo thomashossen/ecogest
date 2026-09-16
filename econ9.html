@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Générateur d'exercices - Économétrie</title>
+<title>Générateur d'exercices - Ajustement linéaire simple</title>
 <script>
 window.MathJax = {
   tex: { 
@@ -146,6 +146,23 @@ body.print-force-solution .sol-card{display:block!important}
 .flag-btn.active{opacity:1;border-color:var(--gold-light);box-shadow:0 0 0 1px rgba(232,184,75,.35)}
 .flag-btn svg{display:block;width:30px;height:20px;border-radius:1px}
 @media print{ .lang-switch{display:none !important;} }
+
+/* TABLEAUX DE DONNEES */
+.dtable-wrap{overflow-x:auto;margin:1.1rem 0}
+.dtable{width:100%;border-collapse:collapse;font-size:.82rem;font-family:'Source Serif 4',serif}
+.dtable th,.dtable td{border:1px solid var(--border);padding:.4rem .5rem;text-align:center;vertical-align:middle}
+.dtable th{background:var(--navy);color:var(--cream);font-weight:600;font-size:.78rem}
+.dtable tr:nth-child(even) td{background:#fbf9f4}
+.dtable td.num{font-family:'JetBrains Mono',monospace;font-size:.78rem;white-space:nowrap}
+.dtable tfoot td{font-weight:700;background:var(--cream-dark)}
+.dtable caption{caption-side:bottom;font-size:.76rem;color:var(--text-muted);font-style:italic;padding-top:.5rem;text-align:justify}
+.dtable-narrow{max-width:560px;margin:0 auto}
+.context-block .dtable-wrap{margin:1rem 0 1.1rem}
+
+/* FIGURES */
+.fig-wrap{margin:1.2rem 0 .3rem;text-align:center;overflow-x:auto}
+.fig-wrap svg{width:100%;max-width:640px;height:auto;background:#fff;border:1px solid var(--border);border-radius:4px}
+.fig-cap{font-size:.78rem;color:var(--text-muted);font-style:italic;text-align:center;margin-bottom:1rem;line-height:1.5}
 </style>
 <!-- KIT:CSS:START v1 --><style id="kit-css">
 /* ============================================================
@@ -385,8 +402,8 @@ p.kit-num::before{
       <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
     </div>
   </div>
-  <h1 data-k="k-h1">Modèle de régression linéaire simple</h1>
-  <p class="subtitle" data-k="k-sub">© Thomas Hossen – Version du 7 mars 2026</p>
+  <h1 data-k="k-h1">Ajustement linéaire simple sur petit échantillon</h1>
+  <p class="subtitle" data-k="k-sub">© Thomas Hossen – Version du 15 septembre 2026</p>
 
   <div id="controls-bar">
     <div class="ctrls">
@@ -400,9 +417,9 @@ p.kit-num::before{
       </div>
       <div class="ctrl-vsep"></div>
       <div class="ctrl-g">
-        <span class="ctrl-lbl" data-k="k-n">Années <em>(n)</em></span>
-        <input class="ctrl-inp" type="number" id="param-n" min="15" max="50" placeholder="défaut">
-        <span class="ctrl-tip" data-k="k-ntip">15 – 50, auto si vide</span>
+        <span class="ctrl-lbl" data-k="k-n">Observations <em>(n)</em></span>
+        <input class="ctrl-inp" type="number" id="param-n" min="5" max="8" placeholder="5">
+        <span class="ctrl-tip" data-k="k-ntip">5 – 8, 5 si vide</span>
       </div>
       <div class="ctrl-vsep"></div>
       <button class="btn-gen" onclick="generateFromControls()"><span data-k="k-gen">Générer</span></button>
@@ -428,7 +445,7 @@ p.kit-num::before{
     </div>
 
     <div id="ex-card" class="card">
-      <div class="card-header"><span class="tag" data-k="k-tag-ex">Énoncé</span><h2 id="card-title" data-k="k-cardtitle">Estimation de la demande</h2></div>
+      <div class="card-header"><span class="tag" data-k="k-tag-ex">Énoncé</span><h2 id="card-title" data-k="k-cardtitle">Régression linéaire simple</h2></div>
       <div class="card-body" id="ex-content"></div>
     </div>
 
@@ -437,16 +454,82 @@ p.kit-num::before{
     </div>
 
     <div id="sol-card" class="card sol-card">
-      <div class="card-header"><span class="tag" data-k="k-tag-sol">Corrigé</span><h2 data-k="k-cardtitle2">Estimation de la demande</h2></div>
+      <div class="card-header"><span class="tag" data-k="k-tag-sol">Corrigé</span><h2 id="card-title2" data-k="k-cardtitle2">Régression linéaire simple</h2></div>
       <div class="card-body" id="sol-content"></div>
     </div>
 
   </div>
 </main>
 
-
 <script>
 let solVisible = false;
+
+/* ============================================================
+   OUTILS NUMERIQUES  /  NUMERIC HELPERS
+   Toutes les grandeurs sont manipulees comme des entiers mis a
+   l'echelle (X en 10^-px, Y en 10^-py, b en 10^-pb) : les calculs
+   du corrige sont donc exacts, sans erreur d'arrondi.
+   ============================================================ */
+const P10 = [1, 10, 100, 1000, 10000, 100000, 1000000];
+
+/* entier v exprime en 10^-d  ->  chaine ; m = mode mathematique */
+function fx(v, d, m) {
+  const neg = v < 0;
+  let s = String(Math.abs(Math.round(v)));
+  let ip = s, fp = '';
+  if (d > 0) { s = s.padStart(d + 1, '0'); ip = s.slice(0, -d); fp = s.slice(-d); }
+  if (ip.length >= 5) {
+    const sep = m ? '\\,' : '\u202F';
+    let out = '';
+    while (ip.length > 3) { out = sep + ip.slice(-3) + out; ip = ip.slice(0, -3); }
+    ip = ip + out;
+  }
+  return (neg ? (m ? '-' : '\u2212') : '') + ip + (d > 0 ? '.' + fp : '');
+}
+/* reel x arrondi a d decimales */
+function fxf(x, d, m) { return fx(Math.round(x * P10[d]), d, m); }
+/* rationnel num/den (num exprime en 10^-d) : valeur exacte si elle tombe juste, sinon arrondie */
+function fq(num, den, d, m) {
+  for (let j = 0; j <= 2 && d + j <= 4; j++) {
+    const t = num * P10[j];
+    if (t % den === 0) return { s: fx(t / den, d + j, m), eq: '=' };
+  }
+  const dd = Math.min(4, Math.max(d, 2));
+  return { s: fx(Math.round(num * P10[dd - d] / den), dd, m), eq: '\\approx' };
+}
+
+/* ============================================================
+   SCENARIOS NUMERIQUES (independants de la langue)
+   xmin/xmax/xstep en 10^-px ; bmin/bmax/bstep en 10^-pb ;
+   amin/amax/astep, ylo/yhi, eu en 10^-py.
+   ============================================================ */
+const SCEN = [
+  { id: 'conso',  idx: 'year',  px: 0, pb: 2, py: 0, xmin: 18000, xmax: 34000, xstep: 500, sortX: true,
+    bmin: 60, bmax: 90, bstep: 1, amin: 1500, amax: 4000, astep: 50, ylo: 1000, yhi: 40000, eu: 10,
+    r2min: 0.85, r2max: 0.985, ok: (x, y) => y.every((v, i) => v < x[i]) },
+  { id: 'cout',   idx: 'month', px: 0, pb: 1, py: 0, xmin: 400, xmax: 2000, xstep: 20,
+    bmin: 80, bmax: 240, bstep: 1, amin: 5000, amax: 15000, astep: 100, ylo: 3000, yhi: 80000, eu: 10,
+    r2min: 0.85, r2max: 0.985 },
+  { id: 'pub',    idx: 'year',  px: 0, pb: 1, py: 1, xmin: 8, xmax: 60, xstep: 1,
+    bmin: 20, bmax: 60, bstep: 1, amin: 1200, amax: 4000, astep: 10, ylo: 500, yhi: 12000, eu: 1,
+    r2min: 0.80, r2max: 0.97 },
+  { id: 'loyer',  idx: 'unit',  px: 0, pb: 1, py: 0, xmin: 18, xmax: 110, xstep: 2,
+    bmin: 100, bmax: 280, bstep: 5, amin: 50, amax: 250, astep: 5, ylo: 150, yhi: 4000, eu: 1,
+    r2min: 0.85, r2max: 0.98 },
+  { id: 'notes',  idx: 'unit',  px: 0, pb: 2, py: 1, xmin: 2, xmax: 30, xstep: 2,
+    bmin: 20, bmax: 45, bstep: 5, amin: 30, amax: 80, astep: 1, ylo: 0, yhi: 200, eu: 1,
+    r2min: 0.70, r2max: 0.95 },
+  { id: 'phil',   idx: 'year',  px: 1, pb: 2, py: 2, xmin: 40, xmax: 100, xstep: 2,
+    bmin: -75, bmax: -25, bstep: 5, amin: 500, amax: 900, astep: 5, ylo: 20, yhi: 1200, eu: 1,
+    r2min: 0.70, r2max: 0.95 },
+  { id: 'dem',    idx: 'unit',  px: 1, pb: 0, py: 0, xmin: 20, xmax: 80, xstep: 2,
+    bmin: -90, bmax: -20, bstep: 5, amin: 400, amax: 900, astep: 10, ylo: 20, yhi: 2000, eu: 1,
+    r2min: 0.80, r2max: 0.97 },
+  { id: 'occas',  idx: 'unit',  px: 0, pb: 1, py: 1, xmin: 1, xmax: 12, xstep: 1,
+    bmin: -25, bmax: -8, bstep: 1, amin: 140, amax: 350, astep: 1, ylo: 15, yhi: 500, eu: 1,
+    r2min: 0.80, r2max: 0.97 }
+];
+
 /* ============================================================
    DICTIONNAIRE BILINGUE  /  BILINGUAL DICTIONARY
    ============================================================ */
@@ -454,203 +537,395 @@ const I18N = {
 
   fr: {
     "htmlLang": "fr",
-    "title": "Générateur d'exercices - Régression simple",
+    "title": "Générateur d'exercices - Ajustement linéaire simple",
     "k-badge": "ÉCONOMÉTRIE",
-    "k-h1": "Modèle de régression linéaire simple",
-    "k-sub": "© Thomas Hossen – Version du 7 mars 2026",
+    "k-h1": "Ajustement linéaire simple sur petit échantillon",
+    "k-sub": "© Thomas Hossen – Version du 15 septembre 2026",
     "k-seed": "Seed de reproductibilité",
     "k-seedtip": "Vide = aléatoire à chaque génération",
-    "k-n": "Années <em>(n)</em>",
-    "k-ntip": "15 – 50, auto si vide",
+    "k-n": "Observations <em>(n)</em>",
+    "k-ntip": "5 – 8, 5 si vide",
     "k-gen": "Générer",
     "k-welcome": "Configurez les paramètres (ou laissez vide pour de l'aléatoire), puis cliquez sur Générer.",
-    "k-new": "↺ Nouvel énoncé",
-    "k-pdf": "⬇ Exporter PDF",
     "k-seedbadge": "Seed&nbsp;:",
     "k-tag-ex": "Énoncé",
-    "k-cardtitle": "Estimation de la demande",
+    "k-cardtitle": "Régression linéaire simple",
     "k-tag-sol": "Corrigé",
-    "k-cardtitle2": "Estimation de la demande",
-    "k-modal": "Exporter en PDF",
-    "k-mseed-pre": "Seed&nbsp;:",
-    "k-mseed-post": "— notez cette valeur pour reproduire exactement cet exercice.",
-    "k-opth": "Inclure l'en-tête de page",
-    "k-opthd": "Titre, badge « ÉCONOMÉTRIE » et intitulé de l'exercice",
-    "k-opts": "Inclure le corrigé complet",
-    "k-optsd": "Démonstrations des estimateurs, variances et prévisions",
-    "k-print": "🖨&nbsp;Imprimer / Sauvegarder PDF",
-    "k-cancel": "Annuler",
-    "copy": "⧉ Copier",
-    "copyTitle": "Copier la seed active",
-    "copied": "✓ Copié",
+    "k-cardtitle2": "Régression linéaire simple",
     "phSeed": "auto",
-    "phN": "défaut",
+    "phN": "5",
     "showSol": "Afficher le corrigé",
     "hideSol": "Masquer le corrigé",
-    situations: [
-      {"nom": "engrais", "desc": "ventes annuelles d'engrais aux États-Unis", "q_desc": "le nombre de tonnes d'engrais vendues", "p_desc": "le prix annuel moyen de l'engrais", "q_unit": "tonne", "p_unit": "prix à la tonne", "geo": "aux États-Unis", "prod": "d'engrais"},
-      {"nom": "pétrole", "desc": "consommations annuelles de pétrole brut au Brésil", "q_desc": "le nombre de millions de barils consommés", "p_desc": "le prix moyen annuel du baril", "q_unit": "million de barils", "p_unit": "prix au baril", "geo": "au Brésil", "prod": "de pétrole"},
-      {"nom": "acier", "desc": "ventes annuelles d'acier au Japon", "q_desc": "le nombre de milliers de tonnes d'acier vendues", "p_desc": "le prix moyen à la tonne de l'acier", "q_unit": "millier de tonnes", "p_unit": "prix à la tonne", "geo": "au Japon", "prod": "d'acier"},
-      {"nom": "ciment", "desc": "ventes annuelles de ciment en Europe", "q_desc": "le nombre de millions de tonnes de ciment vendues", "p_desc": "le prix moyen à la tonne du ciment", "q_unit": "million de tonnes", "p_unit": "prix à la tonne", "geo": "en Europe", "prod": "de ciment"}
-    ],
-    ex: function(D) {
-      const {n, sit, fmX, fmY, fvX, fvY, fcov, p_futur, b_hat, a_hat, r2, sct, scr, sig2_hat, var_b_hat, y_pred, q_pred} = D;
-  let exHTML = `
-    <div class="context-block">
-      On considère les ${sit.desc} sur les ${n} dernières années. Pour tout entier \\(t\\) compris entre 1 et ${n}, on note \\(q_t\\) ${sit.q_desc} à l'année \\(t\\) et \\(p_t\\) ${sit.p_desc} (rapporté à l'indice des prix). Pour tout entier \\(t\\) compris entre 1 et ${n}, on pose alors \\(Y_t=\\ln(q_t)\\) et \\(X_t=\\ln(p_t)\\). On considère alors le modèle linéaire simple \\(Y_t=a+bX_t+u_t\\) (modèle 1), où \\(a\\) et \\(b\\) sont des réels à estimer et \\(u_1,\\ldots,u_n\\) des variables aléatoires vérifiant les hypothèses de Gauss-Markov (dont on note \\(\\sigma^2\\) la variance commune). On observe :
-      \\[\\begin{cases}
-      \\overline{\\textbf{X}}=\\frac{1}{${n}}\\sum\\limits_{t=1}^{${n}}X_t=${fmX}\\text{ et }\\overline{\\textbf{Y}}=\\frac{1}{${n}}\\sum\\limits_{t=1}^{${n}}Y_t=${fmY}\\\\[-6pt]
-      \\widetilde{\\textbf{Var}}(\\textbf{X})=\\frac{1}{${n}}\\sum\\limits_{t=1}^{${n}}(X_t-\\overline{\\textbf{X}})^2=${fvX}\\text{ et } \\widetilde{\\textbf{Var}}(\\textbf{Y})=\\frac{1}{${n}}\\sum\\limits_{t=1}^{${n}}(Y_t-\\overline{\\textbf{Y}})^2=${fvY}\\\\[-12pt]
-      \\widetilde{\\textbf{Cov}}(\\textbf{X},\\textbf{Y})=\\frac{1}{${n}}\\sum\\limits_{t=1}^{${n}}(X_t-\\overline{\\textbf{X}})(Y_t-\\overline{\\textbf{Y}})=${fcov}
-      \\end{cases}\\]
-    </div>
-    <div class="questions"><ol>
-      <li><div class="q-text">Estimer et interpréter \\(\\widehat{a}\\) et \\(\\widehat{b}\\), les estimateurs des moindres carrés ordinaires (MCO) des paramètres \\(a\\) et \\(b\\), respectivement.</div></li>
-      <li><div class="q-text">Quelle est la valeur du coefficient de détermination \\(R^2\\) du modèle ? Commenter.</div></li>
-      <li><div class="q-text">Quelle est la valeur de \\(\\widehat{\\sigma^2}\\), l'estimateur sans biais usuel de \\(\\sigma^2\\) ? En déduire la valeur de \\(\\widehat{\\textbf{Var}}(\\widehat{b})\\), la variance estimée de \\(\\widehat{b}\\) ?</div></li>
-      <li><div class="q-text">On suppose que le modèle 1 restera valable l'année \\(t=${n+1}\\). On estime l'indice des ${sit.p_unit} ${sit.prod} à l'année \\(t=${n+1}\\) à ${p_futur}. Quel sera le niveau des ventes ${sit.prod} ${sit.geo} à l'année \\(t=${n+1}\\) selon le modèle 1 ?</div></li>
-      <li><div class="q-text">On pose maintenant, pour tout entier \\(t\\) compris entre 1 et \\(n\\), \\(Y'_t=\\ln(p_tq_t)\\) et on considère le modèle \\(Y'_t=c+dX_t+v_t\\) (modèle 2), où \\(c\\) et \\(d\\) sont à estimer et \\(v_1,\\ldots,v_n\\) des variables aléatoires vérifiant les hypothèses de Gauss-Markov. Quelle relation y a-t-il d'une part entre \\(\\widehat{b}\\) et \\(\\widehat{d}\\), l'estimateur des MCO de \\(d\\), et d'autre part entre \\(\\widehat{a}\\) et \\(\\widehat{c}\\), l'estimateur des MCO de \\(c\\) ?</div></li>
-    </ol></div>
-  `;
-  return exHTML;
-
+    lbl: {
+      sum: "Somme", mean: "Moyenne",
+      capCalc: "Calculs intermédiaires pour les moyennes, variances et covariance empiriques.",
+      capRes: "Valeurs ajustées et résidus de la régression.",
+      capAnova: "Calculs intermédiaires pour l'équation d'analyse de la variance.",
+      figCap: "Nuage de points des observations (chaque point est repéré par son indice).",
+      strength: r => r >= 0.95 ? "très forte" : r >= 0.85 ? "forte" : r >= 0.7 ? "assez forte" : "modérée",
+      sign: s => s > 0 ? "positive" : "négative",
+      sense: s => s > 0 ? "dans le même sens" : "en sens contraire",
+      slope: s => s > 0 ? "croissante" : "décroissante",
+      shape: (r, sl) => r >= 0.95 ? `sont presque alignés le long d'une droite ${sl}` : `se répartissent autour d'une droite ${sl}, avec une dispersion visible mais limitée`,
+      quality: r2 => r2 >= 0.9 ? "L'ajustement linéaire est donc de très bonne qualité."
+        : r2 >= 0.75 ? "L'ajustement linéaire est donc de bonne qualité."
+        : "L'ajustement linéaire est donc correct, mais une part non négligeable de la variabilité reste inexpliquée par le modèle."
     },
-    sol: function(D) {
-      const {n, sit, fmX, fmY, fvX, fvY, fcov, p_futur, b_hat, a_hat, r2, sct, scr, sig2_hat, var_b_hat, y_pred, q_pred} = D;
-  let fmt = (x) => x >= 0 ? '+' + x : x.toString();
-  let b_perc = Math.abs(b_hat * 100).toFixed(2); // Convert to % wording for log-log
-  let a_exp = Math.exp(a_hat).toFixed(2);
-  
-  let solHTML = `<div class="st"><ol>`;
-  
-  // Q1 (Wrapped in div.q-content)
-  solHTML += `<li><div class="q-content"><p>L'estimateur \\(\\widehat{b}\\) des moindres carrés ordinaires du paramètre \\(b\\) est égal au rapport de la covariance des séries statistiques \\(\\textbf{X}:=(X_1,\\ldots,X_{${n}})\\) et \\(\\textbf{Y}:=(Y_1,\\ldots,Y_{${n}})\\) sur la variance de la série statistique \\(\\textbf{X}\\). Autrement dit, une estimation de \\(b\\) est donnée par \\(\\widehat{b}=\\frac{${fcov}}{${fvX}}\\approx ${b_hat.toFixed(2)}\\) (arrondi au centième). Comme on est en présence d'un modèle log-log, cette estimation signifie qu'une hausse de 1 % du ${sit.p_unit} ${sit.prod} est corrélée à une baisse des quantités vendues de ${Math.abs(b_hat).toFixed(2)} % en moyenne.</p>
-  <p>Par suite, l'estimateur \\(\\widehat{a}\\) des moindres carrés ordinaires du paramètre \\(a\\) vérifie l'égalité \\(\\widehat{a}=\\overline{\\textbf{Y}}-\\widehat{b}\\,\\overline{\\textbf{X}}\\approx ${fmY}-(${b_hat.toFixed(2)})\\times(${fmX})\\), c'est-à-dire \\(\\widehat{a}\\approx ${a_hat.toFixed(3)}\\) (arrondi au millième). Cela signifie, pour tout entier \\(t\\) compris entre 1 et \\(n\\), que la valeur moyenne attendue de \\(Y_t\\) lorsque \\(X_t\\) prend la valeur 0 (c'est-à-dire lorsque \\(p_t\\) prend la valeur 1) est égal à ${a_hat.toFixed(3)} : la quantité attendue ${sit.prod} vendue pour un ${sit.p_unit} de 1 (rapporté à l'indice des prix) est de \\(\\exp(${a_hat.toFixed(3)})\\approx ${a_exp}\\) ${sit.q_unit}(s) par an.</p></div></li>`;
+    scen: {
+      conso: {
+        title: "Consommation et revenu des ménages", idxHead: "Année",
+        intro: D => `Le tableau ci-dessous retrace l'évolution du revenu disponible brut annuel moyen et de la consommation annuelle moyenne des ménages d'un pays donné entre ${D.i0} et ${D.i1}, en euros. On cherche à expliquer la consommation des ménages par leur revenu disponible.`,
+        cap: D => `Revenu disponible brut et consommation annuels moyens des ménages (en euros) entre ${D.i0} et ${D.i1} (données fictives).`,
+        xHead: "Revenu (€)", yHead: "Consommation (€)",
+        xAxis: "Revenu disponible (€)", yAxis: "Consommation (€)",
+        xDef: "le revenu disponible brut à l'année \\(t\\)", yDef: "la consommation des ménages à l'année \\(t\\)",
+        pair: "le revenu disponible et la consommation", yOf: "de la consommation", xOf: "du revenu disponible",
+        bInt: D => `Le coefficient \\(\\widehat{b}=${D.bS}\\) signifie qu'une hausse du revenu disponible d'un euro s'accompagne en moyenne d'une hausse de la consommation de ${D.bT} euro : \\(\\widehat{b}\\) estime la <em>propension marginale à consommer</em>. Elle est bien comprise entre 0 et 1, conformément à la « loi psychologique fondamentale » de Keynes : les ménages ne consomment qu'une partie de tout euro supplémentaire et en épargnent la fraction \\(1-\\widehat{b}=${D.ombS}\\).`,
+        aInt: D => `La constante \\(\\widehat{a}=${D.aS}\\) estime quant à elle la consommation annuelle d'un ménage dont le revenu disponible serait nul : c'est la <em>consommation autonome</em> (ou incompressible) de la fonction de consommation keynésienne, qui devrait alors être financée par désépargne ou par des transferts. Cette lecture repose toutefois sur une extrapolation, un revenu nul se situant très loin des revenus observés (tous supérieurs ou égaux à ${D.xminT} euros).`
+      },
+      cout: {
+        title: "Coût total et volume de production", idxHead: "Mois",
+        intro: D => `Le contrôleur de gestion d'une usine a relevé, sur ${D.n} mois consécutifs, le volume de production (en unités) et le coût total de production (en euros). On cherche à expliquer le coût total par le volume produit.`,
+        cap: D => `Volume de production et coût total mensuels de l'usine sur ${D.n} mois (données fictives).`,
+        xHead: "Production (unités)", yHead: "Coût total (€)",
+        xAxis: "Volume de production (unités)", yAxis: "Coût total (€)",
+        xDef: "le volume de production du mois \\(t\\)", yDef: "le coût total de production du mois \\(t\\)",
+        pair: "le volume de production et le coût total", yOf: "du coût total", xOf: "du volume de production",
+        bInt: D => `Le coefficient \\(\\widehat{b}=${D.bS}\\) signifie que chaque unité supplémentaire produite accroît en moyenne le coût total de ${D.bT} euros : \\(\\widehat{b}\\) estime le <em>coût variable unitaire</em>, c'est-à-dire le coût marginal de production, supposé ici constant.`,
+        aInt: D => `La constante \\(\\widehat{a}=${D.aS}\\) estime le coût total attendu pour une production nulle : elle s'interprète comme le montant des <em>charges fixes</em> mensuelles de l'usine (loyers, amortissements, salaires de structure…), supportées quel que soit le niveau d'activité. Aucun mois sans production n'ayant été observé (la production mensuelle est toujours d'au moins ${D.xminT} unités), cette estimation relève néanmoins de l'extrapolation.`
+      },
+      pub: {
+        title: "Publicité et chiffre d'affaires", idxHead: "Année",
+        intro: D => `Le tableau ci-dessous retrace l'évolution des dépenses publicitaires et du chiffre d'affaires annuels d'une PME entre ${D.i0} et ${D.i1}, en milliers d'euros. On cherche à expliquer le chiffre d'affaires par les dépenses publicitaires.`,
+        cap: D => `Dépenses publicitaires et chiffre d'affaires annuels de la PME (en milliers d'euros) entre ${D.i0} et ${D.i1} (données fictives).`,
+        xHead: "Publicité (k€)", yHead: "Chiffre d'affaires (k€)",
+        xAxis: "Dépenses publicitaires (k€)", yAxis: "Chiffre d'affaires (k€)",
+        xDef: "les dépenses publicitaires de l'année \\(t\\)", yDef: "le chiffre d'affaires de l'année \\(t\\)",
+        pair: "les dépenses publicitaires et le chiffre d'affaires", yOf: "du chiffre d'affaires", xOf: "des dépenses publicitaires",
+        bInt: D => `Le coefficient \\(\\widehat{b}=${D.bS}\\) signifie que 1\u202F000 euros de dépenses publicitaires supplémentaires sont associés en moyenne à un chiffre d'affaires supérieur de ${D.bT} milliers d'euros : chaque euro investi en publicité est associé en moyenne à ${D.bT} euros de ventes supplémentaires. On se gardera toutefois d'une lecture causale trop hâtive : la corrélation peut aussi traduire le fait que l'entreprise augmente son budget publicitaire lorsque ses ventes progressent.`,
+        aInt: D => `La constante \\(\\widehat{a}=${D.aS}\\) estime le chiffre d'affaires annuel attendu en l'absence de toute dépense publicitaire (clientèle fidèle, bouche-à-oreille, notoriété acquise), soit ${D.aT} milliers d'euros. Les dépenses publicitaires observées étant toujours d'au moins ${D.xminT} milliers d'euros, il s'agit toutefois d'une extrapolation.`
+      },
+      loyer: {
+        title: "Loyer et surface des logements", idxHead: "Appartement",
+        intro: D => `Une agence immobilière a relevé la surface (en m²) et le loyer mensuel hors charges (en euros) de ${D.n} appartements comparables situés dans un même quartier. On cherche à expliquer le loyer par la surface du logement.`,
+        cap: D => `Surface et loyer mensuel hors charges des ${D.n} appartements (données fictives).`,
+        xHead: "Surface (m²)", yHead: "Loyer (€)",
+        xAxis: "Surface (m²)", yAxis: "Loyer mensuel (€)",
+        xDef: "la surface de l'appartement \\(i\\)", yDef: "le loyer mensuel de l'appartement \\(i\\)",
+        pair: "la surface et le loyer", yOf: "des loyers", xOf: "des surfaces",
+        bInt: D => `Le coefficient \\(\\widehat{b}=${D.bS}\\) signifie que chaque mètre carré supplémentaire accroît en moyenne le loyer mensuel de ${D.bT} euros : \\(\\widehat{b}\\) estime le <em>prix marginal du mètre carré</em> à la location dans ce quartier.`,
+        aInt: D => `La constante \\(\\widehat{a}=${D.aS}\\) correspond au loyer attendu pour une surface nulle, ce qui n'a évidemment pas de sens physique. On peut tout au plus la lire comme la composante du loyer indépendante de la surface (emplacement, prestations de l'immeuble), mais elle résulte d'une extrapolation loin des surfaces observées (toutes d'au moins ${D.xminT} m²) : elle sert avant tout à positionner la droite d'ajustement.`
+      },
+      notes: {
+        title: "Temps de révision et réussite à l'examen", idxHead: "Étudiant",
+        intro: D => `Un enseignant a relevé, pour ${D.n} étudiants d'une même promotion, le nombre d'heures consacrées à la révision d'un examen et la note obtenue (sur 20). On cherche à expliquer la note par le temps de révision.`,
+        cap: D => `Temps de révision et note obtenue par les ${D.n} étudiants (données fictives).`,
+        xHead: "Révision (heures)", yHead: "Note (sur 20)",
+        xAxis: "Temps de révision (heures)", yAxis: "Note (sur 20)",
+        xDef: "le nombre d'heures de révision de l'étudiant \\(i\\)", yDef: "la note obtenue par l'étudiant \\(i\\)",
+        pair: "le temps de révision et la note", yOf: "des notes", xOf: "du temps de révision",
+        bInt: D => `Le coefficient \\(\\widehat{b}=${D.bS}\\) signifie qu'une heure de révision supplémentaire est associée en moyenne à une note supérieure de ${D.bT} point. Prudence cependant quant à une interprétation causale : les étudiants les plus à l'aise dans la matière peuvent aussi être les plus assidus, de sorte que \\(\\widehat{b}\\) mêle vraisemblablement l'effet du travail et celui d'autres facteurs non observés.`,
+        aInt: D => `La constante \\(\\widehat{a}=${D.aS}\\) estime la note attendue d'un étudiant n'ayant pas révisé du tout. Aucun étudiant de l'échantillon n'ayant révisé moins de ${D.xminT} heures, cette valeur relève cependant de l'extrapolation.`
+      },
+      phil: {
+        title: "Inflation et chômage : la courbe de Phillips", idxHead: "Année",
+        intro: D => `Le tableau ci-dessous retrace l'évolution du taux de chômage et du taux d'inflation (en %) d'un pays donné entre ${D.i0} et ${D.i1}. On cherche à expliquer le taux d'inflation par le taux de chômage, dans l'esprit de la courbe de Phillips.`,
+        cap: D => `Taux de chômage et taux d'inflation annuels (en %) entre ${D.i0} et ${D.i1} (données fictives).`,
+        xHead: "Chômage (%)", yHead: "Inflation (%)",
+        xAxis: "Taux de chômage (%)", yAxis: "Taux d'inflation (%)",
+        xDef: "le taux de chômage de l'année \\(t\\)", yDef: "le taux d'inflation de l'année \\(t\\)",
+        pair: "le taux de chômage et le taux d'inflation", yOf: "du taux d'inflation", xOf: "du taux de chômage",
+        bInt: D => `Le coefficient \\(\\widehat{b}=${D.bS}\\) signifie qu'une hausse du taux de chômage d'un point de pourcentage est associée en moyenne à une baisse du taux d'inflation de ${D.babsT} point : on retrouve la relation décroissante mise en évidence par Phillips (1958), qui suggère un arbitrage entre inflation et chômage. Cet arbitrage n'est cependant stable qu'à court terme : la stagflation des années 1970 a montré qu'il pouvait disparaître lorsque les anticipations d'inflation s'ajustent.`,
+        aInt: D => `La constante \\(\\widehat{a}=${D.aS}\\) est le taux d'inflation attendu pour un taux de chômage nul. Elle n'a guère de signification économique : un chômage nul n'est jamais observé (il subsiste toujours un chômage frictionnel), et cette valeur se situe loin des taux observés (tous d'au moins ${D.xminT} %). \\(\\widehat{a}\\) n'est ici qu'un paramètre de position de la droite d'ajustement.`
+      },
+      dem: {
+        title: "Prix de vente et quantités demandées", idxHead: "Magasin",
+        intro: D => `Une enseigne teste, au cours d'une même semaine, des prix de vente différents pour un même produit dans ${D.n} de ses magasins de taille comparable, et relève les quantités vendues. On cherche à expliquer les quantités vendues par le prix pratiqué.`,
+        cap: D => `Prix de vente (en euros) et quantités vendues (en unités) dans les ${D.n} magasins (données fictives).`,
+        xHead: "Prix (€)", yHead: "Ventes (unités)",
+        xAxis: "Prix de vente (€)", yAxis: "Quantités vendues (unités)",
+        xDef: "le prix de vente pratiqué dans le magasin \\(i\\)", yDef: "la quantité vendue dans le magasin \\(i\\)",
+        pair: "le prix et les quantités vendues", yOf: "des quantités vendues", xOf: "du prix de vente",
+        bInt: D => `Le coefficient \\(\\widehat{b}=${D.bS}\\) signifie qu'un prix supérieur d'un euro est associé en moyenne à des ventes hebdomadaires inférieures de ${D.babsT} unités : on retrouve la <em>loi de la demande</em>. À titre indicatif, l'élasticité-prix de la demande évaluée au point moyen vaut \\(\\widehat{b}\\times\\overline{\\textbf{X}}/\\overline{\\textbf{Y}}\\approx ${D.elasS}\\) : au voisinage du point moyen, une hausse de 1 % du prix est associée à une baisse des ventes d'environ ${D.elasAbsT} %.`,
+        aInt: D => `La constante \\(\\widehat{a}=${D.aS}\\) estime la quantité qui serait écoulée pour un prix nul (quantité de saturation). Aucun magasin ne distribuant le produit gratuitement, et les prix observés étant tous d'au moins ${D.xminT} euros, cette valeur relève de l'extrapolation et n'a qu'une portée indicative.`
+      },
+      occas: {
+        title: "Âge et prix des véhicules d'occasion", idxHead: "Véhicule",
+        intro: D => `Un site d'annonces a relevé l'âge (en années) et le prix de vente (en milliers d'euros) de ${D.n} véhicules d'occasion d'un même modèle. On cherche à expliquer le prix de revente par l'âge du véhicule.`,
+        cap: D => `Âge et prix de vente des ${D.n} véhicules d'occasion (données fictives).`,
+        xHead: "Âge (années)", yHead: "Prix (k€)",
+        xAxis: "Âge du véhicule (années)", yAxis: "Prix de vente (k€)",
+        xDef: "l'âge du véhicule \\(i\\)", yDef: "le prix de vente du véhicule \\(i\\)",
+        pair: "l'âge et le prix", yOf: "des prix de vente", xOf: "de l'âge des véhicules",
+        bInt: D => `Le coefficient \\(\\widehat{b}=${D.bS}\\) signifie que chaque année d'ancienneté supplémentaire est associée en moyenne à une baisse du prix de ${D.babsT} ${D.babs >= 2 ? "milliers" : "millier"} d'euros : \\(\\widehat{b}\\) estime la <em>dépréciation annuelle</em> du véhicule, que le modèle suppose constante (amortissement linéaire).`,
+        aInt: D => `La constante \\(\\widehat{a}=${D.aS}\\) estime le prix d'un véhicule d'âge nul, c'est-à-dire la valeur à neuf implicite du modèle (${D.aT} milliers d'euros). La décote d'un véhicule étant en pratique plus forte les premières années qu'ensuite, cette estimation linéaire est à prendre avec précaution, d'autant que l'échantillon ne compte aucun véhicule de moins de ${D.xminT} ${D.xmin >= 2 ? "ans" : "an"}.`
+      }
+    },
 
-  // Q2 (Wrapped in div.q-content)
-  solHTML += `<li><div class="q-content"><p>Le coefficient de détermination \\(R^2\\) dans le modèle linéaire simple est égal au carré du coefficient de corrélation linéaire entre les séries statistiques \\(\\textbf{X}\\) et \\(\\textbf{Y}\\). On rappelle que le coefficient de corrélation linéaire est égal à la covariance entre les séries \\(\\textbf{X}\\) et \\(\\textbf{Y}\\) divisée par le produit des erreurs-types des séries \\(\\textbf{X}\\) et \\(\\textbf{Y}\\). On a donc \\(R^2=\\frac{(${fcov})^2}{${fvX}\\times ${fvY}}\\approx ${r2.toFixed(2)}\\) (arrondi au centième). Cela signifie donc que ${(r2*100).toFixed(0)} % de la variation observée (en pourcentage) des ventes annuelles ${sit.prod} ${sit.geo} est expliquée par la variation (en pourcentage) du ${sit.p_unit} ${sit.prod}.</p></div></li>`;
+    ex: function (D) {
+      const T = D.T, ix = D.ix;
+      return `
+      <div class="context-block">
+        ${T.intro(D)}
+        ${tblData(D)}
+        Pour tout entier \\(${ix}\\) compris entre ${D.i0} et ${D.i1}, on note \\(Y_${ix}\\) ${T.yDef} et \\(X_${ix}\\) ${T.xDef}. On suppose qu'il existe deux réels \\(a\\) et \\(b\\) et des variables aléatoires \\(u_{${D.i0}},\\ldots,u_{${D.i1}}\\) vérifiant les hypothèses de Gauss-Markov tels que, pour tout entier \\(${ix}\\) compris entre ${D.i0} et ${D.i1}, on ait \\(Y_${ix}=a+bX_${ix}+u_${ix}\\).
+      </div>
+      <div class="questions"><ol>
+        <li><div class="q-text">Représenter le nuage de points et commenter. Calculer le coefficient de corrélation linéaire entre les séries \\(\\textbf{X}:=(X_{${D.i0}},\\ldots,X_{${D.i1}})\\) et \\(\\textbf{Y}:=(Y_{${D.i0}},\\ldots,Y_{${D.i1}})\\).</div></li>
+        <li><div class="q-text">Calculer les estimateurs des moindres carrés ordinaires \\(\\widehat{a}\\) et \\(\\widehat{b}\\) des paramètres \\(a\\) et \\(b\\) respectivement. Interpréter. En déduire les valeurs estimées \\(\\widehat{\\textbf{Y}}:=(\\widehat{Y}_{${D.i0}},\\ldots,\\widehat{Y}_{${D.i1}})\\) de \\(\\textbf{Y}\\).</div></li>
+        <li><div class="q-text">Calculer les résidus et vérifier la propriété selon laquelle la moyenne des résidus est nulle. Calculer l'estimateur \\(\\widehat{\\sigma^2}\\) de la variance des perturbations (supposées homoscédastiques).</div></li>
+        <li><div class="q-text">Écrire et vérifier l'équation d'analyse de la variance. Calculer le coefficient de détermination \\(R^2\\). Commenter le résultat.</div></li>
+      </ol></div>`;
+    },
 
-  // Q3 (Wrapped in div.q-content)
-  solHTML += `<li><div class="q-content"><p>On note SCT la somme des carrés totale et SCR la somme des carrés résiduelle. Comme il y a ${n} observations, on a \\(\\text{SCT}=${n}\\,\\widetilde{\\textbf{Var}}(\\textbf{Y})=${sct.toFixed(3)}\\). Soit \\(\\widehat{\\sigma^2}\\) l'estimateur sans biais usuel de \\(\\sigma^2\\). De plus, on a \\(R^2=1-\\frac{\\text{SCR}}{\\text{SCT}}\\), c'est-à-dire \\(\\text{SCR}=\\text{SCT}(1-R^2)\\approx ${sct.toFixed(3)}(1-${r2.toFixed(2)})\\), soit \\(\\text{SCR}\\approx ${scr.toFixed(2)}\\) (arrondi au centième). Dès lors, on a \\(\\widehat{\\sigma^2}=\\frac{\\text{SCR}}{${n-2}} \\approx \\frac{${scr.toFixed(2)}}{${n-2}}\\), soit \\(\\widehat{\\sigma^2}\\approx ${sig2_hat.toFixed(3)}\\) (arrondi au millième). On a donc \\(\\widehat{\\textbf{Var}}(\\widehat{b})=\\frac{\\widehat{\\sigma^2}}{n\\widetilde{\\textbf{Var}}(\\textbf{X})}\\approx\\frac{${sig2_hat.toFixed(3)}}{${n}\\times ${fvX}}\\), c'est-à-dire \\(\\widehat{\\textbf{Var}}(\\widehat{b})\\approx ${var_b_hat.toFixed(3)}\\).</p></div></li>`;
+    sol: function (D) {
+      const T = D.T, L = I18N.fr.lbl, ix = D.ix, s = D.S;
+      const sum = `\\sum_{${ix}=${D.i0}}^{${D.i1}}`;
+      return `<div class="st"><ol>
 
-  // Q4 (Wrapped in div.q-content)
-  solHTML += `<li><div class="q-content"><p>On suppose que le modèle 1 restera valable l'année suivante, c'est-à-dire à l'année \\(t=${n+1}\\). On estime que le ${sit.p_unit} ${sit.prod} à l'année \\(t=${n+1}\\) sera de ${p_futur} (rapporté à l'indice des prix). Alors le modèle prévoit pour valeur de \\(Y_{${n+1}}\\) la valeur \\(\\widehat{Y}_{${n+1}}:=\\widehat{a}+\\widehat{b}\\ln(${p_futur})\\), c'est-à-dire \\(\\widehat{Y}_{${n+1}}\\approx ${a_hat.toFixed(3)}${fmt(b_hat.toFixed(2))}\\times\\ln(${p_futur})\\), soit \\(\\widehat{Y}_{${n+1}}\\approx ${y_pred.toFixed(3)}\\) (arrondi au millième). Ainsi, si le modèle demeure valable à l'année \\(t=${n+1}\\), on prévoit que \\(\\exp(${y_pred.toFixed(3)})\\approx ${q_pred.toFixed(2)}\\) ${sit.q_unit}(s) ${sit.prod} seront vendues ${sit.geo} pour l'année \\(t=${n+1}\\) (arrondi au centième).</p></div></li>`;
+      <li><div class="q-content">
+        <p>On effectue ci-après les calculs intermédiaires nécessaires au calcul du coefficient de corrélation. On note \\(\\overline{\\textbf{X}}\\), \\(\\overline{\\textbf{Y}}\\), \\(\\overline{\\textbf{X}^2}\\), \\(\\overline{\\textbf{Y}^2}\\) et \\(\\overline{\\textbf{XY}}\\) les moyennes empiriques respectives des séries \\(\\textbf{X}\\), \\(\\textbf{Y}\\), \\(\\textbf{X}^2:=(X_{${D.i0}}^2,\\ldots,X_{${D.i1}}^2)\\), \\(\\textbf{Y}^2:=(Y_{${D.i0}}^2,\\ldots,Y_{${D.i1}}^2)\\) et \\(\\textbf{XY}:=(X_{${D.i0}}Y_{${D.i0}},\\ldots,X_{${D.i1}}Y_{${D.i1}})\\).</p>
+        ${tblCalc(D)}
+        <p>D'une part, la variance empirique de la série \\(\\textbf{X}\\) vaut
+        \\[\\widetilde{\\textbf{Var}}(\\textbf{X})=\\overline{\\textbf{X}^2}-\\overline{\\textbf{X}}^2=${s.mX2}-${s.xbar}^2=${s.varX}\\]
+        D'autre part, la variance empirique de la série \\(\\textbf{Y}\\) vaut
+        \\[\\widetilde{\\textbf{Var}}(\\textbf{Y})=\\overline{\\textbf{Y}^2}-\\overline{\\textbf{Y}}^2=${s.mY2}-${s.ybar}^2=${s.varY}\\]
+        Par suite, la covariance empirique des séries \\(\\textbf{X}\\) et \\(\\textbf{Y}\\) vaut
+        \\[\\widetilde{\\textbf{Cov}}(\\textbf{X},\\textbf{Y})=\\overline{\\textbf{XY}}-\\overline{\\textbf{X}}\\times\\overline{\\textbf{Y}}=${s.mXY}-${s.xbar}\\times ${s.ybar}=${s.cov}\\]
+        Dès lors, en notant \\(\\rho\\) le coefficient de corrélation linéaire entre les séries \\(\\textbf{X}\\) et \\(\\textbf{Y}\\), il vient :
+        \\[\\rho=\\frac{\\widetilde{\\textbf{Cov}}(\\textbf{X},\\textbf{Y})}{\\sqrt{\\widetilde{\\textbf{Var}}(\\textbf{X})\\,\\widetilde{\\textbf{Var}}(\\textbf{Y})}}=\\frac{${s.cov}}{\\sqrt{${s.varX}\\times ${s.varY}}}\\approx ${s.rho}\\]</p>
+        <p>La corrélation entre les séries \\(\\textbf{X}\\) et \\(\\textbf{Y}\\) est donc ${L.strength(Math.abs(D.rho))} et ${L.sign(D.B)} : ${T.pair} évoluent ${L.sense(D.B)}. Le nuage de points ci-dessous le confirme : les points ${L.shape(Math.abs(D.rho), L.slope(D.B))}, ce qui justifie le recours à un modèle linéaire.</p>
+        ${figScatter(D)}
+      </div></li>
 
-  // Q5 (Wrapped in div.q-content)
-  solHTML += `<li><div class="q-content"><p>On pose maintenant, pour tout entier \\(t\\) compris entre 1 et \\(${n}\\), \\(Y'_t=\\ln(p_tq_t)\\) et on considère le modèle \\(Y'_t=c+dX_t+v_t\\) (modèle 2), où \\(c\\) et \\(d\\) sont des réels à estimer et \\(v_1,\\ldots,v_n\\) des variables aléatoires vérifiant les hypothèses de Gauss-Markov. Pour tout entier \\(t\\) compris entre 1 et ${n}, on a :
-  \\[\\begin{aligned}
-  Y'_t=c+dX_t+v_t
-  &\\iff \\ln(p_t)+\\ln(q_t)=c+d\\ln(p_t)+v_t\\\\
-  &\\iff \\ln(q_t)=c+(d-1)\\ln(p_t)+v_t\\\\
-  &\\iff Y_t=c+(d-1)X_t+v_t
-  \\end{aligned}\\]</p>
-  <p>Par unicité des estimateurs des moindres carrés ordinaires dans un modèle linéaire simple où l'on régresse \\(Y\\) sur \\(X\\) à partir des observations conjointes \\((X_1,Y_1),\\ldots,(X_{${n}},Y_{${n}})\\), on en déduit qu'on a \\(\\widehat{c}=\\widehat{a}\\) et \\(\\widehat{b}=\\widehat{d}-1\\). En particulier, on a \\(\\widehat{d}=\\widehat{b}+1\\).</p></div></li>`;
+      <li><div class="q-content">
+        <p>L'estimateur des moindres carrés ordinaires \\(\\widehat{b}\\) du paramètre \\(b\\) est égal au rapport de la covariance empirique des séries \\(\\textbf{X}\\) et \\(\\textbf{Y}\\) sur la variance empirique de la série \\(\\textbf{X}\\) :
+        \\[\\widehat{b}=\\frac{\\widetilde{\\textbf{Cov}}(\\textbf{X},\\textbf{Y})}{\\widetilde{\\textbf{Var}}(\\textbf{X})}=\\frac{${s.cov}}{${s.varX}}=${D.bS}\\]
+        On en déduit l'estimateur \\(\\widehat{a}\\) du paramètre \\(a\\), la droite des moindres carrés passant par le point moyen \\((\\overline{\\textbf{X}},\\overline{\\textbf{Y}})\\) :
+        \\[\\widehat{a}=\\overline{\\textbf{Y}}-\\widehat{b}\\,\\overline{\\textbf{X}}=${s.ybar}-${D.bPar}\\times ${s.xbar}=${D.aS}\\]</p>
+        <p>${T.bInt(D)}</p>
+        <p>${T.aInt(D)}</p>
+        <p>Pour tout entier \\(${ix}\\) compris entre ${D.i0} et ${D.i1}, on pose alors \\(\\widehat{Y}_${ix}:=\\widehat{a}+\\widehat{b}\\,X_${ix}\\). Par exemple, \\(\\widehat{Y}_{${D.i0}}=${D.aS}${D.bOp}${D.babsS}\\times ${s.x0}=${s.yh0}\\). En procédant de même pour chaque observation, on obtient :
+        \\[\\widehat{\\textbf{Y}}=\\left(${s.yhList}\\right)\\]</p>
+      </div></li>
 
-  solHTML += `</ol></div>`;
-  return solHTML;
+      <li><div class="q-content">
+        <p>Pour tout entier \\(${ix}\\) compris entre ${D.i0} et ${D.i1}, on note \\(\\widehat{u}_${ix}:=Y_${ix}-\\widehat{Y}_${ix}\\) le résidu associé à l'observation \\(${ix}\\). On complète le tableau précédent et l'on vérifie que la somme des résidus, et donc leur moyenne, est nulle :</p>
+        ${tblRes(D)}
+        <p>On a bien \\(${sum}\\widehat{u}_${ix}=0\\), d'où \\(\\overline{\\widehat{\\textbf{u}}}=0\\) : cette propriété découle de la première équation normale des moindres carrés ordinaires, valable dès lors que le modèle comporte une constante. On vérifie d'ailleurs que \\(${sum}\\widehat{Y}_${ix}=${sum}Y_${ix}=${s.SY}\\) : les valeurs ajustées ont la même moyenne que les valeurs observées.</p>
+        <p>Notons alors \\(\\widehat{\\sigma^2}\\) l'estimateur sans biais usuel de la variance des perturbations (supposées homoscédastiques), estimé à partir des ${D.n} observations de notre jeu de données. On divise la somme des carrés des résidus par \\(n-2=${D.n - 2}\\), et non par \\(n\\), car deux paramètres ont été estimés :
+        \\[\\widehat{\\sigma^2}=\\frac{1}{${D.n}-2}${sum}\\widehat{u}_${ix}^{\\,2}=\\frac{${s.SCR}}{${D.n - 2}}${s.sig2.eq}${s.sig2.s}\\]</p>
+      </div></li>
 
+      <li><div class="q-content">
+        <p>Pour écrire l'équation d'analyse de la variance, il faut calculer la somme des carrés totale (SCT), la somme des carrés expliquée (SCE) et la somme des carrés résiduelle (SCR). On complète donc le tableau précédent, avec \\(\\overline{\\textbf{Y}}=${s.ybar}\\) :</p>
+        ${tblAnova(D)}
+        <p>L'équation d'analyse de la variance s'écrit
+        \\[\\underbrace{${sum}(Y_${ix}-\\overline{\\textbf{Y}})^2}_{\\text{SCT}}=\\underbrace{${sum}(\\widehat{Y}_${ix}-\\overline{\\textbf{Y}})^2}_{\\text{SCE}}+\\underbrace{${sum}\\widehat{u}_${ix}^{\\,2}}_{\\text{SCR}}\\]
+        et l'on vérifie bien l'égalité \\(${s.SCT}=${s.SCE}+${s.SCR}\\) : la variabilité totale de \\(\\textbf{Y}\\) se décompose exactement en une part expliquée par le modèle et une part résiduelle. Le coefficient de détermination \\(R^2\\) est égal au rapport de la SCE sur la SCT :
+        \\[R^2=\\frac{\\text{SCE}}{\\text{SCT}}=\\frac{${s.SCE}}{${s.SCT}}\\approx ${s.r2}\\]
+        On retrouve par ailleurs l'égalité \\(R^2=\\rho^2\\), spécifique au modèle de régression linéaire simple.</p>
+        <p>Cette valeur du \\(R^2\\) signifie que ${s.r2pct} % de la variance observée ${T.yOf} est expliquée par la variation ${T.xOf} dans notre jeu de données. ${L.quality(D.R2)} On gardera néanmoins à l'esprit qu'avec seulement ${D.n} observations, cette conclusion reste fragile : chaque point pèse lourdement dans l'estimation, et une seule observation atypique suffirait à modifier sensiblement la droite d'ajustement et le \\(R^2\\).</p>
+      </div></li>
+
+      </ol></div>`;
     }
   },
 
   en: {
     "htmlLang": "en",
-    "title": "Exercise generator - Simple regression",
+    "title": "Exercise generator - Simple linear fit",
     "k-badge": "ECONOMETRICS",
-    "k-h1": "The Simple Linear Regression Model",
-    "k-sub": "© Thomas Hossen – March 7, 2026 Version",
+    "k-h1": "Simple Linear Fit on a Small Sample",
+    "k-sub": "© Thomas Hossen – September 15, 2026 Version",
     "k-seed": "Reproducibility seed",
     "k-seedtip": "Empty = random at each generation",
-    "k-n": "Years <em>(n)</em>",
-    "k-ntip": "15 – 50, auto if left empty",
+    "k-n": "Observations <em>(n)</em>",
+    "k-ntip": "5 – 8, 5 if left empty",
     "k-gen": "Generate",
     "k-welcome": "Configure the parameters (or leave them empty for random values), then click Generate.",
-    "k-new": "↺ New statement",
-    "k-pdf": "⬇ Export PDF",
     "k-seedbadge": "Seed:",
     "k-tag-ex": "Problem",
-    "k-cardtitle": "Estimating demand",
+    "k-cardtitle": "Simple linear regression",
     "k-tag-sol": "Solution",
-    "k-cardtitle2": "Estimating demand",
-    "k-modal": "Export to PDF",
-    "k-mseed-pre": "Seed:",
-    "k-mseed-post": "— note this value to reproduce this exercise exactly.",
-    "k-opth": "Include the page header",
-    "k-opthd": "Title, “ECONOMETRICS” badge and exercise heading",
-    "k-opts": "Include the full solution",
-    "k-optsd": "Derivations of the estimators, variances and forecasts",
-    "k-print": "🖨&nbsp;Print / Save as PDF",
-    "k-cancel": "Cancel",
-    "copy": "⧉ Copy",
-    "copyTitle": "Copy the active seed",
-    "copied": "✓ Copied",
+    "k-cardtitle2": "Simple linear regression",
     "phSeed": "auto",
-    "phN": "default",
+    "phN": "5",
     "showSol": "Show the solution",
     "hideSol": "Hide the solution",
-    situations: [
-      {"nom": "fertiliser", "desc": "annual fertiliser sales in the United States", "q_desc": "the number of tonnes of fertiliser sold", "p_desc": "the average annual price of fertiliser", "q_unit": "tonnes", "p_unit": "price per tonne", "geo": "in the United States", "prod": "of fertiliser"},
-      {"nom": "oil", "desc": "annual crude oil consumption in Brazil", "q_desc": "the number of millions of barrels consumed", "p_desc": "the average annual price per barrel", "q_unit": "million barrels", "p_unit": "price per barrel", "geo": "in Brazil", "prod": "of oil"},
-      {"nom": "steel", "desc": "annual steel sales in Japan", "q_desc": "the number of thousands of tonnes of steel sold", "p_desc": "the average price per tonne of steel", "q_unit": "thousand tonnes", "p_unit": "price per tonne", "geo": "in Japan", "prod": "of steel"},
-      {"nom": "cement", "desc": "annual cement sales in Europe", "q_desc": "the number of millions of tonnes of cement sold", "p_desc": "the average price per tonne of cement", "q_unit": "million tonnes", "p_unit": "price per tonne", "geo": "in Europe", "prod": "of cement"}
-    ],
-    ex: function(D) {
-      const {n, sit, fmX, fmY, fvX, fvY, fcov, p_futur, b_hat, a_hat, r2, sct, scr, sig2_hat, var_b_hat, y_pred, q_pred} = D;
-
-  let exHTML = `
-    <div class="context-block">
-      We consider the ${sit.desc} over the last ${n} years. For every integer \\(t\\) between 1 and ${n}, we write \\(q_t\\) for ${sit.q_desc} in year \\(t\\) and \\(p_t\\) for ${sit.p_desc} (expressed relative to the price index). For every integer \\(t\\) between 1 and ${n}, we then set \\(Y_t=\\ln(q_t)\\) and \\(X_t=\\ln(p_t)\\). We then consider the simple linear model \\(Y_t=a+bX_t+u_t\\) (model 1), where \\(a\\) and \\(b\\) are real numbers to be estimated and \\(u_1,\\ldots,u_n\\) are random variables satisfying the Gauss-Markov assumptions (whose common variance is denoted \\(\\sigma^2\\)). We observe:
-      \\[\\begin{cases}
-      \\overline{\\textbf{X}}=\\frac{1}{${n}}\\sum\\limits_{t=1}^{${n}}X_t=${fmX}\\text{ and }\\overline{\\textbf{Y}}=\\frac{1}{${n}}\\sum\\limits_{t=1}^{${n}}Y_t=${fmY}\\\\[-6pt]
-      \\widetilde{\\textbf{Var}}(\\textbf{X})=\\frac{1}{${n}}\\sum\\limits_{t=1}^{${n}}(X_t-\\overline{\\textbf{X}})^2=${fvX}\\text{ and } \\widetilde{\\textbf{Var}}(\\textbf{Y})=\\frac{1}{${n}}\\sum\\limits_{t=1}^{${n}}(Y_t-\\overline{\\textbf{Y}})^2=${fvY}\\\\[-12pt]
-      \\widetilde{\\textbf{Cov}}(\\textbf{X},\\textbf{Y})=\\frac{1}{${n}}\\sum\\limits_{t=1}^{${n}}(X_t-\\overline{\\textbf{X}})(Y_t-\\overline{\\textbf{Y}})=${fcov}
-      \\end{cases}\\]
-    </div>
-    <div class="questions"><ol>
-      <li><div class="q-text">Estimate and interpret \\(\\widehat{a}\\) and \\(\\widehat{b}\\), the ordinary least squares (OLS) estimators of the parameters \\(a\\) and \\(b\\) respectively.</div></li>
-      <li><div class="q-text">What is the value of the coefficient of determination \\(R^2\\) of the model? Comment.</div></li>
-      <li><div class="q-text">What is the value of \\(\\widehat{\\sigma^2}\\), the usual unbiased estimator of \\(\\sigma^2\\)? Deduce from it the value of \\(\\widehat{\\textbf{Var}}(\\widehat{b})\\), the estimated variance of \\(\\widehat{b}\\).</div></li>
-      <li><div class="q-text">Assume that model 1 will still hold in year \\(t=${n+1}\\). The index of the ${sit.p_unit} ${sit.prod} in year \\(t=${n+1}\\) is estimated at ${p_futur}. What will be the level of sales ${sit.prod} ${sit.geo} in year \\(t=${n+1}\\) according to model 1?</div></li>
-      <li><div class="q-text">We now set, for every integer \\(t\\) between 1 and \\(n\\), \\(Y'_t=\\ln(p_tq_t)\\) and we consider the model \\(Y'_t=c+dX_t+v_t\\) (model 2), where \\(c\\) and \\(d\\) are to be estimated and \\(v_1,\\ldots,v_n\\) are random variables satisfying the Gauss-Markov assumptions. What relationship is there, on the one hand, between \\(\\widehat{b}\\) and \\(\\widehat{d}\\), the OLS estimator of \\(d\\), and on the other hand between \\(\\widehat{a}\\) and \\(\\widehat{c}\\), the OLS estimator of \\(c\\)?</div></li>
-    </ol></div>
-  `;
-  return exHTML;
-
+    lbl: {
+      sum: "Sum", mean: "Mean",
+      capCalc: "Intermediate calculations for the empirical means, variances and covariance.",
+      capRes: "Fitted values and residuals of the regression.",
+      capAnova: "Intermediate calculations for the analysis of variance equation.",
+      figCap: "Scatter plot of the observations (each point is labelled with its index).",
+      strength: r => r >= 0.95 ? "very strong" : r >= 0.85 ? "strong" : r >= 0.7 ? "fairly strong" : "moderate",
+      sign: s => s > 0 ? "positive" : "negative",
+      sense: s => s > 0 ? "in the same direction" : "in opposite directions",
+      slope: s => s > 0 ? "upward-sloping" : "downward-sloping",
+      shape: (r, sl) => r >= 0.95 ? `lie almost exactly along an ${sl} straight line` : `are scattered around an ${sl} straight line, with a visible but limited dispersion`,
+      quality: r2 => r2 >= 0.9 ? "The linear fit is therefore of very good quality."
+        : r2 >= 0.75 ? "The linear fit is therefore of good quality."
+        : "The linear fit is therefore acceptable, but a non-negligible share of the variability remains unexplained by the model."
     },
-    sol: function(D) {
-      const {n, sit, fmX, fmY, fvX, fvY, fcov, p_futur, b_hat, a_hat, r2, sct, scr, sig2_hat, var_b_hat, y_pred, q_pred} = D;
+    scen: {
+      conso: {
+        title: "Household consumption and income", idxHead: "Year",
+        intro: D => `The table below traces the evolution of the average annual gross disposable income and the average annual consumption of households in a given country between ${D.i0} and ${D.i1}, in euros. We seek to explain household consumption by disposable income.`,
+        cap: D => `Average annual gross disposable income and consumption of households (in euros) between ${D.i0} and ${D.i1} (fictitious data).`,
+        xHead: "Income (€)", yHead: "Consumption (€)",
+        xAxis: "Disposable income (€)", yAxis: "Consumption (€)",
+        xDef: "for gross disposable income in year \\(t\\)", yDef: "for household consumption in year \\(t\\)",
+        pair: "disposable income and consumption", yOf: "in consumption", xOf: "in disposable income",
+        bInt: D => `The coefficient \\(\\widehat{b}=${D.bS}\\) means that a one-euro increase in disposable income is accompanied on average by a ${D.bT}-euro increase in consumption: \\(\\widehat{b}\\) estimates the <em>marginal propensity to consume</em>. It indeed lies between 0 and 1, in line with Keynes's “fundamental psychological law”: households consume only part of any additional euro and save the fraction \\(1-\\widehat{b}=${D.ombS}\\) of it.`,
+        aInt: D => `The constant \\(\\widehat{a}=${D.aS}\\), for its part, estimates the annual consumption of a household whose disposable income would be zero: this is the <em>autonomous</em> (or incompressible) <em>consumption</em> of the Keynesian consumption function, which would then have to be financed by dissaving or transfers. This reading nonetheless rests on an extrapolation, since a zero income lies very far from the observed incomes (all at least ${D.xminT} euros).`
+      },
+      cout: {
+        title: "Total cost and production volume", idxHead: "Month",
+        intro: D => `The management controller of a factory recorded, over ${D.n} consecutive months, the production volume (in units) and the total production cost (in euros). We seek to explain total cost by the volume produced.`,
+        cap: D => `Monthly production volume and total cost of the factory over ${D.n} months (fictitious data).`,
+        xHead: "Output (units)", yHead: "Total cost (€)",
+        xAxis: "Production volume (units)", yAxis: "Total cost (€)",
+        xDef: "for the production volume of month \\(t\\)", yDef: "for the total production cost of month \\(t\\)",
+        pair: "production volume and total cost", yOf: "in total cost", xOf: "in production volume",
+        bInt: D => `The coefficient \\(\\widehat{b}=${D.bS}\\) means that each additional unit produced raises total cost by ${D.bT} euros on average: \\(\\widehat{b}\\) estimates the <em>unit variable cost</em>, that is the marginal cost of production, assumed constant here.`,
+        aInt: D => `The constant \\(\\widehat{a}=${D.aS}\\) estimates the total cost expected for zero output: it can be read as the factory's monthly <em>fixed costs</em> (rent, depreciation, overhead salaries…), incurred whatever the level of activity. Since no month without production was observed (monthly output is always at least ${D.xminT} units), this estimate is nonetheless an extrapolation.`
+      },
+      pub: {
+        title: "Advertising and sales revenue", idxHead: "Year",
+        intro: D => `The table below traces the evolution of the annual advertising expenditure and annual sales revenue of an SME between ${D.i0} and ${D.i1}, in thousands of euros. We seek to explain sales revenue by advertising expenditure.`,
+        cap: D => `Annual advertising expenditure and sales revenue of the SME (in thousands of euros) between ${D.i0} and ${D.i1} (fictitious data).`,
+        xHead: "Advertising (k€)", yHead: "Sales revenue (k€)",
+        xAxis: "Advertising expenditure (k€)", yAxis: "Sales revenue (k€)",
+        xDef: "for advertising expenditure in year \\(t\\)", yDef: "for sales revenue in year \\(t\\)",
+        pair: "advertising expenditure and sales revenue", yOf: "in sales revenue", xOf: "in advertising expenditure",
+        bInt: D => `The coefficient \\(\\widehat{b}=${D.bS}\\) means that 1\u202F000 euros of additional advertising expenditure is associated on average with sales revenue higher by ${D.bT} thousand euros: each euro spent on advertising is associated on average with ${D.bT} euros of additional sales. One should nonetheless beware of a hasty causal reading: the correlation may also reflect the fact that the firm raises its advertising budget when its sales are growing.`,
+        aInt: D => `The constant \\(\\widehat{a}=${D.aS}\\) estimates the annual sales revenue expected in the absence of any advertising expenditure (loyal customers, word of mouth, established reputation), that is ${D.aT} thousand euros. Since observed advertising expenditure is always at least ${D.xminT} thousand euros, this is however an extrapolation.`
+      },
+      loyer: {
+        title: "Rent and floor area of dwellings", idxHead: "Flat",
+        intro: D => `A real-estate agency recorded the floor area (in m²) and the monthly rent excluding service charges (in euros) of ${D.n} comparable flats located in the same neighbourhood. We seek to explain rent by the floor area of the dwelling.`,
+        cap: D => `Floor area and monthly rent excluding service charges of the ${D.n} flats (fictitious data).`,
+        xHead: "Area (m²)", yHead: "Rent (€)",
+        xAxis: "Floor area (m²)", yAxis: "Monthly rent (€)",
+        xDef: "for the floor area of flat \\(i\\)", yDef: "for the monthly rent of flat \\(i\\)",
+        pair: "floor area and rent", yOf: "in rents", xOf: "in floor areas",
+        bInt: D => `The coefficient \\(\\widehat{b}=${D.bS}\\) means that each additional square metre raises monthly rent by ${D.bT} euros on average: \\(\\widehat{b}\\) estimates the <em>marginal rental price per square metre</em> in this neighbourhood.`,
+        aInt: D => `The constant \\(\\widehat{a}=${D.aS}\\) corresponds to the rent expected for a zero floor area, which obviously has no physical meaning. At most, it can be read as the component of rent that does not depend on floor area (location, building amenities), but it results from an extrapolation far from the observed areas (all at least ${D.xminT} m²): its main role is to position the fitted line.`
+      },
+      notes: {
+        title: "Revision time and exam performance", idxHead: "Student",
+        intro: D => `A lecturer recorded, for ${D.n} students of the same cohort, the number of hours spent revising for an exam and the mark obtained (out of 20). We seek to explain the mark by revision time.`,
+        cap: D => `Revision time and mark obtained by the ${D.n} students (fictitious data).`,
+        xHead: "Revision (hours)", yHead: "Mark (out of 20)",
+        xAxis: "Revision time (hours)", yAxis: "Mark (out of 20)",
+        xDef: "for the number of hours of revision of student \\(i\\)", yDef: "for the mark obtained by student \\(i\\)",
+        pair: "revision time and the mark", yOf: "in marks", xOf: "in revision time",
+        bInt: D => `The coefficient \\(\\widehat{b}=${D.bS}\\) means that one additional hour of revision is associated on average with a mark higher by ${D.bT} points. Caution is needed, however, regarding a causal interpretation: the students most at ease with the subject may also be the most diligent, so that \\(\\widehat{b}\\) probably mixes the effect of work with that of other unobserved factors.`,
+        aInt: D => `The constant \\(\\widehat{a}=${D.aS}\\) estimates the mark expected for a student who did no revision at all. Since no student in the sample revised for fewer than ${D.xminT} hours, this value is however an extrapolation.`
+      },
+      phil: {
+        title: "Inflation and unemployment: the Phillips curve", idxHead: "Year",
+        intro: D => `The table below traces the evolution of the unemployment rate and the inflation rate (in %) of a given country between ${D.i0} and ${D.i1}. We seek to explain the inflation rate by the unemployment rate, in the spirit of the Phillips curve.`,
+        cap: D => `Annual unemployment rate and inflation rate (in %) between ${D.i0} and ${D.i1} (fictitious data).`,
+        xHead: "Unemployment (%)", yHead: "Inflation (%)",
+        xAxis: "Unemployment rate (%)", yAxis: "Inflation rate (%)",
+        xDef: "for the unemployment rate in year \\(t\\)", yDef: "for the inflation rate in year \\(t\\)",
+        pair: "the unemployment rate and the inflation rate", yOf: "in the inflation rate", xOf: "in the unemployment rate",
+        bInt: D => `The coefficient \\(\\widehat{b}=${D.bS}\\) means that a one-percentage-point rise in the unemployment rate is associated on average with a fall of ${D.babsT} points in the inflation rate: we recover the downward-sloping relationship highlighted by Phillips (1958), which suggests a trade-off between inflation and unemployment. This trade-off is only stable in the short run, however: the stagflation of the 1970s showed that it can vanish once inflation expectations adjust.`,
+        aInt: D => `The constant \\(\\widehat{a}=${D.aS}\\) is the inflation rate expected for a zero unemployment rate. It has little economic meaning: zero unemployment is never observed (some frictional unemployment always remains), and this value lies far from the observed rates (all at least ${D.xminT}%). Here \\(\\widehat{a}\\) is merely a location parameter of the fitted line.`
+      },
+      dem: {
+        title: "Selling price and quantities demanded", idxHead: "Store",
+        intro: D => `A retail chain tests, during the same week, different selling prices for the same product in ${D.n} of its stores of comparable size, and records the quantities sold. We seek to explain the quantities sold by the price charged.`,
+        cap: D => `Selling price (in euros) and quantities sold (in units) in the ${D.n} stores (fictitious data).`,
+        xHead: "Price (€)", yHead: "Sales (units)",
+        xAxis: "Selling price (€)", yAxis: "Quantities sold (units)",
+        xDef: "for the selling price charged in store \\(i\\)", yDef: "for the quantity sold in store \\(i\\)",
+        pair: "price and quantities sold", yOf: "in quantities sold", xOf: "in the selling price",
+        bInt: D => `The coefficient \\(\\widehat{b}=${D.bS}\\) means that a price higher by one euro is associated on average with weekly sales lower by ${D.babsT} units: we recover the <em>law of demand</em>. As an indication, the price elasticity of demand evaluated at the mean point is \\(\\widehat{b}\\times\\overline{\\textbf{X}}/\\overline{\\textbf{Y}}\\approx ${D.elasS}\\): around the mean point, a 1% price increase is associated with a fall in sales of about ${D.elasAbsT}%.`,
+        aInt: D => `The constant \\(\\widehat{a}=${D.aS}\\) estimates the quantity that would be sold at a zero price (saturation quantity). Since no store gives the product away and the observed prices are all at least ${D.xminT} euros, this value is an extrapolation and is only indicative.`
+      },
+      occas: {
+        title: "Age and price of used cars", idxHead: "Car",
+        intro: D => `A classified-ads website recorded the age (in years) and the selling price (in thousands of euros) of ${D.n} used cars of the same model. We seek to explain the resale price by the age of the car.`,
+        cap: D => `Age and selling price of the ${D.n} used cars (fictitious data).`,
+        xHead: "Age (years)", yHead: "Price (k€)",
+        xAxis: "Age of the car (years)", yAxis: "Selling price (k€)",
+        xDef: "for the age of car \\(i\\)", yDef: "for the selling price of car \\(i\\)",
+        pair: "age and price", yOf: "in selling prices", xOf: "in the age of the cars",
+        bInt: D => `The coefficient \\(\\widehat{b}=${D.bS}\\) means that each additional year of age is associated on average with a price lower by ${D.babsT} thousand euros: \\(\\widehat{b}\\) estimates the <em>annual depreciation</em> of the car, which the model assumes to be constant (straight-line depreciation).`,
+        aInt: D => `The constant \\(\\widehat{a}=${D.aS}\\) estimates the price of a car of age zero, that is the model's implicit new-car value (${D.aT} thousand euros). Since in practice a car loses value faster in its first years than afterwards, this linear estimate should be treated with caution, all the more so as the sample contains no car younger than ${D.xminT} ${D.xmin >= 2 ? "years" : "year"}.`
+      }
+    },
 
-  let fmt = (x) => x >= 0 ? '+' + x : x.toString();
-  let b_perc = Math.abs(b_hat * 100).toFixed(2); // Convert to % wording for log-log
-  let a_exp = Math.exp(a_hat).toFixed(2);
+    ex: function (D) {
+      const T = D.T, ix = D.ix;
+      return `
+      <div class="context-block">
+        ${T.intro(D)}
+        ${tblData(D)}
+        For every integer \\(${ix}\\) between ${D.i0} and ${D.i1}, we write \\(Y_${ix}\\) ${T.yDef} and \\(X_${ix}\\) ${T.xDef}. We assume that there exist two real numbers \\(a\\) and \\(b\\) and random variables \\(u_{${D.i0}},\\ldots,u_{${D.i1}}\\) satisfying the Gauss-Markov assumptions such that, for every integer \\(${ix}\\) between ${D.i0} and ${D.i1}, \\(Y_${ix}=a+bX_${ix}+u_${ix}\\).
+      </div>
+      <div class="questions"><ol>
+        <li><div class="q-text">Draw the scatter plot and comment. Compute the linear correlation coefficient between the series \\(\\textbf{X}:=(X_{${D.i0}},\\ldots,X_{${D.i1}})\\) and \\(\\textbf{Y}:=(Y_{${D.i0}},\\ldots,Y_{${D.i1}})\\).</div></li>
+        <li><div class="q-text">Compute the ordinary least squares estimators \\(\\widehat{a}\\) and \\(\\widehat{b}\\) of the parameters \\(a\\) and \\(b\\) respectively. Interpret. Deduce the fitted values \\(\\widehat{\\textbf{Y}}:=(\\widehat{Y}_{${D.i0}},\\ldots,\\widehat{Y}_{${D.i1}})\\) of \\(\\textbf{Y}\\).</div></li>
+        <li><div class="q-text">Compute the residuals and check the property that the mean of the residuals is zero. Compute the estimator \\(\\widehat{\\sigma^2}\\) of the variance of the disturbances (assumed homoscedastic).</div></li>
+        <li><div class="q-text">Write down and check the analysis of variance equation. Compute the coefficient of determination \\(R^2\\). Comment on the result.</div></li>
+      </ol></div>`;
+    },
 
-  let solHTML = `<div class="st"><ol>`;
+    sol: function (D) {
+      const T = D.T, L = I18N.en.lbl, ix = D.ix, s = D.S;
+      const sum = `\\sum_{${ix}=${D.i0}}^{${D.i1}}`;
+      return `<div class="st"><ol>
 
-  // Q1
-  solHTML += `<li><div class="q-content"><p>The ordinary least squares estimator \\(\\widehat{b}\\) of the parameter \\(b\\) is equal to the ratio of the covariance of the statistical series \\(\\textbf{X}:=(X_1,\\ldots,X_{${n}})\\) and \\(\\textbf{Y}:=(Y_1,\\ldots,Y_{${n}})\\) to the variance of the statistical series \\(\\textbf{X}\\). In other words, an estimate of \\(b\\) is given by \\(\\widehat{b}=\\frac{${fcov}}{${fvX}}\\approx ${b_hat.toFixed(2)}\\) (rounded to the nearest hundredth). Since we are dealing with a log-log model, this estimate means that a 1% rise in the ${sit.p_unit} ${sit.prod} is correlated with a fall in the quantities sold of ${Math.abs(b_hat).toFixed(2)}% on average.</p>
-  <p>Consequently, the ordinary least squares estimator \\(\\widehat{a}\\) of the parameter \\(a\\) satisfies the equality \\(\\widehat{a}=\\overline{\\textbf{Y}}-\\widehat{b}\\,\\overline{\\textbf{X}}\\approx ${fmY}-(${b_hat.toFixed(2)})\\times(${fmX})\\), that is \\(\\widehat{a}\\approx ${a_hat.toFixed(3)}\\) (rounded to the nearest thousandth). This means, for every integer \\(t\\) between 1 and \\(n\\), that the expected mean value of \\(Y_t\\) when \\(X_t\\) takes the value 0 (that is, when \\(p_t\\) takes the value 1) is equal to ${a_hat.toFixed(3)}: the expected quantity ${sit.prod} sold for a ${sit.p_unit} of 1 (expressed relative to the price index) is \\(\\exp(${a_hat.toFixed(3)})\\approx ${a_exp}\\) ${sit.q_unit} per year.</p></div></li>`;
+      <li><div class="q-content">
+        <p>We first carry out the intermediate calculations needed to compute the correlation coefficient. We write \\(\\overline{\\textbf{X}}\\), \\(\\overline{\\textbf{Y}}\\), \\(\\overline{\\textbf{X}^2}\\), \\(\\overline{\\textbf{Y}^2}\\) and \\(\\overline{\\textbf{XY}}\\) for the empirical means of the series \\(\\textbf{X}\\), \\(\\textbf{Y}\\), \\(\\textbf{X}^2:=(X_{${D.i0}}^2,\\ldots,X_{${D.i1}}^2)\\), \\(\\textbf{Y}^2:=(Y_{${D.i0}}^2,\\ldots,Y_{${D.i1}}^2)\\) and \\(\\textbf{XY}:=(X_{${D.i0}}Y_{${D.i0}},\\ldots,X_{${D.i1}}Y_{${D.i1}})\\) respectively.</p>
+        ${tblCalc(D)}
+        <p>On the one hand, the empirical variance of the series \\(\\textbf{X}\\) is
+        \\[\\widetilde{\\textbf{Var}}(\\textbf{X})=\\overline{\\textbf{X}^2}-\\overline{\\textbf{X}}^2=${s.mX2}-${s.xbar}^2=${s.varX}\\]
+        On the other hand, the empirical variance of the series \\(\\textbf{Y}\\) is
+        \\[\\widetilde{\\textbf{Var}}(\\textbf{Y})=\\overline{\\textbf{Y}^2}-\\overline{\\textbf{Y}}^2=${s.mY2}-${s.ybar}^2=${s.varY}\\]
+        Next, the empirical covariance of the series \\(\\textbf{X}\\) and \\(\\textbf{Y}\\) is
+        \\[\\widetilde{\\textbf{Cov}}(\\textbf{X},\\textbf{Y})=\\overline{\\textbf{XY}}-\\overline{\\textbf{X}}\\times\\overline{\\textbf{Y}}=${s.mXY}-${s.xbar}\\times ${s.ybar}=${s.cov}\\]
+        Hence, writing \\(\\rho\\) for the linear correlation coefficient between the series \\(\\textbf{X}\\) and \\(\\textbf{Y}\\), we get:
+        \\[\\rho=\\frac{\\widetilde{\\textbf{Cov}}(\\textbf{X},\\textbf{Y})}{\\sqrt{\\widetilde{\\textbf{Var}}(\\textbf{X})\\,\\widetilde{\\textbf{Var}}(\\textbf{Y})}}=\\frac{${s.cov}}{\\sqrt{${s.varX}\\times ${s.varY}}}\\approx ${s.rho}\\]</p>
+        <p>The correlation between the series \\(\\textbf{X}\\) and \\(\\textbf{Y}\\) is therefore ${L.strength(Math.abs(D.rho))} and ${L.sign(D.B)}: ${T.pair} move ${L.sense(D.B)}. The scatter plot below confirms this: the points ${L.shape(Math.abs(D.rho), L.slope(D.B))}, which justifies the use of a linear model.</p>
+        ${figScatter(D)}
+      </div></li>
 
-  // Q2
-  solHTML += `<li><div class="q-content"><p>The coefficient of determination \\(R^2\\) in the simple linear model is equal to the square of the linear correlation coefficient between the statistical series \\(\\textbf{X}\\) and \\(\\textbf{Y}\\). Recall that the linear correlation coefficient is equal to the covariance between the series \\(\\textbf{X}\\) and \\(\\textbf{Y}\\) divided by the product of the standard errors of the series \\(\\textbf{X}\\) and \\(\\textbf{Y}\\). We therefore have \\(R^2=\\frac{(${fcov})^2}{${fvX}\\times ${fvY}}\\approx ${r2.toFixed(2)}\\) (rounded to the nearest hundredth). This means that ${(r2*100).toFixed(0)}% of the observed variation (in percentage terms) in the annual sales ${sit.prod} ${sit.geo} is explained by the variation (in percentage terms) in the ${sit.p_unit} ${sit.prod}.</p></div></li>`;
+      <li><div class="q-content">
+        <p>The ordinary least squares estimator \\(\\widehat{b}\\) of the parameter \\(b\\) equals the ratio of the empirical covariance of the series \\(\\textbf{X}\\) and \\(\\textbf{Y}\\) to the empirical variance of the series \\(\\textbf{X}\\):
+        \\[\\widehat{b}=\\frac{\\widetilde{\\textbf{Cov}}(\\textbf{X},\\textbf{Y})}{\\widetilde{\\textbf{Var}}(\\textbf{X})}=\\frac{${s.cov}}{${s.varX}}=${D.bS}\\]
+        We deduce the estimator \\(\\widehat{a}\\) of the parameter \\(a\\), since the least squares line passes through the mean point \\((\\overline{\\textbf{X}},\\overline{\\textbf{Y}})\\):
+        \\[\\widehat{a}=\\overline{\\textbf{Y}}-\\widehat{b}\\,\\overline{\\textbf{X}}=${s.ybar}-${D.bPar}\\times ${s.xbar}=${D.aS}\\]</p>
+        <p>${T.bInt(D)}</p>
+        <p>${T.aInt(D)}</p>
+        <p>For every integer \\(${ix}\\) between ${D.i0} and ${D.i1}, we then set \\(\\widehat{Y}_${ix}:=\\widehat{a}+\\widehat{b}\\,X_${ix}\\). For instance, \\(\\widehat{Y}_{${D.i0}}=${D.aS}${D.bOp}${D.babsS}\\times ${s.x0}=${s.yh0}\\). Proceeding in the same way for each observation, we obtain:
+        \\[\\widehat{\\textbf{Y}}=\\left(${s.yhList}\\right)\\]</p>
+      </div></li>
 
-  // Q3
-  solHTML += `<li><div class="q-content"><p>We write TSS for the total sum of squares and RSS for the residual sum of squares. Since there are ${n} observations, we have \\(\\text{TSS}=${n}\\,\\widetilde{\\textbf{Var}}(\\textbf{Y})=${sct.toFixed(3)}\\). Let \\(\\widehat{\\sigma^2}\\) be the usual unbiased estimator of \\(\\sigma^2\\). Moreover, we have \\(R^2=1-\\frac{\\text{RSS}}{\\text{TSS}}\\), that is \\(\\text{RSS}=\\text{TSS}(1-R^2)\\approx ${sct.toFixed(3)}(1-${r2.toFixed(2)})\\), hence \\(\\text{RSS}\\approx ${scr.toFixed(2)}\\) (rounded to the nearest hundredth). Consequently, we have \\(\\widehat{\\sigma^2}=\\frac{\\text{RSS}}{${n-2}} \\approx \\frac{${scr.toFixed(2)}}{${n-2}}\\), that is \\(\\widehat{\\sigma^2}\\approx ${sig2_hat.toFixed(3)}\\) (rounded to the nearest thousandth). We therefore have \\(\\widehat{\\textbf{Var}}(\\widehat{b})=\\frac{\\widehat{\\sigma^2}}{n\\widetilde{\\textbf{Var}}(\\textbf{X})}\\approx\\frac{${sig2_hat.toFixed(3)}}{${n}\\times ${fvX}}\\), that is \\(\\widehat{\\textbf{Var}}(\\widehat{b})\\approx ${var_b_hat.toFixed(3)}\\).</p></div></li>`;
+      <li><div class="q-content">
+        <p>For every integer \\(${ix}\\) between ${D.i0} and ${D.i1}, we write \\(\\widehat{u}_${ix}:=Y_${ix}-\\widehat{Y}_${ix}\\) for the residual of observation \\(${ix}\\). We extend the previous table and check that the sum of the residuals, and hence their mean, is zero:</p>
+        ${tblRes(D)}
+        <p>We indeed have \\(${sum}\\widehat{u}_${ix}=0\\), hence \\(\\overline{\\widehat{\\textbf{u}}}=0\\): this property follows from the first normal equation of ordinary least squares, which holds whenever the model includes a constant. We also check that \\(${sum}\\widehat{Y}_${ix}=${sum}Y_${ix}=${s.SY}\\): the fitted values have the same mean as the observed values.</p>
+        <p>Let \\(\\widehat{\\sigma^2}\\) denote the usual unbiased estimator of the variance of the disturbances (assumed homoscedastic), estimated from the ${D.n} observations of our dataset. The residual sum of squares is divided by \\(n-2=${D.n - 2}\\), rather than by \\(n\\), because two parameters have been estimated:
+        \\[\\widehat{\\sigma^2}=\\frac{1}{${D.n}-2}${sum}\\widehat{u}_${ix}^{\\,2}=\\frac{${s.SCR}}{${D.n - 2}}${s.sig2.eq}${s.sig2.s}\\]</p>
+      </div></li>
 
-  // Q4
-  solHTML += `<li><div class="q-content"><p>We assume that model 1 will still hold the following year, that is in year \\(t=${n+1}\\). The ${sit.p_unit} ${sit.prod} in year \\(t=${n+1}\\) is estimated at ${p_futur} (expressed relative to the price index). The model then predicts for \\(Y_{${n+1}}\\) the value \\(\\widehat{Y}_{${n+1}}:=\\widehat{a}+\\widehat{b}\\ln(${p_futur})\\), that is \\(\\widehat{Y}_{${n+1}}\\approx ${a_hat.toFixed(3)}${fmt(b_hat.toFixed(2))}\\times\\ln(${p_futur})\\), hence \\(\\widehat{Y}_{${n+1}}\\approx ${y_pred.toFixed(3)}\\) (rounded to the nearest thousandth). Thus, if the model still holds in year \\(t=${n+1}\\), we predict that \\(\\exp(${y_pred.toFixed(3)})\\approx ${q_pred.toFixed(2)}\\) ${sit.q_unit} ${sit.prod} will be sold ${sit.geo} in year \\(t=${n+1}\\) (rounded to the nearest hundredth).</p></div></li>`;
+      <li><div class="q-content">
+        <p>To write down the analysis of variance equation, we need the total sum of squares (TSS), the explained sum of squares (ESS) and the residual sum of squares (RSS). We therefore extend the previous table, with \\(\\overline{\\textbf{Y}}=${s.ybar}\\):</p>
+        ${tblAnova(D)}
+        <p>The analysis of variance equation reads
+        \\[\\underbrace{${sum}(Y_${ix}-\\overline{\\textbf{Y}})^2}_{\\text{TSS}}=\\underbrace{${sum}(\\widehat{Y}_${ix}-\\overline{\\textbf{Y}})^2}_{\\text{ESS}}+\\underbrace{${sum}\\widehat{u}_${ix}^{\\,2}}_{\\text{RSS}}\\]
+        and we do check the equality \\(${s.SCT}=${s.SCE}+${s.SCR}\\): the total variability of \\(\\textbf{Y}\\) splits exactly into a part explained by the model and a residual part. The coefficient of determination \\(R^2\\) equals the ratio of the ESS to the TSS:
+        \\[R^2=\\frac{\\text{ESS}}{\\text{TSS}}=\\frac{${s.SCE}}{${s.SCT}}\\approx ${s.r2}\\]
+        We also recover the equality \\(R^2=\\rho^2\\), specific to the simple linear regression model.</p>
+        <p>This value of \\(R^2\\) means that ${s.r2pct}% of the observed variance ${T.yOf} is explained by the variation ${T.xOf} in our dataset. ${L.quality(D.R2)} One should nevertheless bear in mind that, with only ${D.n} observations, this conclusion remains fragile: each point weighs heavily in the estimation, and a single atypical observation would be enough to shift the fitted line and the \\(R^2\\) noticeably.</p>
+      </div></li>
 
-  // Q5
-  solHTML += `<li><div class="q-content"><p>We now set, for every integer \\(t\\) between 1 and \\(${n}\\), \\(Y'_t=\\ln(p_tq_t)\\) and we consider the model \\(Y'_t=c+dX_t+v_t\\) (model 2), where \\(c\\) and \\(d\\) are real numbers to be estimated and \\(v_1,\\ldots,v_n\\) are random variables satisfying the Gauss-Markov assumptions. For every integer \\(t\\) between 1 and ${n}, we have:
-  \\[\\begin{aligned}
-  Y'_t=c+dX_t+v_t
-  &\\iff \\ln(p_t)+\\ln(q_t)=c+d\\ln(p_t)+v_t\\\\
-  &\\iff \\ln(q_t)=c+(d-1)\\ln(p_t)+v_t\\\\
-  &\\iff Y_t=c+(d-1)X_t+v_t
-  \\end{aligned}\\]</p>
-  <p>By uniqueness of the ordinary least squares estimators in a simple linear model where \\(Y\\) is regressed on \\(X\\) from the joint observations \\((X_1,Y_1),\\ldots,(X_{${n}},Y_{${n}})\\), we deduce that \\(\\widehat{c}=\\widehat{a}\\) and \\(\\widehat{b}=\\widehat{d}-1\\). In particular, \\(\\widehat{d}=\\widehat{b}+1\\).</p></div></li>`;
-
-  solHTML += `</ol></div>`;
-  return solHTML;
-
+      </ol></div>`;
     }
   }
 };
@@ -680,8 +955,6 @@ function applyLang() {
         if (D[key] !== undefined) el.innerHTML = D[key];
     });
 
-    const cp = document.getElementById('btn-copy');
-    if (cp) { cp.textContent = D.copy; cp.title = D.copyTitle; }
     const si = document.getElementById('seed-input');
     if (si) si.placeholder = D.phSeed;
     const ni = document.getElementById('param-n');
@@ -731,82 +1004,316 @@ function initRand(seed) {
   };
 }
 const rI = (a,b) => Math.floor(_rand()*(b-a+1))+a;
-const rA = arr => arr[Math.floor(_rand()*arr.length)];
 
 // ════════════════════════════════════════
-// SCENARIOS & DATA
+// GENERATION DES DONNEES (exactes par construction)
+// On tire X, puis b et a, puis des residus entiers orthogonaux
+// a la constante et a X : les MCO restituent exactement a, b et
+// ces residus. Toutes les moyennes affichees tombent juste.
 // ════════════════════════════════════════
-const situations = () => I18N[LANG].situations;
+function buildData(sc, n) {
+  const S = SCEN[sc];
+  const G = Math.round((S.xmax - S.xmin) / S.xstep);
+  const kx = S.py - S.pb - S.px;
+  const Dv = kx < 0 ? P10[-kx] : 1, Mv = kx > 0 ? P10[kx] : 1;
 
+  for (let outer = 0; outer < 200000; outer++) {
+    /* 1. valeurs distinctes de X sur la grille */
+    const pool = [];
+    for (let g = 0; g <= G; g++) pool.push(g);
+    const gs = [];
+    for (let i = 0; i < n; i++) {
+      const j = rI(i, G);
+      const tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp;
+      gs.push(pool[i]);
+    }
+    if (S.sortX) gs.sort((a, b) => a - b);
+    const sg = gs.reduce((a, b) => a + b, 0);
+    if (sg % n !== 0) continue;
+    if (Math.max.apply(null, gs) - Math.min.apply(null, gs) < 0.45 * G) continue;
+    const m = sg / n;
+    const h = gs.map(g => g - m);
+    const x = gs.map(g => S.xmin + S.xstep * g);
+    const xbar = S.xmin + S.xstep * m;
+    const dx = h.map(v => v * S.xstep);
+    const Sxx = dx.reduce((a, v) => a + v * v, 0);
+    if (Sxx % n !== 0) continue;
 
+    /* 2. pente et constante */
+    const B = S.bmin + S.bstep * rI(0, Math.round((S.bmax - S.bmin) / S.bstep));
+    const A = S.amin + S.astep * rI(0, Math.round((S.amax - S.amin) / S.astep));
+    if ((B * S.xstep) % Dv !== 0 || (B * xbar) % Dv !== 0) continue;
+    const ybar = A + B * xbar * Mv / Dv;
+    const dyh = dx.map(v => B * v * Mv / Dv);
+    const yh = dyh.map(v => ybar + v);
+    const SCE = dyh.reduce((a, v) => a + v * v, 0);
+    if (SCE === 0) continue;
+
+    /* 3. residus : Σk = 0 et Σ h.k = 0, resolus sur la paire d'indices la plus proche */
+    let p = 0, q = 1, best = Infinity;
+    for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) {
+      const dd = Math.abs(h[i] - h[j]);
+      if (dd < best) { best = dd; p = i; q = j; }
+    }
+    const others = [];
+    for (let i = 0; i < n; i++) if (i !== p && i !== q) others.push(i);
+    const tgt = S.r2min + (S.r2max - S.r2min) * _rand();
+    const sd = Math.sqrt(SCE * (1 - tgt) / tgt / n);
+    const K = Math.max(2, Math.round(1.6 * sd / S.eu));
+
+    for (let inner = 0; inner < 400; inner++) {
+      const k = new Array(n).fill(0);
+      let S0 = 0, S1 = 0;
+      for (const i of others) { k[i] = rI(-K, K); S0 += k[i]; S1 += h[i] * k[i]; }
+      const den = h[p] - h[q];
+      const num = h[q] * S0 - S1;
+      if (num % den !== 0) continue;
+      k[p] = num / den + 0;
+      k[q] = -S0 - k[p] + 0;
+      if (Math.abs(k[p]) > 1.5 * K || Math.abs(k[q]) > 1.5 * K) continue;
+      if (k.filter(v => v === 0).length > 1) continue;
+      const e = k.map(v => v * S.eu);
+      const y = yh.map((v, i) => v + e[i]);
+      if (y.some(v => v < S.ylo || v > S.yhi)) continue;
+      if (S.ok && !S.ok(x, y)) continue;
+      const SCR = e.reduce((a, v) => a + v * v, 0);
+      const R2 = SCE / (SCE + SCR);
+      if (R2 < S.r2min || R2 > S.r2max) continue;
+      const dy = y.map(v => v - ybar);
+      const SCT = dy.reduce((a, v) => a + v * v, 0);
+      const Sxy = dx.reduce((a, v, i) => a + v * dy[i], 0);
+      if (SCT !== SCE + SCR) continue;
+      if (SCT % n !== 0 || Sxy % n !== 0) continue;
+      return { cfg: S, n, x, y, yh, e, xbar, ybar, A, B, Sxx, Sxy, SCE, SCR, SCT, R2 };
+    }
+  }
+  return null;
+}
+
+/* Assemblage de toutes les grandeurs affichees (identiques en FR et EN) */
+function computeD(seed, n) {
+  initRand(seed);
+  const sc = rI(0, SCEN.length - 1);
+  const y0 = rI(2012, 2026 - n);
+  const R = buildData(sc, n);
+  const S = R.cfg, px = S.px, py = S.py, pb = S.pb;
+  const sumA = arr => arr.reduce((a, v) => a + v, 0);
+
+  const D = Object.assign({}, R);
+  D.sc = sc; D.id = S.id; D.px = px; D.py = py; D.pb = pb;
+  D.ix = S.idx === 'unit' ? 'i' : 't';
+  D.tv = [];
+  for (let i = 0; i < n; i++) D.tv.push(S.idx === 'year' ? y0 + i : i + 1);
+  D.i0 = D.tv[0]; D.i1 = D.tv[n - 1];
+
+  D.x2 = R.x.map(v => v * v);
+  D.y2 = R.y.map(v => v * v);
+  D.xy = R.x.map((v, i) => v * R.y[i]);
+  D.e2 = R.e.map(v => v * v);
+  D.dy2 = R.y.map(v => (v - R.ybar) * (v - R.ybar));
+  D.dyh2 = R.yh.map(v => (v - R.ybar) * (v - R.ybar));
+  D.SX = sumA(R.x); D.SY = sumA(R.y); D.SYh = sumA(R.yh); D.SE = sumA(R.e);
+  D.SX2 = sumA(D.x2); D.SY2 = sumA(D.y2); D.SXY = sumA(D.xy);
+  D.mX2 = D.SX2 / n; D.mY2 = D.SY2 / n; D.mXY = D.SXY / n;
+  D.varX = D.mX2 - R.xbar * R.xbar;
+  D.varY = D.mY2 - R.ybar * R.ybar;
+  D.cov = D.mXY - R.xbar * R.ybar;
+  D.rho = D.cov / Math.sqrt(D.varX * D.varY);
+  D.xmin = Math.min.apply(null, R.x) / P10[px];
+
+  /* chaines d'affichage (mode mathematique) */
+  D.bS = fx(R.B, pb, true);
+  D.bT = fx(R.B, pb, false);
+  D.babs = Math.abs(R.B) / P10[pb];
+  D.babsS = fx(Math.abs(R.B), pb, true);
+  D.babsT = fx(Math.abs(R.B), pb, false);
+  D.bPar = R.B < 0 ? `(${D.bS})` : D.bS;
+  D.bOp = R.B < 0 ? '-' : '+';
+  D.aS = fx(R.A, py, true);
+  D.aT = fx(R.A, py, false);
+  D.ombS = fx(P10[pb] - R.B, pb, true);
+  D.xminT = fx(Math.min.apply(null, R.x), px, false);
+  const elas = (R.B / P10[pb]) * (R.xbar / P10[px]) / (R.ybar / P10[py]);
+  D.elasS = fxf(elas, 2, true);
+  D.elasAbsT = fxf(Math.abs(elas), 2, false);
+
+  D.S = {
+    xbar: fx(R.xbar, px, true), ybar: fx(R.ybar, py, true),
+    mX2: fx(D.mX2, 2 * px, true), mY2: fx(D.mY2, 2 * py, true), mXY: fx(D.mXY, px + py, true),
+    varX: fx(D.varX, 2 * px, true), varY: fx(D.varY, 2 * py, true), cov: fx(D.cov, px + py, true),
+    rho: fxf(D.rho, 4, true),
+    x0: fx(R.x[0], px, true), yh0: fx(R.yh[0], py, true),
+    yhList: R.yh.map(v => fx(v, py, true)).join(',\\;'),
+    SY: fx(D.SY, py, true),
+    SCR: fx(R.SCR, 2 * py, true), SCE: fx(R.SCE, 2 * py, true), SCT: fx(R.SCT, 2 * py, true),
+    sig2: fq(R.SCR, n - 2, 2 * py, true),
+    r2: fxf(R.R2, 4, true),
+    r2pct: fxf(R.R2 * 100, 2, false)
+  };
+  return D;
+}
+
+/* ============================================================
+   TABLEAUX  /  TABLES
+   ============================================================ */
+const nc = (v, d) => `<td class="num">${fx(v, d, false)}</td>`;
+
+function tblData(D) {
+  const T = D.T;
+  let rows = '';
+  for (let i = 0; i < D.n; i++) rows += `<tr><td>${D.tv[i]}</td>${nc(D.x[i], D.px)}${nc(D.y[i], D.py)}</tr>`;
+  return `<div class="dtable-wrap"><table class="dtable dtable-narrow"><caption>${T.cap(D)}</caption>
+    <tr><th>${T.idxHead}</th><th>${T.xHead}</th><th>${T.yHead}</th></tr>${rows}</table></div>`;
+}
+
+function tblCalc(D) {
+  const T = D.T, L = I18N[LANG].lbl, ix = D.ix, px = D.px, py = D.py;
+  let rows = '';
+  for (let i = 0; i < D.n; i++) {
+    rows += `<tr><td>${D.tv[i]}</td>${nc(D.x[i], px)}${nc(D.x2[i], 2 * px)}${nc(D.y[i], py)}${nc(D.y2[i], 2 * py)}${nc(D.xy[i], px + py)}</tr>`;
+  }
+  return `<div class="dtable-wrap"><table class="dtable"><caption>${L.capCalc}</caption>
+    <tr><th>${T.idxHead}</th><th>\\(X_${ix}\\)</th><th>\\(X_${ix}^2\\)</th><th>\\(Y_${ix}\\)</th><th>\\(Y_${ix}^2\\)</th><th>\\(X_${ix}Y_${ix}\\)</th></tr>
+    ${rows}
+    <tfoot>
+    <tr><td>${L.sum}</td>${nc(D.SX, px)}${nc(D.SX2, 2 * px)}${nc(D.SY, py)}${nc(D.SY2, 2 * py)}${nc(D.SXY, px + py)}</tr>
+    <tr><td>${L.mean}</td>${nc(D.xbar, px)}${nc(D.mX2, 2 * px)}${nc(D.ybar, py)}${nc(D.mY2, 2 * py)}${nc(D.mXY, px + py)}</tr>
+    </tfoot></table></div>`;
+}
+
+function tblRes(D) {
+  const T = D.T, L = I18N[LANG].lbl, ix = D.ix, px = D.px, py = D.py;
+  let rows = '';
+  for (let i = 0; i < D.n; i++) {
+    rows += `<tr><td>${D.tv[i]}</td>${nc(D.x[i], px)}${nc(D.y[i], py)}${nc(D.yh[i], py)}${nc(D.e[i], py)}${nc(D.e2[i], 2 * py)}</tr>`;
+  }
+  return `<div class="dtable-wrap"><table class="dtable"><caption>${L.capRes}</caption>
+    <tr><th>${T.idxHead}</th><th>\\(X_${ix}\\)</th><th>\\(Y_${ix}\\)</th><th>\\(\\widehat{Y}_${ix}\\)</th><th>\\(\\widehat{u}_${ix}\\)</th><th>\\(\\widehat{u}_${ix}^{\\,2}\\)</th></tr>
+    ${rows}
+    <tfoot><tr><td>${L.sum}</td>${nc(D.SX, px)}${nc(D.SY, py)}${nc(D.SYh, py)}${nc(D.SE, py)}${nc(D.SCR, 2 * py)}</tr></tfoot>
+    </table></div>`;
+}
+
+function tblAnova(D) {
+  const T = D.T, L = I18N[LANG].lbl, ix = D.ix, py = D.py;
+  let rows = '';
+  for (let i = 0; i < D.n; i++) {
+    rows += `<tr><td>${D.tv[i]}</td>${nc(D.y[i], py)}${nc(D.yh[i], py)}${nc(D.e2[i], 2 * py)}${nc(D.dy2[i], 2 * py)}${nc(D.dyh2[i], 2 * py)}</tr>`;
+  }
+  return `<div class="dtable-wrap"><table class="dtable"><caption>${L.capAnova}</caption>
+    <tr><th>${T.idxHead}</th><th>\\(Y_${ix}\\)</th><th>\\(\\widehat{Y}_${ix}\\)</th><th>\\(\\widehat{u}_${ix}^{\\,2}\\)</th><th>\\((Y_${ix}-\\overline{\\textbf{Y}})^2\\)</th><th>\\((\\widehat{Y}_${ix}-\\overline{\\textbf{Y}})^2\\)</th></tr>
+    ${rows}
+    <tfoot><tr><td>${L.sum}</td>${nc(D.SY, py)}${nc(D.SYh, py)}${nc(D.SCR, 2 * py)}${nc(D.SCT, 2 * py)}${nc(D.SCE, 2 * py)}</tr></tfoot>
+    </table></div>`;
+}
+
+/* ============================================================
+   NUAGE DE POINTS  /  SCATTER PLOT
+   ============================================================ */
+function niceAxis(lo, hi) {
+  const span = (hi - lo) || Math.abs(hi) || 1;
+  lo -= span * 0.08; hi += span * 0.08;
+  const raw = (hi - lo) / 5;
+  const pw = Math.pow(10, Math.floor(Math.log10(raw)));
+  const f = raw / pw;
+  const mult = f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10;
+  const step = mult * pw;
+  let dec = Math.max(0, -Math.floor(Math.log10(step) + 1e-9));
+  if (mult === 2.5 && step < 10) dec += 1;
+  return { lo: Math.floor(lo / step) * step, hi: Math.ceil(hi / step) * step, step, dec };
+}
+
+function figScatter(D) {
+  const T = D.T, L = I18N[LANG].lbl;
+  const W = 620, H = 380, x0 = 84, x1 = 596, y0 = 22, y1 = 306;
+  const xs = D.x.map(v => v / P10[D.px]), ys = D.y.map(v => v / P10[D.py]);
+  const ax = niceAxis(Math.min.apply(null, xs), Math.max.apply(null, xs));
+  const ay = niceAxis(Math.min.apply(null, ys), Math.max.apply(null, ys));
+  if (ax.lo < 0) ax.lo = 0;   /* toutes les variables du simulateur sont positives */
+  if (ay.lo < 0) ay.lo = 0;
+  const SX = v => x0 + (v - ax.lo) / (ax.hi - ax.lo) * (x1 - x0);
+  const SY = v => y1 - (v - ay.lo) / (ay.hi - ay.lo) * (y1 - y0);
+  let g = '';
+  for (let k = 0; ax.lo + k * ax.step <= ax.hi + 1e-9; k++) {
+    const v = ax.lo + k * ax.step, X = SX(v).toFixed(1);
+    g += `<line x1="${X}" y1="${y0}" x2="${X}" y2="${y1}" stroke="#e2ded5" stroke-width="1"/>`;
+    g += `<text x="${X}" y="${y1 + 18}" text-anchor="middle" font-size="10.5" fill="#5a5a5a">${fxf(v, ax.dec, false)}</text>`;
+  }
+  for (let k = 0; ay.lo + k * ay.step <= ay.hi + 1e-9; k++) {
+    const v = ay.lo + k * ay.step, Y = SY(v).toFixed(1);
+    g += `<line x1="${x0}" y1="${Y}" x2="${x1}" y2="${Y}" stroke="#e2ded5" stroke-width="1"/>`;
+    g += `<text x="${x0 - 8}" y="${(SY(v) + 4).toFixed(1)}" text-anchor="end" font-size="10.5" fill="#5a5a5a">${fxf(v, ay.dec, false)}</text>`;
+  }
+  g += `<line x1="${x0}" y1="${y1}" x2="${x1}" y2="${y1}" stroke="#0d1b2a" stroke-width="1.3"/>`;
+  g += `<line x1="${x0}" y1="${y0}" x2="${x0}" y2="${y1}" stroke="#0d1b2a" stroke-width="1.3"/>`;
+  g += `<text x="${((x0 + x1) / 2).toFixed(0)}" y="${y1 + 42}" text-anchor="middle" font-size="12" fill="#1e1e1e">${T.xAxis}</text>`;
+  const ym = ((y0 + y1) / 2).toFixed(0);
+  g += `<text x="16" y="${ym}" text-anchor="middle" font-size="12" fill="#1e1e1e" transform="rotate(-90 16 ${ym})">${T.yAxis}</text>`;
+  /* etiquettes : on essaie quatre positions autour du point et l'on garde la premiere sans chevauchement */
+  const pts = xs.map((v, i) => ({ cx: SX(v), cy: SY(ys[i]) }));
+  const boxes = pts.map(q => ({ x0: q.cx - 5, x1: q.cx + 5, y0: q.cy - 5, y1: q.cy + 5 }));
+  const hit = (b) => boxes.some(o => b.x0 < o.x1 && b.x1 > o.x0 && b.y0 < o.y1 && b.y1 > o.y0);
+  for (let i = 0; i < D.n; i++) {
+    const q = pts[i], lab = String(D.tv[i]), w = 5.6 * lab.length + 2;
+    const cand = [[7, -6, 'start'], [7, 13, 'start'], [-7, -6, 'end'], [-7, 13, 'end'], [0, -10, 'middle'], [0, 19, 'middle']];
+    let pick = cand[0], pbox = null;
+    for (const c of cand) {
+      const tx = q.cx + c[0], ty = q.cy + c[1];
+      const bx0 = c[2] === 'start' ? tx : c[2] === 'end' ? tx - w : tx - w / 2;
+      const b = { x0: bx0, x1: bx0 + w, y0: ty - 9, y1: ty + 2 };
+      if (!hit(b)) { pick = c; pbox = b; break; }
+    }
+    if (!pbox) {
+      const tx = q.cx + pick[0], ty = q.cy + pick[1];
+      pbox = { x0: tx, x1: tx + w, y0: ty - 9, y1: ty + 2 };
+    }
+    boxes.push(pbox);
+    g += `<circle cx="${q.cx.toFixed(2)}" cy="${q.cy.toFixed(2)}" r="4.5" fill="#0d1b2a"/>`;
+    g += `<text x="${(q.cx + pick[0]).toFixed(1)}" y="${(q.cy + pick[1]).toFixed(1)}" text-anchor="${pick[2]}" font-size="9.5" fill="#8a6a1e">${lab}</text>`;
+  }
+  return `<div class="fig-wrap"><svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" font-family="Source Serif 4, serif">${g}</svg></div><p class="fig-cap">${L.figCap}</p>`;
+}
+
+// ════════════════════════════════════════
+// GENERATION  /  RENDERING
+// ════════════════════════════════════════
 function regen() {
   document.getElementById('seed-input').value = '';
   generateFromControls();
 }
 
+function readN() {
+  const v = parseInt(document.getElementById('param-n').value, 10);
+  if (isNaN(v)) return 5;
+  return Math.min(8, Math.max(5, v));
+}
+
 function generateFromControls() {
   const seedInp = document.getElementById('seed-input').value;
-  const seed = seedInp ? parseInt(seedInp) : Math.floor(Math.random()*10000000);
-  initRand(seed);
-  document.getElementById('seed-disp').textContent = seed;
-  document.getElementById('modal-seed').textContent = seed;
-  
-  const nInp = document.getElementById('param-n').value;
-  const n = nInp ? parseInt(nInp) : rI(15, 30);
-  
-  const sit = rA(situations());
-  
-  // Génération des données cohérentes empiriquement
-  const meanX = rI(-150, 200) / 100;
-  const meanY = rI(10, 350) / 100;
-  
-  let vX, vY, cov;
-  do {
-    vX = rI(20, 150) / 1000;
-    vY = rI(100, 400) / 1000;
-    cov = rI(-120, -20) / 1000; // Élasticité négative
-  } while (cov * cov >= 0.95 * vX * vY); // S'assurer que R^2 < 0.95
+  const seed = seedInp ? parseInt(seedInp, 10) : Math.floor(Math.random() * 10000000);
+  const n = readN();
+  const D = computeD(seed, n);
+  D.T = I18N[LANG].scen[D.id];
 
-  const p_futur = (rI(15, 30) / 10).toFixed(1);
+  document.getElementById('seed-disp').textContent = _activeSeed;
+  document.getElementById('modal-seed').textContent = _activeSeed;
 
-  // Formatage
-  const fmX = meanX.toFixed(2), fmY = meanY.toFixed(2);
-  const fvX = vX.toFixed(3), fvY = vY.toFixed(3), fcov = cov.toFixed(3);
-
-  // Calculs corrigé
-  const b_hat = cov / vX;
-  const a_hat = meanY - b_hat * meanX;
-  const r2 = (cov * cov) / (vX * vY);
-  
-  const sct = n * vY;
-  const scr = sct * (1 - r2);
-  const sig2_hat = scr / (n - 2);
-  const var_b_hat = sig2_hat / (n * vX);
-  
-  const y_pred = a_hat + b_hat * Math.log(parseFloat(p_futur));
-  const q_pred = Math.exp(y_pred);
-
-  // Render HTML Énoncé
-  const D = {n, sit, fmX, fmY, fvX, fvY, fcov, p_futur, b_hat, a_hat, r2,
-             sct, scr, sig2_hat, var_b_hat, y_pred, q_pred};
-
+  document.getElementById('card-title').textContent = D.T.title;
+  document.getElementById('card-title2').textContent = D.T.title;
   document.getElementById('ex-content').innerHTML = I18N[LANG].ex(D);
-
-  // Render HTML Corrigé
   document.getElementById('sol-content').innerHTML = I18N[LANG].sol(D);
 
-  // Affichage
   document.getElementById('welcome').style.display = 'none';
   document.getElementById('ex-area').style.display = 'block';
   solVisible = false;
-  let solC = document.getElementById('sol-card'), btn = document.getElementById('toggle-btn');
+  const solC = document.getElementById('sol-card'), btn = document.getElementById('toggle-btn');
   solC.classList.remove('visible'); btn.classList.remove('shown'); btn.textContent = I18N[LANG].showSol;
 
-  if (window.MathJax) MathJax.typesetPromise();
+  if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise();
 }
 
 // ════════════════════════════════════════
-// UI / PDF EXPORT
+// UI
 // ════════════════════════════════════════
 function toggleSol(){
   solVisible = !solVisible;
@@ -814,21 +1321,12 @@ function toggleSol(){
   if(solVisible){sol.classList.add('visible'); btn.classList.add('shown'); btn.textContent = I18N[LANG].hideSol;}
   else{sol.classList.remove('visible'); btn.classList.remove('shown'); btn.textContent = I18N[LANG].showSol;}
 }
-function __kitOldCopySeed(){
-  const s = document.getElementById('seed-disp').textContent;
-  if(s && s !== '—'){
-    navigator.clipboard.writeText(s).then(() => {
-      const b = event.target, o = b.textContent;
-      b.textContent = I18N[LANG].copied; setTimeout(()=>b.textContent=o,1500);
-    });
-  }
-}
-
 
 /* Initialisation */
 LANG = detectLang();
 applyLang();
 </script>
+
 
 <!-- KIT:JS:START v1 -->
 <div id="pdf-ov" onclick="closePdfModal()"></div>
