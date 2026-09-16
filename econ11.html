@@ -1,0 +1,2226 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Générateur d'exercices - Endogénéité</title>
+<script>
+window.MathJax = {
+  tex: { 
+    inlineMath: [['\\(','\\)']], 
+    displayMath: [['\\[','\\]']], 
+    packages: {'[+]': ['ams']},
+    macros: {
+      Var: ['\\textbf{Var}\\left(#1\\right)', 1],
+      Cov: ['\\textbf{Cov}\\left(#1\\right)', 1],
+      dsum: ['\\sum_{#1}^{#2}', 2]
+    }
+  },
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] }
+};
+</script>
+<script>window.MathJax=window.MathJax||{};window.MathJax.options=window.MathJax.options||{};window.MathJax.options.enableAssistiveMml=true;</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 0;border-bottom:3px solid var(--gold)}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+#controls-bar{border-top:1px solid rgba(255,255,255,.08);padding:1.1rem 0 1.3rem}
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.5)}
+.ctrl-inp{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.38rem .65rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.82rem;width:88px;outline:none;transition:border-color .2s}
+.ctrl-inp:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.ctrl-tip{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:rgba(250,247,240,.33);margin-top:2px}
+.seed-row{display:flex;align-items:flex-end;gap:.45rem}
+.btn-copy-seed{background:transparent;border:1px solid rgba(201,149,42,.4);color:rgba(250,247,240,.55);padding:.38rem .55rem;border-radius:3px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:.65rem;transition:all .18s;white-space:nowrap}
+.btn-copy-seed:hover{border-color:var(--gold-light);color:var(--gold-light)}
+.ctrl-vsep{width:1px;background:rgba(255,255,255,.1);align-self:stretch;margin:0 .2rem}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.3rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.9rem;font-weight:600;transition:background .18s;white-space:nowrap;align-self:flex-end}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.welcome-msg{text-align:center;padding:5rem 2rem;color:var(--text-muted);font-style:italic;font-size:1.05rem}
+.welcome-msg .arrow{font-size:2rem;display:block;margin-bottom:1rem;opacity:.4}
+
+/* TOP BAR */
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.top-bar-left{display:flex;gap:.6rem;align-items:center}
+.btn-sm{background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:'JetBrains Mono',monospace;font-size:.67rem;letter-spacing:.08em;text-transform:uppercase;padding:.4rem 1rem;border-radius:3px;cursor:pointer;transition:all .18s;white-space:nowrap}
+.btn-sm:hover{background:var(--gold);color:var(--navy)}
+.btn-sm.pdf{border-color:#7bafd4;color:#7bafd4}
+.btn-sm.pdf:hover{background:#7bafd4;color:var(--navy)}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.67rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:500}
+
+/* CARDS */
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);margin-bottom:1.5rem;border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+
+/* QUESTIONS */
+.questions ol{counter-reset:q;list-style:none}
+.questions ol>li{counter-increment:q;margin-bottom:1.4rem;display:flex;gap:1rem;align-items:flex-start}
+.questions ol>li::before{content:counter(q);min-width:28px;height:28px;background:var(--navy);color:var(--cream);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:500;flex-shrink:0;margin-top:.15rem}
+.questions ol>li .q-text{flex:1;font-size:.93rem;text-align:justify}
+
+/* SOLUTION */
+.sol-toggle-wrap{text-align:center;margin:1rem 0 0}
+.btn-toggle{background:transparent;border:2px solid var(--navy);color:var(--navy);font-family:'Source Serif 4',serif;font-size:.9rem;padding:.6rem 2rem;border-radius:4px;cursor:pointer;transition:all .2s}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--navy);color:var(--cream)}
+.sol-card{border-top:4px solid var(--green);display:none}
+.sol-card.visible{display:block;animation:fi .3s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+.st{font-size:.92rem;line-height:1.75;text-align:justify}
+.st p{margin-bottom:.7rem}
+.st ol{counter-reset:sq;list-style:none}
+.st>ol>li{counter-increment:sq;margin-bottom:1.6rem;display:flex;gap:1rem;align-items:flex-start}
+.st>ol>li::before{content:counter(sq);min-width:24px;height:24px;background:var(--green);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.68rem;flex-shrink:0;margin-top:.15rem}
+.st ul{list-style:disc;padding-left:1.5rem;margin-bottom:.7rem}
+.st ul li{margin-bottom:1rem}
+.st .q-content{flex:1;} /* Assure que le texte prend toute la largeur restante */
+
+/* PDF MODAL */
+#pdf-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;backdrop-filter:blur(2px)}
+#pdf-modal{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:101;background:#fff;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.25);width:390px;max-width:95vw;border-top:4px solid #7bafd4;overflow:hidden}
+.mh{background:var(--navy);color:var(--cream);padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
+.mh h3{font-family:'Playfair Display',serif;font-size:1rem;font-weight:600}
+.mclose{background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:1.2rem;line-height:1;padding:2px 6px;border-radius:3px;transition:color .15s}
+.mclose:hover{color:#fff}
+.mb2{padding:1.5rem}
+.opt-row{display:flex;align-items:flex-start;gap:.75rem;margin-bottom:1rem;cursor:pointer}
+.opt-row input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--navy);flex-shrink:0;margin-top:3px}
+.opt-lbl{font-size:.93rem}
+.opt-desc{font-size:.75rem;color:var(--text-muted);display:block}
+.seed-note{font-family:'JetBrains Mono',monospace;font-size:.7rem;background:var(--cream-dark);border:1px solid var(--border);padding:.55rem .85rem;border-radius:3px;color:var(--text-muted);margin-bottom:1.2rem;line-height:1.5}
+.seed-note strong{color:var(--navy)}
+.mactions{display:flex;gap:.6rem}
+.btn-print{flex:1;background:var(--navy);color:var(--cream);border:none;padding:.7rem;border-radius:4px;font-family:'Source Serif 4',serif;font-size:.9rem;cursor:pointer;transition:background .2s}
+.btn-print:hover{background:var(--navy-mid)}
+.btn-cancel{background:transparent;border:1px solid var(--border);color:var(--text-muted);padding:.7rem 1rem;border-radius:4px;font-family:'Source Serif 4',serif;font-size:.9rem;cursor:pointer;transition:all .2s}
+.btn-cancel:hover{border-color:var(--text);color:var(--text)}
+
+/* PRINT */
+@media print{
+:root{--navy:#0d1b2a;--cream:#fff;--cream-dark:#f8f8f8;--gold:#c9952a;--green:#2d6b4a;--border:#ccc}
+body{background:#fff;font-size:11pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+header{padding:1rem 1.5rem .8rem}
+header .subtitle{display:none}
+#controls-bar,.top-bar,.sol-toggle-wrap,#pdf-ov,#pdf-modal{display:none!important}
+.card{box-shadow:none;border-radius:0;page-break-inside:avoid;margin-bottom:1rem}
+main{padding:1rem 1.5rem;max-width:100%}
+body.print-no-header header{display:none!important}
+body.print-no-solution .sol-card{display:none!important}
+body.print-force-solution .sol-card{display:block!important}
+}
+
+/* --- Selecteur de langue / Language switch --- */
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem}
+.header-top .header-badge{margin-bottom:0}
+.lang-switch{display:flex;gap:.45rem;flex-shrink:0}
+.flag-btn{background:rgba(255,255,255,.06);border:1px solid rgba(201,149,42,.35);border-radius:3px;padding:3px;cursor:pointer;line-height:0;opacity:.5;transition:opacity .2s,border-color .2s,transform .15s}
+.flag-btn:hover{opacity:1;transform:translateY(-1px)}
+.flag-btn.active{opacity:1;border-color:var(--gold-light);box-shadow:0 0 0 1px rgba(232,184,75,.35)}
+.flag-btn svg{display:block;width:30px;height:20px;border-radius:1px}
+@media print{ .lang-switch{display:none !important;} }
+
+/* TABLEAUX DE DONNEES */
+.dtable-wrap{overflow-x:auto;margin:1.1rem 0}
+.dtable{width:100%;border-collapse:collapse;font-size:.82rem;font-family:'Source Serif 4',serif}
+.dtable th,.dtable td{border:1px solid var(--border);padding:.4rem .5rem;text-align:center;vertical-align:middle}
+.dtable th{background:var(--navy);color:var(--cream);font-weight:600;font-size:.78rem}
+.dtable tr:nth-child(even) td{background:#fbf9f4}
+.dtable td.num{font-family:'JetBrains Mono',monospace;font-size:.78rem;white-space:nowrap}
+.dtable tfoot td{font-weight:700;background:var(--cream-dark)}
+.dtable caption{caption-side:bottom;font-size:.76rem;color:var(--text-muted);font-style:italic;padding-top:.5rem;text-align:justify}
+.dtable-narrow{max-width:560px;margin:0 auto}
+.context-block .dtable-wrap{margin:1rem 0 1.1rem}
+.questions ol ol > li{display:block}
+.q-text .dtable-wrap{margin:.9rem 0 .8rem}
+
+/* FIGURES */
+.fig-wrap{margin:1.2rem 0 .3rem;text-align:center;overflow-x:auto}
+.fig-wrap svg{width:100%;max-width:640px;height:auto;background:#fff;border:1px solid var(--border);border-radius:4px}
+.fig-cap{font-size:.78rem;color:var(--text-muted);font-style:italic;text-align:center;margin-bottom:1rem;line-height:1.5}
+</style>
+<!-- KIT:CSS:START v1 --><style id="kit-css">
+/* ============================================================
+   KIT D'UNIFORMISATION — bloc partagé, identique sur toutes les pages.
+   Ne rien modifier ici fichier par fichier : régénérer le kit.
+   ============================================================ */
+
+/* --- 1. Mathématiques : jamais de débordement --- */
+mjx-container[display="true"]{
+  overflow-x:auto; overflow-y:hidden; max-width:100%;
+  padding:.15rem 0; margin:1rem 0 !important;
+}
+mjx-container[display="true"]::-webkit-scrollbar{height:5px}
+mjx-container[display="true"]::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+mjx-container{ max-width:100%; }
+.math-formula{ text-align:center; margin:1.2rem 0; overflow-x:auto; max-width:100%; }
+@media (max-width:640px){
+  mjx-container[display="true"]{ font-size:88% }
+}
+
+/* --- 2. Listes à puces entourées (questions ET données de contexte) --- */
+.kit-list, .st > ol,
+.questions > ol,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list), .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list),
+.question-list, .enum-list, .q-list{
+  counter-reset:kitq; list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem;
+}
+.kit-list > li, .st > ol > li,
+.questions > ol > li,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li, .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li,
+.question-list > li, .enum-list > li, .q-list > li{
+  counter-increment:kitq; position:relative;
+  padding-left:2.6rem; margin-bottom:1.3rem;
+  font-size:.95rem; line-height:1.7; text-align:justify;
+  font-weight:400; color:var(--text);
+  display:block;
+}
+.kit-list > li::before, .st > ol > li::before,
+.questions > ol > li::before,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li::before, .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li::before,
+.question-list > li::before, .enum-list > li::before, .q-list > li::before{
+  content:counter(kitq);
+  position:absolute; left:0; top:.1rem;
+  width:28px; min-width:28px; height:28px;
+  background:var(--navy); color:var(--cream);
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.72rem; font-weight:500;
+  flex-shrink:0;
+}
+.questions ol > li .q-text{ flex:1; font-size:.95rem; text-align:justify }
+/* sous-listes : cercle creux, plus discret */
+.enum-sublist, .kit-sublist, .sub-list, .sub-ol, .alpha-list, .enum-subsublist,
+.st ol.sub-ol, .questions ol ol, .st ol ol, .kit-list ol, .q-list ol, .question-list ol{
+  counter-reset:kitsq; list-style:none !important; padding-left:0 !important;
+  margin:.9rem 0 .9rem 0;
+}
+.enum-sublist > li, .kit-sublist > li, .sub-list > li, .sub-ol > li, .alpha-list > li, .enum-subsublist > li,
+.st ol.sub-ol > li, .questions ol ol > li, .st ol ol > li, .kit-list ol > li, .q-list ol > li, .question-list ol > li{
+  counter-increment:kitsq; position:relative;
+  padding-left:2.1rem; margin-bottom:.7rem; font-size:.92rem; text-align:justify;
+}
+.enum-sublist > li::before, .kit-sublist > li::before, .sub-list > li::before, .sub-ol > li::before, .alpha-list > li::before, .enum-subsublist > li::before,
+.st ol.sub-ol > li::before, .questions ol ol > li::before, .st ol ol > li::before, .kit-list ol > li::before, .q-list ol > li::before, .question-list ol > li::before{
+  content:counter(kitsq,lower-alpha);
+  min-width:22px;
+  position:absolute; left:0; top:.05rem;
+  width:22px; height:22px;
+  background:transparent; color:var(--navy);
+  border:1px solid var(--gold);
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.65rem;
+}
+
+/* variante : puces simples non numérotées (listes de données) */
+.kit-simple{ list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem }
+.kit-simple > li{
+  position:relative; padding-left:1.5rem; margin-bottom:1.1rem;
+  font-size:.95rem; line-height:1.7; text-align:justify;
+}
+.kit-simple > li::before{
+  content:"\2022"; position:absolute; left:0; top:-.15rem;
+  color:var(--gold); font-size:1.5rem; line-height:1; background:none;
+  width:auto; height:auto; border:none; border-radius:0;
+}
+/* variante : liste à un seul élément, sans puce */
+.kit-nobullet{ list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem }
+.kit-nobullet > li{
+  padding-left:0; margin-bottom:1rem; font-size:.95rem; line-height:1.7; text-align:justify;
+}
+.kit-nobullet > li::before{ content:none !important; display:none !important }
+/* variante : titres de section numérotés (contenu intercalé entre les puces) */
+.kit-num-scope{ counter-reset:kitn }
+p.kit-num{
+  counter-increment:kitn; position:relative;
+  padding-left:2.6rem; margin:1.8rem 0 1rem;
+  font-weight:600; color:var(--navy); text-align:left;
+  min-height:28px; display:flex; align-items:center;
+}
+p.kit-num:first-of-type{ margin-top:0 }
+p.kit-num::before{
+  content:counter(kitn); position:absolute; left:0; top:0;
+  width:28px; height:28px; background:var(--navy); color:var(--cream);
+  border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.72rem; font-weight:500;
+}
+
+/* titres de dossier */
+.dossier-title{
+  margin:2rem 0 1rem; font-weight:600; color:var(--navy); font-size:1.02rem;
+  border-bottom:1px solid var(--border); padding-bottom:.4rem; text-align:left;
+}
+.dossier-title:first-of-type{ margin-top:0 }
+.dossier-body{ margin-bottom:.5rem }
+
+/* --- 3. Corrigé sobre : plus de multiplication de fonds verts --- */
+.sol-card .calc-box, .sol-card .concl{
+  background:transparent !important;
+  border:none !important;
+  border-left:none !important;
+  padding:0 !important;
+  border-radius:0 !important;
+  margin:0 0 1.6rem 0 !important;
+  font-size:.95rem;
+  line-height:1.7;
+  text-align:justify;
+}
+.sol-card .sol-sub{
+  color:var(--navy); font-weight:600; display:block;
+  margin:0 0 .5rem 0; font-size:1rem;
+}
+/* seuls encadrés conservés : les perspectives « Pour aller plus loin » */
+.sol-card .persp-box{
+  background:#f7f9fc !important;
+  border:1px solid #ccd8e6 !important;
+  border-left:3px solid var(--navy-mid) !important;
+  padding:1.2rem !important;
+  border-radius:4px !important;
+  margin:2rem 0 1rem 0 !important;
+  font-size:.9rem; line-height:1.7; text-align:justify;
+}
+
+.btn-toggle{
+  background:transparent; border:2px solid var(--green); border-bottom:none;
+  color:var(--green); font-family:'Source Serif 4',serif; font-size:.95rem;
+  font-weight:600; padding:.5rem 1.5rem; border-radius:4px 4px 0 0; cursor:pointer;
+  transition:all .2s; position:relative; z-index:2; top:2px;
+}
+.btn-toggle:hover{ background:var(--green); color:var(--cream) }
+
+/* --- 4. Bouton « Afficher le corrigé » (modèle der) --- */
+.sol-toggle-wrap{ text-align:left; margin:1.5rem 0 0 0; }
+.sol-card{
+  border-top:2px solid var(--green); display:none;
+  border-radius:0 6px 6px 6px; position:relative; z-index:1;
+}
+.sol-card.visible{ display:block; animation:kitfi .35s ease }
+.sol-card .card-header{ background:var(--green) }
+.sol-card .card-header .tag{ border-color:rgba(200,240,200,.4); color:#a8d8b0 }
+@keyframes kitfi{ from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+
+/* --- 5. Barre d'actions unifiée --- */
+.top-bar{ display:flex; flex-wrap:wrap; gap:.8rem; align-items:center; justify-content:space-between; margin-bottom:1.2rem }
+.top-bar-left{ display:flex; flex-wrap:wrap; gap:.55rem; order:1 }
+.top-bar .seed-badge{ order:2 }
+.btn-sm{ background:transparent; border:1px solid var(--gold); color:var(--gold); font-family:'JetBrains Mono',monospace; font-size:.67rem; letter-spacing:.08em; text-transform:uppercase; padding:.4rem 1rem; border-radius:3px; cursor:pointer; transition:all .18s; white-space:nowrap }
+.btn-sm:hover{ background:var(--gold); color:var(--navy) }
+.btn-sm.pdf{ border-color:#7bafd4; color:#7bafd4 }
+.btn-sm.pdf:hover{ background:#7bafd4; color:var(--navy) }
+.btn-sm.doc{ border-color:#8fa8c4; color:#8fa8c4 }
+.seed-row{ display:flex; gap:.4rem; align-items:center }
+.btn-copy-seed{
+  background:transparent; border:1px solid rgba(201,149,42,.4); color:rgba(250,247,240,.55);
+  padding:.38rem .55rem; border-radius:3px; cursor:pointer;
+  font-family:'JetBrains Mono',monospace; font-size:.65rem; transition:all .18s; white-space:nowrap;
+}
+.btn-copy-seed:hover{ border-color:var(--gold-light); color:var(--gold-light) }
+.btn-sm.doc:hover{ background:#8fa8c4; color:var(--navy) }
+
+/* --- 6. Modale d'export PDF --- */
+#pdf-ov{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:100; backdrop-filter:blur(2px) }
+#pdf-modal{ display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:101; background:#fff; border-radius:8px; box-shadow:0 20px 60px rgba(0,0,0,.25); width:390px; max-width:95vw; border-top:4px solid #7bafd4; overflow:hidden }
+#pdf-ov.open,#pdf-modal.open{ display:block }
+.mh{ background:var(--navy); color:var(--cream); padding:1rem 1.5rem; display:flex; align-items:center; justify-content:space-between }
+.mh h3{ font-family:'Playfair Display',serif; font-size:1rem; font-weight:600; margin:0 }
+.mclose{ background:none; border:none; color:rgba(255,255,255,.6); cursor:pointer; font-size:1.2rem; line-height:1; padding:2px 6px; border-radius:3px; transition:color .15s }
+.mclose:hover{ color:#fff }
+.mb2{ padding:1.5rem }
+.opt-row{ display:flex; align-items:flex-start; gap:.75rem; margin-bottom:1rem; cursor:pointer }
+.opt-row input[type=checkbox]{ width:16px; height:16px; cursor:pointer; accent-color:var(--navy); flex-shrink:0; margin-top:3px }
+.opt-txt{ display:block }
+.opt-lbl{ font-size:.93rem; display:block }
+.opt-desc{ font-size:.75rem; color:var(--text-muted); display:block }
+.seed-note{ font-family:'JetBrains Mono',monospace; font-size:.7rem; background:var(--cream-dark); border:1px solid var(--border); padding:.55rem .85rem; border-radius:3px; color:var(--text-muted); margin-bottom:1.2rem; line-height:1.5 }
+.mactions{ display:flex; gap:.6rem }
+.btn-print{ flex:1; background:var(--navy); color:var(--cream); border:none; padding:.7rem; border-radius:4px; font-family:'Source Serif 4',serif; font-size:.9rem; cursor:pointer; transition:background .2s }
+.btn-print:hover{ background:var(--navy-mid) }
+.btn-cancel{ background:transparent; border:1px solid var(--border); color:var(--text-muted); padding:.7rem 1rem; border-radius:4px; font-family:'Source Serif 4',serif; font-size:.9rem; cursor:pointer; transition:all .2s }
+.btn-cancel:hover{ border-color:var(--text); color:var(--text) }
+
+/* --- 7. Impression --- */
+@media print{
+  body{ background:#fff; font-size:11pt; -webkit-print-color-adjust:exact; print-color-adjust:exact }
+  header{ display:block !important; padding:1rem 1.5rem .8rem }
+  header .subtitle{ display:none }
+  .ctrls, #controls-bar, .top-actions, .top-bar-left, .sol-toggle-wrap,
+  .lang-switch, #pdf-ov, #pdf-modal{ display:none !important }
+  .top-bar{ display:block !important; margin-bottom:.8rem }
+  .top-bar .seed-badge{
+    display:inline-block !important; background:none; border:1px solid var(--border);
+    color:var(--text-muted); font-family:'JetBrains Mono',monospace; font-size:8.5pt;
+    padding:2pt 6pt; border-radius:2px;
+  }
+  body.print-no-header .top-bar{ display:none !important }
+  main{ padding:1rem 1.5rem; max-width:100% }
+  .card{ box-shadow:none; border-radius:0; page-break-inside:avoid; margin-bottom:1rem }
+  #ex-area{ display:block !important }
+  .sol-card{ display:block !important; border-top:2px solid var(--green) }
+  mjx-container[display="true"]{ overflow:visible !important }
+  body.print-no-header header{ display:none !important }
+  body.print-no-header .ctrls{ display:none !important }
+  body.print-no-solution .sol-card,
+  body.print-no-solution .sol-toggle-wrap{ display:none !important }
+  body.print-force-solution .sol-card{ display:block !important }
+}
+</style><!-- KIT:CSS:END -->
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-top">
+    <div class="header-badge" data-k="k-badge">ÉCONOMÉTRIE</div>
+    <div class="lang-switch">
+      <button type="button" class="flag-btn active" id="flag-fr" onclick="setLang('fr')" title="Français" aria-label="Français"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="20" height="40" fill="#002654"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ED2939"/></svg></button>
+      <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
+    </div>
+  </div>
+  <h1 data-k="k-h1">Endogénéité et variables instrumentales</h1>
+  <p class="subtitle" data-k="k-sub">© Thomas Hossen – Version du 16 septembre 2026</p>
+
+  <div id="controls-bar">
+    <div class="ctrls">
+      <div class="ctrl-g">
+        <span class="ctrl-lbl" data-k="k-seed">Seed de reproductibilité</span>
+        <div class="seed-row">
+          <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="0" max="99999999">
+          <button type="button" class="btn-copy-seed" id="btn-copy-seed" onclick="copySeed(this)" title="Copier la seed active"><span data-kit="btnCopy">&#10697; Copier</span></button>
+        </div>
+        <span class="ctrl-tip" data-k="k-seedtip">Vide = aléatoire à chaque génération</span>
+      </div>
+      <div class="ctrl-vsep"></div>
+      <div class="ctrl-g">
+        <span class="ctrl-lbl" data-k="k-n">Observations <em>(n)</em></span>
+        <input class="ctrl-inp" type="number" id="param-n" min="50" max="5000" placeholder="auto">
+        <span class="ctrl-tip" data-k="k-ntip">50 – 5000, auto si vide</span>
+      </div>
+      <div class="ctrl-vsep"></div>
+      <button class="btn-gen" onclick="generateFromControls()"><span data-k="k-gen">Générer</span></button>
+    </div>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" class="welcome-msg">
+    <span class="arrow">↑</span>
+    <span data-k="k-welcome">Configurez les paramètres (ou laissez vide pour de l'aléatoire), puis cliquez sur Générer.</span>
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="top-bar-left">
+        <button type="button" class="btn-sm" onclick="regen()"><span data-kit="btnNew">&#8634; Nouvel &eacute;nonc&eacute;</span></button>
+        <button type="button" class="btn-sm pdf" onclick="openPdfModal()"><span data-kit="btnPdf">&#11015; Exporter PDF</span></button>
+        <button type="button" class="btn-sm doc" onclick="exportWord()"><span data-kit="btnDoc">&#11015; Exporter Word</span></button>
+      </div>
+      <div class="seed-badge"><span data-k="k-seedbadge">Seed&nbsp;:</span> <span id="seed-disp">—</span></div>
+    </div>
+
+    <div id="ex-card" class="card">
+      <div class="card-header"><span class="tag" data-k="k-tag-ex">Énoncé</span><h2 id="card-title" data-k="k-cardtitle">Moindres carrés ordinaires et doubles moindres carrés</h2></div>
+      <div class="card-body" id="ex-content"></div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag" data-k="k-tag-sol">Corrigé</span><h2 id="card-title2" data-k="k-cardtitle2">Moindres carrés ordinaires et doubles moindres carrés</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+let solVisible = false;
+
+/* ============================================================
+   OUTILS NUMERIQUES  /  NUMERIC HELPERS
+   ============================================================ */
+const P10 = [1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000];
+
+function fx(v, d, m) {
+  const neg = v < 0;
+  let s = String(Math.abs(Math.round(v)));
+  let ip = s, fp = '';
+  if (d > 0) { s = s.padStart(d + 1, '0'); ip = s.slice(0, -d); fp = s.slice(-d); }
+  if (ip.length >= 5) {
+    const sep = m ? '\\,' : '\u202F';
+    let out = '';
+    while (ip.length > 3) { out = sep + ip.slice(-3) + out; ip = ip.slice(0, -3); }
+    ip = ip + out;
+  }
+  return (neg ? (m ? '-' : '\u2212') : '') + ip + (d > 0 ? '.' + fp : '');
+}
+function fxf(x, d, m) { return fx(Math.round(x * P10[d]), d, m); }
+/* arrondi au plus proche (demi vers le haut) du rationnel positif num/den, entiers */
+function rhu(num, den) { return Math.floor((2 * num + den) / (2 * den)); }
+/* exp(x) lisible : notation scientifique si la valeur est tres grande ou tres petite */
+function expS(x) {
+  const v = Math.exp(x);
+  if (v >= 1e5 || v < 1e-3) {
+    const l = x / Math.LN10; let k = Math.floor(l); let mnt = Math.pow(10, l - k);
+    if (Math.round(mnt * 10) >= 100) { mnt /= 10; k += 1; }
+    return `${fxf(mnt, 1, true)}\\times 10^{${k}}`;
+  }
+  const d = Math.min(4, Math.max(1, 2 - Math.floor(Math.log10(v))));
+  return fxf(v, d, true);
+}
+/* quantile de la loi de Student (developpement de Cornish-Fisher, erreur < 1e-7 pour nu >= 40) */
+function tq(z, nu) {
+  const g1 = (z ** 3 + z) / 4, g2 = (5 * z ** 5 + 16 * z ** 3 + 3 * z) / 96;
+  const g3 = (3 * z ** 7 + 19 * z ** 5 + 17 * z ** 3 - 15 * z) / 384;
+  const g4 = (79 * z ** 9 + 776 * z ** 7 + 1482 * z ** 5 - 1920 * z ** 3 - 945 * z) / 92160;
+  return z + g1 / nu + g2 / nu ** 2 + g3 / nu ** 3 + g4 / nu ** 4;
+}
+const Z975 = 1.959963984540054, Z995 = 2.5758293035489004;
+
+/* ============================================================
+   SCENARIOS NUMERIQUES (independants de la langue)
+   b0, b1 : 2 decimales ; b2 : d2 decimales ; premiere etape : dP decimales.
+   dir : sens attendu de l'ecart b2(2SLS) - b2(MCO) ; sIV : signe attendu de b2(2SLS).
+   ============================================================ */
+const SC = [
+  { id: 'infl',  n: [80, 160],  eLog: false, zLog: true,  L: { y: 'I', w: 'Y', e: 'O', z: 'S' },
+    b0: [1.50, 4.50], b1: [-0.30, 0.40], b2: [-0.035, -0.008], d2: 3, sIV: -1, dir: -1, cap: 0.08,
+    p0: [60, 160], p1: [-2, 3], p2: [-12, -3], dP: 2, sZ: -1 },
+  { id: 'educ',  n: [400, 3000], eLog: false, zLog: true,  L: { y: 'W', w: 'A', e: 'E', z: 'D' },
+    b0: [1.20, 2.40], b1: [0.04, 0.25], b2: [0.040, 0.095], d2: 3, sIV: 1, dir: 1, cap: 0.18,
+    p0: [10, 16], p1: [-0.5, 0.5], p2: [-0.9, -0.2], dP: 2, sZ: -1 },
+  { id: 'tabac', n: [50, 100],  eLog: true,  zLog: false, L: { y: 'C', w: 'R', e: 'P', z: 'T' },
+    b0: [3.00, 5.50], b1: [0.10, 0.60], b2: [-0.95, -0.25], d2: 2, sIV: -1, dir: -1, cap: 2.5,
+    p0: [0.8, 1.8], p1: [0.05, 0.3], p2: [0.05, 0.25], dP: 3, sZ: 1 },
+  { id: 'crime', n: [60, 160],  eLog: true,  zLog: false, L: { y: 'K', w: 'R', e: 'P', z: 'A' },
+    b0: [5.00, 9.00], b1: [-0.80, -0.10], b2: [-0.15, 0.45], d2: 2, sIV: -1, dir: -1, cap: 1.6, flip: true,
+    p0: [0.3, 1.5], p1: [0.05, 0.4], p2: [0.03, 0.15], dP: 3, sZ: 1 },
+  { id: 'inst',  n: [55, 90],   eLog: false, zLog: true,  L: { y: 'G', w: 'L', e: 'R', z: 'M' },
+    b0: [4.00, 7.00], b1: [0.05, 0.45], b2: [0.30, 0.60], d2: 2, sIV: 1, dir: 1, cap: 1.6,
+    p0: [3, 8], p1: [0.2, 1.2], p2: [-0.9, -0.3], dP: 2, sZ: -1 },
+  { id: 'pub',   n: [100, 400], eLog: true,  zLog: true,  L: { y: 'V', w: 'L', e: 'A', z: 'T' },
+    b0: [1.50, 3.50], b1: [0.45, 0.95], b2: [0.12, 0.35], d2: 2, sIV: 1, dir: -1, cap: 0.35,
+    p0: [1, 4], p1: [0.3, 1.0], p2: [-1.2, -0.3], dP: 2, sZ: -1 },
+  { id: 'form',  n: [150, 600], eLog: false, zLog: true,  L: { y: 'Q', w: 'K', e: 'F', z: 'S' },
+    b0: [1.50, 3.00], b1: [0.15, 0.45], b2: [0.006, 0.018], d2: 3, sIV: 1, dir: -1, cap: 0.018,
+    p0: [5, 30], p1: [1, 6], p2: [2, 8], dP: 2, sZ: 1 }
+];
+
+/* ============================================================
+   DICTIONNAIRE BILINGUE  /  BILINGUAL DICTIONARY
+   ============================================================ */
+const I18N = {
+
+  fr: {
+    "htmlLang": "fr",
+    "title": "Générateur d'exercices - Endogénéité",
+    "k-badge": "ÉCONOMÉTRIE",
+    "k-h1": "Endogénéité et variables instrumentales",
+    "k-sub": "© Thomas Hossen – Version du 16 septembre 2026",
+    "k-seed": "Seed de reproductibilité",
+    "k-seedtip": "Vide = aléatoire à chaque génération",
+    "k-n": "Observations <em>(n)</em>",
+    "k-ntip": "50 – 5000, auto si vide",
+    "k-gen": "Générer",
+    "k-welcome": "Configurez les paramètres (ou laissez vide pour de l'aléatoire), puis cliquez sur Générer.",
+    "k-seedbadge": "Seed&nbsp;:",
+    "k-tag-ex": "Énoncé",
+    "k-cardtitle": "Moindres carrés ordinaires et doubles moindres carrés",
+    "k-tag-sol": "Corrigé",
+    "k-cardtitle2": "Moindres carrés ordinaires et doubles moindres carrés",
+    "phSeed": "auto",
+    "phN": "auto",
+    "showSol": "Afficher le corrigé",
+    "hideSol": "Masquer le corrigé",
+    ols: "MCO",
+    catTxt: c => ["non significatif au niveau de risque de 5&nbsp;% (donc a fortiori à 1&nbsp;%)", "significatif au niveau de risque de 5&nbsp;% mais pas à 1&nbsp;%", "significatif au niveau de risque de 1&nbsp;% (donc a fortiori à 5&nbsp;%)"][c],
+    sc: {
+      infl: {
+        intro: D => `Un économiste s'intéresse à la modélisation du taux d'inflation. Pour tout pays \\(i\\), on note \\(I_i\\) le taux d'inflation annuel du pays \\(i\\) (en % : une valeur de 20 signifie un taux d'inflation de 20&nbsp;%), \\(Y_i\\) son PIB réel par habitant (en dollars) et \\(O_i\\) ses flux commerciaux (importations et exportations) en pourcentage du PIB (une valeur de 66 signifie un taux d'ouverture de 66&nbsp;%). On observe également \\(S_i\\), la superficie du pays \\(i\\) en kilomètres carrés.`,
+        units: "pays", yName: "le taux d'inflation", wName: "le PIB réel par habitant", eName: "le taux d'ouverture", ePl: false, eUnit: "d'un point de pourcentage",
+        yUnit: "%", cond: "un PIB réel par habitant d'un dollar et un pays en autarcie",
+        flip: "",
+        endo: "Le taux d'ouverture est vraisemblablement endogène : une inflation élevée et instable renchérit et complique les échanges internationaux (causalité inverse), et des variables omises, comme la qualité des institutions ou l'indépendance de la banque centrale, influencent à la fois l'ouverture et l'inflation. L'effet modérateur de l'ouverture sur l'inflation (Romer, 1993) serait alors mal mesuré par les MCO.",
+        relev: "la littérature économique montre que les petits pays sont plus ouverts : faute d'un territoire suffisamment vaste et riche en ressources variées, ils ne peuvent pas se permettre l'autarcie, qui reste le privilège des grands pays. On s'attend donc à une corrélation négative entre \\(\\ln(S_i)\\) et \\(O_i\\)",
+        exog: "la superficie d'un pays est fixée par la géographie et l'histoire, et il est plausible qu'elle n'influence l'inflation qu'à travers l'ouverture commerciale. Cette restriction d'exclusion n'est toutefois pas testable avec un seul instrument, et elle peut être discutée : le seul fait que la superficie ne varie pas ne garantit pas qu'elle soit non corrélée à la perturbation, car les grands pays diffèrent aussi des petits par leurs ressources naturelles, leur organisation fédérale ou la taille de leur marché intérieur, autant de facteurs susceptibles d'agir directement sur l'inflation"
+      },
+      educ: {
+        intro: D => `Un économiste du travail étudie le rendement de l'éducation. Pour tout individu \\(i\\), on note \\(W_i\\) son salaire horaire (en euros), \\(A_i\\) son ancienneté dans l'entreprise (en années, au moins égale à 1) et \\(E_i\\) son nombre d'années d'études. On observe également \\(D_i\\), la distance (en kilomètres) entre le domicile de l'individu pendant son adolescence et l'université la plus proche.`,
+        units: "individus", yName: "le salaire horaire", wName: "l'ancienneté", eName: "la durée des études", ePl: false, eUnit: "d'une année",
+        yUnit: "euros de l'heure", cond: "une ancienneté d'un an et un individu n'ayant fait aucune année d'études",
+        flip: "",
+        endo: "La durée des études est vraisemblablement endogène : elle est corrélée à des capacités individuelles non observées (biais d'aptitude), qui accroissent aussi le salaire, et elle est souvent mesurée avec erreur, ce qui crée un biais d'atténuation. La littérature (Card, 1995) trouve fréquemment un rendement estimé par variables instrumentales supérieur à celui des MCO, ce que l'on peut expliquer par l'erreur de mesure ou par le fait que l'instrument identifie le rendement des individus dont la scolarité est la plus sensible au coût d'accès aux études, souvent plus élevé que la moyenne.",
+        relev: "habiter près d'une université réduit le coût financier et le coût d'opportunité des études supérieures. On s'attend donc à une corrélation négative entre \\(\\ln(D_i)\\) et \\(E_i\\)",
+        exog: "la distance à l'université ne devrait affecter le salaire qu'à travers la durée des études. Cette hypothèse est cependant discutable : les familles qui vivent près des universités sont plus souvent urbaines et aisées, et les marchés du travail urbains offrent des salaires plus élevés, ce qui peut créer un lien direct entre \\(D_i\\) et le salaire"
+      },
+      tabac: {
+        intro: D => `Un économiste de la santé étudie la demande de tabac. Pour tout État \\(i\\) d'une fédération, on note \\(C_i\\) la consommation annuelle de cigarettes (en paquets par habitant), \\(R_i\\) le revenu disponible par habitant (en euros) et \\(P_i\\) le prix moyen d'un paquet de cigarettes (en euros, toutes taxes comprises). On observe également \\(T_i\\), le droit d'accise sur le tabac en vigueur dans l'État \\(i\\) (en euros par paquet).`,
+        units: "États", yName: "la consommation de cigarettes", wName: "le revenu par habitant", eName: "le prix du paquet", ePl: false, eUnit: "",
+        yUnit: "paquets par habitant", cond: "un revenu par habitant d'un euro et un paquet vendu un euro",
+        flip: "",
+        endo: "Le prix est endogène car il est déterminé simultanément avec la quantité par la rencontre de l'offre et de la demande : un choc de demande positif accroît à la fois la consommation et le prix, ce qui biaise vers le haut (donc vers zéro) l'élasticité-prix estimée par les MCO. On s'attend donc à une élasticité 2SLS plus négative.",
+        relev: "le droit d'accise est répercuté, au moins en partie, sur le prix de vente. On s'attend donc à une corrélation positive entre \\(T_i\\) et \\(\\ln(P_i)\\)",
+        exog: "le droit d'accise ne devrait affecter la consommation qu'à travers le prix. Cette hypothèse peut être discutée : un État dont la population est hostile au tabac tend à voter des taxes plus élevées et à fumer moins, indépendamment du prix, ce qui corrèlerait \\(T_i\\) avec la perturbation"
+      },
+      crime: {
+        intro: D => `Un économiste étudie l'effet des effectifs de police sur la délinquance. Pour toute ville \\(i\\), on note \\(K_i\\) le taux de criminalité (en crimes pour 100\u202F000 habitants), \\(R_i\\) le revenu médian des ménages (en euros) et \\(P_i\\) le nombre de policiers pour 1\u202F000 habitants. On observe également \\(A_i\\), variable indicatrice valant 1 si une élection municipale a eu lieu dans la ville \\(i\\) au cours de l'année précédente et 0 sinon.`,
+        units: "villes", yName: "le taux de criminalité", wName: "le revenu médian", eName: "le nombre de policiers par habitant", ePl: false, eUnit: "",
+        yUnit: "crimes pour 100\u202F000 habitants", cond: "un revenu médian d'un euro et un policier pour 1\u202F000 habitants",
+        flip: "Ce signe positif est contre-intuitif : il signifie que les villes les mieux dotées en policiers sont aussi celles où la délinquance est la plus forte. Il s'explique vraisemblablement par une causalité inverse, les villes confrontées à une forte délinquance recrutant davantage de policiers : c'est un premier indice d'endogénéité.",
+        endo: "Il y a causalité inverse : les villes confrontées à une forte délinquance recrutent davantage de policiers, ce qui tire l'estimateur des MCO vers le haut, jusqu'à pouvoir inverser son signe (Levitt, 1997). On s'attend donc à un effet 2SLS plus négatif.",
+        relev: "les élus sortants ont tendance à renforcer les effectifs de police à l'approche des élections pour afficher leur action en matière de sécurité. On s'attend donc à une corrélation positive entre \\(A_i\\) et \\(\\ln(P_i)\\)",
+        exog: "le calendrier électoral est fixé à l'avance et n'a pas de raison d'être lié à la délinquance, sinon à travers les effectifs de police. On peut toutefois objecter qu'avant les élections, les élus augmentent aussi d'autres dépenses (éclairage public, aides sociales, équipements) susceptibles de réduire directement la délinquance"
+      },
+      inst: {
+        intro: D => `Un économiste du développement étudie le rôle des institutions dans la prospérité des nations. Pour toute ancienne colonie \\(i\\), on note \\(G_i\\) son PIB par habitant (en dollars), \\(L_i\\) sa distance à l'équateur (latitude absolue, en degrés) et \\(R_i\\) un indice de protection contre le risque d'expropriation (de 0 à 10, une valeur élevée correspondant à des droits de propriété mieux protégés). On observe également \\(M_i\\), le taux de mortalité des premiers colons européens (en décès annuels pour 1\u202F000 colons).`,
+        units: "anciennes colonies", yName: "le PIB par habitant", wName: "la distance à l'équateur", eName: "l'indice de protection contre l'expropriation", ePl: false, eUnit: "d'un point",
+        yUnit: "dollars", cond: "une distance à l'équateur d'un degré et un indice de protection nul",
+        flip: "",
+        endo: "La qualité des institutions est vraisemblablement endogène : les pays riches peuvent s'offrir de meilleures institutions (causalité inverse), et l'indice est mesuré avec erreur, ce qui crée un biais d'atténuation. Acemoglu, Johnson et Robinson (2001) trouvent ainsi un effet estimé par variables instrumentales nettement supérieur à celui des MCO.",
+        relev: "là où la mortalité des colons était élevée, les Européens ne se sont pas installés durablement et ont mis en place des institutions extractives, qui ont persisté après l'indépendance. On s'attend donc à une corrélation négative entre \\(\\ln(M_i)\\) et \\(R_i\\)",
+        exog: "la mortalité des colons, il y a plusieurs siècles, ne devrait affecter le revenu actuel qu'à travers les institutions. Cette restriction d'exclusion a été contestée : l'environnement épidémiologique qui tuait les colons peut peser aujourd'hui encore directement sur la santé, donc sur la productivité, et le contrôle par la latitude n'y suffit pas nécessairement"
+      },
+      pub: {
+        intro: D => `Un économiste d'entreprise étudie l'efficacité des dépenses publicitaires. Pour toute entreprise \\(i\\) d'un même secteur, on note \\(V_i\\) son chiffre d'affaires annuel (en milliers d'euros), \\(L_i\\) son effectif salarié et \\(A_i\\) ses dépenses publicitaires annuelles (en milliers d'euros). On observe également \\(T_i\\), le tarif moyen des espaces publicitaires dans la zone de chalandise de l'entreprise (en euros pour 1\u202F000 contacts).`,
+        units: "entreprises", yName: "le chiffre d'affaires", wName: "l'effectif salarié", eName: "les dépenses publicitaires", ePl: true, eUnit: "",
+        yUnit: "milliers d'euros", cond: "une entreprise d'un seul salarié dépensant 1\u202F000 euros en publicité",
+        flip: "",
+        endo: "Les dépenses publicitaires sont vraisemblablement endogènes : les entreprises fixent souvent leur budget publicitaire en proportion de leur chiffre d'affaires, passé ou attendu. Cette causalité inverse gonfle l'estimateur des MCO, dont on attend qu'il surestime l'effet de la publicité.",
+        relev: "des espaces publicitaires plus chers incitent les entreprises à réduire leurs achats de publicité. On s'attend donc à une corrélation négative entre \\(\\ln(T_i)\\) et \\(\\ln(A_i)\\)",
+        exog: "le tarif des espaces publicitaires ne devrait affecter le chiffre d'affaires qu'à travers le volume de publicité acheté. Cette hypothèse est fragile : les tarifs sont plus élevés dans les zones riches et dynamiques, où la demande adressée aux entreprises est elle-même plus forte, ce qui crée un lien direct entre \\(T_i\\) et la perturbation"
+      },
+      form: {
+        intro: D => `Un économiste étudie l'effet de la formation professionnelle sur la productivité. Pour toute entreprise \\(i\\), on note \\(Q_i\\) sa productivité apparente du travail (valeur ajoutée par salarié, en milliers d'euros), \\(K_i\\) son capital par salarié (en milliers d'euros) et \\(F_i\\) la part de ses salariés ayant suivi une formation dans l'année (en % : une valeur de 30 signifie que 30&nbsp;% des salariés ont été formés). On observe également \\(S_i\\), le montant de l'aide régionale à la formation dont peut bénéficier l'entreprise (en euros par salarié).`,
+        units: "entreprises", yName: "la productivité", wName: "le capital par salarié", eName: "la part de salariés formés", ePl: false, eUnit: "d'un point de pourcentage",
+        yUnit: "milliers d'euros par salarié", cond: "un capital par salarié de 1\u202F000 euros et aucun salarié formé",
+        flip: "",
+        endo: "La part de salariés formés est vraisemblablement endogène : les entreprises les plus productives, mieux gérées ou plus innovantes, forment aussi davantage leurs salariés. Ce biais de sélection, lié à des caractéristiques non observées, gonfle l'estimateur des MCO, qui surestime vraisemblablement l'effet de la formation.",
+        relev: "une aide régionale plus généreuse abaisse le coût de la formation pour l'entreprise. On s'attend donc à une corrélation positive entre \\(\\ln(S_i)\\) et \\(F_i\\)",
+        exog: "l'aide régionale, fixée par les pouvoirs publics, ne devrait affecter la productivité qu'à travers la formation. On peut cependant craindre que les régions les plus dynamiques soient aussi celles qui financent le plus la formation, ou au contraire que les aides ciblent les régions en difficulté, ce qui corrèlerait \\(S_i\\) avec la perturbation"
+      }
+    },
+
+    ex: function (D) {
+      const T = D.T, V = D.V;
+      return `
+      <div class="context-block">
+        ${T.intro(D)} À partir d'une coupe transversale de \\(n:=${D.n}\\) ${T.units}, on estime le modèle de régression linéaire
+        \\[${V.dep}=b_0+b_1${V.w}+b_2${V.e}+u_i\\qquad(1\\leq i\\leq n)\\]
+        où \\(u_i\\) est une variable aléatoire supposée vérifier les hypothèses de Gauss-Markov étendues. L'estimation par la méthode des moindres carrés ordinaires (MCO) donne
+        \\[${D.eqOLS('MCO')}\\]
+        où l'on a indiqué les \\(t\\)-statistiques entre parenthèses sous les estimations des coefficients. Le modélisateur soupçonne la variable \\(${V.e}\\) d'être endogène et l'instrumente par la variable \\(${V.z}\\). La méthode des doubles moindres carrés (2SLS), équivalente ici à celle des variables instrumentales, aboutit aux estimations suivantes :
+        \\[${D.eqIV}\\]
+      </div>
+      <div class="questions"><ol>
+        <li><div class="q-text">Interpréter les coefficients estimés par les MCO. Tester leur significativité au niveau de risque de 5&nbsp;%, puis au niveau de risque de 1&nbsp;%.</div></li>
+        <li><div class="q-text">Montrer que l'estimateur 2SLS est asymptotiquement normal, puis en déduire la validité asymptotique des \\(t\\)-tests de Student sous des conditions que l'on précisera.</div></li>
+        <li><div class="q-text">Comparer dans les grandes lignes les estimations issues de la méthode 2SLS avec celles issues de la méthode des MCO.</div></li>
+        <li><div class="q-text">La variable \\(${V.z}\\) vous semble-t-elle un bon instrument pour la variable \\(${V.e}\\) ? Justifier la réponse à partir de la théorie économique et de l'estimation de première étape.</div></li>
+        <li><div class="q-text">La statistique de Durbin-Wu-Hausman est égale à \\(\\widehat{Q}_H:=${D.S.Q}\\). Vérifier qu'on peut retrouver cette valeur à partir des estimations du coefficient \\(b_2\\). Que peut-on conclure ?</div></li>
+      </ol></div>`;
+    },
+
+    sol: function (D) {
+      const T = D.T, V = D.V, s = D.S, L = I18N.fr;
+      const up = (x) => x > 0 ? 'augmente' : 'diminue';
+      const eVerb = T.ePl ? 'augmentent' : 'augmente';
+      const q = `\\(|\\widehat{t}|\\)`;
+      /* conclusion d'un test bilateral */
+      const test = (k, t, stud) => {
+        const a = Math.abs(t) / 100, lo = stud ? s.q975 : '1.960', hi = stud ? s.q995 : '2.576';
+        const tS = fx(t, 2, true);
+        const c = stud ? D.catS(t) : D.catN(t);
+        const law = stud ? `suit une loi de Student à ${D.df} degrés de liberté` : `suit asymptotiquement une loi normale centrée réduite`;
+        let out = `On teste \\((H_0):b_${k}=0\\) contre \\((H_1):b_${k}\\neq 0\\). Sous \\((H_0)\\), la statistique \\(\\widehat{t}_${k}=${tS}\\) ${law}. `;
+        if (c === 0) out += `Comme \\(|${tS}|<${lo}\\), on ne peut pas rejeter \\((H_0)\\) au niveau de risque de 5&nbsp;%, ni <em>a fortiori</em> au niveau de 1&nbsp;% : la \\(p\\)-valeur du test est supérieure à 0.05, et le coefficient n'est pas statistiquement significatif.`;
+        else if (c === 1) out += `Comme \\(|${tS}|>${lo}\\), on rejette \\((H_0)\\) au niveau de risque de 5&nbsp;%. En revanche, comme \\(|${tS}|<${hi}\\), on ne peut pas la rejeter au niveau de risque de 1&nbsp;% : la \\(p\\)-valeur est comprise entre 0.01 et 0.05.`;
+        else out += `Comme \\(|${tS}|>${hi}\\), on rejette \\((H_0)\\) au niveau de risque de 1&nbsp;%, donc <em>a fortiori</em> au niveau de 5&nbsp;% : la \\(p\\)-valeur est inférieure à 0.01, et le coefficient est très significatif.`;
+        return out;
+      };
+      /* interpretation d'un coefficient de pente */
+      const slopeTxt = (B, dec, isLogX, name, verbX, unitX, pctS) => {
+        const bT = fx(Math.abs(B), dec, true);
+        if (isLogX) return `si ${name} ${verbX} de 1&nbsp;% toutes choses égales par ailleurs, ${T.yName} ${up(B)} en moyenne de \\(${bT}\\)&nbsp;%`;
+        return `si ${name} ${verbX} ${unitX} toutes choses égales par ailleurs, ${T.yName} ${up(B)} en moyenne d'environ \\(100\\times ${bT}=${fx(Math.abs(B), dec - 2, true)}\\)&nbsp;%, ou plus précisément de \\(100\\times|\\exp(${fx(B, dec, true)})-1|\\approx ${pctS}\\)&nbsp;%, puisque le modèle est semi-logarithmique`;
+      };
+      const cmp = (k, Bo, Bi, dec, To, Ti) => {
+        const co = D.catS(To), ci = D.catN(Ti);
+        const same = co === ci;
+        return `${k === 0 ? "L'estimation de la constante" : `L'estimation du coefficient de \\(${V.w}\\)`} passe de \\(${fx(Bo, dec, true)}\\) (MCO) à \\(${fx(Bi, dec, true)}\\) (2SLS). Avec \\(|\\widehat{t}|=${fx(Math.abs(Ti), 2, true)}\\), ce coefficient est ${L.catTxt(ci)} : ${same ? "la conclusion du test est inchangée par rapport aux MCO" : `la conclusion diffère de celle des MCO, où il était ${L.catTxt(co)}`}.`;
+      };
+      const b2cmp = (() => {
+        const o = D.B2 / P10[D.d2], iv = D.B2IV / P10[D.d2];
+        if (Math.sign(o) !== Math.sign(iv)) return `change de signe`;
+        return Math.abs(iv) > Math.abs(o) ? `est plus élevée en valeur absolue` : `est plus faible en valeur absolue`;
+      })();
+      const Hc = D.catH;
+      const hConcl = Hc === 0
+        ? `Comme \\(\\widehat{Q}_H=${s.Q}<3.841\\), on ne peut pas rejeter \\((H_0)\\) au niveau de risque de 5&nbsp;% (ni, <em>a fortiori</em>, à 1&nbsp;%). Il n'est donc pas illégitime de considérer \\(${V.e}\\) comme exogène : les deux estimateurs étant alors convergents, on préfère celui des MCO, qui est plus efficace. L'écart observé entre les deux estimations de \\(b_2\\) peut s'expliquer par la seule imprécision de l'estimateur 2SLS. On se gardera toutefois de conclure que \\(${V.e}\\) est exogène : ne pas rejeter une hypothèse ne la démontre pas, et ce test est peu puissant lorsque l'estimateur 2SLS est imprécis.`
+        : Hc === 1
+        ? `Comme \\(3.841<\\widehat{Q}_H=${s.Q}<6.635\\), on rejette \\((H_0)\\) au niveau de risque de 5&nbsp;%, mais pas au niveau de 1&nbsp;%. Au niveau de 5&nbsp;%, on conclut donc que \\(${V.e}\\) est endogène : l'estimateur des MCO est biaisé et non convergent, et il faut lui préférer l'estimateur 2SLS. Cette conclusion reste toutefois fragile, puisqu'elle ne résiste pas à un niveau de risque plus exigeant.`
+        : `Comme \\(\\widehat{Q}_H=${s.Q}>6.635\\), on rejette \\((H_0)\\) au niveau de risque de 1&nbsp;%, donc <em>a fortiori</em> à 5&nbsp;%. L'endogénéité de \\(${V.e}\\) est nettement établie : l'estimateur des MCO est biaisé et non convergent, et l'on doit retenir les estimations 2SLS.`;
+      const weakH = D.weak ? ` Ce test repose enfin sur la validité de l'instrument, qu'il ne peut pas tester : l'instrument étant faible (question 4), ses conclusions sont ici à considérer avec une prudence particulière.` : ` Ce test repose enfin sur la validité de l'instrument, qu'il suppose acquise sans pouvoir la tester.`;
+      const relQ = D.weak
+        ? `Avec un seul instrument, la statistique de Fisher de significativité de l'instrument vaut \\(F=\\widehat{t}^{\\,2}=(${s.tZ})^2\\approx ${s.F}\\). ${Math.abs(D.TZ) < 196 ? "L'instrument n'est même pas significatif au niveau de risque de 5&nbsp;%, et" : "L'instrument est certes significatif au niveau de risque de 5&nbsp;%, mais"} cette statistique est inférieure au seuil usuel de 10 (Staiger et Stock, 1997) : l'instrument est <em>faible</em>. Dans ce cas, l'estimateur 2SLS est biaisé en direction de celui des MCO en échantillon fini, sa distribution est mal approchée par la loi normale et les \\(t\\)-tests de la question 3 sont peu fiables ; l'écart-type élevé de \\(\\widehat{b}_{2,\\text{2SLS}}\\) en est d'ailleurs le reflet. On préférerait alors des méthodes robustes aux instruments faibles (test d'Anderson-Rubin, estimateur LIML), ou la recherche d'un meilleur instrument.`
+        : `Avec un seul instrument, la statistique de Fisher de significativité de l'instrument vaut \\(F=\\widehat{t}^{\\,2}=(${s.tZ})^2\\approx ${s.F}\\), largement supérieure au seuil usuel de 10 (Staiger et Stock, 1997) : l'instrument est pertinent et n'est pas faible.`;
+      return `<div class="st"><ol>
+
+      <li><div class="q-content">
+        <p>Le modèle comporte \\(K=3\\) coefficients (constante incluse) et \\(n=${D.n}\\) observations. Sous les hypothèses de Gauss-Markov étendues (normalité des perturbations), les \\(t\\)-statistiques suivent sous l'hypothèse nulle une loi de Student à \\(n-K=${D.df}\\) degrés de liberté, dont les quantiles à 97.5&nbsp;% et à 99.5&nbsp;% valent respectivement \\(${s.q975}\\) et \\(${s.q995}\\) environ.</p>
+        <ul>
+          <li>L'estimation de la constante est \\(\\widehat{b}_{0,\\text{MCO}}=${s.b0}\\). Elle correspond à la valeur moyenne attendue de \\(${V.dep}\\) lorsque \\(${V.w}=0\\) et \\(${V.e}=0\\), c'est-à-dire pour ${T.cond} : on aurait alors en moyenne \\(${V.y}\\approx\\exp(${s.b0})\\approx ${s.expb0}\\) ${T.yUnit}. Cette situation se situant très loin du domaine des observations, cette valeur n'a guère de signification économique. ${test(0, D.T0, true)}</li>
+          <li>L'estimation du coefficient de \\(${V.w}\\) est \\(\\widehat{b}_{1,\\text{MCO}}=${s.b1}\\). Le modèle étant log-log pour cette variable, \\(\\widehat{b}_1\\) est une élasticité : ${slopeTxt(D.B1, 2, true, T.wName, 'augmente', '', '')}. ${test(1, D.T1, true)}</li>
+          <li>L'estimation du coefficient de \\(${V.e}\\) est \\(\\widehat{b}_{2,\\text{MCO}}=${s.b2}\\). ${SC[D.sc].eLog ? "Le modèle étant log-log pour cette variable, \\(\\widehat{b}_2\\) est une élasticité" : "Le modèle étant semi-logarithmique pour cette variable, \\(\\widehat{b}_2\\) est une semi-élasticité"} : ${slopeTxt(D.B2, D.d2, SC[D.sc].eLog, T.eName, eVerb, T.eUnit, s.pctExact)}. ${D.flipOLS ? T.flip + ' ' : ''}${test(2, D.T2, true)}</li>
+        </ul>
+      </div></li>
+
+      <li><div class="q-content">
+        <p>On considère un modèle linéaire \\(\\textbf{y}=\\textbf{X}\\textbf{b}+\\textbf{u}\\) estimé à partir de \\(n\\) observations, où \\(\\textbf{X}\\) est une matrice \\(n\\times K\\) dont certaines colonnes sont <em>a priori</em> endogènes. On corrige ce biais à l'aide d'une matrice \\(\\textbf{Z}\\) de taille \\(n\\times L\\), avec \\(L\\geq K\\), obtenue en remplaçant les colonnes problématiques de \\(\\textbf{X}\\) par les observations d'au moins autant de variables instrumentales. On note \\(\\textbf{x}_i^T\\) et \\(\\textbf{z}_i^T\\) les \\(i\\)-ièmes lignes de \\(\\textbf{X}\\) et \\(\\textbf{Z}\\), et \\(\\textbf{P}_{\\textbf{Z}}:=\\textbf{Z}(\\textbf{Z}^T\\textbf{Z})^{-1}\\textbf{Z}^T\\). On suppose que :</p>
+        <ul>
+          <li>les vecteurs \\((\\textbf{x}_i,\\textbf{z}_i,u_i)\\), pour \\(1\\leq i\\leq n\\), sont indépendants et identiquement distribués, et admettent des moments d'ordre 2 finis ;</li>
+          <li>les instruments sont exogènes : \\(\\mathbb{E}[u_i\\,|\\,\\textbf{z}_i]=0\\) ;</li>
+          <li>les perturbations sont homoscédastiques : il existe un réel \\(\\sigma>0\\) tel que \\(\\mathbb{E}[u_i^2\\,|\\,\\textbf{z}_i]=\\sigma^2\\) ;</li>
+          <li>les instruments sont pertinents : la matrice \\(\\textbf{Q}_{\\textbf{ZZ}}:=\\mathbb{E}[\\textbf{z}_i\\textbf{z}_i^T]\\) est inversible et la matrice \\(\\textbf{Q}_{\\textbf{ZX}}:=\\mathbb{E}[\\textbf{z}_i\\textbf{x}_i^T]\\) est de rang \\(K\\) (condition de rang).</li>
+        </ul>
+        <p><strong>Normalité asymptotique.</strong> L'estimateur des doubles moindres carrés s'écrit \\(\\widehat{\\textbf{b}}_{\\text{2SLS}}=(\\textbf{X}^T\\textbf{P}_{\\textbf{Z}}\\textbf{X})^{-1}\\textbf{X}^T\\textbf{P}_{\\textbf{Z}}\\textbf{y}\\). En remplaçant \\(\\textbf{y}\\) par \\(\\textbf{X}\\textbf{b}+\\textbf{u}\\), il vient :
+        \\[\\widehat{\\textbf{b}}_{\\text{2SLS}}=\\textbf{b}+\\textbf{A}_n^{-1}\\textbf{B}_n\\left(\\frac{1}{n}\\textbf{Z}^T\\textbf{u}\\right)\\]
+        où l'on a posé :
+        \\[\\begin{aligned}\\textbf{A}_n&:=\\left(\\frac{1}{n}\\textbf{X}^T\\textbf{Z}\\right)\\left(\\frac{1}{n}\\textbf{Z}^T\\textbf{Z}\\right)^{-1}\\left(\\frac{1}{n}\\textbf{Z}^T\\textbf{X}\\right)\\\\\\textbf{B}_n&:=\\left(\\frac{1}{n}\\textbf{X}^T\\textbf{Z}\\right)\\left(\\frac{1}{n}\\textbf{Z}^T\\textbf{Z}\\right)^{-1}\\end{aligned}\\]
+        D'après la loi des grands nombres, \\(\\frac{1}{n}\\textbf{Z}^T\\textbf{X}=\\frac{1}{n}\\sum_{i=1}^n\\textbf{z}_i\\textbf{x}_i^T\\) et \\(\\frac{1}{n}\\textbf{Z}^T\\textbf{Z}\\) convergent en probabilité vers \\(\\textbf{Q}_{\\textbf{ZX}}\\) et \\(\\textbf{Q}_{\\textbf{ZZ}}\\). La matrice \\(\\textbf{Q}_{\\textbf{ZZ}}\\) étant inversible et l'inversion étant continue sur l'ensemble des matrices inversibles, le théorème de l'application continue assure que \\(\\textbf{A}_n\\) et \\(\\textbf{B}_n\\) convergent en probabilité vers \\(\\textbf{A}:=\\textbf{Q}_{\\textbf{XZ}}\\textbf{Q}_{\\textbf{ZZ}}^{-1}\\textbf{Q}_{\\textbf{ZX}}\\) et \\(\\textbf{B}:=\\textbf{Q}_{\\textbf{XZ}}\\textbf{Q}_{\\textbf{ZZ}}^{-1}\\), où \\(\\textbf{Q}_{\\textbf{XZ}}:=\\textbf{Q}_{\\textbf{ZX}}^T\\). La matrice \\(\\textbf{A}\\) est inversible (symétrique définie positive, grâce à la condition de rang), si bien que \\(\\textbf{A}_n^{-1}\\textbf{B}_n\\) converge en probabilité vers \\(\\textbf{A}^{-1}\\textbf{B}\\).</p>
+        <p>Par ailleurs, d'après le théorème de l'espérance totale et l'exogénéité des instruments, on a \\(\\mathbb{E}[\\textbf{z}_iu_i]=\\mathbb{E}\\big[\\textbf{z}_i\\,\\mathbb{E}[u_i\\,|\\,\\textbf{z}_i]\\big]=\\textbf{0}_{L,1}\\), puis, par homoscédasticité :
+        \\[\\textbf{Var}(\\textbf{z}_iu_i)=\\mathbb{E}[u_i^2\\,\\textbf{z}_i\\textbf{z}_i^T]=\\mathbb{E}\\big[\\mathbb{E}[u_i^2\\,|\\,\\textbf{z}_i]\\,\\textbf{z}_i\\textbf{z}_i^T\\big]=\\sigma^2\\textbf{Q}_{\\textbf{ZZ}}\\]
+        Les vecteurs \\(\\textbf{z}_iu_i\\) étant i.i.d., le théorème central limite de Lindeberg-Lévy assure que \\(\\sqrt{n}\\left(\\frac{1}{n}\\textbf{Z}^T\\textbf{u}\\right)=\\frac{1}{\\sqrt{n}}\\sum_{i=1}^n\\textbf{z}_iu_i\\) converge en loi vers un vecteur gaussien \\(\\textbf{U}\\sim\\mathcal{N}(\\textbf{0}_{L,1},\\sigma^2\\textbf{Q}_{\\textbf{ZZ}})\\). D'après le théorème de Slutsky, il vient alors :
+        \\[\\sqrt{n}\\left(\\widehat{\\textbf{b}}_{\\text{2SLS}}-\\textbf{b}\\right)=\\textbf{A}_n^{-1}\\textbf{B}_n\\,\\sqrt{n}\\left(\\frac{1}{n}\\textbf{Z}^T\\textbf{u}\\right)\\xrightarrow[n\\to+\\infty]{\\mathcal{L}}\\textbf{A}^{-1}\\textbf{B}\\,\\textbf{U}\\sim\\mathcal{N}(\\textbf{0}_{K,1},\\mathbf{\\Sigma})\\]
+        avec \\(\\mathbf{\\Sigma}:=\\sigma^2\\textbf{A}^{-1}\\textbf{B}\\,\\textbf{Q}_{\\textbf{ZZ}}\\,\\textbf{B}^T\\textbf{A}^{-1}=\\sigma^2\\textbf{A}^{-1}\\), puisque \\(\\textbf{B}\\,\\textbf{Q}_{\\textbf{ZZ}}\\,\\textbf{B}^T=\\textbf{Q}_{\\textbf{XZ}}\\textbf{Q}_{\\textbf{ZZ}}^{-1}\\textbf{Q}_{\\textbf{ZX}}=\\textbf{A}\\) et que \\(\\textbf{A}\\) est symétrique. L'estimateur \\(\\widehat{\\textbf{b}}_{\\text{2SLS}}\\) est donc asymptotiquement normal ; il est en particulier convergent, puisque \\(\\textbf{A}_n^{-1}\\textbf{B}_n\\left(\\frac{1}{n}\\textbf{Z}^T\\textbf{u}\\right)\\) converge en probabilité vers \\(\\textbf{A}^{-1}\\textbf{B}\\times\\textbf{0}_{L,1}=\\textbf{0}_{K,1}\\).</p>
+        <p><strong>Validité asymptotique des \\(t\\)-tests.</strong> Posons \\(\\widehat{\\textbf{u}}:=\\textbf{y}-\\textbf{X}\\widehat{\\textbf{b}}_{\\text{2SLS}}\\), calculé avec la matrice \\(\\textbf{X}\\) d'origine et non avec les valeurs ajustées de la première étape : les résidus de la seconde régression effectuée « à la main » conduiraient à des écarts-types erronés. Comme \\(\\widehat{\\textbf{b}}_{\\text{2SLS}}\\) est convergent, la loi des grands nombres assure que \\(\\widehat{\\sigma^2}:=\\frac{\\widehat{\\textbf{u}}^T\\widehat{\\textbf{u}}}{n-K}\\) converge en probabilité vers \\(\\sigma^2\\), donc que \\(\\widehat{\\mathbf{\\Sigma}}:=\\widehat{\\sigma^2}\\textbf{A}_n^{-1}\\) converge en probabilité vers \\(\\mathbf{\\Sigma}\\). Soit alors \\(\\textbf{c}\\in\\mathbb{R}^K\\) non nul et \\(r\\in\\mathbb{R}\\) ; on teste \\((H_0):\\textbf{c}^T\\textbf{b}=r\\). Sous \\((H_0)\\), par stabilité des vecteurs gaussiens par application linéaire, \\(\\sqrt{n}(\\textbf{c}^T\\widehat{\\textbf{b}}_{\\text{2SLS}}-r)\\) converge en loi vers la loi \\(\\mathcal{N}(0,\\textbf{c}^T\\mathbf{\\Sigma}\\textbf{c})\\), avec \\(\\textbf{c}^T\\mathbf{\\Sigma}\\textbf{c}>0\\) puisque \\(\\mathbf{\\Sigma}\\) est définie positive. La fonction \\(x\\mapsto\\sqrt{\\textbf{c}^T\\mathbf{\\Sigma}\\textbf{c}/x}\\) étant continue sur \\(\\mathbb{R}_+^*\\), \\(\\sqrt{\\textbf{c}^T\\mathbf{\\Sigma}\\textbf{c}\\,/\\,\\textbf{c}^T\\widehat{\\mathbf{\\Sigma}}\\textbf{c}}\\) converge en probabilité vers 1, et le théorème de Slutsky donne :
+        \\[\\widehat{t}:=\\frac{\\sqrt{n}\\left(\\textbf{c}^T\\widehat{\\textbf{b}}_{\\text{2SLS}}-r\\right)}{\\sqrt{\\textbf{c}^T\\widehat{\\mathbf{\\Sigma}}\\textbf{c}}}=\\frac{\\sqrt{n}\\left(\\textbf{c}^T\\widehat{\\textbf{b}}_{\\text{2SLS}}-r\\right)}{\\sqrt{\\textbf{c}^T\\mathbf{\\Sigma}\\textbf{c}}}\\times\\sqrt{\\frac{\\textbf{c}^T\\mathbf{\\Sigma}\\textbf{c}}{\\textbf{c}^T\\widehat{\\mathbf{\\Sigma}}\\textbf{c}}}\\xrightarrow[n\\to+\\infty]{\\mathcal{L}}\\mathcal{N}(0,1)\\]
+        En prenant pour \\(\\textbf{c}\\) le \\(k\\)-ième vecteur de la base canonique et \\(r=0\\), on retrouve la \\(t\\)-statistique usuelle \\(\\widehat{t}_k=\\widehat{b}_k\\,/\\,\\sqrt{[\\widehat{\\mathbf{\\Sigma}}]_{kk}/n}\\). Les \\(t\\)-tests (bilatéraux ou unilatéraux) restent donc valables, à condition que l'échantillon soit grand, que les observations soient i.i.d., que les instruments soient exogènes et pertinents (et non faibles) et que les perturbations soient homoscédastiques ; en présence d'hétéroscédasticité, il faut remplacer \\(\\widehat{\\mathbf{\\Sigma}}\\) par l'estimateur robuste de White \\(\\textbf{A}_n^{-1}\\textbf{B}_n\\left(\\frac{1}{n}\\sum_{i=1}^n\\widehat{u}_i^{\\,2}\\,\\textbf{z}_i\\textbf{z}_i^T\\right)\\textbf{B}_n^T\\textbf{A}_n^{-1}\\). La validité n'étant qu'asymptotique, les valeurs critiques sont celles de la loi normale centrée réduite, et non celles d'une loi de Student.</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <p>Les tests de significativité des coefficients 2SLS n'étant valables qu'asymptotiquement, il faut disposer d'un échantillon suffisamment grand ; avec \\(n=${D.n}\\) ${T.units}, on considère cette condition comme vérifiée. Les \\(t\\)-statistiques suivent alors asymptotiquement une loi normale centrée réduite sous l'hypothèse nulle : les valeurs critiques aux niveaux de risque de 5&nbsp;% et de 1&nbsp;% ne sont plus \\(${s.q975}\\) et \\(${s.q995}\\) (quantiles de la loi de Student à ${D.df} degrés de liberté), mais \\(1.960\\) et \\(2.576\\) (quantiles à 97.5&nbsp;% et 99.5&nbsp;% de la loi normale centrée réduite).</p>
+        <ul>
+          <li>${cmp(0, D.B0, D.B0IV, 2, D.T0, D.T0IV)}</li>
+          <li>${cmp(1, D.B1, D.B1IV, 2, D.T1, D.T1IV)}</li>
+          <li>L'estimation du coefficient de \\(${V.e}\\) passe de \\(${s.b2}\\) (MCO) à \\(${s.b2IV}\\) (2SLS) : elle ${b2cmp}. Selon les 2SLS, ${slopeTxt(D.B2IV, D.d2, SC[D.sc].eLog, T.eName, eVerb, T.eUnit, s.pctExactIV)}. Avec \\(|\\widehat{t}|=${fx(Math.abs(D.T2IV), 2, true)}\\), ce coefficient est ${L.catTxt(D.catN(D.T2IV))}${D.catN(D.T2IV) === D.catS(D.T2) ? ", comme avec les MCO" : `, alors qu'il était ${L.catTxt(D.catS(D.T2))} avec les MCO`}. On note aussi que l'écart-type de l'estimateur 2SLS est nettement plus élevé que celui des MCO : c'est le prix à payer pour corriger l'endogénéité, l'estimateur 2SLS n'exploitant que la part de la variabilité de \\(${V.e}\\) expliquée par l'instrument.</li>
+        </ul>
+        <p>${T.endo} L'écart entre les deux estimations de \\(b_2\\) va ici dans le sens attendu et suggère <em>a priori</em> un biais d'endogénéité des MCO ; le test de la question 5 permettra de juger si cet écart est statistiquement significatif.</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <p>Un bon instrument doit vérifier deux conditions : être <em>pertinent</em>, c'est-à-dire corrélé à la variable qu'il instrumente (\\(\\textbf{Cov}(${V.z0},${V.e})\\neq 0\\)), et être <em>exogène</em>, c'est-à-dire non corrélé à la perturbation (\\(\\textbf{Cov}(${V.z0},u_i)=0\\)), ce qui revient à dire qu'il n'influence \\(${V.dep}\\) qu'à travers \\(${V.e}\\) (restriction d'exclusion).</p>
+        <p><strong>Pertinence.</strong> D'un point de vue théorique, ${T.relev}. L'estimation de première étape ${Math.sign(D.P2) === SC[D.sc].sZ ? "va dans ce sens" : "ne va pas dans ce sens"} : le coefficient de \\(${V.z}\\) vaut \\(${s.p2}\\), avec une \\(t\\)-statistique de \\(${s.tZ}\\). ${relQ}</p>
+        <p><strong>Exogénéité.</strong> Du point de vue de la théorie économique, ${T.exog}.</p>
+        <p>En conclusion, \\(${V.z}\\) est ${D.weak ? "un instrument dont l'exogénéité est défendable, mais dont la pertinence empirique est insuffisante : il est faible, et les estimations 2SLS obtenues doivent être considérées avec beaucoup de prudence" : "un instrument pertinent et dont l'exogénéité est défendable, sans pouvoir être démontrée : il constitue un instrument raisonnable, sous réserve des objections précédentes"}.</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <p>On teste l'hypothèse nulle \\((H_0)\\) : « \\(${V.e}\\) est exogène », sous laquelle les estimateurs des MCO et des 2SLS sont tous deux convergents, celui des MCO étant le plus efficace, contre l'hypothèse alternative \\((H_1)\\) : « \\(${V.e}\\) est endogène », sous laquelle seul l'estimateur 2SLS est convergent. Hausman (1978) a montré que, sous \\((H_0)\\), la statistique \\(\\widehat{Q}_H\\) suit asymptotiquement une loi du \\(\\chi^2\\) à \\(k'\\) degrés de liberté, où \\(k'\\) est le nombre de variables potentiellement endogènes ; ici, \\(k'=1\\).</p>
+        <p>Avec une seule variable endogène, la statistique se calcule à partir des seules estimations du coefficient \\(b_2\\) :
+        \\[\\widehat{Q}_H=\\frac{\\left(\\widehat{b}_{2,\\text{2SLS}}-\\widehat{b}_{2,\\text{MCO}}\\right)^2}{\\widehat{\\sigma}_{2,\\text{2SLS}}^2-\\widehat{\\sigma}_{2,\\text{MCO}}^2}\\]
+        où \\(\\widehat{\\sigma}_{2,\\text{MCO}}\\) et \\(\\widehat{\\sigma}_{2,\\text{2SLS}}\\) désignent les écarts-types estimés des deux estimateurs. Sous \\((H_0)\\), l'estimateur des MCO étant le plus efficace, le dénominateur est positif. Chaque écart-type se déduit du quotient de l'estimation par sa \\(t\\)-statistique :
+        \\[\\widehat{\\sigma}_{2,\\text{MCO}}=\\left|\\frac{${s.b2}}{${s.t2}}\\right|\\approx ${s.sO}\\qquad\\text{et}\\qquad\\widehat{\\sigma}_{2,\\text{2SLS}}=\\left|\\frac{${s.b2IV}}{${s.t2IV}}\\right|\\approx ${s.sI}\\]
+        d'où \\(\\widehat{\\sigma}_{2,\\text{MCO}}^2\\approx ${s.vO}\\) et \\(\\widehat{\\sigma}_{2,\\text{2SLS}}^2\\approx ${s.vI}\\). Il vient alors :
+        \\[\\widehat{Q}_H\\approx\\frac{\\left(${s.b2IV}-${s.b2p}\\right)^2}{${s.vI}-${s.vO}}=\\frac{(${s.diff})^2}{${s.den}}=\\frac{${s.num}}{${s.den}}\\approx ${s.Q}\\]
+        ce qui correspond bien à la valeur annoncée.</p>
+        <p>Les quantiles à 95&nbsp;% et à 99&nbsp;% d'une loi du \\(\\chi^2\\) à un degré de liberté valent respectivement \\(3.841\\) et \\(6.635\\) environ. ${hConcl}${weakH}</p>
+      </div></li>
+
+      </ol></div>`;
+    }
+  },
+
+  en: {
+    "htmlLang": "en",
+    "title": "Exercise generator - Endogeneity",
+    "k-badge": "ECONOMETRICS",
+    "k-h1": "Endogeneity and Instrumental Variables",
+    "k-sub": "© Thomas Hossen – September 16, 2026 Version",
+    "k-seed": "Reproducibility seed",
+    "k-seedtip": "Empty = random at each generation",
+    "k-n": "Observations <em>(n)</em>",
+    "k-ntip": "50 – 5000, auto if left empty",
+    "k-gen": "Generate",
+    "k-welcome": "Configure the parameters (or leave them empty for random values), then click Generate.",
+    "k-seedbadge": "Seed:",
+    "k-tag-ex": "Problem",
+    "k-cardtitle": "Ordinary least squares and two-stage least squares",
+    "k-tag-sol": "Solution",
+    "k-cardtitle2": "Ordinary least squares and two-stage least squares",
+    "phSeed": "auto",
+    "phN": "auto",
+    "showSol": "Show the solution",
+    "hideSol": "Hide the solution",
+    ols: "OLS",
+    catTxt: c => ["not significant at the 5% level (hence not at the 1% level either)", "significant at the 5% level but not at the 1% level", "significant at the 1% level (hence also at the 5% level)"][c],
+    sc: {
+      infl: {
+        intro: D => `An economist is interested in modelling the inflation rate. For every country \\(i\\), we write \\(I_i\\) for the annual inflation rate of country \\(i\\) (in %: a value of 20 means an inflation rate of 20%), \\(Y_i\\) for its real GDP per capita (in dollars) and \\(O_i\\) for its trade flows (imports and exports) as a percentage of GDP (a value of 66 means a trade openness of 66%). We also observe \\(S_i\\), the area of country \\(i\\) in square kilometres.`,
+        units: "countries", yName: "the inflation rate", wName: "real GDP per capita", eName: "trade openness", eUnit: "by one percentage point",
+        yUnit: "%", cond: "a real GDP per capita of one dollar and a country in autarky",
+        flip: "",
+        endo: "Trade openness is likely to be endogenous: high and volatile inflation makes international trade costlier and more complicated (reverse causality), and omitted variables such as the quality of institutions or central bank independence affect both openness and inflation. The moderating effect of openness on inflation (Romer, 1993) would then be poorly measured by OLS.",
+        relev: "the economic literature shows that small countries are more open: lacking a sufficiently large territory rich in varied resources, they cannot afford autarky, which remains the privilege of large countries. We therefore expect a negative correlation between \\(\\ln(S_i)\\) and \\(O_i\\)",
+        exog: "a country's area is fixed by geography and history, and it is plausible that it affects inflation only through trade openness. This exclusion restriction cannot, however, be tested with a single instrument, and it is debatable: the mere fact that area does not change does not guarantee that it is uncorrelated with the disturbance, since large countries also differ from small ones in their natural resources, federal organisation or domestic market size, all factors that may directly affect inflation"
+      },
+      educ: {
+        intro: D => `A labour economist studies the returns to education. For every individual \\(i\\), we write \\(W_i\\) for their hourly wage (in euros), \\(A_i\\) for their tenure in the firm (in years, at least 1) and \\(E_i\\) for their number of years of education. We also observe \\(D_i\\), the distance (in kilometres) between the individual's home during adolescence and the nearest university.`,
+        units: "individuals", yName: "the hourly wage", wName: "tenure", eName: "the length of education", eUnit: "by one year",
+        yUnit: "euros per hour", cond: "one year of tenure and an individual with no education at all",
+        flip: "",
+        endo: "The length of education is likely to be endogenous: it is correlated with unobserved individual ability (ability bias), which also raises wages, and it is often measured with error, which creates attenuation bias. The literature (Card, 1995) frequently finds an instrumental-variable return higher than the OLS one, which can be explained by measurement error or by the fact that the instrument identifies the return for individuals whose schooling is most sensitive to the cost of access to education, often higher than average.",
+        relev: "living close to a university reduces the financial and opportunity costs of higher education. We therefore expect a negative correlation between \\(\\ln(D_i)\\) and \\(E_i\\)",
+        exog: "distance to university should affect wages only through the length of education. This assumption is debatable, however: families living close to universities are more often urban and well-off, and urban labour markets pay higher wages, which may create a direct link between \\(D_i\\) and the wage"
+      },
+      tabac: {
+        intro: D => `A health economist studies the demand for tobacco. For every state \\(i\\) of a federation, we write \\(C_i\\) for annual cigarette consumption (in packs per capita), \\(R_i\\) for disposable income per capita (in euros) and \\(P_i\\) for the average price of a pack of cigarettes (in euros, all taxes included). We also observe \\(T_i\\), the excise duty on tobacco in force in state \\(i\\) (in euros per pack).`,
+        units: "states", yName: "cigarette consumption", wName: "income per capita", eName: "the price of a pack", eUnit: "",
+        yUnit: "packs per capita", cond: "an income per capita of one euro and a pack sold for one euro",
+        flip: "",
+        endo: "The price is endogenous because it is determined jointly with quantity by the interaction of supply and demand: a positive demand shock raises both consumption and price, which biases the OLS price elasticity upwards (hence towards zero). We therefore expect a more negative 2SLS elasticity.",
+        relev: "the excise duty is passed on, at least partly, to the retail price. We therefore expect a positive correlation between \\(T_i\\) and \\(\\ln(P_i)\\)",
+        exog: "the excise duty should affect consumption only through the price. This assumption is debatable: a state whose population is hostile to tobacco tends to vote higher taxes and to smoke less, regardless of the price, which would correlate \\(T_i\\) with the disturbance"
+      },
+      crime: {
+        intro: D => `An economist studies the effect of police numbers on crime. For every city \\(i\\), we write \\(K_i\\) for the crime rate (in crimes per 100\u202F000 inhabitants), \\(R_i\\) for median household income (in euros) and \\(P_i\\) for the number of police officers per 1\u202F000 inhabitants. We also observe \\(A_i\\), a dummy variable equal to 1 if a municipal election took place in city \\(i\\) during the previous year and 0 otherwise.`,
+        units: "cities", yName: "the crime rate", wName: "median income", eName: "the number of police officers per capita", eUnit: "",
+        yUnit: "crimes per 100\u202F000 inhabitants", cond: "a median income of one euro and one police officer per 1\u202F000 inhabitants",
+        flip: "This positive sign is counter-intuitive: it means that the cities with the most police officers are also those with the most crime. It is most likely explained by reverse causality, since cities facing high crime hire more police officers: this is a first hint of endogeneity.",
+        endo: "There is reverse causality: cities facing high crime hire more police officers, which pushes the OLS estimator upwards, possibly to the point of reversing its sign (Levitt, 1997). We therefore expect a more negative 2SLS effect.",
+        relev: "incumbent mayors tend to increase police numbers ahead of elections to showcase their record on public safety. We therefore expect a positive correlation between \\(A_i\\) and \\(\\ln(P_i)\\)",
+        exog: "the electoral calendar is set in advance and has no reason to be related to crime other than through police numbers. One may object, however, that before elections, mayors also raise other spending (street lighting, social assistance, facilities) that may directly reduce crime"
+      },
+      inst: {
+        intro: D => `A development economist studies the role of institutions in the prosperity of nations. For every former colony \\(i\\), we write \\(G_i\\) for its GDP per capita (in dollars), \\(L_i\\) for its distance from the equator (absolute latitude, in degrees) and \\(R_i\\) for an index of protection against expropriation risk (from 0 to 10, a higher value meaning better-protected property rights). We also observe \\(M_i\\), the mortality rate of the first European settlers (in annual deaths per 1\u202F000 settlers).`,
+        units: "former colonies", yName: "GDP per capita", wName: "distance from the equator", eName: "the index of protection against expropriation", eUnit: "by one point",
+        yUnit: "dollars", cond: "a distance from the equator of one degree and a protection index of zero",
+        flip: "",
+        endo: "The quality of institutions is likely to be endogenous: rich countries can afford better institutions (reverse causality), and the index is measured with error, which creates attenuation bias. Acemoglu, Johnson and Robinson (2001) thus find an instrumental-variable effect markedly larger than the OLS one.",
+        relev: "where settler mortality was high, Europeans did not settle permanently and set up extractive institutions, which persisted after independence. We therefore expect a negative correlation between \\(\\ln(M_i)\\) and \\(R_i\\)",
+        exog: "settler mortality several centuries ago should affect current income only through institutions. This exclusion restriction has been challenged: the disease environment that killed settlers may still weigh directly on health today, hence on productivity, and controlling for latitude is not necessarily enough"
+      },
+      pub: {
+        intro: D => `A business economist studies the effectiveness of advertising expenditure. For every firm \\(i\\) in a given industry, we write \\(V_i\\) for its annual sales revenue (in thousands of euros), \\(L_i\\) for its headcount and \\(A_i\\) for its annual advertising expenditure (in thousands of euros). We also observe \\(T_i\\), the average price of advertising space in the firm's catchment area (in euros per 1\u202F000 contacts).`,
+        units: "firms", yName: "sales revenue", wName: "headcount", eName: "advertising expenditure", eUnit: "",
+        yUnit: "thousand euros", cond: "a single-employee firm spending 1\u202F000 euros on advertising",
+        flip: "",
+        endo: "Advertising expenditure is likely to be endogenous: firms often set their advertising budget as a proportion of past or expected sales. This reverse causality inflates the OLS estimator, which is expected to overstate the effect of advertising.",
+        relev: "more expensive advertising space leads firms to buy less advertising. We therefore expect a negative correlation between \\(\\ln(T_i)\\) and \\(\\ln(A_i)\\)",
+        exog: "the price of advertising space should affect sales only through the volume of advertising purchased. This assumption is fragile: prices are higher in rich and dynamic areas, where the demand faced by firms is itself stronger, which creates a direct link between \\(T_i\\) and the disturbance"
+      },
+      form: {
+        intro: D => `An economist studies the effect of vocational training on productivity. For every firm \\(i\\), we write \\(Q_i\\) for its apparent labour productivity (value added per employee, in thousands of euros), \\(K_i\\) for its capital per employee (in thousands of euros) and \\(F_i\\) for the share of its employees who received training during the year (in %: a value of 30 means that 30% of employees were trained). We also observe \\(S_i\\), the amount of regional training subsidy available to the firm (in euros per employee).`,
+        units: "firms", yName: "productivity", wName: "capital per employee", eName: "the share of trained employees", eUnit: "by one percentage point",
+        yUnit: "thousand euros per employee", cond: "a capital per employee of 1\u202F000 euros and no trained employee",
+        flip: "",
+        endo: "The share of trained employees is likely to be endogenous: the most productive firms, better managed or more innovative, also train their employees more. This selection bias, linked to unobserved characteristics, inflates the OLS estimator, which probably overstates the effect of training.",
+        relev: "a more generous regional subsidy lowers the cost of training for the firm. We therefore expect a positive correlation between \\(\\ln(S_i)\\) and \\(F_i\\)",
+        exog: "the regional subsidy, set by public authorities, should affect productivity only through training. One may fear, however, that the most dynamic regions are also those that fund training the most, or conversely that subsidies target struggling regions, which would correlate \\(S_i\\) with the disturbance"
+      }
+    },
+
+    ex: function (D) {
+      const T = D.T, V = D.V;
+      return `
+      <div class="context-block">
+        ${T.intro(D)} Using a cross-section of \\(n:=${D.n}\\) ${T.units}, we estimate the linear regression model
+        \\[${V.dep}=b_0+b_1${V.w}+b_2${V.e}+u_i\\qquad(1\\leq i\\leq n)\\]
+        where \\(u_i\\) is a random variable assumed to satisfy the extended Gauss-Markov assumptions. Estimation by ordinary least squares (OLS) yields
+        \\[${D.eqOLS('OLS')}\\]
+        where the \\(t\\)-statistics are shown in parentheses below the estimated coefficients. The modeller suspects the variable \\(${V.e}\\) of being endogenous and instruments it with the variable \\(${V.z}\\). The two-stage least squares method (2SLS), here equivalent to the instrumental variables method, yields the following estimates:
+        \\[${D.eqIV}\\]
+      </div>
+      <div class="questions"><ol>
+        <li><div class="q-text">Interpret the coefficients estimated by OLS. Test their significance at the 5% level, then at the 1% level.</div></li>
+        <li><div class="q-text">Show that the 2SLS estimator is asymptotically normal, then deduce the asymptotic validity of Student's \\(t\\)-tests under conditions to be specified.</div></li>
+        <li><div class="q-text">Compare, in broad terms, the estimates obtained with the 2SLS method with those obtained with OLS.</div></li>
+        <li><div class="q-text">Does the variable \\(${V.z}\\) seem to be a good instrument for the variable \\(${V.e}\\)? Justify your answer using economic theory and the first-stage estimation.</div></li>
+        <li><div class="q-text">The Durbin-Wu-Hausman statistic equals \\(\\widehat{Q}_H:=${D.S.Q}\\). Check that this value can be recovered from the estimates of the coefficient \\(b_2\\). What can be concluded?</div></li>
+      </ol></div>`;
+    },
+
+    sol: function (D) {
+      const T = D.T, V = D.V, s = D.S, L = I18N.en;
+      const up = (x) => x > 0 ? 'rises' : 'falls';
+      const test = (k, t, stud) => {
+        const lo = stud ? s.q975 : '1.960', hi = stud ? s.q995 : '2.576';
+        const tS = fx(t, 2, true);
+        const c = stud ? D.catS(t) : D.catN(t);
+        const law = stud ? `follows a Student distribution with ${D.df} degrees of freedom` : `asymptotically follows a standard normal distribution`;
+        let out = `We test \\((H_0):b_${k}=0\\) against \\((H_1):b_${k}\\neq 0\\). Under \\((H_0)\\), the statistic \\(\\widehat{t}_${k}=${tS}\\) ${law}. `;
+        if (c === 0) out += `Since \\(|${tS}|<${lo}\\), we cannot reject \\((H_0)\\) at the 5% level, and <em>a fortiori</em> not at the 1% level: the \\(p\\)-value of the test exceeds 0.05, and the coefficient is not statistically significant.`;
+        else if (c === 1) out += `Since \\(|${tS}|>${lo}\\), we reject \\((H_0)\\) at the 5% level. However, since \\(|${tS}|<${hi}\\), we cannot reject it at the 1% level: the \\(p\\)-value lies between 0.01 and 0.05.`;
+        else out += `Since \\(|${tS}|>${hi}\\), we reject \\((H_0)\\) at the 1% level, hence <em>a fortiori</em> at the 5% level: the \\(p\\)-value is below 0.01, and the coefficient is highly significant.`;
+        return out;
+      };
+      const slopeTxt = (B, dec, isLogX, name, unitX, pctS) => {
+        const bT = fx(Math.abs(B), dec, true);
+        if (isLogX) return `if ${name} rises by 1%, all else being equal, ${T.yName} ${up(B)} by \\(${bT}\\)% on average`;
+        return `if ${name} rises ${unitX}, all else being equal, ${T.yName} ${up(B)} on average by about \\(100\\times ${bT}=${fx(Math.abs(B), dec - 2, true)}\\)%, or more precisely by \\(100\\times|\\exp(${fx(B, dec, true)})-1|\\approx ${pctS}\\)%, since the model is semi-logarithmic`;
+      };
+      const cmp = (k, Bo, Bi, dec, To, Ti) => {
+        const co = D.catS(To), ci = D.catN(Ti);
+        const same = co === ci;
+        return `${k === 0 ? "The estimate of the constant" : `The estimate of the coefficient of \\(${V.w}\\)`} moves from \\(${fx(Bo, dec, true)}\\) (OLS) to \\(${fx(Bi, dec, true)}\\) (2SLS). With \\(|\\widehat{t}|=${fx(Math.abs(Ti), 2, true)}\\), this coefficient is ${L.catTxt(ci)}: ${same ? "the test conclusion is the same as with OLS" : `the conclusion differs from OLS, where it was ${L.catTxt(co)}`}.`;
+      };
+      const b2cmp = (() => {
+        const o = D.B2 / P10[D.d2], iv = D.B2IV / P10[D.d2];
+        if (Math.sign(o) !== Math.sign(iv)) return `changes sign`;
+        return Math.abs(iv) > Math.abs(o) ? `is larger in absolute value` : `is smaller in absolute value`;
+      })();
+      const Hc = D.catH;
+      const hConcl = Hc === 0
+        ? `Since \\(\\widehat{Q}_H=${s.Q}<3.841\\), we cannot reject \\((H_0)\\) at the 5% level (nor, <em>a fortiori</em>, at the 1% level). It is therefore not unreasonable to treat \\(${V.e}\\) as exogenous: both estimators then being consistent, we prefer OLS, which is more efficient. The observed gap between the two estimates of \\(b_2\\) may be explained by the imprecision of the 2SLS estimator alone. We should nonetheless refrain from concluding that \\(${V.e}\\) is exogenous: failing to reject a hypothesis does not prove it, and this test has little power when the 2SLS estimator is imprecise.`
+        : Hc === 1
+        ? `Since \\(3.841<\\widehat{Q}_H=${s.Q}<6.635\\), we reject \\((H_0)\\) at the 5% level but not at the 1% level. At the 5% level, we therefore conclude that \\(${V.e}\\) is endogenous: the OLS estimator is biased and inconsistent, and the 2SLS estimator should be preferred. This conclusion remains fragile, however, since it does not survive a more demanding significance level.`
+        : `Since \\(\\widehat{Q}_H=${s.Q}>6.635\\), we reject \\((H_0)\\) at the 1% level, hence <em>a fortiori</em> at the 5% level. The endogeneity of \\(${V.e}\\) is clearly established: the OLS estimator is biased and inconsistent, and the 2SLS estimates must be retained.`;
+      const weakH = D.weak ? ` Finally, this test relies on the validity of the instrument, which it cannot test: since the instrument is weak (question 4), its conclusions should be treated with particular caution here.` : ` Finally, this test relies on the validity of the instrument, which it takes for granted without being able to test it.`;
+      const relQ = D.weak
+        ? `With a single instrument, the Fisher statistic for the significance of the instrument equals \\(F=\\widehat{t}^{\\,2}=(${s.tZ})^2\\approx ${s.F}\\). ${Math.abs(D.TZ) < 196 ? "The instrument is not even significant at the 5% level, and" : "The instrument is admittedly significant at the 5% level, but"} this statistic is below the usual threshold of 10 (Staiger and Stock, 1997): the instrument is <em>weak</em>. In that case, the 2SLS estimator is biased towards OLS in finite samples, its distribution is poorly approximated by the normal distribution and the \\(t\\)-tests of question 3 are unreliable; the large standard error of \\(\\widehat{b}_{2,\\text{2SLS}}\\) reflects this. One would then prefer methods that are robust to weak instruments (Anderson-Rubin test, LIML estimator), or look for a better instrument.`
+        : `With a single instrument, the Fisher statistic for the significance of the instrument equals \\(F=\\widehat{t}^{\\,2}=(${s.tZ})^2\\approx ${s.F}\\), well above the usual threshold of 10 (Staiger and Stock, 1997): the instrument is relevant and not weak.`;
+      return `<div class="st"><ol>
+
+      <li><div class="q-content">
+        <p>The model has \\(K=3\\) coefficients (constant included) and \\(n=${D.n}\\) observations. Under the extended Gauss-Markov assumptions (normal disturbances), the \\(t\\)-statistics follow, under the null hypothesis, a Student distribution with \\(n-K=${D.df}\\) degrees of freedom, whose 97.5% and 99.5% quantiles are approximately \\(${s.q975}\\) and \\(${s.q995}\\) respectively.</p>
+        <ul>
+          <li>The estimate of the constant is \\(\\widehat{b}_{0,\\text{OLS}}=${s.b0}\\). It is the expected mean value of \\(${V.dep}\\) when \\(${V.w}=0\\) and \\(${V.e}=0\\), that is for ${T.cond}: we would then have on average \\(${V.y}\\approx\\exp(${s.b0})\\approx ${s.expb0}\\) ${T.yUnit}. Since this situation lies very far from the observed data, this value has little economic meaning. ${test(0, D.T0, true)}</li>
+          <li>The estimate of the coefficient of \\(${V.w}\\) is \\(\\widehat{b}_{1,\\text{OLS}}=${s.b1}\\). Since the model is log-log in this variable, \\(\\widehat{b}_1\\) is an elasticity: ${slopeTxt(D.B1, 2, true, T.wName, '', '')}. ${test(1, D.T1, true)}</li>
+          <li>The estimate of the coefficient of \\(${V.e}\\) is \\(\\widehat{b}_{2,\\text{OLS}}=${s.b2}\\). ${SC[D.sc].eLog ? "Since the model is log-log in this variable, \\(\\widehat{b}_2\\) is an elasticity" : "Since the model is semi-logarithmic in this variable, \\(\\widehat{b}_2\\) is a semi-elasticity"}: ${slopeTxt(D.B2, D.d2, SC[D.sc].eLog, T.eName, T.eUnit, s.pctExact)}. ${D.flipOLS ? T.flip + ' ' : ''}${test(2, D.T2, true)}</li>
+        </ul>
+      </div></li>
+
+      <li><div class="q-content">
+        <p>Consider a linear model \\(\\textbf{y}=\\textbf{X}\\textbf{b}+\\textbf{u}\\) estimated from \\(n\\) observations, where \\(\\textbf{X}\\) is an \\(n\\times K\\) matrix some of whose columns are <em>a priori</em> endogenous. This bias is corrected using an \\(n\\times L\\) matrix \\(\\textbf{Z}\\), with \\(L\\geq K\\), obtained by replacing the problematic columns of \\(\\textbf{X}\\) with the observations of at least as many instrumental variables. We write \\(\\textbf{x}_i^T\\) and \\(\\textbf{z}_i^T\\) for the \\(i\\)-th rows of \\(\\textbf{X}\\) and \\(\\textbf{Z}\\), and \\(\\textbf{P}_{\\textbf{Z}}:=\\textbf{Z}(\\textbf{Z}^T\\textbf{Z})^{-1}\\textbf{Z}^T\\). We assume that:</p>
+        <ul>
+          <li>the vectors \\((\\textbf{x}_i,\\textbf{z}_i,u_i)\\), for \\(1\\leq i\\leq n\\), are independent and identically distributed, with finite moments of order 2;</li>
+          <li>the instruments are exogenous: \\(\\mathbb{E}[u_i\\,|\\,\\textbf{z}_i]=0\\);</li>
+          <li>the disturbances are homoscedastic: there exists a real \\(\\sigma>0\\) such that \\(\\mathbb{E}[u_i^2\\,|\\,\\textbf{z}_i]=\\sigma^2\\);</li>
+          <li>the instruments are relevant: the matrix \\(\\textbf{Q}_{\\textbf{ZZ}}:=\\mathbb{E}[\\textbf{z}_i\\textbf{z}_i^T]\\) is invertible and the matrix \\(\\textbf{Q}_{\\textbf{ZX}}:=\\mathbb{E}[\\textbf{z}_i\\textbf{x}_i^T]\\) has rank \\(K\\) (rank condition).</li>
+        </ul>
+        <p><strong>Asymptotic normality.</strong> The two-stage least squares estimator reads \\(\\widehat{\\textbf{b}}_{\\text{2SLS}}=(\\textbf{X}^T\\textbf{P}_{\\textbf{Z}}\\textbf{X})^{-1}\\textbf{X}^T\\textbf{P}_{\\textbf{Z}}\\textbf{y}\\). Replacing \\(\\textbf{y}\\) with \\(\\textbf{X}\\textbf{b}+\\textbf{u}\\), we get:
+        \\[\\widehat{\\textbf{b}}_{\\text{2SLS}}=\\textbf{b}+\\textbf{A}_n^{-1}\\textbf{B}_n\\left(\\frac{1}{n}\\textbf{Z}^T\\textbf{u}\\right)\\]
+        where we have set:
+        \\[\\begin{aligned}\\textbf{A}_n&:=\\left(\\frac{1}{n}\\textbf{X}^T\\textbf{Z}\\right)\\left(\\frac{1}{n}\\textbf{Z}^T\\textbf{Z}\\right)^{-1}\\left(\\frac{1}{n}\\textbf{Z}^T\\textbf{X}\\right)\\\\\\textbf{B}_n&:=\\left(\\frac{1}{n}\\textbf{X}^T\\textbf{Z}\\right)\\left(\\frac{1}{n}\\textbf{Z}^T\\textbf{Z}\\right)^{-1}\\end{aligned}\\]
+        By the law of large numbers, \\(\\frac{1}{n}\\textbf{Z}^T\\textbf{X}=\\frac{1}{n}\\sum_{i=1}^n\\textbf{z}_i\\textbf{x}_i^T\\) and \\(\\frac{1}{n}\\textbf{Z}^T\\textbf{Z}\\) converge in probability to \\(\\textbf{Q}_{\\textbf{ZX}}\\) and \\(\\textbf{Q}_{\\textbf{ZZ}}\\). Since \\(\\textbf{Q}_{\\textbf{ZZ}}\\) is invertible and inversion is continuous on the set of invertible matrices, the continuous mapping theorem ensures that \\(\\textbf{A}_n\\) and \\(\\textbf{B}_n\\) converge in probability to \\(\\textbf{A}:=\\textbf{Q}_{\\textbf{XZ}}\\textbf{Q}_{\\textbf{ZZ}}^{-1}\\textbf{Q}_{\\textbf{ZX}}\\) and \\(\\textbf{B}:=\\textbf{Q}_{\\textbf{XZ}}\\textbf{Q}_{\\textbf{ZZ}}^{-1}\\), where \\(\\textbf{Q}_{\\textbf{XZ}}:=\\textbf{Q}_{\\textbf{ZX}}^T\\). The matrix \\(\\textbf{A}\\) is invertible (symmetric positive definite, thanks to the rank condition), so that \\(\\textbf{A}_n^{-1}\\textbf{B}_n\\) converges in probability to \\(\\textbf{A}^{-1}\\textbf{B}\\).</p>
+        <p>Moreover, by the law of total expectation and the exogeneity of the instruments, \\(\\mathbb{E}[\\textbf{z}_iu_i]=\\mathbb{E}\\big[\\textbf{z}_i\\,\\mathbb{E}[u_i\\,|\\,\\textbf{z}_i]\\big]=\\textbf{0}_{L,1}\\), and, by homoscedasticity:
+        \\[\\textbf{Var}(\\textbf{z}_iu_i)=\\mathbb{E}[u_i^2\\,\\textbf{z}_i\\textbf{z}_i^T]=\\mathbb{E}\\big[\\mathbb{E}[u_i^2\\,|\\,\\textbf{z}_i]\\,\\textbf{z}_i\\textbf{z}_i^T\\big]=\\sigma^2\\textbf{Q}_{\\textbf{ZZ}}\\]
+        Since the vectors \\(\\textbf{z}_iu_i\\) are i.i.d., the Lindeberg-Lévy central limit theorem ensures that \\(\\sqrt{n}\\left(\\frac{1}{n}\\textbf{Z}^T\\textbf{u}\\right)=\\frac{1}{\\sqrt{n}}\\sum_{i=1}^n\\textbf{z}_iu_i\\) converges in distribution to a Gaussian vector \\(\\textbf{U}\\sim\\mathcal{N}(\\textbf{0}_{L,1},\\sigma^2\\textbf{Q}_{\\textbf{ZZ}})\\). By Slutsky's theorem, we then get:
+        \\[\\sqrt{n}\\left(\\widehat{\\textbf{b}}_{\\text{2SLS}}-\\textbf{b}\\right)=\\textbf{A}_n^{-1}\\textbf{B}_n\\,\\sqrt{n}\\left(\\frac{1}{n}\\textbf{Z}^T\\textbf{u}\\right)\\xrightarrow[n\\to+\\infty]{\\mathcal{L}}\\textbf{A}^{-1}\\textbf{B}\\,\\textbf{U}\\sim\\mathcal{N}(\\textbf{0}_{K,1},\\mathbf{\\Sigma})\\]
+        with \\(\\mathbf{\\Sigma}:=\\sigma^2\\textbf{A}^{-1}\\textbf{B}\\,\\textbf{Q}_{\\textbf{ZZ}}\\,\\textbf{B}^T\\textbf{A}^{-1}=\\sigma^2\\textbf{A}^{-1}\\), since \\(\\textbf{B}\\,\\textbf{Q}_{\\textbf{ZZ}}\\,\\textbf{B}^T=\\textbf{Q}_{\\textbf{XZ}}\\textbf{Q}_{\\textbf{ZZ}}^{-1}\\textbf{Q}_{\\textbf{ZX}}=\\textbf{A}\\) and \\(\\textbf{A}\\) is symmetric. The estimator \\(\\widehat{\\textbf{b}}_{\\text{2SLS}}\\) is therefore asymptotically normal; in particular it is consistent, since \\(\\textbf{A}_n^{-1}\\textbf{B}_n\\left(\\frac{1}{n}\\textbf{Z}^T\\textbf{u}\\right)\\) converges in probability to \\(\\textbf{A}^{-1}\\textbf{B}\\times\\textbf{0}_{L,1}=\\textbf{0}_{K,1}\\).</p>
+        <p><strong>Asymptotic validity of \\(t\\)-tests.</strong> Let \\(\\widehat{\\textbf{u}}:=\\textbf{y}-\\textbf{X}\\widehat{\\textbf{b}}_{\\text{2SLS}}\\), computed with the original matrix \\(\\textbf{X}\\) and not with the first-stage fitted values: the residuals of a second-stage regression run “by hand” would lead to wrong standard errors. Since \\(\\widehat{\\textbf{b}}_{\\text{2SLS}}\\) is consistent, the law of large numbers ensures that \\(\\widehat{\\sigma^2}:=\\frac{\\widehat{\\textbf{u}}^T\\widehat{\\textbf{u}}}{n-K}\\) converges in probability to \\(\\sigma^2\\), hence that \\(\\widehat{\\mathbf{\\Sigma}}:=\\widehat{\\sigma^2}\\textbf{A}_n^{-1}\\) converges in probability to \\(\\mathbf{\\Sigma}\\). Now let \\(\\textbf{c}\\in\\mathbb{R}^K\\) be non-zero and \\(r\\in\\mathbb{R}\\); we test \\((H_0):\\textbf{c}^T\\textbf{b}=r\\). Under \\((H_0)\\), since Gaussian vectors are stable under linear maps, \\(\\sqrt{n}(\\textbf{c}^T\\widehat{\\textbf{b}}_{\\text{2SLS}}-r)\\) converges in distribution to \\(\\mathcal{N}(0,\\textbf{c}^T\\mathbf{\\Sigma}\\textbf{c})\\), with \\(\\textbf{c}^T\\mathbf{\\Sigma}\\textbf{c}>0\\) since \\(\\mathbf{\\Sigma}\\) is positive definite. Since the function \\(x\\mapsto\\sqrt{\\textbf{c}^T\\mathbf{\\Sigma}\\textbf{c}/x}\\) is continuous on \\(\\mathbb{R}_+^*\\), \\(\\sqrt{\\textbf{c}^T\\mathbf{\\Sigma}\\textbf{c}\\,/\\,\\textbf{c}^T\\widehat{\\mathbf{\\Sigma}}\\textbf{c}}\\) converges in probability to 1, and Slutsky's theorem gives:
+        \\[\\widehat{t}:=\\frac{\\sqrt{n}\\left(\\textbf{c}^T\\widehat{\\textbf{b}}_{\\text{2SLS}}-r\\right)}{\\sqrt{\\textbf{c}^T\\widehat{\\mathbf{\\Sigma}}\\textbf{c}}}=\\frac{\\sqrt{n}\\left(\\textbf{c}^T\\widehat{\\textbf{b}}_{\\text{2SLS}}-r\\right)}{\\sqrt{\\textbf{c}^T\\mathbf{\\Sigma}\\textbf{c}}}\\times\\sqrt{\\frac{\\textbf{c}^T\\mathbf{\\Sigma}\\textbf{c}}{\\textbf{c}^T\\widehat{\\mathbf{\\Sigma}}\\textbf{c}}}\\xrightarrow[n\\to+\\infty]{\\mathcal{L}}\\mathcal{N}(0,1)\\]
+        Taking for \\(\\textbf{c}\\) the \\(k\\)-th vector of the canonical basis and \\(r=0\\), we recover the usual \\(t\\)-statistic \\(\\widehat{t}_k=\\widehat{b}_k\\,/\\,\\sqrt{[\\widehat{\\mathbf{\\Sigma}}]_{kk}/n}\\). The \\(t\\)-tests (two-sided or one-sided) therefore remain valid, provided that the sample is large, the observations are i.i.d., the instruments are exogenous and relevant (and not weak) and the disturbances are homoscedastic; under heteroscedasticity, \\(\\widehat{\\mathbf{\\Sigma}}\\) must be replaced by White's robust estimator \\(\\textbf{A}_n^{-1}\\textbf{B}_n\\left(\\frac{1}{n}\\sum_{i=1}^n\\widehat{u}_i^{\\,2}\\,\\textbf{z}_i\\textbf{z}_i^T\\right)\\textbf{B}_n^T\\textbf{A}_n^{-1}\\). Since validity is only asymptotic, the critical values are those of the standard normal distribution, not those of a Student distribution.</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <p>Since significance tests on the 2SLS coefficients are only valid asymptotically, the sample must be large enough; with \\(n=${D.n}\\) ${T.units}, we consider this condition to hold. Under the null hypothesis, the \\(t\\)-statistics then asymptotically follow a standard normal distribution: the critical values at the 5% and 1% levels are no longer \\(${s.q975}\\) and \\(${s.q995}\\) (quantiles of the Student distribution with ${D.df} degrees of freedom), but \\(1.960\\) and \\(2.576\\) (97.5% and 99.5% quantiles of the standard normal distribution).</p>
+        <ul>
+          <li>${cmp(0, D.B0, D.B0IV, 2, D.T0, D.T0IV)}</li>
+          <li>${cmp(1, D.B1, D.B1IV, 2, D.T1, D.T1IV)}</li>
+          <li>The estimate of the coefficient of \\(${V.e}\\) moves from \\(${s.b2}\\) (OLS) to \\(${s.b2IV}\\) (2SLS): it ${b2cmp}. According to 2SLS, ${slopeTxt(D.B2IV, D.d2, SC[D.sc].eLog, T.eName, T.eUnit, s.pctExactIV)}. With \\(|\\widehat{t}|=${fx(Math.abs(D.T2IV), 2, true)}\\), this coefficient is ${L.catTxt(D.catN(D.T2IV))}${D.catN(D.T2IV) === D.catS(D.T2) ? ", as with OLS" : `, whereas it was ${L.catTxt(D.catS(D.T2))} with OLS`}. Note also that the standard error of the 2SLS estimator is markedly larger than that of OLS: this is the price to pay for correcting endogeneity, since the 2SLS estimator only uses the part of the variability of \\(${V.e}\\) explained by the instrument.</li>
+        </ul>
+        <p>${T.endo} The gap between the two estimates of \\(b_2\\) goes in the expected direction here and suggests <em>a priori</em> an endogeneity bias in OLS; the test of question 5 will tell whether this gap is statistically significant.</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <p>A good instrument must satisfy two conditions: it must be <em>relevant</em>, that is correlated with the variable it instruments (\\(\\textbf{Cov}(${V.z0},${V.e})\\neq 0\\)), and <em>exogenous</em>, that is uncorrelated with the disturbance (\\(\\textbf{Cov}(${V.z0},u_i)=0\\)), which amounts to saying that it affects \\(${V.dep}\\) only through \\(${V.e}\\) (exclusion restriction).</p>
+        <p><strong>Relevance.</strong> From a theoretical point of view, ${T.relev}. The first-stage estimation ${Math.sign(D.P2) === SC[D.sc].sZ ? "supports this" : "does not support this"}: the coefficient of \\(${V.z}\\) equals \\(${s.p2}\\), with a \\(t\\)-statistic of \\(${s.tZ}\\). ${relQ}</p>
+        <p><strong>Exogeneity.</strong> From the standpoint of economic theory, ${T.exog}.</p>
+        <p>In conclusion, \\(${V.z}\\) is ${D.weak ? "an instrument whose exogeneity is defensible but whose empirical relevance is insufficient: it is weak, and the resulting 2SLS estimates should be treated with great caution" : "a relevant instrument whose exogeneity is defensible, although it cannot be proven: it is a reasonable instrument, subject to the objections above"}.</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <p>We test the null hypothesis \\((H_0)\\): “\\(${V.e}\\) is exogenous”, under which the OLS and 2SLS estimators are both consistent, OLS being the more efficient, against the alternative \\((H_1)\\): “\\(${V.e}\\) is endogenous”, under which only the 2SLS estimator is consistent. Hausman (1978) showed that, under \\((H_0)\\), the statistic \\(\\widehat{Q}_H\\) asymptotically follows a \\(\\chi^2\\) distribution with \\(k'\\) degrees of freedom, where \\(k'\\) is the number of potentially endogenous variables; here, \\(k'=1\\).</p>
+        <p>With a single endogenous variable, the statistic can be computed from the estimates of the coefficient \\(b_2\\) alone:
+        \\[\\widehat{Q}_H=\\frac{\\left(\\widehat{b}_{2,\\text{2SLS}}-\\widehat{b}_{2,\\text{OLS}}\\right)^2}{\\widehat{\\sigma}_{2,\\text{2SLS}}^2-\\widehat{\\sigma}_{2,\\text{OLS}}^2}\\]
+        where \\(\\widehat{\\sigma}_{2,\\text{OLS}}\\) and \\(\\widehat{\\sigma}_{2,\\text{2SLS}}\\) are the estimated standard errors of the two estimators. Under \\((H_0)\\), OLS being the more efficient, the denominator is positive. Each standard error is the ratio of the estimate to its \\(t\\)-statistic:
+        \\[\\widehat{\\sigma}_{2,\\text{OLS}}=\\left|\\frac{${s.b2}}{${s.t2}}\\right|\\approx ${s.sO}\\qquad\\text{and}\\qquad\\widehat{\\sigma}_{2,\\text{2SLS}}=\\left|\\frac{${s.b2IV}}{${s.t2IV}}\\right|\\approx ${s.sI}\\]
+        hence \\(\\widehat{\\sigma}_{2,\\text{OLS}}^2\\approx ${s.vO}\\) and \\(\\widehat{\\sigma}_{2,\\text{2SLS}}^2\\approx ${s.vI}\\). We then get:
+        \\[\\widehat{Q}_H\\approx\\frac{\\left(${s.b2IV}-${s.b2p}\\right)^2}{${s.vI}-${s.vO}}=\\frac{(${s.diff})^2}{${s.den}}=\\frac{${s.num}}{${s.den}}\\approx ${s.Q}\\]
+        which matches the stated value.</p>
+        <p>The 95% and 99% quantiles of a \\(\\chi^2\\) distribution with one degree of freedom are approximately \\(3.841\\) and \\(6.635\\) respectively. ${hConcl}${weakH}</p>
+      </div></li>
+
+      </ol></div>`;
+    }
+  }
+};
+
+/* ============================================================
+   GESTION DE LA LANGUE  /  LANGUAGE HANDLING
+   ============================================================ */
+let LANG = 'fr';
+
+function detectLang() {
+    try {
+        const q = new URLSearchParams(window.location.search).get('lang');
+        if (q && I18N[q.toLowerCase()]) return q.toLowerCase();
+    } catch (e) {}
+    const h = (window.location.hash || '').replace('#', '').toLowerCase();
+    if (I18N[h]) return h;
+    return 'fr';
+}
+
+function applyLang() {
+    const D = I18N[LANG];
+    document.documentElement.lang = D.htmlLang;
+    document.title = D.title;
+
+    document.querySelectorAll('[data-k]').forEach(function (el) {
+        const key = el.getAttribute('data-k');
+        if (D[key] !== undefined) el.innerHTML = D[key];
+    });
+
+    const si = document.getElementById('seed-input');
+    if (si) si.placeholder = D.phSeed;
+    const ni = document.getElementById('param-n');
+    if (ni) ni.placeholder = D.phN;
+
+    const tb = document.getElementById('toggle-btn');
+    if (tb) tb.textContent = solVisible ? D.hideSol : D.showSol;
+
+    document.getElementById('flag-fr').classList.toggle('active', LANG === 'fr');
+    document.getElementById('flag-en').classList.toggle('active', LANG === 'en');
+}
+
+function setLang(lang) {
+    if (!I18N[lang] || lang === LANG) return;
+    LANG = lang;
+
+    /* La langue est memorisee dans l'URL (partage / rechargement) */
+    try {
+        const u = new URL(window.location.href);
+        u.searchParams.set('lang', lang);
+        history.replaceState(null, '', u.toString());
+    } catch (e) {}
+
+    applyLang();
+
+    /* Si un exercice est affiche, on le regenere a l'identique (meme seed) */
+    if (document.getElementById('ex-area').style.display !== 'none') {
+        const wasVis = solVisible;
+        document.getElementById('seed-input').value = _activeSeed;
+        generateFromControls();
+        if (wasVis) toggleSol();
+    }
+}
+
+// ════════════════════════════════════════
+// SEEDED PRNG — mulberry32
+// ════════════════════════════════════════
+let _rand, _activeSeed = 0;
+function initRand(seed) {
+  _activeSeed = seed >>> 0;
+  let s = _activeSeed;
+  _rand = () => {
+    s = (s + 0x6D2B79F5) >>> 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const rI = (a,b) => Math.floor(_rand()*(b-a+1))+a;
+/* entier tire dans [lo, hi] exprime en 10^-d */
+const rU = (r, d) => rI(Math.round(r[0] * P10[d]), Math.round(r[1] * P10[d]));
+
+// ════════════════════════════════════════
+// GENERATION DES DONNEES
+// Les ecarts-types sous-jacents respectent la relation
+// sigma_2SLS ~ sigma_MCO * sqrt((F + ddl) / F), ou F = t^2 de l'instrument,
+// et l'ecart entre les deux estimations de b2 est calibre pour que la
+// statistique de Hausman tombe dans la zone de decision tiree au sort.
+// Toute la chaine de calcul du corrige est recalculee sur les valeurs affichees.
+// ════════════════════════════════════════
+function computeD(seed, nIn) {
+  initRand(seed);
+  const sc = rI(0, SC.length - 1);
+  const S = SC[sc];
+  const nAuto = rI(S.n[0], S.n[1]);
+  const n = nIn || nAuto;
+  const df = n - 3;
+  const Q975 = Math.round(tq(Z975, df) * 1000), Q995 = Math.round(tq(Z995, df) * 1000);
+  const catS = t => { const a = Math.abs(t) * 10; return a < Q975 ? 0 : a < Q995 ? 1 : 2; };
+  const catN = t => { const a = Math.abs(t) * 10; return a < 1960 ? 0 : a < 2576 ? 1 : 2; };
+  const far = t => { const a = Math.abs(t) * 10; return [Q975, Q995, 1960, 2576].every(c => Math.abs(a - c) >= 30); };
+  const d2 = S.d2, dP = S.dP;
+  const nz = (r, d) => { let v; do { v = rU(r, d); } while (v === 0); return v; };
+  const sg = v => (v < 0 ? -1 : 1);
+
+  for (let guard = 0; guard < 500000; guard++) {
+    const B0 = rU(S.b0, 2), T0 = rI(40, 1200);
+    const B1 = nz(S.b1, 2), T1 = sg(B1) * rI(10, 600);
+    const c2 = rI(0, 2);
+    const T2m = c2 === 0 ? rI(30, 185) : c2 === 1 ? rI(Math.ceil(Q975 / 10) + 3, Math.floor(Q995 / 10) - 3) : rI(Math.ceil(Q995 / 10) + 3, 900);
+    const B2 = nz(S.b2, d2), T2 = sg(B2) * T2m;
+    if (!S.flip && sg(B2) !== S.sIV) continue;
+    const weak = _rand() < 0.25;
+    const TZ = S.sZ * (weak ? rI(130, 290) : rI(420, 1400));
+    const F = (TZ / 100) ** 2;
+    const sO = (Math.abs(B2) / P10[d2]) / (T2m / 100);
+    const sI = sO * Math.sqrt((F + df) / F) * (0.95 + 0.13 * _rand());
+    const cH = rI(0, 2);
+    const u = _rand();
+    const Qt = cH === 0 ? 0.15 + 3.15 * u : cH === 1 ? 4.2 + 2.0 * u : 7.3 + 12.7 * u;
+    const diff = Math.sqrt(Qt * (sI * sI - sO * sO));
+    const B2IV = Math.round((B2 / P10[d2] + S.dir * diff) * P10[d2]);
+    if (B2IV === 0 || sg(B2IV) !== S.sIV || Math.abs(B2IV) / P10[d2] > S.cap) continue;
+    if (S.dir * (B2IV - B2) <= 0) continue;
+    const T2IV = Math.round((B2IV / P10[d2]) / sI * 100);
+    if (Math.abs(T2IV) < 5) continue;
+
+    /* chaine de calcul affichee (question 5) */
+    /* ecarts-types a ds = d2 + 2 decimales, variances a dv = 2 ds - 2 decimales */
+    const ds = d2 + 2, dv = 2 * ds - 2;
+    const sO4 = rhu(Math.abs(B2) * P10[ds + 2], Math.abs(T2) * P10[d2]);
+    const sI4 = rhu(Math.abs(B2IV) * P10[ds + 2], Math.abs(T2IV) * P10[d2]);
+    if (sI4 <= sO4 || sO4 === 0) continue;
+    const vO = rhu(sO4 * sO4, 100), vI = rhu(sI4 * sI4, 100);
+    const den = vI - vO;
+    if (den <= 0) continue;
+    const Dd = B2IV - B2, num = Dd * Dd;
+    const Qi = rhu(num * P10[dv - 2 * d2] * 100, den);
+    /* la valeur calculee sans arrondi intermediaire doit tomber dans la meme zone de decision */
+    const Qex = (Dd / P10[d2]) ** 2 / ((B2IV / T2IV * 100 / P10[d2]) ** 2 - (B2 / T2 * 100 / P10[d2]) ** 2);
+    const zone = q => q < 3.841459 ? 0 : q < 6.634897 ? 1 : 2;
+    if (zone(Qex) !== cH || Math.abs(Qex - 3.841459) < 0.15 || Math.abs(Qex - 6.634897) < 0.15) continue;
+    if (cH === 0 && !(Qi >= 5 && Qi <= 360)) continue;
+    if (cH === 1 && !(Qi >= 410 && Qi <= 640)) continue;
+    if (cH === 2 && !(Qi >= 700 && Qi <= 5000)) continue;
+
+    /* premiere etape et autres coefficients 2SLS */
+    const P0 = nz(S.p0, dP), TP0 = sg(P0) * rI(100, 1500);
+    const P1 = nz(S.p1, dP), TP1 = sg(P1) * rI(10, 500);
+    const P2 = nz(S.p2, dP);
+    /* les ecarts-types 2SLS des autres coefficients augmentent aussi, dans une moindre mesure */
+    const ratio = sI / sO;
+    const B0IV = Math.round(B0 * (0.85 + 0.3 * _rand()));
+    const B1IV = Math.round(B1 * (1 + 1.2 * (_rand() - 0.5)));
+    if (B1IV === 0 || B0IV === 0) continue;
+    const se0 = (B0 / 100) / (T0 / 100) * (1 + (ratio - 1) * (0.3 + 0.7 * _rand()));
+    const se1 = Math.abs((B1 / 100) / (T1 / 100)) * (1 + (ratio - 1) * (0.3 + 0.7 * _rand()));
+    const T0IV = Math.round((B0IV / 100) / se0 * 100), T1IV = Math.round((B1IV / 100) / se1 * 100);
+    if (Math.abs(T0IV) < 5 || Math.abs(T1IV) < 5) continue;
+    if (![T0, T1, T2, T0IV, T1IV, T2IV, TZ].every(far)) continue;
+
+    const D = { sc, id: S.id, n, df, d2, B0, T0, B1, T1, B2, T2, B2IV, T2IV, B0IV, T0IV, B1IV, T1IV,
+      P0, TP0, P1, TP1, P2, TZ, weak, catH: cH, catS, catN, Qi };
+    D.flipOLS = !!S.flip && sg(B2) !== S.sIV;
+
+    /* notations */
+    const Lt = S.L;
+    const dep = `\\ln(${Lt.y}_i)`, w = `\\ln(${Lt.w}_i)`;
+    const e = S.eLog ? `\\ln(${Lt.e}_i)` : `${Lt.e}_i`;
+    const z = S.zLog ? `\\ln(${Lt.z}_i)` : `${Lt.z}_i`;
+    D.V = { dep, w, e, z, z0: `${Lt.z}_i`, y: `${Lt.y}_i` };
+    const cf = (B, d) => fx(B, d, true);
+    const term = (B, T, d, v) => `${B < 0 ? '-' : '+'}\\underset{(${fx(T, 2, true)})}{${cf(Math.abs(B), d)}}\\,${v}`;
+    D.eqOLS = lab => `\\widehat{${dep}}_{\\text{${lab}}}=\\underset{(${fx(T0, 2, true)})}{${cf(B0, 2)}}${term(B1, T1, 2, w)}${term(B2, T2, d2, e)}`;
+    D.eqIV = `\\begin{cases}\\widehat{${e}}=\\underset{(${fx(TP0, 2, true)})}{${cf(P0, dP)}}${term(P1, TP1, dP, w)}${term(P2, TZ, dP, z)}\\\\[6pt]` +
+      `\\widehat{${dep}}_{\\text{2SLS}}=\\underset{(${fx(T0IV, 2, true)})}{${cf(B0IV, 2)}}${term(B1IV, T1IV, 2, w)}${term(B2IV, T2IV, d2, `\\widehat{${e}}`)}\\end{cases}`;
+
+    const pct = B => 100 * Math.abs(Math.exp(B / P10[d2]) - 1);
+    D.S = {
+      q975: fx(Q975, 3, true), q995: fx(Q995, 3, true),
+      b0: cf(B0, 2), b1: cf(B1, 2), b2: cf(B2, d2), b2IV: cf(B2IV, d2),
+      b2p: B2 < 0 ? `(${cf(B2, d2)})` : cf(B2, d2),
+      t2: fx(T2, 2, true), t2IV: fx(T2IV, 2, true),
+      expb0: expS(B0 / 100),
+      pctExact: fxf(pct(B2), 2, true), pctExactIV: fxf(pct(B2IV), 2, true),
+      p2: cf(P2, dP), tZ: fx(TZ, 2, true),
+      F: fx(rhu(TZ * TZ, 100), 2, true),
+      sO: fx(sO4, ds, true), sI: fx(sI4, ds, true), vO: fx(vO, dv, true), vI: fx(vI, dv, true),
+      diff: cf(Dd, d2), num: fx(num, 2 * d2, true), den: fx(den, dv, true),
+      Q: fx(Qi, 2, true)
+    };
+    return D;
+  }
+  throw new Error('generation');
+}
+
+// ════════════════════════════════════════
+// GENERATION  /  RENDERING
+// ════════════════════════════════════════
+function regen() {
+  document.getElementById('seed-input').value = '';
+  generateFromControls();
+}
+
+function readN() {
+  const v = parseInt(document.getElementById('param-n').value, 10);
+  if (isNaN(v)) return 0;
+  return Math.min(5000, Math.max(50, v));
+}
+
+function generateFromControls() {
+  const seedInp = document.getElementById('seed-input').value;
+  const seed = seedInp ? parseInt(seedInp, 10) : Math.floor(Math.random() * 10000000);
+  const D = computeD(seed, readN());
+  D.T = I18N[LANG].sc[D.id];
+
+  document.getElementById('seed-disp').textContent = _activeSeed;
+  document.getElementById('modal-seed').textContent = _activeSeed;
+
+  document.getElementById('ex-content').innerHTML = I18N[LANG].ex(D);
+  document.getElementById('sol-content').innerHTML = I18N[LANG].sol(D);
+
+  document.getElementById('welcome').style.display = 'none';
+  document.getElementById('ex-area').style.display = 'block';
+  solVisible = false;
+  const solC = document.getElementById('sol-card'), btn = document.getElementById('toggle-btn');
+  solC.classList.remove('visible'); btn.classList.remove('shown'); btn.textContent = I18N[LANG].showSol;
+
+  if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise();
+}
+
+// ════════════════════════════════════════
+// UI
+// ════════════════════════════════════════
+function toggleSol(){
+  solVisible = !solVisible;
+  const sol = document.getElementById('sol-card'), btn = document.getElementById('toggle-btn');
+  if(solVisible){sol.classList.add('visible'); btn.classList.add('shown'); btn.textContent = I18N[LANG].hideSol;}
+  else{sol.classList.remove('visible'); btn.classList.remove('shown'); btn.textContent = I18N[LANG].showSol;}
+}
+
+/* Initialisation */
+LANG = detectLang();
+applyLang();
+</script>
+
+
+<!-- KIT:JS:START v1 -->
+<div id="pdf-ov" onclick="closePdfModal()"></div>
+<div id="pdf-modal">
+  <div class="mh">
+    <h3 data-kit="modalTitle">Exporter en PDF</h3>
+    <button type="button" class="mclose" onclick="closePdfModal()">&#10005;</button>
+  </div>
+  <div class="mb2">
+    <div class="seed-note"><span data-kit="seedPre">Seed&nbsp;:</span> <strong id="modal-seed">&mdash;</strong> <span data-kit="seedPost">&mdash; notez cette valeur pour reproduire exactement cet exercice.</span></div>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-header" checked>
+      <span class="opt-txt"><span class="opt-lbl" data-kit="optHeader">Inclure l'en-t&ecirc;te de page</span>
+           <span class="opt-desc" data-kit="optHeaderD">Titre, badge de mati&egrave;re et intitul&eacute; de l'exercice</span></span>
+    </label>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-sol">
+      <span class="opt-txt"><span class="opt-lbl" data-kit="optSol">Inclure le corrig&eacute; complet</span>
+           <span class="opt-desc" data-kit="optSolD">L'ensemble des d&eacute;veloppements et commentaires du corrig&eacute;</span></span>
+    </label>
+    <div class="mactions">
+      <button type="button" class="btn-print" onclick="doPrint()"><span data-kit="print">&#128424;&nbsp;Imprimer / Sauvegarder PDF</span></button>
+      <button type="button" class="btn-cancel" onclick="closePdfModal()"><span data-kit="cancel">Annuler</span></button>
+    </div>
+  </div>
+</div>
+
+<script id="kit-docx">
+/* =============================================================================
+   EXPORT WORD NATIF (.docx)
+   Trois briques, sans aucune dépendance externe :
+     1. mml2omml  — MathML -> OMML, le format d'équation natif de Word
+     2. zip       — écriture d'une archive ZIP (entrées « stored » + CRC32)
+     3. html2wml  — HTML de la page -> WordprocessingML
+   ============================================================================= */
+(function (root) {
+'use strict';
+
+/* --------------------------------------------------------------- utilitaires */
+function esc(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                  .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function kids(n) {
+  var out = [], c = n.firstChild;
+  while (c) { if (c.nodeType === 1) out.push(c); c = c.nextSibling; }
+  return out;
+}
+function txt(n) { return (n.textContent || '').replace(/\u200b/g, '').trim(); }
+
+/* ============================================================================
+   1. MathML -> OMML
+   ========================================================================== */
+var OPEN = '([{\u27e8\u2308\u230a|\u2016';
+var CLOSE = ')]}\u27e9\u2309\u230b|\u2016';
+var BIGOPS = '\u2211\u220f\u222b\u222c\u222d\u222e\u22c3\u22c2\u2210';
+var ACCENTS = {
+  '\u005e': '\u0302', '\u02c6': '\u0302', '^': '\u0302',
+  '\u00af': '\u0304', '\u2015': '\u0304', '\u2212': '\u0304', '_': '\u0304',
+  '~': '\u0303', '\u02dc': '\u0303', '\u02d9': '\u0307',
+  '\u2192': '\u20d7', '\u21c0': '\u20d1', '\u02c7': '\u030c', '\u02d8': '\u0306'
+};
+
+function run(text, style) {
+  if (text === '') return '';
+  var rPr = '<w:rPr><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/></w:rPr>';
+  var mPr = style ? '<m:rPr><m:sty m:val="' + style + '"/></m:rPr>' : '';
+  return '<m:r>' + mPr + rPr + '<m:t xml:space="preserve">' + esc(text) + '</m:t></m:r>';
+}
+
+/* Un grand opérateur (somme, intégrale…) absorbe la suite de la ligne comme
+   opérande : sans cela Word affiche un cadre vide à la place de l'argument. */
+function naryHere(n) {
+  if (!n || n.nodeType !== 1) return null;
+  var t = n.nodeName.toLowerCase().replace(/^.*:/, ''), k = kids(n);
+  if (t === 'munderover' || t === 'msubsup') return { base: k[0], sub: k[1], sup: k[2] };
+  if (t === 'munder' || t === 'msub') return { base: k[0], sub: k[1], sup: null };
+  if (t === 'mover' || t === 'msup') return { base: k[0], sub: null, sup: k[1] };
+  if (t === 'mo') return { base: n, sub: null, sup: null };
+  return null;
+}
+function isBigOp(n) {
+  if (!n || n.nodeType !== 1) return false;
+  var c = txt(n);
+  return n.nodeName.toLowerCase().replace(/^.*:/, '') === 'mo' &&
+         c.length === 1 && BIGOPS.indexOf(c) !== -1;
+}
+
+function seq(nodes) {
+  var s = '';
+  for (var i = 0; i < nodes.length; i++) {
+    var info = naryHere(nodes[i]);
+    if (info && isBigOp(info.base) && i + 1 < nodes.length) {
+      s += naryFull(info, nodes.slice(i + 1));
+      return s;
+    }
+    s += mml(nodes[i]);
+  }
+  return s;
+}
+
+function naryFull(info, rest) {
+  return '<m:nary><m:naryPr><m:chr m:val="' + esc(txt(info.base)) + '"/>' +
+         '<m:limLoc m:val="undOvr"/>' +
+         '<m:subHide m:val="' + (info.sub ? '0' : '1') + '"/>' +
+         '<m:supHide m:val="' + (info.sup ? '0' : '1') + '"/><m:ctrlPr/></m:naryPr>' +
+         '<m:sub>' + (info.sub ? mml(info.sub) : '') + '</m:sub>' +
+         '<m:sup>' + (info.sup ? mml(info.sup) : '') + '</m:sup>' +
+         '<m:e>' + seq(rest) + '</m:e></m:nary>';
+}
+
+/* mrow entouré de délimiteurs -> m:d, pour des parenthèses étirables natives */
+function fenced(ks) {
+  if (ks.length < 2) return null;
+  var a = ks[0], b = ks[ks.length - 1];
+  if (a.nodeName.toLowerCase() !== 'mo' || b.nodeName.toLowerCase() !== 'mo') return null;
+  var o = txt(a), c = txt(b);
+  if (o.length !== 1 || c.length !== 1) return null;
+  if (OPEN.indexOf(o) === -1 || CLOSE.indexOf(c) === -1) return null;
+  var inner = ks.slice(1, -1);
+  /* séparateurs de premier niveau -> plusieurs m:e */
+  var parts = [[]];
+  for (var i = 0; i < inner.length; i++) {
+    if (inner[i].nodeName.toLowerCase() === 'mo' && txt(inner[i]) === ',' && parts.length < 8) {
+      parts.push([]);
+    } else { parts[parts.length - 1].push(inner[i]); }
+  }
+  var sep = parts.length > 1 ? ',' : '';
+  var body = '';
+  for (var j = 0; j < parts.length; j++) body += '<m:e>' + seq(parts[j]) + '</m:e>';
+  return '<m:d><m:dPr><m:begChr m:val="' + esc(o) + '"/><m:sepChr m:val="' + esc(sep) +
+         '"/><m:endChr m:val="' + esc(c) + '"/><m:ctrlPr/></m:dPr>' + body + '</m:d>';
+}
+
+function naryOf(base, sub, sup) {
+  var ch = txt(base);
+  if (ch.length !== 1 || BIGOPS.indexOf(ch) === -1) return null;
+  return '<m:nary><m:naryPr><m:chr m:val="' + esc(ch) + '"/><m:limLoc m:val="undOvr"/>' +
+         '<m:subHide m:val="' + (sub ? '0' : '1') + '"/>' +
+         '<m:supHide m:val="' + (sup ? '0' : '1') + '"/><m:ctrlPr/></m:naryPr>' +
+         '<m:sub>' + (sub ? mml(sub) : '') + '</m:sub>' +
+         '<m:sup>' + (sup ? mml(sup) : '') + '</m:sup>' +
+         '<m:e></m:e></m:nary>';
+}
+
+function mml(n) {
+  if (!n) return '';
+  if (n.nodeType === 3) return run(n.nodeValue);
+  if (n.nodeType !== 1) return '';
+  var t = n.nodeName.toLowerCase().replace(/^.*:/, '');
+  var k = kids(n), s;
+
+  switch (t) {
+    case 'math':
+    case 'semantics':
+    case 'mstyle':
+    case 'mpadded':
+    case 'menclose':
+      return seq(k);
+
+    case 'annotation':
+    case 'annotation-xml':
+    case 'mphantom':
+      return '';
+
+    case 'mrow':
+      s = fenced(k);
+      return s !== null ? s : seq(k);
+
+    case 'mi':      return run(txt(n), txt(n).length === 1 ? 'i' : 'p');
+    case 'mn':      return run(txt(n), 'p');
+    case 'mo':      return run(txt(n), 'p');
+    case 'merror':  return run(txt(n), 'p');
+    case 'ms':      return run(txt(n), 'p');
+
+    case 'mtext':
+      var v = n.textContent || '';
+      return v === '' ? '' :
+        '<m:r><m:rPr><m:nor/></m:rPr><w:rPr><w:rFonts w:ascii="Cambria" w:hAnsi="Cambria"/></w:rPr>' +
+        '<m:t xml:space="preserve">' + esc(v) + '</m:t></m:r>';
+
+    case 'mspace':
+      return run(' ', 'p');
+
+    case 'mfrac':
+      return '<m:f><m:fPr><m:type m:val="' +
+             (n.getAttribute('linethickness') === '0' ? 'noBar' : 'bar') +
+             '"/><m:ctrlPr/></m:fPr><m:num>' + mml(k[0]) + '</m:num><m:den>' +
+             mml(k[1]) + '</m:den></m:f>';
+
+    case 'msup':
+      s = naryOf(k[0], null, k[1]); if (s) return s;
+      return '<m:sSup><m:sSupPr><m:ctrlPr/></m:sSupPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sup>' + mml(k[1]) + '</m:sup></m:sSup>';
+
+    case 'msub':
+      s = naryOf(k[0], k[1], null); if (s) return s;
+      return '<m:sSub><m:sSubPr><m:ctrlPr/></m:sSubPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sub>' + mml(k[1]) + '</m:sub></m:sSub>';
+
+    case 'msubsup':
+      s = naryOf(k[0], k[1], k[2]); if (s) return s;
+      return '<m:sSubSup><m:sSubSupPr><m:ctrlPr/></m:sSubSupPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sub>' + mml(k[1]) + '</m:sub><m:sup>' + mml(k[2]) +
+             '</m:sup></m:sSubSup>';
+
+    case 'msqrt':
+      return '<m:rad><m:radPr><m:degHide m:val="1"/><m:ctrlPr/></m:radPr>' +
+             '<m:deg/><m:e>' + seq(k) + '</m:e></m:rad>';
+
+    case 'mroot':
+      return '<m:rad><m:radPr><m:degHide m:val="0"/><m:ctrlPr/></m:radPr><m:deg>' +
+             mml(k[1]) + '</m:deg><m:e>' + mml(k[0]) + '</m:e></m:rad>';
+
+    case 'mover':
+      var ao = txt(k[1]);
+      if (ACCENTS[ao]) {
+        return '<m:acc><m:accPr><m:chr m:val="' + esc(ACCENTS[ao]) +
+               '"/><m:ctrlPr/></m:accPr><m:e>' + mml(k[0]) + '</m:e></m:acc>';
+      }
+      s = naryOf(k[0], null, k[1]); if (s) return s;
+      return '<m:limUpp><m:limUppPr><m:ctrlPr/></m:limUppPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limUpp>';
+
+    case 'munder':
+      s = naryOf(k[0], k[1], null); if (s) return s;
+      return '<m:limLow><m:limLowPr><m:ctrlPr/></m:limLowPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limLow>';
+
+    case 'munderover':
+      s = naryOf(k[0], k[1], k[2]); if (s) return s;
+      return '<m:limUpp><m:limUppPr><m:ctrlPr/></m:limUppPr><m:e>' +
+             '<m:limLow><m:limLowPr><m:ctrlPr/></m:limLowPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limLow></m:e><m:lim>' +
+             mml(k[2]) + '</m:lim></m:limUpp>';
+
+    case 'mtable':
+      var rows = k.filter(function (r) { return /mtr$/.test(r.nodeName.toLowerCase()); });
+      var ncol = 0;
+      rows.forEach(function (r) { ncol = Math.max(ncol, kids(r).length); });
+      var props = '<m:mPr><m:baseJc m:val="center"/><m:plcHide m:val="1"/><m:mcs><m:mc><m:mcPr>' +
+                  '<m:count m:val="' + (ncol || 1) + '"/><m:mcJc m:val="center"/></m:mcPr></m:mc></m:mcs>' +
+                  '<m:ctrlPr/></m:mPr>';
+      var body = '';
+      rows.forEach(function (r) {
+        body += '<m:mr>';
+        var cells = kids(r);
+        for (var i = 0; i < (ncol || 1); i++) body += '<m:e>' + (cells[i] ? seq(kids(cells[i])) : '') + '</m:e>';
+        body += '</m:mr>';
+      });
+      return '<m:m>' + props + body + '</m:m>';
+
+    case 'mtr':
+    case 'mtd':
+      return seq(k);
+
+    default:
+      return k.length ? seq(k) : run(txt(n), 'p');
+  }
+}
+
+function mathmlToOmml(mathEl) { return mml(mathEl); }
+
+/* ============================================================================
+   2. Écriture ZIP (entrées non compressées + CRC32)
+   ========================================================================== */
+var CRCT = (function () {
+  var t = new Int32Array(256);
+  for (var i = 0; i < 256; i++) {
+    var c = i;
+    for (var j = 0; j < 8; j++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[i] = c;
+  }
+  return t;
+})();
+function crc32(buf) {
+  var c = -1;
+  for (var i = 0; i < buf.length; i++) c = CRCT[(c ^ buf[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ -1) >>> 0;
+}
+function utf8(str) {
+  if (typeof TextEncoder !== 'undefined') return new TextEncoder().encode(str);
+  var b = unescape(encodeURIComponent(str)), a = new Uint8Array(b.length);
+  for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i);
+  return a;
+}
+function zip(files) {
+  var parts = [], central = [], offset = 0;
+  function u16(v) { return [v & 0xFF, (v >>> 8) & 0xFF]; }
+  function u32(v) { return [v & 0xFF, (v >>> 8) & 0xFF, (v >>> 16) & 0xFF, (v >>> 24) & 0xFF]; }
+
+  files.forEach(function (f) {
+    var name = utf8(f.name), data = f.bin ? f.bin : utf8(f.data), c = crc32(data);
+    var local = [].concat(u32(0x04034b50), u16(20), u16(0x0800), u16(0), u16(0), u16(0),
+                          u32(c), u32(data.length), u32(data.length),
+                          u16(name.length), u16(0));
+    parts.push(new Uint8Array(local), name, data);
+    central.push({ name: name, crc: c, size: data.length, off: offset });
+    offset += local.length + name.length + data.length;
+  });
+
+  var cd = [];
+  central.forEach(function (e) {
+    cd = cd.concat(u32(0x02014b50), u16(20), u16(20), u16(0x0800), u16(0), u16(0), u16(0),
+                   u32(e.crc), u32(e.size), u32(e.size),
+                   u16(e.name.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(e.off));
+    cd = cd.concat(Array.prototype.slice.call(e.name));
+  });
+  var cdArr = new Uint8Array(cd);
+  var eocd = new Uint8Array([].concat(u32(0x06054b50), u16(0), u16(0),
+                                      u16(files.length), u16(files.length),
+                                      u32(cdArr.length), u32(offset), u16(0)));
+  parts.push(cdArr, eocd);
+
+  var total = parts.reduce(function (n, p) { return n + p.length; }, 0);
+  var out = new Uint8Array(total), pos = 0;
+  parts.forEach(function (p) { out.set(p, pos); pos += p.length; });
+  return out;
+}
+
+/* ============================================================================
+   3. HTML -> WordprocessingML
+   ========================================================================== */
+var SKIP = { script: 1, style: 1, button: 1, input: 1, noscript: 1 };
+var IMAGES = [];           /* { bin, w, h } collectées pendant le parcours */
+var EMU = 9525;            /* EMU par pixel */
+var MAXW = 5760000;        /* largeur utile de la page, en EMU */
+
+function b64bin(b64) {
+  var raw = atob(b64), a = new Uint8Array(raw.length);
+  for (var i = 0; i < raw.length; i++) a[i] = raw.charCodeAt(i);
+  return a;
+}
+
+function imageXml(dataUrl, wpx, hpx) {
+  var m = /^data:image\/png;base64,(.*)$/.exec(dataUrl || '');
+  if (!m) return '';
+  var cx = Math.round(wpx * EMU), cy = Math.round(hpx * EMU);
+  if (cx > MAXW) { cy = Math.round(cy * MAXW / cx); cx = MAXW; }
+  IMAGES.push({ bin: b64bin(m[1]) });
+  var id = IMAGES.length, rid = 'rIdImg' + id;
+  return '<w:p><w:pPr><w:pStyle w:val="Figure"/><w:jc w:val="center"/></w:pPr><w:r><w:drawing>' +
+    '<wp:inline distT="0" distB="0" distL="0" distR="0">' +
+    '<wp:extent cx="' + cx + '" cy="' + cy + '"/>' +
+    '<wp:effectExtent l="0" t="0" r="0" b="0"/>' +
+    '<wp:docPr id="' + id + '" name="Graphique ' + id + '"/>' +
+    '<wp:cNvGraphicFramePr><a:graphicFrameLocks ' +
+      'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/>' +
+    '</wp:cNvGraphicFramePr>' +
+    '<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">' +
+    '<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+    '<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+    '<pic:nvPicPr><pic:cNvPr id="' + id + '" name="Graphique ' + id + '"/><pic:cNvPicPr/></pic:nvPicPr>' +
+    '<pic:blipFill><a:blip r:embed="' + rid + '"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>' +
+    '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' + cx + '" cy="' + cy + '"/></a:xfrm>' +
+    '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>' +
+    '</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>';
+}
+var BLOCK = { p: 1, div: 1, h1: 1, h2: 1, h3: 1, h4: 1, li: 1, tr: 1, td: 1, th: 1,
+              table: 1, ul: 1, ol: 1, section: 1, article: 1, header: 1, blockquote: 1 };
+
+function W() {
+  this.body = '';
+  this.para = null;      /* { style, runs, numId, ilvl } */
+}
+W.prototype.open = function (style, numId, ilvl) {
+  this.close();
+  this.para = { style: style || 'Corps', runs: '', numId: numId || 0, ilvl: ilvl || 0 };
+};
+W.prototype.close = function () {
+  var p = this.para;
+  this.para = null;
+  if (!p || (p.runs === '' && !p.numId)) return;
+  if (p.runs === '') return;
+  var pPr = '<w:pPr><w:pStyle w:val="' + p.style + '"/>';
+  if (p.numId) pPr += '<w:numPr><w:ilvl w:val="' + p.ilvl + '"/><w:numId w:val="' + p.numId + '"/></w:numPr>';
+  pPr += '</w:pPr>';
+  this.body += '<w:p>' + pPr + p.runs + '</w:p>';
+};
+W.prototype.add = function (xml) {
+  if (!this.para) this.open('Corps');
+  this.para.runs += xml;
+};
+W.prototype.raw = function (xml) { this.close(); this.body += xml; };
+
+function textRun(s, fmt) {
+  if (!s) return '';
+  var rPr = '';
+  if (fmt.b) rPr += '<w:b/>';
+  if (fmt.i) rPr += '<w:i/>';
+  if (fmt.sup) rPr += '<w:vertAlign w:val="superscript"/>';
+  if (fmt.sub) rPr += '<w:vertAlign w:val="subscript"/>';
+  if (fmt.mono) rPr += '<w:rFonts w:ascii="Consolas" w:hAnsi="Consolas"/>';
+  return '<w:r>' + (rPr ? '<w:rPr>' + rPr + '</w:rPr>' : '') +
+         '<w:t xml:space="preserve">' + esc(s) + '</w:t></w:r>';
+}
+
+function walk(node, w, fmt, list) {
+  var i, cs = node.childNodes;
+  for (i = 0; i < cs.length; i++) {
+    var n = cs[i];
+
+    if (n.nodeType === 3) {
+      var s = n.nodeValue.replace(/\s+/g, ' ');
+      if (s.trim() === '' && !/\S/.test(s)) { if (w.para && w.para.runs) w.add(textRun(' ', fmt)); continue; }
+      w.add(textRun(s, fmt));
+      continue;
+    }
+    if (n.nodeType !== 1) continue;
+
+    var tag = n.nodeName.toLowerCase();
+    if (SKIP[tag]) continue;
+    if (n.classList && (n.classList.contains('top-bar') || n.classList.contains('top-actions') ||
+                        n.classList.contains('sol-toggle-wrap'))) continue;
+
+    /* --- équations --- */
+    if (tag === 'mjx-container') {
+      var math = n.querySelector('mjx-assistive-mml math, math');
+      var display = n.getAttribute('display') === 'true';
+      if (math) {
+        var omml = mathmlToOmml(math);
+        if (display) {
+          w.close();
+          w.body += '<w:p><w:pPr><w:pStyle w:val="Formule"/>' +
+                    '<w:jc w:val="center"/></w:pPr>' +
+                    '<m:oMath>' + omml + '</m:oMath></w:p>';
+        } else {
+          w.add('<m:oMath>' + omml + '</m:oMath>');
+        }
+      } else {
+        w.add(textRun(txt(n), fmt));
+      }
+      continue;
+    }
+    if (tag === 'mjx-assistive-mml' || tag === 'math') continue;
+
+    /* --- graphiques --- */
+    if (tag === 'svg' || tag === 'img') {
+      var png = n.getAttribute('data-kit-png');
+      if (png) {
+        w.close();
+        w.body += imageXml(png, +n.getAttribute('data-kit-w') || 600,
+                                +n.getAttribute('data-kit-h') || 380);
+      }
+      continue;
+    }
+
+    /* --- tableaux --- */
+    if (tag === 'table') { w.close(); w.body += table(n); continue; }
+
+    /* --- listes --- */
+    if (tag === 'ul' || tag === 'ol') {
+      w.close();
+      var nid = tag === 'ol' ? 2 : 1;
+      var lvl = list ? Math.min(list.ilvl + 1, 2) : 0;
+      var items = kids(n).filter(function (x) { return x.nodeName.toLowerCase() === 'li'; });
+      items.forEach(function (li) {
+        /* L'item est composé à part : son numéro doit se poser sur le premier
+           paragraphe produit, même si le <li> enveloppe son texte dans un <div>. */
+        var wb = new W();
+        walk(li, wb, fmt, { ilvl: lvl });
+        wb.close();
+        var xml = wb.body;
+        if (!xml) return;
+        var numPr = '<w:pStyle w:val="Liste"/><w:numPr><w:ilvl w:val="' + lvl +
+                    '"/><w:numId w:val="' + nid + '"/></w:numPr>';
+        if (xml.indexOf('<w:pStyle w:val="Corps"/>') !== -1) {
+          xml = xml.replace('<w:pStyle w:val="Corps"/>', numPr);
+        } else {
+          xml = '<w:p><w:pPr>' + numPr + '</w:pPr></w:p>' + xml;
+        }
+        w.body += xml;
+      });
+      continue;
+    }
+
+    /* --- titres --- */
+    if (tag === 'h1' || tag === 'h2') { w.close(); w.open('Titre1'); walk(n, w, fmt, list); w.close(); continue; }
+    if (tag === 'h3' || tag === 'h4') { w.close(); w.open('Titre2'); walk(n, w, fmt, list); w.close(); continue; }
+
+    /* --- titres internes du corrigé --- */
+    if (n.classList && (n.classList.contains('sol-sub') || n.classList.contains('sol-q') ||
+                        n.classList.contains('dossier-title'))) {
+      w.close(); w.open('Titre2'); walk(n, w, { b: true }, list); w.close(); continue;
+    }
+    if (n.classList && n.classList.contains('persp-box')) {
+      w.close();
+      var wb = new W();
+      walk(n, wb, fmt, list);
+      wb.close();
+      w.body += wb.body.replace(/w:val="Corps"/g, 'w:val="Encadre"')
+                       .replace(/w:val="Titre2"/g, 'w:val="EncadreTitre"');
+      continue;
+    }
+
+    /* --- mise en forme inline --- */
+    var f2 = { b: fmt.b, i: fmt.i, sup: fmt.sup, sub: fmt.sub, mono: fmt.mono };
+    if (tag === 'strong' || tag === 'b') f2.b = true;
+    if (tag === 'em' || tag === 'i') f2.i = true;
+    if (tag === 'sup') f2.sup = true;
+    if (tag === 'sub') f2.sub = true;
+    if (tag === 'code' || tag === 'kbd') f2.mono = true;
+
+    /* intertitre écrit en style en ligne (span display:block + gras) */
+    var st = n.getAttribute && n.getAttribute('style');
+    if (st && /display\s*:\s*block/.test(st) && /font-weight\s*:\s*(6|7|8|9|bold)/.test(st)) {
+      w.close(); w.open('Titre3');
+      walk(n, w, { b: true }, list);
+      w.close();
+      continue;
+    }
+
+    if ((tag === 'strong' || tag === 'b') &&
+        (!w.para || w.para.runs === '') &&
+        n.nextElementSibling && n.nextElementSibling.nodeName.toLowerCase() === 'br') {
+      w.close(); w.open('Titre3');
+      walk(n, w, { b: true }, list);
+      w.close();
+      i++;                       /* le <br> qui suit devient inutile */
+      continue;
+    }
+
+    if (tag === 'br') { w.add('<w:r><w:br/></w:r>'); continue; }
+    if (tag === 'hr') { w.close(); continue; }
+
+    if (BLOCK[tag]) { w.close(); w.open('Corps'); walk(n, w, f2, list); w.close(); }
+    else { walk(n, w, f2, list); }
+  }
+}
+
+function cellXml(td, isHead) {
+  var w2 = new W();
+  walk(td, w2, { b: !!isHead }, null);
+  w2.close();
+  var content = w2.body || '<w:p><w:pPr><w:pStyle w:val="Cellule"/></w:pPr></w:p>';
+  content = content.replace(/w:val="Corps"/g, 'w:val="Cellule"');
+  var span = parseInt(td.getAttribute('colspan') || '1', 10);
+  var shd = isHead ? '<w:shd w:val="clear" w:fill="EDE9DF"/>' : '';
+  return '<w:tc><w:tcPr>' + (span > 1 ? '<w:gridSpan w:val="' + span + '"/>' : '') +
+         shd + '<w:vAlign w:val="center"/></w:tcPr>' + content + '</w:tc>';
+}
+
+function table(tbl) {
+  var rows = tbl.querySelectorAll('tr'), out = '', ncol = 0, i, j;
+  for (i = 0; i < rows.length; i++) {
+    var c = rows[i].children, n = 0;
+    for (j = 0; j < c.length; j++) n += parseInt(c[j].getAttribute('colspan') || '1', 10);
+    ncol = Math.max(ncol, n);
+  }
+  if (!ncol) return '';
+  var grid = '<w:tblGrid>';
+  for (i = 0; i < ncol; i++) grid += '<w:gridCol w:w="' + Math.floor(9360 / ncol) + '"/>';
+  grid += '</w:tblGrid>';
+
+  for (i = 0; i < rows.length; i++) {
+    var cells = rows[i].children, xml = '';
+    var head = rows[i].parentNode.nodeName.toLowerCase() === 'thead' ||
+               (cells.length && cells[0].nodeName.toLowerCase() === 'th');
+    for (j = 0; j < cells.length; j++) xml += cellXml(cells[j], head);
+    out += '<w:tr>' + (head ? '<w:trPr><w:tblHeader/></w:trPr>' : '') + xml + '</w:tr>';
+  }
+  return '<w:tbl><w:tblPr><w:tblStyle w:val="Grille"/>' +
+         '<w:tblW w:w="5000" w:type="pct"/><w:tblLayout w:type="fixed"/></w:tblPr>' +
+         grid + out + '</w:tbl><w:p><w:pPr><w:pStyle w:val="Apres"/></w:pPr></w:p>';
+}
+
+/* ============================================================================
+   Assemblage du fichier
+   ========================================================================== */
+var NS =
+  'xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" ' +
+  'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
+  'xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" ' +
+  'xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" ' +
+  'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+  'xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture" ' +
+  'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+  'xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" ' +
+  'mc:Ignorable="w14"';
+
+function style(id, name, opts) {
+  var o = opts || {};
+  return '<w:style w:type="paragraph" w:styleId="' + id + '"><w:name w:val="' + name + '"/>' +
+         '<w:basedOn w:val="Corps"/><w:pPr>' +
+         (o.keep ? '<w:keepNext/>' : '') +
+         '<w:spacing w:before="' + (o.before || 0) + '" w:after="' + (o.after || 120) +
+         '" w:line="' + (o.line || 276) + '" w:lineRule="auto"/>' +
+         (o.jc ? '<w:jc w:val="' + o.jc + '"/>' : '') +
+         (o.ind ? '<w:ind w:left="' + o.ind + '"/>' : '') +
+         (o.border ? '<w:pBdr><w:left w:val="single" w:sz="18" w:space="8" w:color="1A2E42"/></w:pBdr>' : '') +
+         '</w:pPr><w:rPr>' +
+         (o.font ? '<w:rFonts w:ascii="' + o.font + '" w:hAnsi="' + o.font + '"/>' : '') +
+         (o.b ? '<w:b/>' : '') + (o.i ? '<w:i/>' : '') +
+         (o.sz ? '<w:sz w:val="' + o.sz + '"/>' : '') +
+         (o.color ? '<w:color w:val="' + o.color + '"/>' : '') +
+         '</w:rPr></w:style>';
+}
+
+function stylesXml() {
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles ' + NS + '>' +
+    '<w:docDefaults><w:rPrDefault><w:rPr>' +
+      '<w:rFonts w:ascii="Cambria" w:hAnsi="Cambria" w:cs="Cambria"/>' +
+      '<w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="fr-FR"/>' +
+    '</w:rPr></w:rPrDefault><w:pPrDefault><w:pPr>' +
+      '<w:spacing w:after="120" w:line="276" w:lineRule="auto"/><w:jc w:val="both"/>' +
+    '</w:pPr></w:pPrDefault></w:docDefaults>' +
+    '<w:style w:type="paragraph" w:default="1" w:styleId="Corps"><w:name w:val="Normal"/>' +
+      '<w:pPr><w:spacing w:after="120" w:line="276" w:lineRule="auto"/><w:jc w:val="both"/></w:pPr>' +
+      '<w:rPr><w:rFonts w:ascii="Cambria" w:hAnsi="Cambria"/><w:sz w:val="22"/></w:rPr></w:style>' +
+    style('TitreDoc', 'Title', { font: 'Cambria', b: true, sz: 40, color: '0D1B2A', jc: 'left', after: 60, line: 240 }) +
+    style('SousTitre', 'Subtitle', { i: true, sz: 20, color: '5A5A5A', jc: 'left', after: 280, line: 240 }) +
+    style('Titre1', 'heading 1', { b: true, sz: 28, color: '0D1B2A', before: 320, after: 140, jc: 'left', keep: true, line: 240 }) +
+    style('Titre2', 'heading 2', { b: true, sz: 23, color: '1A2E42', before: 240, after: 100, jc: 'left', keep: true, line: 240 }) +
+    style('Formule', 'Formula', { jc: 'center', before: 120, after: 120, line: 240 }) +
+    style('Liste', 'List Paragraph', { after: 100, ind: 360 }) +
+    style('Cellule', 'Table Text', { sz: 20, after: 40, jc: 'left', line: 240 }) +
+    style('Encadre', 'Aside', { ind: 240, border: true, sz: 21, before: 200, after: 200 }) +
+    style('Apres', 'After Table', { after: 200, sz: 12 }) +
+    style('Figure', 'Figure', { jc: 'center', before: 160, after: 200, line: 240 }) +
+    style('Titre3', 'heading 3', { b: true, sz: 22, color: '1A2E42', before: 200,
+                                   after: 60, jc: 'left', keep: true, line: 240 }) +
+    style('EncadreTitre', 'Aside Heading', { ind: 240, border: true, b: true, sz: 22,
+                                             color: '1A2E42', before: 200, after: 60, jc: 'left' }) +
+    '<w:style w:type="table" w:styleId="Grille"><w:name w:val="Table Grid"/><w:tblPr>' +
+      '<w:tblBorders>' +
+      ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(function (b) {
+        return '<w:' + b + ' w:val="single" w:sz="4" w:space="0" w:color="9A9A9A"/>';
+      }).join('') +
+      '</w:tblBorders><w:tblCellMar>' +
+      '<w:top w:w="60" w:type="dxa"/><w:left w:w="90" w:type="dxa"/>' +
+      '<w:bottom w:w="60" w:type="dxa"/><w:right w:w="90" w:type="dxa"/>' +
+      '</w:tblCellMar></w:tblPr></w:style>' +
+    '</w:styles>';
+}
+
+function numberingXml() {
+  function lvl(i, fmt, txtv, ind) {
+    return '<w:lvl w:ilvl="' + i + '"><w:start w:val="1"/><w:numFmt w:val="' + fmt + '"/>' +
+           '<w:lvlText w:val="' + txtv + '"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="' +
+           ind + '" w:hanging="360"/></w:pPr>' +
+           (fmt === 'bullet' ? '<w:rPr><w:rFonts w:ascii="Symbol" w:hAnsi="Symbol"/></w:rPr>' : '') +
+           '</w:lvl>';
+  }
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:numbering ' + NS + '>' +
+    '<w:abstractNum w:abstractNumId="1"><w:multiLevelType w:val="hybridMultilevel"/>' +
+      lvl(0, 'bullet', '\uF0B7', 360) + lvl(1, 'bullet', 'o', 720) + lvl(2, 'bullet', '\uF0A7', 1080) +
+    '</w:abstractNum>' +
+    '<w:abstractNum w:abstractNumId="2"><w:multiLevelType w:val="hybridMultilevel"/>' +
+      lvl(0, 'decimal', '%1.', 360) + lvl(1, 'lowerLetter', '%2.', 720) + lvl(2, 'lowerRoman', '%3.', 1080) +
+    '</w:abstractNum>' +
+    '<w:num w:numId="1"><w:abstractNumId w:val="1"/></w:num>' +
+    '<w:num w:numId="2"><w:abstractNumId w:val="2"/></w:num>' +
+    '</w:numbering>';
+}
+
+function buildDocx(opts) {
+  IMAGES = [];
+  var w = new W();
+
+  if (opts.title) {
+    w.body += '<w:p><w:pPr><w:pStyle w:val="TitreDoc"/></w:pPr>' +
+              textRun(opts.title, {}) + '</w:p>';
+  }
+  if (opts.subtitle) {
+    w.body += '<w:p><w:pPr><w:pStyle w:val="SousTitre"/></w:pPr>' +
+              textRun(opts.subtitle, {}) + '</w:p>';
+  }
+  opts.sections.forEach(function (sec) {
+    if (sec.heading) {
+      w.body += '<w:p><w:pPr><w:pStyle w:val="Titre1"/></w:pPr>' + textRun(sec.heading, {}) + '</w:p>';
+    }
+    walk(sec.node, w, {}, null);
+    w.close();
+  });
+  w.close();
+
+  var doc = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ' + NS + '><w:body>' +
+    w.body +
+    '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/>' +
+    '<w:pgMar w:top="1247" w:right="1247" w:bottom="1247" w:left="1247" ' +
+    'w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>';
+
+  var media = [], rels = '', ctypes = '';
+  IMAGES.forEach(function (im, i) {
+    media.push({ name: 'word/media/image' + (i + 1) + '.png', bin: im.bin });
+    rels += '<Relationship Id="rIdImg' + (i + 1) + '" Type="http://schemas.openxmlformats.org/' +
+            'officeDocument/2006/relationships/image" Target="media/image' + (i + 1) + '.png"/>';
+  });
+  if (IMAGES.length) ctypes = '<Default Extension="png" ContentType="image/png"/>';
+
+  return zip([
+    { name: '[Content_Types].xml',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+        '<Default Extension="xml" ContentType="application/xml"/>' + ctypes +
+        '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+        '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>' +
+        '<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>' +
+        '</Types>' },
+    { name: '_rels/.rels',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+        '</Relationships>' },
+    { name: 'word/_rels/document.xml.rels',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' +
+        '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>' +
+        rels + '</Relationships>' },
+    { name: 'word/document.xml', data: doc },
+    { name: 'word/styles.xml', data: stylesXml() },
+    { name: 'word/numbering.xml', data: numberingXml() }
+  ].concat(media));
+}
+
+root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: W, _walk: walk };
+
+})(window);
+
+</script>
+<script id="kit-js">
+/* ============================================================
+   KIT D'UNIFORMISATION — logique partagée (modale PDF, export Word,
+   libellés de la barre d'actions). Autonome : ne dépend d'aucun
+   dictionnaire I18N propre à la page.
+   ============================================================ */
+(function(){
+  var T = {
+    fr:{ modalTitle:"Exporter en PDF", seedPre:"Seed\u00a0:",
+         seedPost:"\u2014 notez cette valeur pour reproduire exactement cet exercice.",
+         optHeader:"Inclure l'en-t\u00eate de page",
+         optHeaderD:"Titre, badge de mati\u00e8re et intitul\u00e9 de l'exercice",
+         optSol:"Inclure le corrig\u00e9 complet",
+         optSolD:"L'ensemble des d\u00e9veloppements et commentaires du corrig\u00e9",
+         print:"\uD83D\uDDA8\u00a0Imprimer / Sauvegarder PDF", cancel:"Annuler",
+         btnNew:"\u21ba Nouvel \u00e9nonc\u00e9", btnPdf:"\u2b07 Exporter PDF", btnDoc:"\u2b07 Exporter Word",
+         btnCopy:"\u29c9 Copier", copied:"\u2713 Copi\u00e9e", seedLabel:"Seed de reproductibilit\u00e9",
+         docFile:"exercice.doc" },
+    en:{ modalTitle:"Export to PDF", seedPre:"Seed:",
+         seedPost:"\u2014 note this value to reproduce this exact exercise.",
+         optHeader:"Include the page header",
+         optHeaderD:"Title, subject badge and exercise heading",
+         optSol:"Include the full solution",
+         optSolD:"All the workings and comments of the solution",
+         print:"\uD83D\uDDA8\u00a0Print / Save as PDF", cancel:"Cancel",
+         btnNew:"\u21ba New exercise", btnPdf:"\u2b07 Export PDF", btnDoc:"\u2b07 Export Word",
+         btnCopy:"\u29c9 Copy", copied:"\u2713 Copied", seedLabel:"Reproducibility seed",
+         docFile:"exercise.doc" }
+  };
+
+  function lang(){
+    var l = (window.LANG || document.documentElement.lang || 'fr').toLowerCase();
+    return (l.indexOf('en') === 0) ? 'en' : 'fr';
+  }
+  function t(k){ return T[lang()][k]; }
+
+  window.KIT = { T:T, lang:lang, t:t };
+
+  /* --- libellés du kit (modale + barre d'actions) --- */
+  function paint(){
+    var d = T[lang()];
+    document.querySelectorAll('[data-kit]').forEach(function(el){
+      var k = el.getAttribute('data-kit');
+      if (d[k] !== undefined) el.innerHTML = d[k];
+    });
+  }
+  window.KIT.paint = paint;
+
+  /* Se raccroche au changement de langue de la page sans la modifier. */
+  function hookLang(){
+    if (typeof window.setLang === 'function' && !window.setLang.__kit){
+      var orig = window.setLang;
+      var wrapped = function(){ var r = orig.apply(this, arguments); paint(); return r; };
+      wrapped.__kit = true;
+      window.setLang = wrapped;
+    }
+  }
+
+  /* --- Copie de la seed active --- */
+  window.copySeed = function(btn){
+    var el = document.getElementById('seed-disp');
+    if (!el) return;
+    var v = (el.textContent || '').trim();
+    if (!v || v === '\u2014') return;
+    var done = function(){
+      var b = btn || document.getElementById('btn-copy-seed');
+      if (!b) return;
+      var old = b.innerHTML;
+      b.innerHTML = t('copied');
+      setTimeout(function(){ b.innerHTML = old; paint(); }, 1400);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(v).then(done, done);
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = v; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch(e){}
+      document.body.removeChild(ta); done();
+    }
+  };
+
+  /* --- Modale PDF --- */
+  window.openPdfModal = function(){
+    var s = document.getElementById('modal-seed');
+    var src = document.getElementById('seed-disp');
+    if (s && src) s.textContent = (src.textContent || '\u2014').trim();
+    /* la case « corrigé » reflète l'état d'affichage courant */
+    var sol = document.getElementById('sol-card');
+    var box = document.getElementById('opt-sol');
+    if (box) box.checked = !!(window.solVisible ||
+        (sol && (sol.classList.contains('visible') || sol.style.display === 'block')));
+    paint();
+    document.getElementById('pdf-ov').classList.add('open');
+    document.getElementById('pdf-modal').classList.add('open');
+  };
+  window.closePdfModal = function(){
+    document.getElementById('pdf-ov').classList.remove('open');
+    document.getElementById('pdf-modal').classList.remove('open');
+  };
+  var PRINTCLS = ['print-no-header', 'print-force-solution', 'print-no-solution'];
+
+  function clearPrintClasses() {
+    var b = document.body;
+    for (var i = 0; i < PRINTCLS.length; i++) b.classList.remove(PRINTCLS[i]);
+  }
+
+  window.doPrint = function () {
+    var noHdr   = !document.getElementById('opt-header').checked;
+    var inclSol =  document.getElementById('opt-sol').checked;
+    var b = document.body;
+
+    clearPrintClasses();
+    if (noHdr) b.classList.add('print-no-header');
+    b.classList.add(inclSol ? 'print-force-solution' : 'print-no-solution');
+    closePdfModal();
+
+    /* Le nettoyage doit attendre la fin réelle de l'impression. Un simple
+       minuteur ne convient pas : selon le navigateur, window.print() rend la
+       main avant que l'aperçu ne soit composé, et les options seraient alors
+       déjà effacées au moment où le PDF est produit. */
+    var done = false;
+    function finish() {
+      if (done) return;
+      done = true;
+      clearPrintClasses();
+      window.removeEventListener('afterprint', finish);
+      if (mq && mq.removeListener) mq.removeListener(onMq);
+      if (mq && mq.removeEventListener) mq.removeEventListener('change', onMq);
+    }
+    function onMq(e) { if (!e.matches) finish(); }
+
+    var mq = window.matchMedia ? window.matchMedia('print') : null;
+    window.addEventListener('afterprint', finish);
+    if (mq && mq.addEventListener) mq.addEventListener('change', onMq);
+    else if (mq && mq.addListener) mq.addListener(onMq);
+    /* filet de sécurité si le navigateur n'émet aucun de ces signaux */
+    setTimeout(finish, 120000);
+
+    setTimeout(function () { window.print(); }, 120);
+  };
+
+  /* --- Rasterisation des graphiques SVG ---
+     Word ne sait pas lire le SVG. On le convertit en PNG en recopiant d'abord
+     les styles calculés, sinon les couleurs héritées de la feuille disparaissent. */
+  var SVGPROPS = ['fill', 'stroke', 'stroke-width', 'stroke-dasharray', 'stroke-linecap',
+                  'stroke-linejoin', 'opacity', 'fill-opacity', 'stroke-opacity',
+                  'font-family', 'font-size', 'font-weight', 'font-style',
+                  'text-anchor', 'dominant-baseline'];
+
+  function inlineStyles(src, dst) {
+    var a = src.querySelectorAll('*'), b = dst.querySelectorAll('*'), i, j;
+    for (i = 0; i < a.length && i < b.length; i++) {
+      var cs = window.getComputedStyle(a[i]);
+      for (j = 0; j < SVGPROPS.length; j++) {
+        var v = cs.getPropertyValue(SVGPROPS[j]);
+        if (v) b[i].setAttribute(SVGPROPS[j], v);
+      }
+    }
+  }
+
+  function svgSize(svg) {
+    var vb = svg.viewBox && svg.viewBox.baseVal;
+    if (vb && vb.width) return { w: vb.width, h: vb.height };
+    var r = svg.getBoundingClientRect();
+    if (r.width) return { w: r.width, h: r.height };
+    return { w: 600, h: 380 };
+  }
+
+  function svgToPng(svg) {
+    return new Promise(function (resolve) {
+      var done = false;
+      var res = function (v) { if (!done) { done = true; resolve(v); } };
+      /* garde-fou : un graphique qui ne se charge pas ne doit jamais
+         bloquer l'export, on l'omet et le reste du document part quand même */
+      setTimeout(function () { res(null); }, 5000);
+      try {
+        var d = svgSize(svg), SC = 2;
+        var c = svg.cloneNode(true);
+        c.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        c.setAttribute('width', d.w);
+        c.setAttribute('height', d.h);
+        inlineStyles(svg, c);
+        var bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        bg.setAttribute('x', 0); bg.setAttribute('y', 0);
+        bg.setAttribute('width', '100%'); bg.setAttribute('height', '100%');
+        bg.setAttribute('fill', '#ffffff');
+        c.insertBefore(bg, c.firstChild);
+        var xml = new XMLSerializer().serializeToString(c);
+        var img = new Image();
+        img.onload = function () {
+          try {
+            var cv = document.createElement('canvas');
+            cv.width = Math.round(d.w * SC); cv.height = Math.round(d.h * SC);
+            var ctx = cv.getContext('2d');
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, cv.width, cv.height);
+            ctx.drawImage(img, 0, 0, cv.width, cv.height);
+            res({ png: cv.toDataURL('image/png'), w: d.w, h: d.h });
+          } catch (e) { res(null); }
+        };
+        img.onerror = function () { res(null); };
+        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml);
+      } catch (e) { res(null); }
+    });
+  }
+
+  /* --- Export Word natif (.docx) ---
+     Les formules sont converties en OMML, le format d'équation natif de Word :
+     elles restent éditables et se composent avec Cambria Math. */
+  window.exportWord = function () {
+    var area = document.getElementById('ex-area');
+    if (!area || !window.DocxExport) { return; }
+
+    var btn = document.querySelector('.btn-sm.doc');
+    if (btn) { btn.disabled = true; btn.style.opacity = '.5'; }
+
+    var svgs = Array.prototype.slice.call(area.querySelectorAll('svg'));
+    Promise.all(svgs.map(svgToPng)).then(function (pngs) {
+      svgs.forEach(function (sv, i) {
+        if (!pngs[i]) return;
+        sv.setAttribute('data-kit-png', pngs[i].png);
+        sv.setAttribute('data-kit-w', pngs[i].w);
+        sv.setAttribute('data-kit-h', pngs[i].h);
+      });
+      try { writeDocx(area); } finally {
+        svgs.forEach(function (sv) {
+          sv.removeAttribute('data-kit-png');
+          sv.removeAttribute('data-kit-w');
+          sv.removeAttribute('data-kit-h');
+        });
+        if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+      }
+    });
+  };
+
+  function writeDocx(area) {
+
+    var h1 = document.querySelector('header h1');
+    var badge = document.querySelector('.header-badge, #lbl-badge');
+    var seed = document.getElementById('seed-disp');
+    var bits = [];
+    if (badge && badge.textContent.trim()) bits.push(badge.textContent.trim());
+    if (seed && seed.textContent.trim() && seed.textContent.trim() !== '\u2014') {
+      bits.push('seed ' + seed.textContent.trim());
+    }
+    bits.push('Thomas Hossen');
+
+    var sections = [];
+    var cards = area.querySelectorAll('.card');
+    for (var i = 0; i < cards.length; i++) {
+      var body = cards[i].querySelector('.card-body');
+      if (!body) continue;
+      var tag = cards[i].querySelector('.card-header .tag');
+      var h2 = cards[i].querySelector('.card-header h2');
+      var head = [tag ? tag.textContent.trim() : '', h2 ? h2.textContent.trim() : '']
+                   .filter(Boolean).join(' \u2014 ');
+      sections.push({ heading: head, node: body });
+    }
+    if (!sections.length) sections = [{ heading: '', node: area }];
+
+    var bytes = window.DocxExport.build({
+      title: h1 ? h1.textContent.trim() : document.title,
+      subtitle: bits.join(' \u00b7 '),
+      sections: sections
+    });
+
+    var name = (h1 ? h1.textContent : 'exercice').normalize('NFD')
+                 .replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9]+/g, '_')
+                 .replace(/^_|_$/g, '').slice(0, 60) || 'exercice';
+    var blob = new Blob([bytes], {
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = name + '.docx';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){ hookLang(); paint(); });
+  if (document.readyState !== 'loading'){ hookLang(); paint(); }
+})();
+</script>
+<!-- KIT:JS:END -->
+</body>
+</html>
