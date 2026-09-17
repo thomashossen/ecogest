@@ -1,0 +1,2050 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Finance d'Entreprise - Coût de la dette à court terme</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['\\[', '\\]']]
+    }
+  };
+</script>
+<script>window.MathJax=window.MathJax||{};window.MathJax.options=window.MathJax.options||{};window.MathJax.options.enableAssistiveMml=true;</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7;text-align:justify;}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 1.5rem;border-bottom:3px solid var(--gold);text-align:left;}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end;background:rgba(255,255,255,.03);padding:1rem 1.5rem;border-radius:6px;border:1px solid rgba(255,255,255,.1)}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.6)}
+.ctrl-inp, .ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.4rem .7rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none;transition:border-color .2s}
+.ctrl-inp:focus, .ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.5rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;transition:background .18s;margin-left:auto}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN & CARDS */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:700}
+
+.top-actions{display:flex;gap:.5rem;}
+.btn-action{background:#fff;border:1px solid var(--border);color:var(--navy);padding:.4rem .8rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.85rem;font-weight:600;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.btn-action:hover{border-color:var(--navy);background:var(--cream-dark);}
+
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem;text-align:left;}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+.event-list{list-style:none;}
+.event-list > li{margin-bottom:1.5rem;padding-left:1.5rem;position:relative;font-size:.95rem;text-align:justify}
+.event-list > li::before{content:"•";position:absolute;left:0;color:var(--gold);font-size:1.5rem;line-height:1}
+
+.sub-list { list-style-type: none; padding-left: 1rem; margin-top: 0.8rem; text-align:justify;}
+.sub-list li { margin-bottom: 0.5rem; }
+
+/* EXAM TABLE */
+.exam-table-wrap { overflow-x: auto; margin: 1.5rem 0; }
+.exam-table{width:100%;border-collapse:collapse;font-size:.85rem;font-family:'Source Serif 4',serif; margin: 0;}
+.exam-table th, .exam-table td{border:1px solid var(--border);padding:.6rem;text-align:center;vertical-align:middle;}
+.exam-table th{background:var(--navy);color:var(--cream);font-weight:600;}
+.exam-table .txt-left{text-align:left;font-weight:600;color:var(--navy);}
+.exam-table .amt{font-family:'JetBrains Mono',monospace;text-align:right;white-space:nowrap;}
+
+.two-col-table { width: 100%; display: flex; gap: 2rem; margin: 1.5rem 0; }
+.col-half { flex: 1; }
+
+/* SOLUTION TOGGLE */
+.sol-toggle-wrap{text-align:left; margin: 1.5rem 0 0 0;}
+.btn-toggle{background:transparent;border:2px solid var(--green);border-bottom:none;color:var(--green);font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;padding:.5rem 1.5rem;border-radius:4px 4px 0 0;cursor:pointer;transition:all .2s; position:relative; z-index:2; top:2px;}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--green);color:var(--cream)}
+.sol-card{border-top:2px solid var(--green);display:none; border-radius: 0 6px 6px 6px; position:relative; z-index:1;}
+.sol-card.visible{display:block;animation:fi .4s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+
+.calc-box{background:#f9fcf9;border:1px solid #c8e6c9;padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.9rem;color:var(--text);line-height:1.6;text-align:justify;}
+
+@media print{
+  body{background:#fff;}
+  header, .ctrls, .sol-toggle-wrap, .top-actions {display:none !important;}
+  .card{box-shadow:none; border:1px solid var(--border); margin-bottom:2rem;}
+  .sol-card{display:block !important; border-top:2px solid var(--green);}
+  #ex-area {display:block !important;}
+}
+
+/* --- Selecteur de langue / Language switch --- */
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem}
+.header-top .header-badge{margin-bottom:0}
+.lang-switch{display:flex;gap:.45rem;flex-shrink:0}
+.flag-btn{background:rgba(255,255,255,.06);border:1px solid rgba(201,149,42,.35);border-radius:3px;padding:3px;cursor:pointer;line-height:0;opacity:.5;transition:opacity .2s,border-color .2s,transform .15s}
+.flag-btn:hover{opacity:1;transform:translateY(-1px)}
+.flag-btn.active{opacity:1;border-color:var(--gold-light);box-shadow:0 0 0 1px rgba(232,184,75,.35)}
+.flag-btn svg{display:block;width:30px;height:20px;border-radius:1px}
+@media print{ .lang-switch{display:none !important;} }
+</style>
+<!-- KIT:CSS:START v1 --><style id="kit-css">
+/* ============================================================
+   KIT D'UNIFORMISATION — bloc partagé, identique sur toutes les pages.
+   Ne rien modifier ici fichier par fichier : régénérer le kit.
+   ============================================================ */
+
+/* --- 1. Mathématiques : jamais de débordement --- */
+mjx-container[display="true"]{
+  overflow-x:auto; overflow-y:hidden; max-width:100%;
+  padding:.15rem 0; margin:1rem 0 !important;
+}
+mjx-container[display="true"]::-webkit-scrollbar{height:5px}
+mjx-container[display="true"]::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+mjx-container{ max-width:100%; }
+.math-formula{ text-align:center; margin:1.2rem 0; overflow-x:auto; max-width:100%; }
+@media (max-width:640px){
+  mjx-container[display="true"]{ font-size:88% }
+}
+
+/* --- 2. Listes à puces entourées (questions ET données de contexte) --- */
+.kit-list, .st > ol,
+.questions > ol,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list), .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list),
+.question-list, .enum-list, .q-list{
+  counter-reset:kitq; list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem;
+}
+.kit-list > li, .st > ol > li,
+.questions > ol > li,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li, .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li,
+.question-list > li, .enum-list > li, .q-list > li{
+  counter-increment:kitq; position:relative;
+  padding-left:2.6rem; margin-bottom:1.3rem;
+  font-size:.95rem; line-height:1.7; text-align:justify;
+  font-weight:400; color:var(--text);
+  display:block;
+}
+.kit-list > li::before, .st > ol > li::before,
+.questions > ol > li::before,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li::before, .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li::before,
+.question-list > li::before, .enum-list > li::before, .q-list > li::before{
+  content:counter(kitq);
+  position:absolute; left:0; top:.1rem;
+  width:28px; min-width:28px; height:28px;
+  background:var(--navy); color:var(--cream);
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.72rem; font-weight:500;
+  flex-shrink:0;
+}
+.questions ol > li .q-text{ flex:1; font-size:.95rem; text-align:justify }
+/* sous-listes : cercle creux, plus discret */
+.enum-sublist, .kit-sublist, .sub-list, .sub-ol, .alpha-list, .enum-subsublist,
+.st ol.sub-ol, .questions ol ol, .st ol ol, .kit-list ol, .q-list ol, .question-list ol{
+  counter-reset:kitsq; list-style:none !important; padding-left:0 !important;
+  margin:.9rem 0 .9rem 0;
+}
+.enum-sublist > li, .kit-sublist > li, .sub-list > li, .sub-ol > li, .alpha-list > li, .enum-subsublist > li,
+.st ol.sub-ol > li, .questions ol ol > li, .st ol ol > li, .kit-list ol > li, .q-list ol > li, .question-list ol > li{
+  counter-increment:kitsq; position:relative;
+  padding-left:2.1rem; margin-bottom:.7rem; font-size:.92rem; text-align:justify;
+}
+.enum-sublist > li::before, .kit-sublist > li::before, .sub-list > li::before, .sub-ol > li::before, .alpha-list > li::before, .enum-subsublist > li::before,
+.st ol.sub-ol > li::before, .questions ol ol > li::before, .st ol ol > li::before, .kit-list ol > li::before, .q-list ol > li::before, .question-list ol > li::before{
+  content:counter(kitsq,lower-alpha);
+  min-width:22px;
+  position:absolute; left:0; top:.05rem;
+  width:22px; height:22px;
+  background:transparent; color:var(--navy);
+  border:1px solid var(--gold);
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.65rem;
+}
+
+/* variante : puces simples non numérotées (listes de données) */
+.kit-simple{ list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem }
+.kit-simple > li{
+  position:relative; padding-left:1.5rem; margin-bottom:1.1rem;
+  font-size:.95rem; line-height:1.7; text-align:justify;
+}
+.kit-simple > li::before{
+  content:"\2022"; position:absolute; left:0; top:-.15rem;
+  color:var(--gold); font-size:1.5rem; line-height:1; background:none;
+  width:auto; height:auto; border:none; border-radius:0;
+}
+/* variante : liste à un seul élément, sans puce */
+.kit-nobullet{ list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem }
+.kit-nobullet > li{
+  padding-left:0; margin-bottom:1rem; font-size:.95rem; line-height:1.7; text-align:justify;
+}
+.kit-nobullet > li::before{ content:none !important; display:none !important }
+/* variante : titres de section numérotés (contenu intercalé entre les puces) */
+.kit-num-scope{ counter-reset:kitn }
+p.kit-num{
+  counter-increment:kitn; position:relative;
+  padding-left:2.6rem; margin:1.8rem 0 1rem;
+  font-weight:600; color:var(--navy); text-align:left;
+  min-height:28px; display:flex; align-items:center;
+}
+p.kit-num:first-of-type{ margin-top:0 }
+p.kit-num::before{
+  content:counter(kitn); position:absolute; left:0; top:0;
+  width:28px; height:28px; background:var(--navy); color:var(--cream);
+  border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.72rem; font-weight:500;
+}
+
+/* titres de dossier */
+.dossier-title{
+  margin:2rem 0 1rem; font-weight:600; color:var(--navy); font-size:1.02rem;
+  border-bottom:1px solid var(--border); padding-bottom:.4rem; text-align:left;
+}
+.dossier-title:first-of-type{ margin-top:0 }
+.dossier-body{ margin-bottom:.5rem }
+
+/* --- 3. Corrigé sobre : plus de multiplication de fonds verts --- */
+.sol-card .calc-box, .sol-card .concl{
+  background:transparent !important;
+  border:none !important;
+  border-left:none !important;
+  padding:0 !important;
+  border-radius:0 !important;
+  margin:0 0 1.6rem 0 !important;
+  font-size:.95rem;
+  line-height:1.7;
+  text-align:justify;
+}
+.sol-card .sol-sub{
+  color:var(--navy); font-weight:600; display:block;
+  margin:0 0 .5rem 0; font-size:1rem;
+}
+/* seuls encadrés conservés : les perspectives « Pour aller plus loin » */
+.sol-card .persp-box{
+  background:#f7f9fc !important;
+  border:1px solid #ccd8e6 !important;
+  border-left:3px solid var(--navy-mid) !important;
+  padding:1.2rem !important;
+  border-radius:4px !important;
+  margin:2rem 0 1rem 0 !important;
+  font-size:.9rem; line-height:1.7; text-align:justify;
+}
+
+.btn-toggle{
+  background:transparent; border:2px solid var(--green); border-bottom:none;
+  color:var(--green); font-family:'Source Serif 4',serif; font-size:.95rem;
+  font-weight:600; padding:.5rem 1.5rem; border-radius:4px 4px 0 0; cursor:pointer;
+  transition:all .2s; position:relative; z-index:2; top:2px;
+}
+.btn-toggle:hover{ background:var(--green); color:var(--cream) }
+
+/* --- 4. Bouton « Afficher le corrigé » (modèle der) --- */
+.sol-toggle-wrap{ text-align:left; margin:1.5rem 0 0 0; }
+.sol-card{
+  border-top:2px solid var(--green); display:none;
+  border-radius:0 6px 6px 6px; position:relative; z-index:1;
+}
+.sol-card.visible{ display:block; animation:kitfi .35s ease }
+.sol-card .card-header{ background:var(--green) }
+.sol-card .card-header .tag{ border-color:rgba(200,240,200,.4); color:#a8d8b0 }
+@keyframes kitfi{ from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+
+/* --- 5. Barre d'actions unifiée --- */
+.top-bar{ display:flex; flex-wrap:wrap; gap:.8rem; align-items:center; justify-content:space-between; margin-bottom:1.2rem }
+.top-bar-left{ display:flex; flex-wrap:wrap; gap:.55rem; order:1 }
+.top-bar .seed-badge{ order:2 }
+.btn-sm{ background:transparent; border:1px solid var(--gold); color:var(--gold); font-family:'JetBrains Mono',monospace; font-size:.67rem; letter-spacing:.08em; text-transform:uppercase; padding:.4rem 1rem; border-radius:3px; cursor:pointer; transition:all .18s; white-space:nowrap }
+.btn-sm:hover{ background:var(--gold); color:var(--navy) }
+.btn-sm.pdf{ border-color:#7bafd4; color:#7bafd4 }
+.btn-sm.pdf:hover{ background:#7bafd4; color:var(--navy) }
+.btn-sm.doc{ border-color:#8fa8c4; color:#8fa8c4 }
+.seed-row{ display:flex; gap:.4rem; align-items:center }
+.btn-copy-seed{
+  background:transparent; border:1px solid rgba(201,149,42,.4); color:rgba(250,247,240,.55);
+  padding:.38rem .55rem; border-radius:3px; cursor:pointer;
+  font-family:'JetBrains Mono',monospace; font-size:.65rem; transition:all .18s; white-space:nowrap;
+}
+.btn-copy-seed:hover{ border-color:var(--gold-light); color:var(--gold-light) }
+.btn-sm.doc:hover{ background:#8fa8c4; color:var(--navy) }
+
+/* --- 6. Modale d'export PDF --- */
+#pdf-ov{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:100; backdrop-filter:blur(2px) }
+#pdf-modal{ display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:101; background:#fff; border-radius:8px; box-shadow:0 20px 60px rgba(0,0,0,.25); width:390px; max-width:95vw; border-top:4px solid #7bafd4; overflow:hidden }
+#pdf-ov.open,#pdf-modal.open{ display:block }
+.mh{ background:var(--navy); color:var(--cream); padding:1rem 1.5rem; display:flex; align-items:center; justify-content:space-between }
+.mh h3{ font-family:'Playfair Display',serif; font-size:1rem; font-weight:600; margin:0 }
+.mclose{ background:none; border:none; color:rgba(255,255,255,.6); cursor:pointer; font-size:1.2rem; line-height:1; padding:2px 6px; border-radius:3px; transition:color .15s }
+.mclose:hover{ color:#fff }
+.mb2{ padding:1.5rem }
+.opt-row{ display:flex; align-items:flex-start; gap:.75rem; margin-bottom:1rem; cursor:pointer }
+.opt-row input[type=checkbox]{ width:16px; height:16px; cursor:pointer; accent-color:var(--navy); flex-shrink:0; margin-top:3px }
+.opt-txt{ display:block }
+.opt-lbl{ font-size:.93rem; display:block }
+.opt-desc{ font-size:.75rem; color:var(--text-muted); display:block }
+.seed-note{ font-family:'JetBrains Mono',monospace; font-size:.7rem; background:var(--cream-dark); border:1px solid var(--border); padding:.55rem .85rem; border-radius:3px; color:var(--text-muted); margin-bottom:1.2rem; line-height:1.5 }
+.mactions{ display:flex; gap:.6rem }
+.btn-print{ flex:1; background:var(--navy); color:var(--cream); border:none; padding:.7rem; border-radius:4px; font-family:'Source Serif 4',serif; font-size:.9rem; cursor:pointer; transition:background .2s }
+.btn-print:hover{ background:var(--navy-mid) }
+.btn-cancel{ background:transparent; border:1px solid var(--border); color:var(--text-muted); padding:.7rem 1rem; border-radius:4px; font-family:'Source Serif 4',serif; font-size:.9rem; cursor:pointer; transition:all .2s }
+.btn-cancel:hover{ border-color:var(--text); color:var(--text) }
+
+/* --- 7. Impression --- */
+@media print{
+  body{ background:#fff; font-size:11pt; -webkit-print-color-adjust:exact; print-color-adjust:exact }
+  header{ display:block !important; padding:1rem 1.5rem .8rem }
+  header .subtitle{ display:none }
+  .ctrls, #controls-bar, .top-actions, .top-bar-left, .sol-toggle-wrap,
+  .lang-switch, #pdf-ov, #pdf-modal{ display:none !important }
+  .top-bar{ display:block !important; margin-bottom:.8rem }
+  .top-bar .seed-badge{
+    display:inline-block !important; background:none; border:1px solid var(--border);
+    color:var(--text-muted); font-family:'JetBrains Mono',monospace; font-size:8.5pt;
+    padding:2pt 6pt; border-radius:2px;
+  }
+  body.print-no-header .top-bar{ display:none !important }
+  main{ padding:1rem 1.5rem; max-width:100% }
+  .card{ box-shadow:none; border-radius:0; page-break-inside:avoid; margin-bottom:1rem }
+  #ex-area{ display:block !important }
+  .sol-card{ display:block !important; border-top:2px solid var(--green) }
+  mjx-container[display="true"]{ overflow:visible !important }
+  body.print-no-header header{ display:none !important }
+  body.print-no-header .ctrls{ display:none !important }
+  body.print-no-solution .sol-card,
+  body.print-no-solution .sol-toggle-wrap{ display:none !important }
+  body.print-force-solution .sol-card{ display:block !important }
+}
+</style><!-- KIT:CSS:END -->
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-top">
+    <div class="header-badge" data-k="k-badge">MÉTHODE D'ÉVALUATION DES ACTIFS FINANCIERS</div>
+    <div class="lang-switch">
+      <button type="button" class="flag-btn active" id="flag-fr" onclick="setLang('fr')" title="Français" aria-label="Français"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="20" height="40" fill="#002654"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ED2939"/></svg></button>
+      <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
+    </div>
+  </div>
+  <h1 data-k="k-h1">Le coût réel de la dette à court terme</h1>
+  <p class="subtitle" data-k="k-sub">© Thomas Hossen – Version du 17 septembre 2026</p>
+
+  <div class="ctrls">
+    <div class="ctrl-g">
+      <span class="ctrl-lbl" data-k="k-seed">Seed de reproductibilité</span>
+      <div class="seed-row"><input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999"><button type="button" class="btn-copy-seed" id="btn-copy-seed" onclick="copySeed(this)" title="Copier la seed active"><span data-kit="btnCopy">&#10697; Copier</span></button></div>
+    </div>
+    <button class="btn-gen" onclick="generateExercise(false)"><span data-k="k-gen">Générer</span></button>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" style="text-align:center; padding:4rem; color:var(--text-muted); font-style:italic;">
+    <span data-k="k-welcome">Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.</span>
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="seed-badge"><span data-k="k-seedbadge">Seed active :</span> <span id="seed-disp"></span></div>
+      <div class="top-bar-left">
+        <button type="button" class="btn-sm" onclick="generateExercise(true)"><span data-kit="btnNew">&#8634; Nouvel &eacute;nonc&eacute;</span></button>
+        <button type="button" class="btn-sm pdf" onclick="openPdfModal()"><span data-kit="btnPdf">&#11015; Exporter PDF</span></button>
+        <button type="button" class="btn-sm doc" onclick="exportWord()"><span data-kit="btnDoc">&#11015; Exporter Word</span></button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="tag" data-k="k-tag-ex">Énoncé</span><h2 data-k="k-cardtitle">Comparaison des formes de financement de trésorerie</h2></div>
+      <div class="card-body">
+        <div class="context-block" id="context-text"></div>
+        <div id="enonce-table-container"></div>
+        <div class="context-block" id="additional-info" style="margin-top:1.5rem; background:#fff; border-left:3px solid var(--navy); border-radius:0;"></div>
+
+        <p style="margin-bottom:1rem; font-weight:600; color:var(--red); text-align:left;" data-k="k-work">Travail à faire</p>
+        <ul class="event-list" id="events-list"></ul>
+      </div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag" data-k="k-tag-sol">Corrigé</span><h2 data-k="k-cardtitle2">Comparaison des formes de financement de trésorerie</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+/* ============================================================
+   PROFILS D'ENTREPRISE  /  COMPANY PROFILES
+   ============================================================ */
+const PROFILES = [
+  { name: "Alpha Industries",
+    fr: { secteur: "une entreprise industrielle spécialisée dans les équipements de levage", clients: "de grands donneurs d'ordre du bâtiment et des travaux publics" },
+    en: { secteur: "an industrial company specialising in lifting equipment", clients: "large construction and civil-engineering contractors" } },
+  { name: "Méridiane Composites",
+    fr: { secteur: "un équipementier de second rang du secteur aéronautique", clients: "des intégrateurs aéronautiques de premier rang" },
+    en: { secteur: "a second-tier supplier to the aerospace industry", clients: "top-tier aerospace integrators" } },
+  { name: "Norvent Mécanique",
+    fr: { secteur: "un fabricant de machines-outils de précision", clients: "des constructeurs automobiles et ferroviaires" },
+    en: { secteur: "a precision machine-tool manufacturer", clients: "automotive and rail manufacturers" } },
+  { name: "Castelane Agro",
+    fr: { secteur: "une coopérative de transformation agroalimentaire", clients: "des centrales d'achat de la grande distribution" },
+    en: { secteur: "an agri-food processing cooperative", clients: "the purchasing centres of large retail chains" } },
+  { name: "Vertimax Emballages",
+    fr: { secteur: "un producteur d'emballages industriels recyclés", clients: "des groupes de la chimie et de la cosmétique" },
+    en: { secteur: "a producer of recycled industrial packaging", clients: "chemical and cosmetics groups" } },
+  { name: "Solère Électrotechnique",
+    fr: { secteur: "un fabricant de composants électrotechniques", clients: "des exploitants de réseaux d'énergie" },
+    en: { secteur: "a manufacturer of electrotechnical components", clients: "energy network operators" } }
+];
+
+/* ============================================================
+   DICTIONNAIRE BILINGUE  /  BILINGUAL DICTIONARY
+   ============================================================ */
+const I18N = {
+
+  fr: {
+    "htmlLang": "fr",
+    "title": "Simulateur Finance d'Entreprise - Coût de la dette à court terme",
+    "locale": "fr-FR",
+    "k-badge": "MÉTHODE D'ÉVALUATION DES ACTIFS FINANCIERS",
+    "k-h1": "Le coût réel de la dette à court terme",
+    "k-sub": "© Thomas Hossen – Version du 17 septembre 2026",
+    "k-seed": "Seed de reproductibilité",
+    "k-gen": "Générer",
+    "k-welcome": "Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.",
+    "k-seedbadge": "Seed active :",
+    "k-tag-ex": "Énoncé",
+    "k-cardtitle": "Comparaison des formes de financement de trésorerie",
+    "k-tag-sol": "Corrigé",
+    "k-cardtitle2": "Comparaison des formes de financement de trésorerie",
+    "k-work": "Travail à faire",
+    "showSol": "Afficher le corrigé",
+    "hideSol": "Masquer le corrigé",
+    thousands: "\\,",
+    decimal: "{,}",
+
+    names: { A: "escompte d'effets", B: "crédit Dailly", C: "mobilisation de billet de trésorerie", D: "découvert en compte" },
+    shortNames: { A: "Escompte", B: "Dailly", C: "Billet", D: "Découvert" },
+    chartTitle: "Taux annuel équivalent par solution",
+    chartAxis: "% l'an",
+
+    context: function(D) {
+      const p = D.prof.fr;
+      return `
+        ${D.prof.name} est ${p.secteur} qui doit faire face à un besoin de trésorerie ponctuel de ${fmtNb(D.N,0)} euros pendant une durée de ${D.T} jours, le temps que se dénouent les décalages entre ses décaissements d'exploitation et les règlements de ses clients. L'entreprise dispose d'un portefeuille de créances clients de ${fmtNb(D.N,0)} euros, matérialisées par des effets à ${D.T} jours bien répartis sur ${p.clients} réputés solvables, et bénéficie d'un bon <em>rating</em> bancaire. Sa banque lui propose quatre modes de financement à court terme, dont les conditions sont récapitulées ci-dessous.
+      `;
+    },
+    table: function(D) {
+      return `<div class="exam-table-wrap">
+        <table class="exam-table">
+            <tr><th style="width:26%;">Solution</th><th style="width:16%;">Taux nominal annuel</th><th style="width:29%;">Commissions et frais</th><th style="width:29%;">Caractéristiques</th></tr>
+            <tr>
+              <td class="txt-left">A — Escompte d'effets</td>
+              <td class="amt">${fmtNb(D.tA,2)} %</td>
+              <td class="txt-left" style="font-weight:400;">Commission d'escompte de ${fmtNb(D.cA,2)} % du nominal</td>
+              <td class="txt-left" style="font-weight:400;">Remise de la totalité des effets, nominal ${fmtNb(D.N,0)} € à ${D.T} jours ; intérêts précomptés</td>
+            </tr>
+            <tr>
+              <td class="txt-left">B — Crédit Dailly</td>
+              <td class="amt">${fmtNb(D.tB,2)} %</td>
+              <td class="txt-left" style="font-weight:400;">Commission de service de ${fmtNb(D.cB,2)} % du nominal cédé</td>
+              <td class="txt-left" style="font-weight:400;">Cession par bordereau de ${fmtNb(D.N,0)} € de créances ; la banque finance ${fmtNb(D.q,0)} % du nominal cédé, intérêts calculés sur le montant versé</td>
+            </tr>
+            <tr>
+              <td class="txt-left">C — Mobilisation de billet</td>
+              <td class="amt">${fmtNb(D.tC,2)} %</td>
+              <td class="txt-left" style="font-weight:400;">Frais de dossier forfaitaires de ${fmtNb(D.F,0)} €</td>
+              <td class="txt-left" style="font-weight:400;">Billet de trésorerie de nominal ${fmtNb(D.N,0)} € à ${D.T} jours ; intérêts précomptés</td>
+            </tr>
+            <tr>
+              <td class="txt-left">D — Découvert en compte</td>
+              <td class="amt">${fmtNb(D.tD,2)} %</td>
+              <td class="txt-left" style="font-weight:400;">Commission d'engagement annuelle de ${fmtNb(D.ce,2)} % sur le plafond autorisé, <em>prorata temporis</em> ; CPFD de ${fmtNb(D.cpfd,2)} % sur la période</td>
+              <td class="txt-left" style="font-weight:400;">Plafond autorisé de ${fmtNb(D.P,0)} € ; utilisation moyenne de ${fmtNb(D.N,0)} € sur ${D.T} jours, avec un plus fort découvert de ${fmtNb(D.P,0)} € pendant ${D.peakDays} jours ; intérêts post-comptés</td>
+            </tr>
+        </table>
+      </div>`;
+    },
+    info: function(D) {
+      return `
+        <strong>Hypothèses de travail.</strong> Tous les taux sont des taux nominaux annuels calculés sur une base de 360 jours. Les intérêts sont précomptés pour les solutions A et C (ils sont retenus dès la mise à disposition des fonds), calculés sur le montant versé et prélevés d'avance pour la solution B, et post-comptés pour la solution D (ils sont débités en fin de période). Le taux effectif d'une opération rapporte le coût total supporté à la ressource nette réellement mise à la disposition de l'entreprise, et non à son nominal. Le passage du taux périodique au taux annuel équivalent se fait par proportionnalité, selon l'usage du court terme : $i_{\\text{annuel}} = i_{T} \\times \\frac{360}{T}$. Les montants sont arrondis au centime, les taux à deux décimales, mais tous les calculs intermédiaires sont conduits en pleine précision.
+      `;
+    },
+    enonce: function(D) {
+      let h = "";
+      h += `<li><strong>Solution A — escompte d'effets.</strong> Calculez les intérêts d'escompte, la commission, le coût total de l'opération sur ${D.T} jours et la ressource nette effectivement reçue. En déduire le taux effectif sur la période et le taux annuel équivalent.</li>`;
+      h += `<li><strong>Solution B — crédit Dailly.</strong> Déterminez le montant effectivement financé par la banque, les intérêts, la commission de service, le coût total et la ressource nette. En déduire le taux effectif sur la période et le taux annuel équivalent.</li>`;
+      h += `<li><strong>Solution C — mobilisation de billet de trésorerie.</strong> Calculez les intérêts précomptés, le coût total frais de dossier compris, la ressource nette, puis les taux effectifs correspondants.</li>`;
+      h += `<li><strong>Solution D — découvert en compte.</strong> Calculez les agios, la commission d'engagement, la commission du plus fort découvert (CPFD), le coût total sur la période et le taux effectif correspondant.</li>`;
+      h += `<li><strong>Comparaison.</strong> Classez les quatre solutions de la moins chère à la plus coûteuse. Vérifiez, pour chacune, si la ressource nette couvre effectivement le besoin de ${fmtNb(D.N,0)} euros, et commentez l'écart entre taux faciaux et taux effectifs.</li>`;
+      h += `<li><strong>Analyse qualitative.</strong> Au-delà du seul critère de coût, discutez les avantages et les inconvénients de chaque forme de financement pour ${D.prof.name} : souplesse, sécurité, adéquation au besoin, risques, lourdeur administrative. Concluez sur le montage à recommander.</li>`;
+      return h;
+    },
+    sol: function(D) {
+      const L = I18N['fr'], NM = L.names;
+      let s = "";
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">1. Solution A — escompte d'effets</span>
+        L'escompte est l'opération par laquelle la banque rachète à l'entreprise des effets de commerce non échus et lui en verse immédiatement la contre-valeur, diminuée des intérêts courant jusqu'à l'échéance et des commissions. Les intérêts sont donc <em>précomptés</em> : ils sont retenus dès le départ sur le nominal, et non payés à l'échéance. Ils se calculent sur le nominal remis et sur la durée restant à courir :
+        <div class="math-formula">\\[I_A = N \\times t_A \\times \\frac{T}{360} = ${texI(D.N)} \\times ${texD(D.tA,2)}\\,\\% \\times \\frac{${D.T}}{360} = ${texM(D.IA)}\\ \\text{euros}\\]</div>
+        La commission d'escompte est proportionnelle au nominal remis : $C_A = ${texD(D.cA,2)}\\,\\% \\times ${texI(D.N)} = ${texM(D.CA)}$ euros. Le coût total de l'opération sur ${D.T} jours est donc $\\text{Coût}_A = I_A + C_A = ${texM(D.IA)} + ${texM(D.CA)} = ${texM(D.costA)}$ euros.<br><br>
+        L'entreprise ne reçoit pas le nominal, mais une ressource nette égale au nominal diminué des intérêts et de la commission : $R_A = N - I_A - C_A = ${texI(D.N)} - ${texM(D.IA)} - ${texM(D.CA)} = ${texM(D.RA)}$ euros. Le taux effectif rapporte le coût supporté à cette ressource réellement mise à disposition, et non au nominal :
+        <div class="math-formula">\\[i_{A,${D.T}} = \\frac{\\text{Coût}_A}{R_A} = \\frac{${texM(D.costA)}}{${texM(D.RA)}} = ${texD(D.iA*100,3)}\\,\\%\\ \\text{sur ${D.T} jours}\\]</div>
+        Ramené à l'année par proportionnalité, le taux annuel équivalent s'établit à $i_A = ${texD(D.iA*100,3)}\\,\\% \\times \\frac{360}{${D.T}} = ${texD(D.aA*100,2)}\\,\\%$, à comparer au taux facial de ${fmtNb(D.tA,2)} % : l'écart de ${fmtNb((D.aA*100-D.tA)*100,0)} points de base provient à la fois de la commission et du précompte des intérêts, qui réduit l'assiette de financement sans réduire le coût.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">2. Solution B — crédit Dailly</span>
+        La cession Dailly transfère à la banque, par la simple remise d'un bordereau, la propriété d'un ensemble de créances professionnelles. La banque ne finance toutefois qu'une quotité du nominal cédé, la retenue de garantie couvrant le risque d'impayé et les litiges commerciaux. Le montant effectivement avancé est donc
+        <div class="math-formula">\\[M_B = ${texD(D.q,0)}\\,\\% \\times ${texI(D.N)} = ${texM(D.MB)}\\ \\text{euros}\\]</div>
+        Les intérêts sont calculés sur ce seul montant financé, pour ${D.T} jours : $I_B = M_B \\times t_B \\times \\frac{T}{360} = ${texM(D.MB)} \\times ${texD(D.tB,2)}\\,\\% \\times \\frac{${D.T}}{360} = ${texM(D.IB)}$ euros. La commission de service, en revanche, porte sur le nominal cédé et non sur le montant financé : $C_B = ${texD(D.cB,2)}\\,\\% \\times ${texI(D.N)} = ${texM(D.CB)}$ euros. Cette asymétrie d'assiette est caractéristique du Dailly et pèse mécaniquement sur le coût effectif.<br><br>
+        Le coût total sur la période vaut $\\text{Coût}_B = I_B + C_B = ${texM(D.IB)} + ${texM(D.CB)} = ${texM(D.costB)}$ euros, pour une ressource nette de $R_B = M_B - I_B - C_B = ${texM(D.MB)} - ${texM(D.IB)} - ${texM(D.CB)} = ${texM(D.RB)}$ euros. D'où
+        <div class="math-formula">\\[i_{B,${D.T}} = \\frac{${texM(D.costB)}}{${texM(D.RB)}} = ${texD(D.iB*100,3)}\\,\\%\\ \\text{sur ${D.T} jours},\\qquad i_B = ${texD(D.iB*100,3)}\\,\\% \\times \\frac{360}{${D.T}} = ${texD(D.aB*100,2)}\\,\\%\\ \\text{l'an}\\]</div>
+        Le taux facial de ${fmtNb(D.tB,2)} % est pourtant ${D.tB <= Math.min(D.tA,D.tC,D.tD) ? "le plus bas des quatre" : "modéré"} : c'est la quotité de financement de ${fmtNb(D.q,0)} %, bien davantage que le taux, qui renchérit ici la ressource.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">3. Solution C — mobilisation de billet de trésorerie</span>
+        Le billet de trésorerie est une promesse écrite de payer une somme déterminée à une échéance déterminée. Il ne repose pas sur des créances clients, mais sur la seule signature de l'entreprise : la banque le mobilise, c'est-à-dire qu'elle l'accepte et avance immédiatement les fonds, intérêts précomptés. Ces intérêts portent sur le nominal du billet :
+        <div class="math-formula">\\[I_C = N \\times t_C \\times \\frac{T}{360} = ${texI(D.N)} \\times ${texD(D.tC,2)}\\,\\% \\times \\frac{${D.T}}{360} = ${texM(D.IC)}\\ \\text{euros}\\]</div>
+        S'y ajoutent des frais de dossier forfaitaires de ${fmtNb(D.F,0)} euros, indépendants du montant comme de la durée. Le coût total s'élève donc à $\\text{Coût}_C = I_C + ${texI(D.F)} = ${texM(D.IC)} + ${texI(D.F)} = ${texM(D.costC)}$ euros, et la ressource nette à $R_C = N - I_C - ${texI(D.F)} = ${texM(D.RC)}$ euros. Il vient
+        <div class="math-formula">\\[i_{C,${D.T}} = \\frac{${texM(D.costC)}}{${texM(D.RC)}} = ${texD(D.iC*100,3)}\\,\\%\\ \\text{sur ${D.T} jours},\\qquad i_C = ${texD(D.aC*100,2)}\\,\\%\\ \\text{l'an}\\]</div>
+        Les frais fixes représentent ici ${fmtNb(D.F/D.costC*100,1)} % du coût total, soit ${fmtNb(D.F/D.RC*360/D.T*10000,0)} points de base en rythme annuel : plus la durée est courte et le montant faible, plus ce forfait pèse — c'est la raison pour laquelle ce type de montage n'a de sens qu'à partir d'un certain volume.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">4. Solution D — découvert en compte</span>
+        Le découvert autorisé n'est pas adossé à une créance : la banque laisse simplement le compte fonctionner en position débitrice, dans la limite d'un plafond convenu. Les agios se calculent sur le solde débiteur moyen. En première approximation, on retient l'utilisation moyenne annoncée de ${fmtNb(D.N,0)} euros comme assiette, ce qui revient à supposer que les variations autour de cette moyenne — dont le pic de ${fmtNb(D.P,0)} euros pendant ${D.peakDays} jours — se compensent sur la période :
+        <div class="math-formula">\\[I_D = ${texI(D.N)} \\times ${texD(D.tD,2)}\\,\\% \\times \\frac{${D.T}}{360} = ${texM(D.ID)}\\ \\text{euros}\\]</div>
+        La commission d'engagement rémunère la mise à disposition de la ligne, due que celle-ci soit utilisée ou non : elle porte donc sur le plafond autorisé, au taux annuel de ${fmtNb(D.ce,2)} % et <em>prorata temporis</em> : $C_{\\text{eng}} = ${texI(D.P)} \\times ${texD(D.ce,2)}\\,\\% \\times \\frac{${D.T}}{360} = ${texM(D.Ceng)}$ euros. La commission du plus fort découvert (CPFD) porte, par définition, sur le montant maximal effectivement atteint sur la période, soit ${fmtNb(D.P,0)} euros : $C_{\\text{PFD}} = ${texD(D.cpfd,2)}\\,\\% \\times ${texI(D.P)} = ${texM(D.Cpfd)}$ euros.<br><br>
+        Le coût total ressort ainsi à $\\text{Coût}_D = I_D + C_{\\text{eng}} + C_{\\text{PFD}} = ${texM(D.ID)} + ${texM(D.Ceng)} + ${texM(D.Cpfd)} = ${texM(D.costD)}$ euros. S'agissant du seul financement dont les intérêts sont post-comptés, la ressource est mise à disposition en continu et n'est pas amputée d'avance : la ressource nette moyenne peut être assimilée à ${fmtNb(D.N,0)} euros, d'où
+        <div class="math-formula">\\[i_{D,${D.T}} = \\frac{${texM(D.costD)}}{${texI(D.N)}} = ${texD(D.iD*100,3)}\\,\\%\\ \\text{sur ${D.T} jours},\\qquad i_D = ${texD(D.aD*100,2)}\\,\\%\\ \\text{l'an}\\]</div>
+        Les seules commissions représentent ${fmtNb((D.Ceng+D.Cpfd)/D.costD*100,1)} % du coût du découvert : le taux facial de ${fmtNb(D.tD,2)} % ne dit donc qu'une partie de l'histoire.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">5. Comparaison des quatre solutions</span>
+        Le tableau ci-dessous récapitule les résultats obtenus.
+        ${solTable(D, 'fr')}
+        ${chartSVG(D, 'fr')}
+        Le classement, de la moins chère à la plus coûteuse, s'établit donc ainsi : ${D.order.map((c,idx) => `${idx+1}) la solution ${c} (${NM[c]}), à ${fmtNb(D.rates[c]*100,2)} % l'an`).join(' ; ')}. L'écart entre la meilleure et la moins bonne solution atteint ${fmtNb((D.rates[D.order[3]]-D.rates[D.order[0]])*10000,0)} points de base, soit ${fmtNb(D.costs[D.order[3]]-D.costs[D.order[0]],2)} euros sur la seule période de ${D.T} jours.<br><br>
+        <strong>Couverture du besoin.</strong> Le classement par le coût ne suffit pas : encore faut-il que la ressource nette couvre les ${fmtNb(D.N,0)} euros nécessaires. Or aucune des trois formules à intérêts précomptés ne le fait exactement — ${fmtNb(D.RA,2)} euros pour l'escompte, ${fmtNb(D.RC,2)} euros pour le billet — et le Dailly laisse un manque de ${fmtNb(D.N-D.RB,2)} euros, du seul fait de la quotité de ${fmtNb(D.q,0)} %. Pour obtenir exactement ${fmtNb(D.N,0)} euros de ressource nette par cession Dailly, il faudrait céder un nominal de créances de
+        <div class="math-formula">\\[X = \\frac{N}{${texD(D.q,0)}\\,\\% \\times \\left(1 - ${texD(D.tB,2)}\\,\\% \\times \\frac{${D.T}}{360}\\right) - ${texD(D.cB,2)}\\,\\%} = ${texM(D.needB)}\\ \\text{euros}\\]</div>
+        soit ${fmtNb(D.needB/D.N*100-100,1)} % de plus que le besoin exprimé — ce qui suppose que le portefeuille de créances soit suffisamment fourni. Seul le découvert met la totalité du montant à disposition, mais c'est aussi celui qui laisse la banque la plus libre de se retirer.<br><br>
+        <strong>Taux faciaux et taux effectifs.</strong> Le classement par taux facial (${D.orderFacial.map(c => `${c} : ${fmtNb(D.facial[c],2)} %`).join(', ')}) ${D.sameOrder ? "coïncide ici avec le classement par taux effectif, mais ce n'est pas une règle" : "ne coïncide pas avec le classement par taux effectif"} : trois mécanismes creusent systématiquement l'écart entre les deux. Le précompte des intérêts d'abord, qui fait payer un taux sur un nominal supérieur à la somme réellement reçue ; les commissions ensuite, qu'elles soient proportionnelles ou forfaitaires ; la quotité de financement enfin, lorsque la banque ne finance qu'une fraction de l'assiette. Un taux annoncé « hors commissions » n'a donc aucune valeur comparative.<br><br>
+        <strong>Une remarque de méthode.</strong> Le passage du taux périodique au taux annuel par simple proportionnalité est la convention usuelle du court terme, mais elle sous-estime le coût véritable dès lors que l'opération est renouvelée. Le taux actuariel équivalent de la meilleure solution s'établit en effet à $\\left(1 + ${texD(D.rates[D.order[0]]*D.T/360*100,3)}\\,\\%\\right)^{360/${D.T}} - 1 = ${texD(D.actuBest*100,2)}\\,\\%$, soit ${fmtNb((D.actuBest-D.rates[D.order[0]])*10000,0)} points de base de plus que le taux proportionnel — un écart d'autant plus marqué que la période est courte et le taux élevé.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">6. Analyse qualitative</span>
+        Le coût n'épuise pas la comparaison : chaque technique répond à une logique différente et n'expose pas l'entreprise aux mêmes risques.<br><br>
+        <strong>L'escompte d'effets (A)</strong> est directement adossé à des créances commerciales matérialisées par des effets. Il transforme ces créances en trésorerie tout en offrant une bonne visibilité sur les flux, puisque l'échéance du crédit épouse celle des effets. Il reste toutefois lourd administrativement — gestion des effets, remises successives à la banque, suivi des impayés — et son assiette est strictement limitée aux effets disponibles : avec un portefeuille peu fourni ou mal réparti, l'entreprise se retrouve sous-financée ; avec un portefeuille abondant, elle est tentée de mobiliser au-delà de son besoin réel et de payer des intérêts inutiles.<br><br>
+        <strong>Le crédit Dailly (B)</strong> élargit considérablement l'assiette mobilisable : un bordereau unique permet de céder un ensemble de créances professionnelles, nées ou à naître, sans le formalisme de l'effet de commerce. C'est l'outil le mieux adapté au financement structurel du besoin en fonds de roulement. En contrepartie, la banque ne finance qu'une fraction du nominal — ${fmtNb(D.q,0)} % ici —, ce qui oblige à céder davantage que le besoin, et l'opération comporte une dimension juridique marquée : la cession transfère la propriété des créances et engage l'entreprise au-delà du simple crédit.<br><br>
+        <strong>La mobilisation de billet (C)</strong> ne repose que sur la signature de l'entreprise. Elle est parfaitement calibrée pour un besoin ponctuel dont le montant et la durée sont connus d'avance : un nominal, une échéance, un taux, et rien à gérer entre-temps. Le montage peut fonctionner en <em>revolving</em> si le billet est renouvelé. Ses limites tiennent aux frais fixes, qui pénalisent les petits montants, au précompte des intérêts, qui réduit la ressource nette, et surtout à la qualité de signature exigée : c'est un financement réservé aux entreprises bien notées, et l'entreprise supporte seule le risque de non-renouvellement à l'échéance.<br><br>
+        <strong>Le découvert (D)</strong> est la formule la plus souple : le financement s'ajuste en temps réel aux fluctuations de trésorerie, sans montage spécifique, et c'est le seul dispositif qui absorbe un pic imprévu comme celui de ${fmtNb(D.P,0)} euros. Cette souplesse se paie deux fois. En coût d'abord — ${fmtNb(D.aD*100,2)} % l'an ici, commissions comprises. En sécurité ensuite : un découvert non formellement confirmé peut être réduit ou retiré par la banque moyennant un simple préavis, ce qui en fait la ressource la plus fragile au moment précis où l'entreprise en aurait le plus besoin.<br><br>
+        <em>In fine</em>, pour un besoin ponctuel dont le montant et la durée sont clairement identifiés, la solution ${D.order[0]} (${NM[D.order[0]]}) s'impose sur le critère du coût, à ${fmtNb(D.rates[D.order[0]]*100,2)} % l'an. Le montage le plus raisonnable consiste à la retenir comme financement principal, tout en conservant une autorisation de découvert dimensionnée pour absorber les aléas : le découvert n'a pas vocation à financer un besoin anticipé, mais à couvrir ce qui ne l'a pas été.
+      </div>`;
+
+      s += `<div class="persp-box">
+        <span class="sol-sub">Pour aller plus loin — le crédit Dailly dans le droit français</span>
+        Le crédit Dailly tire son nom du sénateur Étienne Dailly, à l'origine de la loi n° 81-1 du 2 janvier 1981 facilitant le crédit aux entreprises, modifiée par la loi bancaire du 24 janvier 1984 et aujourd'hui codifiée aux articles L. 313-23 à L. 313-35 du code monétaire et financier. Son objet est de permettre la transmission simplifiée d'un grand nombre de créances par un document unique, là où le droit commun de la cession de créance imposait un formalisme dissuasif.
+        <p style="margin-top:.8rem;"><strong>Qui, et quoi.</strong> Le cédant doit être une personne morale, de droit privé ou de droit public, ou une personne physique agissant dans le cadre de son activité professionnelle ; le débiteur cédé également. Le cessionnaire, lui, ne peut être qu'un établissement de crédit ou une société de financement. Les créances cédées doivent être professionnelles, mais peuvent être nées ou à naître, y compris lorsque leur montant et leur exigibilité ne sont pas encore déterminés — c'est ce qui rend la technique si commode pour financer un besoin en fonds de roulement en continu.</p>
+        <p style="margin-top:.8rem;"><strong>Le bordereau.</strong> L'article L. 313-23 impose des mentions à peine de disqualification : la dénomination « acte de cession de créances professionnelles » (ou « acte de nantissement »), la mention que l'acte est soumis aux articles L. 313-23 à L. 313-34 du code monétaire et financier, le nom ou la dénomination sociale de l'établissement bénéficiaire, et la désignation ou l'individualisation des créances. Le bordereau est signé par le cédant et daté par le cessionnaire. À défaut d'une seule de ces mentions, le titre ne vaut pas comme acte de cession au sens de la loi : il ne reste qu'une cession de droit commun, avec son formalisme propre.</p>
+        <p style="margin-top:.8rem;"><strong>Les effets.</strong> La cession transfère la propriété des créances et devient opposable aux tiers à la date portée sur le bordereau, sans autre formalité : cette date tranche les conflits avec un affactureur ou un autre cessionnaire. La banque peut renforcer sa position en notifiant la cession au débiteur cédé, ce qui interdit à celui-ci de payer valablement le cédant, ou en obtenant son acceptation, qui l'engage à payer directement la banque et lui rend inopposables les exceptions tirées de ses rapports avec le cédant. Deux usages coexistent : la cession <em>à titre d'escompte</em>, qui donne lieu à un financement immédiat comme dans cet exercice, et la cession <em>à titre de garantie</em>, où les créances ne servent que de sûreté.</p>
+        <p style="margin-top:.8rem;"><strong>Le point à retenir.</strong> Sauf convention contraire, le cédant demeure garant solidaire du paiement des créances cédées. Le Dailly n'est donc pas un transfert de risque : si le client ne paie pas, la banque se retourne contre l'entreprise. C'est toute la différence avec l'affacturage sans recours, plus coûteux mais qui déconsolide effectivement le risque client — et c'est aussi ce qui justifie, du point de vue de la banque, la quotité de financement retenue ici.</p>
+      </div>`;
+
+      s += `<div class="persp-box">
+        <span class="sol-sub">Pour aller plus loin — se financer par émission de titres</span>
+        Le billet de trésorerie de la solution C est ici mobilisé par la banque, comme un simple effet. Dans sa forme de marché, il s'agit d'un titre de créance négociable placé directement auprès d'investisseurs, rebaptisé <em>NEU CP</em> (<em>Negotiable European Commercial Paper</em>) lors de la réforme du 1<sup>er</sup> juin 2016 et régi par les articles L. 213-1 A et suivants du code monétaire et financier. Les conditions d'accès sont exigeantes : durée inférieure ou égale à un an, montant unitaire minimal de 150&nbsp;000 euros, documentation financière déposée auprès de la Banque de France qui en assure la publicité et la surveillance, notation du programme ou garantie équivalente, et ligne bancaire de substitution (<em>back-up</em>) destinée à sécuriser le remboursement en cas de fermeture du marché. C'est un financement de grande signature : la désintermédiation n'est pas gratuite, elle se paie en transparence et en discipline de marché.
+        <p style="margin-top:.8rem;"><strong>Le passage au financement obligataire.</strong> Pour un besoin durable et non plus ponctuel, l'entreprise peut émettre des obligations, titres négociables conférant des droits de créance identiques pour une même valeur nominale. La faculté d'émettre est ouverte aux sociétés par actions — SA, SCA, SAS — et, sous conditions, aux SARL. L'article L. 228-39 du code de commerce subordonne l'émission d'une société par actions n'ayant pas établi deux bilans régulièrement approuvés par les actionnaires à une vérification préalable de l'actif et du passif par un ou plusieurs commissaires désignés à cet effet, sauf lorsque les obligations bénéficient de la garantie d'une société remplissant, elle, cette condition — dérogation pensée pour les filiales de groupes.</p>
+        <p style="margin-top:.8rem;"><strong>Les régimes particuliers.</strong> La SARL ne peut émettre que des obligations nominatives, sans offre au public, à condition d'être tenue de désigner un commissaire aux comptes et d'avoir fait approuver les comptes de ses trois derniers exercices de douze mois (article L. 223-11 du code de commerce). La SAS, quant à elle, ne peut procéder à une offre au public de titres financiers (article L. 227-2) : ses émissions obligataires doivent être réservées à des investisseurs qualifiés ou à un cercle restreint d'investisseurs, ou porter sur des titres de forte valeur nominale unitaire. L'offre au public proprement dite suppose un prospectus approuvé par l'Autorité des marchés financiers, dans le cadre du règlement européen dit Prospectus.</p>
+        <p style="margin-top:.8rem;"><strong>La logique économique.</strong> Ces conditions dessinent une frontière nette. Le crédit bancaire à court terme — escompte, Dailly, découvert — est accessible à toutes les entreprises et se négocie de gré à gré avec un banquier qui connaît le dossier. Le financement par titres, billet de trésorerie comme obligation, suppose une taille critique, une notation, des coûts fixes d'émission et une exposition permanente au jugement du marché ; en contrepartie, il affranchit l'entreprise de la relation bancaire et procure, pour les bonnes signatures, des conditions sensiblement meilleures. Le choix entre les deux n'est donc pas seulement un arbitrage de taux : c'est un arbitrage entre l'intermédiation et l'exposition au marché.</p>
+      </div>`;
+
+      return s;
+    }
+  },
+
+  en: {
+    "htmlLang": "en",
+    "title": "Corporate Finance Simulator - Cost of Short-Term Debt",
+    "locale": "en-GB",
+    "k-badge": "FINANCIAL ASSET VALUATION METHODS",
+    "k-h1": "The true cost of short-term debt",
+    "k-sub": "© Thomas Hossen – Version of 17 September 2026",
+    "k-seed": "Reproducibility seed",
+    "k-gen": "Generate",
+    "k-welcome": "Set the parameters and click Generate to create a new exercise.",
+    "k-seedbadge": "Active seed:",
+    "k-tag-ex": "Statement",
+    "k-cardtitle": "Comparing short-term treasury financing arrangements",
+    "k-tag-sol": "Solution",
+    "k-cardtitle2": "Comparing short-term treasury financing arrangements",
+    "k-work": "Required work",
+    "showSol": "Show solution",
+    "hideSol": "Hide solution",
+    thousands: ",",
+    decimal: ".",
+
+    names: { A: "bill discounting", B: "Dailly assignment", C: "commercial paper discounting", D: "bank overdraft" },
+    shortNames: { A: "Discounting", B: "Dailly", C: "Paper", D: "Overdraft" },
+    chartTitle: "Equivalent annual rate by financing option",
+    chartAxis: "% p.a.",
+
+    context: function(D) {
+      const p = D.prof.en;
+      return `
+        ${D.prof.name} is ${p.secteur} facing a one-off treasury need of ${fmtNb(D.N,0)} euros for ${D.T} days, the time required for the gap between its operating disbursements and its customer receipts to unwind. The company holds a trade receivables portfolio of ${fmtNb(D.N,0)} euros, evidenced by ${D.T}-day bills well spread across ${p.clients} of sound credit standing, and enjoys a good banking rating. Its bank offers four short-term financing arrangements, whose terms are summarised below.
+      `;
+    },
+    table: function(D) {
+      return `<div class="exam-table-wrap">
+        <table class="exam-table">
+            <tr><th style="width:26%;">Option</th><th style="width:16%;">Nominal annual rate</th><th style="width:29%;">Fees and commissions</th><th style="width:29%;">Features</th></tr>
+            <tr>
+              <td class="txt-left">A — Bill discounting</td>
+              <td class="amt">${fmtNb(D.tA,2)}%</td>
+              <td class="txt-left" style="font-weight:400;">Discounting commission of ${fmtNb(D.cA,2)}% of face value</td>
+              <td class="txt-left" style="font-weight:400;">All bills discounted, face value €${fmtNb(D.N,0)} at ${D.T} days; interest deducted upfront</td>
+            </tr>
+            <tr>
+              <td class="txt-left">B — Dailly assignment</td>
+              <td class="amt">${fmtNb(D.tB,2)}%</td>
+              <td class="txt-left" style="font-weight:400;">Servicing commission of ${fmtNb(D.cB,2)}% of the face value assigned</td>
+              <td class="txt-left" style="font-weight:400;">Assignment by schedule of €${fmtNb(D.N,0)} of receivables; the bank funds ${fmtNb(D.q,0)}% of the assigned face value, interest computed on the amount advanced</td>
+            </tr>
+            <tr>
+              <td class="txt-left">C — Commercial paper</td>
+              <td class="amt">${fmtNb(D.tC,2)}%</td>
+              <td class="txt-left" style="font-weight:400;">Flat arrangement fee of €${fmtNb(D.F,0)}</td>
+              <td class="txt-left" style="font-weight:400;">Promissory note of €${fmtNb(D.N,0)} at ${D.T} days; interest deducted upfront</td>
+            </tr>
+            <tr>
+              <td class="txt-left">D — Bank overdraft</td>
+              <td class="amt">${fmtNb(D.tD,2)}%</td>
+              <td class="txt-left" style="font-weight:400;">Annual commitment fee of ${fmtNb(D.ce,2)}% on the authorised limit, <em>pro rata temporis</em>; peak-balance commission of ${fmtNb(D.cpfd,2)}% over the period</td>
+              <td class="txt-left" style="font-weight:400;">Authorised limit of €${fmtNb(D.P,0)}; average drawing of €${fmtNb(D.N,0)} over ${D.T} days, with a peak balance of €${fmtNb(D.P,0)} for ${D.peakDays} days; interest charged in arrears</td>
+            </tr>
+        </table>
+      </div>`;
+    },
+    info: function(D) {
+      return `
+        <strong>Working assumptions.</strong> All rates are nominal annual rates computed on a 360-day basis. Interest is deducted upfront for options A and C (it is withheld as soon as the funds are made available), computed on the amount advanced and likewise withheld upfront for option B, and charged in arrears for option D (it is debited at the end of the period). The effective rate of an arrangement relates the total cost borne to the net resource actually placed at the company's disposal, not to its face value. The move from the periodic rate to the equivalent annual rate is made proportionally, as is customary in short-term finance: $i_{\\text{annual}} = i_{T} \\times \\frac{360}{T}$. Amounts are rounded to the cent and rates to two decimal places, but all intermediate computations are carried out at full precision.
+      `;
+    },
+    enonce: function(D) {
+      let h = "";
+      h += `<li><strong>Option A — bill discounting.</strong> Compute the discount interest, the commission, the total cost of the arrangement over ${D.T} days and the net resource actually received. Deduce the effective rate over the period and the equivalent annual rate.</li>`;
+      h += `<li><strong>Option B — Dailly assignment.</strong> Determine the amount actually funded by the bank, the interest, the servicing commission, the total cost and the net resource. Deduce the effective rate over the period and the equivalent annual rate.</li>`;
+      h += `<li><strong>Option C — commercial paper discounting.</strong> Compute the upfront interest, the total cost including the arrangement fee, the net resource, and then the corresponding effective rates.</li>`;
+      h += `<li><strong>Option D — bank overdraft.</strong> Compute the interest charges, the commitment fee, the peak-balance commission, the total cost over the period and the corresponding effective rate.</li>`;
+      h += `<li><strong>Comparison.</strong> Rank the four options from cheapest to most expensive. Check, for each of them, whether the net resource actually covers the ${fmtNb(D.N,0)}-euro need, and comment on the gap between headline and effective rates.</li>`;
+      h += `<li><strong>Qualitative analysis.</strong> Beyond cost alone, discuss the advantages and drawbacks of each financing technique for ${D.prof.name}: flexibility, security, fit with the need, risks, administrative burden. Conclude with the arrangement you would recommend.</li>`;
+      return h;
+    },
+    sol: function(D) {
+      const L = I18N['en'], NM = L.names;
+      let s = "";
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">1. Option A — bill discounting</span>
+        Discounting is the operation whereby the bank buys back from the company bills of exchange that have not yet matured and immediately pays their counter-value, less the interest running to maturity and the commissions. Interest is therefore <em>deducted upfront</em>: it is withheld at the outset from the face value rather than paid at maturity. It is computed on the face value presented and on the time left to run:
+        <div class="math-formula">\\[I_A = N \\times t_A \\times \\frac{T}{360} = ${texI(D.N)} \\times ${texD(D.tA,2)}\\,\\% \\times \\frac{${D.T}}{360} = ${texM(D.IA)}\\ \\text{euros}\\]</div>
+        The discounting commission is proportional to the face value presented: $C_A = ${texD(D.cA,2)}\\,\\% \\times ${texI(D.N)} = ${texM(D.CA)}$ euros. The total cost over ${D.T} days is therefore $\\text{Cost}_A = I_A + C_A = ${texM(D.IA)} + ${texM(D.CA)} = ${texM(D.costA)}$ euros.<br><br>
+        The company does not receive the face value, but a net resource equal to the face value less interest and commission: $R_A = N - I_A - C_A = ${texI(D.N)} - ${texM(D.IA)} - ${texM(D.CA)} = ${texM(D.RA)}$ euros. The effective rate relates the cost borne to that resource actually made available, not to the face value:
+        <div class="math-formula">\\[i_{A,${D.T}} = \\frac{\\text{Cost}_A}{R_A} = \\frac{${texM(D.costA)}}{${texM(D.RA)}} = ${texD(D.iA*100,3)}\\,\\%\\ \\text{over ${D.T} days}\\]</div>
+        Annualised proportionally, the equivalent annual rate stands at $i_A = ${texD(D.iA*100,3)}\\,\\% \\times \\frac{360}{${D.T}} = ${texD(D.aA*100,2)}\\,\\%$, against a headline rate of ${fmtNb(D.tA,2)}%: the ${fmtNb((D.aA*100-D.tA)*100,0)}-basis-point gap comes both from the commission and from the upfront deduction of interest, which shrinks the funding base without shrinking the cost.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">2. Option B — Dailly assignment</span>
+        A Dailly assignment transfers to the bank, through the mere delivery of a schedule of receivables, the ownership of a set of professional claims. The bank, however, funds only a fraction of the assigned face value, the retained share covering the risk of default and of commercial disputes. The amount actually advanced is therefore
+        <div class="math-formula">\\[M_B = ${texD(D.q,0)}\\,\\% \\times ${texI(D.N)} = ${texM(D.MB)}\\ \\text{euros}\\]</div>
+        Interest is computed on that funded amount alone, for ${D.T} days: $I_B = M_B \\times t_B \\times \\frac{T}{360} = ${texM(D.MB)} \\times ${texD(D.tB,2)}\\,\\% \\times \\frac{${D.T}}{360} = ${texM(D.IB)}$ euros. The servicing commission, by contrast, is levied on the assigned face value rather than on the funded amount: $C_B = ${texD(D.cB,2)}\\,\\% \\times ${texI(D.N)} = ${texM(D.CB)}$ euros. This mismatch of bases is characteristic of the Dailly technique and mechanically weighs on the effective cost.<br><br>
+        The total cost over the period is $\\text{Cost}_B = I_B + C_B = ${texM(D.IB)} + ${texM(D.CB)} = ${texM(D.costB)}$ euros, for a net resource of $R_B = M_B - I_B - C_B = ${texM(D.MB)} - ${texM(D.IB)} - ${texM(D.CB)} = ${texM(D.RB)}$ euros. Hence
+        <div class="math-formula">\\[i_{B,${D.T}} = \\frac{${texM(D.costB)}}{${texM(D.RB)}} = ${texD(D.iB*100,3)}\\,\\%\\ \\text{over ${D.T} days},\\qquad i_B = ${texD(D.iB*100,3)}\\,\\% \\times \\frac{360}{${D.T}} = ${texD(D.aB*100,2)}\\,\\%\\ \\text{p.a.}\\]</div>
+        Yet the headline rate of ${fmtNb(D.tB,2)}% is ${D.tB <= Math.min(D.tA,D.tC,D.tD) ? "the lowest of the four" : "a moderate one"}: it is the ${fmtNb(D.q,0)}% funding ratio, far more than the rate, that makes this resource expensive here.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">3. Option C — commercial paper discounting</span>
+        Commercial paper is a written promise to pay a stated amount at a stated date. It does not rest on trade receivables but on the company's own signature alone: the bank discounts it, that is, accepts it and immediately advances the funds, with interest deducted upfront. That interest is computed on the face value of the note:
+        <div class="math-formula">\\[I_C = N \\times t_C \\times \\frac{T}{360} = ${texI(D.N)} \\times ${texD(D.tC,2)}\\,\\% \\times \\frac{${D.T}}{360} = ${texM(D.IC)}\\ \\text{euros}\\]</div>
+        A flat arrangement fee of ${fmtNb(D.F,0)} euros is added, independent of both amount and maturity. The total cost is therefore $\\text{Cost}_C = I_C + ${texI(D.F)} = ${texM(D.IC)} + ${texI(D.F)} = ${texM(D.costC)}$ euros, and the net resource $R_C = N - I_C - ${texI(D.F)} = ${texM(D.RC)}$ euros. It follows that
+        <div class="math-formula">\\[i_{C,${D.T}} = \\frac{${texM(D.costC)}}{${texM(D.RC)}} = ${texD(D.iC*100,3)}\\,\\%\\ \\text{over ${D.T} days},\\qquad i_C = ${texD(D.aC*100,2)}\\,\\%\\ \\text{p.a.}\\]</div>
+        The flat fee accounts here for ${fmtNb(D.F/D.costC*100,1)}% of the total cost, that is ${fmtNb(D.F/D.RC*360/D.T*10000,0)} basis points on an annual basis: the shorter the maturity and the smaller the amount, the heavier this fixed charge weighs — which is why such an arrangement only makes sense above a certain volume.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">4. Option D — bank overdraft</span>
+        An authorised overdraft is not backed by any receivable: the bank simply lets the account run in debit, up to an agreed limit. Interest charges are computed on the average debit balance. As a first approximation, the stated average drawing of ${fmtNb(D.N,0)} euros is used as the base, which amounts to assuming that the variations around that average — including the peak of ${fmtNb(D.P,0)} euros for ${D.peakDays} days — offset each other over the period:
+        <div class="math-formula">\\[I_D = ${texI(D.N)} \\times ${texD(D.tD,2)}\\,\\% \\times \\frac{${D.T}}{360} = ${texM(D.ID)}\\ \\text{euros}\\]</div>
+        The commitment fee remunerates the provision of the facility and is due whether or not it is drawn: it therefore applies to the authorised limit, at an annual rate of ${fmtNb(D.ce,2)}% and <em>pro rata temporis</em>: $C_{\\text{comm}} = ${texI(D.P)} \\times ${texD(D.ce,2)}\\,\\% \\times \\frac{${D.T}}{360} = ${texM(D.Ceng)}$ euros. The peak-balance commission applies, by definition, to the highest amount actually reached over the period, namely ${fmtNb(D.P,0)} euros: $C_{\\text{peak}} = ${texD(D.cpfd,2)}\\,\\% \\times ${texI(D.P)} = ${texM(D.Cpfd)}$ euros.<br><br>
+        The total cost thus comes to $\\text{Cost}_D = I_D + C_{\\text{comm}} + C_{\\text{peak}} = ${texM(D.ID)} + ${texM(D.Ceng)} + ${texM(D.Cpfd)} = ${texM(D.costD)}$ euros. As the only arrangement whose interest is charged in arrears, the resource is made available continuously and is not cut into upfront: the average net resource can be taken as ${fmtNb(D.N,0)} euros, hence
+        <div class="math-formula">\\[i_{D,${D.T}} = \\frac{${texM(D.costD)}}{${texI(D.N)}} = ${texD(D.iD*100,3)}\\,\\%\\ \\text{over ${D.T} days},\\qquad i_D = ${texD(D.aD*100,2)}\\,\\%\\ \\text{p.a.}\\]</div>
+        Commissions alone account for ${fmtNb((D.Ceng+D.Cpfd)/D.costD*100,1)}% of the cost of the overdraft: the headline rate of ${fmtNb(D.tD,2)}% therefore tells only part of the story.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">5. Comparing the four options</span>
+        The table below summarises the results obtained.
+        ${solTable(D, 'en')}
+        ${chartSVG(D, 'en')}
+        The ranking, from cheapest to most expensive, is therefore: ${D.order.map((c,idx) => `${idx+1}) option ${c} (${NM[c]}), at ${fmtNb(D.rates[c]*100,2)}% p.a.`).join('; ')}. The gap between best and worst reaches ${fmtNb((D.rates[D.order[3]]-D.rates[D.order[0]])*10000,0)} basis points, that is ${fmtNb(D.costs[D.order[3]]-D.costs[D.order[0]],2)} euros over the ${D.T}-day period alone.<br><br>
+        <strong>Covering the need.</strong> Ranking by cost is not enough: the net resource must also cover the ${fmtNb(D.N,0)} euros required. None of the three upfront-interest arrangements does so exactly — ${fmtNb(D.RA,2)} euros for discounting, ${fmtNb(D.RC,2)} euros for the note — and the Dailly assignment leaves a shortfall of ${fmtNb(D.N-D.RB,2)} euros, purely on account of the ${fmtNb(D.q,0)}% funding ratio. To obtain exactly ${fmtNb(D.N,0)} euros of net resource through a Dailly assignment, the face value of receivables to be assigned would have to be
+        <div class="math-formula">\\[X = \\frac{N}{${texD(D.q,0)}\\,\\% \\times \\left(1 - ${texD(D.tB,2)}\\,\\% \\times \\frac{${D.T}}{360}\\right) - ${texD(D.cB,2)}\\,\\%} = ${texM(D.needB)}\\ \\text{euros}\\]</div>
+        that is ${fmtNb(D.needB/D.N*100-100,1)}% more than the stated need — which presupposes a sufficiently well-stocked receivables portfolio. Only the overdraft makes the full amount available, but it is also the one that leaves the bank freest to withdraw.<br><br>
+        <strong>Headline versus effective rates.</strong> The ranking by headline rate (${D.orderFacial.map(c => `${c}: ${fmtNb(D.facial[c],2)}%`).join(', ')}) ${D.sameOrder ? "happens to coincide here with the ranking by effective rate, but that is no rule" : "does not coincide with the ranking by effective rate"}: three mechanisms systematically widen the gap between the two. First the upfront deduction of interest, which charges a rate on a face value larger than the sum actually received; then the commissions, whether proportional or flat; and finally the funding ratio, when the bank advances only a fraction of the base. A rate quoted "excluding commissions" therefore has no comparative value whatsoever.<br><br>
+        <strong>A methodological remark.</strong> Moving from the periodic rate to the annual rate by simple proportionality is the usual short-term convention, but it understates the true cost as soon as the arrangement is rolled over. The equivalent actuarial rate of the best option indeed stands at $\\left(1 + ${texD(D.rates[D.order[0]]*D.T/360*100,3)}\\,\\%\\right)^{360/${D.T}} - 1 = ${texD(D.actuBest*100,2)}\\,\\%$, that is ${fmtNb((D.actuBest-D.rates[D.order[0]])*10000,0)} basis points above the proportional rate — a gap that widens the shorter the period and the higher the rate.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">6. Qualitative analysis</span>
+        Cost does not exhaust the comparison: each technique follows a different logic and does not expose the company to the same risks.<br><br>
+        <strong>Bill discounting (A)</strong> is directly backed by trade receivables evidenced by bills. It turns those receivables into cash while offering good visibility on flows, since the maturity of the credit matches that of the bills. It remains administratively heavy, however — handling the bills, successive presentations to the bank, monitoring of unpaid items — and its base is strictly limited to the bills available: with a thin or poorly spread portfolio the company ends up underfunded; with an abundant one it is tempted to discount beyond its actual need and to pay interest for nothing.<br><br>
+        <strong>The Dailly assignment (B)</strong> considerably widens the base that can be mobilised: a single schedule allows a whole set of professional receivables, existing or future, to be assigned without the formalism of bills of exchange. It is the tool best suited to the structural financing of working capital needs. In return, the bank funds only a fraction of the face value — ${fmtNb(D.q,0)}% here — which forces the company to assign more than it needs, and the operation carries a pronounced legal dimension: the assignment transfers ownership of the receivables and binds the company well beyond a simple credit line.<br><br>
+        <strong>Commercial paper discounting (C)</strong> rests on the company's signature alone. It is perfectly calibrated for a one-off need whose amount and maturity are known in advance: one face value, one maturity, one rate, and nothing to manage in between. The arrangement can be run on a revolving basis if the note is renewed. Its limits lie in the fixed fees, which penalise small amounts, in the upfront deduction of interest, which reduces the net resource, and above all in the credit quality required: this is financing reserved for well-rated companies, and the company alone bears the risk of non-renewal at maturity.<br><br>
+        <strong>The overdraft (D)</strong> is the most flexible arrangement: financing adjusts in real time to treasury fluctuations, with no specific set-up, and it is the only facility that absorbs an unforeseen peak such as the ${fmtNb(D.P,0)}-euro one. That flexibility is paid for twice. In cost first — ${fmtNb(D.aD*100,2)}% p.a. here, commissions included. In security next: an overdraft that has not been formally confirmed can be cut back or withdrawn by the bank at short notice, which makes it the most fragile resource precisely when the company would need it most.<br><br>
+        <em>In fine</em>, for a one-off need whose amount and maturity are clearly identified, option ${D.order[0]} (${NM[D.order[0]]}) prevails on cost, at ${fmtNb(D.rates[D.order[0]]*100,2)}% p.a. The most sensible arrangement is to retain it as the main source of financing while keeping an overdraft authorisation sized to absorb the unexpected: an overdraft is not meant to fund an anticipated need, but to cover what has not been anticipated.
+      </div>`;
+
+      s += `<div class="persp-box">
+        <span class="sol-sub">Going further — the Dailly assignment in French law</span>
+        The Dailly credit takes its name from Senator Étienne Dailly, who initiated Law no. 81-1 of 2 January 1981 facilitating credit to businesses, amended by the Banking Act of 24 January 1984 and now codified in articles L. 313-23 to L. 313-35 of the French Monetary and Financial Code. Its purpose is to allow a large number of receivables to be transferred through a single document, where the general law of assignment imposed a prohibitive formalism.
+        <p style="margin-top:.8rem;"><strong>Who, and what.</strong> The assignor must be a legal entity, whether governed by private or public law, or a natural person acting in the course of their professional activity; the same holds for the assigned debtor. The assignee, by contrast, can only be a credit institution or a financing company. The receivables assigned must be professional ones, but may be existing or future, including where their amount and due date are not yet determined — which is what makes the technique so convenient for financing working capital needs on a continuous basis.</p>
+        <p style="margin-top:.8rem;"><strong>The schedule.</strong> Article L. 313-23 imposes particulars on pain of disqualification: the heading "acte de cession de créances professionnelles" (or "acte de nantissement"), a statement that the instrument is governed by articles L. 313-23 to L. 313-34 of the Monetary and Financial Code, the name or corporate name of the beneficiary institution, and the designation or individualisation of the receivables. The schedule is signed by the assignor and dated by the assignee. Should even one of these particulars be missing, the instrument does not qualify as an assignment within the meaning of the Act: what remains is an ordinary assignment, with its own formalism.</p>
+        <p style="margin-top:.8rem;"><strong>The effects.</strong> The assignment transfers ownership of the receivables and becomes enforceable against third parties on the date shown on the schedule, with no further formality: that date settles conflicts with a factor or a competing assignee. The bank may strengthen its position by notifying the assigned debtor, which bars the latter from validly paying the assignor, or by obtaining that debtor's acceptance, which commits them to pay the bank directly and bars defences arising from their dealings with the assignor. Two uses coexist: assignment <em>by way of discount</em>, giving rise to immediate funding as in this exercise, and assignment <em>by way of security</em>, where the receivables serve only as collateral.</p>
+        <p style="margin-top:.8rem;"><strong>The point to remember.</strong> Unless otherwise agreed, the assignor remains jointly and severally liable for payment of the assigned receivables. A Dailly assignment is therefore not a transfer of risk: if the customer fails to pay, the bank turns back to the company. That is the whole difference with non-recourse factoring, which is more expensive but genuinely removes customer risk — and it is also what justifies, from the bank's standpoint, the funding ratio applied here.</p>
+      </div>`;
+
+      s += `<div class="persp-box">
+        <span class="sol-sub">Going further — financing through the issuance of securities</span>
+        The commercial paper of option C is discounted here by the bank, like an ordinary bill. In its market form, it is a negotiable debt security placed directly with investors, renamed <em>NEU CP</em> (<em>Negotiable European Commercial Paper</em>) in the reform of 1 June 2016 and governed by articles L. 213-1 A et seq. of the French Monetary and Financial Code. Access conditions are demanding: a maturity of one year or less, a minimum unit amount of 150,000 euros, financial documentation filed with the Banque de France, which publishes it and oversees the market, a rating for the programme or an equivalent guarantee, and a bank back-up line intended to secure repayment should the market close. This is financing for strong names: disintermediation is not free, it is paid for in transparency and market discipline.
+        <p style="margin-top:.8rem;"><strong>Moving on to bond financing.</strong> For a lasting rather than a one-off need, a company may issue bonds, negotiable securities conferring identical creditor rights for a given face value. The power to issue is open to joint-stock companies — SA, SCA, SAS — and, under conditions, to limited liability companies (SARL). Article L. 228-39 of the French Commercial Code makes an issue by a joint-stock company that has not drawn up two duly approved balance sheets conditional on a prior verification of its assets and liabilities by one or more specially appointed commissioners, save where the bonds benefit from the guarantee of a company that does meet that condition — a derogation designed for group subsidiaries.</p>
+        <p style="margin-top:.8rem;"><strong>Specific regimes.</strong> An SARL may only issue registered bonds, without any public offering, provided it is required to appoint a statutory auditor and has had the accounts of its last three twelve-month financial years duly approved (article L. 223-11 of the Commercial Code). An SAS, for its part, may not make a public offering of financial securities (article L. 227-2): its bond issues must be reserved for qualified investors or a restricted circle of investors, or bear on securities of high unit face value. A public offering proper requires a prospectus approved by the Autorité des marchés financiers, under the European Prospectus Regulation.</p>
+        <p style="margin-top:.8rem;"><strong>The economic logic.</strong> These conditions draw a clear boundary. Short-term bank credit — discounting, Dailly, overdraft — is open to every company and negotiated over the counter with a banker who knows the file. Financing through securities, whether commercial paper or bonds, presupposes critical size, a rating, fixed issuance costs and permanent exposure to the market's judgement; in return, it frees the company from the banking relationship and secures, for strong names, appreciably better terms. The choice between the two is therefore not merely an arbitrage on rates: it is an arbitrage between intermediation and exposure to the market.</p>
+      </div>`;
+
+      return s;
+    }
+  }
+};
+
+/* ============================================================
+   GESTION DE LA LANGUE  /  LANGUAGE HANDLING
+   ============================================================ */
+let LANG = 'fr';
+
+function detectLang() {
+    try {
+        const q = new URLSearchParams(window.location.search).get('lang');
+        if (q && I18N[q.toLowerCase()]) return q.toLowerCase();
+    } catch (e) {}
+    const h = (window.location.hash || '').replace('#', '').toLowerCase();
+    if (I18N[h]) return h;
+    return 'fr';
+}
+
+function applyLang() {
+    const D = I18N[LANG];
+    document.documentElement.lang = D.htmlLang;
+    document.title = D.title;
+
+    document.querySelectorAll('[data-k]').forEach(function (el) {
+        const key = el.getAttribute('data-k');
+        if (D[key] !== undefined) el.innerHTML = D[key];
+    });
+
+    const btn = document.getElementById('toggle-btn');
+    if (btn) btn.innerText = document.getElementById('sol-card').classList.contains('visible') ? D.hideSol : D.showSol;
+
+    document.getElementById('flag-fr').classList.toggle('active', LANG === 'fr');
+    document.getElementById('flag-en').classList.toggle('active', LANG === 'en');
+}
+
+function setLang(lang) {
+    if (!I18N[lang] || lang === LANG) return;
+    LANG = lang;
+
+    try {
+        const u = new URL(window.location.href);
+        u.searchParams.set('lang', lang);
+        history.replaceState(null, '', u.toString());
+    } catch (e) {}
+
+    applyLang();
+
+    if (document.getElementById('ex-area').style.display !== 'none') {
+        const solWasVisible = document.getElementById('sol-card').classList.contains('visible');
+        generateExercise(false);
+        if (solWasVisible) toggleSol();
+    }
+}
+
+// --- PRNG (Mulberry32) ---
+let currentSeed = 0;
+function seedPRNG(seed) {
+    return function() {
+      let t = seed += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+let random = Math.random;
+
+function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
+function pick(arr) { return arr[randInt(0, arr.length - 1)]; }
+
+function texD(num, dec) {
+    let sign = num < 0 ? "-" : "";
+    let parts = Math.abs(num).toFixed(dec).split('.');
+    let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, I18N[LANG].thousands);
+    return sign + intPart + (parts.length > 1 ? I18N[LANG].decimal + parts[1] : "");
+}
+function texI(num) { return texD(num, 0); }
+function texM(num) { return texD(num, 2); }
+function fmtNb(num, dec) {
+    return num.toLocaleString(I18N[LANG].locale, {minimumFractionDigits: dec, maximumFractionDigits: dec});
+}
+
+/* ============================================================
+   MODÈLE  /  MODEL
+   ============================================================ */
+function computeModel() {
+    const prof = PROFILES[randInt(0, PROFILES.length - 1)];
+
+    const N = randInt(6, 18) * 50000;                     // 300 000 .. 900 000 euros
+    const T = pick([30, 45, 60, 90]);                     // durée du besoin, en jours
+    const k = T / 360;
+
+    // --- Solution A : escompte d'effets ---
+    const tA = randInt(40, 62) / 10;                      // 4.0 .. 6.2 %
+    const cA = pick([0.05, 0.10, 0.15, 0.20]);            // commission d'escompte, % du nominal
+
+    // --- Solution B : crédit Dailly ---
+    const tB = randInt(36, 56) / 10;                      // 3.6 .. 5.6 %
+    const q  = pick([85, 90, 95]);                        // quotité financée, %
+    const cB = pick([0.15, 0.20, 0.25, 0.30]);            // commission de service, % du nominal cédé
+
+    // --- Solution C : mobilisation de billet ---
+    const tC = randInt(38, 58) / 10;                      // 3.8 .. 5.8 %
+    const F  = randInt(3, 8) * 100;                       // frais de dossier forfaitaires
+
+    // --- Solution D : découvert en compte ---
+    const tD = randInt(60, 85) / 10;                      // 6.0 .. 8.5 %
+    const P  = N + pick([50000, 100000, 150000]);         // plafond autorisé
+    const ce = pick([0.20, 0.25, 0.30]);                  // commission d'engagement annuelle, % du plafond
+    const cpfd = pick([0.04, 0.05, 0.06]);                // CPFD, % du plus fort découvert
+    const peakDays = randInt(5, Math.min(15, Math.floor(T / 3)));
+
+    // --- Coûts, ressources nettes et taux effectifs ---
+    const IA = N * (tA / 100) * k;
+    const CA = N * (cA / 100);
+    const costA = IA + CA;
+    const RA = N - IA - CA;
+    const iA = costA / RA, aA = iA * 360 / T;
+
+    const MB = N * q / 100;
+    const IB = MB * (tB / 100) * k;
+    const CB = N * (cB / 100);
+    const costB = IB + CB;
+    const RB = MB - IB - CB;
+    const iB = costB / RB, aB = iB * 360 / T;
+
+    const IC = N * (tC / 100) * k;
+    const costC = IC + F;
+    const RC = N - IC - F;
+    const iC = costC / RC, aC = iC * 360 / T;
+
+    const ID = N * (tD / 100) * k;
+    const Ceng = P * (ce / 100) * k;
+    const Cpfd = P * (cpfd / 100);
+    const costD = ID + Ceng + Cpfd;
+    const RD = N;
+    const iD = costD / RD, aD = iD * 360 / T;
+
+    const rates  = { A: aA, B: aB, C: aC, D: aD };
+    const periodRates = { A: iA, B: iB, C: iC, D: iD };
+    const costs  = { A: costA, B: costB, C: costC, D: costD };
+    const nets   = { A: RA, B: RB, C: RC, D: RD };
+    const facial = { A: tA, B: tB, C: tC, D: tD };
+
+    const order = ['A','B','C','D'].slice().sort((x, y) => rates[x] - rates[y]);
+    const orderFacial = ['A','B','C','D'].slice().sort((x, y) => facial[x] - facial[y]);
+    const sameOrder = order.join('') === orderFacial.join('');
+
+    // Taux actuariel équivalent de la meilleure solution
+    const best = order[0];
+    const actuBest = Math.pow(1 + periodRates[best], 360 / T) - 1;
+
+    // Nominal de créances à céder pour obtenir exactement N en ressource nette (Dailly)
+    const needB = N / ((q / 100) * (1 - (tB / 100) * k) - cB / 100);
+
+    return {
+        prof, N, T, k,
+        tA, cA, tB, q, cB, tC, F, tD, P, ce, cpfd, peakDays,
+        IA, CA, costA, RA, iA, aA,
+        MB, IB, CB, costB, RB, iB, aB,
+        IC, costC, RC, iC, aC,
+        ID, Ceng, Cpfd, costD, RD, iD, aD,
+        rates, periodRates, costs, nets, facial,
+        order, orderFacial, sameOrder, best, actuBest, needB
+    };
+}
+
+/* ============================================================
+   TABLEAU DE SYNTHÈSE ET GRAPHIQUE  /  SUMMARY TABLE AND CHART
+   ============================================================ */
+function solTable(D, lang) {
+    const L = I18N[lang];
+    const head = (lang === 'fr')
+        ? ['Solution', 'Coût total sur ' + D.T + ' j', 'Ressource nette', 'Taux sur ' + D.T + ' j', 'Taux annuel', 'Rang']
+        : ['Option', 'Total cost over ' + D.T + ' d', 'Net resource', 'Rate over ' + D.T + ' d', 'Annual rate', 'Rank'];
+    const cur = (lang === 'fr') ? (v => fmtNb(v, 2) + ' €') : (v => '€' + fmtNb(v, 2));
+    let rows = '';
+    ['A','B','C','D'].forEach(function (c) {
+        const rank = D.order.indexOf(c) + 1;
+        const isBest = (rank === 1);
+        rows += `<tr${isBest ? ' style="background:#fdf8ec;"' : ''}>
+            <td class="txt-left">${c} — ${L.shortNames[c]}</td>
+            <td class="amt">${cur(D.costs[c])}</td>
+            <td class="amt">${cur(D.nets[c])}</td>
+            <td class="amt">${fmtNb(D.periodRates[c] * 100, 3)} %</td>
+            <td class="amt"${isBest ? ' style="font-weight:700;color:var(--navy);"' : ''}>${fmtNb(D.rates[c] * 100, 2)} %</td>
+            <td class="amt">${rank}</td>
+        </tr>`;
+    });
+    return `<div class="exam-table-wrap"><table class="exam-table">
+        <tr>${head.map(h => `<th>${h}</th>`).join('')}</tr>
+        ${rows}
+    </table></div>`;
+}
+
+function chartSVG(D, lang) {
+    const L = I18N[lang];
+    const W = 660, H = 300, mL = 58, mR = 18, mT = 34, mB = 62;
+    const pw = W - mL - mR, ph = H - mT - mB;
+    const maxPct = Math.max(D.aA, D.aB, D.aC, D.aD) * 100;
+    const top = Math.ceil(maxPct + 0.8);
+    const step = top > 10 ? 2 : 1;
+    const y = v => mT + ph - (v / top) * ph;
+
+    let g = '';
+    for (let v = 0; v <= top; v += step) {
+        g += `<line x1="${mL}" y1="${y(v).toFixed(1)}" x2="${W - mR}" y2="${y(v).toFixed(1)}" stroke="#d4cfc4" stroke-width="1"/>`;
+        g += `<text x="${mL - 9}" y="${(y(v) + 4).toFixed(1)}" text-anchor="end" font-family="'JetBrains Mono',monospace" font-size="10" fill="#5a5a5a">${v}</text>`;
+    }
+
+    const slot = pw / 4, bw = slot * 0.46;
+    ['A','B','C','D'].forEach(function (c, i) {
+        const v = D.rates[c] * 100;
+        const cx = mL + slot * i + slot / 2;
+        const isBest = (D.order[0] === c);
+        g += `<rect x="${(cx - bw / 2).toFixed(1)}" y="${y(v).toFixed(1)}" width="${bw.toFixed(1)}" height="${(mT + ph - y(v)).toFixed(1)}" fill="${isBest ? '#c9952a' : '#1a2e42'}" rx="2"/>`;
+        g += `<text x="${cx.toFixed(1)}" y="${(y(v) - 8).toFixed(1)}" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="11" font-weight="700" fill="${isBest ? '#8a6414' : '#1a2e42'}">${fmtNb(v, 2)}</text>`;
+        g += `<text x="${cx.toFixed(1)}" y="${(mT + ph + 20).toFixed(1)}" text-anchor="middle" font-family="'Source Serif 4',serif" font-size="12" fill="#1e1e1e">${c} — ${L.shortNames[c]}</text>`;
+        g += `<text x="${cx.toFixed(1)}" y="${(mT + ph + 37).toFixed(1)}" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="9.5" fill="#5a5a5a">${fmtNb(D.facial[c], 2)} %</text>`;
+    });
+
+    return `<div style="margin:1.4rem 0; overflow-x:auto;">
+      <svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" role="img">
+        <text x="${mL}" y="20" font-family="'Playfair Display',serif" font-size="14" font-weight="600" fill="#0d1b2a">${L.chartTitle}</text>
+        <text x="${W - mR}" y="20" text-anchor="end" font-family="'JetBrains Mono',monospace" font-size="10" fill="#5a5a5a">${L.chartAxis}</text>
+        ${g}
+        <line x1="${mL}" y1="${mT + ph}" x2="${W - mR}" y2="${mT + ph}" stroke="#0d1b2a" stroke-width="1.5"/>
+        <line x1="${mL}" y1="${mT}" x2="${mL}" y2="${mT + ph}" stroke="#0d1b2a" stroke-width="1.5"/>
+        <text x="${mL}" y="${H - 6}" font-family="'Source Serif 4',serif" font-size="10" font-style="italic" fill="#5a5a5a">${lang === 'fr' ? "En gris sous chaque barre : le taux nominal annoncé par la banque." : "In grey under each bar: the headline rate quoted by the bank."}</text>
+      </svg>
+    </div>`;
+}
+
+/* ============================================================
+   GÉNÉRATION  /  GENERATION
+   ============================================================ */
+function generateExercise(forceNew = false) {
+    if (forceNew) {
+        document.getElementById('seed-input').value = "";
+    }
+    let seedVal = document.getElementById('seed-input').value;
+    currentSeed = seedVal ? parseInt(seedVal) : Math.floor(Math.random() * 99999999);
+    document.getElementById('seed-disp').innerText = currentSeed;
+    document.getElementById('seed-input').value = currentSeed;
+    random = seedPRNG(currentSeed);
+
+    const DIC = I18N[LANG];
+    const D = computeModel();
+
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('ex-area').style.display = 'block';
+    document.getElementById('sol-card').classList.remove('visible');
+    document.getElementById('toggle-btn').innerText = DIC.showSol;
+    document.getElementById('toggle-btn').classList.remove('shown');
+
+    document.getElementById('context-text').innerHTML = DIC.context(D);
+    document.getElementById('enonce-table-container').innerHTML = DIC.table(D);
+    document.getElementById('additional-info').innerHTML = DIC.info(D);
+    document.getElementById('events-list').innerHTML = DIC.enonce(D);
+    document.getElementById('sol-content').innerHTML = DIC.sol(D);
+
+    if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
+        MathJax.typesetPromise().catch(function (err) { console.error('MathJax :', err); });
+    }
+}
+
+function toggleSol() {
+    let solCard = document.getElementById('sol-card');
+    let btn = document.getElementById('toggle-btn');
+    if (solCard.classList.contains('visible')) {
+        solCard.classList.remove('visible');
+        btn.innerText = I18N[LANG].showSol;
+        btn.classList.remove('shown');
+    } else {
+        solCard.classList.add('visible');
+        btn.innerText = I18N[LANG].hideSol;
+        btn.classList.add('shown');
+        solCard.scrollIntoView({behavior: 'smooth', block: 'start'});
+    }
+}
+
+/* Initialisation */
+LANG = detectLang();
+applyLang();
+</script>
+<!-- KIT:JS:START v1 -->
+<div id="pdf-ov" onclick="closePdfModal()"></div>
+<div id="pdf-modal">
+  <div class="mh">
+    <h3 data-kit="modalTitle">Exporter en PDF</h3>
+    <button type="button" class="mclose" onclick="closePdfModal()">&#10005;</button>
+  </div>
+  <div class="mb2">
+    <div class="seed-note"><span data-kit="seedPre">Seed&nbsp;:</span> <strong id="modal-seed">&mdash;</strong> <span data-kit="seedPost">&mdash; notez cette valeur pour reproduire exactement cet exercice.</span></div>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-header" checked>
+      <span class="opt-txt"><span class="opt-lbl" data-kit="optHeader">Inclure l'en-t&ecirc;te de page</span>
+           <span class="opt-desc" data-kit="optHeaderD">Titre, badge de mati&egrave;re et intitul&eacute; de l'exercice</span></span>
+    </label>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-sol">
+      <span class="opt-txt"><span class="opt-lbl" data-kit="optSol">Inclure le corrig&eacute; complet</span>
+           <span class="opt-desc" data-kit="optSolD">L'ensemble des d&eacute;veloppements et commentaires du corrig&eacute;</span></span>
+    </label>
+    <div class="mactions">
+      <button type="button" class="btn-print" onclick="doPrint()"><span data-kit="print">&#128424;&nbsp;Imprimer / Sauvegarder PDF</span></button>
+      <button type="button" class="btn-cancel" onclick="closePdfModal()"><span data-kit="cancel">Annuler</span></button>
+    </div>
+  </div>
+</div>
+
+<script id="kit-docx">
+/* =============================================================================
+   EXPORT WORD NATIF (.docx)
+   Trois briques, sans aucune dépendance externe :
+     1. mml2omml  — MathML -> OMML, le format d'équation natif de Word
+     2. zip       — écriture d'une archive ZIP (entrées « stored » + CRC32)
+     3. html2wml  — HTML de la page -> WordprocessingML
+   ============================================================================= */
+(function (root) {
+'use strict';
+
+/* --------------------------------------------------------------- utilitaires */
+function esc(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                  .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function kids(n) {
+  var out = [], c = n.firstChild;
+  while (c) { if (c.nodeType === 1) out.push(c); c = c.nextSibling; }
+  return out;
+}
+function txt(n) { return (n.textContent || '').replace(/\u200b/g, '').trim(); }
+
+/* ============================================================================
+   1. MathML -> OMML
+   ========================================================================== */
+var OPEN = '([{\u27e8\u2308\u230a|\u2016';
+var CLOSE = ')]}\u27e9\u2309\u230b|\u2016';
+var BIGOPS = '\u2211\u220f\u222b\u222c\u222d\u222e\u22c3\u22c2\u2210';
+var ACCENTS = {
+  '\u005e': '\u0302', '\u02c6': '\u0302', '^': '\u0302',
+  '\u00af': '\u0304', '\u2015': '\u0304', '\u2212': '\u0304', '_': '\u0304',
+  '~': '\u0303', '\u02dc': '\u0303', '\u02d9': '\u0307',
+  '\u2192': '\u20d7', '\u21c0': '\u20d1', '\u02c7': '\u030c', '\u02d8': '\u0306'
+};
+
+function run(text, style) {
+  if (text === '') return '';
+  var rPr = '<w:rPr><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/></w:rPr>';
+  var mPr = style ? '<m:rPr><m:sty m:val="' + style + '"/></m:rPr>' : '';
+  return '<m:r>' + mPr + rPr + '<m:t xml:space="preserve">' + esc(text) + '</m:t></m:r>';
+}
+
+/* Un grand opérateur (somme, intégrale…) absorbe la suite de la ligne comme
+   opérande : sans cela Word affiche un cadre vide à la place de l'argument. */
+function naryHere(n) {
+  if (!n || n.nodeType !== 1) return null;
+  var t = n.nodeName.toLowerCase().replace(/^.*:/, ''), k = kids(n);
+  if (t === 'munderover' || t === 'msubsup') return { base: k[0], sub: k[1], sup: k[2] };
+  if (t === 'munder' || t === 'msub') return { base: k[0], sub: k[1], sup: null };
+  if (t === 'mover' || t === 'msup') return { base: k[0], sub: null, sup: k[1] };
+  if (t === 'mo') return { base: n, sub: null, sup: null };
+  return null;
+}
+function isBigOp(n) {
+  if (!n || n.nodeType !== 1) return false;
+  var c = txt(n);
+  return n.nodeName.toLowerCase().replace(/^.*:/, '') === 'mo' &&
+         c.length === 1 && BIGOPS.indexOf(c) !== -1;
+}
+
+function seq(nodes) {
+  var s = '';
+  for (var i = 0; i < nodes.length; i++) {
+    var info = naryHere(nodes[i]);
+    if (info && isBigOp(info.base) && i + 1 < nodes.length) {
+      s += naryFull(info, nodes.slice(i + 1));
+      return s;
+    }
+    s += mml(nodes[i]);
+  }
+  return s;
+}
+
+function naryFull(info, rest) {
+  return '<m:nary><m:naryPr><m:chr m:val="' + esc(txt(info.base)) + '"/>' +
+         '<m:limLoc m:val="undOvr"/>' +
+         '<m:subHide m:val="' + (info.sub ? '0' : '1') + '"/>' +
+         '<m:supHide m:val="' + (info.sup ? '0' : '1') + '"/><m:ctrlPr/></m:naryPr>' +
+         '<m:sub>' + (info.sub ? mml(info.sub) : '') + '</m:sub>' +
+         '<m:sup>' + (info.sup ? mml(info.sup) : '') + '</m:sup>' +
+         '<m:e>' + seq(rest) + '</m:e></m:nary>';
+}
+
+/* mrow entouré de délimiteurs -> m:d, pour des parenthèses étirables natives */
+function fenced(ks) {
+  if (ks.length < 2) return null;
+  var a = ks[0], b = ks[ks.length - 1];
+  if (a.nodeName.toLowerCase() !== 'mo' || b.nodeName.toLowerCase() !== 'mo') return null;
+  var o = txt(a), c = txt(b);
+  if (o.length !== 1 || c.length !== 1) return null;
+  if (OPEN.indexOf(o) === -1 || CLOSE.indexOf(c) === -1) return null;
+  var inner = ks.slice(1, -1);
+  /* séparateurs de premier niveau -> plusieurs m:e */
+  var parts = [[]];
+  for (var i = 0; i < inner.length; i++) {
+    if (inner[i].nodeName.toLowerCase() === 'mo' && txt(inner[i]) === ',' && parts.length < 8) {
+      parts.push([]);
+    } else { parts[parts.length - 1].push(inner[i]); }
+  }
+  var sep = parts.length > 1 ? ',' : '';
+  var body = '';
+  for (var j = 0; j < parts.length; j++) body += '<m:e>' + seq(parts[j]) + '</m:e>';
+  return '<m:d><m:dPr><m:begChr m:val="' + esc(o) + '"/><m:sepChr m:val="' + esc(sep) +
+         '"/><m:endChr m:val="' + esc(c) + '"/><m:ctrlPr/></m:dPr>' + body + '</m:d>';
+}
+
+function naryOf(base, sub, sup) {
+  var ch = txt(base);
+  if (ch.length !== 1 || BIGOPS.indexOf(ch) === -1) return null;
+  return '<m:nary><m:naryPr><m:chr m:val="' + esc(ch) + '"/><m:limLoc m:val="undOvr"/>' +
+         '<m:subHide m:val="' + (sub ? '0' : '1') + '"/>' +
+         '<m:supHide m:val="' + (sup ? '0' : '1') + '"/><m:ctrlPr/></m:naryPr>' +
+         '<m:sub>' + (sub ? mml(sub) : '') + '</m:sub>' +
+         '<m:sup>' + (sup ? mml(sup) : '') + '</m:sup>' +
+         '<m:e></m:e></m:nary>';
+}
+
+function mml(n) {
+  if (!n) return '';
+  if (n.nodeType === 3) return run(n.nodeValue);
+  if (n.nodeType !== 1) return '';
+  var t = n.nodeName.toLowerCase().replace(/^.*:/, '');
+  var k = kids(n), s;
+
+  switch (t) {
+    case 'math':
+    case 'semantics':
+    case 'mstyle':
+    case 'mpadded':
+    case 'menclose':
+      return seq(k);
+
+    case 'annotation':
+    case 'annotation-xml':
+    case 'mphantom':
+      return '';
+
+    case 'mrow':
+      s = fenced(k);
+      return s !== null ? s : seq(k);
+
+    case 'mi':      return run(txt(n), txt(n).length === 1 ? 'i' : 'p');
+    case 'mn':      return run(txt(n), 'p');
+    case 'mo':      return run(txt(n), 'p');
+    case 'merror':  return run(txt(n), 'p');
+    case 'ms':      return run(txt(n), 'p');
+
+    case 'mtext':
+      var v = n.textContent || '';
+      return v === '' ? '' :
+        '<m:r><m:rPr><m:nor/></m:rPr><w:rPr><w:rFonts w:ascii="Cambria" w:hAnsi="Cambria"/></w:rPr>' +
+        '<m:t xml:space="preserve">' + esc(v) + '</m:t></m:r>';
+
+    case 'mspace':
+      return run(' ', 'p');
+
+    case 'mfrac':
+      return '<m:f><m:fPr><m:type m:val="' +
+             (n.getAttribute('linethickness') === '0' ? 'noBar' : 'bar') +
+             '"/><m:ctrlPr/></m:fPr><m:num>' + mml(k[0]) + '</m:num><m:den>' +
+             mml(k[1]) + '</m:den></m:f>';
+
+    case 'msup':
+      s = naryOf(k[0], null, k[1]); if (s) return s;
+      return '<m:sSup><m:sSupPr><m:ctrlPr/></m:sSupPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sup>' + mml(k[1]) + '</m:sup></m:sSup>';
+
+    case 'msub':
+      s = naryOf(k[0], k[1], null); if (s) return s;
+      return '<m:sSub><m:sSubPr><m:ctrlPr/></m:sSubPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sub>' + mml(k[1]) + '</m:sub></m:sSub>';
+
+    case 'msubsup':
+      s = naryOf(k[0], k[1], k[2]); if (s) return s;
+      return '<m:sSubSup><m:sSubSupPr><m:ctrlPr/></m:sSubSupPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sub>' + mml(k[1]) + '</m:sub><m:sup>' + mml(k[2]) +
+             '</m:sup></m:sSubSup>';
+
+    case 'msqrt':
+      return '<m:rad><m:radPr><m:degHide m:val="1"/><m:ctrlPr/></m:radPr>' +
+             '<m:deg/><m:e>' + seq(k) + '</m:e></m:rad>';
+
+    case 'mroot':
+      return '<m:rad><m:radPr><m:degHide m:val="0"/><m:ctrlPr/></m:radPr><m:deg>' +
+             mml(k[1]) + '</m:deg><m:e>' + mml(k[0]) + '</m:e></m:rad>';
+
+    case 'mover':
+      var ao = txt(k[1]);
+      if (ACCENTS[ao]) {
+        return '<m:acc><m:accPr><m:chr m:val="' + esc(ACCENTS[ao]) +
+               '"/><m:ctrlPr/></m:accPr><m:e>' + mml(k[0]) + '</m:e></m:acc>';
+      }
+      s = naryOf(k[0], null, k[1]); if (s) return s;
+      return '<m:limUpp><m:limUppPr><m:ctrlPr/></m:limUppPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limUpp>';
+
+    case 'munder':
+      s = naryOf(k[0], k[1], null); if (s) return s;
+      return '<m:limLow><m:limLowPr><m:ctrlPr/></m:limLowPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limLow>';
+
+    case 'munderover':
+      s = naryOf(k[0], k[1], k[2]); if (s) return s;
+      return '<m:limUpp><m:limUppPr><m:ctrlPr/></m:limUppPr><m:e>' +
+             '<m:limLow><m:limLowPr><m:ctrlPr/></m:limLowPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limLow></m:e><m:lim>' +
+             mml(k[2]) + '</m:lim></m:limUpp>';
+
+    case 'mtable':
+      var rows = k.filter(function (r) { return /mtr$/.test(r.nodeName.toLowerCase()); });
+      var ncol = 0;
+      rows.forEach(function (r) { ncol = Math.max(ncol, kids(r).length); });
+      var props = '<m:mPr><m:baseJc m:val="center"/><m:plcHide m:val="1"/><m:mcs><m:mc><m:mcPr>' +
+                  '<m:count m:val="' + (ncol || 1) + '"/><m:mcJc m:val="center"/></m:mcPr></m:mc></m:mcs>' +
+                  '<m:ctrlPr/></m:mPr>';
+      var body = '';
+      rows.forEach(function (r) {
+        body += '<m:mr>';
+        var cells = kids(r);
+        for (var i = 0; i < (ncol || 1); i++) body += '<m:e>' + (cells[i] ? seq(kids(cells[i])) : '') + '</m:e>';
+        body += '</m:mr>';
+      });
+      return '<m:m>' + props + body + '</m:m>';
+
+    case 'mtr':
+    case 'mtd':
+      return seq(k);
+
+    default:
+      return k.length ? seq(k) : run(txt(n), 'p');
+  }
+}
+
+function mathmlToOmml(mathEl) { return mml(mathEl); }
+
+/* ============================================================================
+   2. Écriture ZIP (entrées non compressées + CRC32)
+   ========================================================================== */
+var CRCT = (function () {
+  var t = new Int32Array(256);
+  for (var i = 0; i < 256; i++) {
+    var c = i;
+    for (var j = 0; j < 8; j++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[i] = c;
+  }
+  return t;
+})();
+function crc32(buf) {
+  var c = -1;
+  for (var i = 0; i < buf.length; i++) c = CRCT[(c ^ buf[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ -1) >>> 0;
+}
+function utf8(str) {
+  if (typeof TextEncoder !== 'undefined') return new TextEncoder().encode(str);
+  var b = unescape(encodeURIComponent(str)), a = new Uint8Array(b.length);
+  for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i);
+  return a;
+}
+function zip(files) {
+  var parts = [], central = [], offset = 0;
+  function u16(v) { return [v & 0xFF, (v >>> 8) & 0xFF]; }
+  function u32(v) { return [v & 0xFF, (v >>> 8) & 0xFF, (v >>> 16) & 0xFF, (v >>> 24) & 0xFF]; }
+
+  files.forEach(function (f) {
+    var name = utf8(f.name), data = f.bin ? f.bin : utf8(f.data), c = crc32(data);
+    var local = [].concat(u32(0x04034b50), u16(20), u16(0x0800), u16(0), u16(0), u16(0),
+                          u32(c), u32(data.length), u32(data.length),
+                          u16(name.length), u16(0));
+    parts.push(new Uint8Array(local), name, data);
+    central.push({ name: name, crc: c, size: data.length, off: offset });
+    offset += local.length + name.length + data.length;
+  });
+
+  var cd = [];
+  central.forEach(function (e) {
+    cd = cd.concat(u32(0x02014b50), u16(20), u16(20), u16(0x0800), u16(0), u16(0), u16(0),
+                   u32(e.crc), u32(e.size), u32(e.size),
+                   u16(e.name.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(e.off));
+    cd = cd.concat(Array.prototype.slice.call(e.name));
+  });
+  var cdArr = new Uint8Array(cd);
+  var eocd = new Uint8Array([].concat(u32(0x06054b50), u16(0), u16(0),
+                                      u16(files.length), u16(files.length),
+                                      u32(cdArr.length), u32(offset), u16(0)));
+  parts.push(cdArr, eocd);
+
+  var total = parts.reduce(function (n, p) { return n + p.length; }, 0);
+  var out = new Uint8Array(total), pos = 0;
+  parts.forEach(function (p) { out.set(p, pos); pos += p.length; });
+  return out;
+}
+
+/* ============================================================================
+   3. HTML -> WordprocessingML
+   ========================================================================== */
+var SKIP = { script: 1, style: 1, button: 1, input: 1, noscript: 1 };
+var IMAGES = [];           /* { bin, w, h } collectées pendant le parcours */
+var EMU = 9525;            /* EMU par pixel */
+var MAXW = 5760000;        /* largeur utile de la page, en EMU */
+
+function b64bin(b64) {
+  var raw = atob(b64), a = new Uint8Array(raw.length);
+  for (var i = 0; i < raw.length; i++) a[i] = raw.charCodeAt(i);
+  return a;
+}
+
+function imageXml(dataUrl, wpx, hpx) {
+  var m = /^data:image\/png;base64,(.*)$/.exec(dataUrl || '');
+  if (!m) return '';
+  var cx = Math.round(wpx * EMU), cy = Math.round(hpx * EMU);
+  if (cx > MAXW) { cy = Math.round(cy * MAXW / cx); cx = MAXW; }
+  IMAGES.push({ bin: b64bin(m[1]) });
+  var id = IMAGES.length, rid = 'rIdImg' + id;
+  return '<w:p><w:pPr><w:pStyle w:val="Figure"/><w:jc w:val="center"/></w:pPr><w:r><w:drawing>' +
+    '<wp:inline distT="0" distB="0" distL="0" distR="0">' +
+    '<wp:extent cx="' + cx + '" cy="' + cy + '"/>' +
+    '<wp:effectExtent l="0" t="0" r="0" b="0"/>' +
+    '<wp:docPr id="' + id + '" name="Graphique ' + id + '"/>' +
+    '<wp:cNvGraphicFramePr><a:graphicFrameLocks ' +
+      'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/>' +
+    '</wp:cNvGraphicFramePr>' +
+    '<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">' +
+    '<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+    '<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+    '<pic:nvPicPr><pic:cNvPr id="' + id + '" name="Graphique ' + id + '"/><pic:cNvPicPr/></pic:nvPicPr>' +
+    '<pic:blipFill><a:blip r:embed="' + rid + '"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>' +
+    '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' + cx + '" cy="' + cy + '"/></a:xfrm>' +
+    '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>' +
+    '</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>';
+}
+var BLOCK = { p: 1, div: 1, h1: 1, h2: 1, h3: 1, h4: 1, li: 1, tr: 1, td: 1, th: 1,
+              table: 1, ul: 1, ol: 1, section: 1, article: 1, header: 1, blockquote: 1 };
+
+function W() {
+  this.body = '';
+  this.para = null;      /* { style, runs, numId, ilvl } */
+}
+W.prototype.open = function (style, numId, ilvl) {
+  this.close();
+  this.para = { style: style || 'Corps', runs: '', numId: numId || 0, ilvl: ilvl || 0 };
+};
+W.prototype.close = function () {
+  var p = this.para;
+  this.para = null;
+  if (!p || (p.runs === '' && !p.numId)) return;
+  if (p.runs === '') return;
+  var pPr = '<w:pPr><w:pStyle w:val="' + p.style + '"/>';
+  if (p.numId) pPr += '<w:numPr><w:ilvl w:val="' + p.ilvl + '"/><w:numId w:val="' + p.numId + '"/></w:numPr>';
+  pPr += '</w:pPr>';
+  this.body += '<w:p>' + pPr + p.runs + '</w:p>';
+};
+W.prototype.add = function (xml) {
+  if (!this.para) this.open('Corps');
+  this.para.runs += xml;
+};
+W.prototype.raw = function (xml) { this.close(); this.body += xml; };
+
+function textRun(s, fmt) {
+  if (!s) return '';
+  var rPr = '';
+  if (fmt.b) rPr += '<w:b/>';
+  if (fmt.i) rPr += '<w:i/>';
+  if (fmt.sup) rPr += '<w:vertAlign w:val="superscript"/>';
+  if (fmt.sub) rPr += '<w:vertAlign w:val="subscript"/>';
+  if (fmt.mono) rPr += '<w:rFonts w:ascii="Consolas" w:hAnsi="Consolas"/>';
+  return '<w:r>' + (rPr ? '<w:rPr>' + rPr + '</w:rPr>' : '') +
+         '<w:t xml:space="preserve">' + esc(s) + '</w:t></w:r>';
+}
+
+function walk(node, w, fmt, list) {
+  var i, cs = node.childNodes;
+  for (i = 0; i < cs.length; i++) {
+    var n = cs[i];
+
+    if (n.nodeType === 3) {
+      var s = n.nodeValue.replace(/\s+/g, ' ');
+      if (s.trim() === '' && !/\S/.test(s)) { if (w.para && w.para.runs) w.add(textRun(' ', fmt)); continue; }
+      w.add(textRun(s, fmt));
+      continue;
+    }
+    if (n.nodeType !== 1) continue;
+
+    var tag = n.nodeName.toLowerCase();
+    if (SKIP[tag]) continue;
+    if (n.classList && (n.classList.contains('top-bar') || n.classList.contains('top-actions') ||
+                        n.classList.contains('sol-toggle-wrap'))) continue;
+
+    /* --- équations --- */
+    if (tag === 'mjx-container') {
+      var math = n.querySelector('mjx-assistive-mml math, math');
+      var display = n.getAttribute('display') === 'true';
+      if (math) {
+        var omml = mathmlToOmml(math);
+        if (display) {
+          w.close();
+          w.body += '<w:p><w:pPr><w:pStyle w:val="Formule"/>' +
+                    '<w:jc w:val="center"/></w:pPr>' +
+                    '<m:oMath>' + omml + '</m:oMath></w:p>';
+        } else {
+          w.add('<m:oMath>' + omml + '</m:oMath>');
+        }
+      } else {
+        w.add(textRun(txt(n), fmt));
+      }
+      continue;
+    }
+    if (tag === 'mjx-assistive-mml' || tag === 'math') continue;
+
+    /* --- graphiques --- */
+    if (tag === 'svg' || tag === 'img') {
+      var png = n.getAttribute('data-kit-png');
+      if (png) {
+        w.close();
+        w.body += imageXml(png, +n.getAttribute('data-kit-w') || 600,
+                                +n.getAttribute('data-kit-h') || 380);
+      }
+      continue;
+    }
+
+    /* --- tableaux --- */
+    if (tag === 'table') { w.close(); w.body += table(n); continue; }
+
+    /* --- listes --- */
+    if (tag === 'ul' || tag === 'ol') {
+      w.close();
+      var nid = tag === 'ol' ? 2 : 1;
+      var lvl = list ? Math.min(list.ilvl + 1, 2) : 0;
+      var items = kids(n).filter(function (x) { return x.nodeName.toLowerCase() === 'li'; });
+      items.forEach(function (li) {
+        /* L'item est composé à part : son numéro doit se poser sur le premier
+           paragraphe produit, même si le <li> enveloppe son texte dans un <div>. */
+        var wb = new W();
+        walk(li, wb, fmt, { ilvl: lvl });
+        wb.close();
+        var xml = wb.body;
+        if (!xml) return;
+        var numPr = '<w:pStyle w:val="Liste"/><w:numPr><w:ilvl w:val="' + lvl +
+                    '"/><w:numId w:val="' + nid + '"/></w:numPr>';
+        if (xml.indexOf('<w:pStyle w:val="Corps"/>') !== -1) {
+          xml = xml.replace('<w:pStyle w:val="Corps"/>', numPr);
+        } else {
+          xml = '<w:p><w:pPr>' + numPr + '</w:pPr></w:p>' + xml;
+        }
+        w.body += xml;
+      });
+      continue;
+    }
+
+    /* --- titres --- */
+    if (tag === 'h1' || tag === 'h2') { w.close(); w.open('Titre1'); walk(n, w, fmt, list); w.close(); continue; }
+    if (tag === 'h3' || tag === 'h4') { w.close(); w.open('Titre2'); walk(n, w, fmt, list); w.close(); continue; }
+
+    /* --- titres internes du corrigé --- */
+    if (n.classList && (n.classList.contains('sol-sub') || n.classList.contains('sol-q') ||
+                        n.classList.contains('dossier-title'))) {
+      w.close(); w.open('Titre2'); walk(n, w, { b: true }, list); w.close(); continue;
+    }
+    if (n.classList && n.classList.contains('persp-box')) {
+      w.close();
+      var wb = new W();
+      walk(n, wb, fmt, list);
+      wb.close();
+      w.body += wb.body.replace(/w:val="Corps"/g, 'w:val="Encadre"')
+                       .replace(/w:val="Titre2"/g, 'w:val="EncadreTitre"');
+      continue;
+    }
+
+    /* --- mise en forme inline --- */
+    var f2 = { b: fmt.b, i: fmt.i, sup: fmt.sup, sub: fmt.sub, mono: fmt.mono };
+    if (tag === 'strong' || tag === 'b') f2.b = true;
+    if (tag === 'em' || tag === 'i') f2.i = true;
+    if (tag === 'sup') f2.sup = true;
+    if (tag === 'sub') f2.sub = true;
+    if (tag === 'code' || tag === 'kbd') f2.mono = true;
+
+    /* intertitre écrit en style en ligne (span display:block + gras) */
+    var st = n.getAttribute && n.getAttribute('style');
+    if (st && /display\s*:\s*block/.test(st) && /font-weight\s*:\s*(6|7|8|9|bold)/.test(st)) {
+      w.close(); w.open('Titre3');
+      walk(n, w, { b: true }, list);
+      w.close();
+      continue;
+    }
+
+    if ((tag === 'strong' || tag === 'b') &&
+        (!w.para || w.para.runs === '') &&
+        n.nextElementSibling && n.nextElementSibling.nodeName.toLowerCase() === 'br') {
+      w.close(); w.open('Titre3');
+      walk(n, w, { b: true }, list);
+      w.close();
+      i++;                       /* le <br> qui suit devient inutile */
+      continue;
+    }
+
+    if (tag === 'br') { w.add('<w:r><w:br/></w:r>'); continue; }
+    if (tag === 'hr') { w.close(); continue; }
+
+    if (BLOCK[tag]) { w.close(); w.open('Corps'); walk(n, w, f2, list); w.close(); }
+    else { walk(n, w, f2, list); }
+  }
+}
+
+function cellXml(td, isHead) {
+  var w2 = new W();
+  walk(td, w2, { b: !!isHead }, null);
+  w2.close();
+  var content = w2.body || '<w:p><w:pPr><w:pStyle w:val="Cellule"/></w:pPr></w:p>';
+  content = content.replace(/w:val="Corps"/g, 'w:val="Cellule"');
+  var span = parseInt(td.getAttribute('colspan') || '1', 10);
+  var shd = isHead ? '<w:shd w:val="clear" w:fill="EDE9DF"/>' : '';
+  return '<w:tc><w:tcPr>' + (span > 1 ? '<w:gridSpan w:val="' + span + '"/>' : '') +
+         shd + '<w:vAlign w:val="center"/></w:tcPr>' + content + '</w:tc>';
+}
+
+function table(tbl) {
+  var rows = tbl.querySelectorAll('tr'), out = '', ncol = 0, i, j;
+  for (i = 0; i < rows.length; i++) {
+    var c = rows[i].children, n = 0;
+    for (j = 0; j < c.length; j++) n += parseInt(c[j].getAttribute('colspan') || '1', 10);
+    ncol = Math.max(ncol, n);
+  }
+  if (!ncol) return '';
+  var grid = '<w:tblGrid>';
+  for (i = 0; i < ncol; i++) grid += '<w:gridCol w:w="' + Math.floor(9360 / ncol) + '"/>';
+  grid += '</w:tblGrid>';
+
+  for (i = 0; i < rows.length; i++) {
+    var cells = rows[i].children, xml = '';
+    var head = rows[i].parentNode.nodeName.toLowerCase() === 'thead' ||
+               (cells.length && cells[0].nodeName.toLowerCase() === 'th');
+    for (j = 0; j < cells.length; j++) xml += cellXml(cells[j], head);
+    out += '<w:tr>' + (head ? '<w:trPr><w:tblHeader/></w:trPr>' : '') + xml + '</w:tr>';
+  }
+  return '<w:tbl><w:tblPr><w:tblStyle w:val="Grille"/>' +
+         '<w:tblW w:w="5000" w:type="pct"/><w:tblLayout w:type="fixed"/></w:tblPr>' +
+         grid + out + '</w:tbl><w:p><w:pPr><w:pStyle w:val="Apres"/></w:pPr></w:p>';
+}
+
+/* ============================================================================
+   Assemblage du fichier
+   ========================================================================== */
+var NS =
+  'xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" ' +
+  'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
+  'xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" ' +
+  'xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" ' +
+  'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+  'xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture" ' +
+  'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+  'xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" ' +
+  'mc:Ignorable="w14"';
+
+function style(id, name, opts) {
+  var o = opts || {};
+  return '<w:style w:type="paragraph" w:styleId="' + id + '"><w:name w:val="' + name + '"/>' +
+         '<w:basedOn w:val="Corps"/><w:pPr>' +
+         (o.keep ? '<w:keepNext/>' : '') +
+         '<w:spacing w:before="' + (o.before || 0) + '" w:after="' + (o.after || 120) +
+         '" w:line="' + (o.line || 276) + '" w:lineRule="auto"/>' +
+         (o.jc ? '<w:jc w:val="' + o.jc + '"/>' : '') +
+         (o.ind ? '<w:ind w:left="' + o.ind + '"/>' : '') +
+         (o.border ? '<w:pBdr><w:left w:val="single" w:sz="18" w:space="8" w:color="1A2E42"/></w:pBdr>' : '') +
+         '</w:pPr><w:rPr>' +
+         (o.font ? '<w:rFonts w:ascii="' + o.font + '" w:hAnsi="' + o.font + '"/>' : '') +
+         (o.b ? '<w:b/>' : '') + (o.i ? '<w:i/>' : '') +
+         (o.sz ? '<w:sz w:val="' + o.sz + '"/>' : '') +
+         (o.color ? '<w:color w:val="' + o.color + '"/>' : '') +
+         '</w:rPr></w:style>';
+}
+
+function stylesXml() {
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles ' + NS + '>' +
+    '<w:docDefaults><w:rPrDefault><w:rPr>' +
+      '<w:rFonts w:ascii="Cambria" w:hAnsi="Cambria" w:cs="Cambria"/>' +
+      '<w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="fr-FR"/>' +
+    '</w:rPr></w:rPrDefault><w:pPrDefault><w:pPr>' +
+      '<w:spacing w:after="120" w:line="276" w:lineRule="auto"/><w:jc w:val="both"/>' +
+    '</w:pPr></w:pPrDefault></w:docDefaults>' +
+    '<w:style w:type="paragraph" w:default="1" w:styleId="Corps"><w:name w:val="Normal"/>' +
+      '<w:pPr><w:spacing w:after="120" w:line="276" w:lineRule="auto"/><w:jc w:val="both"/></w:pPr>' +
+      '<w:rPr><w:rFonts w:ascii="Cambria" w:hAnsi="Cambria"/><w:sz w:val="22"/></w:rPr></w:style>' +
+    style('TitreDoc', 'Title', { font: 'Cambria', b: true, sz: 40, color: '0D1B2A', jc: 'left', after: 60, line: 240 }) +
+    style('SousTitre', 'Subtitle', { i: true, sz: 20, color: '5A5A5A', jc: 'left', after: 280, line: 240 }) +
+    style('Titre1', 'heading 1', { b: true, sz: 28, color: '0D1B2A', before: 320, after: 140, jc: 'left', keep: true, line: 240 }) +
+    style('Titre2', 'heading 2', { b: true, sz: 23, color: '1A2E42', before: 240, after: 100, jc: 'left', keep: true, line: 240 }) +
+    style('Formule', 'Formula', { jc: 'center', before: 120, after: 120, line: 240 }) +
+    style('Liste', 'List Paragraph', { after: 100, ind: 360 }) +
+    style('Cellule', 'Table Text', { sz: 20, after: 40, jc: 'left', line: 240 }) +
+    style('Encadre', 'Aside', { ind: 240, border: true, sz: 21, before: 200, after: 200 }) +
+    style('Apres', 'After Table', { after: 200, sz: 12 }) +
+    style('Figure', 'Figure', { jc: 'center', before: 160, after: 200, line: 240 }) +
+    style('Titre3', 'heading 3', { b: true, sz: 22, color: '1A2E42', before: 200,
+                                   after: 60, jc: 'left', keep: true, line: 240 }) +
+    style('EncadreTitre', 'Aside Heading', { ind: 240, border: true, b: true, sz: 22,
+                                             color: '1A2E42', before: 200, after: 60, jc: 'left' }) +
+    '<w:style w:type="table" w:styleId="Grille"><w:name w:val="Table Grid"/><w:tblPr>' +
+      '<w:tblBorders>' +
+      ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(function (b) {
+        return '<w:' + b + ' w:val="single" w:sz="4" w:space="0" w:color="9A9A9A"/>';
+      }).join('') +
+      '</w:tblBorders><w:tblCellMar>' +
+      '<w:top w:w="60" w:type="dxa"/><w:left w:w="90" w:type="dxa"/>' +
+      '<w:bottom w:w="60" w:type="dxa"/><w:right w:w="90" w:type="dxa"/>' +
+      '</w:tblCellMar></w:tblPr></w:style>' +
+    '</w:styles>';
+}
+
+function numberingXml() {
+  function lvl(i, fmt, txtv, ind) {
+    return '<w:lvl w:ilvl="' + i + '"><w:start w:val="1"/><w:numFmt w:val="' + fmt + '"/>' +
+           '<w:lvlText w:val="' + txtv + '"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="' +
+           ind + '" w:hanging="360"/></w:pPr>' +
+           (fmt === 'bullet' ? '<w:rPr><w:rFonts w:ascii="Symbol" w:hAnsi="Symbol"/></w:rPr>' : '') +
+           '</w:lvl>';
+  }
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:numbering ' + NS + '>' +
+    '<w:abstractNum w:abstractNumId="1"><w:multiLevelType w:val="hybridMultilevel"/>' +
+      lvl(0, 'bullet', '\uF0B7', 360) + lvl(1, 'bullet', 'o', 720) + lvl(2, 'bullet', '\uF0A7', 1080) +
+    '</w:abstractNum>' +
+    '<w:abstractNum w:abstractNumId="2"><w:multiLevelType w:val="hybridMultilevel"/>' +
+      lvl(0, 'decimal', '%1.', 360) + lvl(1, 'lowerLetter', '%2.', 720) + lvl(2, 'lowerRoman', '%3.', 1080) +
+    '</w:abstractNum>' +
+    '<w:num w:numId="1"><w:abstractNumId w:val="1"/></w:num>' +
+    '<w:num w:numId="2"><w:abstractNumId w:val="2"/></w:num>' +
+    '</w:numbering>';
+}
+
+function buildDocx(opts) {
+  IMAGES = [];
+  var w = new W();
+
+  if (opts.title) {
+    w.body += '<w:p><w:pPr><w:pStyle w:val="TitreDoc"/></w:pPr>' +
+              textRun(opts.title, {}) + '</w:p>';
+  }
+  if (opts.subtitle) {
+    w.body += '<w:p><w:pPr><w:pStyle w:val="SousTitre"/></w:pPr>' +
+              textRun(opts.subtitle, {}) + '</w:p>';
+  }
+  opts.sections.forEach(function (sec) {
+    if (sec.heading) {
+      w.body += '<w:p><w:pPr><w:pStyle w:val="Titre1"/></w:pPr>' + textRun(sec.heading, {}) + '</w:p>';
+    }
+    walk(sec.node, w, {}, null);
+    w.close();
+  });
+  w.close();
+
+  var doc = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ' + NS + '><w:body>' +
+    w.body +
+    '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/>' +
+    '<w:pgMar w:top="1247" w:right="1247" w:bottom="1247" w:left="1247" ' +
+    'w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>';
+
+  var media = [], rels = '', ctypes = '';
+  IMAGES.forEach(function (im, i) {
+    media.push({ name: 'word/media/image' + (i + 1) + '.png', bin: im.bin });
+    rels += '<Relationship Id="rIdImg' + (i + 1) + '" Type="http://schemas.openxmlformats.org/' +
+            'officeDocument/2006/relationships/image" Target="media/image' + (i + 1) + '.png"/>';
+  });
+  if (IMAGES.length) ctypes = '<Default Extension="png" ContentType="image/png"/>';
+
+  return zip([
+    { name: '[Content_Types].xml',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+        '<Default Extension="xml" ContentType="application/xml"/>' + ctypes +
+        '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+        '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>' +
+        '<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>' +
+        '</Types>' },
+    { name: '_rels/.rels',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+        '</Relationships>' },
+    { name: 'word/_rels/document.xml.rels',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' +
+        '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>' +
+        rels + '</Relationships>' },
+    { name: 'word/document.xml', data: doc },
+    { name: 'word/styles.xml', data: stylesXml() },
+    { name: 'word/numbering.xml', data: numberingXml() }
+  ].concat(media));
+}
+
+root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: W, _walk: walk };
+
+})(window);
+
+</script>
+<script id="kit-js">
+/* ============================================================
+   KIT D'UNIFORMISATION — logique partagée (modale PDF, export Word,
+   libellés de la barre d'actions). Autonome : ne dépend d'aucun
+   dictionnaire I18N propre à la page.
+   ============================================================ */
+(function(){
+  var T = {
+    fr:{ modalTitle:"Exporter en PDF", seedPre:"Seed\u00a0:",
+         seedPost:"\u2014 notez cette valeur pour reproduire exactement cet exercice.",
+         optHeader:"Inclure l'en-t\u00eate de page",
+         optHeaderD:"Titre, badge de mati\u00e8re et intitul\u00e9 de l'exercice",
+         optSol:"Inclure le corrig\u00e9 complet",
+         optSolD:"L'ensemble des d\u00e9veloppements et commentaires du corrig\u00e9",
+         print:"\uD83D\uDDA8\u00a0Imprimer / Sauvegarder PDF", cancel:"Annuler",
+         btnNew:"\u21ba Nouvel \u00e9nonc\u00e9", btnPdf:"\u2b07 Exporter PDF", btnDoc:"\u2b07 Exporter Word",
+         btnCopy:"\u29c9 Copier", copied:"\u2713 Copi\u00e9e", seedLabel:"Seed de reproductibilit\u00e9",
+         docFile:"exercice.doc" },
+    en:{ modalTitle:"Export to PDF", seedPre:"Seed:",
+         seedPost:"\u2014 note this value to reproduce this exact exercise.",
+         optHeader:"Include the page header",
+         optHeaderD:"Title, subject badge and exercise heading",
+         optSol:"Include the full solution",
+         optSolD:"All the workings and comments of the solution",
+         print:"\uD83D\uDDA8\u00a0Print / Save as PDF", cancel:"Cancel",
+         btnNew:"\u21ba New exercise", btnPdf:"\u2b07 Export PDF", btnDoc:"\u2b07 Export Word",
+         btnCopy:"\u29c9 Copy", copied:"\u2713 Copied", seedLabel:"Reproducibility seed",
+         docFile:"exercise.doc" }
+  };
+
+  function lang(){
+    var l = (window.LANG || document.documentElement.lang || 'fr').toLowerCase();
+    return (l.indexOf('en') === 0) ? 'en' : 'fr';
+  }
+  function t(k){ return T[lang()][k]; }
+
+  window.KIT = { T:T, lang:lang, t:t };
+
+  /* --- libellés du kit (modale + barre d'actions) --- */
+  function paint(){
+    var d = T[lang()];
+    document.querySelectorAll('[data-kit]').forEach(function(el){
+      var k = el.getAttribute('data-kit');
+      if (d[k] !== undefined) el.innerHTML = d[k];
+    });
+  }
+  window.KIT.paint = paint;
+
+  /* Se raccroche au changement de langue de la page sans la modifier. */
+  function hookLang(){
+    if (typeof window.setLang === 'function' && !window.setLang.__kit){
+      var orig = window.setLang;
+      var wrapped = function(){ var r = orig.apply(this, arguments); paint(); return r; };
+      wrapped.__kit = true;
+      window.setLang = wrapped;
+    }
+  }
+
+  /* --- Copie de la seed active --- */
+  window.copySeed = function(btn){
+    var el = document.getElementById('seed-disp');
+    if (!el) return;
+    var v = (el.textContent || '').trim();
+    if (!v || v === '\u2014') return;
+    var done = function(){
+      var b = btn || document.getElementById('btn-copy-seed');
+      if (!b) return;
+      var old = b.innerHTML;
+      b.innerHTML = t('copied');
+      setTimeout(function(){ b.innerHTML = old; paint(); }, 1400);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(v).then(done, done);
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = v; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch(e){}
+      document.body.removeChild(ta); done();
+    }
+  };
+
+  /* --- Modale PDF --- */
+  window.openPdfModal = function(){
+    var s = document.getElementById('modal-seed');
+    var src = document.getElementById('seed-disp');
+    if (s && src) s.textContent = (src.textContent || '\u2014').trim();
+    /* la case « corrigé » reflète l'état d'affichage courant */
+    var sol = document.getElementById('sol-card');
+    var box = document.getElementById('opt-sol');
+    if (box) box.checked = !!(window.solVisible ||
+        (sol && (sol.classList.contains('visible') || sol.style.display === 'block')));
+    paint();
+    document.getElementById('pdf-ov').classList.add('open');
+    document.getElementById('pdf-modal').classList.add('open');
+  };
+  window.closePdfModal = function(){
+    document.getElementById('pdf-ov').classList.remove('open');
+    document.getElementById('pdf-modal').classList.remove('open');
+  };
+  var PRINTCLS = ['print-no-header', 'print-force-solution', 'print-no-solution'];
+
+  function clearPrintClasses() {
+    var b = document.body;
+    for (var i = 0; i < PRINTCLS.length; i++) b.classList.remove(PRINTCLS[i]);
+  }
+
+  window.doPrint = function () {
+    var noHdr   = !document.getElementById('opt-header').checked;
+    var inclSol =  document.getElementById('opt-sol').checked;
+    var b = document.body;
+
+    clearPrintClasses();
+    if (noHdr) b.classList.add('print-no-header');
+    b.classList.add(inclSol ? 'print-force-solution' : 'print-no-solution');
+    closePdfModal();
+
+    /* Le nettoyage doit attendre la fin réelle de l'impression. Un simple
+       minuteur ne convient pas : selon le navigateur, window.print() rend la
+       main avant que l'aperçu ne soit composé, et les options seraient alors
+       déjà effacées au moment où le PDF est produit. */
+    var done = false;
+    function finish() {
+      if (done) return;
+      done = true;
+      clearPrintClasses();
+      window.removeEventListener('afterprint', finish);
+      if (mq && mq.removeListener) mq.removeListener(onMq);
+      if (mq && mq.removeEventListener) mq.removeEventListener('change', onMq);
+    }
+    function onMq(e) { if (!e.matches) finish(); }
+
+    var mq = window.matchMedia ? window.matchMedia('print') : null;
+    window.addEventListener('afterprint', finish);
+    if (mq && mq.addEventListener) mq.addEventListener('change', onMq);
+    else if (mq && mq.addListener) mq.addListener(onMq);
+    /* filet de sécurité si le navigateur n'émet aucun de ces signaux */
+    setTimeout(finish, 120000);
+
+    setTimeout(function () { window.print(); }, 120);
+  };
+
+  /* --- Rasterisation des graphiques SVG ---
+     Word ne sait pas lire le SVG. On le convertit en PNG en recopiant d'abord
+     les styles calculés, sinon les couleurs héritées de la feuille disparaissent. */
+  var SVGPROPS = ['fill', 'stroke', 'stroke-width', 'stroke-dasharray', 'stroke-linecap',
+                  'stroke-linejoin', 'opacity', 'fill-opacity', 'stroke-opacity',
+                  'font-family', 'font-size', 'font-weight', 'font-style',
+                  'text-anchor', 'dominant-baseline'];
+
+  function inlineStyles(src, dst) {
+    var a = src.querySelectorAll('*'), b = dst.querySelectorAll('*'), i, j;
+    for (i = 0; i < a.length && i < b.length; i++) {
+      var cs = window.getComputedStyle(a[i]);
+      for (j = 0; j < SVGPROPS.length; j++) {
+        var v = cs.getPropertyValue(SVGPROPS[j]);
+        if (v) b[i].setAttribute(SVGPROPS[j], v);
+      }
+    }
+  }
+
+  function svgSize(svg) {
+    var vb = svg.viewBox && svg.viewBox.baseVal;
+    if (vb && vb.width) return { w: vb.width, h: vb.height };
+    var r = svg.getBoundingClientRect();
+    if (r.width) return { w: r.width, h: r.height };
+    return { w: 600, h: 380 };
+  }
+
+  function svgToPng(svg) {
+    return new Promise(function (resolve) {
+      var done = false;
+      var res = function (v) { if (!done) { done = true; resolve(v); } };
+      /* garde-fou : un graphique qui ne se charge pas ne doit jamais
+         bloquer l'export, on l'omet et le reste du document part quand même */
+      setTimeout(function () { res(null); }, 5000);
+      try {
+        var d = svgSize(svg), SC = 2;
+        var c = svg.cloneNode(true);
+        c.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        c.setAttribute('width', d.w);
+        c.setAttribute('height', d.h);
+        inlineStyles(svg, c);
+        var bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        bg.setAttribute('x', 0); bg.setAttribute('y', 0);
+        bg.setAttribute('width', '100%'); bg.setAttribute('height', '100%');
+        bg.setAttribute('fill', '#ffffff');
+        c.insertBefore(bg, c.firstChild);
+        var xml = new XMLSerializer().serializeToString(c);
+        var img = new Image();
+        img.onload = function () {
+          try {
+            var cv = document.createElement('canvas');
+            cv.width = Math.round(d.w * SC); cv.height = Math.round(d.h * SC);
+            var ctx = cv.getContext('2d');
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, cv.width, cv.height);
+            ctx.drawImage(img, 0, 0, cv.width, cv.height);
+            res({ png: cv.toDataURL('image/png'), w: d.w, h: d.h });
+          } catch (e) { res(null); }
+        };
+        img.onerror = function () { res(null); };
+        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml);
+      } catch (e) { res(null); }
+    });
+  }
+
+  /* --- Export Word natif (.docx) ---
+     Les formules sont converties en OMML, le format d'équation natif de Word :
+     elles restent éditables et se composent avec Cambria Math. */
+  window.exportWord = function () {
+    var area = document.getElementById('ex-area');
+    if (!area || !window.DocxExport) { return; }
+
+    var btn = document.querySelector('.btn-sm.doc');
+    if (btn) { btn.disabled = true; btn.style.opacity = '.5'; }
+
+    var svgs = Array.prototype.slice.call(area.querySelectorAll('svg'));
+    Promise.all(svgs.map(svgToPng)).then(function (pngs) {
+      svgs.forEach(function (sv, i) {
+        if (!pngs[i]) return;
+        sv.setAttribute('data-kit-png', pngs[i].png);
+        sv.setAttribute('data-kit-w', pngs[i].w);
+        sv.setAttribute('data-kit-h', pngs[i].h);
+      });
+      try { writeDocx(area); } finally {
+        svgs.forEach(function (sv) {
+          sv.removeAttribute('data-kit-png');
+          sv.removeAttribute('data-kit-w');
+          sv.removeAttribute('data-kit-h');
+        });
+        if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+      }
+    });
+  };
+
+  function writeDocx(area) {
+
+    var h1 = document.querySelector('header h1');
+    var badge = document.querySelector('.header-badge, #lbl-badge');
+    var seed = document.getElementById('seed-disp');
+    var bits = [];
+    if (badge && badge.textContent.trim()) bits.push(badge.textContent.trim());
+    if (seed && seed.textContent.trim() && seed.textContent.trim() !== '\u2014') {
+      bits.push('seed ' + seed.textContent.trim());
+    }
+    bits.push('Thomas Hossen');
+
+    var sections = [];
+    var cards = area.querySelectorAll('.card');
+    for (var i = 0; i < cards.length; i++) {
+      var body = cards[i].querySelector('.card-body');
+      if (!body) continue;
+      var tag = cards[i].querySelector('.card-header .tag');
+      var h2 = cards[i].querySelector('.card-header h2');
+      var head = [tag ? tag.textContent.trim() : '', h2 ? h2.textContent.trim() : '']
+                   .filter(Boolean).join(' \u2014 ');
+      sections.push({ heading: head, node: body });
+    }
+    if (!sections.length) sections = [{ heading: '', node: area }];
+
+    var bytes = window.DocxExport.build({
+      title: h1 ? h1.textContent.trim() : document.title,
+      subtitle: bits.join(' \u00b7 '),
+      sections: sections
+    });
+
+    var name = (h1 ? h1.textContent : 'exercice').normalize('NFD')
+                 .replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9]+/g, '_')
+                 .replace(/^_|_$/g, '').slice(0, 60) || 'exercice';
+    var blob = new Blob([bytes], {
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = name + '.docx';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){ hookLang(); paint(); });
+  if (document.readyState !== 'loading'){ hookLang(); paint(); }
+})();
+</script>
+<!-- KIT:JS:END -->
+
+</body>
+</html>
