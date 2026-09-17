@@ -298,6 +298,9 @@ p.kit-num::before{
   margin:0 0 .5rem 0; font-size:1rem;
 }
 /* seuls encadrés conservés : les perspectives « Pour aller plus loin » */
+.sol-card .persp-box p{margin:0 0 .75rem 0}
+.sol-card .persp-box .sol-sub{margin-top:1.1rem}
+.sol-card .persp-box .sol-sub:first-child{margin-top:0}
 .sol-card .persp-box{
   background:#f7f9fc !important;
   border:1px solid #ccd8e6 !important;
@@ -1045,6 +1048,117 @@ const I18N = {
 };
 
 /* ============================================================
+   ENCADRE « POUR ALLER PLUS LOIN » : PRODUIT DE KRONECKER
+   L'exemple numerique depend de la seed, via un generateur local
+   (les tirages de l'exercice ne sont pas modifies).
+   ============================================================ */
+function kronExample(seed) {
+  let s = (seed ^ 0x9E3779B9) >>> 0;
+  const rnd = () => { s = (s + 0x6D2B79F5) >>> 0; let t = Math.imul(s ^ (s >>> 15), 1 | s); t ^= t + Math.imul(t ^ (t >>> 7), 61 | t); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  const ri = (a, b) => Math.floor(rnd() * (b - a + 1)) + a;
+  const det2 = M => M[0][0] * M[1][1] - M[0][1] * M[1][0];
+  const kron = (P, Q) => { const R = []; for (let i = 0; i < 2; i++) for (let k = 0; k < 2; k++) { const row = []; for (let j = 0; j < 2; j++) for (let l = 0; l < 2; l++) row.push(P[i][j] * Q[k][l]); R.push(row); } return R; };
+  for (let g = 0; g < 1000; g++) {
+    const A = [[ri(-3, 5), ri(-3, 5)], [ri(-3, 5), ri(-3, 5)]], B = [[ri(-3, 5), ri(-3, 5)], [ri(-3, 5), ri(-3, 5)]];
+    if (det2(A) === 0 || det2(B) === 0) continue;
+    const K = kron(A, B), K2 = kron(B, A);
+    if (JSON.stringify(K) === JSON.stringify(K2)) continue;
+    return { A, B, K, K2, trA: A[0][0] + A[1][1], trB: B[0][0] + B[1][1], trK: K[0][0] + K[1][1] + K[2][2] + K[3][3], dA: det2(A), dB: det2(B) };
+  }
+  return null;
+}
+const imat = M => `\\begin{pmatrix}${M.map(r => r.join('&')).join('\\\\')}\\end{pmatrix}`;
+const par = v => (v < 0 ? `(${v})` : String(v));
+
+const KRON = {
+  fr: function (seed) {
+    const E = kronExample(seed), A = E.A, B = E.B;
+    const blocks = `\\begin{pmatrix}${par(A[0][0])}\\,\\textbf{B}&${par(A[0][1])}\\,\\textbf{B}\\\\${par(A[1][0])}\\,\\textbf{B}&${par(A[1][1])}\\,\\textbf{B}\\end{pmatrix}`;
+    return `<div class="persp-box">
+      <div class="sol-sub">Pour aller plus loin : le produit de Kronecker</div>
+      <p>La propriété du « produit mixte » utilisée dans ce corrigé est l'une des propriétés du <em>produit de Kronecker</em>, noté \\(\\otimes\\), qui permet d'écrire de façon compacte les grandes matrices structurées par blocs rencontrées en économétrie des systèmes d'équations et des données de panel.</p>
+
+      <div class="sol-sub">Définition</div>
+      <p>Soit \\(\\textbf{A}=(a_{ij})\\) une matrice de taille \\(m\\times n\\) et \\(\\textbf{B}\\) une matrice de taille \\(p\\times q\\). Le produit de Kronecker de \\(\\textbf{A}\\) par \\(\\textbf{B}\\) est la matrice par blocs de taille \\(mp\\times nq\\)
+      \\[\\textbf{A}\\otimes\\textbf{B}:=\\begin{pmatrix}a_{11}\\textbf{B}&\\cdots&a_{1n}\\textbf{B}\\\\\\vdots&\\ddots&\\vdots\\\\a_{m1}\\textbf{B}&\\cdots&a_{mn}\\textbf{B}\\end{pmatrix}\\]
+      obtenue en remplaçant chaque coefficient \\(a_{ij}\\) de \\(\\textbf{A}\\) par le bloc \\(a_{ij}\\textbf{B}\\). Les deux matrices peuvent avoir des tailles quelconques : contrairement au produit matriciel usuel, le produit de Kronecker est toujours défini. Dans le modèle SUR, \\(\\boldsymbol{\\Sigma}\\otimes\\textbf{I}_n\\) est ainsi la matrice dont le bloc \\((i,j)\\) vaut \\(\\sigma_{ij}\\textbf{I}_n\\).</p>
+      <p><em>Exemple.</em> Avec \\(\\textbf{A}=${imat(A)}\\) et \\(\\textbf{B}=${imat(B)}\\), on obtient
+      \\[\\textbf{A}\\otimes\\textbf{B}=${blocks}=${imat(E.K)}\\qquad\\text{alors que}\\qquad\\textbf{B}\\otimes\\textbf{A}=${imat(E.K2)}\\]
+      Le produit de Kronecker n'est donc pas commutatif en général, même si \\(\\textbf{A}\\otimes\\textbf{B}\\) et \\(\\textbf{B}\\otimes\\textbf{A}\\) contiennent les mêmes coefficients, rangés différemment.</p>
+
+      <div class="sol-sub">Propriétés algébriques élémentaires</div>
+      <p><strong>Propriété 1 (bilinéarité).</strong> Pour toutes matrices de tailles compatibles et tout réel \\(\\lambda\\), \\((\\textbf{A}+\\textbf{A}')\\otimes\\textbf{B}=\\textbf{A}\\otimes\\textbf{B}+\\textbf{A}'\\otimes\\textbf{B}\\), \\(\\textbf{A}\\otimes(\\textbf{B}+\\textbf{B}')=\\textbf{A}\\otimes\\textbf{B}+\\textbf{A}\\otimes\\textbf{B}'\\) et \\((\\lambda\\textbf{A})\\otimes\\textbf{B}=\\textbf{A}\\otimes(\\lambda\\textbf{B})=\\lambda(\\textbf{A}\\otimes\\textbf{B})\\). <em>Démonstration.</em> Il suffit de comparer les blocs : le bloc \\((i,j)\\) du membre de gauche de la première égalité vaut \\((a_{ij}+a'_{ij})\\textbf{B}=a_{ij}\\textbf{B}+a'_{ij}\\textbf{B}\\) ; les deux autres égalités se traitent de la même façon.</p>
+      <p><strong>Propriété 2 (associativité).</strong> \\((\\textbf{A}\\otimes\\textbf{B})\\otimes\\textbf{C}=\\textbf{A}\\otimes(\\textbf{B}\\otimes\\textbf{C})\\). <em>Démonstration.</em> Les deux matrices sont formées des blocs \\(a_{ij}b_{kl}\\textbf{C}\\), rangés dans le même ordre lexicographique en \\((i,k)\\) pour les lignes et en \\((j,l)\\) pour les colonnes.</p>
+      <p><strong>Propriété 3 (transposition).</strong> \\((\\textbf{A}\\otimes\\textbf{B})^T=\\textbf{A}^T\\otimes\\textbf{B}^T\\). En particulier, si \\(\\textbf{A}\\) et \\(\\textbf{B}\\) sont symétriques, \\(\\textbf{A}\\otimes\\textbf{B}\\) l'est aussi. <em>Démonstration.</em> Transposer une matrice par blocs revient à échanger les blocs \\((i,j)\\) et \\((j,i)\\) et à transposer chacun d'eux : le bloc \\((i,j)\\) de \\((\\textbf{A}\\otimes\\textbf{B})^T\\) vaut donc \\((a_{ji}\\textbf{B})^T=a_{ji}\\textbf{B}^T\\), qui est bien le bloc \\((i,j)\\) de \\(\\textbf{A}^T\\otimes\\textbf{B}^T\\).</p>
+
+      <div class="sol-sub">La propriété du produit mixte</div>
+      <p><strong>Propriété 4 (produit mixte).</strong> Si les produits \\(\\textbf{AC}\\) et \\(\\textbf{BD}\\) sont définis, alors
+      \\[(\\textbf{A}\\otimes\\textbf{B})(\\textbf{C}\\otimes\\textbf{D})=(\\textbf{AC})\\otimes(\\textbf{BD})\\]
+      <em>Démonstration.</em> Soit \\(\\textbf{A}\\) de taille \\(m\\times n\\), \\(\\textbf{C}\\) de taille \\(n\\times r\\), \\(\\textbf{B}\\) de taille \\(p\\times q\\) et \\(\\textbf{D}\\) de taille \\(q\\times s\\). La matrice \\(\\textbf{A}\\otimes\\textbf{B}\\) est formée de \\(m\\times n\\) blocs de taille \\(p\\times q\\), et \\(\\textbf{C}\\otimes\\textbf{D}\\) de \\(n\\times r\\) blocs de taille \\(q\\times s\\) : les découpages sont compatibles, et l'on peut effectuer le produit par blocs. Le bloc \\((i,k)\\) du produit vaut
+      \\[\\sum_{j=1}^{n}(a_{ij}\\textbf{B})(c_{jk}\\textbf{D})=\\Big(\\sum_{j=1}^{n}a_{ij}c_{jk}\\Big)\\textbf{BD}=(\\textbf{AC})_{ik}\\,\\textbf{BD}\\]
+      qui est exactement le bloc \\((i,k)\\) de \\((\\textbf{AC})\\otimes(\\textbf{BD})\\). La propriété s'étend par récurrence à un nombre quelconque de facteurs : \\((\\textbf{A}_1\\otimes\\textbf{B}_1)\\cdots(\\textbf{A}_k\\otimes\\textbf{B}_k)=(\\textbf{A}_1\\cdots\\textbf{A}_k)\\otimes(\\textbf{B}_1\\cdots\\textbf{B}_k)\\).</p>
+      <p><strong>Propriété 5 (inverse).</strong> Si \\(\\textbf{A}\\) et \\(\\textbf{B}\\) sont carrées et inversibles, \\(\\textbf{A}\\otimes\\textbf{B}\\) est inversible et \\((\\textbf{A}\\otimes\\textbf{B})^{-1}=\\textbf{A}^{-1}\\otimes\\textbf{B}^{-1}\\). <em>Démonstration.</em> D'après la propriété 4, \\((\\textbf{A}\\otimes\\textbf{B})(\\textbf{A}^{-1}\\otimes\\textbf{B}^{-1})=(\\textbf{AA}^{-1})\\otimes(\\textbf{BB}^{-1})=\\textbf{I}_m\\otimes\\textbf{I}_p=\\textbf{I}_{mp}\\), la dernière égalité se lisant directement sur la définition. Une matrice carrée admettant un inverse à droite est inversible, d'où le résultat. C'est ainsi que l'on obtient \\(\\boldsymbol{\\Omega}^{-1}=(\\boldsymbol{\\Sigma}\\otimes\\textbf{I}_n)^{-1}=\\boldsymbol{\\Sigma}^{-1}\\otimes\\textbf{I}_n\\) sans inverser une matrice de taille \\(2n\\times 2n\\).</p>
+
+      <div class="sol-sub">Trace, spectre, déterminant</div>
+      <p><strong>Propriété 6 (trace).</strong> Si \\(\\textbf{A}\\) et \\(\\textbf{B}\\) sont carrées, \\(\\text{tr}(\\textbf{A}\\otimes\\textbf{B})=\\text{tr}(\\textbf{A})\\,\\text{tr}(\\textbf{B})\\). <em>Démonstration.</em> Les coefficients diagonaux de \\(\\textbf{A}\\otimes\\textbf{B}\\) sont ceux des blocs diagonaux \\(a_{ii}\\textbf{B}\\), dont la trace vaut \\(a_{ii}\\,\\text{tr}(\\textbf{B})\\) ; il reste à sommer sur \\(i\\). Dans l'exemple, \\(\\text{tr}(\\textbf{A}\\otimes\\textbf{B})=${E.trK}=${par(E.trA)}\\times ${par(E.trB)}\\).</p>
+      <p><strong>Propriété 7 (valeurs propres).</strong> Soit \\(\\textbf{A}\\) carrée d'ordre \\(m\\), de valeurs propres \\(\\lambda_1,\\ldots,\\lambda_m\\), et \\(\\textbf{B}\\) carrée d'ordre \\(p\\), de valeurs propres \\(\\mu_1,\\ldots,\\mu_p\\) (comptées avec multiplicité, dans \\(\\mathbb{C}\\)). Les valeurs propres de \\(\\textbf{A}\\otimes\\textbf{B}\\) sont les \\(mp\\) produits \\(\\lambda_i\\mu_j\\). <em>Démonstration.</em> D'après le théorème de trigonalisation, il existe des matrices inversibles \\(\\textbf{P}\\) et \\(\\textbf{Q}\\) et des matrices triangulaires supérieures \\(\\textbf{T}\\) et \\(\\textbf{S}\\), de diagonales respectives \\((\\lambda_i)\\) et \\((\\mu_j)\\), telles que \\(\\textbf{A}=\\textbf{P}\\textbf{T}\\textbf{P}^{-1}\\) et \\(\\textbf{B}=\\textbf{Q}\\textbf{S}\\textbf{Q}^{-1}\\). Par les propriétés 4 et 5,
+      \\[\\textbf{A}\\otimes\\textbf{B}=(\\textbf{P}\\otimes\\textbf{Q})(\\textbf{T}\\otimes\\textbf{S})(\\textbf{P}\\otimes\\textbf{Q})^{-1}\\]
+      Or \\(\\textbf{T}\\otimes\\textbf{S}\\) est triangulaire supérieure (ses blocs situés sous la diagonale sont nuls, et ses blocs diagonaux \\(\\lambda_i\\textbf{S}\\) sont triangulaires supérieurs), de coefficients diagonaux \\(\\lambda_i\\mu_j\\). Deux matrices semblables ayant les mêmes valeurs propres, le résultat s'ensuit. Plus directement, si \\(\\textbf{Au}=\\lambda\\textbf{u}\\) et \\(\\textbf{Bv}=\\mu\\textbf{v}\\), la propriété 4 donne \\((\\textbf{A}\\otimes\\textbf{B})(\\textbf{u}\\otimes\\textbf{v})=(\\textbf{Au})\\otimes(\\textbf{Bv})=\\lambda\\mu\\,(\\textbf{u}\\otimes\\textbf{v})\\).</p>
+      <p><strong>Propriété 8 (déterminant).</strong> Si \\(\\textbf{A}\\) est carrée d'ordre \\(m\\) et \\(\\textbf{B}\\) carrée d'ordre \\(p\\), alors \\(\\det(\\textbf{A}\\otimes\\textbf{B})=\\det(\\textbf{A})^p\\,\\det(\\textbf{B})^m\\). <em>Démonstration.</em> Le déterminant est le produit des valeurs propres, donc, d'après la propriété 7, \\[\\det(\\textbf{A}\\otimes\\textbf{B})=\\prod_{i=1}^m\\prod_{j=1}^p\\lambda_i\\mu_j=\\prod_{i=1}^m\\Big(\\lambda_i^p\\prod_{j=1}^p\\mu_j\\Big)=\\det(\\textbf{A})^p\\det(\\textbf{B})^m\\] Attention à l'ordre des exposants : chaque déterminant est élevé à la taille de l'<em>autre</em> matrice. Dans l'exemple, \\(\\det(\\textbf{A}\\otimes\\textbf{B})=${par(E.dA)}^2\\times ${par(E.dB)}^2=${E.dA * E.dA * E.dB * E.dB}\\).</p>
+      <p><strong>Propriété 9 (positivité).</strong> Si \\(\\textbf{A}\\) et \\(\\textbf{B}\\) sont symétriques définies positives, \\(\\textbf{A}\\otimes\\textbf{B}\\) l'est aussi, et \\((\\textbf{A}\\otimes\\textbf{B})^{1/2}=\\textbf{A}^{1/2}\\otimes\\textbf{B}^{1/2}\\). <em>Démonstration.</em> La symétrie découle de la propriété 3, et les valeurs propres \\(\\lambda_i\\mu_j\\) sont strictement positives d'après la propriété 7. Enfin, \\(\\textbf{A}^{1/2}\\otimes\\textbf{B}^{1/2}\\) est symétrique définie positive pour la même raison, et son carré vaut \\(\\textbf{A}\\otimes\\textbf{B}\\) par la propriété 4. Dans le modèle SUR, cela garantit que \\(\\boldsymbol{\\Omega}=\\boldsymbol{\\Sigma}\\otimes\\textbf{I}_n\\) est une matrice de variances-covariances légitime, et que la matrice de « sphérisation » des MCG vaut simplement \\(\\boldsymbol{\\Omega}^{-1/2}=\\boldsymbol{\\Sigma}^{-1/2}\\otimes\\textbf{I}_n\\) : chaque date est transformée de la même façon.</p>
+
+      <div class="sol-sub">Lien avec la vectorisation</div>
+      <p>Pour une matrice \\(\\textbf{M}\\) de taille \\(p\\times q\\), on note \\(\\text{vec}(\\textbf{M})\\) le vecteur de taille \\(pq\\) obtenu en empilant ses colonnes.</p>
+      <p><strong>Propriété 10.</strong> Pour toutes matrices \\(\\textbf{A}\\), \\(\\textbf{M}\\) et \\(\\textbf{B}\\) telles que le produit \\(\\textbf{AMB}\\) soit défini, \\(\\text{vec}(\\textbf{AMB})=(\\textbf{B}^T\\otimes\\textbf{A})\\,\\text{vec}(\\textbf{M})\\). <em>Démonstration.</em> Notons \\(\\textbf{m}_k\\) la \\(k\\)-ième colonne de \\(\\textbf{M}\\). La \\(j\\)-ième colonne de \\(\\textbf{AMB}\\) vaut \\(\\textbf{AM}\\textbf{b}_j=\\sum_k b_{kj}\\,\\textbf{A}\\textbf{m}_k\\), où \\(\\textbf{b}_j\\) est la \\(j\\)-ième colonne de \\(\\textbf{B}\\). Or le \\(j\\)-ième « bloc-ligne » de \\((\\textbf{B}^T\\otimes\\textbf{A})\\,\\text{vec}(\\textbf{M})\\) vaut \\(\\sum_k(\\textbf{B}^T)_{jk}\\,\\textbf{A}\\textbf{m}_k=\\sum_kb_{kj}\\,\\textbf{A}\\textbf{m}_k\\) : les deux vecteurs coïncident bloc par bloc.</p>
+      <p><em>Application.</em> La régression multivariée \\(\\textbf{Y}=\\textbf{X}_0\\textbf{B}+\\textbf{U}\\), où \\(\\textbf{Y}\\) est de taille \\(n\\times M\\) et regroupe \\(M\\) équations ayant les mêmes régresseurs, s'écrit, en appliquant la propriété 10 avec \\(\\textbf{A}=\\textbf{X}_0\\) et le troisième facteur égal à \\(\\textbf{I}_M\\) :\\[\\text{vec}(\\textbf{Y})=(\\textbf{I}_M\\otimes\\textbf{X}_0)\\,\\text{vec}(\\textbf{B})+\\text{vec}(\\textbf{U})\\]On retrouve exactement la forme empilée du modèle SUR à régresseurs identiques de la question 4, dont la matrice \\(\\textbf{X}=\\textbf{I}_M\\otimes\\textbf{X}_0\\) conduit, par les propriétés 3, 4 et 5, à l'égalité entre MCG et MCO équation par équation.</p>
+    </div>`;
+  },
+
+  en: function (seed) {
+    const E = kronExample(seed), A = E.A, B = E.B;
+    const blocks = `\\begin{pmatrix}${par(A[0][0])}\\,\\textbf{B}&${par(A[0][1])}\\,\\textbf{B}\\\\${par(A[1][0])}\\,\\textbf{B}&${par(A[1][1])}\\,\\textbf{B}\\end{pmatrix}`;
+    return `<div class="persp-box">
+      <div class="sol-sub">Going further: the Kronecker product</div>
+      <p>The “mixed-product” property used in this solution is one of the properties of the <em>Kronecker product</em>, denoted \\(\\otimes\\), which provides a compact way of writing the large block-structured matrices encountered in the econometrics of systems of equations and of panel data.</p>
+
+      <div class="sol-sub">Definition</div>
+      <p>Let \\(\\textbf{A}=(a_{ij})\\) be an \\(m\\times n\\) matrix and \\(\\textbf{B}\\) a \\(p\\times q\\) matrix. The Kronecker product of \\(\\textbf{A}\\) and \\(\\textbf{B}\\) is the \\(mp\\times nq\\) block matrix
+      \\[\\textbf{A}\\otimes\\textbf{B}:=\\begin{pmatrix}a_{11}\\textbf{B}&\\cdots&a_{1n}\\textbf{B}\\\\\\vdots&\\ddots&\\vdots\\\\a_{m1}\\textbf{B}&\\cdots&a_{mn}\\textbf{B}\\end{pmatrix}\\]
+      obtained by replacing each entry \\(a_{ij}\\) of \\(\\textbf{A}\\) with the block \\(a_{ij}\\textbf{B}\\). The two matrices may have any sizes: unlike the usual matrix product, the Kronecker product is always defined. In the SUR model, \\(\\boldsymbol{\\Sigma}\\otimes\\textbf{I}_n\\) is thus the matrix whose \\((i,j)\\) block is \\(\\sigma_{ij}\\textbf{I}_n\\).</p>
+      <p><em>Example.</em> With \\(\\textbf{A}=${imat(A)}\\) and \\(\\textbf{B}=${imat(B)}\\), we get
+      \\[\\textbf{A}\\otimes\\textbf{B}=${blocks}=${imat(E.K)}\\qquad\\text{whereas}\\qquad\\textbf{B}\\otimes\\textbf{A}=${imat(E.K2)}\\]
+      The Kronecker product is therefore not commutative in general, even though \\(\\textbf{A}\\otimes\\textbf{B}\\) and \\(\\textbf{B}\\otimes\\textbf{A}\\) contain the same entries, arranged differently.</p>
+
+      <div class="sol-sub">Elementary algebraic properties</div>
+      <p><strong>Property 1 (bilinearity).</strong> For all matrices of compatible sizes and every real \\(\\lambda\\), \\((\\textbf{A}+\\textbf{A}')\\otimes\\textbf{B}=\\textbf{A}\\otimes\\textbf{B}+\\textbf{A}'\\otimes\\textbf{B}\\), \\(\\textbf{A}\\otimes(\\textbf{B}+\\textbf{B}')=\\textbf{A}\\otimes\\textbf{B}+\\textbf{A}\\otimes\\textbf{B}'\\) and \\((\\lambda\\textbf{A})\\otimes\\textbf{B}=\\textbf{A}\\otimes(\\lambda\\textbf{B})=\\lambda(\\textbf{A}\\otimes\\textbf{B})\\). <em>Proof.</em> It suffices to compare blocks: the \\((i,j)\\) block of the left-hand side of the first equality is \\((a_{ij}+a'_{ij})\\textbf{B}=a_{ij}\\textbf{B}+a'_{ij}\\textbf{B}\\); the other two equalities are handled in the same way.</p>
+      <p><strong>Property 2 (associativity).</strong> \\((\\textbf{A}\\otimes\\textbf{B})\\otimes\\textbf{C}=\\textbf{A}\\otimes(\\textbf{B}\\otimes\\textbf{C})\\). <em>Proof.</em> Both matrices are made of the blocks \\(a_{ij}b_{kl}\\textbf{C}\\), arranged in the same lexicographic order in \\((i,k)\\) for rows and in \\((j,l)\\) for columns.</p>
+      <p><strong>Property 3 (transposition).</strong> \\((\\textbf{A}\\otimes\\textbf{B})^T=\\textbf{A}^T\\otimes\\textbf{B}^T\\). In particular, if \\(\\textbf{A}\\) and \\(\\textbf{B}\\) are symmetric, so is \\(\\textbf{A}\\otimes\\textbf{B}\\). <em>Proof.</em> Transposing a block matrix amounts to swapping blocks \\((i,j)\\) and \\((j,i)\\) and transposing each of them: the \\((i,j)\\) block of \\((\\textbf{A}\\otimes\\textbf{B})^T\\) is therefore \\((a_{ji}\\textbf{B})^T=a_{ji}\\textbf{B}^T\\), which is indeed the \\((i,j)\\) block of \\(\\textbf{A}^T\\otimes\\textbf{B}^T\\).</p>
+
+      <div class="sol-sub">The mixed-product property</div>
+      <p><strong>Property 4 (mixed product).</strong> If the products \\(\\textbf{AC}\\) and \\(\\textbf{BD}\\) are defined, then
+      \\[(\\textbf{A}\\otimes\\textbf{B})(\\textbf{C}\\otimes\\textbf{D})=(\\textbf{AC})\\otimes(\\textbf{BD})\\]
+      <em>Proof.</em> Let \\(\\textbf{A}\\) be \\(m\\times n\\), \\(\\textbf{C}\\) be \\(n\\times r\\), \\(\\textbf{B}\\) be \\(p\\times q\\) and \\(\\textbf{D}\\) be \\(q\\times s\\). The matrix \\(\\textbf{A}\\otimes\\textbf{B}\\) consists of \\(m\\times n\\) blocks of size \\(p\\times q\\), and \\(\\textbf{C}\\otimes\\textbf{D}\\) of \\(n\\times r\\) blocks of size \\(q\\times s\\): the partitions are compatible, and the product can be computed blockwise. The \\((i,k)\\) block of the product is
+      \\[\\sum_{j=1}^{n}(a_{ij}\\textbf{B})(c_{jk}\\textbf{D})=\\Big(\\sum_{j=1}^{n}a_{ij}c_{jk}\\Big)\\textbf{BD}=(\\textbf{AC})_{ik}\\,\\textbf{BD}\\]
+      which is exactly the \\((i,k)\\) block of \\((\\textbf{AC})\\otimes(\\textbf{BD})\\). The property extends by induction to any number of factors: \\((\\textbf{A}_1\\otimes\\textbf{B}_1)\\cdots(\\textbf{A}_k\\otimes\\textbf{B}_k)=(\\textbf{A}_1\\cdots\\textbf{A}_k)\\otimes(\\textbf{B}_1\\cdots\\textbf{B}_k)\\).</p>
+      <p><strong>Property 5 (inverse).</strong> If \\(\\textbf{A}\\) and \\(\\textbf{B}\\) are square and invertible, \\(\\textbf{A}\\otimes\\textbf{B}\\) is invertible and \\((\\textbf{A}\\otimes\\textbf{B})^{-1}=\\textbf{A}^{-1}\\otimes\\textbf{B}^{-1}\\). <em>Proof.</em> By property 4, \\((\\textbf{A}\\otimes\\textbf{B})(\\textbf{A}^{-1}\\otimes\\textbf{B}^{-1})=(\\textbf{AA}^{-1})\\otimes(\\textbf{BB}^{-1})=\\textbf{I}_m\\otimes\\textbf{I}_p=\\textbf{I}_{mp}\\), the last equality following directly from the definition. A square matrix with a right inverse is invertible, hence the result. This is how \\(\\boldsymbol{\\Omega}^{-1}=(\\boldsymbol{\\Sigma}\\otimes\\textbf{I}_n)^{-1}=\\boldsymbol{\\Sigma}^{-1}\\otimes\\textbf{I}_n\\) is obtained without inverting a \\(2n\\times 2n\\) matrix.</p>
+
+      <div class="sol-sub">Trace, spectrum, determinant</div>
+      <p><strong>Property 6 (trace).</strong> If \\(\\textbf{A}\\) and \\(\\textbf{B}\\) are square, \\(\\text{tr}(\\textbf{A}\\otimes\\textbf{B})=\\text{tr}(\\textbf{A})\\,\\text{tr}(\\textbf{B})\\). <em>Proof.</em> The diagonal entries of \\(\\textbf{A}\\otimes\\textbf{B}\\) are those of the diagonal blocks \\(a_{ii}\\textbf{B}\\), whose trace is \\(a_{ii}\\,\\text{tr}(\\textbf{B})\\); it remains to sum over \\(i\\). In the example, \\(\\text{tr}(\\textbf{A}\\otimes\\textbf{B})=${E.trK}=${par(E.trA)}\\times ${par(E.trB)}\\).</p>
+      <p><strong>Property 7 (eigenvalues).</strong> Let \\(\\textbf{A}\\) be square of order \\(m\\), with eigenvalues \\(\\lambda_1,\\ldots,\\lambda_m\\), and \\(\\textbf{B}\\) square of order \\(p\\), with eigenvalues \\(\\mu_1,\\ldots,\\mu_p\\) (counted with multiplicity, in \\(\\mathbb{C}\\)). The eigenvalues of \\(\\textbf{A}\\otimes\\textbf{B}\\) are the \\(mp\\) products \\(\\lambda_i\\mu_j\\). <em>Proof.</em> By the triangularisation theorem, there exist invertible matrices \\(\\textbf{P}\\) and \\(\\textbf{Q}\\) and upper triangular matrices \\(\\textbf{T}\\) and \\(\\textbf{S}\\), with diagonals \\((\\lambda_i)\\) and \\((\\mu_j)\\) respectively, such that \\(\\textbf{A}=\\textbf{P}\\textbf{T}\\textbf{P}^{-1}\\) and \\(\\textbf{B}=\\textbf{Q}\\textbf{S}\\textbf{Q}^{-1}\\). By properties 4 and 5,
+      \\[\\textbf{A}\\otimes\\textbf{B}=(\\textbf{P}\\otimes\\textbf{Q})(\\textbf{T}\\otimes\\textbf{S})(\\textbf{P}\\otimes\\textbf{Q})^{-1}\\]
+      Now \\(\\textbf{T}\\otimes\\textbf{S}\\) is upper triangular (its blocks below the diagonal are zero, and its diagonal blocks \\(\\lambda_i\\textbf{S}\\) are upper triangular), with diagonal entries \\(\\lambda_i\\mu_j\\). Since similar matrices have the same eigenvalues, the result follows. More directly, if \\(\\textbf{Au}=\\lambda\\textbf{u}\\) and \\(\\textbf{Bv}=\\mu\\textbf{v}\\), property 4 gives \\((\\textbf{A}\\otimes\\textbf{B})(\\textbf{u}\\otimes\\textbf{v})=(\\textbf{Au})\\otimes(\\textbf{Bv})=\\lambda\\mu\\,(\\textbf{u}\\otimes\\textbf{v})\\).</p>
+      <p><strong>Property 8 (determinant).</strong> If \\(\\textbf{A}\\) is square of order \\(m\\) and \\(\\textbf{B}\\) square of order \\(p\\), then \\(\\det(\\textbf{A}\\otimes\\textbf{B})=\\det(\\textbf{A})^p\\,\\det(\\textbf{B})^m\\). <em>Proof.</em> The determinant is the product of the eigenvalues, so, by property 7, \\[\\det(\\textbf{A}\\otimes\\textbf{B})=\\prod_{i=1}^m\\prod_{j=1}^p\\lambda_i\\mu_j=\\prod_{i=1}^m\\Big(\\lambda_i^p\\prod_{j=1}^p\\mu_j\\Big)=\\det(\\textbf{A})^p\\det(\\textbf{B})^m\\] Mind the exponents: each determinant is raised to the size of the <em>other</em> matrix. In the example, \\(\\det(\\textbf{A}\\otimes\\textbf{B})=${par(E.dA)}^2\\times ${par(E.dB)}^2=${E.dA * E.dA * E.dB * E.dB}\\).</p>
+      <p><strong>Property 9 (positivity).</strong> If \\(\\textbf{A}\\) and \\(\\textbf{B}\\) are symmetric positive definite, so is \\(\\textbf{A}\\otimes\\textbf{B}\\), and \\((\\textbf{A}\\otimes\\textbf{B})^{1/2}=\\textbf{A}^{1/2}\\otimes\\textbf{B}^{1/2}\\). <em>Proof.</em> Symmetry follows from property 3, and the eigenvalues \\(\\lambda_i\\mu_j\\) are strictly positive by property 7. Finally, \\(\\textbf{A}^{1/2}\\otimes\\textbf{B}^{1/2}\\) is symmetric positive definite for the same reason, and its square is \\(\\textbf{A}\\otimes\\textbf{B}\\) by property 4. In the SUR model, this guarantees that \\(\\boldsymbol{\\Omega}=\\boldsymbol{\\Sigma}\\otimes\\textbf{I}_n\\) is a legitimate variance-covariance matrix, and that the GLS “sphericising” matrix is simply \\(\\boldsymbol{\\Omega}^{-1/2}=\\boldsymbol{\\Sigma}^{-1/2}\\otimes\\textbf{I}_n\\): every date is transformed in the same way.</p>
+
+      <div class="sol-sub">Link with vectorisation</div>
+      <p>For a \\(p\\times q\\) matrix \\(\\textbf{M}\\), we write \\(\\text{vec}(\\textbf{M})\\) for the vector of size \\(pq\\) obtained by stacking its columns.</p>
+      <p><strong>Property 10.</strong> For all matrices \\(\\textbf{A}\\), \\(\\textbf{M}\\) and \\(\\textbf{B}\\) such that the product \\(\\textbf{AMB}\\) is defined, \\(\\text{vec}(\\textbf{AMB})=(\\textbf{B}^T\\otimes\\textbf{A})\\,\\text{vec}(\\textbf{M})\\). <em>Proof.</em> Write \\(\\textbf{m}_k\\) for the \\(k\\)-th column of \\(\\textbf{M}\\). The \\(j\\)-th column of \\(\\textbf{AMB}\\) is \\(\\textbf{AM}\\textbf{b}_j=\\sum_k b_{kj}\\,\\textbf{A}\\textbf{m}_k\\), where \\(\\textbf{b}_j\\) is the \\(j\\)-th column of \\(\\textbf{B}\\). Now the \\(j\\)-th “block row” of \\((\\textbf{B}^T\\otimes\\textbf{A})\\,\\text{vec}(\\textbf{M})\\) is \\(\\sum_k(\\textbf{B}^T)_{jk}\\,\\textbf{A}\\textbf{m}_k=\\sum_kb_{kj}\\,\\textbf{A}\\textbf{m}_k\\): both vectors coincide block by block.</p>
+      <p><em>Application.</em> The multivariate regression \\(\\textbf{Y}=\\textbf{X}_0\\textbf{B}+\\textbf{U}\\), where \\(\\textbf{Y}\\) is \\(n\\times M\\) and gathers \\(M\\) equations with the same regressors, can be written, by applying property 10 with \\(\\textbf{A}=\\textbf{X}_0\\) and the third factor equal to \\(\\textbf{I}_M\\), as\\[\\text{vec}(\\textbf{Y})=(\\textbf{I}_M\\otimes\\textbf{X}_0)\\,\\text{vec}(\\textbf{B})+\\text{vec}(\\textbf{U})\\]This is exactly the stacked form of the SUR model with identical regressors of question 4, whose matrix \\(\\textbf{X}=\\textbf{I}_M\\otimes\\textbf{X}_0\\) leads, by properties 3, 4 and 5, to the equality between GLS and equation-by-equation OLS.</p>
+    </div>`;
+  }
+};
+
+/* ============================================================
    GESTION DE LA LANGUE  /  LANGUAGE HANDLING
    ============================================================ */
 let LANG = 'fr';
@@ -1119,7 +1233,7 @@ function generateFromControls() {
   document.getElementById('card-title').textContent = T.title;
   document.getElementById('card-title2').textContent = T.title;
   document.getElementById('ex-content').innerHTML = I18N[LANG].ex(D);
-  document.getElementById('sol-content').innerHTML = I18N[LANG].sol(D);
+  document.getElementById('sol-content').innerHTML = I18N[LANG].sol(D) + KRON[LANG](_activeSeed);
 
   document.getElementById('welcome').style.display = 'none';
   document.getElementById('ex-area').style.display = 'block';
