@@ -1,0 +1,2209 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Générateur d'exercices - Test de Chow</title>
+<script>
+window.MathJax = {
+  tex: { 
+    inlineMath: [['\\(','\\)']], 
+    displayMath: [['\\[','\\]']], 
+    packages: {'[+]': ['ams']},
+    macros: {
+      Var: ['\\textbf{Var}\\left(#1\\right)', 1],
+      Cov: ['\\textbf{Cov}\\left(#1\\right)', 1],
+      dsum: ['\\sum_{#1}^{#2}', 2]
+    }
+  },
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] }
+};
+</script>
+<script>window.MathJax=window.MathJax||{};window.MathJax.options=window.MathJax.options||{};window.MathJax.options.enableAssistiveMml=true;</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 0;border-bottom:3px solid var(--gold)}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+#controls-bar{border-top:1px solid rgba(255,255,255,.08);padding:1.1rem 0 1.3rem}
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.5)}
+.ctrl-inp{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.38rem .65rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.82rem;width:88px;outline:none;transition:border-color .2s}
+.ctrl-inp:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.ctrl-tip{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:rgba(250,247,240,.33);margin-top:2px}
+.seed-row{display:flex;align-items:flex-end;gap:.45rem}
+.btn-copy-seed{background:transparent;border:1px solid rgba(201,149,42,.4);color:rgba(250,247,240,.55);padding:.38rem .55rem;border-radius:3px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:.65rem;transition:all .18s;white-space:nowrap}
+.btn-copy-seed:hover{border-color:var(--gold-light);color:var(--gold-light)}
+.ctrl-vsep{width:1px;background:rgba(255,255,255,.1);align-self:stretch;margin:0 .2rem}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.3rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.9rem;font-weight:600;transition:background .18s;white-space:nowrap;align-self:flex-end}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.welcome-msg{text-align:center;padding:5rem 2rem;color:var(--text-muted);font-style:italic;font-size:1.05rem}
+.welcome-msg .arrow{font-size:2rem;display:block;margin-bottom:1rem;opacity:.4}
+
+/* TOP BAR */
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.top-bar-left{display:flex;gap:.6rem;align-items:center}
+.btn-sm{background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:'JetBrains Mono',monospace;font-size:.67rem;letter-spacing:.08em;text-transform:uppercase;padding:.4rem 1rem;border-radius:3px;cursor:pointer;transition:all .18s;white-space:nowrap}
+.btn-sm:hover{background:var(--gold);color:var(--navy)}
+.btn-sm.pdf{border-color:#7bafd4;color:#7bafd4}
+.btn-sm.pdf:hover{background:#7bafd4;color:var(--navy)}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.67rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:500}
+
+/* CARDS */
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);margin-bottom:1.5rem;border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+
+/* QUESTIONS */
+.questions ol{counter-reset:q;list-style:none}
+.questions ol>li{counter-increment:q;margin-bottom:1.4rem;display:flex;gap:1rem;align-items:flex-start}
+.questions ol>li::before{content:counter(q);min-width:28px;height:28px;background:var(--navy);color:var(--cream);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:500;flex-shrink:0;margin-top:.15rem}
+.questions ol>li .q-text{flex:1;font-size:.93rem;text-align:justify}
+
+/* SOLUTION */
+.sol-toggle-wrap{text-align:center;margin:1rem 0 0}
+.btn-toggle{background:transparent;border:2px solid var(--navy);color:var(--navy);font-family:'Source Serif 4',serif;font-size:.9rem;padding:.6rem 2rem;border-radius:4px;cursor:pointer;transition:all .2s}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--navy);color:var(--cream)}
+.sol-card{border-top:4px solid var(--green);display:none}
+.sol-card.visible{display:block;animation:fi .3s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+.st{font-size:.92rem;line-height:1.75;text-align:justify}
+.st p{margin-bottom:.7rem}
+.st ol{counter-reset:sq;list-style:none}
+.st>ol>li{counter-increment:sq;margin-bottom:1.6rem;display:flex;gap:1rem;align-items:flex-start}
+.st>ol>li::before{content:counter(sq);min-width:24px;height:24px;background:var(--green);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.68rem;flex-shrink:0;margin-top:.15rem}
+.st ul{list-style:disc;padding-left:1.5rem;margin-bottom:.7rem}
+.st ul li{margin-bottom:1rem}
+.st .q-content{flex:1;} /* Assure que le texte prend toute la largeur restante */
+
+/* PDF MODAL */
+#pdf-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;backdrop-filter:blur(2px)}
+#pdf-modal{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:101;background:#fff;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.25);width:390px;max-width:95vw;border-top:4px solid #7bafd4;overflow:hidden}
+.mh{background:var(--navy);color:var(--cream);padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
+.mh h3{font-family:'Playfair Display',serif;font-size:1rem;font-weight:600}
+.mclose{background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:1.2rem;line-height:1;padding:2px 6px;border-radius:3px;transition:color .15s}
+.mclose:hover{color:#fff}
+.mb2{padding:1.5rem}
+.opt-row{display:flex;align-items:flex-start;gap:.75rem;margin-bottom:1rem;cursor:pointer}
+.opt-row input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--navy);flex-shrink:0;margin-top:3px}
+.opt-lbl{font-size:.93rem}
+.opt-desc{font-size:.75rem;color:var(--text-muted);display:block}
+.seed-note{font-family:'JetBrains Mono',monospace;font-size:.7rem;background:var(--cream-dark);border:1px solid var(--border);padding:.55rem .85rem;border-radius:3px;color:var(--text-muted);margin-bottom:1.2rem;line-height:1.5}
+.seed-note strong{color:var(--navy)}
+.mactions{display:flex;gap:.6rem}
+.btn-print{flex:1;background:var(--navy);color:var(--cream);border:none;padding:.7rem;border-radius:4px;font-family:'Source Serif 4',serif;font-size:.9rem;cursor:pointer;transition:background .2s}
+.btn-print:hover{background:var(--navy-mid)}
+.btn-cancel{background:transparent;border:1px solid var(--border);color:var(--text-muted);padding:.7rem 1rem;border-radius:4px;font-family:'Source Serif 4',serif;font-size:.9rem;cursor:pointer;transition:all .2s}
+.btn-cancel:hover{border-color:var(--text);color:var(--text)}
+
+/* PRINT */
+@media print{
+:root{--navy:#0d1b2a;--cream:#fff;--cream-dark:#f8f8f8;--gold:#c9952a;--green:#2d6b4a;--border:#ccc}
+body{background:#fff;font-size:11pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+header{padding:1rem 1.5rem .8rem}
+header .subtitle{display:none}
+#controls-bar,.top-bar,.sol-toggle-wrap,#pdf-ov,#pdf-modal{display:none!important}
+.card{box-shadow:none;border-radius:0;page-break-inside:avoid;margin-bottom:1rem}
+main{padding:1rem 1.5rem;max-width:100%}
+body.print-no-header header{display:none!important}
+body.print-no-solution .sol-card{display:none!important}
+body.print-force-solution .sol-card{display:block!important}
+}
+
+/* --- Selecteur de langue / Language switch --- */
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem}
+.header-top .header-badge{margin-bottom:0}
+.lang-switch{display:flex;gap:.45rem;flex-shrink:0}
+.flag-btn{background:rgba(255,255,255,.06);border:1px solid rgba(201,149,42,.35);border-radius:3px;padding:3px;cursor:pointer;line-height:0;opacity:.5;transition:opacity .2s,border-color .2s,transform .15s}
+.flag-btn:hover{opacity:1;transform:translateY(-1px)}
+.flag-btn.active{opacity:1;border-color:var(--gold-light);box-shadow:0 0 0 1px rgba(232,184,75,.35)}
+.flag-btn svg{display:block;width:30px;height:20px;border-radius:1px}
+@media print{ .lang-switch{display:none !important;} }
+
+/* TABLEAUX DE DONNEES */
+.dtable-wrap{overflow-x:auto;margin:1.1rem 0}
+.dtable{width:100%;border-collapse:collapse;font-size:.82rem;font-family:'Source Serif 4',serif}
+.dtable th,.dtable td{border:1px solid var(--border);padding:.4rem .5rem;text-align:center;vertical-align:middle}
+.dtable th{background:var(--navy);color:var(--cream);font-weight:600;font-size:.78rem}
+.dtable tr:nth-child(even) td{background:#fbf9f4}
+.dtable td.num{font-family:'JetBrains Mono',monospace;font-size:.78rem;white-space:nowrap}
+.dtable tfoot td{font-weight:700;background:var(--cream-dark)}
+.dtable caption{caption-side:bottom;font-size:.76rem;color:var(--text-muted);font-style:italic;padding-top:.5rem;text-align:justify}
+.dtable-narrow{max-width:560px;margin:0 auto}
+.context-block .dtable-wrap{margin:1rem 0 1.1rem}
+.questions ol ol > li{display:block}
+.q-text .dtable-wrap{margin:.9rem 0 .8rem}
+
+/* FIGURES */
+.fig-wrap{margin:1.2rem 0 .3rem;text-align:center;overflow-x:auto}
+.fig-wrap svg{width:100%;max-width:640px;height:auto;background:#fff;border:1px solid var(--border);border-radius:4px}
+.fig-cap{font-size:.78rem;color:var(--text-muted);font-style:italic;text-align:center;margin-bottom:1rem;line-height:1.5}
+</style>
+<!-- KIT:CSS:START v1 --><style id="kit-css">
+/* ============================================================
+   KIT D'UNIFORMISATION — bloc partagé, identique sur toutes les pages.
+   Ne rien modifier ici fichier par fichier : régénérer le kit.
+   ============================================================ */
+
+/* --- 1. Mathématiques : jamais de débordement --- */
+mjx-container[display="true"]{
+  overflow-x:auto; overflow-y:hidden; max-width:100%;
+  padding:.15rem 0; margin:1rem 0 !important;
+}
+mjx-container[display="true"]::-webkit-scrollbar{height:5px}
+mjx-container[display="true"]::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+mjx-container{ max-width:100%; }
+.math-formula{ text-align:center; margin:1.2rem 0; overflow-x:auto; max-width:100%; }
+@media (max-width:640px){
+  mjx-container[display="true"]{ font-size:88% }
+}
+
+/* --- 2. Listes à puces entourées (questions ET données de contexte) --- */
+.kit-list, .st > ol,
+.questions > ol,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list), .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list),
+.question-list, .enum-list, .q-list{
+  counter-reset:kitq; list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem;
+}
+.kit-list > li, .st > ol > li,
+.questions > ol > li,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li, .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li,
+.question-list > li, .enum-list > li, .q-list > li{
+  counter-increment:kitq; position:relative;
+  padding-left:2.6rem; margin-bottom:1.3rem;
+  font-size:.95rem; line-height:1.7; text-align:justify;
+  font-weight:400; color:var(--text);
+  display:block;
+}
+.kit-list > li::before, .st > ol > li::before,
+.questions > ol > li::before,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li::before, .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li::before,
+.question-list > li::before, .enum-list > li::before, .q-list > li::before{
+  content:counter(kitq);
+  position:absolute; left:0; top:.1rem;
+  width:28px; min-width:28px; height:28px;
+  background:var(--navy); color:var(--cream);
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.72rem; font-weight:500;
+  flex-shrink:0;
+}
+.questions ol > li .q-text{ flex:1; font-size:.95rem; text-align:justify }
+/* sous-listes : cercle creux, plus discret */
+.enum-sublist, .kit-sublist, .sub-list, .sub-ol, .alpha-list, .enum-subsublist,
+.st ol.sub-ol, .questions ol ol, .st ol ol, .kit-list ol, .q-list ol, .question-list ol{
+  counter-reset:kitsq; list-style:none !important; padding-left:0 !important;
+  margin:.9rem 0 .9rem 0;
+}
+.enum-sublist > li, .kit-sublist > li, .sub-list > li, .sub-ol > li, .alpha-list > li, .enum-subsublist > li,
+.st ol.sub-ol > li, .questions ol ol > li, .st ol ol > li, .kit-list ol > li, .q-list ol > li, .question-list ol > li{
+  counter-increment:kitsq; position:relative;
+  padding-left:2.1rem; margin-bottom:.7rem; font-size:.92rem; text-align:justify;
+}
+.enum-sublist > li::before, .kit-sublist > li::before, .sub-list > li::before, .sub-ol > li::before, .alpha-list > li::before, .enum-subsublist > li::before,
+.st ol.sub-ol > li::before, .questions ol ol > li::before, .st ol ol > li::before, .kit-list ol > li::before, .q-list ol > li::before, .question-list ol > li::before{
+  content:counter(kitsq,lower-alpha);
+  min-width:22px;
+  position:absolute; left:0; top:.05rem;
+  width:22px; height:22px;
+  background:transparent; color:var(--navy);
+  border:1px solid var(--gold);
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.65rem;
+}
+
+/* variante : puces simples non numérotées (listes de données) */
+.kit-simple{ list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem }
+.kit-simple > li{
+  position:relative; padding-left:1.5rem; margin-bottom:1.1rem;
+  font-size:.95rem; line-height:1.7; text-align:justify;
+}
+.kit-simple > li::before{
+  content:"\2022"; position:absolute; left:0; top:-.15rem;
+  color:var(--gold); font-size:1.5rem; line-height:1; background:none;
+  width:auto; height:auto; border:none; border-radius:0;
+}
+/* variante : liste à un seul élément, sans puce */
+.kit-nobullet{ list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem }
+.kit-nobullet > li{
+  padding-left:0; margin-bottom:1rem; font-size:.95rem; line-height:1.7; text-align:justify;
+}
+.kit-nobullet > li::before{ content:none !important; display:none !important }
+/* variante : titres de section numérotés (contenu intercalé entre les puces) */
+.kit-num-scope{ counter-reset:kitn }
+p.kit-num{
+  counter-increment:kitn; position:relative;
+  padding-left:2.6rem; margin:1.8rem 0 1rem;
+  font-weight:600; color:var(--navy); text-align:left;
+  min-height:28px; display:flex; align-items:center;
+}
+p.kit-num:first-of-type{ margin-top:0 }
+p.kit-num::before{
+  content:counter(kitn); position:absolute; left:0; top:0;
+  width:28px; height:28px; background:var(--navy); color:var(--cream);
+  border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.72rem; font-weight:500;
+}
+
+/* titres de dossier */
+.dossier-title{
+  margin:2rem 0 1rem; font-weight:600; color:var(--navy); font-size:1.02rem;
+  border-bottom:1px solid var(--border); padding-bottom:.4rem; text-align:left;
+}
+.dossier-title:first-of-type{ margin-top:0 }
+.dossier-body{ margin-bottom:.5rem }
+
+/* --- 3. Corrigé sobre : plus de multiplication de fonds verts --- */
+.sol-card .calc-box, .sol-card .concl{
+  background:transparent !important;
+  border:none !important;
+  border-left:none !important;
+  padding:0 !important;
+  border-radius:0 !important;
+  margin:0 0 1.6rem 0 !important;
+  font-size:.95rem;
+  line-height:1.7;
+  text-align:justify;
+}
+.sol-card .sol-sub{
+  color:var(--navy); font-weight:600; display:block;
+  margin:0 0 .5rem 0; font-size:1rem;
+}
+/* seuls encadrés conservés : les perspectives « Pour aller plus loin » */
+.sol-card .persp-box p{margin:0 0 .75rem 0}
+.sol-card .persp-box .sol-sub{margin-top:1.1rem}
+.sol-card .persp-box .sol-sub:first-child{margin-top:0}
+.sol-card .persp-box{
+  background:#f7f9fc !important;
+  border:1px solid #ccd8e6 !important;
+  border-left:3px solid var(--navy-mid) !important;
+  padding:1.2rem !important;
+  border-radius:4px !important;
+  margin:2rem 0 1rem 0 !important;
+  font-size:.9rem; line-height:1.7; text-align:justify;
+}
+
+.btn-toggle{
+  background:transparent; border:2px solid var(--green); border-bottom:none;
+  color:var(--green); font-family:'Source Serif 4',serif; font-size:.95rem;
+  font-weight:600; padding:.5rem 1.5rem; border-radius:4px 4px 0 0; cursor:pointer;
+  transition:all .2s; position:relative; z-index:2; top:2px;
+}
+.btn-toggle:hover{ background:var(--green); color:var(--cream) }
+
+/* --- 4. Bouton « Afficher le corrigé » (modèle der) --- */
+.sol-toggle-wrap{ text-align:left; margin:1.5rem 0 0 0; }
+.sol-card{
+  border-top:2px solid var(--green); display:none;
+  border-radius:0 6px 6px 6px; position:relative; z-index:1;
+}
+.sol-card.visible{ display:block; animation:kitfi .35s ease }
+.sol-card .card-header{ background:var(--green) }
+.sol-card .card-header .tag{ border-color:rgba(200,240,200,.4); color:#a8d8b0 }
+@keyframes kitfi{ from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+
+/* --- 5. Barre d'actions unifiée --- */
+.top-bar{ display:flex; flex-wrap:wrap; gap:.8rem; align-items:center; justify-content:space-between; margin-bottom:1.2rem }
+.top-bar-left{ display:flex; flex-wrap:wrap; gap:.55rem; order:1 }
+.top-bar .seed-badge{ order:2 }
+.btn-sm{ background:transparent; border:1px solid var(--gold); color:var(--gold); font-family:'JetBrains Mono',monospace; font-size:.67rem; letter-spacing:.08em; text-transform:uppercase; padding:.4rem 1rem; border-radius:3px; cursor:pointer; transition:all .18s; white-space:nowrap }
+.btn-sm:hover{ background:var(--gold); color:var(--navy) }
+.btn-sm.pdf{ border-color:#7bafd4; color:#7bafd4 }
+.btn-sm.pdf:hover{ background:#7bafd4; color:var(--navy) }
+.btn-sm.doc{ border-color:#8fa8c4; color:#8fa8c4 }
+.seed-row{ display:flex; gap:.4rem; align-items:center }
+.btn-copy-seed{
+  background:transparent; border:1px solid rgba(201,149,42,.4); color:rgba(250,247,240,.55);
+  padding:.38rem .55rem; border-radius:3px; cursor:pointer;
+  font-family:'JetBrains Mono',monospace; font-size:.65rem; transition:all .18s; white-space:nowrap;
+}
+.btn-copy-seed:hover{ border-color:var(--gold-light); color:var(--gold-light) }
+.btn-sm.doc:hover{ background:#8fa8c4; color:var(--navy) }
+
+/* --- 6. Modale d'export PDF --- */
+#pdf-ov{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:100; backdrop-filter:blur(2px) }
+#pdf-modal{ display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:101; background:#fff; border-radius:8px; box-shadow:0 20px 60px rgba(0,0,0,.25); width:390px; max-width:95vw; border-top:4px solid #7bafd4; overflow:hidden }
+#pdf-ov.open,#pdf-modal.open{ display:block }
+.mh{ background:var(--navy); color:var(--cream); padding:1rem 1.5rem; display:flex; align-items:center; justify-content:space-between }
+.mh h3{ font-family:'Playfair Display',serif; font-size:1rem; font-weight:600; margin:0 }
+.mclose{ background:none; border:none; color:rgba(255,255,255,.6); cursor:pointer; font-size:1.2rem; line-height:1; padding:2px 6px; border-radius:3px; transition:color .15s }
+.mclose:hover{ color:#fff }
+.mb2{ padding:1.5rem }
+.opt-row{ display:flex; align-items:flex-start; gap:.75rem; margin-bottom:1rem; cursor:pointer }
+.opt-row input[type=checkbox]{ width:16px; height:16px; cursor:pointer; accent-color:var(--navy); flex-shrink:0; margin-top:3px }
+.opt-txt{ display:block }
+.opt-lbl{ font-size:.93rem; display:block }
+.opt-desc{ font-size:.75rem; color:var(--text-muted); display:block }
+.seed-note{ font-family:'JetBrains Mono',monospace; font-size:.7rem; background:var(--cream-dark); border:1px solid var(--border); padding:.55rem .85rem; border-radius:3px; color:var(--text-muted); margin-bottom:1.2rem; line-height:1.5 }
+.mactions{ display:flex; gap:.6rem }
+.btn-print{ flex:1; background:var(--navy); color:var(--cream); border:none; padding:.7rem; border-radius:4px; font-family:'Source Serif 4',serif; font-size:.9rem; cursor:pointer; transition:background .2s }
+.btn-print:hover{ background:var(--navy-mid) }
+.btn-cancel{ background:transparent; border:1px solid var(--border); color:var(--text-muted); padding:.7rem 1rem; border-radius:4px; font-family:'Source Serif 4',serif; font-size:.9rem; cursor:pointer; transition:all .2s }
+.btn-cancel:hover{ border-color:var(--text); color:var(--text) }
+
+/* --- 7. Impression --- */
+@media print{
+  body{ background:#fff; font-size:11pt; -webkit-print-color-adjust:exact; print-color-adjust:exact }
+  header{ display:block !important; padding:1rem 1.5rem .8rem }
+  header .subtitle{ display:none }
+  .ctrls, #controls-bar, .top-actions, .top-bar-left, .sol-toggle-wrap,
+  .lang-switch, #pdf-ov, #pdf-modal{ display:none !important }
+  .top-bar{ display:block !important; margin-bottom:.8rem }
+  .top-bar .seed-badge{
+    display:inline-block !important; background:none; border:1px solid var(--border);
+    color:var(--text-muted); font-family:'JetBrains Mono',monospace; font-size:8.5pt;
+    padding:2pt 6pt; border-radius:2px;
+  }
+  body.print-no-header .top-bar{ display:none !important }
+  main{ padding:1rem 1.5rem; max-width:100% }
+  .card{ box-shadow:none; border-radius:0; page-break-inside:avoid; margin-bottom:1rem }
+  #ex-area{ display:block !important }
+  .sol-card{ display:block !important; border-top:2px solid var(--green) }
+  mjx-container[display="true"]{ overflow:visible !important }
+  body.print-no-header header{ display:none !important }
+  body.print-no-header .ctrls{ display:none !important }
+  body.print-no-solution .sol-card,
+  body.print-no-solution .sol-toggle-wrap{ display:none !important }
+  body.print-force-solution .sol-card{ display:block !important }
+}
+</style><!-- KIT:CSS:END -->
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-top">
+    <div class="header-badge" data-k="k-badge">ÉCONOMÉTRIE</div>
+    <div class="lang-switch">
+      <button type="button" class="flag-btn active" id="flag-fr" onclick="setLang('fr')" title="Français" aria-label="Français"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="20" height="40" fill="#002654"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ED2939"/></svg></button>
+      <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
+    </div>
+  </div>
+  <h1 data-k="k-h1">Test de Chow de changement structurel</h1>
+  <p class="subtitle" data-k="k-sub">© Thomas Hossen – Version du 17 septembre 2026</p>
+
+  <div id="controls-bar">
+    <div class="ctrls">
+      <div class="ctrl-g">
+        <span class="ctrl-lbl" data-k="k-seed">Seed de reproductibilité</span>
+        <div class="seed-row">
+          <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="0" max="99999999">
+          <button type="button" class="btn-copy-seed" id="btn-copy-seed" onclick="copySeed(this)" title="Copier la seed active"><span data-kit="btnCopy">&#10697; Copier</span></button>
+        </div>
+        <span class="ctrl-tip" data-k="k-seedtip">Vide = aléatoire à chaque génération</span>
+      </div>
+      <div class="ctrl-vsep"></div>
+      <div class="ctrl-g">
+        <span class="ctrl-lbl" data-k="k-n">Groupes <em>(G, question 7)</em></span>
+        <input class="ctrl-inp" type="number" id="param-n" min="3" max="5" placeholder="auto">
+        <span class="ctrl-tip" data-k="k-ntip">3 – 5, auto si vide</span>
+      </div>
+      <div class="ctrl-vsep"></div>
+      <button class="btn-gen" onclick="generateFromControls()"><span data-k="k-gen">Générer</span></button>
+    </div>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" class="welcome-msg">
+    <span class="arrow">↑</span>
+    <span data-k="k-welcome">Configurez les paramètres (ou laissez vide pour de l'aléatoire), puis cliquez sur Générer.</span>
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="top-bar-left">
+        <button type="button" class="btn-sm" onclick="regen()"><span data-kit="btnNew">&#8634; Nouvel &eacute;nonc&eacute;</span></button>
+        <button type="button" class="btn-sm pdf" onclick="openPdfModal()"><span data-kit="btnPdf">&#11015; Exporter PDF</span></button>
+        <button type="button" class="btn-sm doc" onclick="exportWord()"><span data-kit="btnDoc">&#11015; Exporter Word</span></button>
+      </div>
+      <div class="seed-badge"><span data-k="k-seedbadge">Seed&nbsp;:</span> <span id="seed-disp">—</span></div>
+    </div>
+
+    <div id="ex-card" class="card">
+      <div class="card-header"><span class="tag" data-k="k-tag-ex">Énoncé</span><h2 id="card-title" data-k="k-cardtitle">Test de Chow</h2></div>
+      <div class="card-body" id="ex-content"></div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag" data-k="k-tag-sol">Corrigé</span><h2 id="card-title2" data-k="k-cardtitle2">Test de Chow</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+let solVisible = false;
+
+/* ============================================================
+   OUTILS NUMERIQUES  /  NUMERIC HELPERS
+   ============================================================ */
+const P10 = [1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000];
+function fx(v, d, m) {
+  const neg = v < 0;
+  let s = String(Math.abs(Math.round(v)));
+  let ip = s, fp = '';
+  if (d > 0) { s = s.padStart(d + 1, '0'); ip = s.slice(0, -d); fp = s.slice(-d); }
+  if (ip.length >= 5) {
+    const sep = m ? '\\,' : '\u202F';
+    let out = '';
+    while (ip.length > 3) { out = sep + ip.slice(-3) + out; ip = ip.slice(0, -3); }
+    ip = ip + out;
+  }
+  return (neg && /[1-9]/.test(ip + fp) ? (m ? '-' : '\u2212') : '') + ip + (d > 0 ? '.' + fp : '');
+}
+function fxf(x, d, m) { return fx(Math.round(x * P10[d]), d, m); }
+function fS(x, sig, m) {
+  if (x === 0) return '0';
+  const e = Math.floor(Math.log10(Math.abs(x)));
+  if (e < -3 || e >= 7) {
+    let mant = x / Math.pow(10, e), ee = e;
+    if (Math.abs(Number(mant.toFixed(sig - 1))) >= 10) { mant /= 10; ee += 1; }
+    const ms = fxf(mant, sig - 1, m);
+    return m ? `${ms}\\times 10^{${ee}}` : `${ms} × 10<sup>${ee}</sup>`;
+  }
+  return fxf(x, Math.max(0, sig - 1 - e), m);
+}
+const fP = p => (p < 1e-4 ? '&lt; 0.0001' : p.toFixed(4));
+function inv(A) {
+  const n = A.length, M = A.map((r, i) => r.concat(Array.from({ length: n }, (_, j) => (i === j ? 1 : 0))));
+  for (let c = 0; c < n; c++) {
+    let p = c;
+    for (let r = c + 1; r < n; r++) if (Math.abs(M[r][c]) > Math.abs(M[p][c])) p = r;
+    [M[c], M[p]] = [M[p], M[c]];
+    const d = M[c][c];
+    for (let j = 0; j < 2 * n; j++) M[c][j] /= d;
+    for (let r = 0; r < n; r++) if (r !== c) { const f = M[r][c]; for (let j = 0; j < 2 * n; j++) M[r][j] -= f * M[c][j]; }
+  }
+  return M.map(r => r.slice(n));
+}
+/* MCO : coefficients, somme des carres des residus, (X'X)^-1 */
+function ols(rows, y) {
+  const k = rows[0].length;
+  const A = Array.from({ length: k }, (_, i) => Array.from({ length: k }, (_, j) => rows.reduce((s, r) => s + r[i] * r[j], 0)));
+  const v = Array.from({ length: k }, (_, i) => rows.reduce((s, r, t) => s + r[i] * y[t], 0));
+  const Ai = inv(A), b = Ai.map(r => r.reduce((s, x, j) => s + x * v[j], 0));
+  const ssr = rows.reduce((s, r, t) => { const e = y[t] - r.reduce((q, x, j) => q + x * b[j], 0); return s + e * e; }, 0);
+  return { b, ssr, Ai };
+}
+/* loi de Fisher */
+function lgammaF(z) {
+  const g = [0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313, -176.61502916214059, 12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+  if (z < 0.5) return Math.log(Math.PI / Math.abs(Math.sin(Math.PI * z))) - lgammaF(1 - z);
+  z -= 1; let x = g[0];
+  for (let i = 1; i < 9; i++) x += g[i] / (z + i);
+  const t = z + 7.5;
+  return 0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(t) - t + Math.log(x);
+}
+function betacf(a, b, x) {
+  const FP = 1e-300; let qab = a + b, qap = a + 1, qam = a - 1, c = 1, d = 1 - qab * x / qap;
+  if (Math.abs(d) < FP) d = FP; d = 1 / d; let h = d;
+  for (let m = 1; m < 100000; m++) {
+    const m2 = 2 * m; let aa = m * (b - m) * x / ((qam + m2) * (a + m2));
+    d = 1 + aa * d; if (Math.abs(d) < FP) d = FP; c = 1 + aa / c; if (Math.abs(c) < FP) c = FP; d = 1 / d; h *= d * c;
+    aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2));
+    d = 1 + aa * d; if (Math.abs(d) < FP) d = FP; c = 1 + aa / c; if (Math.abs(c) < FP) c = FP; d = 1 / d;
+    const del = d * c; h *= del; if (Math.abs(del - 1) < 1e-16) break;
+  }
+  return h;
+}
+function betaI(a, b, x) {
+  if (x <= 0) return 0; if (x >= 1) return 1;
+  const bt = Math.exp(lgammaF(a + b) - lgammaF(a) - lgammaF(b) + a * Math.log(x) + b * Math.log(1 - x));
+  return x < (a + 1) / (a + b + 2) ? bt * betacf(a, b, x) / a : 1 - bt * betacf(b, a, 1 - x) / b;
+}
+const fsf = (f, d1, d2) => (f <= 0 ? 1 : betaI(d2 / 2, d1 / 2, d2 / (d2 + d1 * f)));
+function fq(p, d1, d2) {
+  let lo = 0, hi = 1;
+  while (1 - fsf(hi, d1, d2) < p) hi *= 2;
+  for (let i = 0; i < 200; i++) { const m = (lo + hi) / 2; if (1 - fsf(m, d1, d2) < p) lo = m; else hi = m; }
+  return (lo + hi) / 2;
+}
+
+/* ============================================================
+   CONTEXTES (independants de la langue)
+   ============================================================ */
+const CX = [
+  { id: 'wage', ts: false, y: '\\ln(W_i)', X: [{ L: 'E', r: [9, 18], int: true }, { L: 'X', r: [0, 40], int: true }, { L: 'T', r: [0, 25], int: true }],
+    beta: [1.8, 0.06, 0.012, 0.008], delta: [0.15, 0.025, 0.007, 0.007], sig: [0.2, 0.3], n: [25, 60], nG: [20, 45] },
+  { id: 'cons', ts: true, y: 'C_t', X: [{ L: 'R', r: [800, 1300] }, { L: 'r', r: [-1, 4] }, { L: 'P', r: [2000, 5000] }],
+    beta: [20, 0.75, -1.5, 0.02], delta: [15, 0.05, 1.2, 0.012], sig: [3, 5], n: [16, 40], nG: [14, 30] },
+  { id: 'housing', ts: false, y: '\\ln(P_i)', X: [{ L: 'D', r: [0.5, 15] }, { L: 'S', r: [2, 15] }, { L: 'A', r: [0, 80], int: true }],
+    beta: [8.4, -0.035, -0.01, -0.003], delta: [0.1, 0.02, 0.012, 0.0025], sig: [0.12, 0.2], n: [25, 60], nG: [20, 45] },
+  { id: 'prod', ts: false, y: '\\ln(Y_i)', X: [{ L: '\\ln K', r: [4, 9] }, { L: '\\ln L', r: [2, 7] }, { L: 'R', r: [0, 8] }],
+    beta: [1.0, 0.33, 0.62, 0.02], delta: [0.3, 0.09, 0.11, 0.02], sig: [0.25, 0.35], n: [25, 60], nG: [20, 45] }
+];
+
+/* ============================================================
+   GENERATEUR PSEUDO-ALEATOIRE
+   ============================================================ */
+let _rand, _activeSeed = 0;
+function initRand(seed) {
+  _activeSeed = seed >>> 0;
+  let s = _activeSeed;
+  _rand = () => {
+    s = (s + 0x6D2B79F5) >>> 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const rI = (a, b) => Math.floor(_rand() * (b - a + 1)) + a;
+const rU = (a, b) => a + (b - a) * _rand();
+const rN = () => { let u = 0; while (u === 0) u = _rand(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * _rand()); };
+const near = (p, a) => p > a * 0.4 && p < a * 2.2;
+
+/* ============================================================
+   GENERATION ET CALCULS
+   ============================================================ */
+/* tire les donnees d'un groupe (regresseurs legerement decales d'un groupe a l'autre) */
+function drawGroup(S, k, n, beta, sig, shift) {
+  const rows = [], y = [];
+  for (let t = 0; t < n; t++) {
+    const r = [1];
+    for (let j = 0; j < k; j++) {
+      const R = S.X[j].r, w = R[1] - R[0];
+      let v = R[0] + w * Math.min(1, Math.max(0, _rand() * 0.8 + 0.1 * (1 + shift[j])));
+      if (S.ts && j === 0) v = R[0] + w * Math.min(1, Math.max(0, (t / n) * 0.5 + 0.25 * (1 + shift[j]) + 0.05 * rN()));
+      v = S.X[j].int ? Math.round(v) : Math.round(v * 100) / 100;
+      r.push(v);
+    }
+    rows.push(r);
+    y.push(r.reduce((s, x, j) => s + x * beta[j], 0) + sig * rN());
+  }
+  return { rows, y };
+}
+function decFor(vals) { return Math.max(0, Math.min(6, 3 - Math.floor(Math.log10(Math.min(...vals))))); }
+
+function computeD(seed, Gin) {
+  initRand(seed);
+  const ci = rI(0, CX.length - 1), S = CX[ci];
+  const k = rI(1, 3), q = k + 1;
+  const GAuto = rI(3, 5);
+  const G = Gin || GAuto;
+  const sig = rU(...S.sig);
+  const base = S.beta.slice(0, q);
+  const shiftOf = () => Array.from({ length: 3 }, () => rU(-0.3, 0.3));
+  const mkBreak = (on) => base.map((b, j) => b + (on && _rand() < 0.6 ? (_rand() < 0.5 ? -1 : 1) * S.delta[j] * rU(0.7, 1.5) : 0));
+
+  /* ---------- question 6 : deux groupes ---------- */
+  let Q6;
+  for (let g6 = 0; g6 < 20000 && !Q6; g6++) {
+    const brk = _rand() < 0.6;
+    const n = [rI(...S.n), rI(...S.n)];
+    const b2 = mkBreak(brk);
+    const d1 = drawGroup(S, k, n[0], base, sig, shiftOf()), d2 = drawGroup(S, k, n[1], b2, sig, shiftOf());
+    const o1 = ols(d1.rows, d1.y), o2 = ols(d2.rows, d2.y), oc = ols(d1.rows.concat(d2.rows), d1.y.concat(d2.y));
+    const dS = decFor([o1.ssr, o2.ssr]);
+    const I = [o1.ssr, o2.ssr, oc.ssr].map(v => Math.round(v * P10[dS]));
+    const Ssum = I[0] + I[1], diff = I[2] - Ssum;
+    if (diff <= 0) continue;
+    const N = n[0] + n[1], df2 = N - 2 * q;
+    const F = diff * df2 / (Ssum * q), p = fsf(F, q, df2);
+    if (near(p, 0.05) || near(p, 0.01)) continue;
+    /* test d'egalite des variances (Goldfeld-Quandt, bilateral) */
+    const v1 = I[0] / (n[0] - q), v2 = I[1] / (n[1] - q);
+    const GQ = v1 / v2, pl = fsf(GQ, n[0] - q, n[1] - q), pGQ = 2 * Math.min(pl, 1 - pl);
+    if (pGQ < 0.15) continue;
+    /* coefficient dont l'ecart est le plus marque (statistique de Wald individuelle) */
+    const s1 = I[0] / P10[dS] / (n[0] - q), s2 = I[1] / P10[dS] / (n[1] - q);
+    const tz = base.map((_, j) => Math.abs(o1.b[j] - o2.b[j]) / Math.sqrt(s1 * o1.Ai[j][j] + s2 * o2.Ai[j][j]));
+    const jmax = tz.indexOf(Math.max(...tz));
+    Q6 = { brk, n, N, o: [o1, o2, oc], dS, I, Ssum, diff, df2, F, p, q95: fq(0.95, q, df2), q99: fq(0.99, q, df2),
+      GQ, pGQ, v1, v2, dfGQ: [n[0] - q, n[1] - q], gq975: fq(0.975, n[0] - q, n[1] - q), gq025: fq(0.025, n[0] - q, n[1] - q), jmax, tz };
+  }
+  if (!Q6) throw new Error('q6');
+
+  /* ---------- question 7 : G groupes ---------- */
+  let Q7;
+  const m = G * (G - 1) / 2, aB = 0.05 / m;
+  for (let g7 = 0; g7 < 50000 && !Q7; g7++) {
+    const scen = rI(0, 2);                       /* 0 : aucune rupture ; 1 : un groupe atypique ; 2 : deux regimes */
+    const odd = rI(0, G - 1), cut = rI(1, G - 1);
+    const alt = mkBreak(true);
+    if (alt.every((v, j) => v === base[j])) continue;
+    const nG = Array.from({ length: G }, () => rI(...S.nG));
+    const betas = Array.from({ length: G }, (_, g) => (scen === 0 ? base : scen === 1 ? (g === odd ? alt : base) : (g < cut ? base : alt)));
+    const data = betas.map((b, g) => drawGroup(S, k, nG[g], b, sig, shiftOf()));
+    const og = data.map(d => ols(d.rows, d.y));
+    const all = ols(data.flatMap(d => d.rows), data.flatMap(d => d.y));
+    const pairs = [];
+    for (let a = 0; a < G; a++) for (let b = a + 1; b < G; b++) {
+      pairs.push({ a, b, o: ols(data[a].rows.concat(data[b].rows), data[a].y.concat(data[b].y)) });
+    }
+    const dS = decFor(og.map(o => o.ssr));
+    const Ig = og.map(o => Math.round(o.ssr * P10[dS])), Iall = Math.round(all.ssr * P10[dS]);
+    const Ssum = Ig.reduce((s, v) => s + v, 0), diff = Iall - Ssum;
+    if (diff <= 0) continue;
+    const N = nG.reduce((s, v) => s + v, 0), df1 = (G - 1) * q, df2 = N - G * q;
+    const F = diff * df2 / (Ssum * df1), p = fsf(F, df1, df2);
+    if (near(p, 0.05) || near(p, 0.01)) continue;
+    let ok = true;
+    const pr = pairs.map(P => {
+      const Ip = Math.round(P.o.ssr * P10[dS]), ss = Ig[P.a] + Ig[P.b], dd = Ip - ss;
+      const nn = nG[P.a] + nG[P.b], d2 = nn - 2 * q;
+      const Fp = dd * d2 / (ss * q), pp = fsf(Fp, q, d2);
+      if (dd <= 0 || near(pp, aB) || near(pp, 0.05)) ok = false;
+      return { a: P.a, b: P.b, Ip, ss, dd, nn, d2, F: Fp, p: pp };
+    });
+    if (!ok) continue;
+    const nRej = pr.filter(x => x.p < aB).length;
+    if (p < 0.05 && nRej === 0) continue;     /* rejet global sans paire identifiee : cas trop delicat pour l'exercice */
+    Q7 = { scen, nG, N, og, all, dS, Ig, Iall, Ssum, diff, df1, df2, F, p, q95: fq(0.95, df1, df2), pr, m, aB, qB: fq(1 - aB, q, pr[0].d2), nRej,
+      nNaive: pr.filter(x => x.p < 0.05).length };
+  }
+  if (!Q7) throw new Error('q7');
+  return { sc: ci, id: S.id, S, k, q, G, sig, Q6, Q7 };
+}
+
+/* ============================================================
+   AFFICHAGE COMMUN
+   ============================================================ */
+function dtable(head, rows, cap, narrow) {
+  return `<div class="dtable-wrap"><table class="dtable${narrow ? ' dtable-narrow' : ''}">${cap ? `<caption>${cap}</caption>` : ''}` +
+    `<tr>${head.map(h => `<th>${h}</th>`).join('')}</tr>` +
+    rows.map(r => `<tr>${r.map((c, j) => `<td${j > 0 && /^(&lt; )?[\u2212-]?\d/.test(c) ? ' class="num"' : ''}>${c}</td>`).join('')}</tr>`).join('') + `</table></div>`;
+}
+const coefHead = D => ['\\(\\widehat{b}_0\\)'].concat(D.S.X.slice(0, D.k).map((x, j) => `\\(\\widehat{b}_{${j + 1}}\\)`));
+function modelTex(D, sfx) {
+  const S = D.S, i = S.ts ? 't' : 'i';
+  const ys = S.y;
+  const terms = S.X.slice(0, D.k).map((x, j) => `b_{${j + 1}}${sfx}\\,${x.L}_${i}`).join('+');
+  return `${ys}=b_0${sfx}+${terms}+u_${i}`;
+}
+function q6Table(D, L) {
+  const Q = D.Q6, T = L.ctx[D.id];
+  const row = (lab, n, I, o) => [lab, String(n), fx(I, Q.dS), ...o.b.map(v => fS(v, 4))];
+  return dtable([L.grp, '\\(n\\)', L.scr].concat(coefHead(D)),
+    [row(T.g2[0], Q.n[0], Q.I[0], Q.o[0]), row(T.g2[1], Q.n[1], Q.I[1], Q.o[1]), row(L.pooled, Q.N, Q.I[2], Q.o[2])], L.cap6, false);
+}
+function q7Table(D, L) {
+  const Q = D.Q7, T = L.ctx[D.id];
+  const rows = Q.og.map((o, g) => [T.gG(g), String(Q.nG[g]), fx(Q.Ig[g], Q.dS), ...o.b.map(v => fS(v, 4))]);
+  rows.push([L.pooled, String(Q.N), fx(Q.Iall, Q.dS), ...Q.all.b.map(v => fS(v, 4))]);
+  return dtable([L.grp7, '\\(n_g\\)', L.scr].concat(coefHead(D)), rows, L.cap7, false);
+}
+function q7Pairs(D, L) {
+  const Q = D.Q7, T = L.ctx[D.id];
+  return dtable([L.pair, L.nPair, L.scrPair], Q.pr.map(x => [`${T.gG(x.a)} – ${T.gG(x.b)}`, String(x.nn), fx(x.Ip, Q.dS)]), L.capPairs, true);
+}
+
+/* ============================================================
+   DICTIONNAIRE BILINGUE  /  BILINGUAL DICTIONARY
+   ============================================================ */
+const I18N = {
+  fr: {
+    "htmlLang": "fr",
+    "title": "Générateur d'exercices - Test de Chow",
+    "k-badge": "ÉCONOMÉTRIE",
+    "k-h1": "Test de Chow de changement structurel",
+    "k-sub": "© Thomas Hossen – Version du 17 septembre 2026",
+    "k-seed": "Seed de reproductibilité",
+    "k-seedtip": "Vide = aléatoire à chaque génération",
+    "k-n": "Groupes <em>(G, question 7)</em>",
+    "k-ntip": "3 – 5, auto si vide",
+    "k-gen": "Générer",
+    "k-welcome": "Configurez les paramètres (ou laissez vide pour de l'aléatoire), puis cliquez sur Générer.",
+    "k-seedbadge": "Seed&nbsp;:",
+    "k-tag-ex": "Énoncé",
+    "k-cardtitle": "Test de Chow",
+    "k-tag-sol": "Corrigé",
+    "k-cardtitle2": "Test de Chow",
+    "phSeed": "auto",
+    "phN": "auto",
+    "showSol": "Afficher le corrigé",
+    "hideSol": "Masquer le corrigé",
+    grp: "Échantillon", grp7: "Groupe", scr: "SCR", pooled: "Ensemble", pair: "Paire de groupes", nPair: "Effectif cumulé", scrPair: "SCR de la régression commune",
+    cap6: "Estimations par les MCO sur chaque échantillon et sur l'ensemble des deux (données fictives).",
+    cap7: "Estimations par les MCO sur chaque groupe et sur l'ensemble des groupes (données fictives).",
+    capPairs: "Sommes des carrés des résidus des régressions estimées sur chaque paire de groupes réunis.",
+    pairHead: ["Paire", "\\(\\text{SCR}_{g}+\\text{SCR}_{h}\\)", "Statistique \\(F\\)", "p-valeur", "Rejet au niveau corrigé ?", "Rejet au niveau de 5 % ?"],
+    yes: "oui", no: "non",
+    pv: p => (p < 1e-4 ? "est inférieure à 0.0001" : `vaut ${p.toFixed(4)}`),
+    pde: p => (p < 1e-4 ? "inférieure à 0.0001" : `de ${p.toFixed(4)}`),
+    ctx: {
+      wage: {
+        title: "Salaires des femmes et des hommes", unitPl: "salariés",
+        intro: k => `On étudie le salaire horaire \\(W_i\\) (en euros) de salariés en fonction de ${['leur nombre d\'années d\'études \\(E_i\\)', 'leur nombre d\'années d\'études \\(E_i\\) et de leur expérience professionnelle \\(X_i\\) (en années)', 'leur nombre d\'années d\'études \\(E_i\\), de leur expérience professionnelle \\(X_i\\) et de leur ancienneté dans l\'entreprise \\(T_i\\) (en années)'][k - 1]}.`,
+        g2: ['Femmes', 'Hommes'], two: "les femmes et les hommes", q6: "la façon dont les salaires sont fixés diffère entre les femmes et les hommes",
+        gG: g => ['Île-de-France', 'Nord-Est', 'Nord-Ouest', 'Sud-Est', 'Sud-Ouest'][g], many: "les régions", unitG: "plusieurs régions",
+        coef: j => ['le salaire de base (constante)', "le rendement d'une année d'études", "le rendement d'une année d'expérience", "le rendement d'une année d'ancienneté"][j]
+      },
+      cons: {
+        title: "Fonction de consommation et crise financière", unitPl: "trimestres",
+        intro: k => `On étudie la consommation trimestrielle des ménages \\(C_t\\) (en milliards d'euros) d'un pays en fonction de ${['son revenu disponible \\(R_t\\) (en milliards d\'euros)', 'son revenu disponible \\(R_t\\) et du taux d\'intérêt réel \\(r_t\\) (en %)', 'son revenu disponible \\(R_t\\), du taux d\'intérêt réel \\(r_t\\) et du patrimoine financier des ménages \\(P_t\\) (en milliards d\'euros)'][k - 1]}.`,
+        g2: ['Avant 2008', 'Depuis 2008'], two: "les périodes antérieure et postérieure à la crise financière de 2008", q6: "le comportement de consommation des ménages a changé avec la crise financière de 2008",
+        gG: g => `Période ${g + 1}`, many: "les sous-périodes", unitG: "plusieurs sous-périodes consécutives",
+        coef: j => ['la consommation autonome (constante)', 'la propension marginale à consommer', "l'effet du taux d'intérêt réel", "l'effet de richesse"][j]
+      },
+      housing: {
+        title: "Prix des logements et tramway", unitPl: "ventes",
+        intro: k => `On étudie le prix au mètre carré \\(P_i\\) (en euros) des logements vendus dans une agglomération en fonction de ${['la distance au centre \\(D_i\\) (en kilomètres)', 'la distance au centre \\(D_i\\) (en kilomètres) et de la surface \\(S_i\\) (en dizaines de mètres carrés)', 'la distance au centre \\(D_i\\) (en kilomètres), de la surface \\(S_i\\) (en dizaines de mètres carrés) et de l\'âge du bâtiment \\(A_i\\) (en années)'][k - 1]}.`,
+        g2: ['Avant le tramway', 'Après le tramway'], two: "les ventes antérieures et postérieures à la mise en service d'une ligne de tramway", q6: "la mise en service d'une ligne de tramway a modifié la formation des prix",
+        gG: g => String(2019 + g), many: "les années de vente", unitG: "plusieurs années de vente",
+        coef: j => ['le niveau des prix (constante)', "l'effet de la distance au centre", "l'effet de la surface", "l'effet de l'âge du bâtiment"][j]
+      },
+      prod: {
+        title: "Fonction de production des entreprises", unitPl: "entreprises",
+        intro: k => `On étudie la valeur ajoutée \\(Y_i\\) d'entreprises en fonction de ${['leur capital \\(K_i\\)', 'leur capital \\(K_i\\) et de leur emploi \\(L_i\\)', 'leur capital \\(K_i\\), de leur emploi \\(L_i\\) et de leur intensité de recherche et développement \\(R_i\\) (dépenses de R&amp;D en % du chiffre d\'affaires)'][k - 1]}, dans l'esprit d'une fonction de production de Cobb-Douglas.`,
+        g2: ['PME', 'Grandes entreprises'], two: "les PME et les grandes entreprises", q6: "les PME et les grandes entreprises ont la même technologie de production",
+        gG: g => ['Industrie', 'Construction', 'Commerce', 'Transports', 'Services'][g], many: "les secteurs", unitG: "plusieurs secteurs d'activité",
+        coef: j => ['la productivité globale des facteurs (constante)', "l'élasticité de la production au capital", "l'élasticité de la production au travail", "l'effet de l'intensité de R&amp;D"][j]
+      }
+    },
+
+    ex: function (D) {
+      const T = this.ctx[D.id], S = D.S, Q6 = D.Q6, Q7 = D.Q7;
+      return `
+      <div class="context-block">
+        On dispose de deux échantillons 1 et 2 comportant \\(n_1\\) et \\(n_2\\) individus. Chaque individu est décrit par une variable à expliquer \\(Y\\) et par \\(k\\) variables explicatives \\(X_1,\\ldots,X_k\\), où \\(k+1\\leq\\min(n_1,n_2)-1\\) ; les \\(n_1\\) premières observations correspondent à l'échantillon 1 et les \\(n_2\\) dernières à l'échantillon 2. On estime sur chaque échantillon la régression \\(Y_i=b_0+b_1X_{1,i}+\\cdots+b_kX_{k,i}+u_i\\), ce qui fournit les estimations \\(\\widehat{b}_0^{(1)},\\ldots,\\widehat{b}_k^{(1)}\\) et \\(\\widehat{b}_0^{(2)},\\ldots,\\widehat{b}_k^{(2)}\\). On suppose que \\((u_1,\\ldots,u_{n_1+n_2})\\) est un vecteur gaussien vérifiant les hypothèses de Gauss-Markov, avec une même variance \\(\\sigma^2\\) dans les deux échantillons. On cherche à tester l'hypothèse nulle \\((H_0)\\) selon laquelle les \\(k+1\\) coefficients \\(b_0,\\ldots,b_k\\) sont identiques dans les deux échantillons. Pour tout \\(i\\), on note \\(D_i^{(1)}\\) (resp. \\(D_i^{(2)}\\)) l'indicatrice d'appartenance de l'individu \\(i\\) à l'échantillon 1 (resp. 2), et l'on considère la régression, estimée sur l'ensemble des \\(n_1+n_2\\) individus :
+        \\[Y_i=b_0^{(1)}D_i^{(1)}+b_0^{(2)}D_i^{(2)}+\\sum_{j=1}^{k}b_j^{(1)}X_{j,i}D_i^{(1)}+\\sum_{j=1}^{k}b_j^{(2)}X_{j,i}D_i^{(2)}+v_i\\qquad(\\star)\\]
+        où \\((v_1,\\ldots,v_{n_1+n_2})\\) vérifie les mêmes hypothèses. On note \\(\\textbf{X}_1\\) (resp. \\(\\textbf{X}_2\\)) la matrice de taille \\(n_1\\times(k+1)\\) (resp. \\(n_2\\times(k+1)\\)) formée d'une colonne de 1 et des observations des régresseurs de l'échantillon 1 (resp. 2), et \\(\\textbf{X}:=\\begin{pmatrix}\\textbf{X}_1&\\textbf{0}\\\\\\textbf{0}&\\textbf{X}_2\\end{pmatrix}\\) la matrice des régresseurs de \\((\\star)\\).
+      </div>
+      <div class="questions"><ol>
+        <li><div class="q-text">Pourquoi le modèle \\((\\star)\\) ne doit-il pas comporter de terme constant ? Justifier que l'estimateur des moindres carrés ordinaires du modèle \\((\\star)\\) s'écrit \\(\\widehat{\\textbf{b}}=(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\textbf{Y}\\).</div></li>
+        <li><div class="q-text">En déduire que, pour tout \\(j\\in\\{0,\\ldots,k\\}\\), les estimateurs des MCO de \\(b_j^{(1)}\\) et \\(b_j^{(2)}\\) dans \\((\\star)\\) sont \\(\\widehat{b}_j^{(1)}\\) et \\(\\widehat{b}_j^{(2)}\\).</div></li>
+        <li><div class="q-text">Tester \\((H_0'):\\forall j\\in\\{0,\\ldots,k\\},\\ b_j^{(1)}=b_j^{(2)}\\) contre \\((H_1'):\\exists j,\\ b_j^{(1)}\\neq b_j^{(2)}\\) : préciser la statistique de test, sa loi sous l'hypothèse nulle et la règle de décision au niveau de risque \\(\\alpha\\).</div></li>
+        <li><div class="q-text">Montrer que cette statistique s'écrit
+        \\[F=\\frac{\\text{SCR}_C-(\\text{SCR}_1+\\text{SCR}_2)}{\\text{SCR}_1+\\text{SCR}_2}\\times\\frac{n_1+n_2-2(k+1)}{k+1}\\]
+        où \\(\\text{SCR}_1\\) et \\(\\text{SCR}_2\\) sont les sommes des carrés des résidus des régressions estimées sur chaque échantillon et \\(\\text{SCR}_C\\) celle de la régression commune estimée sur l'ensemble des individus.</div></li>
+        <li><div class="q-text">Dans quelle mesure ce test permet-il de détecter des « changements structurels » ? Donner deux exemples d'utilisation, l'un sur séries temporelles et l'autre sur données en coupe transversale, et préciser les limites du test.</div></li>
+        <li><div class="q-text">${T.intro(D.k)} On se demande si ${T.q6}. On estime le modèle \\(${modelTex(D, '')}\\) séparément sur les deux échantillons, puis sur leur réunion :
+        ${q6Table(D, this)}
+        <ol>
+          <li>Tester au niveau de 5 % l'égalité des variances des perturbations dans les deux échantillons (test de Goldfeld-Quandt). Pourquoi ce test est-il un préalable au test de Chow ?</li>
+          <li>Réaliser le test de Chow aux niveaux de 5 % et de 1 %.</li>
+          <li>Interpréter le résultat en comparant les estimations des deux échantillons.</li>
+        </ol></div></li>
+        <li><div class="q-text">On souhaite désormais comparer \\(G\\geq 2\\) groupes. On distingue désormais ${T.unitG} : ${D.G} groupes au total, notés \\(g=1,\\ldots,${D.G}\\), dont les résultats d'estimation figurent ci-dessous.
+        ${q7Table(D, this)}
+        ${q7Pairs(D, this)}
+        <ol>
+          <li>Généraliser le modèle \\((\\star)\\) et le test de Chow au cas de \\(G\\) groupes : combien de contraintes l'hypothèse d'égalité des coefficients comporte-t-elle ? Quelle est la statistique de test et quelle est sa loi sous l'hypothèse nulle ?</li>
+          <li>Réaliser le test d'égalité des coefficients entre les ${D.G} groupes au niveau de 5 %.</li>
+          <li>Réaliser les ${Q7.m} tests de Chow deux à deux en appliquant une correction de Bonferroni, de sorte que le risque global de rejet à tort reste inférieur à 5 %. Quels groupes se distinguent ? Que se passerait-il sans correction ?</li>
+        </ol></div></li>
+      </ol></div>`;
+    },
+
+    sol: function (D) {
+      const T = this.ctx[D.id], S = D.S, k = D.k, q = D.q, Q6 = D.Q6, Q7 = D.Q7, dS = Q6.dS;
+      const rej6 = Q6.p < 0.05, rej6b = Q6.p < 0.01;
+      const f = (v, d) => fx(v, d, true);
+      const q6txt = rej6
+        ? `Comme \\(F>${fxf(Q6.q95, 3, true)}\\), on rejette l'hypothèse d'égalité des coefficients au niveau de 5 %${rej6b ? ` ; comme \\(F>${fxf(Q6.q99, 3, true)}\\), on la rejette aussi au niveau de 1 %` : `, mais pas au niveau de 1 %, puisque \\(F<${fxf(Q6.q99, 3, true)}\\)`}. La p-valeur ${this.pv(Q6.p)}.`
+        : `Comme \\(F<${fxf(Q6.q95, 3, true)}\\), on ne peut pas rejeter l'hypothèse d'égalité des coefficients au niveau de 5 %, ni a fortiori au niveau de 1 %. La p-valeur ${this.pv(Q6.p)}.`;
+      const interp6 = rej6
+        ? `Il existe donc une rupture structurelle entre ${T.two}. Le test de Chow est global et n'indique pas quels coefficients diffèrent ; la comparaison des estimations suggère que l'écart le plus marqué porte sur ${T.coef(Q6.jmax)} (${fS(Q6.o[0].b[Q6.jmax], 4)} pour « ${T.g2[0]} » contre ${fS(Q6.o[1].b[Q6.jmax], 4)} pour « ${T.g2[1]} »). Pour le confirmer, on testerait individuellement l'égalité de ce coefficient dans le modèle \\((\\star)\\), ou l'on introduirait une indicatrice et ses interactions dans un modèle avec constante commune. Il serait en revanche erroné d'estimer le modèle sur l'ensemble des ${S.ts ? 'périodes' : 'individus'} sans tenir compte de cette rupture.`
+        : `Rien n'indique une différence de comportement entre ${T.two} : les écarts entre les estimations des deux échantillons (par exemple ${fS(Q6.o[0].b[Q6.jmax], 4)} contre ${fS(Q6.o[1].b[Q6.jmax], 4)} pour ${T.coef(Q6.jmax)}) sont compatibles avec les seules fluctuations d'échantillonnage. On peut donc estimer un modèle commun sur l'ensemble des ${Q6.N} observations, ce qui améliore la précision des estimations. Ne pas rejeter l'hypothèse nulle ne prouve toutefois pas l'absence de rupture : le test peut manquer de puissance avec des échantillons de cette taille.`;
+      /* question 7 */
+      const rej7 = Q7.p < 0.05;
+      const pairRows = Q7.pr.map(x => [`${T.gG(x.a)} – ${T.gG(x.b)}`, fx(x.ss, Q7.dS), fxf(x.F, 3), fP(x.p), x.p < Q7.aB ? this.yes : this.no, x.p < 0.05 ? this.yes : this.no]);
+      const rejPairs = Q7.pr.filter(x => x.p < Q7.aB).map(x => `${T.gG(x.a)} et ${T.gG(x.b)}`);
+      const naiveOnly = Q7.pr.filter(x => x.p < 0.05 && x.p >= Q7.aB).map(x => `${T.gG(x.a)} et ${T.gG(x.b)}`);
+      const inGroups = {};
+      Q7.pr.filter(x => x.p < Q7.aB).forEach(x => { inGroups[x.a] = (inGroups[x.a] || 0) + 1; inGroups[x.b] = (inGroups[x.b] || 0) + 1; });
+      const maxc = Math.max(0, ...Object.values(inGroups));
+      const odd = Object.keys(inGroups).filter(g => inGroups[g] === maxc && maxc === D.G - 1).map(Number);
+      const pairTxt = (Q7.nRej === 0
+        ? `Aucune paire ne présente de différence significative au niveau corrigé${rej7 ? '' : ", ce qui est cohérent avec le test global"}.`
+        : `Au niveau corrigé, les différences significatives concernent ${Q7.nRej === 1 ? 'la paire' : 'les paires'} ${rejPairs.join(', ')}.${odd.length === 1 ? ` Le groupe « ${T.gG(odd[0])} » se distingue de tous les autres : c'est lui qui porte la rupture détectée par le test global.` : ''}`) +
+        (naiveOnly.length ? ` Sans correction, on conclurait aussi à une différence entre ${naiveOnly.join(', ')} : ${naiveOnly.length > 1 ? 'ces rejets relèvent' : 'ce rejet relève'} vraisemblablement du hasard des comparaisons multiples.` : ` Sans correction, les conclusions seraient ici identiques, mais le risque de rejeter à tort au moins une égalité atteindrait jusqu'à \\(1-(1-0.05)^{${Q7.m}}\\approx ${fxf(1 - Math.pow(0.95, Q7.m), 3, true)}\\) si les tests étaient indépendants.`);
+      return `<div class="st"><ol>
+
+      <li><div class="q-content">
+        <p>Tout individu appartient à un et un seul des deux échantillons, donc \\(D_i^{(1)}+D_i^{(2)}=1\\) pour tout \\(i\\). Si l'on ajoutait une constante au modèle \\((\\star)\\), la colonne de 1 serait égale à la somme des colonnes \\(D^{(1)}\\) et \\(D^{(2)}\\) : la matrice des régresseurs, de taille \\((n_1+n_2)\\times(2k+3)\\), ne serait que de rang \\(2k+2\\). Cette multicolinéarité parfaite (le « piège des indicatrices ») rendrait \\(\\textbf{X}^T\\textbf{X}\\) non inversible, et les coefficients ne seraient pas identifiables. Sans constante, les colonnes de \\((\\star)\\) s'écrivent, pour les \\(n_1\\) premières lignes, \\((1,X_{1,i},\\ldots,X_{k,i},0,\\ldots,0)\\) et, pour les \\(n_2\\) dernières, \\((0,\\ldots,0,1,X_{1,i},\\ldots,X_{k,i})\\) : la matrice des régresseurs est exactement \\(\\textbf{X}\\). Comme \\(\\textbf{X}_1\\) et \\(\\textbf{X}_2\\) sont de rang \\(k+1\\) (ce qu'autorise la condition \\(k+1\\leq\\min(n_1,n_2)-1\\)), \\(\\textbf{X}\\) est de rang \\(2k+2\\) et \\(\\textbf{X}^T\\textbf{X}\\) est inversible. Les hypothèses de Gauss-Markov étant vérifiées, l'estimateur des MCO est \\(\\widehat{\\textbf{b}}=(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\textbf{Y}\\), où \\(\\textbf{Y}:=(\\textbf{Y}_1^T,\\textbf{Y}_2^T)^T\\).</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <p>Le produit par blocs donne
+        \\[\\textbf{X}^T\\textbf{X}=\\begin{pmatrix}\\textbf{X}_1^T\\textbf{X}_1&\\textbf{0}\\\\\\textbf{0}&\\textbf{X}_2^T\\textbf{X}_2\\end{pmatrix}\\qquad\\text{et}\\qquad\\textbf{X}^T\\textbf{Y}=\\begin{pmatrix}\\textbf{X}_1^T\\textbf{Y}_1\\\\\\textbf{X}_2^T\\textbf{Y}_2\\end{pmatrix}\\]
+        La matrice \\(\\textbf{X}^T\\textbf{X}\\) étant diagonale par blocs, son inverse s'obtient en inversant chaque bloc, d'où
+        \\[\\widehat{\\textbf{b}}=\\begin{pmatrix}(\\textbf{X}_1^T\\textbf{X}_1)^{-1}&\\textbf{0}\\\\\\textbf{0}&(\\textbf{X}_2^T\\textbf{X}_2)^{-1}\\end{pmatrix}\\begin{pmatrix}\\textbf{X}_1^T\\textbf{Y}_1\\\\\\textbf{X}_2^T\\textbf{Y}_2\\end{pmatrix}=\\begin{pmatrix}(\\textbf{X}_1^T\\textbf{X}_1)^{-1}\\textbf{X}_1^T\\textbf{Y}_1\\\\(\\textbf{X}_2^T\\textbf{X}_2)^{-1}\\textbf{X}_2^T\\textbf{Y}_2\\end{pmatrix}\\]
+        Les \\(k+1\\) premières composantes de \\(\\widehat{\\textbf{b}}\\) sont les estimations obtenues sur le seul échantillon 1, et les \\(k+1\\) dernières celles obtenues sur le seul échantillon 2 : pour tout \\(j\\), les estimateurs de \\(b_j^{(1)}\\) et \\(b_j^{(2)}\\) dans \\((\\star)\\) sont \\(\\widehat{b}_j^{(1)}\\) et \\(\\widehat{b}_j^{(2)}\\).</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <p>L'hypothèse \\((H_0')\\) impose \\(k+1\\) contraintes linéaires (et non \\(k\\) : la constante est concernée) au modèle \\((\\star)\\), qui comporte \\(2k+2\\) coefficients et \\(n_1+n_2\\) observations et vérifie les hypothèses de Gauss-Markov avec des perturbations gaussiennes. On peut donc mettre en œuvre un test de Fisher. Notons \\(\\text{SCR}_\\star\\) la somme des carrés des résidus du modèle non contraint \\((\\star)\\) et \\(\\text{SCR}_C\\) celle du modèle contraint. Sous \\((H_0')\\), en notant \\(b_j\\) la valeur commune de \\(b_j^{(1)}\\) et \\(b_j^{(2)}\\) et en utilisant \\(D_i^{(1)}+D_i^{(2)}=1\\), le modèle contraint s'écrit \\(Y_i=b_0+\\sum_{j=1}^kb_jX_{j,i}+v_i\\) : c'est la régression commune estimée sur l'ensemble des individus. La statistique
+        \\[F:=\\frac{(\\text{SCR}_C-\\text{SCR}_\\star)/(k+1)}{\\text{SCR}_\\star/(n_1+n_2-2(k+1))}\\]
+        suit alors, sous \\((H_0')\\), une loi de Fisher à \\(k+1\\) et \\(n_1+n_2-2(k+1)\\) degrés de liberté. Au niveau de risque \\(\\alpha\\), on rejette \\((H_0')\\), et l'on conclut à un changement structurel, si et seulement si \\(F\\) dépasse le quantile d'ordre \\(1-\\alpha\\) de cette loi.</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <p>Notons \\(\\widehat{\\textbf{u}}_1:=\\textbf{Y}_1-\\textbf{X}_1\\widehat{\\textbf{b}}^{(1)}\\) et \\(\\widehat{\\textbf{u}}_2:=\\textbf{Y}_2-\\textbf{X}_2\\widehat{\\textbf{b}}^{(2)}\\) les vecteurs des résidus des régressions estimées sur chaque échantillon. D'après la question 2, le vecteur des résidus de \\((\\star)\\) vaut
+        \\[\\widehat{\\textbf{v}}=\\textbf{Y}-\\textbf{X}\\widehat{\\textbf{b}}=\\begin{pmatrix}\\textbf{Y}_1-\\textbf{X}_1\\widehat{\\textbf{b}}^{(1)}\\\\\\textbf{Y}_2-\\textbf{X}_2\\widehat{\\textbf{b}}^{(2)}\\end{pmatrix}=\\begin{pmatrix}\\widehat{\\textbf{u}}_1\\\\\\widehat{\\textbf{u}}_2\\end{pmatrix},\\qquad\\text{d'où}\\qquad\\text{SCR}_\\star=\\widehat{\\textbf{v}}^T\\widehat{\\textbf{v}}=\\widehat{\\textbf{u}}_1^T\\widehat{\\textbf{u}}_1+\\widehat{\\textbf{u}}_2^T\\widehat{\\textbf{u}}_2=\\text{SCR}_1+\\text{SCR}_2\\]
+        En reportant dans la statistique de la question 3, on obtient la statistique de Chow annoncée :
+        \\[F=\\frac{\\text{SCR}_C-(\\text{SCR}_1+\\text{SCR}_2)}{\\text{SCR}_1+\\text{SCR}_2}\\times\\frac{n_1+n_2-2(k+1)}{k+1}\\]
+        Son intérêt pratique est de ne nécessiter que trois régressions usuelles, sans estimer explicitement le modèle \\((\\star)\\). Comme le modèle commun est un cas particulier du modèle \\((\\star)\\), on a toujours \\(\\text{SCR}_C\\geq\\text{SCR}_1+\\text{SCR}_2\\), donc \\(F\\geq 0\\).</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <p>Le test de Chow détermine si une même relation économique vaut pour deux sous-populations ou deux périodes : un rejet signifie que la façon dont les variables explicatives agissent sur \\(Y\\) diffère, c'est-à-dire qu'il existe un changement structurel. Sur données en coupe transversale, on peut par exemple comparer les équations de salaire des femmes et des hommes, afin de savoir si les employeurs valorisent différemment les caractéristiques des salariés selon le sexe. Sur séries temporelles, on peut étudier si l'arrivée au pouvoir de Xi Jinping en 2013 a modifié la façon dont la Chine attribue son aide au développement, en comparant la même équation estimée avant et après cette date.</p>
+        <p>Le test présente toutefois plusieurs limites. Il suppose que la variance des perturbations est la même dans les deux échantillons ; si ce n'est pas le cas, sa statistique ne suit plus une loi de Fisher, et l'on doit lui préférer un test de Wald fondé sur des variances estimées séparément. Il suppose aussi que la date ou le critère de séparation est connu <em>a priori</em> : choisir la date de rupture au vu des données fausse le niveau du test, et l'on utilise alors des tests adaptés (test de Quandt-Andrews). Enfin, il exige que chaque échantillon comporte plus de \\(k+1\\) observations ; sinon, on recourt au test prédictif de Chow.</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <ol>
+        <li><p>Le test de Chow repose sur l'hypothèse d'une variance commune aux deux échantillons : si elle est violée, la statistique \\(F\\) ne suit plus une loi de Fisher et le test n'a plus le niveau annoncé. On estime les variances par \\(\\widehat{\\sigma}_g^2:=\\text{SCR}_g/(n_g-k-1)\\) :
+        \\[\\widehat{\\sigma}_1^2=\\frac{${f(Q6.I[0], dS)}}{${Q6.n[0]}-${q}}\\approx ${fS(Q6.v1 / P10[dS], 4, true)}\\qquad\\text{et}\\qquad\\widehat{\\sigma}_2^2=\\frac{${f(Q6.I[1], dS)}}{${Q6.n[1]}-${q}}\\approx ${fS(Q6.v2 / P10[dS], 4, true)}\\]
+        Sous l'hypothèse d'égalité des variances, le rapport \\(\\widehat{\\sigma}_1^2/\\widehat{\\sigma}_2^2\\approx ${fxf(Q6.GQ, 3, true)}\\) suit une loi de Fisher à \\(${Q6.dfGQ[0]}\\) et \\(${Q6.dfGQ[1]}\\) degrés de liberté. Pour un test bilatéral au niveau de 5 %, on le compare aux quantiles d'ordre 2.5 % et 97.5 % de cette loi, qui valent environ \\(${fxf(Q6.gq025, 3, true)}\\) et \\(${fxf(Q6.gq975, 3, true)}\\). Le rapport étant compris entre ces deux valeurs (p-valeur bilatérale ${this.pde(Q6.pGQ)}), on ne rejette pas l'égalité des variances : le test de Chow peut être mis en œuvre.</p></li>
+        <li><p>Avec \\(k=${k}\\), on a \\(k+1=${q}\\) contraintes et \\(n_1+n_2-2(k+1)=${Q6.N}-${2 * q}=${Q6.df2}\\) degrés de liberté. On calcule \\(\\text{SCR}_1+\\text{SCR}_2=${f(Q6.Ssum, dS)}\\) et \\(\\text{SCR}_C-(\\text{SCR}_1+\\text{SCR}_2)=${f(Q6.diff, dS)}\\), d'où
+        \\[F=\\frac{${f(Q6.diff, dS)}}{${f(Q6.Ssum, dS)}}\\times\\frac{${Q6.df2}}{${q}}\\approx ${fxf(Q6.F, 3, true)}\\]
+        Les quantiles d'ordre 95 % et 99 % de la loi de Fisher à \\(${q}\\) et \\(${Q6.df2}\\) degrés de liberté valent environ \\(${fxf(Q6.q95, 3, true)}\\) et \\(${fxf(Q6.q99, 3, true)}\\). ${q6txt}</p></li>
+        <li><p>${interp6}</p></li>
+        </ol>
+      </div></li>
+
+      <li><div class="q-content">
+        <ol>
+        <li><p>Avec \\(G\\) groupes, on introduit les \\(G\\) indicatrices \\(D_i^{(1)},\\ldots,D_i^{(G)}\\), dont la somme vaut 1, et l'on estime sans constante
+        \\[Y_i=\\sum_{g=1}^{G}b_0^{(g)}D_i^{(g)}+\\sum_{g=1}^{G}\\sum_{j=1}^{k}b_j^{(g)}X_{j,i}D_i^{(g)}+v_i\\]
+        La matrice des régresseurs est diagonale par blocs, de blocs \\(\\textbf{X}_1,\\ldots,\\textbf{X}_G\\) ; comme à la question 2, les estimateurs des MCO sont ceux des régressions estimées séparément sur chaque groupe, et, comme à la question 4, la somme des carrés des résidus du modèle non contraint vaut \\(\\text{SCR}_1+\\cdots+\\text{SCR}_G\\). Le modèle compte \\(G(k+1)\\) coefficients. L'hypothèse \\((H_0):b_j^{(1)}=\\cdots=b_j^{(G)}\\) pour tout \\(j\\in\\{0,\\ldots,k\\}\\) comporte \\((G-1)(k+1)\\) contraintes (pour chaque \\(j\\), \\(G-1\\) égalités), et le modèle contraint est la régression commune, de somme des carrés des résidus \\(\\text{SCR}_C\\). La statistique de Chow généralisée
+        \\[F=\\frac{\\text{SCR}_C-\\sum_{g=1}^{G}\\text{SCR}_g}{\\sum_{g=1}^{G}\\text{SCR}_g}\\times\\frac{N-G(k+1)}{(G-1)(k+1)},\\qquad N:=\\sum_{g=1}^{G}n_g\\]
+        suit, sous \\((H_0)\\), une loi de Fisher à \\((G-1)(k+1)\\) et \\(N-G(k+1)\\) degrés de liberté, en supposant toujours la variance des perturbations commune à tous les groupes. Pour \\(G=2\\), on retrouve la statistique de la question 4. De façon équivalente, on peut estimer un modèle avec constante, \\(G-1\\) indicatrices et leurs interactions avec les régresseurs, le groupe omis servant de référence, et tester la nullité jointe de ces \\((G-1)(k+1)\\) coefficients.</p></li>
+        <li><p>Ici, \\(G=${D.G}\\), \\(N=${Q7.N}\\), \\((G-1)(k+1)=${Q7.df1}\\) et \\(N-G(k+1)=${Q7.df2}\\). On calcule \\(\\sum_g\\text{SCR}_g=${f(Q7.Ssum, Q7.dS)}\\) et \\(\\text{SCR}_C-\\sum_g\\text{SCR}_g=${f(Q7.diff, Q7.dS)}\\), d'où
+        \\[F=\\frac{${f(Q7.diff, Q7.dS)}}{${f(Q7.Ssum, Q7.dS)}}\\times\\frac{${Q7.df2}}{${Q7.df1}}\\approx ${fxf(Q7.F, 3, true)}\\]
+        Le quantile d'ordre 95 % de la loi de Fisher à \\(${Q7.df1}\\) et \\(${Q7.df2}\\) degrés de liberté vaut environ \\(${fxf(Q7.q95, 3, true)}\\). ${rej7 ? `Comme \\(F>${fxf(Q7.q95, 3, true)}\\) (p-valeur ${this.pde(Q7.p)}), on rejette l'égalité des coefficients entre les ${D.G} groupes au niveau de 5 % : la relation n'est pas la même pour ${T.many}.` : `Comme \\(F<${fxf(Q7.q95, 3, true)}\\) (p-valeur ${this.pde(Q7.p)}), on ne peut pas rejeter l'égalité des coefficients entre les ${D.G} groupes au niveau de 5 % : rien n'indique que la relation diffère selon ${T.many}.`}</p></li>
+        <li><p>Il y a \\(G(G-1)/2=${Q7.m}\\) paires de groupes. Pour chaque paire \\((g,h)\\), le test de Chow à deux groupes utilise la statistique de la question 4, calculée sur les seuls groupes \\(g\\) et \\(h\\), qui suit une loi de Fisher à \\(${q}\\) et \\(n_g+n_h-${2 * q}\\) degrés de liberté. Effectuer ${Q7.m} tests au niveau de 5 % exposerait à un risque élevé de rejeter à tort au moins une égalité. La correction de Bonferroni consiste à réaliser chaque test au niveau \\(5\\,\\%/${Q7.m}\\approx ${fxf(100 * Q7.aB, 3, true)}\\,\\%\\) : d'après l'inégalité de Boole, la probabilité de rejeter à tort au moins une des ${Q7.m} hypothèses est alors inférieure à 5 %. On rejette donc l'égalité pour la paire \\((g,h)\\) si sa p-valeur est inférieure à \\(${fS(Q7.aB, 4, true)}\\).</p>
+        ${dtable(this.pairHead, pairRows, '', false)}
+        <p>${pairTxt} La correction de Bonferroni est conservatrice : elle garantit le risque global, au prix d'une perte de puissance pour chaque comparaison.</p></li>
+        </ol>
+      </div></li>
+
+      </ol></div>
+      <div class="persp-box">
+        <div class="sol-sub">Pour aller plus loin</div>
+        <p><strong>Variances différentes.</strong> Lorsque le test préalable rejette l'égalité des variances, on compare directement les deux vecteurs d'estimations à l'aide de la statistique de Wald \\[W=(\\widehat{\\textbf{b}}^{(1)}-\\widehat{\\textbf{b}}^{(2)})^T\\big(\\widehat{\\sigma}_1^2(\\textbf{X}_1^T\\textbf{X}_1)^{-1}+\\widehat{\\sigma}_2^2(\\textbf{X}_2^T\\textbf{X}_2)^{-1}\\big)^{-1}(\\widehat{\\textbf{b}}^{(1)}-\\widehat{\\textbf{b}}^{(2)})\\] qui suit asymptotiquement une loi du \\(\\chi^2\\) à \\(k+1\\) degrés de liberté.</p>
+        <p><strong>Date de rupture inconnue.</strong> Sur séries temporelles, on calcule la statistique de Chow pour toutes les dates de rupture possibles (en écartant les extrémités de l'échantillon) et l'on retient la plus grande. Cette statistique « sup-F » ne suit pas une loi de Fisher : ses valeurs critiques, tabulées par Andrews (1993), sont nettement plus élevées. En R, le package strucchange fournit ces tests (fonctions <code>sctest</code> et <code>Fstats</code>).</p>
+        <p><strong>Test prédictif de Chow.</strong> Si le second échantillon compte trop peu d'observations pour une estimation séparée (\\(n_2\\leq k+1\\)), on compare \\[\\frac{(\\text{SCR}_C-\\text{SCR}_1)/n_2}{\\text{SCR}_1/(n_1-k-1)}\\] à une loi de Fisher à \\(n_2\\) et \\(n_1-k-1\\) degrés de liberté : on teste alors si les observations du second échantillon sont bien prédites par le modèle estimé sur le premier.</p>
+      </div>`;
+    }
+  },
+
+  en: {
+    "htmlLang": "en",
+    "title": "Exercise generator - Chow test",
+    "k-badge": "ECONOMETRICS",
+    "k-h1": "Chow Test for Structural Change",
+    "k-sub": "© Thomas Hossen – September 17, 2026 Version",
+    "k-seed": "Reproducibility seed",
+    "k-seedtip": "Empty = random at each generation",
+    "k-n": "Groups <em>(G, question 7)</em>",
+    "k-ntip": "3 – 5, auto if left empty",
+    "k-gen": "Generate",
+    "k-welcome": "Configure the parameters (or leave them empty for random values), then click Generate.",
+    "k-seedbadge": "Seed:",
+    "k-tag-ex": "Problem",
+    "k-cardtitle": "Chow test",
+    "k-tag-sol": "Solution",
+    "k-cardtitle2": "Chow test",
+    "phSeed": "auto",
+    "phN": "auto",
+    "showSol": "Show the solution",
+    "hideSol": "Hide the solution",
+    grp: "Sample", grp7: "Group", scr: "RSS", pooled: "Pooled", pair: "Pair of groups", nPair: "Combined size", scrPair: "RSS of the pooled regression",
+    cap6: "OLS estimates on each sample and on both samples pooled (fictitious data).",
+    cap7: "OLS estimates on each group and on all groups pooled (fictitious data).",
+    capPairs: "Residual sums of squares of the regressions estimated on each pair of groups pooled.",
+    pairHead: ["Pair", "\\(\\text{RSS}_{g}+\\text{RSS}_{h}\\)", "\\(F\\) statistic", "p-value", "Rejected at the corrected level?", "Rejected at the 5 % level?"],
+    yes: "yes", no: "no",
+    pv: p => (p < 1e-4 ? "is below 0.0001" : `is ${p.toFixed(4)}`),
+    pde: p => (p < 1e-4 ? "below 0.0001" : `of ${p.toFixed(4)}`),
+    ctx: {
+      wage: {
+        title: "Wages of women and men", unitPl: "employees",
+        intro: k => `We study the hourly wage \\(W_i\\) (in euros) of employees as a function of ${['their number of years of education \\(E_i\\)', 'their number of years of education \\(E_i\\) and their work experience \\(X_i\\) (in years)', 'their number of years of education \\(E_i\\), their work experience \\(X_i\\) and their tenure in the firm \\(T_i\\) (in years)'][k - 1]}.`,
+        g2: ['Women', 'Men'], two: "women and men", q6: "wages are set differently for women and men",
+        gG: g => ['Île-de-France', 'North-East', 'North-West', 'South-East', 'South-West'][g], many: "the regions", unitG: "several regions",
+        coef: j => ['the base wage (constant)', 'the return to one year of education', 'the return to one year of experience', 'the return to one year of tenure'][j]
+      },
+      cons: {
+        title: "Consumption function and the financial crisis", unitPl: "quarters",
+        intro: k => `We study the quarterly household consumption \\(C_t\\) (in billions of euros) of a country as a function of ${['its disposable income \\(R_t\\) (in billions of euros)', 'its disposable income \\(R_t\\) and the real interest rate \\(r_t\\) (in %)', 'its disposable income \\(R_t\\), the real interest rate \\(r_t\\) and household financial wealth \\(P_t\\) (in billions of euros)'][k - 1]}.`,
+        g2: ['Before 2008', 'Since 2008'], two: "the periods before and after the 2008 financial crisis", q6: "household consumption behaviour changed with the 2008 financial crisis",
+        gG: g => `Period ${g + 1}`, many: "the sub-periods", unitG: "several consecutive sub-periods",
+        coef: j => ['autonomous consumption (constant)', 'the marginal propensity to consume', 'the effect of the real interest rate', 'the wealth effect'][j]
+      },
+      housing: {
+        title: "Housing prices and the tramway", unitPl: "sales",
+        intro: k => `We study the price per square metre \\(P_i\\) (in euros) of dwellings sold in an urban area as a function of ${['the distance to the centre \\(D_i\\) (in kilometres)', 'the distance to the centre \\(D_i\\) (in kilometres) and the floor area \\(S_i\\) (in tens of square metres)', 'the distance to the centre \\(D_i\\) (in kilometres), the floor area \\(S_i\\) (in tens of square metres) and the age of the building \\(A_i\\) (in years)'][k - 1]}.`,
+        g2: ['Before the tramway', 'After the tramway'], two: "sales before and after the opening of a tramway line", q6: "the opening of a tramway line changed how prices are formed",
+        gG: g => String(2019 + g), many: "the years of sale", unitG: "several years of sale",
+        coef: j => ['the price level (constant)', 'the effect of distance to the centre', 'the effect of floor area', 'the effect of building age'][j]
+      },
+      prod: {
+        title: "Production function of firms", unitPl: "firms",
+        intro: k => `We study the value added \\(Y_i\\) of firms as a function of ${['their capital \\(K_i\\)', 'their capital \\(K_i\\) and their employment \\(L_i\\)', 'their capital \\(K_i\\), their employment \\(L_i\\) and their research and development intensity \\(R_i\\) (R&amp;D spending as a % of sales)'][k - 1]}, in the spirit of a Cobb-Douglas production function.`,
+        g2: ['SMEs', 'Large firms'], two: "SMEs and large firms", q6: "SMEs and large firms share the same production technology",
+        gG: g => ['Manufacturing', 'Construction', 'Retail', 'Transport', 'Services'][g], many: "the sectors", unitG: "several industries",
+        coef: j => ['total factor productivity (constant)', 'the output elasticity of capital', 'the output elasticity of labour', 'the effect of R&amp;D intensity'][j]
+      }
+    },
+
+    ex: function (D) {
+      const T = this.ctx[D.id], S = D.S, Q6 = D.Q6, Q7 = D.Q7;
+      return `
+      <div class="context-block">
+        We have two samples 1 and 2 with \\(n_1\\) and \\(n_2\\) individuals. Each individual is described by a dependent variable \\(Y\\) and by \\(k\\) explanatory variables \\(X_1,\\ldots,X_k\\), where \\(k+1\\leq\\min(n_1,n_2)-1\\); the first \\(n_1\\) observations belong to sample 1 and the last \\(n_2\\) to sample 2. On each sample, we estimate the regression \\(Y_i=b_0+b_1X_{1,i}+\\cdots+b_kX_{k,i}+u_i\\), which yields the estimates \\(\\widehat{b}_0^{(1)},\\ldots,\\widehat{b}_k^{(1)}\\) and \\(\\widehat{b}_0^{(2)},\\ldots,\\widehat{b}_k^{(2)}\\). We assume that \\((u_1,\\ldots,u_{n_1+n_2})\\) is a Gaussian vector satisfying the Gauss-Markov assumptions, with the same variance \\(\\sigma^2\\) in both samples. We want to test the null hypothesis \\((H_0)\\) that the \\(k+1\\) coefficients \\(b_0,\\ldots,b_k\\) are identical in both samples. For every \\(i\\), we write \\(D_i^{(1)}\\) (resp. \\(D_i^{(2)}\\)) for the dummy indicating that individual \\(i\\) belongs to sample 1 (resp. 2), and we consider the following regression, estimated on all \\(n_1+n_2\\) individuals:
+        \\[Y_i=b_0^{(1)}D_i^{(1)}+b_0^{(2)}D_i^{(2)}+\\sum_{j=1}^{k}b_j^{(1)}X_{j,i}D_i^{(1)}+\\sum_{j=1}^{k}b_j^{(2)}X_{j,i}D_i^{(2)}+v_i\\qquad(\\star)\\]
+        where \\((v_1,\\ldots,v_{n_1+n_2})\\) satisfies the same assumptions. We write \\(\\textbf{X}_1\\) (resp. \\(\\textbf{X}_2\\)) for the \\(n_1\\times(k+1)\\) (resp. \\(n_2\\times(k+1)\\)) matrix made of a column of 1s and the observations of the regressors in sample 1 (resp. 2), and \\(\\textbf{X}:=\\begin{pmatrix}\\textbf{X}_1&\\textbf{0}\\\\\\textbf{0}&\\textbf{X}_2\\end{pmatrix}\\) for the regressor matrix of \\((\\star)\\).
+      </div>
+      <div class="questions"><ol>
+        <li><div class="q-text">Why must model \\((\\star)\\) not include a constant term? Justify that the ordinary least squares estimator of model \\((\\star)\\) is \\(\\widehat{\\textbf{b}}=(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\textbf{Y}\\).</div></li>
+        <li><div class="q-text">Deduce that, for every \\(j\\in\\{0,\\ldots,k\\}\\), the OLS estimators of \\(b_j^{(1)}\\) and \\(b_j^{(2)}\\) in \\((\\star)\\) are \\(\\widehat{b}_j^{(1)}\\) and \\(\\widehat{b}_j^{(2)}\\).</div></li>
+        <li><div class="q-text">Test \\((H_0'):\\forall j\\in\\{0,\\ldots,k\\},\\ b_j^{(1)}=b_j^{(2)}\\) against \\((H_1'):\\exists j,\\ b_j^{(1)}\\neq b_j^{(2)}\\): specify the test statistic, its distribution under the null and the decision rule at significance level \\(\\alpha\\).</div></li>
+        <li><div class="q-text">Show that this statistic can be written
+        \\[F=\\frac{\\text{RSS}_C-(\\text{RSS}_1+\\text{RSS}_2)}{\\text{RSS}_1+\\text{RSS}_2}\\times\\frac{n_1+n_2-2(k+1)}{k+1}\\]
+        where \\(\\text{RSS}_1\\) and \\(\\text{RSS}_2\\) are the residual sums of squares of the regressions estimated on each sample and \\(\\text{RSS}_C\\) that of the common regression estimated on all individuals.</div></li>
+        <li><div class="q-text">To what extent does this test detect “structural changes”? Give two examples of use, one with time series and one with cross-sectional data, and state the limitations of the test.</div></li>
+        <li><div class="q-text">${T.intro(D.k)} We ask whether ${T.q6}. The model \\(${modelTex(D, '')}\\) is estimated separately on the two samples, then on both pooled:
+        ${q6Table(D, this)}
+        <ol>
+          <li>Test at the 5 % level the equality of the disturbance variances in the two samples (Goldfeld-Quandt test). Why is this test a prerequisite for the Chow test?</li>
+          <li>Carry out the Chow test at the 5 % and 1 % levels.</li>
+          <li>Interpret the result by comparing the estimates of the two samples.</li>
+        </ol></div></li>
+        <li><div class="q-text">We now wish to compare \\(G\\geq 2\\) groups. We now distinguish ${T.unitG}: ${D.G} groups in total, denoted \\(g=1,\\ldots,${D.G}\\), whose estimation results are shown below.
+        ${q7Table(D, this)}
+        ${q7Pairs(D, this)}
+        <ol>
+          <li>Generalise model \\((\\star)\\) and the Chow test to the case of \\(G\\) groups: how many restrictions does the hypothesis of equal coefficients involve? What is the test statistic and what is its distribution under the null?</li>
+          <li>Test the equality of the coefficients across the ${D.G} groups at the 5 % level.</li>
+          <li>Carry out the ${Q7.m} pairwise Chow tests with a Bonferroni correction, so that the overall risk of a false rejection stays below 5 %. Which groups stand out? What would happen without the correction?</li>
+        </ol></div></li>
+      </ol></div>`;
+    },
+
+    sol: function (D) {
+      const T = this.ctx[D.id], S = D.S, k = D.k, q = D.q, Q6 = D.Q6, Q7 = D.Q7, dS = Q6.dS;
+      const rej6 = Q6.p < 0.05, rej6b = Q6.p < 0.01;
+      const f = (v, d) => fx(v, d, true);
+      const q6txt = rej6
+        ? `Since \\(F>${fxf(Q6.q95, 3, true)}\\), we reject the equality of the coefficients at the 5 % level${rej6b ? `; since \\(F>${fxf(Q6.q99, 3, true)}\\), we also reject it at the 1 % level` : `, but not at the 1 % level, since \\(F<${fxf(Q6.q99, 3, true)}\\)`}. The p-value ${this.pv(Q6.p)}.`
+        : `Since \\(F<${fxf(Q6.q95, 3, true)}\\), we cannot reject the equality of the coefficients at the 5 % level, nor a fortiori at the 1 % level. The p-value ${this.pv(Q6.p)}.`;
+      const interp6 = rej6
+        ? `There is therefore a structural break between ${T.two}. The Chow test is a joint test and does not say which coefficients differ; comparing the estimates suggests that the sharpest difference concerns ${T.coef(Q6.jmax)} (${fS(Q6.o[0].b[Q6.jmax], 4)} for “${T.g2[0]}” against ${fS(Q6.o[1].b[Q6.jmax], 4)} for “${T.g2[1]}”). To confirm this, one would test the equality of that coefficient individually in model \\((\\star)\\), or introduce a dummy and its interactions in a model with a common constant. It would, however, be wrong to estimate the model on all ${S.ts ? 'periods' : 'individuals'} while ignoring this break.`
+        : `Nothing suggests a difference in behaviour between ${T.two}: the gaps between the estimates of the two samples (for instance ${fS(Q6.o[0].b[Q6.jmax], 4)} against ${fS(Q6.o[1].b[Q6.jmax], 4)} for ${T.coef(Q6.jmax)}) are consistent with mere sampling fluctuations. A common model can therefore be estimated on all ${Q6.N} observations, which improves the precision of the estimates. Failing to reject the null does not, however, prove that there is no break: the test may lack power with samples of this size.`;
+      const rej7 = Q7.p < 0.05;
+      const pairRows = Q7.pr.map(x => [`${T.gG(x.a)} – ${T.gG(x.b)}`, fx(x.ss, Q7.dS), fxf(x.F, 3), fP(x.p), x.p < Q7.aB ? this.yes : this.no, x.p < 0.05 ? this.yes : this.no]);
+      const rejPairs = Q7.pr.filter(x => x.p < Q7.aB).map(x => `${T.gG(x.a)} and ${T.gG(x.b)}`);
+      const naiveOnly = Q7.pr.filter(x => x.p < 0.05 && x.p >= Q7.aB).map(x => `${T.gG(x.a)} and ${T.gG(x.b)}`);
+      const inGroups = {};
+      Q7.pr.filter(x => x.p < Q7.aB).forEach(x => { inGroups[x.a] = (inGroups[x.a] || 0) + 1; inGroups[x.b] = (inGroups[x.b] || 0) + 1; });
+      const maxc = Math.max(0, ...Object.values(inGroups));
+      const odd = Object.keys(inGroups).filter(g => inGroups[g] === maxc && maxc === D.G - 1).map(Number);
+      const pairTxt = (Q7.nRej === 0
+        ? `No pair shows a significant difference at the corrected level${rej7 ? '' : ', which is consistent with the joint test'}.`
+        : `At the corrected level, significant differences concern ${Q7.nRej === 1 ? 'the pair' : 'the pairs'} ${rejPairs.join(', ')}.${odd.length === 1 ? ` Group “${T.gG(odd[0])}” differs from all the others: it drives the break detected by the joint test.` : ''}`) +
+        (naiveOnly.length ? ` Without correction, one would also conclude that there is a difference between ${naiveOnly.join(', ')}: ${naiveOnly.length > 1 ? 'these rejections are' : 'this rejection is'} probably due to chance in multiple comparisons.` : ` Without correction, the conclusions would be the same here, but the risk of falsely rejecting at least one equality could reach \\(1-(1-0.05)^{${Q7.m}}\\approx ${fxf(1 - Math.pow(0.95, Q7.m), 3, true)}\\) if the tests were independent.`);
+      return `<div class="st"><ol>
+
+      <li><div class="q-content">
+        <p>Every individual belongs to one and only one of the two samples, so \\(D_i^{(1)}+D_i^{(2)}=1\\) for every \\(i\\). If a constant were added to model \\((\\star)\\), the column of 1s would equal the sum of the columns \\(D^{(1)}\\) and \\(D^{(2)}\\): the regressor matrix, of size \\((n_1+n_2)\\times(2k+3)\\), would only have rank \\(2k+2\\). This perfect multicollinearity (the “dummy variable trap”) would make \\(\\textbf{X}^T\\textbf{X}\\) singular, and the coefficients would not be identified. Without a constant, the rows of \\((\\star)\\) are \\((1,X_{1,i},\\ldots,X_{k,i},0,\\ldots,0)\\) for the first \\(n_1\\) observations and \\((0,\\ldots,0,1,X_{1,i},\\ldots,X_{k,i})\\) for the last \\(n_2\\): the regressor matrix is exactly \\(\\textbf{X}\\). Since \\(\\textbf{X}_1\\) and \\(\\textbf{X}_2\\) have rank \\(k+1\\) (which the condition \\(k+1\\leq\\min(n_1,n_2)-1\\) allows), \\(\\textbf{X}\\) has rank \\(2k+2\\) and \\(\\textbf{X}^T\\textbf{X}\\) is invertible. Since the Gauss-Markov assumptions hold, the OLS estimator is \\(\\widehat{\\textbf{b}}=(\\textbf{X}^T\\textbf{X})^{-1}\\textbf{X}^T\\textbf{Y}\\), where \\(\\textbf{Y}:=(\\textbf{Y}_1^T,\\textbf{Y}_2^T)^T\\).</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <p>Block multiplication gives
+        \\[\\textbf{X}^T\\textbf{X}=\\begin{pmatrix}\\textbf{X}_1^T\\textbf{X}_1&\\textbf{0}\\\\\\textbf{0}&\\textbf{X}_2^T\\textbf{X}_2\\end{pmatrix}\\qquad\\text{and}\\qquad\\textbf{X}^T\\textbf{Y}=\\begin{pmatrix}\\textbf{X}_1^T\\textbf{Y}_1\\\\\\textbf{X}_2^T\\textbf{Y}_2\\end{pmatrix}\\]
+        Since \\(\\textbf{X}^T\\textbf{X}\\) is block diagonal, its inverse is obtained by inverting each block, hence
+        \\[\\widehat{\\textbf{b}}=\\begin{pmatrix}(\\textbf{X}_1^T\\textbf{X}_1)^{-1}&\\textbf{0}\\\\\\textbf{0}&(\\textbf{X}_2^T\\textbf{X}_2)^{-1}\\end{pmatrix}\\begin{pmatrix}\\textbf{X}_1^T\\textbf{Y}_1\\\\\\textbf{X}_2^T\\textbf{Y}_2\\end{pmatrix}=\\begin{pmatrix}(\\textbf{X}_1^T\\textbf{X}_1)^{-1}\\textbf{X}_1^T\\textbf{Y}_1\\\\(\\textbf{X}_2^T\\textbf{X}_2)^{-1}\\textbf{X}_2^T\\textbf{Y}_2\\end{pmatrix}\\]
+        The first \\(k+1\\) components of \\(\\widehat{\\textbf{b}}\\) are the estimates obtained on sample 1 alone, and the last \\(k+1\\) those obtained on sample 2 alone: for every \\(j\\), the estimators of \\(b_j^{(1)}\\) and \\(b_j^{(2)}\\) in \\((\\star)\\) are \\(\\widehat{b}_j^{(1)}\\) and \\(\\widehat{b}_j^{(2)}\\).</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <p>The hypothesis \\((H_0')\\) imposes \\(k+1\\) linear restrictions (not \\(k\\): the constant is involved) on model \\((\\star)\\), which has \\(2k+2\\) coefficients and \\(n_1+n_2\\) observations and satisfies the Gauss-Markov assumptions with Gaussian disturbances. A Fisher test can therefore be used. Let \\(\\text{RSS}_\\star\\) be the residual sum of squares of the unrestricted model \\((\\star)\\) and \\(\\text{RSS}_C\\) that of the restricted model. Under \\((H_0')\\), writing \\(b_j\\) for the common value of \\(b_j^{(1)}\\) and \\(b_j^{(2)}\\) and using \\(D_i^{(1)}+D_i^{(2)}=1\\), the restricted model reads \\(Y_i=b_0+\\sum_{j=1}^kb_jX_{j,i}+v_i\\): it is the common regression estimated on all individuals. The statistic
+        \\[F:=\\frac{(\\text{RSS}_C-\\text{RSS}_\\star)/(k+1)}{\\text{RSS}_\\star/(n_1+n_2-2(k+1))}\\]
+        then follows, under \\((H_0')\\), a Fisher distribution with \\(k+1\\) and \\(n_1+n_2-2(k+1)\\) degrees of freedom. At level \\(\\alpha\\), we reject \\((H_0')\\), and conclude that there is a structural change, if and only if \\(F\\) exceeds the quantile of order \\(1-\\alpha\\) of this distribution.</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <p>Let \\(\\widehat{\\textbf{u}}_1:=\\textbf{Y}_1-\\textbf{X}_1\\widehat{\\textbf{b}}^{(1)}\\) and \\(\\widehat{\\textbf{u}}_2:=\\textbf{Y}_2-\\textbf{X}_2\\widehat{\\textbf{b}}^{(2)}\\) be the residual vectors of the regressions estimated on each sample. By question 2, the residual vector of \\((\\star)\\) is
+        \\[\\widehat{\\textbf{v}}=\\textbf{Y}-\\textbf{X}\\widehat{\\textbf{b}}=\\begin{pmatrix}\\textbf{Y}_1-\\textbf{X}_1\\widehat{\\textbf{b}}^{(1)}\\\\\\textbf{Y}_2-\\textbf{X}_2\\widehat{\\textbf{b}}^{(2)}\\end{pmatrix}=\\begin{pmatrix}\\widehat{\\textbf{u}}_1\\\\\\widehat{\\textbf{u}}_2\\end{pmatrix},\\qquad\\text{hence}\\qquad\\text{RSS}_\\star=\\widehat{\\textbf{v}}^T\\widehat{\\textbf{v}}=\\widehat{\\textbf{u}}_1^T\\widehat{\\textbf{u}}_1+\\widehat{\\textbf{u}}_2^T\\widehat{\\textbf{u}}_2=\\text{RSS}_1+\\text{RSS}_2\\]
+        Substituting into the statistic of question 3, we obtain the Chow statistic:
+        \\[F=\\frac{\\text{RSS}_C-(\\text{RSS}_1+\\text{RSS}_2)}{\\text{RSS}_1+\\text{RSS}_2}\\times\\frac{n_1+n_2-2(k+1)}{k+1}\\]
+        Its practical advantage is that it only requires three standard regressions, without explicitly estimating model \\((\\star)\\). Since the common model is a special case of model \\((\\star)\\), we always have \\(\\text{RSS}_C\\geq\\text{RSS}_1+\\text{RSS}_2\\), hence \\(F\\geq 0\\).</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <p>The Chow test determines whether the same economic relationship holds for two sub-populations or two periods: a rejection means that the way the explanatory variables affect \\(Y\\) differs, that is, there is a structural change. With cross-sectional data, one can for example compare the wage equations of women and men, to find out whether employers value employee characteristics differently depending on sex. With time series, one can study whether Xi Jinping's rise to power in 2013 changed the way China allocates its development aid, by comparing the same equation estimated before and after that date.</p>
+        <p>The test has several limitations, however. It assumes that the disturbance variance is the same in both samples; if not, its statistic no longer follows a Fisher distribution, and a Wald test based on separately estimated variances should be preferred. It also assumes that the break date or splitting criterion is known <em>a priori</em>: choosing the break date by looking at the data distorts the level of the test, and suitable tests (Quandt-Andrews test) must then be used. Finally, it requires each sample to contain more than \\(k+1\\) observations; otherwise, Chow's predictive test is used.</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <ol>
+        <li><p>The Chow test relies on the assumption of a variance common to both samples: if it fails, the statistic \\(F\\) no longer follows a Fisher distribution and the test no longer has its nominal level. The variances are estimated by \\(\\widehat{\\sigma}_g^2:=\\text{RSS}_g/(n_g-k-1)\\):
+        \\[\\widehat{\\sigma}_1^2=\\frac{${f(Q6.I[0], dS)}}{${Q6.n[0]}-${q}}\\approx ${fS(Q6.v1 / P10[dS], 4, true)}\\qquad\\text{and}\\qquad\\widehat{\\sigma}_2^2=\\frac{${f(Q6.I[1], dS)}}{${Q6.n[1]}-${q}}\\approx ${fS(Q6.v2 / P10[dS], 4, true)}\\]
+        Under equal variances, the ratio \\(\\widehat{\\sigma}_1^2/\\widehat{\\sigma}_2^2\\approx ${fxf(Q6.GQ, 3, true)}\\) follows a Fisher distribution with \\(${Q6.dfGQ[0]}\\) and \\(${Q6.dfGQ[1]}\\) degrees of freedom. For a two-sided test at the 5 % level, it is compared with the 2.5 % and 97.5 % quantiles of this distribution, which are about \\(${fxf(Q6.gq025, 3, true)}\\) and \\(${fxf(Q6.gq975, 3, true)}\\). Since the ratio lies between these two values (two-sided p-value ${this.pde(Q6.pGQ)}), equal variances are not rejected: the Chow test can be carried out.</p></li>
+        <li><p>With \\(k=${k}\\), there are \\(k+1=${q}\\) restrictions and \\(n_1+n_2-2(k+1)=${Q6.N}-${2 * q}=${Q6.df2}\\) degrees of freedom. We compute \\(\\text{RSS}_1+\\text{RSS}_2=${f(Q6.Ssum, dS)}\\) and \\(\\text{RSS}_C-(\\text{RSS}_1+\\text{RSS}_2)=${f(Q6.diff, dS)}\\), hence
+        \\[F=\\frac{${f(Q6.diff, dS)}}{${f(Q6.Ssum, dS)}}\\times\\frac{${Q6.df2}}{${q}}\\approx ${fxf(Q6.F, 3, true)}\\]
+        The 95 % and 99 % quantiles of the Fisher distribution with \\(${q}\\) and \\(${Q6.df2}\\) degrees of freedom are about \\(${fxf(Q6.q95, 3, true)}\\) and \\(${fxf(Q6.q99, 3, true)}\\). ${q6txt}</p></li>
+        <li><p>${interp6}</p></li>
+        </ol>
+      </div></li>
+
+      <li><div class="q-content">
+        <ol>
+        <li><p>With \\(G\\) groups, we introduce the \\(G\\) dummies \\(D_i^{(1)},\\ldots,D_i^{(G)}\\), which sum to 1, and estimate without a constant
+        \\[Y_i=\\sum_{g=1}^{G}b_0^{(g)}D_i^{(g)}+\\sum_{g=1}^{G}\\sum_{j=1}^{k}b_j^{(g)}X_{j,i}D_i^{(g)}+v_i\\]
+        The regressor matrix is block diagonal, with blocks \\(\\textbf{X}_1,\\ldots,\\textbf{X}_G\\); as in question 2, the OLS estimators are those of the regressions estimated separately on each group and, as in question 4, the residual sum of squares of the unrestricted model is \\(\\text{RSS}_1+\\cdots+\\text{RSS}_G\\). The model has \\(G(k+1)\\) coefficients. The hypothesis \\((H_0):b_j^{(1)}=\\cdots=b_j^{(G)}\\) for every \\(j\\in\\{0,\\ldots,k\\}\\) involves \\((G-1)(k+1)\\) restrictions (for each \\(j\\), \\(G-1\\) equalities), and the restricted model is the common regression, with residual sum of squares \\(\\text{RSS}_C\\). The generalised Chow statistic
+        \\[F=\\frac{\\text{RSS}_C-\\sum_{g=1}^{G}\\text{RSS}_g}{\\sum_{g=1}^{G}\\text{RSS}_g}\\times\\frac{N-G(k+1)}{(G-1)(k+1)},\\qquad N:=\\sum_{g=1}^{G}n_g\\]
+        follows, under \\((H_0)\\), a Fisher distribution with \\((G-1)(k+1)\\) and \\(N-G(k+1)\\) degrees of freedom, still assuming the disturbance variance to be common to all groups. For \\(G=2\\), we recover the statistic of question 4. Equivalently, one can estimate a model with a constant, \\(G-1\\) dummies and their interactions with the regressors, the omitted group serving as reference, and test the joint nullity of these \\((G-1)(k+1)\\) coefficients.</p></li>
+        <li><p>Here, \\(G=${D.G}\\), \\(N=${Q7.N}\\), \\((G-1)(k+1)=${Q7.df1}\\) and \\(N-G(k+1)=${Q7.df2}\\). We compute \\(\\sum_g\\text{RSS}_g=${f(Q7.Ssum, Q7.dS)}\\) and \\(\\text{RSS}_C-\\sum_g\\text{RSS}_g=${f(Q7.diff, Q7.dS)}\\), hence
+        \\[F=\\frac{${f(Q7.diff, Q7.dS)}}{${f(Q7.Ssum, Q7.dS)}}\\times\\frac{${Q7.df2}}{${Q7.df1}}\\approx ${fxf(Q7.F, 3, true)}\\]
+        The 95 % quantile of the Fisher distribution with \\(${Q7.df1}\\) and \\(${Q7.df2}\\) degrees of freedom is about \\(${fxf(Q7.q95, 3, true)}\\). ${rej7 ? `Since \\(F>${fxf(Q7.q95, 3, true)}\\) (p-value ${this.pde(Q7.p)}), we reject the equality of the coefficients across the ${D.G} groups at the 5 % level: the relationship is not the same for ${T.many}.` : `Since \\(F<${fxf(Q7.q95, 3, true)}\\) (p-value ${this.pde(Q7.p)}), we cannot reject the equality of the coefficients across the ${D.G} groups at the 5 % level: nothing suggests that the relationship differs across ${T.many}.`}</p></li>
+        <li><p>There are \\(G(G-1)/2=${Q7.m}\\) pairs of groups. For each pair \\((g,h)\\), the two-group Chow test uses the statistic of question 4, computed on groups \\(g\\) and \\(h\\) only, which follows a Fisher distribution with \\(${q}\\) and \\(n_g+n_h-${2 * q}\\) degrees of freedom. Running ${Q7.m} tests at the 5 % level would entail a high risk of falsely rejecting at least one equality. The Bonferroni correction consists in running each test at level \\(5\\,\\%/${Q7.m}\\approx ${fxf(100 * Q7.aB, 3, true)}\\,\\%\\): by Boole's inequality, the probability of falsely rejecting at least one of the ${Q7.m} hypotheses is then below 5 %. We therefore reject equality for pair \\((g,h)\\) if its p-value is below \\(${fS(Q7.aB, 4, true)}\\).</p>
+        ${dtable(this.pairHead, pairRows, '', false)}
+        <p>${pairTxt} The Bonferroni correction is conservative: it guarantees the overall risk, at the cost of a loss of power for each comparison.</p></li>
+        </ol>
+      </div></li>
+
+      </ol></div>
+      <div class="persp-box">
+        <div class="sol-sub">Going further</div>
+        <p><strong>Unequal variances.</strong> When the preliminary test rejects equal variances, the two vectors of estimates are compared directly using the Wald statistic \\[W=(\\widehat{\\textbf{b}}^{(1)}-\\widehat{\\textbf{b}}^{(2)})^T\\big(\\widehat{\\sigma}_1^2(\\textbf{X}_1^T\\textbf{X}_1)^{-1}+\\widehat{\\sigma}_2^2(\\textbf{X}_2^T\\textbf{X}_2)^{-1}\\big)^{-1}(\\widehat{\\textbf{b}}^{(1)}-\\widehat{\\textbf{b}}^{(2)})\\] which asymptotically follows a \\(\\chi^2\\) distribution with \\(k+1\\) degrees of freedom.</p>
+        <p><strong>Unknown break date.</strong> With time series, the Chow statistic is computed for every possible break date (excluding the ends of the sample) and the largest one is retained. This “sup-F” statistic does not follow a Fisher distribution: its critical values, tabulated by Andrews (1993), are markedly higher. In R, the strucchange package provides these tests (functions <code>sctest</code> and <code>Fstats</code>).</p>
+        <p><strong>Chow's predictive test.</strong> If the second sample has too few observations for a separate estimation (\\(n_2\\leq k+1\\)), one compares \\[\\frac{(\\text{RSS}_C-\\text{RSS}_1)/n_2}{\\text{RSS}_1/(n_1-k-1)}\\] with a Fisher distribution with \\(n_2\\) and \\(n_1-k-1\\) degrees of freedom: this tests whether the observations of the second sample are well predicted by the model estimated on the first.</p>
+      </div>`;
+    }
+  }
+};
+
+/* ============================================================
+   GESTION DE LA LANGUE  /  LANGUAGE HANDLING
+   ============================================================ */
+let LANG = 'fr';
+
+function detectLang() {
+    try {
+        const q = new URLSearchParams(window.location.search).get('lang');
+        if (q && I18N[q.toLowerCase()]) return q.toLowerCase();
+    } catch (e) {}
+    const h = (window.location.hash || '').replace('#', '').toLowerCase();
+    if (I18N[h]) return h;
+    return 'fr';
+}
+
+function applyLang() {
+    const D = I18N[LANG];
+    document.documentElement.lang = D.htmlLang;
+    document.title = D.title;
+    document.querySelectorAll('[data-k]').forEach(function (el) {
+        const key = el.getAttribute('data-k');
+        if (D[key] !== undefined) el.innerHTML = D[key];
+    });
+    const si = document.getElementById('seed-input');
+    if (si) si.placeholder = D.phSeed;
+    const ni = document.getElementById('param-n');
+    if (ni) ni.placeholder = D.phN;
+    const tb = document.getElementById('toggle-btn');
+    if (tb) tb.textContent = solVisible ? D.hideSol : D.showSol;
+    document.getElementById('flag-fr').classList.toggle('active', LANG === 'fr');
+    document.getElementById('flag-en').classList.toggle('active', LANG === 'en');
+}
+
+function setLang(lang) {
+    if (!I18N[lang] || lang === LANG) return;
+    LANG = lang;
+    try {
+        const u = new URL(window.location.href);
+        u.searchParams.set('lang', lang);
+        history.replaceState(null, '', u.toString());
+    } catch (e) {}
+    applyLang();
+    if (document.getElementById('ex-area').style.display !== 'none') {
+        const wasVis = solVisible;
+        document.getElementById('seed-input').value = _activeSeed;
+        generateFromControls();
+        if (wasVis) toggleSol();
+    }
+}
+
+// ════════════════════════════════════════
+// GENERATION  /  RENDERING
+// ════════════════════════════════════════
+function regen() {
+  document.getElementById('seed-input').value = '';
+  generateFromControls();
+}
+
+function readN() {
+  const v = parseInt(document.getElementById('param-n').value, 10);
+  if (isNaN(v)) return 0;
+  return Math.min(5, Math.max(3, v));
+}
+
+function generateFromControls() {
+  const seedInp = document.getElementById('seed-input').value;
+  const seed = seedInp ? parseInt(seedInp, 10) : Math.floor(Math.random() * 10000000);
+  const D = computeD(seed, readN());
+  const T = I18N[LANG].ctx[D.id];
+
+  document.getElementById('seed-disp').textContent = _activeSeed;
+  document.getElementById('modal-seed').textContent = _activeSeed;
+  document.getElementById('card-title').textContent = T.title;
+  document.getElementById('card-title2').textContent = T.title;
+  document.getElementById('ex-content').innerHTML = I18N[LANG].ex(D);
+  document.getElementById('sol-content').innerHTML = I18N[LANG].sol(D);
+
+  document.getElementById('welcome').style.display = 'none';
+  document.getElementById('ex-area').style.display = 'block';
+  solVisible = false;
+  const solC = document.getElementById('sol-card'), btn = document.getElementById('toggle-btn');
+  solC.classList.remove('visible'); btn.classList.remove('shown'); btn.textContent = I18N[LANG].showSol;
+
+  if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise();
+}
+
+function toggleSol(){
+  solVisible = !solVisible;
+  const sol = document.getElementById('sol-card'), btn = document.getElementById('toggle-btn');
+  if(solVisible){sol.classList.add('visible'); btn.classList.add('shown'); btn.textContent = I18N[LANG].hideSol;}
+  else{sol.classList.remove('visible'); btn.classList.remove('shown'); btn.textContent = I18N[LANG].showSol;}
+}
+
+/* Initialisation */
+LANG = detectLang();
+applyLang();
+</script>
+
+
+<!-- KIT:JS:START v1 -->
+<div id="pdf-ov" onclick="closePdfModal()"></div>
+<div id="pdf-modal">
+  <div class="mh">
+    <h3 data-kit="modalTitle">Exporter en PDF</h3>
+    <button type="button" class="mclose" onclick="closePdfModal()">&#10005;</button>
+  </div>
+  <div class="mb2">
+    <div class="seed-note"><span data-kit="seedPre">Seed&nbsp;:</span> <strong id="modal-seed">&mdash;</strong> <span data-kit="seedPost">&mdash; notez cette valeur pour reproduire exactement cet exercice.</span></div>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-header" checked>
+      <span class="opt-txt"><span class="opt-lbl" data-kit="optHeader">Inclure l'en-t&ecirc;te de page</span>
+           <span class="opt-desc" data-kit="optHeaderD">Titre, badge de mati&egrave;re et intitul&eacute; de l'exercice</span></span>
+    </label>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-sol">
+      <span class="opt-txt"><span class="opt-lbl" data-kit="optSol">Inclure le corrig&eacute; complet</span>
+           <span class="opt-desc" data-kit="optSolD">L'ensemble des d&eacute;veloppements et commentaires du corrig&eacute;</span></span>
+    </label>
+    <div class="mactions">
+      <button type="button" class="btn-print" onclick="doPrint()"><span data-kit="print">&#128424;&nbsp;Imprimer / Sauvegarder PDF</span></button>
+      <button type="button" class="btn-cancel" onclick="closePdfModal()"><span data-kit="cancel">Annuler</span></button>
+    </div>
+  </div>
+</div>
+
+<script id="kit-docx">
+/* =============================================================================
+   EXPORT WORD NATIF (.docx)
+   Trois briques, sans aucune dépendance externe :
+     1. mml2omml  — MathML -> OMML, le format d'équation natif de Word
+     2. zip       — écriture d'une archive ZIP (entrées « stored » + CRC32)
+     3. html2wml  — HTML de la page -> WordprocessingML
+   ============================================================================= */
+(function (root) {
+'use strict';
+
+/* --------------------------------------------------------------- utilitaires */
+function esc(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                  .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function kids(n) {
+  var out = [], c = n.firstChild;
+  while (c) { if (c.nodeType === 1) out.push(c); c = c.nextSibling; }
+  return out;
+}
+function txt(n) { return (n.textContent || '').replace(/\u200b/g, '').trim(); }
+
+/* ============================================================================
+   1. MathML -> OMML
+   ========================================================================== */
+var OPEN = '([{\u27e8\u2308\u230a|\u2016';
+var CLOSE = ')]}\u27e9\u2309\u230b|\u2016';
+var BIGOPS = '\u2211\u220f\u222b\u222c\u222d\u222e\u22c3\u22c2\u2210';
+var ACCENTS = {
+  '\u005e': '\u0302', '\u02c6': '\u0302', '^': '\u0302',
+  '\u00af': '\u0304', '\u2015': '\u0304', '\u2212': '\u0304', '_': '\u0304',
+  '~': '\u0303', '\u02dc': '\u0303', '\u02d9': '\u0307',
+  '\u2192': '\u20d7', '\u21c0': '\u20d1', '\u02c7': '\u030c', '\u02d8': '\u0306'
+};
+
+function run(text, style) {
+  if (text === '') return '';
+  var rPr = '<w:rPr><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/></w:rPr>';
+  var mPr = style ? '<m:rPr><m:sty m:val="' + style + '"/></m:rPr>' : '';
+  return '<m:r>' + mPr + rPr + '<m:t xml:space="preserve">' + esc(text) + '</m:t></m:r>';
+}
+
+/* Un grand opérateur (somme, intégrale…) absorbe la suite de la ligne comme
+   opérande : sans cela Word affiche un cadre vide à la place de l'argument. */
+function naryHere(n) {
+  if (!n || n.nodeType !== 1) return null;
+  var t = n.nodeName.toLowerCase().replace(/^.*:/, ''), k = kids(n);
+  if (t === 'munderover' || t === 'msubsup') return { base: k[0], sub: k[1], sup: k[2] };
+  if (t === 'munder' || t === 'msub') return { base: k[0], sub: k[1], sup: null };
+  if (t === 'mover' || t === 'msup') return { base: k[0], sub: null, sup: k[1] };
+  if (t === 'mo') return { base: n, sub: null, sup: null };
+  return null;
+}
+function isBigOp(n) {
+  if (!n || n.nodeType !== 1) return false;
+  var c = txt(n);
+  return n.nodeName.toLowerCase().replace(/^.*:/, '') === 'mo' &&
+         c.length === 1 && BIGOPS.indexOf(c) !== -1;
+}
+
+function seq(nodes) {
+  var s = '';
+  for (var i = 0; i < nodes.length; i++) {
+    var info = naryHere(nodes[i]);
+    if (info && isBigOp(info.base) && i + 1 < nodes.length) {
+      s += naryFull(info, nodes.slice(i + 1));
+      return s;
+    }
+    s += mml(nodes[i]);
+  }
+  return s;
+}
+
+function naryFull(info, rest) {
+  return '<m:nary><m:naryPr><m:chr m:val="' + esc(txt(info.base)) + '"/>' +
+         '<m:limLoc m:val="undOvr"/>' +
+         '<m:subHide m:val="' + (info.sub ? '0' : '1') + '"/>' +
+         '<m:supHide m:val="' + (info.sup ? '0' : '1') + '"/><m:ctrlPr/></m:naryPr>' +
+         '<m:sub>' + (info.sub ? mml(info.sub) : '') + '</m:sub>' +
+         '<m:sup>' + (info.sup ? mml(info.sup) : '') + '</m:sup>' +
+         '<m:e>' + seq(rest) + '</m:e></m:nary>';
+}
+
+/* mrow entouré de délimiteurs -> m:d, pour des parenthèses étirables natives */
+function fenced(ks) {
+  if (ks.length < 2) return null;
+  var a = ks[0], b = ks[ks.length - 1];
+  if (a.nodeName.toLowerCase() !== 'mo' || b.nodeName.toLowerCase() !== 'mo') return null;
+  var o = txt(a), c = txt(b);
+  if (o.length !== 1 || c.length !== 1) return null;
+  if (OPEN.indexOf(o) === -1 || CLOSE.indexOf(c) === -1) return null;
+  var inner = ks.slice(1, -1);
+  /* séparateurs de premier niveau -> plusieurs m:e */
+  var parts = [[]];
+  for (var i = 0; i < inner.length; i++) {
+    if (inner[i].nodeName.toLowerCase() === 'mo' && txt(inner[i]) === ',' && parts.length < 8) {
+      parts.push([]);
+    } else { parts[parts.length - 1].push(inner[i]); }
+  }
+  var sep = parts.length > 1 ? ',' : '';
+  var body = '';
+  for (var j = 0; j < parts.length; j++) body += '<m:e>' + seq(parts[j]) + '</m:e>';
+  return '<m:d><m:dPr><m:begChr m:val="' + esc(o) + '"/><m:sepChr m:val="' + esc(sep) +
+         '"/><m:endChr m:val="' + esc(c) + '"/><m:ctrlPr/></m:dPr>' + body + '</m:d>';
+}
+
+function naryOf(base, sub, sup) {
+  var ch = txt(base);
+  if (ch.length !== 1 || BIGOPS.indexOf(ch) === -1) return null;
+  return '<m:nary><m:naryPr><m:chr m:val="' + esc(ch) + '"/><m:limLoc m:val="undOvr"/>' +
+         '<m:subHide m:val="' + (sub ? '0' : '1') + '"/>' +
+         '<m:supHide m:val="' + (sup ? '0' : '1') + '"/><m:ctrlPr/></m:naryPr>' +
+         '<m:sub>' + (sub ? mml(sub) : '') + '</m:sub>' +
+         '<m:sup>' + (sup ? mml(sup) : '') + '</m:sup>' +
+         '<m:e></m:e></m:nary>';
+}
+
+function mml(n) {
+  if (!n) return '';
+  if (n.nodeType === 3) return run(n.nodeValue);
+  if (n.nodeType !== 1) return '';
+  var t = n.nodeName.toLowerCase().replace(/^.*:/, '');
+  var k = kids(n), s;
+
+  switch (t) {
+    case 'math':
+    case 'semantics':
+    case 'mstyle':
+    case 'mpadded':
+    case 'menclose':
+      return seq(k);
+
+    case 'annotation':
+    case 'annotation-xml':
+    case 'mphantom':
+      return '';
+
+    case 'mrow':
+      s = fenced(k);
+      return s !== null ? s : seq(k);
+
+    case 'mi':      return run(txt(n), txt(n).length === 1 ? 'i' : 'p');
+    case 'mn':      return run(txt(n), 'p');
+    case 'mo':      return run(txt(n), 'p');
+    case 'merror':  return run(txt(n), 'p');
+    case 'ms':      return run(txt(n), 'p');
+
+    case 'mtext':
+      var v = n.textContent || '';
+      return v === '' ? '' :
+        '<m:r><m:rPr><m:nor/></m:rPr><w:rPr><w:rFonts w:ascii="Cambria" w:hAnsi="Cambria"/></w:rPr>' +
+        '<m:t xml:space="preserve">' + esc(v) + '</m:t></m:r>';
+
+    case 'mspace':
+      return run(' ', 'p');
+
+    case 'mfrac':
+      return '<m:f><m:fPr><m:type m:val="' +
+             (n.getAttribute('linethickness') === '0' ? 'noBar' : 'bar') +
+             '"/><m:ctrlPr/></m:fPr><m:num>' + mml(k[0]) + '</m:num><m:den>' +
+             mml(k[1]) + '</m:den></m:f>';
+
+    case 'msup':
+      s = naryOf(k[0], null, k[1]); if (s) return s;
+      return '<m:sSup><m:sSupPr><m:ctrlPr/></m:sSupPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sup>' + mml(k[1]) + '</m:sup></m:sSup>';
+
+    case 'msub':
+      s = naryOf(k[0], k[1], null); if (s) return s;
+      return '<m:sSub><m:sSubPr><m:ctrlPr/></m:sSubPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sub>' + mml(k[1]) + '</m:sub></m:sSub>';
+
+    case 'msubsup':
+      s = naryOf(k[0], k[1], k[2]); if (s) return s;
+      return '<m:sSubSup><m:sSubSupPr><m:ctrlPr/></m:sSubSupPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sub>' + mml(k[1]) + '</m:sub><m:sup>' + mml(k[2]) +
+             '</m:sup></m:sSubSup>';
+
+    case 'msqrt':
+      return '<m:rad><m:radPr><m:degHide m:val="1"/><m:ctrlPr/></m:radPr>' +
+             '<m:deg/><m:e>' + seq(k) + '</m:e></m:rad>';
+
+    case 'mroot':
+      return '<m:rad><m:radPr><m:degHide m:val="0"/><m:ctrlPr/></m:radPr><m:deg>' +
+             mml(k[1]) + '</m:deg><m:e>' + mml(k[0]) + '</m:e></m:rad>';
+
+    case 'mover':
+      var ao = txt(k[1]);
+      if (ACCENTS[ao]) {
+        return '<m:acc><m:accPr><m:chr m:val="' + esc(ACCENTS[ao]) +
+               '"/><m:ctrlPr/></m:accPr><m:e>' + mml(k[0]) + '</m:e></m:acc>';
+      }
+      s = naryOf(k[0], null, k[1]); if (s) return s;
+      return '<m:limUpp><m:limUppPr><m:ctrlPr/></m:limUppPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limUpp>';
+
+    case 'munder':
+      s = naryOf(k[0], k[1], null); if (s) return s;
+      return '<m:limLow><m:limLowPr><m:ctrlPr/></m:limLowPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limLow>';
+
+    case 'munderover':
+      s = naryOf(k[0], k[1], k[2]); if (s) return s;
+      return '<m:limUpp><m:limUppPr><m:ctrlPr/></m:limUppPr><m:e>' +
+             '<m:limLow><m:limLowPr><m:ctrlPr/></m:limLowPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limLow></m:e><m:lim>' +
+             mml(k[2]) + '</m:lim></m:limUpp>';
+
+    case 'mtable':
+      var rows = k.filter(function (r) { return /mtr$/.test(r.nodeName.toLowerCase()); });
+      var ncol = 0;
+      rows.forEach(function (r) { ncol = Math.max(ncol, kids(r).length); });
+      var props = '<m:mPr><m:baseJc m:val="center"/><m:plcHide m:val="1"/><m:mcs><m:mc><m:mcPr>' +
+                  '<m:count m:val="' + (ncol || 1) + '"/><m:mcJc m:val="center"/></m:mcPr></m:mc></m:mcs>' +
+                  '<m:ctrlPr/></m:mPr>';
+      var body = '';
+      rows.forEach(function (r) {
+        body += '<m:mr>';
+        var cells = kids(r);
+        for (var i = 0; i < (ncol || 1); i++) body += '<m:e>' + (cells[i] ? seq(kids(cells[i])) : '') + '</m:e>';
+        body += '</m:mr>';
+      });
+      return '<m:m>' + props + body + '</m:m>';
+
+    case 'mtr':
+    case 'mtd':
+      return seq(k);
+
+    default:
+      return k.length ? seq(k) : run(txt(n), 'p');
+  }
+}
+
+function mathmlToOmml(mathEl) { return mml(mathEl); }
+
+/* ============================================================================
+   2. Écriture ZIP (entrées non compressées + CRC32)
+   ========================================================================== */
+var CRCT = (function () {
+  var t = new Int32Array(256);
+  for (var i = 0; i < 256; i++) {
+    var c = i;
+    for (var j = 0; j < 8; j++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[i] = c;
+  }
+  return t;
+})();
+function crc32(buf) {
+  var c = -1;
+  for (var i = 0; i < buf.length; i++) c = CRCT[(c ^ buf[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ -1) >>> 0;
+}
+function utf8(str) {
+  if (typeof TextEncoder !== 'undefined') return new TextEncoder().encode(str);
+  var b = unescape(encodeURIComponent(str)), a = new Uint8Array(b.length);
+  for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i);
+  return a;
+}
+function zip(files) {
+  var parts = [], central = [], offset = 0;
+  function u16(v) { return [v & 0xFF, (v >>> 8) & 0xFF]; }
+  function u32(v) { return [v & 0xFF, (v >>> 8) & 0xFF, (v >>> 16) & 0xFF, (v >>> 24) & 0xFF]; }
+
+  files.forEach(function (f) {
+    var name = utf8(f.name), data = f.bin ? f.bin : utf8(f.data), c = crc32(data);
+    var local = [].concat(u32(0x04034b50), u16(20), u16(0x0800), u16(0), u16(0), u16(0),
+                          u32(c), u32(data.length), u32(data.length),
+                          u16(name.length), u16(0));
+    parts.push(new Uint8Array(local), name, data);
+    central.push({ name: name, crc: c, size: data.length, off: offset });
+    offset += local.length + name.length + data.length;
+  });
+
+  var cd = [];
+  central.forEach(function (e) {
+    cd = cd.concat(u32(0x02014b50), u16(20), u16(20), u16(0x0800), u16(0), u16(0), u16(0),
+                   u32(e.crc), u32(e.size), u32(e.size),
+                   u16(e.name.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(e.off));
+    cd = cd.concat(Array.prototype.slice.call(e.name));
+  });
+  var cdArr = new Uint8Array(cd);
+  var eocd = new Uint8Array([].concat(u32(0x06054b50), u16(0), u16(0),
+                                      u16(files.length), u16(files.length),
+                                      u32(cdArr.length), u32(offset), u16(0)));
+  parts.push(cdArr, eocd);
+
+  var total = parts.reduce(function (n, p) { return n + p.length; }, 0);
+  var out = new Uint8Array(total), pos = 0;
+  parts.forEach(function (p) { out.set(p, pos); pos += p.length; });
+  return out;
+}
+
+/* ============================================================================
+   3. HTML -> WordprocessingML
+   ========================================================================== */
+var SKIP = { script: 1, style: 1, button: 1, input: 1, noscript: 1 };
+var IMAGES = [];           /* { bin, w, h } collectées pendant le parcours */
+var EMU = 9525;            /* EMU par pixel */
+var MAXW = 5760000;        /* largeur utile de la page, en EMU */
+
+function b64bin(b64) {
+  var raw = atob(b64), a = new Uint8Array(raw.length);
+  for (var i = 0; i < raw.length; i++) a[i] = raw.charCodeAt(i);
+  return a;
+}
+
+function imageXml(dataUrl, wpx, hpx) {
+  var m = /^data:image\/png;base64,(.*)$/.exec(dataUrl || '');
+  if (!m) return '';
+  var cx = Math.round(wpx * EMU), cy = Math.round(hpx * EMU);
+  if (cx > MAXW) { cy = Math.round(cy * MAXW / cx); cx = MAXW; }
+  IMAGES.push({ bin: b64bin(m[1]) });
+  var id = IMAGES.length, rid = 'rIdImg' + id;
+  return '<w:p><w:pPr><w:pStyle w:val="Figure"/><w:jc w:val="center"/></w:pPr><w:r><w:drawing>' +
+    '<wp:inline distT="0" distB="0" distL="0" distR="0">' +
+    '<wp:extent cx="' + cx + '" cy="' + cy + '"/>' +
+    '<wp:effectExtent l="0" t="0" r="0" b="0"/>' +
+    '<wp:docPr id="' + id + '" name="Graphique ' + id + '"/>' +
+    '<wp:cNvGraphicFramePr><a:graphicFrameLocks ' +
+      'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/>' +
+    '</wp:cNvGraphicFramePr>' +
+    '<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">' +
+    '<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+    '<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+    '<pic:nvPicPr><pic:cNvPr id="' + id + '" name="Graphique ' + id + '"/><pic:cNvPicPr/></pic:nvPicPr>' +
+    '<pic:blipFill><a:blip r:embed="' + rid + '"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>' +
+    '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' + cx + '" cy="' + cy + '"/></a:xfrm>' +
+    '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>' +
+    '</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>';
+}
+var BLOCK = { p: 1, div: 1, h1: 1, h2: 1, h3: 1, h4: 1, li: 1, tr: 1, td: 1, th: 1,
+              table: 1, ul: 1, ol: 1, section: 1, article: 1, header: 1, blockquote: 1 };
+
+function W() {
+  this.body = '';
+  this.para = null;      /* { style, runs, numId, ilvl } */
+}
+W.prototype.open = function (style, numId, ilvl) {
+  this.close();
+  this.para = { style: style || 'Corps', runs: '', numId: numId || 0, ilvl: ilvl || 0 };
+};
+W.prototype.close = function () {
+  var p = this.para;
+  this.para = null;
+  if (!p || (p.runs === '' && !p.numId)) return;
+  if (p.runs === '') return;
+  var pPr = '<w:pPr><w:pStyle w:val="' + p.style + '"/>';
+  if (p.numId) pPr += '<w:numPr><w:ilvl w:val="' + p.ilvl + '"/><w:numId w:val="' + p.numId + '"/></w:numPr>';
+  pPr += '</w:pPr>';
+  this.body += '<w:p>' + pPr + p.runs + '</w:p>';
+};
+W.prototype.add = function (xml) {
+  if (!this.para) this.open('Corps');
+  this.para.runs += xml;
+};
+W.prototype.raw = function (xml) { this.close(); this.body += xml; };
+
+function textRun(s, fmt) {
+  if (!s) return '';
+  var rPr = '';
+  if (fmt.b) rPr += '<w:b/>';
+  if (fmt.i) rPr += '<w:i/>';
+  if (fmt.sup) rPr += '<w:vertAlign w:val="superscript"/>';
+  if (fmt.sub) rPr += '<w:vertAlign w:val="subscript"/>';
+  if (fmt.mono) rPr += '<w:rFonts w:ascii="Consolas" w:hAnsi="Consolas"/>';
+  return '<w:r>' + (rPr ? '<w:rPr>' + rPr + '</w:rPr>' : '') +
+         '<w:t xml:space="preserve">' + esc(s) + '</w:t></w:r>';
+}
+
+function walk(node, w, fmt, list) {
+  var i, cs = node.childNodes;
+  for (i = 0; i < cs.length; i++) {
+    var n = cs[i];
+
+    if (n.nodeType === 3) {
+      var s = n.nodeValue.replace(/\s+/g, ' ');
+      if (s.trim() === '' && !/\S/.test(s)) { if (w.para && w.para.runs) w.add(textRun(' ', fmt)); continue; }
+      w.add(textRun(s, fmt));
+      continue;
+    }
+    if (n.nodeType !== 1) continue;
+
+    var tag = n.nodeName.toLowerCase();
+    if (SKIP[tag]) continue;
+    if (n.classList && (n.classList.contains('top-bar') || n.classList.contains('top-actions') ||
+                        n.classList.contains('sol-toggle-wrap'))) continue;
+
+    /* --- équations --- */
+    if (tag === 'mjx-container') {
+      var math = n.querySelector('mjx-assistive-mml math, math');
+      var display = n.getAttribute('display') === 'true';
+      if (math) {
+        var omml = mathmlToOmml(math);
+        if (display) {
+          w.close();
+          w.body += '<w:p><w:pPr><w:pStyle w:val="Formule"/>' +
+                    '<w:jc w:val="center"/></w:pPr>' +
+                    '<m:oMath>' + omml + '</m:oMath></w:p>';
+        } else {
+          w.add('<m:oMath>' + omml + '</m:oMath>');
+        }
+      } else {
+        w.add(textRun(txt(n), fmt));
+      }
+      continue;
+    }
+    if (tag === 'mjx-assistive-mml' || tag === 'math') continue;
+
+    /* --- graphiques --- */
+    if (tag === 'svg' || tag === 'img') {
+      var png = n.getAttribute('data-kit-png');
+      if (png) {
+        w.close();
+        w.body += imageXml(png, +n.getAttribute('data-kit-w') || 600,
+                                +n.getAttribute('data-kit-h') || 380);
+      }
+      continue;
+    }
+
+    /* --- tableaux --- */
+    if (tag === 'table') { w.close(); w.body += table(n); continue; }
+
+    /* --- listes --- */
+    if (tag === 'ul' || tag === 'ol') {
+      w.close();
+      var nid = tag === 'ol' ? 2 : 1;
+      var lvl = list ? Math.min(list.ilvl + 1, 2) : 0;
+      var items = kids(n).filter(function (x) { return x.nodeName.toLowerCase() === 'li'; });
+      items.forEach(function (li) {
+        /* L'item est composé à part : son numéro doit se poser sur le premier
+           paragraphe produit, même si le <li> enveloppe son texte dans un <div>. */
+        var wb = new W();
+        walk(li, wb, fmt, { ilvl: lvl });
+        wb.close();
+        var xml = wb.body;
+        if (!xml) return;
+        var numPr = '<w:pStyle w:val="Liste"/><w:numPr><w:ilvl w:val="' + lvl +
+                    '"/><w:numId w:val="' + nid + '"/></w:numPr>';
+        if (xml.indexOf('<w:pStyle w:val="Corps"/>') !== -1) {
+          xml = xml.replace('<w:pStyle w:val="Corps"/>', numPr);
+        } else {
+          xml = '<w:p><w:pPr>' + numPr + '</w:pPr></w:p>' + xml;
+        }
+        w.body += xml;
+      });
+      continue;
+    }
+
+    /* --- titres --- */
+    if (tag === 'h1' || tag === 'h2') { w.close(); w.open('Titre1'); walk(n, w, fmt, list); w.close(); continue; }
+    if (tag === 'h3' || tag === 'h4') { w.close(); w.open('Titre2'); walk(n, w, fmt, list); w.close(); continue; }
+
+    /* --- titres internes du corrigé --- */
+    if (n.classList && (n.classList.contains('sol-sub') || n.classList.contains('sol-q') ||
+                        n.classList.contains('dossier-title'))) {
+      w.close(); w.open('Titre2'); walk(n, w, { b: true }, list); w.close(); continue;
+    }
+    if (n.classList && n.classList.contains('persp-box')) {
+      w.close();
+      var wb = new W();
+      walk(n, wb, fmt, list);
+      wb.close();
+      w.body += wb.body.replace(/w:val="Corps"/g, 'w:val="Encadre"')
+                       .replace(/w:val="Titre2"/g, 'w:val="EncadreTitre"');
+      continue;
+    }
+
+    /* --- mise en forme inline --- */
+    var f2 = { b: fmt.b, i: fmt.i, sup: fmt.sup, sub: fmt.sub, mono: fmt.mono };
+    if (tag === 'strong' || tag === 'b') f2.b = true;
+    if (tag === 'em' || tag === 'i') f2.i = true;
+    if (tag === 'sup') f2.sup = true;
+    if (tag === 'sub') f2.sub = true;
+    if (tag === 'code' || tag === 'kbd') f2.mono = true;
+
+    /* intertitre écrit en style en ligne (span display:block + gras) */
+    var st = n.getAttribute && n.getAttribute('style');
+    if (st && /display\s*:\s*block/.test(st) && /font-weight\s*:\s*(6|7|8|9|bold)/.test(st)) {
+      w.close(); w.open('Titre3');
+      walk(n, w, { b: true }, list);
+      w.close();
+      continue;
+    }
+
+    if ((tag === 'strong' || tag === 'b') &&
+        (!w.para || w.para.runs === '') &&
+        n.nextElementSibling && n.nextElementSibling.nodeName.toLowerCase() === 'br') {
+      w.close(); w.open('Titre3');
+      walk(n, w, { b: true }, list);
+      w.close();
+      i++;                       /* le <br> qui suit devient inutile */
+      continue;
+    }
+
+    if (tag === 'br') { w.add('<w:r><w:br/></w:r>'); continue; }
+    if (tag === 'hr') { w.close(); continue; }
+
+    if (BLOCK[tag]) { w.close(); w.open('Corps'); walk(n, w, f2, list); w.close(); }
+    else { walk(n, w, f2, list); }
+  }
+}
+
+function cellXml(td, isHead) {
+  var w2 = new W();
+  walk(td, w2, { b: !!isHead }, null);
+  w2.close();
+  var content = w2.body || '<w:p><w:pPr><w:pStyle w:val="Cellule"/></w:pPr></w:p>';
+  content = content.replace(/w:val="Corps"/g, 'w:val="Cellule"');
+  var span = parseInt(td.getAttribute('colspan') || '1', 10);
+  var shd = isHead ? '<w:shd w:val="clear" w:fill="EDE9DF"/>' : '';
+  return '<w:tc><w:tcPr>' + (span > 1 ? '<w:gridSpan w:val="' + span + '"/>' : '') +
+         shd + '<w:vAlign w:val="center"/></w:tcPr>' + content + '</w:tc>';
+}
+
+function table(tbl) {
+  var rows = tbl.querySelectorAll('tr'), out = '', ncol = 0, i, j;
+  for (i = 0; i < rows.length; i++) {
+    var c = rows[i].children, n = 0;
+    for (j = 0; j < c.length; j++) n += parseInt(c[j].getAttribute('colspan') || '1', 10);
+    ncol = Math.max(ncol, n);
+  }
+  if (!ncol) return '';
+  var grid = '<w:tblGrid>';
+  for (i = 0; i < ncol; i++) grid += '<w:gridCol w:w="' + Math.floor(9360 / ncol) + '"/>';
+  grid += '</w:tblGrid>';
+
+  for (i = 0; i < rows.length; i++) {
+    var cells = rows[i].children, xml = '';
+    var head = rows[i].parentNode.nodeName.toLowerCase() === 'thead' ||
+               (cells.length && cells[0].nodeName.toLowerCase() === 'th');
+    for (j = 0; j < cells.length; j++) xml += cellXml(cells[j], head);
+    out += '<w:tr>' + (head ? '<w:trPr><w:tblHeader/></w:trPr>' : '') + xml + '</w:tr>';
+  }
+  return '<w:tbl><w:tblPr><w:tblStyle w:val="Grille"/>' +
+         '<w:tblW w:w="5000" w:type="pct"/><w:tblLayout w:type="fixed"/></w:tblPr>' +
+         grid + out + '</w:tbl><w:p><w:pPr><w:pStyle w:val="Apres"/></w:pPr></w:p>';
+}
+
+/* ============================================================================
+   Assemblage du fichier
+   ========================================================================== */
+var NS =
+  'xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" ' +
+  'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
+  'xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" ' +
+  'xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" ' +
+  'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+  'xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture" ' +
+  'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+  'xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" ' +
+  'mc:Ignorable="w14"';
+
+function style(id, name, opts) {
+  var o = opts || {};
+  return '<w:style w:type="paragraph" w:styleId="' + id + '"><w:name w:val="' + name + '"/>' +
+         '<w:basedOn w:val="Corps"/><w:pPr>' +
+         (o.keep ? '<w:keepNext/>' : '') +
+         '<w:spacing w:before="' + (o.before || 0) + '" w:after="' + (o.after || 120) +
+         '" w:line="' + (o.line || 276) + '" w:lineRule="auto"/>' +
+         (o.jc ? '<w:jc w:val="' + o.jc + '"/>' : '') +
+         (o.ind ? '<w:ind w:left="' + o.ind + '"/>' : '') +
+         (o.border ? '<w:pBdr><w:left w:val="single" w:sz="18" w:space="8" w:color="1A2E42"/></w:pBdr>' : '') +
+         '</w:pPr><w:rPr>' +
+         (o.font ? '<w:rFonts w:ascii="' + o.font + '" w:hAnsi="' + o.font + '"/>' : '') +
+         (o.b ? '<w:b/>' : '') + (o.i ? '<w:i/>' : '') +
+         (o.sz ? '<w:sz w:val="' + o.sz + '"/>' : '') +
+         (o.color ? '<w:color w:val="' + o.color + '"/>' : '') +
+         '</w:rPr></w:style>';
+}
+
+function stylesXml() {
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles ' + NS + '>' +
+    '<w:docDefaults><w:rPrDefault><w:rPr>' +
+      '<w:rFonts w:ascii="Cambria" w:hAnsi="Cambria" w:cs="Cambria"/>' +
+      '<w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="fr-FR"/>' +
+    '</w:rPr></w:rPrDefault><w:pPrDefault><w:pPr>' +
+      '<w:spacing w:after="120" w:line="276" w:lineRule="auto"/><w:jc w:val="both"/>' +
+    '</w:pPr></w:pPrDefault></w:docDefaults>' +
+    '<w:style w:type="paragraph" w:default="1" w:styleId="Corps"><w:name w:val="Normal"/>' +
+      '<w:pPr><w:spacing w:after="120" w:line="276" w:lineRule="auto"/><w:jc w:val="both"/></w:pPr>' +
+      '<w:rPr><w:rFonts w:ascii="Cambria" w:hAnsi="Cambria"/><w:sz w:val="22"/></w:rPr></w:style>' +
+    style('TitreDoc', 'Title', { font: 'Cambria', b: true, sz: 40, color: '0D1B2A', jc: 'left', after: 60, line: 240 }) +
+    style('SousTitre', 'Subtitle', { i: true, sz: 20, color: '5A5A5A', jc: 'left', after: 280, line: 240 }) +
+    style('Titre1', 'heading 1', { b: true, sz: 28, color: '0D1B2A', before: 320, after: 140, jc: 'left', keep: true, line: 240 }) +
+    style('Titre2', 'heading 2', { b: true, sz: 23, color: '1A2E42', before: 240, after: 100, jc: 'left', keep: true, line: 240 }) +
+    style('Formule', 'Formula', { jc: 'center', before: 120, after: 120, line: 240 }) +
+    style('Liste', 'List Paragraph', { after: 100, ind: 360 }) +
+    style('Cellule', 'Table Text', { sz: 20, after: 40, jc: 'left', line: 240 }) +
+    style('Encadre', 'Aside', { ind: 240, border: true, sz: 21, before: 200, after: 200 }) +
+    style('Apres', 'After Table', { after: 200, sz: 12 }) +
+    style('Figure', 'Figure', { jc: 'center', before: 160, after: 200, line: 240 }) +
+    style('Titre3', 'heading 3', { b: true, sz: 22, color: '1A2E42', before: 200,
+                                   after: 60, jc: 'left', keep: true, line: 240 }) +
+    style('EncadreTitre', 'Aside Heading', { ind: 240, border: true, b: true, sz: 22,
+                                             color: '1A2E42', before: 200, after: 60, jc: 'left' }) +
+    '<w:style w:type="table" w:styleId="Grille"><w:name w:val="Table Grid"/><w:tblPr>' +
+      '<w:tblBorders>' +
+      ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(function (b) {
+        return '<w:' + b + ' w:val="single" w:sz="4" w:space="0" w:color="9A9A9A"/>';
+      }).join('') +
+      '</w:tblBorders><w:tblCellMar>' +
+      '<w:top w:w="60" w:type="dxa"/><w:left w:w="90" w:type="dxa"/>' +
+      '<w:bottom w:w="60" w:type="dxa"/><w:right w:w="90" w:type="dxa"/>' +
+      '</w:tblCellMar></w:tblPr></w:style>' +
+    '</w:styles>';
+}
+
+function numberingXml() {
+  function lvl(i, fmt, txtv, ind) {
+    return '<w:lvl w:ilvl="' + i + '"><w:start w:val="1"/><w:numFmt w:val="' + fmt + '"/>' +
+           '<w:lvlText w:val="' + txtv + '"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="' +
+           ind + '" w:hanging="360"/></w:pPr>' +
+           (fmt === 'bullet' ? '<w:rPr><w:rFonts w:ascii="Symbol" w:hAnsi="Symbol"/></w:rPr>' : '') +
+           '</w:lvl>';
+  }
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:numbering ' + NS + '>' +
+    '<w:abstractNum w:abstractNumId="1"><w:multiLevelType w:val="hybridMultilevel"/>' +
+      lvl(0, 'bullet', '\uF0B7', 360) + lvl(1, 'bullet', 'o', 720) + lvl(2, 'bullet', '\uF0A7', 1080) +
+    '</w:abstractNum>' +
+    '<w:abstractNum w:abstractNumId="2"><w:multiLevelType w:val="hybridMultilevel"/>' +
+      lvl(0, 'decimal', '%1.', 360) + lvl(1, 'lowerLetter', '%2.', 720) + lvl(2, 'lowerRoman', '%3.', 1080) +
+    '</w:abstractNum>' +
+    '<w:num w:numId="1"><w:abstractNumId w:val="1"/></w:num>' +
+    '<w:num w:numId="2"><w:abstractNumId w:val="2"/></w:num>' +
+    '</w:numbering>';
+}
+
+function buildDocx(opts) {
+  IMAGES = [];
+  var w = new W();
+
+  if (opts.title) {
+    w.body += '<w:p><w:pPr><w:pStyle w:val="TitreDoc"/></w:pPr>' +
+              textRun(opts.title, {}) + '</w:p>';
+  }
+  if (opts.subtitle) {
+    w.body += '<w:p><w:pPr><w:pStyle w:val="SousTitre"/></w:pPr>' +
+              textRun(opts.subtitle, {}) + '</w:p>';
+  }
+  opts.sections.forEach(function (sec) {
+    if (sec.heading) {
+      w.body += '<w:p><w:pPr><w:pStyle w:val="Titre1"/></w:pPr>' + textRun(sec.heading, {}) + '</w:p>';
+    }
+    walk(sec.node, w, {}, null);
+    w.close();
+  });
+  w.close();
+
+  var doc = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ' + NS + '><w:body>' +
+    w.body +
+    '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/>' +
+    '<w:pgMar w:top="1247" w:right="1247" w:bottom="1247" w:left="1247" ' +
+    'w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>';
+
+  var media = [], rels = '', ctypes = '';
+  IMAGES.forEach(function (im, i) {
+    media.push({ name: 'word/media/image' + (i + 1) + '.png', bin: im.bin });
+    rels += '<Relationship Id="rIdImg' + (i + 1) + '" Type="http://schemas.openxmlformats.org/' +
+            'officeDocument/2006/relationships/image" Target="media/image' + (i + 1) + '.png"/>';
+  });
+  if (IMAGES.length) ctypes = '<Default Extension="png" ContentType="image/png"/>';
+
+  return zip([
+    { name: '[Content_Types].xml',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+        '<Default Extension="xml" ContentType="application/xml"/>' + ctypes +
+        '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+        '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>' +
+        '<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>' +
+        '</Types>' },
+    { name: '_rels/.rels',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+        '</Relationships>' },
+    { name: 'word/_rels/document.xml.rels',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' +
+        '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>' +
+        rels + '</Relationships>' },
+    { name: 'word/document.xml', data: doc },
+    { name: 'word/styles.xml', data: stylesXml() },
+    { name: 'word/numbering.xml', data: numberingXml() }
+  ].concat(media));
+}
+
+root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: W, _walk: walk };
+
+})(window);
+
+</script>
+<script id="kit-js">
+/* ============================================================
+   KIT D'UNIFORMISATION — logique partagée (modale PDF, export Word,
+   libellés de la barre d'actions). Autonome : ne dépend d'aucun
+   dictionnaire I18N propre à la page.
+   ============================================================ */
+(function(){
+  var T = {
+    fr:{ modalTitle:"Exporter en PDF", seedPre:"Seed\u00a0:",
+         seedPost:"\u2014 notez cette valeur pour reproduire exactement cet exercice.",
+         optHeader:"Inclure l'en-t\u00eate de page",
+         optHeaderD:"Titre, badge de mati\u00e8re et intitul\u00e9 de l'exercice",
+         optSol:"Inclure le corrig\u00e9 complet",
+         optSolD:"L'ensemble des d\u00e9veloppements et commentaires du corrig\u00e9",
+         print:"\uD83D\uDDA8\u00a0Imprimer / Sauvegarder PDF", cancel:"Annuler",
+         btnNew:"\u21ba Nouvel \u00e9nonc\u00e9", btnPdf:"\u2b07 Exporter PDF", btnDoc:"\u2b07 Exporter Word",
+         btnCopy:"\u29c9 Copier", copied:"\u2713 Copi\u00e9e", seedLabel:"Seed de reproductibilit\u00e9",
+         docFile:"exercice.doc" },
+    en:{ modalTitle:"Export to PDF", seedPre:"Seed:",
+         seedPost:"\u2014 note this value to reproduce this exact exercise.",
+         optHeader:"Include the page header",
+         optHeaderD:"Title, subject badge and exercise heading",
+         optSol:"Include the full solution",
+         optSolD:"All the workings and comments of the solution",
+         print:"\uD83D\uDDA8\u00a0Print / Save as PDF", cancel:"Cancel",
+         btnNew:"\u21ba New exercise", btnPdf:"\u2b07 Export PDF", btnDoc:"\u2b07 Export Word",
+         btnCopy:"\u29c9 Copy", copied:"\u2713 Copied", seedLabel:"Reproducibility seed",
+         docFile:"exercise.doc" }
+  };
+
+  function lang(){
+    var l = (window.LANG || document.documentElement.lang || 'fr').toLowerCase();
+    return (l.indexOf('en') === 0) ? 'en' : 'fr';
+  }
+  function t(k){ return T[lang()][k]; }
+
+  window.KIT = { T:T, lang:lang, t:t };
+
+  /* --- libellés du kit (modale + barre d'actions) --- */
+  function paint(){
+    var d = T[lang()];
+    document.querySelectorAll('[data-kit]').forEach(function(el){
+      var k = el.getAttribute('data-kit');
+      if (d[k] !== undefined) el.innerHTML = d[k];
+    });
+  }
+  window.KIT.paint = paint;
+
+  /* Se raccroche au changement de langue de la page sans la modifier. */
+  function hookLang(){
+    if (typeof window.setLang === 'function' && !window.setLang.__kit){
+      var orig = window.setLang;
+      var wrapped = function(){ var r = orig.apply(this, arguments); paint(); return r; };
+      wrapped.__kit = true;
+      window.setLang = wrapped;
+    }
+  }
+
+  /* --- Copie de la seed active --- */
+  window.copySeed = function(btn){
+    var el = document.getElementById('seed-disp');
+    if (!el) return;
+    var v = (el.textContent || '').trim();
+    if (!v || v === '\u2014') return;
+    var done = function(){
+      var b = btn || document.getElementById('btn-copy-seed');
+      if (!b) return;
+      var old = b.innerHTML;
+      b.innerHTML = t('copied');
+      setTimeout(function(){ b.innerHTML = old; paint(); }, 1400);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(v).then(done, done);
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = v; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch(e){}
+      document.body.removeChild(ta); done();
+    }
+  };
+
+  /* --- Modale PDF --- */
+  window.openPdfModal = function(){
+    var s = document.getElementById('modal-seed');
+    var src = document.getElementById('seed-disp');
+    if (s && src) s.textContent = (src.textContent || '\u2014').trim();
+    /* la case « corrigé » reflète l'état d'affichage courant */
+    var sol = document.getElementById('sol-card');
+    var box = document.getElementById('opt-sol');
+    if (box) box.checked = !!(window.solVisible ||
+        (sol && (sol.classList.contains('visible') || sol.style.display === 'block')));
+    paint();
+    document.getElementById('pdf-ov').classList.add('open');
+    document.getElementById('pdf-modal').classList.add('open');
+  };
+  window.closePdfModal = function(){
+    document.getElementById('pdf-ov').classList.remove('open');
+    document.getElementById('pdf-modal').classList.remove('open');
+  };
+  var PRINTCLS = ['print-no-header', 'print-force-solution', 'print-no-solution'];
+
+  function clearPrintClasses() {
+    var b = document.body;
+    for (var i = 0; i < PRINTCLS.length; i++) b.classList.remove(PRINTCLS[i]);
+  }
+
+  window.doPrint = function () {
+    var noHdr   = !document.getElementById('opt-header').checked;
+    var inclSol =  document.getElementById('opt-sol').checked;
+    var b = document.body;
+
+    clearPrintClasses();
+    if (noHdr) b.classList.add('print-no-header');
+    b.classList.add(inclSol ? 'print-force-solution' : 'print-no-solution');
+    closePdfModal();
+
+    /* Le nettoyage doit attendre la fin réelle de l'impression. Un simple
+       minuteur ne convient pas : selon le navigateur, window.print() rend la
+       main avant que l'aperçu ne soit composé, et les options seraient alors
+       déjà effacées au moment où le PDF est produit. */
+    var done = false;
+    function finish() {
+      if (done) return;
+      done = true;
+      clearPrintClasses();
+      window.removeEventListener('afterprint', finish);
+      if (mq && mq.removeListener) mq.removeListener(onMq);
+      if (mq && mq.removeEventListener) mq.removeEventListener('change', onMq);
+    }
+    function onMq(e) { if (!e.matches) finish(); }
+
+    var mq = window.matchMedia ? window.matchMedia('print') : null;
+    window.addEventListener('afterprint', finish);
+    if (mq && mq.addEventListener) mq.addEventListener('change', onMq);
+    else if (mq && mq.addListener) mq.addListener(onMq);
+    /* filet de sécurité si le navigateur n'émet aucun de ces signaux */
+    setTimeout(finish, 120000);
+
+    setTimeout(function () { window.print(); }, 120);
+  };
+
+  /* --- Rasterisation des graphiques SVG ---
+     Word ne sait pas lire le SVG. On le convertit en PNG en recopiant d'abord
+     les styles calculés, sinon les couleurs héritées de la feuille disparaissent. */
+  var SVGPROPS = ['fill', 'stroke', 'stroke-width', 'stroke-dasharray', 'stroke-linecap',
+                  'stroke-linejoin', 'opacity', 'fill-opacity', 'stroke-opacity',
+                  'font-family', 'font-size', 'font-weight', 'font-style',
+                  'text-anchor', 'dominant-baseline'];
+
+  function inlineStyles(src, dst) {
+    var a = src.querySelectorAll('*'), b = dst.querySelectorAll('*'), i, j;
+    for (i = 0; i < a.length && i < b.length; i++) {
+      var cs = window.getComputedStyle(a[i]);
+      for (j = 0; j < SVGPROPS.length; j++) {
+        var v = cs.getPropertyValue(SVGPROPS[j]);
+        if (v) b[i].setAttribute(SVGPROPS[j], v);
+      }
+    }
+  }
+
+  function svgSize(svg) {
+    var vb = svg.viewBox && svg.viewBox.baseVal;
+    if (vb && vb.width) return { w: vb.width, h: vb.height };
+    var r = svg.getBoundingClientRect();
+    if (r.width) return { w: r.width, h: r.height };
+    return { w: 600, h: 380 };
+  }
+
+  function svgToPng(svg) {
+    return new Promise(function (resolve) {
+      var done = false;
+      var res = function (v) { if (!done) { done = true; resolve(v); } };
+      /* garde-fou : un graphique qui ne se charge pas ne doit jamais
+         bloquer l'export, on l'omet et le reste du document part quand même */
+      setTimeout(function () { res(null); }, 5000);
+      try {
+        var d = svgSize(svg), SC = 2;
+        var c = svg.cloneNode(true);
+        c.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        c.setAttribute('width', d.w);
+        c.setAttribute('height', d.h);
+        inlineStyles(svg, c);
+        var bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        bg.setAttribute('x', 0); bg.setAttribute('y', 0);
+        bg.setAttribute('width', '100%'); bg.setAttribute('height', '100%');
+        bg.setAttribute('fill', '#ffffff');
+        c.insertBefore(bg, c.firstChild);
+        var xml = new XMLSerializer().serializeToString(c);
+        var img = new Image();
+        img.onload = function () {
+          try {
+            var cv = document.createElement('canvas');
+            cv.width = Math.round(d.w * SC); cv.height = Math.round(d.h * SC);
+            var ctx = cv.getContext('2d');
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, cv.width, cv.height);
+            ctx.drawImage(img, 0, 0, cv.width, cv.height);
+            res({ png: cv.toDataURL('image/png'), w: d.w, h: d.h });
+          } catch (e) { res(null); }
+        };
+        img.onerror = function () { res(null); };
+        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml);
+      } catch (e) { res(null); }
+    });
+  }
+
+  /* --- Export Word natif (.docx) ---
+     Les formules sont converties en OMML, le format d'équation natif de Word :
+     elles restent éditables et se composent avec Cambria Math. */
+  window.exportWord = function () {
+    var area = document.getElementById('ex-area');
+    if (!area || !window.DocxExport) { return; }
+
+    var btn = document.querySelector('.btn-sm.doc');
+    if (btn) { btn.disabled = true; btn.style.opacity = '.5'; }
+
+    var svgs = Array.prototype.slice.call(area.querySelectorAll('svg'));
+    Promise.all(svgs.map(svgToPng)).then(function (pngs) {
+      svgs.forEach(function (sv, i) {
+        if (!pngs[i]) return;
+        sv.setAttribute('data-kit-png', pngs[i].png);
+        sv.setAttribute('data-kit-w', pngs[i].w);
+        sv.setAttribute('data-kit-h', pngs[i].h);
+      });
+      try { writeDocx(area); } finally {
+        svgs.forEach(function (sv) {
+          sv.removeAttribute('data-kit-png');
+          sv.removeAttribute('data-kit-w');
+          sv.removeAttribute('data-kit-h');
+        });
+        if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+      }
+    });
+  };
+
+  function writeDocx(area) {
+
+    var h1 = document.querySelector('header h1');
+    var badge = document.querySelector('.header-badge, #lbl-badge');
+    var seed = document.getElementById('seed-disp');
+    var bits = [];
+    if (badge && badge.textContent.trim()) bits.push(badge.textContent.trim());
+    if (seed && seed.textContent.trim() && seed.textContent.trim() !== '\u2014') {
+      bits.push('seed ' + seed.textContent.trim());
+    }
+    bits.push('Thomas Hossen');
+
+    var sections = [];
+    var cards = area.querySelectorAll('.card');
+    for (var i = 0; i < cards.length; i++) {
+      var body = cards[i].querySelector('.card-body');
+      if (!body) continue;
+      var tag = cards[i].querySelector('.card-header .tag');
+      var h2 = cards[i].querySelector('.card-header h2');
+      var head = [tag ? tag.textContent.trim() : '', h2 ? h2.textContent.trim() : '']
+                   .filter(Boolean).join(' \u2014 ');
+      sections.push({ heading: head, node: body });
+    }
+    if (!sections.length) sections = [{ heading: '', node: area }];
+
+    var bytes = window.DocxExport.build({
+      title: h1 ? h1.textContent.trim() : document.title,
+      subtitle: bits.join(' \u00b7 '),
+      sections: sections
+    });
+
+    var name = (h1 ? h1.textContent : 'exercice').normalize('NFD')
+                 .replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9]+/g, '_')
+                 .replace(/^_|_$/g, '').slice(0, 60) || 'exercice';
+    var blob = new Blob([bytes], {
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = name + '.docx';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){ hookLang(); paint(); });
+  if (document.readyState !== 'loading'){ hookLang(); paint(); }
+})();
+</script>
+<!-- KIT:JS:END -->
+</body>
+</html>
