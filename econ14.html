@@ -1,0 +1,2151 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Générateur d'exercices - Modèle SUR</title>
+<script>
+window.MathJax = {
+  tex: { 
+    inlineMath: [['\\(','\\)']], 
+    displayMath: [['\\[','\\]']], 
+    packages: {'[+]': ['ams']},
+    macros: {
+      Var: ['\\textbf{Var}\\left(#1\\right)', 1],
+      Cov: ['\\textbf{Cov}\\left(#1\\right)', 1],
+      dsum: ['\\sum_{#1}^{#2}', 2]
+    }
+  },
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] }
+};
+</script>
+<script>window.MathJax=window.MathJax||{};window.MathJax.options=window.MathJax.options||{};window.MathJax.options.enableAssistiveMml=true;</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 0;border-bottom:3px solid var(--gold)}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+#controls-bar{border-top:1px solid rgba(255,255,255,.08);padding:1.1rem 0 1.3rem}
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.5)}
+.ctrl-inp{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.38rem .65rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.82rem;width:88px;outline:none;transition:border-color .2s}
+.ctrl-inp:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.ctrl-tip{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:rgba(250,247,240,.33);margin-top:2px}
+.seed-row{display:flex;align-items:flex-end;gap:.45rem}
+.btn-copy-seed{background:transparent;border:1px solid rgba(201,149,42,.4);color:rgba(250,247,240,.55);padding:.38rem .55rem;border-radius:3px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:.65rem;transition:all .18s;white-space:nowrap}
+.btn-copy-seed:hover{border-color:var(--gold-light);color:var(--gold-light)}
+.ctrl-vsep{width:1px;background:rgba(255,255,255,.1);align-self:stretch;margin:0 .2rem}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.3rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.9rem;font-weight:600;transition:background .18s;white-space:nowrap;align-self:flex-end}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.welcome-msg{text-align:center;padding:5rem 2rem;color:var(--text-muted);font-style:italic;font-size:1.05rem}
+.welcome-msg .arrow{font-size:2rem;display:block;margin-bottom:1rem;opacity:.4}
+
+/* TOP BAR */
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.top-bar-left{display:flex;gap:.6rem;align-items:center}
+.btn-sm{background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:'JetBrains Mono',monospace;font-size:.67rem;letter-spacing:.08em;text-transform:uppercase;padding:.4rem 1rem;border-radius:3px;cursor:pointer;transition:all .18s;white-space:nowrap}
+.btn-sm:hover{background:var(--gold);color:var(--navy)}
+.btn-sm.pdf{border-color:#7bafd4;color:#7bafd4}
+.btn-sm.pdf:hover{background:#7bafd4;color:var(--navy)}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.67rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:500}
+
+/* CARDS */
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);margin-bottom:1.5rem;border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+
+/* QUESTIONS */
+.questions ol{counter-reset:q;list-style:none}
+.questions ol>li{counter-increment:q;margin-bottom:1.4rem;display:flex;gap:1rem;align-items:flex-start}
+.questions ol>li::before{content:counter(q);min-width:28px;height:28px;background:var(--navy);color:var(--cream);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:500;flex-shrink:0;margin-top:.15rem}
+.questions ol>li .q-text{flex:1;font-size:.93rem;text-align:justify}
+
+/* SOLUTION */
+.sol-toggle-wrap{text-align:center;margin:1rem 0 0}
+.btn-toggle{background:transparent;border:2px solid var(--navy);color:var(--navy);font-family:'Source Serif 4',serif;font-size:.9rem;padding:.6rem 2rem;border-radius:4px;cursor:pointer;transition:all .2s}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--navy);color:var(--cream)}
+.sol-card{border-top:4px solid var(--green);display:none}
+.sol-card.visible{display:block;animation:fi .3s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+.st{font-size:.92rem;line-height:1.75;text-align:justify}
+.st p{margin-bottom:.7rem}
+.st ol{counter-reset:sq;list-style:none}
+.st>ol>li{counter-increment:sq;margin-bottom:1.6rem;display:flex;gap:1rem;align-items:flex-start}
+.st>ol>li::before{content:counter(sq);min-width:24px;height:24px;background:var(--green);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.68rem;flex-shrink:0;margin-top:.15rem}
+.st ul{list-style:disc;padding-left:1.5rem;margin-bottom:.7rem}
+.st ul li{margin-bottom:1rem}
+.st .q-content{flex:1;} /* Assure que le texte prend toute la largeur restante */
+
+/* PDF MODAL */
+#pdf-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;backdrop-filter:blur(2px)}
+#pdf-modal{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:101;background:#fff;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.25);width:390px;max-width:95vw;border-top:4px solid #7bafd4;overflow:hidden}
+.mh{background:var(--navy);color:var(--cream);padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
+.mh h3{font-family:'Playfair Display',serif;font-size:1rem;font-weight:600}
+.mclose{background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:1.2rem;line-height:1;padding:2px 6px;border-radius:3px;transition:color .15s}
+.mclose:hover{color:#fff}
+.mb2{padding:1.5rem}
+.opt-row{display:flex;align-items:flex-start;gap:.75rem;margin-bottom:1rem;cursor:pointer}
+.opt-row input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--navy);flex-shrink:0;margin-top:3px}
+.opt-lbl{font-size:.93rem}
+.opt-desc{font-size:.75rem;color:var(--text-muted);display:block}
+.seed-note{font-family:'JetBrains Mono',monospace;font-size:.7rem;background:var(--cream-dark);border:1px solid var(--border);padding:.55rem .85rem;border-radius:3px;color:var(--text-muted);margin-bottom:1.2rem;line-height:1.5}
+.seed-note strong{color:var(--navy)}
+.mactions{display:flex;gap:.6rem}
+.btn-print{flex:1;background:var(--navy);color:var(--cream);border:none;padding:.7rem;border-radius:4px;font-family:'Source Serif 4',serif;font-size:.9rem;cursor:pointer;transition:background .2s}
+.btn-print:hover{background:var(--navy-mid)}
+.btn-cancel{background:transparent;border:1px solid var(--border);color:var(--text-muted);padding:.7rem 1rem;border-radius:4px;font-family:'Source Serif 4',serif;font-size:.9rem;cursor:pointer;transition:all .2s}
+.btn-cancel:hover{border-color:var(--text);color:var(--text)}
+
+/* PRINT */
+@media print{
+:root{--navy:#0d1b2a;--cream:#fff;--cream-dark:#f8f8f8;--gold:#c9952a;--green:#2d6b4a;--border:#ccc}
+body{background:#fff;font-size:11pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+header{padding:1rem 1.5rem .8rem}
+header .subtitle{display:none}
+#controls-bar,.top-bar,.sol-toggle-wrap,#pdf-ov,#pdf-modal{display:none!important}
+.card{box-shadow:none;border-radius:0;page-break-inside:avoid;margin-bottom:1rem}
+main{padding:1rem 1.5rem;max-width:100%}
+body.print-no-header header{display:none!important}
+body.print-no-solution .sol-card{display:none!important}
+body.print-force-solution .sol-card{display:block!important}
+}
+
+/* --- Selecteur de langue / Language switch --- */
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem}
+.header-top .header-badge{margin-bottom:0}
+.lang-switch{display:flex;gap:.45rem;flex-shrink:0}
+.flag-btn{background:rgba(255,255,255,.06);border:1px solid rgba(201,149,42,.35);border-radius:3px;padding:3px;cursor:pointer;line-height:0;opacity:.5;transition:opacity .2s,border-color .2s,transform .15s}
+.flag-btn:hover{opacity:1;transform:translateY(-1px)}
+.flag-btn.active{opacity:1;border-color:var(--gold-light);box-shadow:0 0 0 1px rgba(232,184,75,.35)}
+.flag-btn svg{display:block;width:30px;height:20px;border-radius:1px}
+@media print{ .lang-switch{display:none !important;} }
+
+/* TABLEAUX DE DONNEES */
+.dtable-wrap{overflow-x:auto;margin:1.1rem 0}
+.dtable{width:100%;border-collapse:collapse;font-size:.82rem;font-family:'Source Serif 4',serif}
+.dtable th,.dtable td{border:1px solid var(--border);padding:.4rem .5rem;text-align:center;vertical-align:middle}
+.dtable th{background:var(--navy);color:var(--cream);font-weight:600;font-size:.78rem}
+.dtable tr:nth-child(even) td{background:#fbf9f4}
+.dtable td.num{font-family:'JetBrains Mono',monospace;font-size:.78rem;white-space:nowrap}
+.dtable tfoot td{font-weight:700;background:var(--cream-dark)}
+.dtable caption{caption-side:bottom;font-size:.76rem;color:var(--text-muted);font-style:italic;padding-top:.5rem;text-align:justify}
+.dtable-narrow{max-width:560px;margin:0 auto}
+.context-block .dtable-wrap{margin:1rem 0 1.1rem}
+.questions ol ol > li{display:block}
+.q-text .dtable-wrap{margin:.9rem 0 .8rem}
+
+/* FIGURES */
+.fig-wrap{margin:1.2rem 0 .3rem;text-align:center;overflow-x:auto}
+.fig-wrap svg{width:100%;max-width:640px;height:auto;background:#fff;border:1px solid var(--border);border-radius:4px}
+.fig-cap{font-size:.78rem;color:var(--text-muted);font-style:italic;text-align:center;margin-bottom:1rem;line-height:1.5}
+</style>
+<!-- KIT:CSS:START v1 --><style id="kit-css">
+/* ============================================================
+   KIT D'UNIFORMISATION — bloc partagé, identique sur toutes les pages.
+   Ne rien modifier ici fichier par fichier : régénérer le kit.
+   ============================================================ */
+
+/* --- 1. Mathématiques : jamais de débordement --- */
+mjx-container[display="true"]{
+  overflow-x:auto; overflow-y:hidden; max-width:100%;
+  padding:.15rem 0; margin:1rem 0 !important;
+}
+mjx-container[display="true"]::-webkit-scrollbar{height:5px}
+mjx-container[display="true"]::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+mjx-container{ max-width:100%; }
+.math-formula{ text-align:center; margin:1.2rem 0; overflow-x:auto; max-width:100%; }
+@media (max-width:640px){
+  mjx-container[display="true"]{ font-size:88% }
+}
+
+/* --- 2. Listes à puces entourées (questions ET données de contexte) --- */
+.kit-list, .st > ol,
+.questions > ol,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list), .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list),
+.question-list, .enum-list, .q-list{
+  counter-reset:kitq; list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem;
+}
+.kit-list > li, .st > ol > li,
+.questions > ol > li,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li, .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li,
+.question-list > li, .enum-list > li, .q-list > li{
+  counter-increment:kitq; position:relative;
+  padding-left:2.6rem; margin-bottom:1.3rem;
+  font-size:.95rem; line-height:1.7; text-align:justify;
+  font-weight:400; color:var(--text);
+  display:block;
+}
+.kit-list > li::before, .st > ol > li::before,
+.questions > ol > li::before,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li::before, .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li::before,
+.question-list > li::before, .enum-list > li::before, .q-list > li::before{
+  content:counter(kitq);
+  position:absolute; left:0; top:.1rem;
+  width:28px; min-width:28px; height:28px;
+  background:var(--navy); color:var(--cream);
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.72rem; font-weight:500;
+  flex-shrink:0;
+}
+.questions ol > li .q-text{ flex:1; font-size:.95rem; text-align:justify }
+/* sous-listes : cercle creux, plus discret */
+.enum-sublist, .kit-sublist, .sub-list, .sub-ol, .alpha-list, .enum-subsublist,
+.st ol.sub-ol, .questions ol ol, .st ol ol, .kit-list ol, .q-list ol, .question-list ol{
+  counter-reset:kitsq; list-style:none !important; padding-left:0 !important;
+  margin:.9rem 0 .9rem 0;
+}
+.enum-sublist > li, .kit-sublist > li, .sub-list > li, .sub-ol > li, .alpha-list > li, .enum-subsublist > li,
+.st ol.sub-ol > li, .questions ol ol > li, .st ol ol > li, .kit-list ol > li, .q-list ol > li, .question-list ol > li{
+  counter-increment:kitsq; position:relative;
+  padding-left:2.1rem; margin-bottom:.7rem; font-size:.92rem; text-align:justify;
+}
+.enum-sublist > li::before, .kit-sublist > li::before, .sub-list > li::before, .sub-ol > li::before, .alpha-list > li::before, .enum-subsublist > li::before,
+.st ol.sub-ol > li::before, .questions ol ol > li::before, .st ol ol > li::before, .kit-list ol > li::before, .q-list ol > li::before, .question-list ol > li::before{
+  content:counter(kitsq,lower-alpha);
+  min-width:22px;
+  position:absolute; left:0; top:.05rem;
+  width:22px; height:22px;
+  background:transparent; color:var(--navy);
+  border:1px solid var(--gold);
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.65rem;
+}
+
+/* variante : puces simples non numérotées (listes de données) */
+.kit-simple{ list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem }
+.kit-simple > li{
+  position:relative; padding-left:1.5rem; margin-bottom:1.1rem;
+  font-size:.95rem; line-height:1.7; text-align:justify;
+}
+.kit-simple > li::before{
+  content:"\2022"; position:absolute; left:0; top:-.15rem;
+  color:var(--gold); font-size:1.5rem; line-height:1; background:none;
+  width:auto; height:auto; border:none; border-radius:0;
+}
+/* variante : liste à un seul élément, sans puce */
+.kit-nobullet{ list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem }
+.kit-nobullet > li{
+  padding-left:0; margin-bottom:1rem; font-size:.95rem; line-height:1.7; text-align:justify;
+}
+.kit-nobullet > li::before{ content:none !important; display:none !important }
+/* variante : titres de section numérotés (contenu intercalé entre les puces) */
+.kit-num-scope{ counter-reset:kitn }
+p.kit-num{
+  counter-increment:kitn; position:relative;
+  padding-left:2.6rem; margin:1.8rem 0 1rem;
+  font-weight:600; color:var(--navy); text-align:left;
+  min-height:28px; display:flex; align-items:center;
+}
+p.kit-num:first-of-type{ margin-top:0 }
+p.kit-num::before{
+  content:counter(kitn); position:absolute; left:0; top:0;
+  width:28px; height:28px; background:var(--navy); color:var(--cream);
+  border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.72rem; font-weight:500;
+}
+
+/* titres de dossier */
+.dossier-title{
+  margin:2rem 0 1rem; font-weight:600; color:var(--navy); font-size:1.02rem;
+  border-bottom:1px solid var(--border); padding-bottom:.4rem; text-align:left;
+}
+.dossier-title:first-of-type{ margin-top:0 }
+.dossier-body{ margin-bottom:.5rem }
+
+/* --- 3. Corrigé sobre : plus de multiplication de fonds verts --- */
+.sol-card .calc-box, .sol-card .concl{
+  background:transparent !important;
+  border:none !important;
+  border-left:none !important;
+  padding:0 !important;
+  border-radius:0 !important;
+  margin:0 0 1.6rem 0 !important;
+  font-size:.95rem;
+  line-height:1.7;
+  text-align:justify;
+}
+.sol-card .sol-sub{
+  color:var(--navy); font-weight:600; display:block;
+  margin:0 0 .5rem 0; font-size:1rem;
+}
+/* seuls encadrés conservés : les perspectives « Pour aller plus loin » */
+.sol-card .persp-box{
+  background:#f7f9fc !important;
+  border:1px solid #ccd8e6 !important;
+  border-left:3px solid var(--navy-mid) !important;
+  padding:1.2rem !important;
+  border-radius:4px !important;
+  margin:2rem 0 1rem 0 !important;
+  font-size:.9rem; line-height:1.7; text-align:justify;
+}
+
+.btn-toggle{
+  background:transparent; border:2px solid var(--green); border-bottom:none;
+  color:var(--green); font-family:'Source Serif 4',serif; font-size:.95rem;
+  font-weight:600; padding:.5rem 1.5rem; border-radius:4px 4px 0 0; cursor:pointer;
+  transition:all .2s; position:relative; z-index:2; top:2px;
+}
+.btn-toggle:hover{ background:var(--green); color:var(--cream) }
+
+/* --- 4. Bouton « Afficher le corrigé » (modèle der) --- */
+.sol-toggle-wrap{ text-align:left; margin:1.5rem 0 0 0; }
+.sol-card{
+  border-top:2px solid var(--green); display:none;
+  border-radius:0 6px 6px 6px; position:relative; z-index:1;
+}
+.sol-card.visible{ display:block; animation:kitfi .35s ease }
+.sol-card .card-header{ background:var(--green) }
+.sol-card .card-header .tag{ border-color:rgba(200,240,200,.4); color:#a8d8b0 }
+@keyframes kitfi{ from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+
+/* --- 5. Barre d'actions unifiée --- */
+.top-bar{ display:flex; flex-wrap:wrap; gap:.8rem; align-items:center; justify-content:space-between; margin-bottom:1.2rem }
+.top-bar-left{ display:flex; flex-wrap:wrap; gap:.55rem; order:1 }
+.top-bar .seed-badge{ order:2 }
+.btn-sm{ background:transparent; border:1px solid var(--gold); color:var(--gold); font-family:'JetBrains Mono',monospace; font-size:.67rem; letter-spacing:.08em; text-transform:uppercase; padding:.4rem 1rem; border-radius:3px; cursor:pointer; transition:all .18s; white-space:nowrap }
+.btn-sm:hover{ background:var(--gold); color:var(--navy) }
+.btn-sm.pdf{ border-color:#7bafd4; color:#7bafd4 }
+.btn-sm.pdf:hover{ background:#7bafd4; color:var(--navy) }
+.btn-sm.doc{ border-color:#8fa8c4; color:#8fa8c4 }
+.seed-row{ display:flex; gap:.4rem; align-items:center }
+.btn-copy-seed{
+  background:transparent; border:1px solid rgba(201,149,42,.4); color:rgba(250,247,240,.55);
+  padding:.38rem .55rem; border-radius:3px; cursor:pointer;
+  font-family:'JetBrains Mono',monospace; font-size:.65rem; transition:all .18s; white-space:nowrap;
+}
+.btn-copy-seed:hover{ border-color:var(--gold-light); color:var(--gold-light) }
+.btn-sm.doc:hover{ background:#8fa8c4; color:var(--navy) }
+
+/* --- 6. Modale d'export PDF --- */
+#pdf-ov{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:100; backdrop-filter:blur(2px) }
+#pdf-modal{ display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:101; background:#fff; border-radius:8px; box-shadow:0 20px 60px rgba(0,0,0,.25); width:390px; max-width:95vw; border-top:4px solid #7bafd4; overflow:hidden }
+#pdf-ov.open,#pdf-modal.open{ display:block }
+.mh{ background:var(--navy); color:var(--cream); padding:1rem 1.5rem; display:flex; align-items:center; justify-content:space-between }
+.mh h3{ font-family:'Playfair Display',serif; font-size:1rem; font-weight:600; margin:0 }
+.mclose{ background:none; border:none; color:rgba(255,255,255,.6); cursor:pointer; font-size:1.2rem; line-height:1; padding:2px 6px; border-radius:3px; transition:color .15s }
+.mclose:hover{ color:#fff }
+.mb2{ padding:1.5rem }
+.opt-row{ display:flex; align-items:flex-start; gap:.75rem; margin-bottom:1rem; cursor:pointer }
+.opt-row input[type=checkbox]{ width:16px; height:16px; cursor:pointer; accent-color:var(--navy); flex-shrink:0; margin-top:3px }
+.opt-txt{ display:block }
+.opt-lbl{ font-size:.93rem; display:block }
+.opt-desc{ font-size:.75rem; color:var(--text-muted); display:block }
+.seed-note{ font-family:'JetBrains Mono',monospace; font-size:.7rem; background:var(--cream-dark); border:1px solid var(--border); padding:.55rem .85rem; border-radius:3px; color:var(--text-muted); margin-bottom:1.2rem; line-height:1.5 }
+.mactions{ display:flex; gap:.6rem }
+.btn-print{ flex:1; background:var(--navy); color:var(--cream); border:none; padding:.7rem; border-radius:4px; font-family:'Source Serif 4',serif; font-size:.9rem; cursor:pointer; transition:background .2s }
+.btn-print:hover{ background:var(--navy-mid) }
+.btn-cancel{ background:transparent; border:1px solid var(--border); color:var(--text-muted); padding:.7rem 1rem; border-radius:4px; font-family:'Source Serif 4',serif; font-size:.9rem; cursor:pointer; transition:all .2s }
+.btn-cancel:hover{ border-color:var(--text); color:var(--text) }
+
+/* --- 7. Impression --- */
+@media print{
+  body{ background:#fff; font-size:11pt; -webkit-print-color-adjust:exact; print-color-adjust:exact }
+  header{ display:block !important; padding:1rem 1.5rem .8rem }
+  header .subtitle{ display:none }
+  .ctrls, #controls-bar, .top-actions, .top-bar-left, .sol-toggle-wrap,
+  .lang-switch, #pdf-ov, #pdf-modal{ display:none !important }
+  .top-bar{ display:block !important; margin-bottom:.8rem }
+  .top-bar .seed-badge{
+    display:inline-block !important; background:none; border:1px solid var(--border);
+    color:var(--text-muted); font-family:'JetBrains Mono',monospace; font-size:8.5pt;
+    padding:2pt 6pt; border-radius:2px;
+  }
+  body.print-no-header .top-bar{ display:none !important }
+  main{ padding:1rem 1.5rem; max-width:100% }
+  .card{ box-shadow:none; border-radius:0; page-break-inside:avoid; margin-bottom:1rem }
+  #ex-area{ display:block !important }
+  .sol-card{ display:block !important; border-top:2px solid var(--green) }
+  mjx-container[display="true"]{ overflow:visible !important }
+  body.print-no-header header{ display:none !important }
+  body.print-no-header .ctrls{ display:none !important }
+  body.print-no-solution .sol-card,
+  body.print-no-solution .sol-toggle-wrap{ display:none !important }
+  body.print-force-solution .sol-card{ display:block !important }
+}
+</style><!-- KIT:CSS:END -->
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-top">
+    <div class="header-badge" data-k="k-badge">ÉCONOMÉTRIE</div>
+    <div class="lang-switch">
+      <button type="button" class="flag-btn active" id="flag-fr" onclick="setLang('fr')" title="Français" aria-label="Français"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="20" height="40" fill="#002654"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ED2939"/></svg></button>
+      <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
+    </div>
+  </div>
+  <h1 data-k="k-h1">Régressions apparemment indépendantes (SUR)</h1>
+  <p class="subtitle" data-k="k-sub">© Thomas Hossen – Version du 17 septembre 2026</p>
+
+  <div id="controls-bar">
+    <div class="ctrls">
+      <div class="ctrl-g">
+        <span class="ctrl-lbl" data-k="k-seed">Seed de reproductibilité</span>
+        <div class="seed-row">
+          <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="0" max="99999999">
+          <button type="button" class="btn-copy-seed" id="btn-copy-seed" onclick="copySeed(this)" title="Copier la seed active"><span data-kit="btnCopy">&#10697; Copier</span></button>
+        </div>
+        <span class="ctrl-tip" data-k="k-seedtip">Vide = aléatoire à chaque génération</span>
+      </div>
+      <div class="ctrl-vsep"></div>
+      <div class="ctrl-g">
+        <span class="ctrl-lbl" data-k="k-n">Observations <em>(n)</em></span>
+        <input class="ctrl-inp" type="number" id="param-n" min="8" max="12" placeholder="auto">
+        <span class="ctrl-tip" data-k="k-ntip">8 – 12, auto si vide</span>
+      </div>
+      <div class="ctrl-vsep"></div>
+      <button class="btn-gen" onclick="generateFromControls()"><span data-k="k-gen">Générer</span></button>
+    </div>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" class="welcome-msg">
+    <span class="arrow">↑</span>
+    <span data-k="k-welcome">Configurez les paramètres (ou laissez vide pour de l'aléatoire), puis cliquez sur Générer.</span>
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="top-bar-left">
+        <button type="button" class="btn-sm" onclick="regen()"><span data-kit="btnNew">&#8634; Nouvel &eacute;nonc&eacute;</span></button>
+        <button type="button" class="btn-sm pdf" onclick="openPdfModal()"><span data-kit="btnPdf">&#11015; Exporter PDF</span></button>
+        <button type="button" class="btn-sm doc" onclick="exportWord()"><span data-kit="btnDoc">&#11015; Exporter Word</span></button>
+      </div>
+      <div class="seed-badge"><span data-k="k-seedbadge">Seed&nbsp;:</span> <span id="seed-disp">—</span></div>
+    </div>
+
+    <div id="ex-card" class="card">
+      <div class="card-header"><span class="tag" data-k="k-tag-ex">Énoncé</span><h2 id="card-title" data-k="k-cardtitle">Modèle SUR</h2></div>
+      <div class="card-body" id="ex-content"></div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag" data-k="k-tag-sol">Corrigé</span><h2 id="card-title2" data-k="k-cardtitle2">Modèle SUR</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+let solVisible = false;
+
+/* ============================================================
+   OUTILS NUMERIQUES  /  NUMERIC HELPERS
+   ============================================================ */
+const P10 = [1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000];
+function fx(v, d, m) {
+  const neg = v < 0;
+  let s = String(Math.abs(Math.round(v)));
+  let ip = s, fp = '';
+  if (d > 0) { s = s.padStart(d + 1, '0'); ip = s.slice(0, -d); fp = s.slice(-d); }
+  if (ip.length >= 5) {
+    const sep = m ? '\\,' : '\u202F';
+    let out = '';
+    while (ip.length > 3) { out = sep + ip.slice(-3) + out; ip = ip.slice(0, -3); }
+    ip = ip + out;
+  }
+  return (neg && /[1-9]/.test(ip + fp) ? (m ? '-' : '\u2212') : '') + ip + (d > 0 ? '.' + fp : '');
+}
+function fxf(x, d, m) { return fx(Math.round(x * P10[d]), d, m); }
+function fS(x, sig, m) {
+  if (x === 0) return '0';
+  const e = Math.floor(Math.log10(Math.abs(x)));
+  if (e < -3 || e >= 7) {
+    let mant = x / Math.pow(10, e), ee = e;
+    if (Math.abs(Number(mant.toFixed(sig - 1))) >= 10) { mant /= 10; ee += 1; }
+    const ms = fxf(mant, sig - 1, m);
+    return m ? `${ms}\\times 10^{${ee}}` : `${ms} × 10<sup>${ee}</sup>`;
+  }
+  return fxf(x, Math.max(0, sig - 1 - e), m);
+}
+function inv(A) {
+  const n = A.length, M = A.map((r, i) => r.concat(Array.from({ length: n }, (_, j) => (i === j ? 1 : 0))));
+  for (let c = 0; c < n; c++) {
+    let p = c;
+    for (let r = c + 1; r < n; r++) if (Math.abs(M[r][c]) > Math.abs(M[p][c])) p = r;
+    [M[c], M[p]] = [M[p], M[c]];
+    const d = M[c][c];
+    for (let j = 0; j < 2 * n; j++) M[c][j] /= d;
+    for (let r = 0; r < n; r++) if (r !== c) { const f = M[r][c]; for (let j = 0; j < 2 * n; j++) M[r][j] -= f * M[c][j]; }
+  }
+  return M.map(r => r.slice(n));
+}
+const mvec = (A, v) => A.map(r => r.reduce((s, x, k) => s + x * v[k], 0));
+/* loi du khi-deux a un degre de liberte : P(X > x) = erfc(sqrt(x/2)) */
+function erfc(x) {
+  /* developpement en fraction continue / serie (precision ~1e-14) */
+  if (x < 2) {
+    let sum = x, term = x, k = 0;
+    while (Math.abs(term) > 1e-17 * Math.abs(sum)) { k++; term *= -x * x / k; sum += term / (2 * k + 1); if (k > 500) break; }
+    return 1 - 2 / Math.sqrt(Math.PI) * sum;
+  }
+  let f = 0;
+  for (let k = 60; k >= 1; k--) f = (k / 2) / (x + f);
+  return Math.exp(-x * x) / Math.sqrt(Math.PI) / (x + f);
+}
+const chi1sf = x => erfc(Math.sqrt(x / 2));
+const pnormTwo = z => erfc(Math.abs(z) / Math.SQRT2);
+
+/* ============================================================
+   CONTEXTES (independants de la langue)
+   ============================================================ */
+const CX = [
+  { id: 'meat', log: true, L: { y1: 'Q_{B,t}', x1: 'P_{B,t}', y2: 'Q_{P,t}', x2: 'P_{P,t}' },
+    dx: 3, dy: 3, x: [[4.45, 4.75], [4.45, 4.75]], ym: [[0.6, 1.0], [0.5, 0.9]], b: [[-1.2, -0.3], [-1.1, -0.3]], sig: [[0.02, 0.05], [0.02, 0.05]], sgn: [-1, -1] },
+  { id: 'firm', log: false, L: { y1: 'I_{A,t}', x1: 'V_{A,t}', y2: 'I_{B,t}', x2: 'V_{B,t}' },
+    dx: 1, dy: 1, x: [[800, 2500], [500, 1800]], ym: [[150, 300], [100, 250]], b: [[0.04, 0.12], [0.05, 0.15]], sig: [[10, 25], [8, 20]], sgn: [1, 1] },
+  { id: 'energy', log: true, L: { y1: 'E_{t}', x1: 'P^{E}_{t}', y2: 'G_{t}', x2: 'P^{G}_{t}' },
+    dx: 3, dy: 3, x: [[4.40, 4.80], [4.30, 4.90]], ym: [[5.5, 6.0], [6.4, 7.0]], b: [[-0.6, -0.1], [-0.7, -0.15]], sig: [[0.015, 0.04], [0.02, 0.05]], sgn: [-1, -1] },
+  { id: 'shop', log: false, L: { y1: 'S_{A,t}', x1: 'A_{A,t}', y2: 'S_{B,t}', x2: 'A_{B,t}' },
+    dx: 1, dy: 1, x: [[5, 25], [5, 25]], ym: [[80, 140], [70, 130]], b: [[1.5, 4], [1.5, 4]], sig: [[4, 9], [4, 9]], sgn: [1, 1] }
+];
+
+/* ============================================================
+   GENERATEUR PSEUDO-ALEATOIRE
+   ============================================================ */
+let _rand, _activeSeed = 0;
+function initRand(seed) {
+  _activeSeed = seed >>> 0;
+  let s = _activeSeed;
+  _rand = () => {
+    s = (s + 0x6D2B79F5) >>> 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const rI = (a, b) => Math.floor(_rand() * (b - a + 1)) + a;
+const rU = (r) => r[0] + (r[1] - r[0]) * _rand();
+const rN = () => { let u = 0; while (u === 0) u = _rand(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * _rand()); };
+
+/* ============================================================
+   GENERATION ET CALCULS
+   ============================================================ */
+function computeD(seed, nIn) {
+  initRand(seed);
+  const ci = rI(0, CX.length - 1), S = CX[ci];
+  const nAuto = rI(8, 12);
+  const n = nIn || nAuto;
+  const t0 = rI(0, 11);
+  const dx = S.dx, dy = S.dy;
+  for (let guard = 0; guard < 200000; guard++) {
+    const strong = _rand() < 0.75;
+    const rho = (strong ? 0.6 + 0.3 * _rand() : 0.15 * _rand()) * (_rand() < 0.75 ? 1 : -1);
+    /* la constante est deduite d'un niveau moyen plausible de la variable expliquee */
+    const b = [rU(S.b[0]), rU(S.b[1])], sg = [rU(S.sig[0]), rU(S.sig[1])];
+    const a = [0, 1].map(k => rU(S.ym[k]) - b[k] * (S.x[k][0] + S.x[k][1]) / 2);
+    const xi = [[], []], yi = [[], []];
+    for (let t = 0; t < n; t++) {
+      const z1 = rN(), z2 = rho * z1 + Math.sqrt(1 - rho * rho) * rN();
+      const u = [sg[0] * z1, sg[1] * z2];
+      for (let k = 0; k < 2; k++) {
+        const x = Math.round(rU(S.x[k]) * P10[dx]);
+        xi[k].push(x);
+        yi[k].push(Math.round((a[k] + b[k] * x / P10[dx] + u[k]) * P10[dy]));
+      }
+    }
+    if (!S.log && yi.some((v, k) => v.some(q => q < 0.25 * S.ym[k][0] * P10[dy]))) continue;
+    /* sommes exactes (entiers mis a l'echelle) */
+    const sum = f => { let s = 0; for (let t = 0; t < n; t++) s += f(t); return s; };
+    const XX = (k, l) => [[n, sum(t => xi[l][t])], [sum(t => xi[k][t]), sum(t => xi[k][t] * xi[l][t])]];  /* decimales : [[0,dx],[dx,2dx]] */
+    const XY = (k, l) => [sum(t => yi[l][t]), sum(t => xi[k][t] * yi[l][t])];                          /* decimales : [dy, dx+dy] */
+    const decXX = [[0, dx], [dx, 2 * dx]], decXY = [dy, dx + dy];
+    const fM = M => M.map((r, i) => r.map((v, j) => v / P10[decXX[i][j]]));
+    const fV = V => V.map((v, i) => v / P10[decXY[i]]);
+    const X = [0, 1].map(k => xi[k].map(v => v / P10[dx])), Y = [0, 1].map(k => yi[k].map(v => v / P10[dy]));
+    /* MCO equation par equation */
+    const ols = [0, 1].map(k => {
+      const A = fM(XX(k, k)), Ai = inv(A), bb = mvec(Ai, fV(XY(k, k)));
+      const e = Y[k].map((y, t) => y - bb[0] - bb[1] * X[k][t]);
+      return { A, Ai, b: bb, e };
+    });
+    const Sig = [[0, 0], [0, 0]];
+    for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) Sig[i][j] = sum(t => ols[i].e[t] * ols[j].e[t]) / n;
+    const r = Sig[0][1] / Math.sqrt(Sig[0][0] * Sig[1][1]);
+    const LM = n * r * r, pLM = chi1sf(LM);
+    if (pLM > 0.03 && pLM < 0.12) continue;
+    const Si = inv(Sig);
+    /* MCQG */
+    const B = (k, l) => fM(XX(k, l));
+    const G = Array.from({ length: 4 }, () => [0, 0, 0, 0]);
+    for (let k = 0; k < 2; k++) for (let l = 0; l < 2; l++) {
+      const M = B(k, l);
+      for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) G[2 * k + i][2 * l + j] = Si[k][l] * M[i][j];
+    }
+    const h = [0, 0, 0, 0];
+    for (let k = 0; k < 2; k++) for (let l = 0; l < 2; l++) {
+      const v = fV(XY(k, l));
+      for (let i = 0; i < 2; i++) h[2 * k + i] += Si[k][l] * v[i];
+    }
+    const V = inv(G), bF = mvec(V, h);
+    const seF = V.map((row, i) => Math.sqrt(row[i]));
+    const seO = [0, 1].flatMap(k => [Math.sqrt(Sig[k][k] * ols[k].Ai[0][0]), Math.sqrt(Sig[k][k] * ols[k].Ai[1][1])]);
+    const bO = [ols[0].b[0], ols[0].b[1], ols[1].b[0], ols[1].b[1]];
+    if (Math.sign(bF[1]) !== S.sgn[0] || Math.sign(bF[3]) !== S.sgn[1] || Math.sign(bO[1]) !== S.sgn[0] || Math.sign(bO[3]) !== S.sgn[1]) continue;
+    const ratio = [0, 1, 2, 3].map(i => (seO[i] * seO[i]) / (seF[i] * seF[i]));
+    if (Math.abs(r) > 0.5 && Math.max(ratio[1], ratio[3]) < 1.1) continue;
+    const zF = bF.map((v, i) => v / seF[i]);
+    const pF = zF.map(z => pnormTwo(z));
+    if (pF.some(p => p > 0.03 && p < 0.08)) continue;
+    const dvar = V[1][1] + V[3][3] - 2 * V[1][3];
+    const W = (bF[1] - bF[3]) ** 2 / dvar, pW = chi1sf(W);
+    if (pW > 0.03 && pW < 0.1) continue;
+    /* correlation des regresseurs (le gain du SUR diminue quand elle augmente) */
+    const mx = X.map(v => v.reduce((p, q) => p + q, 0) / n);
+    const cxx = sum(t => (X[0][t] - mx[0]) * (X[1][t] - mx[1])) / Math.sqrt(sum(t => (X[0][t] - mx[0]) ** 2) * sum(t => (X[1][t] - mx[1]) ** 2));
+    return { sc: ci, id: S.id, S, n, t0, dx, dy, xi, yi, X, Y, XX, XY, decXX, decXY, ols, Sig, Si, r, LM, pLM, G, h, V, bF, seF, bO, seO, ratio, zF, pF,
+      W, pW, dvar, cxx, strong, rhoTrue: rho };
+  }
+  throw new Error('generation');
+}
+
+/* ============================================================
+   AFFICHAGE COMMUN
+   ============================================================ */
+const pmat = rows => `\\begin{pmatrix}${rows.map(r => r.join('&')).join('\\\\')}\\end{pmatrix}`;
+const exM = (D, M) => pmat(M.map((r, i) => r.map((v, k) => fx(v, D.decXX[i][k], true))));
+const exV = (D, V) => pmat(V.map((v, i) => [fx(v, D.decXY[i], true)]));
+const flM = (M, s) => pmat(M.map(r => r.map(v => fS(v, s || 4, true))));
+const flV = (V, s) => pmat(V.map(v => [fS(v, s || 5, true)]));
+const fP = p => (p < 1e-4 ? '&lt; 0.0001' : p.toFixed(4));
+function dtable(head, rows, cap, narrow) {
+  return `<div class="dtable-wrap"><table class="dtable${narrow ? ' dtable-narrow' : ''}">${cap ? `<caption>${cap}</caption>` : ''}` +
+    `<tr>${head.map(h => `<th>${h}</th>`).join('')}</tr>` +
+    rows.map(r => `<tr>${r.map((c, j) => `<td${j > 0 && /^(&lt; )?[\u2212-]?\d/.test(c) ? ' class="num"' : ''}>${c}</td>`).join('')}</tr>`).join('') + `</table></div>`;
+}
+/* variables des equations, sous forme de formules */
+function vars(D) {
+  const L = D.S.L, lg = v => (D.S.log ? `\\ln ${v}` : v);
+  return { y1: lg(L.y1), x1: lg(L.x1), y2: lg(L.y2), x2: lg(L.x2) };
+}
+function dataTable(D, T) {
+  const v = vars(D);
+  return dtable([T.tHead, `\\(${v.y1}\\)`, `\\(${v.x1}\\)`, `\\(${v.y2}\\)`, `\\(${v.x2}\\)`],
+    Array.from({ length: D.n }, (_, t) => [T.tLab(D, t), fx(D.yi[0][t], D.dy), fx(D.xi[0][t], D.dx), fx(D.yi[1][t], D.dy), fx(D.xi[1][t], D.dx)]), T.dCap, true);
+}
+function resTable(D, L) {
+  const nm = ['\\(a_1\\)', '\\(b_1\\)', '\\(a_2\\)', '\\(b_2\\)'];
+  return dtable(L.resHead, nm.map((c, i) => [c, fS(D.bO[i], 5), fS(D.seO[i], 4), fS(D.bF[i], 5), fS(D.seF[i], 4), fxf(D.ratio[i], 3)]), '', false);
+}
+
+/* ============================================================
+   DICTIONNAIRE BILINGUE  /  BILINGUAL DICTIONARY
+   ============================================================ */
+const MONTHS = {
+  fr: ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'],
+  en: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+};
+const I18N = {
+  fr: {
+    "htmlLang": "fr",
+    "title": "Générateur d'exercices - Modèle SUR",
+    "k-badge": "ÉCONOMÉTRIE",
+    "k-h1": "Régressions apparemment indépendantes (SUR)",
+    "k-sub": "© Thomas Hossen – Version du 17 septembre 2026",
+    "k-seed": "Seed de reproductibilité",
+    "k-seedtip": "Vide = aléatoire à chaque génération",
+    "k-n": "Observations <em>(n)</em>",
+    "k-ntip": "8 – 12, auto si vide",
+    "k-gen": "Générer",
+    "k-welcome": "Configurez les paramètres (ou laissez vide pour de l'aléatoire), puis cliquez sur Générer.",
+    "k-seedbadge": "Seed&nbsp;:",
+    "k-tag-ex": "Énoncé",
+    "k-cardtitle": "Modèle SUR",
+    "k-tag-sol": "Corrigé",
+    "k-cardtitle2": "Modèle SUR",
+    "phSeed": "auto",
+    "phN": "auto",
+    "showSol": "Afficher le corrigé",
+    "hideSol": "Masquer le corrigé",
+    resHead: ["Coefficient", "MCO", "Écart-type MCO", "MCQG", "Écart-type MCQG", "Rapport des variances"],
+    tstHead: ["Coefficient", "Estimation MCQG", "Statistique z", "p-valeur", "Conclusion à 5 %"],
+    sigTxt: p => (p < 0.05 ? 'significatif' : 'non significatif'),
+    ctx: {
+      meat: {
+        title: "Demande de viande de bœuf et de porc", tHead: "Mois", tLab: (D, t) => `${MONTHS.fr[(D.t0 + t) % 12]}`,
+        dCap: "Consommations par tête (en kilogrammes) et indices de prix (base 100), en logarithmes (données fictives).",
+        intro: D => `On étudie la demande de deux produits d'origine animale sur ${D.n} mois consécutifs. Pour tout mois \\(t\\), on note \\(Q_{B,t}\\) (resp. \\(Q_{P,t}\\)) la consommation de viande de bœuf (resp. de porc) par tête, en kilogrammes, et \\(P_{B,t}\\) (resp. \\(P_{P,t}\\)) l'indice des prix à la consommation de la viande de bœuf (resp. de porc), base 100. Les prix sont supposés exogènes.`,
+        eqs: "les demandes de bœuf et de porc",
+        shock: "un scandale sanitaire touchant la filière bovine (\\(u_{1,t}\\) fortement négatif) peut, par effet ricochet, faire aussi chuter la consommation de porc, ou au contraire provoquer un report vers celle-ci ; plus généralement, des chocs communs (saisonnalité, mode alimentaire, conjoncture) affectent simultanément les deux demandes",
+        b: k => `\\(b_${k}\\) est l'élasticité-prix directe de la demande de ${k === 1 ? 'bœuf' : 'porc'} : une hausse de 1 % du prix ${k === 1 ? 'du bœuf' : 'du porc'} s'accompagne, en moyenne, d'une baisse de la consommation de \\(|b_${k}|\\) %`,
+        interp: (k, v) => `une hausse de 1 % du prix ${k === 1 ? 'du bœuf' : 'du porc'} s'accompagne d'une baisse d'environ ${v} % de la consommation correspondante ; la demande est ${Math.abs(Number(v)) < 1 ? 'inélastique' : 'élastique'} au prix`,
+        eq: "des élasticités-prix directes des deux demandes",
+        same: "Dans un système de demande où chaque équation contient tous les prix (comme dans l'exemple du cours, où les prix des trois viandes et le niveau général des prix figurent dans chaque équation), les régresseurs sont identiques d'une équation à l'autre : les MCG, et donc les MCQG, se confondent alors avec les MCO équation par équation. Le modèle SUR n'est utile que parce qu'ici chaque demande ne dépend que de son propre prix."
+      },
+      firm: {
+        title: "Investissement de deux entreprises", tHead: "Année", tLab: (D, t) => String(2000 + D.t0 + t),
+        dCap: "Investissement et valeur de marché des deux entreprises, en millions d'euros (données fictives).",
+        intro: D => `On étudie l'investissement de deux entreprises A et B sur ${D.n} années, dans l'esprit des données de Grunfeld. Pour toute année \\(t\\), on note \\(I_{A,t}\\) (resp. \\(I_{B,t}\\)) l'investissement brut de l'entreprise A (resp. B) et \\(V_{A,t}\\) (resp. \\(V_{B,t}\\)) sa valeur de marché, en millions d'euros. Les valeurs de marché sont supposées exogènes.`,
+        eqs: "les investissements des deux entreprises",
+        shock: "des chocs macroéconomiques communs (conditions de crédit, confiance des chefs d'entreprise, fiscalité) affectent simultanément les décisions d'investissement des deux entreprises, d'autant plus si elles appartiennent au même secteur",
+        b: k => `\\(b_${k}\\) mesure la sensibilité de l'investissement de l'entreprise ${k === 1 ? 'A' : 'B'} à sa valeur de marché : une hausse d'un million d'euros de celle-ci s'accompagne, en moyenne, d'une hausse de \\(b_${k}\\) million d'euros de l'investissement`,
+        interp: (k, v) => `une hausse d'un million d'euros de la valeur de marché de l'entreprise ${k === 1 ? 'A' : 'B'} s'accompagne d'un investissement supérieur d'environ ${v} million d'euros, soit ${Math.round(Number(v) * 1000)} milliers d'euros`,
+        eq: "des sensibilités de l'investissement à la valeur de marché",
+        same: "Si l'investissement de chaque entreprise dépendait des valeurs de marché des deux entreprises à la fois, les régresseurs seraient identiques d'une équation à l'autre et les MCG, donc les MCQG, se confondraient avec les MCO équation par équation. Le modèle SUR n'est utile que parce qu'ici chaque équation contient ses propres régresseurs."
+      },
+      energy: {
+        title: "Demande d'électricité et de gaz", tHead: "Mois", tLab: (D, t) => `${MONTHS.fr[(D.t0 + t) % 12]}`,
+        dCap: "Consommations moyennes par ménage (en kWh) et indices de prix (base 100), en logarithmes (données fictives).",
+        intro: D => `On étudie la consommation d'énergie des ménages d'une région sur ${D.n} mois consécutifs. Pour tout mois \\(t\\), on note \\(E_t\\) (resp. \\(G_t\\)) la consommation moyenne d'électricité (resp. de gaz) par ménage, en kWh, et \\(P^E_t\\) (resp. \\(P^G_t\\)) l'indice du prix de l'électricité (resp. du gaz), base 100. Les prix, régulés, sont supposés exogènes.`,
+        eqs: "les demandes d'électricité et de gaz",
+        shock: "une vague de froid augmente simultanément les consommations d'électricité et de gaz, tous deux utilisés pour le chauffage ; les perturbations des deux équations sont donc vraisemblablement corrélées positivement",
+        b: k => `\\(b_${k}\\) est l'élasticité-prix directe de la demande ${k === 1 ? "d'électricité" : 'de gaz'} : une hausse de 1 % du prix s'accompagne, en moyenne, d'une baisse de la consommation de \\(|b_${k}|\\) %`,
+        interp: (k, v) => `une hausse de 1 % du prix ${k === 1 ? "de l'électricité" : 'du gaz'} s'accompagne d'une baisse d'environ ${v} % de la consommation correspondante ; la demande est ${Math.abs(Number(v)) < 1 ? 'inélastique' : 'élastique'} à court terme`,
+        eq: "des élasticités-prix de l'électricité et du gaz",
+        same: "Si l'on introduisait les deux prix dans chacune des deux équations (pour capter les substitutions entre énergies), les régresseurs deviendraient identiques et les MCG, donc les MCQG, se confondraient avec les MCO équation par équation."
+      },
+      shop: {
+        title: "Ventes de deux magasins", tHead: "Semaine", tLab: (D, t) => String(D.t0 + t + 1),
+        dCap: "Ventes hebdomadaires et dépenses publicitaires locales des deux magasins, en milliers d'euros (données fictives).",
+        intro: D => `Une enseigne étudie les ventes de deux de ses magasins, A et B, situés dans des villes différentes, sur ${D.n} semaines. Pour toute semaine \\(t\\), on note \\(S_{A,t}\\) (resp. \\(S_{B,t}\\)) les ventes du magasin A (resp. B) et \\(A_{A,t}\\) (resp. \\(A_{B,t}\\)) ses dépenses publicitaires locales, en milliers d'euros. Les budgets publicitaires, fixés à l'avance par le siège, sont supposés exogènes.`,
+        eqs: "les ventes des deux magasins",
+        shock: "des chocs communs (météo, jours fériés, campagne nationale de l'enseigne, conjoncture) affectent simultanément les ventes des deux magasins",
+        b: k => `\\(b_${k}\\) mesure l'effet de la publicité locale sur les ventes du magasin ${k === 1 ? 'A' : 'B'} : mille euros de publicité supplémentaires s'accompagnent, en moyenne, de \\(b_${k}\\) milliers d'euros de ventes supplémentaires`,
+        interp: (k, v) => `mille euros de publicité locale supplémentaires s'accompagnent d'environ ${v} milliers d'euros de ventes supplémentaires pour le magasin ${k === 1 ? 'A' : 'B'}`,
+        eq: "des effets de la publicité dans les deux magasins",
+        same: "Si les ventes de chaque magasin dépendaient des budgets publicitaires des deux magasins, les régresseurs seraient identiques d'une équation à l'autre et les MCG, donc les MCQG, se confondraient avec les MCO équation par équation."
+      }
+    },
+
+    ex: function (D) {
+      const T = this.ctx[D.id], v = vars(D);
+      return `
+      <div class="context-block">
+        ${T.intro(D)} On considère le système de deux équations suivant :
+        \\[\\forall t\\in\\{1,\\ldots,${D.n}\\}\\qquad\\begin{cases}${v.y1}=a_1+b_1\\,${v.x1}+u_{1,t}\\\\${v.y2}=a_2+b_2\\,${v.x2}+u_{2,t}\\end{cases}\\]
+        On suppose que \\(\\mathbb{E}[u_{i,t}\\,|\\,\\textbf{X}]=0\\) pour tous \\(i\\) et \\(t\\), que \\(\\textbf{Cov}(u_{i,t},u_{j,t}\\,|\\,\\textbf{X})=\\sigma_{ij}\\) pour tous \\(i,j\\in\\{1,2\\}\\) et toute date \\(t\\), et que \\(\\textbf{Cov}(u_{i,t},u_{j,s}\\,|\\,\\textbf{X})=0\\) dès que \\(t\\neq s\\), où \\(\\boldsymbol{\\Sigma}:=(\\sigma_{ij})_{1\\leq i,j\\leq 2}\\) est une matrice symétrique définie positive. Pour \\(i\\in\\{1,2\\}\\), on note \\(\\textbf{y}_i\\in\\mathbb{R}^{${D.n}}\\) le vecteur des variables expliquées de l'équation \\(i\\), \\(\\textbf{X}_i\\) la matrice de taille \\(${D.n}\\times 2\\) formée d'une colonne de 1 et du régresseur de l'équation \\(i\\), \\(\\boldsymbol{\\beta}_i:=(a_i,b_i)^T\\) et \\(\\textbf{u}_i:=(u_{i,1},\\ldots,u_{i,${D.n}})^T\\).
+      </div>
+      <div class="questions"><ol>
+        <li><div class="q-text">Quelle méthode peut-on envisager pour estimer chaque équation séparément ? A-t-il un sens de rechercher une méthode d'estimation qui tienne compte d'éventuelles interdépendances entre les deux équations ?</div></li>
+        <li><div class="q-text">Écrire le système sous la forme empilée \\(\\textbf{Y}=\\textbf{X}\\boldsymbol{\\beta}+\\textbf{u}\\). Montrer que \\(\\boldsymbol{\\Omega}:=\\textbf{Var}(\\textbf{u}\\,|\\,\\textbf{X})=\\boldsymbol{\\Sigma}\\otimes\\textbf{I}_{${D.n}}\\), où \\(\\otimes\\) désigne le produit de Kronecker, et en déduire \\(\\boldsymbol{\\Omega}^{-1}\\). L'estimateur des moindres carrés ordinaires est-il BLUE ? Donner l'expression de l'estimateur des moindres carrés généralisés (MCG) et de sa matrice de variances-covariances.</div></li>
+        <li><div class="q-text">Montrer que, si \\(\\sigma_{12}=0\\), l'estimateur des MCG coïncide avec l'estimateur des MCO appliqué équation par équation.</div></li>
+        <li><div class="q-text">Montrer que, si les deux équations comportent exactement les mêmes régresseurs (\\(\\textbf{X}_1=\\textbf{X}_2\\)), l'estimateur des MCG coïncide encore avec l'estimateur des MCO équation par équation, quelle que soit \\(\\boldsymbol{\\Sigma}\\). Qu'en conclure pour l'intérêt du modèle SUR ?</div></li>
+        <li><div class="q-text">La matrice \\(\\boldsymbol{\\Sigma}\\) étant inconnue en pratique, rappeler le principe de l'estimateur des moindres carrés quasi généralisés (MCQG) de Zellner, et justifier que les tests de Student restent valables asymptotiquement pour cet estimateur.</div></li>
+        <li><div class="q-text">On dispose des observations suivantes :
+        ${dataTable(D, T)}
+        <ol>
+          <li>Estimer chaque équation par les MCO. En déduire l'estimateur \\(\\widehat{\\boldsymbol{\\Sigma}}\\) de \\(\\boldsymbol{\\Sigma}\\) défini par \\(\\widehat{\\sigma}_{ij}:=\\frac{1}{n}\\widehat{\\textbf{u}}_i^T\\widehat{\\textbf{u}}_j\\), où \\(\\widehat{\\textbf{u}}_i\\) est le vecteur des résidus des MCO de l'équation \\(i\\), puis le coefficient de corrélation \\(\\widehat{r}\\) entre les résidus des deux équations. Tester l'hypothèse \\(\\sigma_{12}=0\\) au niveau de 5 % à l'aide de la statistique de Breusch-Pagan \\(\\lambda:=n\\,\\widehat{r}^{\\,2}\\), qui suit asymptotiquement une loi du \\(\\chi^2\\) à un degré de liberté sous l'hypothèse nulle.</li>
+          <li>Calculer, à l'aide d'un logiciel ou d'une calculatrice matricielle, l'estimateur des MCQG de \\(\\boldsymbol{\\beta}\\) et sa matrice de variances-covariances estimée. Comparer les estimations et les écarts-types à ceux des MCO (on prendra, pour les MCO, \\(\\widehat{\\sigma}_{ii}(\\textbf{X}_i^T\\textbf{X}_i)^{-1}\\) comme matrice de variances-covariances de \\(\\widehat{\\boldsymbol{\\beta}}_i\\)).</li>
+          <li>Interpréter les pentes estimées par les MCQG et tester leur significativité au niveau de 5 %.</li>
+          <li>Tester au niveau de 5 % l'égalité ${T.eq}, c'est-à-dire \\((H_0):b_1=b_2\\), à l'aide d'un test de Wald.</li>
+        </ol></div></li>
+      </ol></div>`;
+    },
+
+    sol: function (D) {
+      const T = this.ctx[D.id], v = vars(D), n = D.n, Sg = D.Sig, Si = D.Si;
+      const rejLM = D.pLM < 0.05, rejW = D.pW < 0.05;
+      const tst = [1, 3].map(i => [`\\(b_${(i + 1) / 2}\\)`, fS(D.bF[i], 5), fxf(D.zF[i], 3), fP(D.pF[i]), this.sigTxt(D.pF[i])]);
+      const tstC = [0, 2].map(i => [`\\(a_${i / 2 + 1}\\)`, fS(D.bF[i], 5), fxf(D.zF[i], 3), fP(D.pF[i]), this.sigTxt(D.pF[i])]);
+      const g = Math.max(D.ratio[1], D.ratio[3]), gk = D.ratio[1] >= D.ratio[3] ? 1 : 2;
+      const moveTxt = rejLM
+        ? `La corrélation estimée entre les perturbations étant nette, les MCQG exploitent l'information contenue dans chaque équation pour estimer l'autre : les estimations s'écartent de celles des MCO et les écarts-types diminuent, le rapport des variances atteignant ${fxf(g, 3, false)} pour \\(b_${gk}\\). Ce gain est d'autant plus important que la corrélation entre les perturbations est forte et que les régresseurs des deux équations sont peu corrélés entre eux (ici, leur corrélation vaut ${fxf(D.cxx, 3, false)}).`
+        : `La corrélation estimée entre les perturbations étant faible, les MCQG diffèrent peu des MCO et le gain de précision est négligeable (rapport des variances de ${fxf(g, 3, false)} au plus) : l'estimation équation par équation était ici suffisante.`;
+      return `<div class="st"><ol>
+
+      <li><div class="q-content">
+        <p>Chaque équation est un modèle de régression linéaire simple qui vérifie, prise isolément, les hypothèses de Gauss-Markov : on peut donc l'estimer séparément par les moindres carrés ordinaires, et l'estimateur obtenu est sans biais. Les deux équations semblent <em>a priori</em> indépendantes, puisqu'elles ne partagent ni variable expliquée ni régresseur. Il est cependant plausible que leurs perturbations soient corrélées à une même date : ${T.shock}. Cette corrélation contemporaine \\(\\sigma_{12}\\neq 0\\) constitue une information que l'estimation séparée ignore. Estimer les deux équations conjointement permet de l'exploiter pour gagner en précision : c'est le modèle à équations apparemment indépendantes (<em>seemingly unrelated regressions</em>, SUR) de Zellner (1962).</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <p>En empilant les deux équations, on obtient
+        \\[\\underbrace{\\begin{pmatrix}\\textbf{y}_1\\\\\\textbf{y}_2\\end{pmatrix}}_{=:\\textbf{Y}}=\\underbrace{\\begin{pmatrix}\\textbf{X}_1&\\textbf{0}\\\\\\textbf{0}&\\textbf{X}_2\\end{pmatrix}}_{=:\\textbf{X}}\\underbrace{\\begin{pmatrix}\\boldsymbol{\\beta}_1\\\\\\boldsymbol{\\beta}_2\\end{pmatrix}}_{=:\\boldsymbol{\\beta}}+\\underbrace{\\begin{pmatrix}\\textbf{u}_1\\\\\\textbf{u}_2\\end{pmatrix}}_{=:\\textbf{u}}\\]
+        où \\(\\textbf{Y}\\) et \\(\\textbf{u}\\) sont de taille \\(${2 * n}\\times 1\\), \\(\\textbf{X}\\) de taille \\(${2 * n}\\times 4\\) et les blocs \\(\\textbf{0}\\) de taille \\(${n}\\times 2\\). Par hypothèse, \\(\\textbf{Var}(\\textbf{u}_i,\\textbf{u}_j\\,|\\,\\textbf{X})=\\sigma_{ij}\\textbf{I}_{${n}}\\) pour tous \\(i,j\\), puisque les perturbations de dates différentes sont non corrélées et que celles d'une même date ont pour covariance \\(\\sigma_{ij}\\). Par blocs, il vient
+        \\[\\boldsymbol{\\Omega}=\\begin{pmatrix}\\sigma_{11}\\textbf{I}_{${n}}&\\sigma_{12}\\textbf{I}_{${n}}\\\\\\sigma_{12}\\textbf{I}_{${n}}&\\sigma_{22}\\textbf{I}_{${n}}\\end{pmatrix}=\\boldsymbol{\\Sigma}\\otimes\\textbf{I}_{${n}}\\]
+        Grâce à la propriété du produit mixte \\((\\textbf{A}\\otimes\\textbf{B})(\\textbf{C}\\otimes\\textbf{D})=\\textbf{AC}\\otimes\\textbf{BD}\\), on a \\((\\boldsymbol{\\Sigma}\\otimes\\textbf{I}_{${n}})(\\boldsymbol{\\Sigma}^{-1}\\otimes\\textbf{I}_{${n}})=\\textbf{I}_2\\otimes\\textbf{I}_{${n}}=\\textbf{I}_{${2 * n}}\\), donc
+        \\[\\boldsymbol{\\Omega}^{-1}=\\boldsymbol{\\Sigma}^{-1}\\otimes\\textbf{I}_{${n}}=\\begin{pmatrix}\\sigma^{11}\\textbf{I}_{${n}}&\\sigma^{12}\\textbf{I}_{${n}}\\\\\\sigma^{12}\\textbf{I}_{${n}}&\\sigma^{22}\\textbf{I}_{${n}}\\end{pmatrix},\\qquad\\text{où}\\qquad\\boldsymbol{\\Sigma}^{-1}=\\frac{1}{\\sigma_{11}\\sigma_{22}-\\sigma_{12}^2}\\begin{pmatrix}\\sigma_{22}&-\\sigma_{12}\\\\-\\sigma_{12}&\\sigma_{11}\\end{pmatrix}=:\\begin{pmatrix}\\sigma^{11}&\\sigma^{12}\\\\\\sigma^{12}&\\sigma^{22}\\end{pmatrix}\\]
+        Ce calcul évite l'inversion par compléments de Schur d'une matrice de taille \\(${2 * n}\\times ${2 * n}\\).</p>
+        <p>La matrice \\(\\boldsymbol{\\Omega}\\) n'est pas proportionnelle à l'identité dès que \\(\\sigma_{12}\\neq 0\\) ou \\(\\sigma_{11}\\neq\\sigma_{22}\\) : les hypothèses de Gauss-Markov ne sont pas vérifiées par le système empilé, et l'estimateur des MCO, bien que sans biais, n'est en général pas BLUE. Comme \\(\\boldsymbol{\\Omega}\\) est inversible, on lui préfère l'estimateur des MCG
+        \\[\\widehat{\\boldsymbol{\\beta}}_{\\text{MCG}}=\\big(\\textbf{X}^T\\boldsymbol{\\Omega}^{-1}\\textbf{X}\\big)^{-1}\\textbf{X}^T\\boldsymbol{\\Omega}^{-1}\\textbf{Y},\\qquad\\textbf{Var}(\\widehat{\\boldsymbol{\\beta}}_{\\text{MCG}}\\,|\\,\\textbf{X})=\\big(\\textbf{X}^T\\boldsymbol{\\Omega}^{-1}\\textbf{X}\\big)^{-1}\\]
+        qui est BLUE d'après le théorème d'Aitken (c'est l'estimateur des MCO du modèle transformé par \\(\\boldsymbol{\\Omega}^{-1/2}\\), qui vérifie les hypothèses de Gauss-Markov). Par blocs, on a
+        \\[\\textbf{X}^T\\boldsymbol{\\Omega}^{-1}\\textbf{X}=\\begin{pmatrix}\\sigma^{11}\\textbf{X}_1^T\\textbf{X}_1&\\sigma^{12}\\textbf{X}_1^T\\textbf{X}_2\\\\\\sigma^{12}\\textbf{X}_2^T\\textbf{X}_1&\\sigma^{22}\\textbf{X}_2^T\\textbf{X}_2\\end{pmatrix}\\qquad\\text{et}\\qquad\\textbf{X}^T\\boldsymbol{\\Omega}^{-1}\\textbf{Y}=\\begin{pmatrix}\\sigma^{11}\\textbf{X}_1^T\\textbf{y}_1+\\sigma^{12}\\textbf{X}_1^T\\textbf{y}_2\\\\\\sigma^{12}\\textbf{X}_2^T\\textbf{y}_1+\\sigma^{22}\\textbf{X}_2^T\\textbf{y}_2\\end{pmatrix}\\]</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <p>Si \\(\\sigma_{12}=0\\), alors \\(\\sigma^{12}=0\\), \\(\\sigma^{11}=1/\\sigma_{11}\\) et \\(\\sigma^{22}=1/\\sigma_{22}\\). La matrice \\(\\textbf{X}^T\\boldsymbol{\\Omega}^{-1}\\textbf{X}\\) est alors diagonale par blocs, et son inverse aussi :
+        \\[\\widehat{\\boldsymbol{\\beta}}_{\\text{MCG}}=\\begin{pmatrix}\\sigma_{11}(\\textbf{X}_1^T\\textbf{X}_1)^{-1}&\\textbf{0}\\\\\\textbf{0}&\\sigma_{22}(\\textbf{X}_2^T\\textbf{X}_2)^{-1}\\end{pmatrix}\\begin{pmatrix}\\sigma_{11}^{-1}\\textbf{X}_1^T\\textbf{y}_1\\\\\\sigma_{22}^{-1}\\textbf{X}_2^T\\textbf{y}_2\\end{pmatrix}=\\begin{pmatrix}(\\textbf{X}_1^T\\textbf{X}_1)^{-1}\\textbf{X}_1^T\\textbf{y}_1\\\\(\\textbf{X}_2^T\\textbf{X}_2)^{-1}\\textbf{X}_2^T\\textbf{y}_2\\end{pmatrix}\\]
+        On retrouve les estimateurs des MCO des deux équations : en l'absence de corrélation entre les perturbations, chaque équation n'apporte aucune information sur l'autre, et l'estimation séparée est efficace.</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <p>Si \\(\\textbf{X}_1=\\textbf{X}_2=:\\textbf{X}_0\\), alors \\(\\textbf{X}=\\textbf{I}_2\\otimes\\textbf{X}_0\\). Par la propriété du produit mixte,
+        \\[\\textbf{X}^T\\boldsymbol{\\Omega}^{-1}\\textbf{X}=(\\textbf{I}_2\\otimes\\textbf{X}_0^T)(\\boldsymbol{\\Sigma}^{-1}\\otimes\\textbf{I}_{${n}})(\\textbf{I}_2\\otimes\\textbf{X}_0)=\\boldsymbol{\\Sigma}^{-1}\\otimes\\textbf{X}_0^T\\textbf{X}_0\\]
+        et
+        \\[\\textbf{X}^T\\boldsymbol{\\Omega}^{-1}=\\boldsymbol{\\Sigma}^{-1}\\otimes\\textbf{X}_0^T\\]
+        d'où, puisque \\((\\boldsymbol{\\Sigma}^{-1}\\otimes\\textbf{X}_0^T\\textbf{X}_0)^{-1}=\\boldsymbol{\\Sigma}\\otimes(\\textbf{X}_0^T\\textbf{X}_0)^{-1}\\),
+        \\[\\widehat{\\boldsymbol{\\beta}}_{\\text{MCG}}=\\big(\\boldsymbol{\\Sigma}\\otimes(\\textbf{X}_0^T\\textbf{X}_0)^{-1}\\big)\\big(\\boldsymbol{\\Sigma}^{-1}\\otimes\\textbf{X}_0^T\\big)\\textbf{Y}=\\big(\\textbf{I}_2\\otimes(\\textbf{X}_0^T\\textbf{X}_0)^{-1}\\textbf{X}_0^T\\big)\\textbf{Y}=\\begin{pmatrix}(\\textbf{X}_0^T\\textbf{X}_0)^{-1}\\textbf{X}_0^T\\textbf{y}_1\\\\(\\textbf{X}_0^T\\textbf{X}_0)^{-1}\\textbf{X}_0^T\\textbf{y}_2\\end{pmatrix}\\]
+        Les MCG se confondent donc avec les MCO équation par équation, quelle que soit la matrice \\(\\boldsymbol{\\Sigma}\\) (résultat de Zellner et Kruskal), et il en va de même des MCQG, qui ne font que remplacer \\(\\boldsymbol{\\Sigma}\\) par \\(\\widehat{\\boldsymbol{\\Sigma}}\\). Le modèle SUR n'apporte un gain d'efficacité que si les perturbations sont corrélées <strong>et</strong> si les équations comportent des régresseurs différents. ${T.same}</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <p>La méthode des MCQG de Zellner procède en deux étapes. On estime d'abord chaque équation par les MCO, ce qui fournit des résidus \\(\\widehat{\\textbf{u}}_1\\) et \\(\\widehat{\\textbf{u}}_2\\), puis l'estimateur \\(\\widehat{\\sigma}_{ij}:=\\frac{1}{n}\\widehat{\\textbf{u}}_i^T\\widehat{\\textbf{u}}_j\\) de \\(\\sigma_{ij}\\). On applique ensuite la formule des MCG en remplaçant \\(\\boldsymbol{\\Omega}\\) par \\(\\widehat{\\boldsymbol{\\Omega}}:=\\widehat{\\boldsymbol{\\Sigma}}\\otimes\\textbf{I}_n\\) :
+        \\[\\widehat{\\boldsymbol{\\beta}}_{\\text{MCQG}}=\\big(\\textbf{X}^T\\widehat{\\boldsymbol{\\Omega}}^{-1}\\textbf{X}\\big)^{-1}\\textbf{X}^T\\widehat{\\boldsymbol{\\Omega}}^{-1}\\textbf{Y}\\]
+        Les estimateurs des MCO étant convergents, les résidus convergent vers les perturbations et, sous des hypothèses de régularité (observations indépendantes d'une date à l'autre, moments d'ordre 4 finis, matrices \\(\\frac{1}{n}\\textbf{X}_i^T\\textbf{X}_j\\) convergentes), \\(\\widehat{\\boldsymbol{\\Sigma}}\\) converge en probabilité vers \\(\\boldsymbol{\\Sigma}\\). Par continuité de l'inversion et par le théorème de Slutsky, \\(\\frac{1}{n}\\textbf{X}^T\\widehat{\\boldsymbol{\\Omega}}^{-1}\\textbf{X}\\) a alors la même limite en probabilité que \\(\\frac{1}{n}\\textbf{X}^T\\boldsymbol{\\Omega}^{-1}\\textbf{X}\\), et \\(\\frac{1}{\\sqrt{n}}\\textbf{X}^T\\widehat{\\boldsymbol{\\Omega}}^{-1}\\textbf{u}\\) la même limite en loi que \\(\\frac{1}{\\sqrt{n}}\\textbf{X}^T\\boldsymbol{\\Omega}^{-1}\\textbf{u}\\). Les MCQG ont donc la même loi asymptotique que les MCG :
+        \\[\\sqrt{n}\\big(\\widehat{\\boldsymbol{\\beta}}_{\\text{MCQG}}-\\boldsymbol{\\beta}\\big)\\xrightarrow[n\\to+\\infty]{\\mathcal{L}}\\mathcal{N}\\Big(\\textbf{0},\\ \\text{plim}\\big(\\tfrac{1}{n}\\textbf{X}^T\\boldsymbol{\\Omega}^{-1}\\textbf{X}\\big)^{-1}\\Big)\\]
+        Pour tout coefficient \\(\\beta_k\\), la statistique \\(\\widehat{z}_k:=(\\widehat{\\beta}_{k,\\text{MCQG}}-\\beta_k)\\big/\\sqrt{[(\\textbf{X}^T\\widehat{\\boldsymbol{\\Omega}}^{-1}\\textbf{X})^{-1}]_{kk}}\\), dont le dénominateur converge (après normalisation par \\(\\sqrt{n}\\)) vers l'écart-type asymptotique, converge en loi vers \\(\\mathcal{N}(0,1)\\) d'après le théorème de Slutsky. Les tests de Student restent donc valables asymptotiquement, avec les quantiles de la loi normale centrée réduite, même si les perturbations ne sont pas gaussiennes. On peut itérer la procédure jusqu'à convergence (MCQG itérés), ce qui conduit, sous normalité, à l'estimateur du maximum de vraisemblance.</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <ol>
+        <li><p>Pour la première équation, on calcule
+        \\[\\textbf{X}_1^T\\textbf{X}_1=${exM(D, D.XX(0, 0))}\\qquad\\textbf{X}_1^T\\textbf{y}_1=${exV(D, D.XY(0, 0))}\\]
+        d'où
+        \\[\\widehat{\\boldsymbol{\\beta}}_{1,\\text{MCO}}=(\\textbf{X}_1^T\\textbf{X}_1)^{-1}\\textbf{X}_1^T\\textbf{y}_1\\approx ${flV(D.ols[0].b)}\\]
+        et, pour la seconde,
+        \\[\\textbf{X}_2^T\\textbf{X}_2=${exM(D, D.XX(1, 1))}\\qquad\\textbf{X}_2^T\\textbf{y}_2=${exV(D, D.XY(1, 1))}\\]
+        d'où
+        \\[\\widehat{\\boldsymbol{\\beta}}_{2,\\text{MCO}}\\approx ${flV(D.ols[1].b)}\\]
+        Les résidus \\(\\widehat{u}_{i,t}:=${'y'}_{i,t}-\\widehat{a}_i-\\widehat{b}_ix_{i,t}\\) (avec des notations évidentes) donnent
+        \\[\\widehat{\\boldsymbol{\\Sigma}}=\\frac{1}{${n}}\\begin{pmatrix}\\widehat{\\textbf{u}}_1^T\\widehat{\\textbf{u}}_1&\\widehat{\\textbf{u}}_1^T\\widehat{\\textbf{u}}_2\\\\\\widehat{\\textbf{u}}_2^T\\widehat{\\textbf{u}}_1&\\widehat{\\textbf{u}}_2^T\\widehat{\\textbf{u}}_2\\end{pmatrix}\\approx ${flM(Sg)}\\qquad\\text{et}\\qquad\\widehat{r}=\\frac{\\widehat{\\sigma}_{12}}{\\sqrt{\\widehat{\\sigma}_{11}\\widehat{\\sigma}_{22}}}\\approx ${fxf(D.r, 4, true)}\\]
+        La statistique de Breusch-Pagan vaut \\(\\lambda=${n}\\,\\widehat{r}^{\\,2}\\approx ${fxf(D.LM, 3, true)}\\), pour une p-valeur de ${fP(D.pLM)}. Le quantile à 95 % de la loi du \\(\\chi^2\\) à un degré de liberté valant 3.841, ${rejLM ? `on rejette l'hypothèse \\(\\sigma_{12}=0\\) au niveau de 5 % : les perturbations des deux équations sont significativement corrélées, ce qui justifie le recours au modèle SUR` : `on ne peut pas rejeter l'hypothèse \\(\\sigma_{12}=0\\) au niveau de 5 % : rien n'indique que les perturbations des deux équations soient corrélées, et l'estimation séparée par les MCO paraît suffisante`}. Avec seulement ${n} observations, ce test asymptotique doit toutefois être interprété avec prudence.</p></li>
+        <li><p>On calcule \\(\\widehat{\\boldsymbol{\\Sigma}}^{-1}\\approx ${flM(Si)}\\), puis on assemble les blocs de la question 2, à l'aide des produits croisés
+        \\[\\textbf{X}_1^T\\textbf{X}_2=${exM(D, D.XX(0, 1))}\\qquad\\textbf{X}_1^T\\textbf{y}_2=${exV(D, D.XY(0, 1))}\\qquad\\textbf{X}_2^T\\textbf{y}_1=${exV(D, D.XY(1, 0))}\\]
+        Il vient
+        \\[\\textbf{X}^T\\widehat{\\boldsymbol{\\Omega}}^{-1}\\textbf{X}\\approx ${flM(D.G)}\\qquad\\textbf{X}^T\\widehat{\\boldsymbol{\\Omega}}^{-1}\\textbf{Y}\\approx ${flV(D.h)}\\]
+        d'où
+        \\[\\widehat{\\boldsymbol{\\beta}}_{\\text{MCQG}}=\\begin{pmatrix}\\widehat{a}_1\\\\\\widehat{b}_1\\\\\\widehat{a}_2\\\\\\widehat{b}_2\\end{pmatrix}\\approx ${flV(D.bF)}\\]
+        \\[\\widehat{\\textbf{Var}}(\\widehat{\\boldsymbol{\\beta}}_{\\text{MCQG}})=\\big(\\textbf{X}^T\\widehat{\\boldsymbol{\\Omega}}^{-1}\\textbf{X}\\big)^{-1}\\approx ${flM(D.V)}\\]
+        Le tableau suivant compare les deux méthodes :</p>
+        ${resTable(D, this)}
+        <p>${moveTxt} Conformément au théorème d'Aitken appliqué avec \\(\\widehat{\\boldsymbol{\\Sigma}}\\), chaque variance des MCQG est inférieure à la variance des MCO correspondante. En R, on obtient ces résultats avec <code>systemfit(list(eq1 = y1 ~ x1, eq2 = y2 ~ x2), method = "SUR", data = d, methodResidCov = "noDfCor")</code> ; en Python, avec <code>SUR.from_formula({"eq1": "y1 ~ 1 + x1", "eq2": "y2 ~ 1 + x2"}, d).fit(method="gls", cov_type="unadjusted")</code> du package linearmodels. Attention aux réglages par défaut des logiciels : systemfit corrige par défaut \\(\\widehat{\\boldsymbol{\\Sigma}}\\) des degrés de liberté, et linearmodels calcule par défaut des écarts-types robustes à l'hétéroscédasticité, ce qui modifie les résultats.</p></li>
+        <li><p>${T.b(1)} ; ${T.b(2)}. Selon les MCQG, ${T.interp(1, fS(Math.abs(D.bF[1]), 3, false))} ; de même, ${T.interp(2, fS(Math.abs(D.bF[3]), 3, false))}. D'après la question 5, les statistiques \\(\\widehat{z}=\\widehat{\\beta}_k/\\widehat{\\sigma}_{\\widehat{\\beta}_k}\\) suivent asymptotiquement une loi normale centrée réduite sous l'hypothèse de nullité du coefficient ; on compare leur valeur absolue à 1.960 :</p>
+        ${dtable(this.tstHead, tstC.concat(tst), '', false)}
+        <p>Les deux pentes sont ${D.pF[1] < 0.05 && D.pF[3] < 0.05 ? 'significatives' : D.pF[1] >= 0.05 && D.pF[3] >= 0.05 ? 'non significatives' : `respectivement ${this.sigTxt(D.pF[1])}e et ${this.sigTxt(D.pF[3])}e`} au niveau de 5 %. Ces conclusions reposent sur une approximation asymptotique, fragile avec ${n} observations.</p></li>
+        <li><p>L'hypothèse \\((H_0):b_1=b_2\\) s'écrit \\(\\textbf{R}\\boldsymbol{\\beta}=0\\) avec \\(\\textbf{R}:=(0,1,0,-1)\\). La statistique de Wald
+        \\[W:=\\frac{(\\widehat{b}_1-\\widehat{b}_2)^2}{\\textbf{R}\\,\\widehat{\\textbf{Var}}(\\widehat{\\boldsymbol{\\beta}}_{\\text{MCQG}})\\,\\textbf{R}^T}=\\frac{(\\widehat{b}_1-\\widehat{b}_2)^2}{\\widehat{\\textbf{Var}}(\\widehat{b}_1)+\\widehat{\\textbf{Var}}(\\widehat{b}_2)-2\\,\\widehat{\\textbf{Cov}}(\\widehat{b}_1,\\widehat{b}_2)}\\]
+        suit asymptotiquement une loi du \\(\\chi^2\\) à un degré de liberté sous \\((H_0)\\). Ici, \\(\\widehat{b}_1-\\widehat{b}_2\\approx ${fS(D.bF[1] - D.bF[3], 4, true)}\\) et le dénominateur vaut environ \\(${fS(D.dvar, 4, true)}\\), d'où \\(W\\approx ${fxf(D.W, 3, true)}\\) et une p-valeur de ${fP(D.pW)}. ${rejW ? `Comme \\(W>3.841\\), on rejette l'égalité ${T.eq} au niveau de 5 %.` : `Comme \\(W<3.841\\), on ne peut pas rejeter l'égalité ${T.eq} au niveau de 5 %.`} La covariance entre \\(\\widehat{b}_1\\) et \\(\\widehat{b}_2\\), nulle pour des MCO estimés séparément, est ici prise en compte : c'est un autre avantage de l'estimation conjointe, qui permet de tester simplement des contraintes portant sur plusieurs équations. Une contrainte d'homogénéité portant sur l'ensemble des coefficients (\\(a_1=a_2\\) et \\(b_1=b_2\\)) se testerait de la même façon, avec une statistique suivant une loi du \\(\\chi^2\\) à deux degrés de liberté.</p></li>
+        </ol>
+      </div></li>
+
+      </ol></div>`;
+    }
+  },
+
+  en: {
+    "htmlLang": "en",
+    "title": "Exercise generator - SUR model",
+    "k-badge": "ECONOMETRICS",
+    "k-h1": "Seemingly Unrelated Regressions (SUR)",
+    "k-sub": "© Thomas Hossen – September 17, 2026 Version",
+    "k-seed": "Reproducibility seed",
+    "k-seedtip": "Empty = random at each generation",
+    "k-n": "Observations <em>(n)</em>",
+    "k-ntip": "8 – 12, auto if left empty",
+    "k-gen": "Generate",
+    "k-welcome": "Configure the parameters (or leave them empty for random values), then click Generate.",
+    "k-seedbadge": "Seed:",
+    "k-tag-ex": "Problem",
+    "k-cardtitle": "SUR model",
+    "k-tag-sol": "Solution",
+    "k-cardtitle2": "SUR model",
+    "phSeed": "auto",
+    "phN": "auto",
+    "showSol": "Show the solution",
+    "hideSol": "Hide the solution",
+    resHead: ["Coefficient", "OLS", "OLS std. error", "FGLS", "FGLS std. error", "Variance ratio"],
+    tstHead: ["Coefficient", "FGLS estimate", "z statistic", "p-value", "Conclusion at 5 %"],
+    sigTxt: p => (p < 0.05 ? 'significant' : 'not significant'),
+    ctx: {
+      meat: {
+        title: "Demand for beef and pork", tHead: "Month", tLab: (D, t) => `${MONTHS.en[(D.t0 + t) % 12]}`,
+        dCap: "Per capita consumption (in kilograms) and price indices (base 100), in logarithms (fictitious data).",
+        intro: D => `We study the demand for two animal products over ${D.n} consecutive months. For every month \\(t\\), we write \\(Q_{B,t}\\) (resp. \\(Q_{P,t}\\)) for per capita beef (resp. pork) consumption, in kilograms, and \\(P_{B,t}\\) (resp. \\(P_{P,t}\\)) for the consumer price index of beef (resp. pork), base 100. Prices are assumed exogenous.`,
+        eqs: "the demands for beef and pork",
+        shock: "a food scandal hitting the beef industry (\\(u_{1,t}\\) strongly negative) may, through a ripple effect, also depress pork consumption, or on the contrary shift demand towards it; more generally, common shocks (seasonality, food trends, the business cycle) affect both demands at the same time",
+        b: k => `\\(b_${k}\\) is the own-price elasticity of ${k === 1 ? 'beef' : 'pork'} demand: a 1 % rise in the price of ${k === 1 ? 'beef' : 'pork'} goes with an average fall of \\(|b_${k}|\\) % in consumption`,
+        interp: (k, v) => `a 1 % rise in the price of ${k === 1 ? 'beef' : 'pork'} goes with a fall of about ${v} % in the corresponding consumption; demand is price-${Math.abs(Number(v)) < 1 ? 'inelastic' : 'elastic'}`,
+        eq: "of the own-price elasticities of the two demands",
+        same: "In a demand system where every equation contains all prices (as in the course example, where the prices of the three meats and the general price level appear in each equation), the regressors are identical across equations: GLS, and hence FGLS, then coincide with equation-by-equation OLS. The SUR model is only useful here because each demand depends on its own price only."
+      },
+      firm: {
+        title: "Investment of two firms", tHead: "Year", tLab: (D, t) => String(2000 + D.t0 + t),
+        dCap: "Investment and market value of the two firms, in millions of euros (fictitious data).",
+        intro: D => `We study the investment of two firms A and B over ${D.n} years, in the spirit of the Grunfeld data. For every year \\(t\\), we write \\(I_{A,t}\\) (resp. \\(I_{B,t}\\)) for the gross investment of firm A (resp. B) and \\(V_{A,t}\\) (resp. \\(V_{B,t}\\)) for its market value, in millions of euros. Market values are assumed exogenous.`,
+        eqs: "the investments of the two firms",
+        shock: "common macroeconomic shocks (credit conditions, business confidence, taxation) affect the investment decisions of both firms at the same time, all the more so if they belong to the same industry",
+        b: k => `\\(b_${k}\\) measures the sensitivity of firm ${k === 1 ? 'A' : 'B'}'s investment to its market value: a one-million-euro rise in the latter goes with an average rise of \\(b_${k}\\) million euros in investment`,
+        interp: (k, v) => `a one-million-euro rise in firm ${k === 1 ? 'A' : 'B'}'s market value goes with investment higher by about ${v} million euros, that is ${Math.round(Number(v) * 1000)} thousand euros`,
+        eq: "of the sensitivities of investment to market value",
+        same: "If each firm's investment depended on the market values of both firms, the regressors would be identical across equations and GLS, hence FGLS, would coincide with equation-by-equation OLS. The SUR model is only useful here because each equation has its own regressors."
+      },
+      energy: {
+        title: "Demand for electricity and gas", tHead: "Month", tLab: (D, t) => `${MONTHS.en[(D.t0 + t) % 12]}`,
+        dCap: "Average consumption per household (in kWh) and price indices (base 100), in logarithms (fictitious data).",
+        intro: D => `We study the energy consumption of households in a region over ${D.n} consecutive months. For every month \\(t\\), we write \\(E_t\\) (resp. \\(G_t\\)) for the average electricity (resp. gas) consumption per household, in kWh, and \\(P^E_t\\) (resp. \\(P^G_t\\)) for the electricity (resp. gas) price index, base 100. Prices, being regulated, are assumed exogenous.`,
+        eqs: "the demands for electricity and gas",
+        shock: "a cold spell raises both electricity and gas consumption, since both are used for heating; the disturbances of the two equations are therefore likely to be positively correlated",
+        b: k => `\\(b_${k}\\) is the own-price elasticity of ${k === 1 ? 'electricity' : 'gas'} demand: a 1 % price rise goes with an average fall of \\(|b_${k}|\\) % in consumption`,
+        interp: (k, v) => `a 1 % rise in the price of ${k === 1 ? 'electricity' : 'gas'} goes with a fall of about ${v} % in the corresponding consumption; demand is ${Math.abs(Number(v)) < 1 ? 'inelastic' : 'elastic'} in the short run`,
+        eq: "of the price elasticities of electricity and gas",
+        same: "If both prices were included in each of the two equations (to capture substitution between energies), the regressors would become identical and GLS, hence FGLS, would coincide with equation-by-equation OLS."
+      },
+      shop: {
+        title: "Sales of two stores", tHead: "Week", tLab: (D, t) => String(D.t0 + t + 1),
+        dCap: "Weekly sales and local advertising expenditure of the two stores, in thousands of euros (fictitious data).",
+        intro: D => `A retail chain studies the sales of two of its stores, A and B, located in different towns, over ${D.n} weeks. For every week \\(t\\), we write \\(S_{A,t}\\) (resp. \\(S_{B,t}\\)) for the sales of store A (resp. B) and \\(A_{A,t}\\) (resp. \\(A_{B,t}\\)) for its local advertising expenditure, in thousands of euros. Advertising budgets, set in advance by headquarters, are assumed exogenous.`,
+        eqs: "the sales of the two stores",
+        shock: "common shocks (weather, public holidays, the chain's national campaign, the business cycle) affect the sales of both stores at the same time",
+        b: k => `\\(b_${k}\\) measures the effect of local advertising on the sales of store ${k === 1 ? 'A' : 'B'}: one thousand euros of additional advertising goes with an average of \\(b_${k}\\) thousand euros of additional sales`,
+        interp: (k, v) => `one thousand euros of additional local advertising goes with about ${v} thousand euros of additional sales for store ${k === 1 ? 'A' : 'B'}`,
+        eq: "of the advertising effects in the two stores",
+        same: "If each store's sales depended on the advertising budgets of both stores, the regressors would be identical across equations and GLS, hence FGLS, would coincide with equation-by-equation OLS."
+      }
+    },
+
+    ex: function (D) {
+      const T = this.ctx[D.id], v = vars(D);
+      return `
+      <div class="context-block">
+        ${T.intro(D)} We consider the following two-equation system:
+        \\[\\forall t\\in\\{1,\\ldots,${D.n}\\}\\qquad\\begin{cases}${v.y1}=a_1+b_1\\,${v.x1}+u_{1,t}\\\\${v.y2}=a_2+b_2\\,${v.x2}+u_{2,t}\\end{cases}\\]
+        We assume that \\(\\mathbb{E}[u_{i,t}\\,|\\,\\textbf{X}]=0\\) for all \\(i\\) and \\(t\\), that \\(\\textbf{Cov}(u_{i,t},u_{j,t}\\,|\\,\\textbf{X})=\\sigma_{ij}\\) for all \\(i,j\\in\\{1,2\\}\\) and every date \\(t\\), and that \\(\\textbf{Cov}(u_{i,t},u_{j,s}\\,|\\,\\textbf{X})=0\\) whenever \\(t\\neq s\\), where \\(\\boldsymbol{\\Sigma}:=(\\sigma_{ij})_{1\\leq i,j\\leq 2}\\) is a symmetric positive definite matrix. For \\(i\\in\\{1,2\\}\\), we write \\(\\textbf{y}_i\\in\\mathbb{R}^{${D.n}}\\) for the vector of dependent variables of equation \\(i\\), \\(\\textbf{X}_i\\) for the \\(${D.n}\\times 2\\) matrix made of a column of 1s and the regressor of equation \\(i\\), \\(\\boldsymbol{\\beta}_i:=(a_i,b_i)^T\\) and \\(\\textbf{u}_i:=(u_{i,1},\\ldots,u_{i,${D.n}})^T\\).
+      </div>
+      <div class="questions"><ol>
+        <li><div class="q-text">Which method can be used to estimate each equation separately? Does it make sense to look for an estimation method that accounts for possible interdependencies between the two equations?</div></li>
+        <li><div class="q-text">Write the system in stacked form \\(\\textbf{Y}=\\textbf{X}\\boldsymbol{\\beta}+\\textbf{u}\\). Show that \\(\\boldsymbol{\\Omega}:=\\textbf{Var}(\\textbf{u}\\,|\\,\\textbf{X})=\\boldsymbol{\\Sigma}\\otimes\\textbf{I}_{${D.n}}\\), where \\(\\otimes\\) denotes the Kronecker product, and deduce \\(\\boldsymbol{\\Omega}^{-1}\\). Is the ordinary least squares estimator BLUE? Give the expression of the generalised least squares (GLS) estimator and of its variance-covariance matrix.</div></li>
+        <li><div class="q-text">Show that, if \\(\\sigma_{12}=0\\), the GLS estimator coincides with the OLS estimator applied equation by equation.</div></li>
+        <li><div class="q-text">Show that, if both equations contain exactly the same regressors (\\(\\textbf{X}_1=\\textbf{X}_2\\)), the GLS estimator still coincides with equation-by-equation OLS, whatever \\(\\boldsymbol{\\Sigma}\\). What does this imply for the usefulness of the SUR model?</div></li>
+        <li><div class="q-text">Since \\(\\boldsymbol{\\Sigma}\\) is unknown in practice, recall the principle of Zellner's feasible generalised least squares (FGLS) estimator, and justify that Student tests remain asymptotically valid for this estimator.</div></li>
+        <li><div class="q-text">The following observations are available:
+        ${dataTable(D, T)}
+        <ol>
+          <li>Estimate each equation by OLS. Deduce the estimator \\(\\widehat{\\boldsymbol{\\Sigma}}\\) of \\(\\boldsymbol{\\Sigma}\\) defined by \\(\\widehat{\\sigma}_{ij}:=\\frac{1}{n}\\widehat{\\textbf{u}}_i^T\\widehat{\\textbf{u}}_j\\), where \\(\\widehat{\\textbf{u}}_i\\) is the vector of OLS residuals of equation \\(i\\), then the correlation coefficient \\(\\widehat{r}\\) between the residuals of the two equations. Test the hypothesis \\(\\sigma_{12}=0\\) at the 5 % level using the Breusch-Pagan statistic \\(\\lambda:=n\\,\\widehat{r}^{\\,2}\\), which asymptotically follows a \\(\\chi^2\\) distribution with one degree of freedom under the null.</li>
+          <li>Using software or a matrix calculator, compute the FGLS estimator of \\(\\boldsymbol{\\beta}\\) and its estimated variance-covariance matrix. Compare the estimates and standard errors with those of OLS (for OLS, take \\(\\widehat{\\sigma}_{ii}(\\textbf{X}_i^T\\textbf{X}_i)^{-1}\\) as the variance-covariance matrix of \\(\\widehat{\\boldsymbol{\\beta}}_i\\)).</li>
+          <li>Interpret the slopes estimated by FGLS and test their significance at the 5 % level.</li>
+          <li>Test at the 5 % level the equality ${T.eq}, that is \\((H_0):b_1=b_2\\), using a Wald test.</li>
+        </ol></div></li>
+      </ol></div>`;
+    },
+
+    sol: function (D) {
+      const T = this.ctx[D.id], v = vars(D), n = D.n, Sg = D.Sig, Si = D.Si;
+      const rejLM = D.pLM < 0.05, rejW = D.pW < 0.05;
+      const tst = [1, 3].map(i => [`\\(b_${(i + 1) / 2}\\)`, fS(D.bF[i], 5), fxf(D.zF[i], 3), fP(D.pF[i]), this.sigTxt(D.pF[i])]);
+      const tstC = [0, 2].map(i => [`\\(a_${i / 2 + 1}\\)`, fS(D.bF[i], 5), fxf(D.zF[i], 3), fP(D.pF[i]), this.sigTxt(D.pF[i])]);
+      const g = Math.max(D.ratio[1], D.ratio[3]), gk = D.ratio[1] >= D.ratio[3] ? 1 : 2;
+      const moveTxt = rejLM
+        ? `Since the estimated correlation between the disturbances is clear-cut, FGLS uses the information contained in each equation to estimate the other: the estimates move away from OLS and the standard errors shrink, the variance ratio reaching ${fxf(g, 3, false)} for \\(b_${gk}\\). This gain is all the larger as the correlation between the disturbances is strong and the regressors of the two equations are weakly correlated with each other (here, their correlation is ${fxf(D.cxx, 3, false)}).`
+        : `Since the estimated correlation between the disturbances is weak, FGLS differs little from OLS and the precision gain is negligible (variance ratio of at most ${fxf(g, 3, false)}): equation-by-equation estimation was sufficient here.`;
+      return `<div class="st"><ol>
+
+      <li><div class="q-content">
+        <p>Each equation is a simple linear regression model which, taken on its own, satisfies the Gauss-Markov assumptions: it can therefore be estimated separately by ordinary least squares, and the resulting estimator is unbiased. The two equations seem independent <em>a priori</em>, since they share neither dependent variable nor regressor. It is plausible, however, that their disturbances are correlated at a given date: ${T.shock}. This contemporaneous correlation \\(\\sigma_{12}\\neq 0\\) is information that separate estimation ignores. Estimating both equations jointly makes it possible to exploit it to gain precision: this is Zellner's (1962) seemingly unrelated regressions (SUR) model.</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <p>Stacking the two equations, we get
+        \\[\\underbrace{\\begin{pmatrix}\\textbf{y}_1\\\\\\textbf{y}_2\\end{pmatrix}}_{=:\\textbf{Y}}=\\underbrace{\\begin{pmatrix}\\textbf{X}_1&\\textbf{0}\\\\\\textbf{0}&\\textbf{X}_2\\end{pmatrix}}_{=:\\textbf{X}}\\underbrace{\\begin{pmatrix}\\boldsymbol{\\beta}_1\\\\\\boldsymbol{\\beta}_2\\end{pmatrix}}_{=:\\boldsymbol{\\beta}}+\\underbrace{\\begin{pmatrix}\\textbf{u}_1\\\\\\textbf{u}_2\\end{pmatrix}}_{=:\\textbf{u}}\\]
+        where \\(\\textbf{Y}\\) and \\(\\textbf{u}\\) are \\(${2 * n}\\times 1\\), \\(\\textbf{X}\\) is \\(${2 * n}\\times 4\\) and the \\(\\textbf{0}\\) blocks are \\(${n}\\times 2\\). By assumption, \\(\\textbf{Var}(\\textbf{u}_i,\\textbf{u}_j\\,|\\,\\textbf{X})=\\sigma_{ij}\\textbf{I}_{${n}}\\) for all \\(i,j\\), since disturbances at different dates are uncorrelated and those at the same date have covariance \\(\\sigma_{ij}\\). By blocks, we get
+        \\[\\boldsymbol{\\Omega}=\\begin{pmatrix}\\sigma_{11}\\textbf{I}_{${n}}&\\sigma_{12}\\textbf{I}_{${n}}\\\\\\sigma_{12}\\textbf{I}_{${n}}&\\sigma_{22}\\textbf{I}_{${n}}\\end{pmatrix}=\\boldsymbol{\\Sigma}\\otimes\\textbf{I}_{${n}}\\]
+        By the mixed-product property \\((\\textbf{A}\\otimes\\textbf{B})(\\textbf{C}\\otimes\\textbf{D})=\\textbf{AC}\\otimes\\textbf{BD}\\), we have \\((\\boldsymbol{\\Sigma}\\otimes\\textbf{I}_{${n}})(\\boldsymbol{\\Sigma}^{-1}\\otimes\\textbf{I}_{${n}})=\\textbf{I}_2\\otimes\\textbf{I}_{${n}}=\\textbf{I}_{${2 * n}}\\), hence
+        \\[\\boldsymbol{\\Omega}^{-1}=\\boldsymbol{\\Sigma}^{-1}\\otimes\\textbf{I}_{${n}}=\\begin{pmatrix}\\sigma^{11}\\textbf{I}_{${n}}&\\sigma^{12}\\textbf{I}_{${n}}\\\\\\sigma^{12}\\textbf{I}_{${n}}&\\sigma^{22}\\textbf{I}_{${n}}\\end{pmatrix},\\qquad\\text{where}\\qquad\\boldsymbol{\\Sigma}^{-1}=\\frac{1}{\\sigma_{11}\\sigma_{22}-\\sigma_{12}^2}\\begin{pmatrix}\\sigma_{22}&-\\sigma_{12}\\\\-\\sigma_{12}&\\sigma_{11}\\end{pmatrix}=:\\begin{pmatrix}\\sigma^{11}&\\sigma^{12}\\\\\\sigma^{12}&\\sigma^{22}\\end{pmatrix}\\]
+        This computation avoids inverting a \\(${2 * n}\\times ${2 * n}\\) matrix through Schur complements.</p>
+        <p>The matrix \\(\\boldsymbol{\\Omega}\\) is not proportional to the identity as soon as \\(\\sigma_{12}\\neq 0\\) or \\(\\sigma_{11}\\neq\\sigma_{22}\\): the stacked system does not satisfy the Gauss-Markov assumptions, and the OLS estimator, although unbiased, is generally not BLUE. Since \\(\\boldsymbol{\\Omega}\\) is invertible, the GLS estimator is preferred:
+        \\[\\widehat{\\boldsymbol{\\beta}}_{\\text{GLS}}=\\big(\\textbf{X}^T\\boldsymbol{\\Omega}^{-1}\\textbf{X}\\big)^{-1}\\textbf{X}^T\\boldsymbol{\\Omega}^{-1}\\textbf{Y},\\qquad\\textbf{Var}(\\widehat{\\boldsymbol{\\beta}}_{\\text{GLS}}\\,|\\,\\textbf{X})=\\big(\\textbf{X}^T\\boldsymbol{\\Omega}^{-1}\\textbf{X}\\big)^{-1}\\]
+        which is BLUE by Aitken's theorem (it is the OLS estimator of the model transformed by \\(\\boldsymbol{\\Omega}^{-1/2}\\), which satisfies the Gauss-Markov assumptions). By blocks,
+        \\[\\textbf{X}^T\\boldsymbol{\\Omega}^{-1}\\textbf{X}=\\begin{pmatrix}\\sigma^{11}\\textbf{X}_1^T\\textbf{X}_1&\\sigma^{12}\\textbf{X}_1^T\\textbf{X}_2\\\\\\sigma^{12}\\textbf{X}_2^T\\textbf{X}_1&\\sigma^{22}\\textbf{X}_2^T\\textbf{X}_2\\end{pmatrix}\\qquad\\text{and}\\qquad\\textbf{X}^T\\boldsymbol{\\Omega}^{-1}\\textbf{Y}=\\begin{pmatrix}\\sigma^{11}\\textbf{X}_1^T\\textbf{y}_1+\\sigma^{12}\\textbf{X}_1^T\\textbf{y}_2\\\\\\sigma^{12}\\textbf{X}_2^T\\textbf{y}_1+\\sigma^{22}\\textbf{X}_2^T\\textbf{y}_2\\end{pmatrix}\\]</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <p>If \\(\\sigma_{12}=0\\), then \\(\\sigma^{12}=0\\), \\(\\sigma^{11}=1/\\sigma_{11}\\) and \\(\\sigma^{22}=1/\\sigma_{22}\\). The matrix \\(\\textbf{X}^T\\boldsymbol{\\Omega}^{-1}\\textbf{X}\\) is then block diagonal, and so is its inverse:
+        \\[\\widehat{\\boldsymbol{\\beta}}_{\\text{GLS}}=\\begin{pmatrix}\\sigma_{11}(\\textbf{X}_1^T\\textbf{X}_1)^{-1}&\\textbf{0}\\\\\\textbf{0}&\\sigma_{22}(\\textbf{X}_2^T\\textbf{X}_2)^{-1}\\end{pmatrix}\\begin{pmatrix}\\sigma_{11}^{-1}\\textbf{X}_1^T\\textbf{y}_1\\\\\\sigma_{22}^{-1}\\textbf{X}_2^T\\textbf{y}_2\\end{pmatrix}=\\begin{pmatrix}(\\textbf{X}_1^T\\textbf{X}_1)^{-1}\\textbf{X}_1^T\\textbf{y}_1\\\\(\\textbf{X}_2^T\\textbf{X}_2)^{-1}\\textbf{X}_2^T\\textbf{y}_2\\end{pmatrix}\\]
+        We recover the OLS estimators of the two equations: without correlation between the disturbances, each equation carries no information about the other, and separate estimation is efficient.</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <p>If \\(\\textbf{X}_1=\\textbf{X}_2=:\\textbf{X}_0\\), then \\(\\textbf{X}=\\textbf{I}_2\\otimes\\textbf{X}_0\\). By the mixed-product property,
+        \\[\\textbf{X}^T\\boldsymbol{\\Omega}^{-1}\\textbf{X}=(\\textbf{I}_2\\otimes\\textbf{X}_0^T)(\\boldsymbol{\\Sigma}^{-1}\\otimes\\textbf{I}_{${n}})(\\textbf{I}_2\\otimes\\textbf{X}_0)=\\boldsymbol{\\Sigma}^{-1}\\otimes\\textbf{X}_0^T\\textbf{X}_0\\]
+        and
+        \\[\\textbf{X}^T\\boldsymbol{\\Omega}^{-1}=\\boldsymbol{\\Sigma}^{-1}\\otimes\\textbf{X}_0^T\\]
+        hence, since \\((\\boldsymbol{\\Sigma}^{-1}\\otimes\\textbf{X}_0^T\\textbf{X}_0)^{-1}=\\boldsymbol{\\Sigma}\\otimes(\\textbf{X}_0^T\\textbf{X}_0)^{-1}\\),
+        \\[\\widehat{\\boldsymbol{\\beta}}_{\\text{GLS}}=\\big(\\boldsymbol{\\Sigma}\\otimes(\\textbf{X}_0^T\\textbf{X}_0)^{-1}\\big)\\big(\\boldsymbol{\\Sigma}^{-1}\\otimes\\textbf{X}_0^T\\big)\\textbf{Y}=\\big(\\textbf{I}_2\\otimes(\\textbf{X}_0^T\\textbf{X}_0)^{-1}\\textbf{X}_0^T\\big)\\textbf{Y}=\\begin{pmatrix}(\\textbf{X}_0^T\\textbf{X}_0)^{-1}\\textbf{X}_0^T\\textbf{y}_1\\\\(\\textbf{X}_0^T\\textbf{X}_0)^{-1}\\textbf{X}_0^T\\textbf{y}_2\\end{pmatrix}\\]
+        GLS therefore coincides with equation-by-equation OLS, whatever the matrix \\(\\boldsymbol{\\Sigma}\\) (Zellner and Kruskal's result), and so does FGLS, which merely replaces \\(\\boldsymbol{\\Sigma}\\) with \\(\\widehat{\\boldsymbol{\\Sigma}}\\). The SUR model only brings an efficiency gain if the disturbances are correlated <strong>and</strong> the equations have different regressors. ${T.same}</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <p>Zellner's FGLS method proceeds in two steps. Each equation is first estimated by OLS, which yields residuals \\(\\widehat{\\textbf{u}}_1\\) and \\(\\widehat{\\textbf{u}}_2\\), then the estimator \\(\\widehat{\\sigma}_{ij}:=\\frac{1}{n}\\widehat{\\textbf{u}}_i^T\\widehat{\\textbf{u}}_j\\) of \\(\\sigma_{ij}\\). The GLS formula is then applied with \\(\\boldsymbol{\\Omega}\\) replaced by \\(\\widehat{\\boldsymbol{\\Omega}}:=\\widehat{\\boldsymbol{\\Sigma}}\\otimes\\textbf{I}_n\\):
+        \\[\\widehat{\\boldsymbol{\\beta}}_{\\text{FGLS}}=\\big(\\textbf{X}^T\\widehat{\\boldsymbol{\\Omega}}^{-1}\\textbf{X}\\big)^{-1}\\textbf{X}^T\\widehat{\\boldsymbol{\\Omega}}^{-1}\\textbf{Y}\\]
+        Since the OLS estimators are consistent, the residuals converge to the disturbances and, under regularity conditions (observations independent across dates, finite moments of order 4, convergent matrices \\(\\frac{1}{n}\\textbf{X}_i^T\\textbf{X}_j\\)), \\(\\widehat{\\boldsymbol{\\Sigma}}\\) converges in probability to \\(\\boldsymbol{\\Sigma}\\). By continuity of inversion and Slutsky's theorem, \\(\\frac{1}{n}\\textbf{X}^T\\widehat{\\boldsymbol{\\Omega}}^{-1}\\textbf{X}\\) then has the same probability limit as \\(\\frac{1}{n}\\textbf{X}^T\\boldsymbol{\\Omega}^{-1}\\textbf{X}\\), and \\(\\frac{1}{\\sqrt{n}}\\textbf{X}^T\\widehat{\\boldsymbol{\\Omega}}^{-1}\\textbf{u}\\) the same limit in distribution as \\(\\frac{1}{\\sqrt{n}}\\textbf{X}^T\\boldsymbol{\\Omega}^{-1}\\textbf{u}\\). FGLS therefore has the same asymptotic distribution as GLS:
+        \\[\\sqrt{n}\\big(\\widehat{\\boldsymbol{\\beta}}_{\\text{FGLS}}-\\boldsymbol{\\beta}\\big)\\xrightarrow[n\\to+\\infty]{\\mathcal{L}}\\mathcal{N}\\Big(\\textbf{0},\\ \\text{plim}\\big(\\tfrac{1}{n}\\textbf{X}^T\\boldsymbol{\\Omega}^{-1}\\textbf{X}\\big)^{-1}\\Big)\\]
+        For every coefficient \\(\\beta_k\\), the statistic \\(\\widehat{z}_k:=(\\widehat{\\beta}_{k,\\text{FGLS}}-\\beta_k)\\big/\\sqrt{[(\\textbf{X}^T\\widehat{\\boldsymbol{\\Omega}}^{-1}\\textbf{X})^{-1}]_{kk}}\\), whose denominator converges (after scaling by \\(\\sqrt{n}\\)) to the asymptotic standard deviation, converges in distribution to \\(\\mathcal{N}(0,1)\\) by Slutsky's theorem. Student tests therefore remain asymptotically valid, with standard normal quantiles, even if the disturbances are not Gaussian. The procedure can be iterated until convergence (iterated FGLS), which leads, under normality, to the maximum likelihood estimator.</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <ol>
+        <li><p>For the first equation, we compute
+        \\[\\textbf{X}_1^T\\textbf{X}_1=${exM(D, D.XX(0, 0))}\\qquad\\textbf{X}_1^T\\textbf{y}_1=${exV(D, D.XY(0, 0))}\\]
+        hence
+        \\[\\widehat{\\boldsymbol{\\beta}}_{1,\\text{OLS}}=(\\textbf{X}_1^T\\textbf{X}_1)^{-1}\\textbf{X}_1^T\\textbf{y}_1\\approx ${flV(D.ols[0].b)}\\]
+        and, for the second,
+        \\[\\textbf{X}_2^T\\textbf{X}_2=${exM(D, D.XX(1, 1))}\\qquad\\textbf{X}_2^T\\textbf{y}_2=${exV(D, D.XY(1, 1))}\\]
+        hence
+        \\[\\widehat{\\boldsymbol{\\beta}}_{2,\\text{OLS}}\\approx ${flV(D.ols[1].b)}\\]
+        The residuals \\(\\widehat{u}_{i,t}:=${'y'}_{i,t}-\\widehat{a}_i-\\widehat{b}_ix_{i,t}\\) (with obvious notations) give
+        \\[\\widehat{\\boldsymbol{\\Sigma}}=\\frac{1}{${n}}\\begin{pmatrix}\\widehat{\\textbf{u}}_1^T\\widehat{\\textbf{u}}_1&\\widehat{\\textbf{u}}_1^T\\widehat{\\textbf{u}}_2\\\\\\widehat{\\textbf{u}}_2^T\\widehat{\\textbf{u}}_1&\\widehat{\\textbf{u}}_2^T\\widehat{\\textbf{u}}_2\\end{pmatrix}\\approx ${flM(Sg)}\\qquad\\text{and}\\qquad\\widehat{r}=\\frac{\\widehat{\\sigma}_{12}}{\\sqrt{\\widehat{\\sigma}_{11}\\widehat{\\sigma}_{22}}}\\approx ${fxf(D.r, 4, true)}\\]
+        The Breusch-Pagan statistic equals \\(\\lambda=${n}\\,\\widehat{r}^{\\,2}\\approx ${fxf(D.LM, 3, true)}\\), with a p-value of ${fP(D.pLM)}. Since the 95 % quantile of the \\(\\chi^2\\) distribution with one degree of freedom is 3.841, ${rejLM ? `we reject the hypothesis \\(\\sigma_{12}=0\\) at the 5 % level: the disturbances of the two equations are significantly correlated, which justifies the use of the SUR model` : `we cannot reject the hypothesis \\(\\sigma_{12}=0\\) at the 5 % level: nothing suggests that the disturbances of the two equations are correlated, and separate OLS estimation appears sufficient`}. With only ${n} observations, however, this asymptotic test should be interpreted with caution.</p></li>
+        <li><p>We compute \\(\\widehat{\\boldsymbol{\\Sigma}}^{-1}\\approx ${flM(Si)}\\), then assemble the blocks of question 2, using the cross products
+        \\[\\textbf{X}_1^T\\textbf{X}_2=${exM(D, D.XX(0, 1))}\\qquad\\textbf{X}_1^T\\textbf{y}_2=${exV(D, D.XY(0, 1))}\\qquad\\textbf{X}_2^T\\textbf{y}_1=${exV(D, D.XY(1, 0))}\\]
+        We get
+        \\[\\textbf{X}^T\\widehat{\\boldsymbol{\\Omega}}^{-1}\\textbf{X}\\approx ${flM(D.G)}\\qquad\\textbf{X}^T\\widehat{\\boldsymbol{\\Omega}}^{-1}\\textbf{Y}\\approx ${flV(D.h)}\\]
+        hence
+        \\[\\widehat{\\boldsymbol{\\beta}}_{\\text{FGLS}}=\\begin{pmatrix}\\widehat{a}_1\\\\\\widehat{b}_1\\\\\\widehat{a}_2\\\\\\widehat{b}_2\\end{pmatrix}\\approx ${flV(D.bF)}\\]
+        \\[\\widehat{\\textbf{Var}}(\\widehat{\\boldsymbol{\\beta}}_{\\text{FGLS}})=\\big(\\textbf{X}^T\\widehat{\\boldsymbol{\\Omega}}^{-1}\\textbf{X}\\big)^{-1}\\approx ${flM(D.V)}\\]
+        The following table compares both methods:</p>
+        ${resTable(D, this)}
+        <p>${moveTxt} In line with Aitken's theorem applied with \\(\\widehat{\\boldsymbol{\\Sigma}}\\), each FGLS variance is smaller than the corresponding OLS variance. In R, these results are obtained with <code>systemfit(list(eq1 = y1 ~ x1, eq2 = y2 ~ x2), method = "SUR", data = d, methodResidCov = "noDfCor")</code>; in Python, with <code>SUR.from_formula({"eq1": "y1 ~ 1 + x1", "eq2": "y2 ~ 1 + x2"}, d).fit(method="gls", cov_type="unadjusted")</code> from the linearmodels package. Beware of software defaults: systemfit applies a degrees-of-freedom correction to \\(\\widehat{\\boldsymbol{\\Sigma}}\\) by default, and linearmodels computes heteroscedasticity-robust standard errors by default, which changes the results.</p></li>
+        <li><p>${T.b(1)}; ${T.b(2)}. According to FGLS, ${T.interp(1, fS(Math.abs(D.bF[1]), 3, false))}; likewise, ${T.interp(2, fS(Math.abs(D.bF[3]), 3, false))}. By question 5, the statistics \\(\\widehat{z}=\\widehat{\\beta}_k/\\widehat{\\sigma}_{\\widehat{\\beta}_k}\\) asymptotically follow a standard normal distribution under the hypothesis that the coefficient is zero; their absolute value is compared with 1.960:</p>
+        ${dtable(this.tstHead, tstC.concat(tst), '', false)}
+        <p>The two slopes are ${D.pF[1] < 0.05 && D.pF[3] < 0.05 ? 'significant' : D.pF[1] >= 0.05 && D.pF[3] >= 0.05 ? 'not significant' : `respectively ${this.sigTxt(D.pF[1])} and ${this.sigTxt(D.pF[3])}`} at the 5 % level. These conclusions rely on an asymptotic approximation, which is fragile with ${n} observations.</p></li>
+        <li><p>The hypothesis \\((H_0):b_1=b_2\\) can be written \\(\\textbf{R}\\boldsymbol{\\beta}=0\\) with \\(\\textbf{R}:=(0,1,0,-1)\\). The Wald statistic
+        \\[W:=\\frac{(\\widehat{b}_1-\\widehat{b}_2)^2}{\\textbf{R}\\,\\widehat{\\textbf{Var}}(\\widehat{\\boldsymbol{\\beta}}_{\\text{FGLS}})\\,\\textbf{R}^T}=\\frac{(\\widehat{b}_1-\\widehat{b}_2)^2}{\\widehat{\\textbf{Var}}(\\widehat{b}_1)+\\widehat{\\textbf{Var}}(\\widehat{b}_2)-2\\,\\widehat{\\textbf{Cov}}(\\widehat{b}_1,\\widehat{b}_2)}\\]
+        asymptotically follows a \\(\\chi^2\\) distribution with one degree of freedom under \\((H_0)\\). Here, \\(\\widehat{b}_1-\\widehat{b}_2\\approx ${fS(D.bF[1] - D.bF[3], 4, true)}\\) and the denominator is about \\(${fS(D.dvar, 4, true)}\\), hence \\(W\\approx ${fxf(D.W, 3, true)}\\) and a p-value of ${fP(D.pW)}. ${rejW ? `Since \\(W>3.841\\), we reject the equality ${T.eq} at the 5 % level.` : `Since \\(W<3.841\\), we cannot reject the equality ${T.eq} at the 5 % level.`} The covariance between \\(\\widehat{b}_1\\) and \\(\\widehat{b}_2\\), which is zero for separately estimated OLS, is taken into account here: this is another advantage of joint estimation, which makes it easy to test restrictions involving several equations. A homogeneity restriction on all coefficients (\\(a_1=a_2\\) and \\(b_1=b_2\\)) would be tested in the same way, with a statistic following a \\(\\chi^2\\) distribution with two degrees of freedom.</p></li>
+        </ol>
+      </div></li>
+
+      </ol></div>`;
+    }
+  }
+};
+
+/* ============================================================
+   GESTION DE LA LANGUE  /  LANGUAGE HANDLING
+   ============================================================ */
+let LANG = 'fr';
+
+function detectLang() {
+    try {
+        const q = new URLSearchParams(window.location.search).get('lang');
+        if (q && I18N[q.toLowerCase()]) return q.toLowerCase();
+    } catch (e) {}
+    const h = (window.location.hash || '').replace('#', '').toLowerCase();
+    if (I18N[h]) return h;
+    return 'fr';
+}
+
+function applyLang() {
+    const D = I18N[LANG];
+    document.documentElement.lang = D.htmlLang;
+    document.title = D.title;
+    document.querySelectorAll('[data-k]').forEach(function (el) {
+        const key = el.getAttribute('data-k');
+        if (D[key] !== undefined) el.innerHTML = D[key];
+    });
+    const si = document.getElementById('seed-input');
+    if (si) si.placeholder = D.phSeed;
+    const ni = document.getElementById('param-n');
+    if (ni) ni.placeholder = D.phN;
+    const tb = document.getElementById('toggle-btn');
+    if (tb) tb.textContent = solVisible ? D.hideSol : D.showSol;
+    document.getElementById('flag-fr').classList.toggle('active', LANG === 'fr');
+    document.getElementById('flag-en').classList.toggle('active', LANG === 'en');
+}
+
+function setLang(lang) {
+    if (!I18N[lang] || lang === LANG) return;
+    LANG = lang;
+    try {
+        const u = new URL(window.location.href);
+        u.searchParams.set('lang', lang);
+        history.replaceState(null, '', u.toString());
+    } catch (e) {}
+    applyLang();
+    if (document.getElementById('ex-area').style.display !== 'none') {
+        const wasVis = solVisible;
+        document.getElementById('seed-input').value = _activeSeed;
+        generateFromControls();
+        if (wasVis) toggleSol();
+    }
+}
+
+// ════════════════════════════════════════
+// GENERATION  /  RENDERING
+// ════════════════════════════════════════
+function regen() {
+  document.getElementById('seed-input').value = '';
+  generateFromControls();
+}
+
+function readN() {
+  const v = parseInt(document.getElementById('param-n').value, 10);
+  if (isNaN(v)) return 0;
+  return Math.min(12, Math.max(8, v));
+}
+
+function generateFromControls() {
+  const seedInp = document.getElementById('seed-input').value;
+  const seed = seedInp ? parseInt(seedInp, 10) : Math.floor(Math.random() * 10000000);
+  const D = computeD(seed, readN());
+  const T = I18N[LANG].ctx[D.id];
+
+  document.getElementById('seed-disp').textContent = _activeSeed;
+  document.getElementById('modal-seed').textContent = _activeSeed;
+  document.getElementById('card-title').textContent = T.title;
+  document.getElementById('card-title2').textContent = T.title;
+  document.getElementById('ex-content').innerHTML = I18N[LANG].ex(D);
+  document.getElementById('sol-content').innerHTML = I18N[LANG].sol(D);
+
+  document.getElementById('welcome').style.display = 'none';
+  document.getElementById('ex-area').style.display = 'block';
+  solVisible = false;
+  const solC = document.getElementById('sol-card'), btn = document.getElementById('toggle-btn');
+  solC.classList.remove('visible'); btn.classList.remove('shown'); btn.textContent = I18N[LANG].showSol;
+
+  if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise();
+}
+
+function toggleSol(){
+  solVisible = !solVisible;
+  const sol = document.getElementById('sol-card'), btn = document.getElementById('toggle-btn');
+  if(solVisible){sol.classList.add('visible'); btn.classList.add('shown'); btn.textContent = I18N[LANG].hideSol;}
+  else{sol.classList.remove('visible'); btn.classList.remove('shown'); btn.textContent = I18N[LANG].showSol;}
+}
+
+/* Initialisation */
+LANG = detectLang();
+applyLang();
+</script>
+
+
+<!-- KIT:JS:START v1 -->
+<div id="pdf-ov" onclick="closePdfModal()"></div>
+<div id="pdf-modal">
+  <div class="mh">
+    <h3 data-kit="modalTitle">Exporter en PDF</h3>
+    <button type="button" class="mclose" onclick="closePdfModal()">&#10005;</button>
+  </div>
+  <div class="mb2">
+    <div class="seed-note"><span data-kit="seedPre">Seed&nbsp;:</span> <strong id="modal-seed">&mdash;</strong> <span data-kit="seedPost">&mdash; notez cette valeur pour reproduire exactement cet exercice.</span></div>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-header" checked>
+      <span class="opt-txt"><span class="opt-lbl" data-kit="optHeader">Inclure l'en-t&ecirc;te de page</span>
+           <span class="opt-desc" data-kit="optHeaderD">Titre, badge de mati&egrave;re et intitul&eacute; de l'exercice</span></span>
+    </label>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-sol">
+      <span class="opt-txt"><span class="opt-lbl" data-kit="optSol">Inclure le corrig&eacute; complet</span>
+           <span class="opt-desc" data-kit="optSolD">L'ensemble des d&eacute;veloppements et commentaires du corrig&eacute;</span></span>
+    </label>
+    <div class="mactions">
+      <button type="button" class="btn-print" onclick="doPrint()"><span data-kit="print">&#128424;&nbsp;Imprimer / Sauvegarder PDF</span></button>
+      <button type="button" class="btn-cancel" onclick="closePdfModal()"><span data-kit="cancel">Annuler</span></button>
+    </div>
+  </div>
+</div>
+
+<script id="kit-docx">
+/* =============================================================================
+   EXPORT WORD NATIF (.docx)
+   Trois briques, sans aucune dépendance externe :
+     1. mml2omml  — MathML -> OMML, le format d'équation natif de Word
+     2. zip       — écriture d'une archive ZIP (entrées « stored » + CRC32)
+     3. html2wml  — HTML de la page -> WordprocessingML
+   ============================================================================= */
+(function (root) {
+'use strict';
+
+/* --------------------------------------------------------------- utilitaires */
+function esc(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                  .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function kids(n) {
+  var out = [], c = n.firstChild;
+  while (c) { if (c.nodeType === 1) out.push(c); c = c.nextSibling; }
+  return out;
+}
+function txt(n) { return (n.textContent || '').replace(/\u200b/g, '').trim(); }
+
+/* ============================================================================
+   1. MathML -> OMML
+   ========================================================================== */
+var OPEN = '([{\u27e8\u2308\u230a|\u2016';
+var CLOSE = ')]}\u27e9\u2309\u230b|\u2016';
+var BIGOPS = '\u2211\u220f\u222b\u222c\u222d\u222e\u22c3\u22c2\u2210';
+var ACCENTS = {
+  '\u005e': '\u0302', '\u02c6': '\u0302', '^': '\u0302',
+  '\u00af': '\u0304', '\u2015': '\u0304', '\u2212': '\u0304', '_': '\u0304',
+  '~': '\u0303', '\u02dc': '\u0303', '\u02d9': '\u0307',
+  '\u2192': '\u20d7', '\u21c0': '\u20d1', '\u02c7': '\u030c', '\u02d8': '\u0306'
+};
+
+function run(text, style) {
+  if (text === '') return '';
+  var rPr = '<w:rPr><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/></w:rPr>';
+  var mPr = style ? '<m:rPr><m:sty m:val="' + style + '"/></m:rPr>' : '';
+  return '<m:r>' + mPr + rPr + '<m:t xml:space="preserve">' + esc(text) + '</m:t></m:r>';
+}
+
+/* Un grand opérateur (somme, intégrale…) absorbe la suite de la ligne comme
+   opérande : sans cela Word affiche un cadre vide à la place de l'argument. */
+function naryHere(n) {
+  if (!n || n.nodeType !== 1) return null;
+  var t = n.nodeName.toLowerCase().replace(/^.*:/, ''), k = kids(n);
+  if (t === 'munderover' || t === 'msubsup') return { base: k[0], sub: k[1], sup: k[2] };
+  if (t === 'munder' || t === 'msub') return { base: k[0], sub: k[1], sup: null };
+  if (t === 'mover' || t === 'msup') return { base: k[0], sub: null, sup: k[1] };
+  if (t === 'mo') return { base: n, sub: null, sup: null };
+  return null;
+}
+function isBigOp(n) {
+  if (!n || n.nodeType !== 1) return false;
+  var c = txt(n);
+  return n.nodeName.toLowerCase().replace(/^.*:/, '') === 'mo' &&
+         c.length === 1 && BIGOPS.indexOf(c) !== -1;
+}
+
+function seq(nodes) {
+  var s = '';
+  for (var i = 0; i < nodes.length; i++) {
+    var info = naryHere(nodes[i]);
+    if (info && isBigOp(info.base) && i + 1 < nodes.length) {
+      s += naryFull(info, nodes.slice(i + 1));
+      return s;
+    }
+    s += mml(nodes[i]);
+  }
+  return s;
+}
+
+function naryFull(info, rest) {
+  return '<m:nary><m:naryPr><m:chr m:val="' + esc(txt(info.base)) + '"/>' +
+         '<m:limLoc m:val="undOvr"/>' +
+         '<m:subHide m:val="' + (info.sub ? '0' : '1') + '"/>' +
+         '<m:supHide m:val="' + (info.sup ? '0' : '1') + '"/><m:ctrlPr/></m:naryPr>' +
+         '<m:sub>' + (info.sub ? mml(info.sub) : '') + '</m:sub>' +
+         '<m:sup>' + (info.sup ? mml(info.sup) : '') + '</m:sup>' +
+         '<m:e>' + seq(rest) + '</m:e></m:nary>';
+}
+
+/* mrow entouré de délimiteurs -> m:d, pour des parenthèses étirables natives */
+function fenced(ks) {
+  if (ks.length < 2) return null;
+  var a = ks[0], b = ks[ks.length - 1];
+  if (a.nodeName.toLowerCase() !== 'mo' || b.nodeName.toLowerCase() !== 'mo') return null;
+  var o = txt(a), c = txt(b);
+  if (o.length !== 1 || c.length !== 1) return null;
+  if (OPEN.indexOf(o) === -1 || CLOSE.indexOf(c) === -1) return null;
+  var inner = ks.slice(1, -1);
+  /* séparateurs de premier niveau -> plusieurs m:e */
+  var parts = [[]];
+  for (var i = 0; i < inner.length; i++) {
+    if (inner[i].nodeName.toLowerCase() === 'mo' && txt(inner[i]) === ',' && parts.length < 8) {
+      parts.push([]);
+    } else { parts[parts.length - 1].push(inner[i]); }
+  }
+  var sep = parts.length > 1 ? ',' : '';
+  var body = '';
+  for (var j = 0; j < parts.length; j++) body += '<m:e>' + seq(parts[j]) + '</m:e>';
+  return '<m:d><m:dPr><m:begChr m:val="' + esc(o) + '"/><m:sepChr m:val="' + esc(sep) +
+         '"/><m:endChr m:val="' + esc(c) + '"/><m:ctrlPr/></m:dPr>' + body + '</m:d>';
+}
+
+function naryOf(base, sub, sup) {
+  var ch = txt(base);
+  if (ch.length !== 1 || BIGOPS.indexOf(ch) === -1) return null;
+  return '<m:nary><m:naryPr><m:chr m:val="' + esc(ch) + '"/><m:limLoc m:val="undOvr"/>' +
+         '<m:subHide m:val="' + (sub ? '0' : '1') + '"/>' +
+         '<m:supHide m:val="' + (sup ? '0' : '1') + '"/><m:ctrlPr/></m:naryPr>' +
+         '<m:sub>' + (sub ? mml(sub) : '') + '</m:sub>' +
+         '<m:sup>' + (sup ? mml(sup) : '') + '</m:sup>' +
+         '<m:e></m:e></m:nary>';
+}
+
+function mml(n) {
+  if (!n) return '';
+  if (n.nodeType === 3) return run(n.nodeValue);
+  if (n.nodeType !== 1) return '';
+  var t = n.nodeName.toLowerCase().replace(/^.*:/, '');
+  var k = kids(n), s;
+
+  switch (t) {
+    case 'math':
+    case 'semantics':
+    case 'mstyle':
+    case 'mpadded':
+    case 'menclose':
+      return seq(k);
+
+    case 'annotation':
+    case 'annotation-xml':
+    case 'mphantom':
+      return '';
+
+    case 'mrow':
+      s = fenced(k);
+      return s !== null ? s : seq(k);
+
+    case 'mi':      return run(txt(n), txt(n).length === 1 ? 'i' : 'p');
+    case 'mn':      return run(txt(n), 'p');
+    case 'mo':      return run(txt(n), 'p');
+    case 'merror':  return run(txt(n), 'p');
+    case 'ms':      return run(txt(n), 'p');
+
+    case 'mtext':
+      var v = n.textContent || '';
+      return v === '' ? '' :
+        '<m:r><m:rPr><m:nor/></m:rPr><w:rPr><w:rFonts w:ascii="Cambria" w:hAnsi="Cambria"/></w:rPr>' +
+        '<m:t xml:space="preserve">' + esc(v) + '</m:t></m:r>';
+
+    case 'mspace':
+      return run(' ', 'p');
+
+    case 'mfrac':
+      return '<m:f><m:fPr><m:type m:val="' +
+             (n.getAttribute('linethickness') === '0' ? 'noBar' : 'bar') +
+             '"/><m:ctrlPr/></m:fPr><m:num>' + mml(k[0]) + '</m:num><m:den>' +
+             mml(k[1]) + '</m:den></m:f>';
+
+    case 'msup':
+      s = naryOf(k[0], null, k[1]); if (s) return s;
+      return '<m:sSup><m:sSupPr><m:ctrlPr/></m:sSupPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sup>' + mml(k[1]) + '</m:sup></m:sSup>';
+
+    case 'msub':
+      s = naryOf(k[0], k[1], null); if (s) return s;
+      return '<m:sSub><m:sSubPr><m:ctrlPr/></m:sSubPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sub>' + mml(k[1]) + '</m:sub></m:sSub>';
+
+    case 'msubsup':
+      s = naryOf(k[0], k[1], k[2]); if (s) return s;
+      return '<m:sSubSup><m:sSubSupPr><m:ctrlPr/></m:sSubSupPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sub>' + mml(k[1]) + '</m:sub><m:sup>' + mml(k[2]) +
+             '</m:sup></m:sSubSup>';
+
+    case 'msqrt':
+      return '<m:rad><m:radPr><m:degHide m:val="1"/><m:ctrlPr/></m:radPr>' +
+             '<m:deg/><m:e>' + seq(k) + '</m:e></m:rad>';
+
+    case 'mroot':
+      return '<m:rad><m:radPr><m:degHide m:val="0"/><m:ctrlPr/></m:radPr><m:deg>' +
+             mml(k[1]) + '</m:deg><m:e>' + mml(k[0]) + '</m:e></m:rad>';
+
+    case 'mover':
+      var ao = txt(k[1]);
+      if (ACCENTS[ao]) {
+        return '<m:acc><m:accPr><m:chr m:val="' + esc(ACCENTS[ao]) +
+               '"/><m:ctrlPr/></m:accPr><m:e>' + mml(k[0]) + '</m:e></m:acc>';
+      }
+      s = naryOf(k[0], null, k[1]); if (s) return s;
+      return '<m:limUpp><m:limUppPr><m:ctrlPr/></m:limUppPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limUpp>';
+
+    case 'munder':
+      s = naryOf(k[0], k[1], null); if (s) return s;
+      return '<m:limLow><m:limLowPr><m:ctrlPr/></m:limLowPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limLow>';
+
+    case 'munderover':
+      s = naryOf(k[0], k[1], k[2]); if (s) return s;
+      return '<m:limUpp><m:limUppPr><m:ctrlPr/></m:limUppPr><m:e>' +
+             '<m:limLow><m:limLowPr><m:ctrlPr/></m:limLowPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limLow></m:e><m:lim>' +
+             mml(k[2]) + '</m:lim></m:limUpp>';
+
+    case 'mtable':
+      var rows = k.filter(function (r) { return /mtr$/.test(r.nodeName.toLowerCase()); });
+      var ncol = 0;
+      rows.forEach(function (r) { ncol = Math.max(ncol, kids(r).length); });
+      var props = '<m:mPr><m:baseJc m:val="center"/><m:plcHide m:val="1"/><m:mcs><m:mc><m:mcPr>' +
+                  '<m:count m:val="' + (ncol || 1) + '"/><m:mcJc m:val="center"/></m:mcPr></m:mc></m:mcs>' +
+                  '<m:ctrlPr/></m:mPr>';
+      var body = '';
+      rows.forEach(function (r) {
+        body += '<m:mr>';
+        var cells = kids(r);
+        for (var i = 0; i < (ncol || 1); i++) body += '<m:e>' + (cells[i] ? seq(kids(cells[i])) : '') + '</m:e>';
+        body += '</m:mr>';
+      });
+      return '<m:m>' + props + body + '</m:m>';
+
+    case 'mtr':
+    case 'mtd':
+      return seq(k);
+
+    default:
+      return k.length ? seq(k) : run(txt(n), 'p');
+  }
+}
+
+function mathmlToOmml(mathEl) { return mml(mathEl); }
+
+/* ============================================================================
+   2. Écriture ZIP (entrées non compressées + CRC32)
+   ========================================================================== */
+var CRCT = (function () {
+  var t = new Int32Array(256);
+  for (var i = 0; i < 256; i++) {
+    var c = i;
+    for (var j = 0; j < 8; j++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[i] = c;
+  }
+  return t;
+})();
+function crc32(buf) {
+  var c = -1;
+  for (var i = 0; i < buf.length; i++) c = CRCT[(c ^ buf[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ -1) >>> 0;
+}
+function utf8(str) {
+  if (typeof TextEncoder !== 'undefined') return new TextEncoder().encode(str);
+  var b = unescape(encodeURIComponent(str)), a = new Uint8Array(b.length);
+  for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i);
+  return a;
+}
+function zip(files) {
+  var parts = [], central = [], offset = 0;
+  function u16(v) { return [v & 0xFF, (v >>> 8) & 0xFF]; }
+  function u32(v) { return [v & 0xFF, (v >>> 8) & 0xFF, (v >>> 16) & 0xFF, (v >>> 24) & 0xFF]; }
+
+  files.forEach(function (f) {
+    var name = utf8(f.name), data = f.bin ? f.bin : utf8(f.data), c = crc32(data);
+    var local = [].concat(u32(0x04034b50), u16(20), u16(0x0800), u16(0), u16(0), u16(0),
+                          u32(c), u32(data.length), u32(data.length),
+                          u16(name.length), u16(0));
+    parts.push(new Uint8Array(local), name, data);
+    central.push({ name: name, crc: c, size: data.length, off: offset });
+    offset += local.length + name.length + data.length;
+  });
+
+  var cd = [];
+  central.forEach(function (e) {
+    cd = cd.concat(u32(0x02014b50), u16(20), u16(20), u16(0x0800), u16(0), u16(0), u16(0),
+                   u32(e.crc), u32(e.size), u32(e.size),
+                   u16(e.name.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(e.off));
+    cd = cd.concat(Array.prototype.slice.call(e.name));
+  });
+  var cdArr = new Uint8Array(cd);
+  var eocd = new Uint8Array([].concat(u32(0x06054b50), u16(0), u16(0),
+                                      u16(files.length), u16(files.length),
+                                      u32(cdArr.length), u32(offset), u16(0)));
+  parts.push(cdArr, eocd);
+
+  var total = parts.reduce(function (n, p) { return n + p.length; }, 0);
+  var out = new Uint8Array(total), pos = 0;
+  parts.forEach(function (p) { out.set(p, pos); pos += p.length; });
+  return out;
+}
+
+/* ============================================================================
+   3. HTML -> WordprocessingML
+   ========================================================================== */
+var SKIP = { script: 1, style: 1, button: 1, input: 1, noscript: 1 };
+var IMAGES = [];           /* { bin, w, h } collectées pendant le parcours */
+var EMU = 9525;            /* EMU par pixel */
+var MAXW = 5760000;        /* largeur utile de la page, en EMU */
+
+function b64bin(b64) {
+  var raw = atob(b64), a = new Uint8Array(raw.length);
+  for (var i = 0; i < raw.length; i++) a[i] = raw.charCodeAt(i);
+  return a;
+}
+
+function imageXml(dataUrl, wpx, hpx) {
+  var m = /^data:image\/png;base64,(.*)$/.exec(dataUrl || '');
+  if (!m) return '';
+  var cx = Math.round(wpx * EMU), cy = Math.round(hpx * EMU);
+  if (cx > MAXW) { cy = Math.round(cy * MAXW / cx); cx = MAXW; }
+  IMAGES.push({ bin: b64bin(m[1]) });
+  var id = IMAGES.length, rid = 'rIdImg' + id;
+  return '<w:p><w:pPr><w:pStyle w:val="Figure"/><w:jc w:val="center"/></w:pPr><w:r><w:drawing>' +
+    '<wp:inline distT="0" distB="0" distL="0" distR="0">' +
+    '<wp:extent cx="' + cx + '" cy="' + cy + '"/>' +
+    '<wp:effectExtent l="0" t="0" r="0" b="0"/>' +
+    '<wp:docPr id="' + id + '" name="Graphique ' + id + '"/>' +
+    '<wp:cNvGraphicFramePr><a:graphicFrameLocks ' +
+      'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/>' +
+    '</wp:cNvGraphicFramePr>' +
+    '<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">' +
+    '<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+    '<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+    '<pic:nvPicPr><pic:cNvPr id="' + id + '" name="Graphique ' + id + '"/><pic:cNvPicPr/></pic:nvPicPr>' +
+    '<pic:blipFill><a:blip r:embed="' + rid + '"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>' +
+    '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' + cx + '" cy="' + cy + '"/></a:xfrm>' +
+    '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>' +
+    '</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>';
+}
+var BLOCK = { p: 1, div: 1, h1: 1, h2: 1, h3: 1, h4: 1, li: 1, tr: 1, td: 1, th: 1,
+              table: 1, ul: 1, ol: 1, section: 1, article: 1, header: 1, blockquote: 1 };
+
+function W() {
+  this.body = '';
+  this.para = null;      /* { style, runs, numId, ilvl } */
+}
+W.prototype.open = function (style, numId, ilvl) {
+  this.close();
+  this.para = { style: style || 'Corps', runs: '', numId: numId || 0, ilvl: ilvl || 0 };
+};
+W.prototype.close = function () {
+  var p = this.para;
+  this.para = null;
+  if (!p || (p.runs === '' && !p.numId)) return;
+  if (p.runs === '') return;
+  var pPr = '<w:pPr><w:pStyle w:val="' + p.style + '"/>';
+  if (p.numId) pPr += '<w:numPr><w:ilvl w:val="' + p.ilvl + '"/><w:numId w:val="' + p.numId + '"/></w:numPr>';
+  pPr += '</w:pPr>';
+  this.body += '<w:p>' + pPr + p.runs + '</w:p>';
+};
+W.prototype.add = function (xml) {
+  if (!this.para) this.open('Corps');
+  this.para.runs += xml;
+};
+W.prototype.raw = function (xml) { this.close(); this.body += xml; };
+
+function textRun(s, fmt) {
+  if (!s) return '';
+  var rPr = '';
+  if (fmt.b) rPr += '<w:b/>';
+  if (fmt.i) rPr += '<w:i/>';
+  if (fmt.sup) rPr += '<w:vertAlign w:val="superscript"/>';
+  if (fmt.sub) rPr += '<w:vertAlign w:val="subscript"/>';
+  if (fmt.mono) rPr += '<w:rFonts w:ascii="Consolas" w:hAnsi="Consolas"/>';
+  return '<w:r>' + (rPr ? '<w:rPr>' + rPr + '</w:rPr>' : '') +
+         '<w:t xml:space="preserve">' + esc(s) + '</w:t></w:r>';
+}
+
+function walk(node, w, fmt, list) {
+  var i, cs = node.childNodes;
+  for (i = 0; i < cs.length; i++) {
+    var n = cs[i];
+
+    if (n.nodeType === 3) {
+      var s = n.nodeValue.replace(/\s+/g, ' ');
+      if (s.trim() === '' && !/\S/.test(s)) { if (w.para && w.para.runs) w.add(textRun(' ', fmt)); continue; }
+      w.add(textRun(s, fmt));
+      continue;
+    }
+    if (n.nodeType !== 1) continue;
+
+    var tag = n.nodeName.toLowerCase();
+    if (SKIP[tag]) continue;
+    if (n.classList && (n.classList.contains('top-bar') || n.classList.contains('top-actions') ||
+                        n.classList.contains('sol-toggle-wrap'))) continue;
+
+    /* --- équations --- */
+    if (tag === 'mjx-container') {
+      var math = n.querySelector('mjx-assistive-mml math, math');
+      var display = n.getAttribute('display') === 'true';
+      if (math) {
+        var omml = mathmlToOmml(math);
+        if (display) {
+          w.close();
+          w.body += '<w:p><w:pPr><w:pStyle w:val="Formule"/>' +
+                    '<w:jc w:val="center"/></w:pPr>' +
+                    '<m:oMath>' + omml + '</m:oMath></w:p>';
+        } else {
+          w.add('<m:oMath>' + omml + '</m:oMath>');
+        }
+      } else {
+        w.add(textRun(txt(n), fmt));
+      }
+      continue;
+    }
+    if (tag === 'mjx-assistive-mml' || tag === 'math') continue;
+
+    /* --- graphiques --- */
+    if (tag === 'svg' || tag === 'img') {
+      var png = n.getAttribute('data-kit-png');
+      if (png) {
+        w.close();
+        w.body += imageXml(png, +n.getAttribute('data-kit-w') || 600,
+                                +n.getAttribute('data-kit-h') || 380);
+      }
+      continue;
+    }
+
+    /* --- tableaux --- */
+    if (tag === 'table') { w.close(); w.body += table(n); continue; }
+
+    /* --- listes --- */
+    if (tag === 'ul' || tag === 'ol') {
+      w.close();
+      var nid = tag === 'ol' ? 2 : 1;
+      var lvl = list ? Math.min(list.ilvl + 1, 2) : 0;
+      var items = kids(n).filter(function (x) { return x.nodeName.toLowerCase() === 'li'; });
+      items.forEach(function (li) {
+        /* L'item est composé à part : son numéro doit se poser sur le premier
+           paragraphe produit, même si le <li> enveloppe son texte dans un <div>. */
+        var wb = new W();
+        walk(li, wb, fmt, { ilvl: lvl });
+        wb.close();
+        var xml = wb.body;
+        if (!xml) return;
+        var numPr = '<w:pStyle w:val="Liste"/><w:numPr><w:ilvl w:val="' + lvl +
+                    '"/><w:numId w:val="' + nid + '"/></w:numPr>';
+        if (xml.indexOf('<w:pStyle w:val="Corps"/>') !== -1) {
+          xml = xml.replace('<w:pStyle w:val="Corps"/>', numPr);
+        } else {
+          xml = '<w:p><w:pPr>' + numPr + '</w:pPr></w:p>' + xml;
+        }
+        w.body += xml;
+      });
+      continue;
+    }
+
+    /* --- titres --- */
+    if (tag === 'h1' || tag === 'h2') { w.close(); w.open('Titre1'); walk(n, w, fmt, list); w.close(); continue; }
+    if (tag === 'h3' || tag === 'h4') { w.close(); w.open('Titre2'); walk(n, w, fmt, list); w.close(); continue; }
+
+    /* --- titres internes du corrigé --- */
+    if (n.classList && (n.classList.contains('sol-sub') || n.classList.contains('sol-q') ||
+                        n.classList.contains('dossier-title'))) {
+      w.close(); w.open('Titre2'); walk(n, w, { b: true }, list); w.close(); continue;
+    }
+    if (n.classList && n.classList.contains('persp-box')) {
+      w.close();
+      var wb = new W();
+      walk(n, wb, fmt, list);
+      wb.close();
+      w.body += wb.body.replace(/w:val="Corps"/g, 'w:val="Encadre"')
+                       .replace(/w:val="Titre2"/g, 'w:val="EncadreTitre"');
+      continue;
+    }
+
+    /* --- mise en forme inline --- */
+    var f2 = { b: fmt.b, i: fmt.i, sup: fmt.sup, sub: fmt.sub, mono: fmt.mono };
+    if (tag === 'strong' || tag === 'b') f2.b = true;
+    if (tag === 'em' || tag === 'i') f2.i = true;
+    if (tag === 'sup') f2.sup = true;
+    if (tag === 'sub') f2.sub = true;
+    if (tag === 'code' || tag === 'kbd') f2.mono = true;
+
+    /* intertitre écrit en style en ligne (span display:block + gras) */
+    var st = n.getAttribute && n.getAttribute('style');
+    if (st && /display\s*:\s*block/.test(st) && /font-weight\s*:\s*(6|7|8|9|bold)/.test(st)) {
+      w.close(); w.open('Titre3');
+      walk(n, w, { b: true }, list);
+      w.close();
+      continue;
+    }
+
+    if ((tag === 'strong' || tag === 'b') &&
+        (!w.para || w.para.runs === '') &&
+        n.nextElementSibling && n.nextElementSibling.nodeName.toLowerCase() === 'br') {
+      w.close(); w.open('Titre3');
+      walk(n, w, { b: true }, list);
+      w.close();
+      i++;                       /* le <br> qui suit devient inutile */
+      continue;
+    }
+
+    if (tag === 'br') { w.add('<w:r><w:br/></w:r>'); continue; }
+    if (tag === 'hr') { w.close(); continue; }
+
+    if (BLOCK[tag]) { w.close(); w.open('Corps'); walk(n, w, f2, list); w.close(); }
+    else { walk(n, w, f2, list); }
+  }
+}
+
+function cellXml(td, isHead) {
+  var w2 = new W();
+  walk(td, w2, { b: !!isHead }, null);
+  w2.close();
+  var content = w2.body || '<w:p><w:pPr><w:pStyle w:val="Cellule"/></w:pPr></w:p>';
+  content = content.replace(/w:val="Corps"/g, 'w:val="Cellule"');
+  var span = parseInt(td.getAttribute('colspan') || '1', 10);
+  var shd = isHead ? '<w:shd w:val="clear" w:fill="EDE9DF"/>' : '';
+  return '<w:tc><w:tcPr>' + (span > 1 ? '<w:gridSpan w:val="' + span + '"/>' : '') +
+         shd + '<w:vAlign w:val="center"/></w:tcPr>' + content + '</w:tc>';
+}
+
+function table(tbl) {
+  var rows = tbl.querySelectorAll('tr'), out = '', ncol = 0, i, j;
+  for (i = 0; i < rows.length; i++) {
+    var c = rows[i].children, n = 0;
+    for (j = 0; j < c.length; j++) n += parseInt(c[j].getAttribute('colspan') || '1', 10);
+    ncol = Math.max(ncol, n);
+  }
+  if (!ncol) return '';
+  var grid = '<w:tblGrid>';
+  for (i = 0; i < ncol; i++) grid += '<w:gridCol w:w="' + Math.floor(9360 / ncol) + '"/>';
+  grid += '</w:tblGrid>';
+
+  for (i = 0; i < rows.length; i++) {
+    var cells = rows[i].children, xml = '';
+    var head = rows[i].parentNode.nodeName.toLowerCase() === 'thead' ||
+               (cells.length && cells[0].nodeName.toLowerCase() === 'th');
+    for (j = 0; j < cells.length; j++) xml += cellXml(cells[j], head);
+    out += '<w:tr>' + (head ? '<w:trPr><w:tblHeader/></w:trPr>' : '') + xml + '</w:tr>';
+  }
+  return '<w:tbl><w:tblPr><w:tblStyle w:val="Grille"/>' +
+         '<w:tblW w:w="5000" w:type="pct"/><w:tblLayout w:type="fixed"/></w:tblPr>' +
+         grid + out + '</w:tbl><w:p><w:pPr><w:pStyle w:val="Apres"/></w:pPr></w:p>';
+}
+
+/* ============================================================================
+   Assemblage du fichier
+   ========================================================================== */
+var NS =
+  'xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" ' +
+  'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
+  'xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" ' +
+  'xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" ' +
+  'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+  'xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture" ' +
+  'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+  'xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" ' +
+  'mc:Ignorable="w14"';
+
+function style(id, name, opts) {
+  var o = opts || {};
+  return '<w:style w:type="paragraph" w:styleId="' + id + '"><w:name w:val="' + name + '"/>' +
+         '<w:basedOn w:val="Corps"/><w:pPr>' +
+         (o.keep ? '<w:keepNext/>' : '') +
+         '<w:spacing w:before="' + (o.before || 0) + '" w:after="' + (o.after || 120) +
+         '" w:line="' + (o.line || 276) + '" w:lineRule="auto"/>' +
+         (o.jc ? '<w:jc w:val="' + o.jc + '"/>' : '') +
+         (o.ind ? '<w:ind w:left="' + o.ind + '"/>' : '') +
+         (o.border ? '<w:pBdr><w:left w:val="single" w:sz="18" w:space="8" w:color="1A2E42"/></w:pBdr>' : '') +
+         '</w:pPr><w:rPr>' +
+         (o.font ? '<w:rFonts w:ascii="' + o.font + '" w:hAnsi="' + o.font + '"/>' : '') +
+         (o.b ? '<w:b/>' : '') + (o.i ? '<w:i/>' : '') +
+         (o.sz ? '<w:sz w:val="' + o.sz + '"/>' : '') +
+         (o.color ? '<w:color w:val="' + o.color + '"/>' : '') +
+         '</w:rPr></w:style>';
+}
+
+function stylesXml() {
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles ' + NS + '>' +
+    '<w:docDefaults><w:rPrDefault><w:rPr>' +
+      '<w:rFonts w:ascii="Cambria" w:hAnsi="Cambria" w:cs="Cambria"/>' +
+      '<w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="fr-FR"/>' +
+    '</w:rPr></w:rPrDefault><w:pPrDefault><w:pPr>' +
+      '<w:spacing w:after="120" w:line="276" w:lineRule="auto"/><w:jc w:val="both"/>' +
+    '</w:pPr></w:pPrDefault></w:docDefaults>' +
+    '<w:style w:type="paragraph" w:default="1" w:styleId="Corps"><w:name w:val="Normal"/>' +
+      '<w:pPr><w:spacing w:after="120" w:line="276" w:lineRule="auto"/><w:jc w:val="both"/></w:pPr>' +
+      '<w:rPr><w:rFonts w:ascii="Cambria" w:hAnsi="Cambria"/><w:sz w:val="22"/></w:rPr></w:style>' +
+    style('TitreDoc', 'Title', { font: 'Cambria', b: true, sz: 40, color: '0D1B2A', jc: 'left', after: 60, line: 240 }) +
+    style('SousTitre', 'Subtitle', { i: true, sz: 20, color: '5A5A5A', jc: 'left', after: 280, line: 240 }) +
+    style('Titre1', 'heading 1', { b: true, sz: 28, color: '0D1B2A', before: 320, after: 140, jc: 'left', keep: true, line: 240 }) +
+    style('Titre2', 'heading 2', { b: true, sz: 23, color: '1A2E42', before: 240, after: 100, jc: 'left', keep: true, line: 240 }) +
+    style('Formule', 'Formula', { jc: 'center', before: 120, after: 120, line: 240 }) +
+    style('Liste', 'List Paragraph', { after: 100, ind: 360 }) +
+    style('Cellule', 'Table Text', { sz: 20, after: 40, jc: 'left', line: 240 }) +
+    style('Encadre', 'Aside', { ind: 240, border: true, sz: 21, before: 200, after: 200 }) +
+    style('Apres', 'After Table', { after: 200, sz: 12 }) +
+    style('Figure', 'Figure', { jc: 'center', before: 160, after: 200, line: 240 }) +
+    style('Titre3', 'heading 3', { b: true, sz: 22, color: '1A2E42', before: 200,
+                                   after: 60, jc: 'left', keep: true, line: 240 }) +
+    style('EncadreTitre', 'Aside Heading', { ind: 240, border: true, b: true, sz: 22,
+                                             color: '1A2E42', before: 200, after: 60, jc: 'left' }) +
+    '<w:style w:type="table" w:styleId="Grille"><w:name w:val="Table Grid"/><w:tblPr>' +
+      '<w:tblBorders>' +
+      ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(function (b) {
+        return '<w:' + b + ' w:val="single" w:sz="4" w:space="0" w:color="9A9A9A"/>';
+      }).join('') +
+      '</w:tblBorders><w:tblCellMar>' +
+      '<w:top w:w="60" w:type="dxa"/><w:left w:w="90" w:type="dxa"/>' +
+      '<w:bottom w:w="60" w:type="dxa"/><w:right w:w="90" w:type="dxa"/>' +
+      '</w:tblCellMar></w:tblPr></w:style>' +
+    '</w:styles>';
+}
+
+function numberingXml() {
+  function lvl(i, fmt, txtv, ind) {
+    return '<w:lvl w:ilvl="' + i + '"><w:start w:val="1"/><w:numFmt w:val="' + fmt + '"/>' +
+           '<w:lvlText w:val="' + txtv + '"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="' +
+           ind + '" w:hanging="360"/></w:pPr>' +
+           (fmt === 'bullet' ? '<w:rPr><w:rFonts w:ascii="Symbol" w:hAnsi="Symbol"/></w:rPr>' : '') +
+           '</w:lvl>';
+  }
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:numbering ' + NS + '>' +
+    '<w:abstractNum w:abstractNumId="1"><w:multiLevelType w:val="hybridMultilevel"/>' +
+      lvl(0, 'bullet', '\uF0B7', 360) + lvl(1, 'bullet', 'o', 720) + lvl(2, 'bullet', '\uF0A7', 1080) +
+    '</w:abstractNum>' +
+    '<w:abstractNum w:abstractNumId="2"><w:multiLevelType w:val="hybridMultilevel"/>' +
+      lvl(0, 'decimal', '%1.', 360) + lvl(1, 'lowerLetter', '%2.', 720) + lvl(2, 'lowerRoman', '%3.', 1080) +
+    '</w:abstractNum>' +
+    '<w:num w:numId="1"><w:abstractNumId w:val="1"/></w:num>' +
+    '<w:num w:numId="2"><w:abstractNumId w:val="2"/></w:num>' +
+    '</w:numbering>';
+}
+
+function buildDocx(opts) {
+  IMAGES = [];
+  var w = new W();
+
+  if (opts.title) {
+    w.body += '<w:p><w:pPr><w:pStyle w:val="TitreDoc"/></w:pPr>' +
+              textRun(opts.title, {}) + '</w:p>';
+  }
+  if (opts.subtitle) {
+    w.body += '<w:p><w:pPr><w:pStyle w:val="SousTitre"/></w:pPr>' +
+              textRun(opts.subtitle, {}) + '</w:p>';
+  }
+  opts.sections.forEach(function (sec) {
+    if (sec.heading) {
+      w.body += '<w:p><w:pPr><w:pStyle w:val="Titre1"/></w:pPr>' + textRun(sec.heading, {}) + '</w:p>';
+    }
+    walk(sec.node, w, {}, null);
+    w.close();
+  });
+  w.close();
+
+  var doc = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ' + NS + '><w:body>' +
+    w.body +
+    '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/>' +
+    '<w:pgMar w:top="1247" w:right="1247" w:bottom="1247" w:left="1247" ' +
+    'w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>';
+
+  var media = [], rels = '', ctypes = '';
+  IMAGES.forEach(function (im, i) {
+    media.push({ name: 'word/media/image' + (i + 1) + '.png', bin: im.bin });
+    rels += '<Relationship Id="rIdImg' + (i + 1) + '" Type="http://schemas.openxmlformats.org/' +
+            'officeDocument/2006/relationships/image" Target="media/image' + (i + 1) + '.png"/>';
+  });
+  if (IMAGES.length) ctypes = '<Default Extension="png" ContentType="image/png"/>';
+
+  return zip([
+    { name: '[Content_Types].xml',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+        '<Default Extension="xml" ContentType="application/xml"/>' + ctypes +
+        '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+        '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>' +
+        '<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>' +
+        '</Types>' },
+    { name: '_rels/.rels',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+        '</Relationships>' },
+    { name: 'word/_rels/document.xml.rels',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' +
+        '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>' +
+        rels + '</Relationships>' },
+    { name: 'word/document.xml', data: doc },
+    { name: 'word/styles.xml', data: stylesXml() },
+    { name: 'word/numbering.xml', data: numberingXml() }
+  ].concat(media));
+}
+
+root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: W, _walk: walk };
+
+})(window);
+
+</script>
+<script id="kit-js">
+/* ============================================================
+   KIT D'UNIFORMISATION — logique partagée (modale PDF, export Word,
+   libellés de la barre d'actions). Autonome : ne dépend d'aucun
+   dictionnaire I18N propre à la page.
+   ============================================================ */
+(function(){
+  var T = {
+    fr:{ modalTitle:"Exporter en PDF", seedPre:"Seed\u00a0:",
+         seedPost:"\u2014 notez cette valeur pour reproduire exactement cet exercice.",
+         optHeader:"Inclure l'en-t\u00eate de page",
+         optHeaderD:"Titre, badge de mati\u00e8re et intitul\u00e9 de l'exercice",
+         optSol:"Inclure le corrig\u00e9 complet",
+         optSolD:"L'ensemble des d\u00e9veloppements et commentaires du corrig\u00e9",
+         print:"\uD83D\uDDA8\u00a0Imprimer / Sauvegarder PDF", cancel:"Annuler",
+         btnNew:"\u21ba Nouvel \u00e9nonc\u00e9", btnPdf:"\u2b07 Exporter PDF", btnDoc:"\u2b07 Exporter Word",
+         btnCopy:"\u29c9 Copier", copied:"\u2713 Copi\u00e9e", seedLabel:"Seed de reproductibilit\u00e9",
+         docFile:"exercice.doc" },
+    en:{ modalTitle:"Export to PDF", seedPre:"Seed:",
+         seedPost:"\u2014 note this value to reproduce this exact exercise.",
+         optHeader:"Include the page header",
+         optHeaderD:"Title, subject badge and exercise heading",
+         optSol:"Include the full solution",
+         optSolD:"All the workings and comments of the solution",
+         print:"\uD83D\uDDA8\u00a0Print / Save as PDF", cancel:"Cancel",
+         btnNew:"\u21ba New exercise", btnPdf:"\u2b07 Export PDF", btnDoc:"\u2b07 Export Word",
+         btnCopy:"\u29c9 Copy", copied:"\u2713 Copied", seedLabel:"Reproducibility seed",
+         docFile:"exercise.doc" }
+  };
+
+  function lang(){
+    var l = (window.LANG || document.documentElement.lang || 'fr').toLowerCase();
+    return (l.indexOf('en') === 0) ? 'en' : 'fr';
+  }
+  function t(k){ return T[lang()][k]; }
+
+  window.KIT = { T:T, lang:lang, t:t };
+
+  /* --- libellés du kit (modale + barre d'actions) --- */
+  function paint(){
+    var d = T[lang()];
+    document.querySelectorAll('[data-kit]').forEach(function(el){
+      var k = el.getAttribute('data-kit');
+      if (d[k] !== undefined) el.innerHTML = d[k];
+    });
+  }
+  window.KIT.paint = paint;
+
+  /* Se raccroche au changement de langue de la page sans la modifier. */
+  function hookLang(){
+    if (typeof window.setLang === 'function' && !window.setLang.__kit){
+      var orig = window.setLang;
+      var wrapped = function(){ var r = orig.apply(this, arguments); paint(); return r; };
+      wrapped.__kit = true;
+      window.setLang = wrapped;
+    }
+  }
+
+  /* --- Copie de la seed active --- */
+  window.copySeed = function(btn){
+    var el = document.getElementById('seed-disp');
+    if (!el) return;
+    var v = (el.textContent || '').trim();
+    if (!v || v === '\u2014') return;
+    var done = function(){
+      var b = btn || document.getElementById('btn-copy-seed');
+      if (!b) return;
+      var old = b.innerHTML;
+      b.innerHTML = t('copied');
+      setTimeout(function(){ b.innerHTML = old; paint(); }, 1400);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(v).then(done, done);
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = v; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch(e){}
+      document.body.removeChild(ta); done();
+    }
+  };
+
+  /* --- Modale PDF --- */
+  window.openPdfModal = function(){
+    var s = document.getElementById('modal-seed');
+    var src = document.getElementById('seed-disp');
+    if (s && src) s.textContent = (src.textContent || '\u2014').trim();
+    /* la case « corrigé » reflète l'état d'affichage courant */
+    var sol = document.getElementById('sol-card');
+    var box = document.getElementById('opt-sol');
+    if (box) box.checked = !!(window.solVisible ||
+        (sol && (sol.classList.contains('visible') || sol.style.display === 'block')));
+    paint();
+    document.getElementById('pdf-ov').classList.add('open');
+    document.getElementById('pdf-modal').classList.add('open');
+  };
+  window.closePdfModal = function(){
+    document.getElementById('pdf-ov').classList.remove('open');
+    document.getElementById('pdf-modal').classList.remove('open');
+  };
+  var PRINTCLS = ['print-no-header', 'print-force-solution', 'print-no-solution'];
+
+  function clearPrintClasses() {
+    var b = document.body;
+    for (var i = 0; i < PRINTCLS.length; i++) b.classList.remove(PRINTCLS[i]);
+  }
+
+  window.doPrint = function () {
+    var noHdr   = !document.getElementById('opt-header').checked;
+    var inclSol =  document.getElementById('opt-sol').checked;
+    var b = document.body;
+
+    clearPrintClasses();
+    if (noHdr) b.classList.add('print-no-header');
+    b.classList.add(inclSol ? 'print-force-solution' : 'print-no-solution');
+    closePdfModal();
+
+    /* Le nettoyage doit attendre la fin réelle de l'impression. Un simple
+       minuteur ne convient pas : selon le navigateur, window.print() rend la
+       main avant que l'aperçu ne soit composé, et les options seraient alors
+       déjà effacées au moment où le PDF est produit. */
+    var done = false;
+    function finish() {
+      if (done) return;
+      done = true;
+      clearPrintClasses();
+      window.removeEventListener('afterprint', finish);
+      if (mq && mq.removeListener) mq.removeListener(onMq);
+      if (mq && mq.removeEventListener) mq.removeEventListener('change', onMq);
+    }
+    function onMq(e) { if (!e.matches) finish(); }
+
+    var mq = window.matchMedia ? window.matchMedia('print') : null;
+    window.addEventListener('afterprint', finish);
+    if (mq && mq.addEventListener) mq.addEventListener('change', onMq);
+    else if (mq && mq.addListener) mq.addListener(onMq);
+    /* filet de sécurité si le navigateur n'émet aucun de ces signaux */
+    setTimeout(finish, 120000);
+
+    setTimeout(function () { window.print(); }, 120);
+  };
+
+  /* --- Rasterisation des graphiques SVG ---
+     Word ne sait pas lire le SVG. On le convertit en PNG en recopiant d'abord
+     les styles calculés, sinon les couleurs héritées de la feuille disparaissent. */
+  var SVGPROPS = ['fill', 'stroke', 'stroke-width', 'stroke-dasharray', 'stroke-linecap',
+                  'stroke-linejoin', 'opacity', 'fill-opacity', 'stroke-opacity',
+                  'font-family', 'font-size', 'font-weight', 'font-style',
+                  'text-anchor', 'dominant-baseline'];
+
+  function inlineStyles(src, dst) {
+    var a = src.querySelectorAll('*'), b = dst.querySelectorAll('*'), i, j;
+    for (i = 0; i < a.length && i < b.length; i++) {
+      var cs = window.getComputedStyle(a[i]);
+      for (j = 0; j < SVGPROPS.length; j++) {
+        var v = cs.getPropertyValue(SVGPROPS[j]);
+        if (v) b[i].setAttribute(SVGPROPS[j], v);
+      }
+    }
+  }
+
+  function svgSize(svg) {
+    var vb = svg.viewBox && svg.viewBox.baseVal;
+    if (vb && vb.width) return { w: vb.width, h: vb.height };
+    var r = svg.getBoundingClientRect();
+    if (r.width) return { w: r.width, h: r.height };
+    return { w: 600, h: 380 };
+  }
+
+  function svgToPng(svg) {
+    return new Promise(function (resolve) {
+      var done = false;
+      var res = function (v) { if (!done) { done = true; resolve(v); } };
+      /* garde-fou : un graphique qui ne se charge pas ne doit jamais
+         bloquer l'export, on l'omet et le reste du document part quand même */
+      setTimeout(function () { res(null); }, 5000);
+      try {
+        var d = svgSize(svg), SC = 2;
+        var c = svg.cloneNode(true);
+        c.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        c.setAttribute('width', d.w);
+        c.setAttribute('height', d.h);
+        inlineStyles(svg, c);
+        var bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        bg.setAttribute('x', 0); bg.setAttribute('y', 0);
+        bg.setAttribute('width', '100%'); bg.setAttribute('height', '100%');
+        bg.setAttribute('fill', '#ffffff');
+        c.insertBefore(bg, c.firstChild);
+        var xml = new XMLSerializer().serializeToString(c);
+        var img = new Image();
+        img.onload = function () {
+          try {
+            var cv = document.createElement('canvas');
+            cv.width = Math.round(d.w * SC); cv.height = Math.round(d.h * SC);
+            var ctx = cv.getContext('2d');
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, cv.width, cv.height);
+            ctx.drawImage(img, 0, 0, cv.width, cv.height);
+            res({ png: cv.toDataURL('image/png'), w: d.w, h: d.h });
+          } catch (e) { res(null); }
+        };
+        img.onerror = function () { res(null); };
+        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml);
+      } catch (e) { res(null); }
+    });
+  }
+
+  /* --- Export Word natif (.docx) ---
+     Les formules sont converties en OMML, le format d'équation natif de Word :
+     elles restent éditables et se composent avec Cambria Math. */
+  window.exportWord = function () {
+    var area = document.getElementById('ex-area');
+    if (!area || !window.DocxExport) { return; }
+
+    var btn = document.querySelector('.btn-sm.doc');
+    if (btn) { btn.disabled = true; btn.style.opacity = '.5'; }
+
+    var svgs = Array.prototype.slice.call(area.querySelectorAll('svg'));
+    Promise.all(svgs.map(svgToPng)).then(function (pngs) {
+      svgs.forEach(function (sv, i) {
+        if (!pngs[i]) return;
+        sv.setAttribute('data-kit-png', pngs[i].png);
+        sv.setAttribute('data-kit-w', pngs[i].w);
+        sv.setAttribute('data-kit-h', pngs[i].h);
+      });
+      try { writeDocx(area); } finally {
+        svgs.forEach(function (sv) {
+          sv.removeAttribute('data-kit-png');
+          sv.removeAttribute('data-kit-w');
+          sv.removeAttribute('data-kit-h');
+        });
+        if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+      }
+    });
+  };
+
+  function writeDocx(area) {
+
+    var h1 = document.querySelector('header h1');
+    var badge = document.querySelector('.header-badge, #lbl-badge');
+    var seed = document.getElementById('seed-disp');
+    var bits = [];
+    if (badge && badge.textContent.trim()) bits.push(badge.textContent.trim());
+    if (seed && seed.textContent.trim() && seed.textContent.trim() !== '\u2014') {
+      bits.push('seed ' + seed.textContent.trim());
+    }
+    bits.push('Thomas Hossen');
+
+    var sections = [];
+    var cards = area.querySelectorAll('.card');
+    for (var i = 0; i < cards.length; i++) {
+      var body = cards[i].querySelector('.card-body');
+      if (!body) continue;
+      var tag = cards[i].querySelector('.card-header .tag');
+      var h2 = cards[i].querySelector('.card-header h2');
+      var head = [tag ? tag.textContent.trim() : '', h2 ? h2.textContent.trim() : '']
+                   .filter(Boolean).join(' \u2014 ');
+      sections.push({ heading: head, node: body });
+    }
+    if (!sections.length) sections = [{ heading: '', node: area }];
+
+    var bytes = window.DocxExport.build({
+      title: h1 ? h1.textContent.trim() : document.title,
+      subtitle: bits.join(' \u00b7 '),
+      sections: sections
+    });
+
+    var name = (h1 ? h1.textContent : 'exercice').normalize('NFD')
+                 .replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9]+/g, '_')
+                 .replace(/^_|_$/g, '').slice(0, 60) || 'exercice';
+    var blob = new Blob([bytes], {
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = name + '.docx';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){ hookLang(); paint(); });
+  if (document.readyState !== 'loading'){ hookLang(); paint(); }
+})();
+</script>
+<!-- KIT:JS:END -->
+</body>
+</html>

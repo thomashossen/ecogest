@@ -1,0 +1,2126 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Générateur d'exercices - Données agrégées et hétéroscédasticité</title>
+<script>
+window.MathJax = {
+  tex: { 
+    inlineMath: [['\\(','\\)']], 
+    displayMath: [['\\[','\\]']], 
+    packages: {'[+]': ['ams']},
+    macros: {
+      Var: ['\\textbf{Var}\\left(#1\\right)', 1],
+      Cov: ['\\textbf{Cov}\\left(#1\\right)', 1],
+      dsum: ['\\sum_{#1}^{#2}', 2]
+    }
+  },
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] }
+};
+</script>
+<script>window.MathJax=window.MathJax||{};window.MathJax.options=window.MathJax.options||{};window.MathJax.options.enableAssistiveMml=true;</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 0;border-bottom:3px solid var(--gold)}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+#controls-bar{border-top:1px solid rgba(255,255,255,.08);padding:1.1rem 0 1.3rem}
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.5)}
+.ctrl-inp{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.38rem .65rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.82rem;width:88px;outline:none;transition:border-color .2s}
+.ctrl-inp:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.ctrl-tip{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:rgba(250,247,240,.33);margin-top:2px}
+.seed-row{display:flex;align-items:flex-end;gap:.45rem}
+.btn-copy-seed{background:transparent;border:1px solid rgba(201,149,42,.4);color:rgba(250,247,240,.55);padding:.38rem .55rem;border-radius:3px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:.65rem;transition:all .18s;white-space:nowrap}
+.btn-copy-seed:hover{border-color:var(--gold-light);color:var(--gold-light)}
+.ctrl-vsep{width:1px;background:rgba(255,255,255,.1);align-self:stretch;margin:0 .2rem}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.3rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.9rem;font-weight:600;transition:background .18s;white-space:nowrap;align-self:flex-end}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.welcome-msg{text-align:center;padding:5rem 2rem;color:var(--text-muted);font-style:italic;font-size:1.05rem}
+.welcome-msg .arrow{font-size:2rem;display:block;margin-bottom:1rem;opacity:.4}
+
+/* TOP BAR */
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.top-bar-left{display:flex;gap:.6rem;align-items:center}
+.btn-sm{background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:'JetBrains Mono',monospace;font-size:.67rem;letter-spacing:.08em;text-transform:uppercase;padding:.4rem 1rem;border-radius:3px;cursor:pointer;transition:all .18s;white-space:nowrap}
+.btn-sm:hover{background:var(--gold);color:var(--navy)}
+.btn-sm.pdf{border-color:#7bafd4;color:#7bafd4}
+.btn-sm.pdf:hover{background:#7bafd4;color:var(--navy)}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.67rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:500}
+
+/* CARDS */
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);margin-bottom:1.5rem;border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+
+/* QUESTIONS */
+.questions ol{counter-reset:q;list-style:none}
+.questions ol>li{counter-increment:q;margin-bottom:1.4rem;display:flex;gap:1rem;align-items:flex-start}
+.questions ol>li::before{content:counter(q);min-width:28px;height:28px;background:var(--navy);color:var(--cream);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:500;flex-shrink:0;margin-top:.15rem}
+.questions ol>li .q-text{flex:1;font-size:.93rem;text-align:justify}
+
+/* SOLUTION */
+.sol-toggle-wrap{text-align:center;margin:1rem 0 0}
+.btn-toggle{background:transparent;border:2px solid var(--navy);color:var(--navy);font-family:'Source Serif 4',serif;font-size:.9rem;padding:.6rem 2rem;border-radius:4px;cursor:pointer;transition:all .2s}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--navy);color:var(--cream)}
+.sol-card{border-top:4px solid var(--green);display:none}
+.sol-card.visible{display:block;animation:fi .3s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+.st{font-size:.92rem;line-height:1.75;text-align:justify}
+.st p{margin-bottom:.7rem}
+.st ol{counter-reset:sq;list-style:none}
+.st>ol>li{counter-increment:sq;margin-bottom:1.6rem;display:flex;gap:1rem;align-items:flex-start}
+.st>ol>li::before{content:counter(sq);min-width:24px;height:24px;background:var(--green);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.68rem;flex-shrink:0;margin-top:.15rem}
+.st ul{list-style:disc;padding-left:1.5rem;margin-bottom:.7rem}
+.st ul li{margin-bottom:1rem}
+.st .q-content{flex:1;} /* Assure que le texte prend toute la largeur restante */
+
+/* PDF MODAL */
+#pdf-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;backdrop-filter:blur(2px)}
+#pdf-modal{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:101;background:#fff;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.25);width:390px;max-width:95vw;border-top:4px solid #7bafd4;overflow:hidden}
+.mh{background:var(--navy);color:var(--cream);padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
+.mh h3{font-family:'Playfair Display',serif;font-size:1rem;font-weight:600}
+.mclose{background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:1.2rem;line-height:1;padding:2px 6px;border-radius:3px;transition:color .15s}
+.mclose:hover{color:#fff}
+.mb2{padding:1.5rem}
+.opt-row{display:flex;align-items:flex-start;gap:.75rem;margin-bottom:1rem;cursor:pointer}
+.opt-row input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--navy);flex-shrink:0;margin-top:3px}
+.opt-lbl{font-size:.93rem}
+.opt-desc{font-size:.75rem;color:var(--text-muted);display:block}
+.seed-note{font-family:'JetBrains Mono',monospace;font-size:.7rem;background:var(--cream-dark);border:1px solid var(--border);padding:.55rem .85rem;border-radius:3px;color:var(--text-muted);margin-bottom:1.2rem;line-height:1.5}
+.seed-note strong{color:var(--navy)}
+.mactions{display:flex;gap:.6rem}
+.btn-print{flex:1;background:var(--navy);color:var(--cream);border:none;padding:.7rem;border-radius:4px;font-family:'Source Serif 4',serif;font-size:.9rem;cursor:pointer;transition:background .2s}
+.btn-print:hover{background:var(--navy-mid)}
+.btn-cancel{background:transparent;border:1px solid var(--border);color:var(--text-muted);padding:.7rem 1rem;border-radius:4px;font-family:'Source Serif 4',serif;font-size:.9rem;cursor:pointer;transition:all .2s}
+.btn-cancel:hover{border-color:var(--text);color:var(--text)}
+
+/* PRINT */
+@media print{
+:root{--navy:#0d1b2a;--cream:#fff;--cream-dark:#f8f8f8;--gold:#c9952a;--green:#2d6b4a;--border:#ccc}
+body{background:#fff;font-size:11pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+header{padding:1rem 1.5rem .8rem}
+header .subtitle{display:none}
+#controls-bar,.top-bar,.sol-toggle-wrap,#pdf-ov,#pdf-modal{display:none!important}
+.card{box-shadow:none;border-radius:0;page-break-inside:avoid;margin-bottom:1rem}
+main{padding:1rem 1.5rem;max-width:100%}
+body.print-no-header header{display:none!important}
+body.print-no-solution .sol-card{display:none!important}
+body.print-force-solution .sol-card{display:block!important}
+}
+
+/* --- Selecteur de langue / Language switch --- */
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem}
+.header-top .header-badge{margin-bottom:0}
+.lang-switch{display:flex;gap:.45rem;flex-shrink:0}
+.flag-btn{background:rgba(255,255,255,.06);border:1px solid rgba(201,149,42,.35);border-radius:3px;padding:3px;cursor:pointer;line-height:0;opacity:.5;transition:opacity .2s,border-color .2s,transform .15s}
+.flag-btn:hover{opacity:1;transform:translateY(-1px)}
+.flag-btn.active{opacity:1;border-color:var(--gold-light);box-shadow:0 0 0 1px rgba(232,184,75,.35)}
+.flag-btn svg{display:block;width:30px;height:20px;border-radius:1px}
+@media print{ .lang-switch{display:none !important;} }
+
+/* TABLEAUX DE DONNEES */
+.dtable-wrap{overflow-x:auto;margin:1.1rem 0}
+.dtable{width:100%;border-collapse:collapse;font-size:.82rem;font-family:'Source Serif 4',serif}
+.dtable th,.dtable td{border:1px solid var(--border);padding:.4rem .5rem;text-align:center;vertical-align:middle}
+.dtable th{background:var(--navy);color:var(--cream);font-weight:600;font-size:.78rem}
+.dtable tr:nth-child(even) td{background:#fbf9f4}
+.dtable td.num{font-family:'JetBrains Mono',monospace;font-size:.78rem;white-space:nowrap}
+.dtable tfoot td{font-weight:700;background:var(--cream-dark)}
+.dtable caption{caption-side:bottom;font-size:.76rem;color:var(--text-muted);font-style:italic;padding-top:.5rem;text-align:justify}
+.dtable-narrow{max-width:560px;margin:0 auto}
+.context-block .dtable-wrap{margin:1rem 0 1.1rem}
+.questions ol ol > li{display:block}
+.q-text .dtable-wrap{margin:.9rem 0 .8rem}
+
+/* FIGURES */
+.fig-wrap{margin:1.2rem 0 .3rem;text-align:center;overflow-x:auto}
+.fig-wrap svg{width:100%;max-width:640px;height:auto;background:#fff;border:1px solid var(--border);border-radius:4px}
+.fig-cap{font-size:.78rem;color:var(--text-muted);font-style:italic;text-align:center;margin-bottom:1rem;line-height:1.5}
+</style>
+<!-- KIT:CSS:START v1 --><style id="kit-css">
+/* ============================================================
+   KIT D'UNIFORMISATION — bloc partagé, identique sur toutes les pages.
+   Ne rien modifier ici fichier par fichier : régénérer le kit.
+   ============================================================ */
+
+/* --- 1. Mathématiques : jamais de débordement --- */
+mjx-container[display="true"]{
+  overflow-x:auto; overflow-y:hidden; max-width:100%;
+  padding:.15rem 0; margin:1rem 0 !important;
+}
+mjx-container[display="true"]::-webkit-scrollbar{height:5px}
+mjx-container[display="true"]::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+mjx-container{ max-width:100%; }
+.math-formula{ text-align:center; margin:1.2rem 0; overflow-x:auto; max-width:100%; }
+@media (max-width:640px){
+  mjx-container[display="true"]{ font-size:88% }
+}
+
+/* --- 2. Listes à puces entourées (questions ET données de contexte) --- */
+.kit-list, .st > ol,
+.questions > ol,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list), .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list),
+.question-list, .enum-list, .q-list{
+  counter-reset:kitq; list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem;
+}
+.kit-list > li, .st > ol > li,
+.questions > ol > li,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li, .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li,
+.question-list > li, .enum-list > li, .q-list > li{
+  counter-increment:kitq; position:relative;
+  padding-left:2.6rem; margin-bottom:1.3rem;
+  font-size:.95rem; line-height:1.7; text-align:justify;
+  font-weight:400; color:var(--text);
+  display:block;
+}
+.kit-list > li::before, .st > ol > li::before,
+.questions > ol > li::before,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li::before, .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li::before,
+.question-list > li::before, .enum-list > li::before, .q-list > li::before{
+  content:counter(kitq);
+  position:absolute; left:0; top:.1rem;
+  width:28px; min-width:28px; height:28px;
+  background:var(--navy); color:var(--cream);
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.72rem; font-weight:500;
+  flex-shrink:0;
+}
+.questions ol > li .q-text{ flex:1; font-size:.95rem; text-align:justify }
+/* sous-listes : cercle creux, plus discret */
+.enum-sublist, .kit-sublist, .sub-list, .sub-ol, .alpha-list, .enum-subsublist,
+.st ol.sub-ol, .questions ol ol, .st ol ol, .kit-list ol, .q-list ol, .question-list ol{
+  counter-reset:kitsq; list-style:none !important; padding-left:0 !important;
+  margin:.9rem 0 .9rem 0;
+}
+.enum-sublist > li, .kit-sublist > li, .sub-list > li, .sub-ol > li, .alpha-list > li, .enum-subsublist > li,
+.st ol.sub-ol > li, .questions ol ol > li, .st ol ol > li, .kit-list ol > li, .q-list ol > li, .question-list ol > li{
+  counter-increment:kitsq; position:relative;
+  padding-left:2.1rem; margin-bottom:.7rem; font-size:.92rem; text-align:justify;
+}
+.enum-sublist > li::before, .kit-sublist > li::before, .sub-list > li::before, .sub-ol > li::before, .alpha-list > li::before, .enum-subsublist > li::before,
+.st ol.sub-ol > li::before, .questions ol ol > li::before, .st ol ol > li::before, .kit-list ol > li::before, .q-list ol > li::before, .question-list ol > li::before{
+  content:counter(kitsq,lower-alpha);
+  min-width:22px;
+  position:absolute; left:0; top:.05rem;
+  width:22px; height:22px;
+  background:transparent; color:var(--navy);
+  border:1px solid var(--gold);
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.65rem;
+}
+
+/* variante : puces simples non numérotées (listes de données) */
+.kit-simple{ list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem }
+.kit-simple > li{
+  position:relative; padding-left:1.5rem; margin-bottom:1.1rem;
+  font-size:.95rem; line-height:1.7; text-align:justify;
+}
+.kit-simple > li::before{
+  content:"\2022"; position:absolute; left:0; top:-.15rem;
+  color:var(--gold); font-size:1.5rem; line-height:1; background:none;
+  width:auto; height:auto; border:none; border-radius:0;
+}
+/* variante : liste à un seul élément, sans puce */
+.kit-nobullet{ list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem }
+.kit-nobullet > li{
+  padding-left:0; margin-bottom:1rem; font-size:.95rem; line-height:1.7; text-align:justify;
+}
+.kit-nobullet > li::before{ content:none !important; display:none !important }
+/* variante : titres de section numérotés (contenu intercalé entre les puces) */
+.kit-num-scope{ counter-reset:kitn }
+p.kit-num{
+  counter-increment:kitn; position:relative;
+  padding-left:2.6rem; margin:1.8rem 0 1rem;
+  font-weight:600; color:var(--navy); text-align:left;
+  min-height:28px; display:flex; align-items:center;
+}
+p.kit-num:first-of-type{ margin-top:0 }
+p.kit-num::before{
+  content:counter(kitn); position:absolute; left:0; top:0;
+  width:28px; height:28px; background:var(--navy); color:var(--cream);
+  border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.72rem; font-weight:500;
+}
+
+/* titres de dossier */
+.dossier-title{
+  margin:2rem 0 1rem; font-weight:600; color:var(--navy); font-size:1.02rem;
+  border-bottom:1px solid var(--border); padding-bottom:.4rem; text-align:left;
+}
+.dossier-title:first-of-type{ margin-top:0 }
+.dossier-body{ margin-bottom:.5rem }
+
+/* --- 3. Corrigé sobre : plus de multiplication de fonds verts --- */
+.sol-card .calc-box, .sol-card .concl{
+  background:transparent !important;
+  border:none !important;
+  border-left:none !important;
+  padding:0 !important;
+  border-radius:0 !important;
+  margin:0 0 1.6rem 0 !important;
+  font-size:.95rem;
+  line-height:1.7;
+  text-align:justify;
+}
+.sol-card .sol-sub{
+  color:var(--navy); font-weight:600; display:block;
+  margin:0 0 .5rem 0; font-size:1rem;
+}
+/* seuls encadrés conservés : les perspectives « Pour aller plus loin » */
+.sol-card .persp-box{
+  background:#f7f9fc !important;
+  border:1px solid #ccd8e6 !important;
+  border-left:3px solid var(--navy-mid) !important;
+  padding:1.2rem !important;
+  border-radius:4px !important;
+  margin:2rem 0 1rem 0 !important;
+  font-size:.9rem; line-height:1.7; text-align:justify;
+}
+
+.btn-toggle{
+  background:transparent; border:2px solid var(--green); border-bottom:none;
+  color:var(--green); font-family:'Source Serif 4',serif; font-size:.95rem;
+  font-weight:600; padding:.5rem 1.5rem; border-radius:4px 4px 0 0; cursor:pointer;
+  transition:all .2s; position:relative; z-index:2; top:2px;
+}
+.btn-toggle:hover{ background:var(--green); color:var(--cream) }
+
+/* --- 4. Bouton « Afficher le corrigé » (modèle der) --- */
+.sol-toggle-wrap{ text-align:left; margin:1.5rem 0 0 0; }
+.sol-card{
+  border-top:2px solid var(--green); display:none;
+  border-radius:0 6px 6px 6px; position:relative; z-index:1;
+}
+.sol-card.visible{ display:block; animation:kitfi .35s ease }
+.sol-card .card-header{ background:var(--green) }
+.sol-card .card-header .tag{ border-color:rgba(200,240,200,.4); color:#a8d8b0 }
+@keyframes kitfi{ from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+
+/* --- 5. Barre d'actions unifiée --- */
+.top-bar{ display:flex; flex-wrap:wrap; gap:.8rem; align-items:center; justify-content:space-between; margin-bottom:1.2rem }
+.top-bar-left{ display:flex; flex-wrap:wrap; gap:.55rem; order:1 }
+.top-bar .seed-badge{ order:2 }
+.btn-sm{ background:transparent; border:1px solid var(--gold); color:var(--gold); font-family:'JetBrains Mono',monospace; font-size:.67rem; letter-spacing:.08em; text-transform:uppercase; padding:.4rem 1rem; border-radius:3px; cursor:pointer; transition:all .18s; white-space:nowrap }
+.btn-sm:hover{ background:var(--gold); color:var(--navy) }
+.btn-sm.pdf{ border-color:#7bafd4; color:#7bafd4 }
+.btn-sm.pdf:hover{ background:#7bafd4; color:var(--navy) }
+.btn-sm.doc{ border-color:#8fa8c4; color:#8fa8c4 }
+.seed-row{ display:flex; gap:.4rem; align-items:center }
+.btn-copy-seed{
+  background:transparent; border:1px solid rgba(201,149,42,.4); color:rgba(250,247,240,.55);
+  padding:.38rem .55rem; border-radius:3px; cursor:pointer;
+  font-family:'JetBrains Mono',monospace; font-size:.65rem; transition:all .18s; white-space:nowrap;
+}
+.btn-copy-seed:hover{ border-color:var(--gold-light); color:var(--gold-light) }
+.btn-sm.doc:hover{ background:#8fa8c4; color:var(--navy) }
+
+/* --- 6. Modale d'export PDF --- */
+#pdf-ov{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:100; backdrop-filter:blur(2px) }
+#pdf-modal{ display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:101; background:#fff; border-radius:8px; box-shadow:0 20px 60px rgba(0,0,0,.25); width:390px; max-width:95vw; border-top:4px solid #7bafd4; overflow:hidden }
+#pdf-ov.open,#pdf-modal.open{ display:block }
+.mh{ background:var(--navy); color:var(--cream); padding:1rem 1.5rem; display:flex; align-items:center; justify-content:space-between }
+.mh h3{ font-family:'Playfair Display',serif; font-size:1rem; font-weight:600; margin:0 }
+.mclose{ background:none; border:none; color:rgba(255,255,255,.6); cursor:pointer; font-size:1.2rem; line-height:1; padding:2px 6px; border-radius:3px; transition:color .15s }
+.mclose:hover{ color:#fff }
+.mb2{ padding:1.5rem }
+.opt-row{ display:flex; align-items:flex-start; gap:.75rem; margin-bottom:1rem; cursor:pointer }
+.opt-row input[type=checkbox]{ width:16px; height:16px; cursor:pointer; accent-color:var(--navy); flex-shrink:0; margin-top:3px }
+.opt-txt{ display:block }
+.opt-lbl{ font-size:.93rem; display:block }
+.opt-desc{ font-size:.75rem; color:var(--text-muted); display:block }
+.seed-note{ font-family:'JetBrains Mono',monospace; font-size:.7rem; background:var(--cream-dark); border:1px solid var(--border); padding:.55rem .85rem; border-radius:3px; color:var(--text-muted); margin-bottom:1.2rem; line-height:1.5 }
+.mactions{ display:flex; gap:.6rem }
+.btn-print{ flex:1; background:var(--navy); color:var(--cream); border:none; padding:.7rem; border-radius:4px; font-family:'Source Serif 4',serif; font-size:.9rem; cursor:pointer; transition:background .2s }
+.btn-print:hover{ background:var(--navy-mid) }
+.btn-cancel{ background:transparent; border:1px solid var(--border); color:var(--text-muted); padding:.7rem 1rem; border-radius:4px; font-family:'Source Serif 4',serif; font-size:.9rem; cursor:pointer; transition:all .2s }
+.btn-cancel:hover{ border-color:var(--text); color:var(--text) }
+
+/* --- 7. Impression --- */
+@media print{
+  body{ background:#fff; font-size:11pt; -webkit-print-color-adjust:exact; print-color-adjust:exact }
+  header{ display:block !important; padding:1rem 1.5rem .8rem }
+  header .subtitle{ display:none }
+  .ctrls, #controls-bar, .top-actions, .top-bar-left, .sol-toggle-wrap,
+  .lang-switch, #pdf-ov, #pdf-modal{ display:none !important }
+  .top-bar{ display:block !important; margin-bottom:.8rem }
+  .top-bar .seed-badge{
+    display:inline-block !important; background:none; border:1px solid var(--border);
+    color:var(--text-muted); font-family:'JetBrains Mono',monospace; font-size:8.5pt;
+    padding:2pt 6pt; border-radius:2px;
+  }
+  body.print-no-header .top-bar{ display:none !important }
+  main{ padding:1rem 1.5rem; max-width:100% }
+  .card{ box-shadow:none; border-radius:0; page-break-inside:avoid; margin-bottom:1rem }
+  #ex-area{ display:block !important }
+  .sol-card{ display:block !important; border-top:2px solid var(--green) }
+  mjx-container[display="true"]{ overflow:visible !important }
+  body.print-no-header header{ display:none !important }
+  body.print-no-header .ctrls{ display:none !important }
+  body.print-no-solution .sol-card,
+  body.print-no-solution .sol-toggle-wrap{ display:none !important }
+  body.print-force-solution .sol-card{ display:block !important }
+}
+</style><!-- KIT:CSS:END -->
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-top">
+    <div class="header-badge" data-k="k-badge">ÉCONOMÉTRIE</div>
+    <div class="lang-switch">
+      <button type="button" class="flag-btn active" id="flag-fr" onclick="setLang('fr')" title="Français" aria-label="Français"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="20" height="40" fill="#002654"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ED2939"/></svg></button>
+      <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
+    </div>
+  </div>
+  <h1 data-k="k-h1">Données agrégées et hétéroscédasticité</h1>
+  <p class="subtitle" data-k="k-sub">© Thomas Hossen – Version du 17 septembre 2026</p>
+
+  <div id="controls-bar">
+    <div class="ctrls">
+      <div class="ctrl-g">
+        <span class="ctrl-lbl" data-k="k-seed">Seed de reproductibilité</span>
+        <div class="seed-row">
+          <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="0" max="99999999">
+          <button type="button" class="btn-copy-seed" id="btn-copy-seed" onclick="copySeed(this)" title="Copier la seed active"><span data-kit="btnCopy">&#10697; Copier</span></button>
+        </div>
+        <span class="ctrl-tip" data-k="k-seedtip">Vide = aléatoire à chaque génération</span>
+      </div>
+      <div class="ctrl-vsep"></div>
+      <div class="ctrl-g">
+        <span class="ctrl-lbl" data-k="k-n">Groupes <em>(N)</em></span>
+        <input class="ctrl-inp" type="number" id="param-n" min="5" max="9" placeholder="auto">
+        <span class="ctrl-tip" data-k="k-ntip">5 – 9, auto si vide</span>
+      </div>
+      <div class="ctrl-vsep"></div>
+      <button class="btn-gen" onclick="generateFromControls()"><span data-k="k-gen">Générer</span></button>
+    </div>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" class="welcome-msg">
+    <span class="arrow">↑</span>
+    <span data-k="k-welcome">Configurez les paramètres (ou laissez vide pour de l'aléatoire), puis cliquez sur Générer.</span>
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="top-bar-left">
+        <button type="button" class="btn-sm" onclick="regen()"><span data-kit="btnNew">&#8634; Nouvel &eacute;nonc&eacute;</span></button>
+        <button type="button" class="btn-sm pdf" onclick="openPdfModal()"><span data-kit="btnPdf">&#11015; Exporter PDF</span></button>
+        <button type="button" class="btn-sm doc" onclick="exportWord()"><span data-kit="btnDoc">&#11015; Exporter Word</span></button>
+      </div>
+      <div class="seed-badge"><span data-k="k-seedbadge">Seed&nbsp;:</span> <span id="seed-disp">—</span></div>
+    </div>
+
+    <div id="ex-card" class="card">
+      <div class="card-header"><span class="tag" data-k="k-tag-ex">Énoncé</span><h2 id="card-title" data-k="k-cardtitle">Moindres carrés généralisés</h2></div>
+      <div class="card-body" id="ex-content"></div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag" data-k="k-tag-sol">Corrigé</span><h2 id="card-title2" data-k="k-cardtitle2">Moindres carrés généralisés</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+let solVisible = false;
+
+/* ============================================================
+   OUTILS NUMERIQUES  /  NUMERIC HELPERS
+   ============================================================ */
+const P10 = [1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000];
+function fx(v, d, m) {
+  const neg = v < 0;
+  let s = String(Math.abs(Math.round(v)));
+  let ip = s, fp = '';
+  if (d > 0) { s = s.padStart(d + 1, '0'); ip = s.slice(0, -d); fp = s.slice(-d); }
+  if (ip.length >= 5) {
+    const sep = m ? '\\,' : '\u202F';
+    let out = '';
+    while (ip.length > 3) { out = sep + ip.slice(-3) + out; ip = ip.slice(0, -3); }
+    ip = ip + out;
+  }
+  return (neg && /[1-9]/.test(ip + fp) ? (m ? '-' : '\u2212') : '') + ip + (d > 0 ? '.' + fp : '');
+}
+function fxf(x, d, m) { return fx(Math.round(x * P10[d]), d, m); }
+/* chiffres significatifs ; notation scientifique pour les tres petites ou tres grandes valeurs */
+function fS(x, sig, m) {
+  if (x === 0) return '0';
+  const e = Math.floor(Math.log10(Math.abs(x)));
+  if (e < -3 || e >= 7) {
+    let mant = x / Math.pow(10, e);
+    let ee = e;
+    if (Math.abs(Number(mant.toFixed(sig - 1))) >= 10) { mant /= 10; ee += 1; }
+    const ms = fxf(mant, sig - 1, m);
+    return m ? `${ms}\\times 10^{${ee}}` : `${ms} × 10<sup>${ee}</sup>`;
+  }
+  return fxf(x, Math.max(0, sig - 1 - e), m);
+}
+function gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { const t = a % b; a = b; b = t; } return a; }
+function frT(p, q) { const g = gcd(p, q); p /= g; q /= g; return q === 1 ? String(p) : `\\frac{${p}}{${q}}`; }
+function sqrtFr(p, q) { const g = gcd(p, q); p /= g; q /= g; if (q === 1 && Number.isInteger(Math.sqrt(p))) return String(Math.sqrt(p)); return `\\sqrt{${frT(p, q)}}`; }
+
+/* algebre lineaire */
+function inv(A) {
+  const n = A.length, M = A.map((r, i) => r.concat(Array.from({ length: n }, (_, j) => (i === j ? 1 : 0))));
+  for (let c = 0; c < n; c++) {
+    let p = c;
+    for (let r = c + 1; r < n; r++) if (Math.abs(M[r][c]) > Math.abs(M[p][c])) p = r;
+    [M[c], M[p]] = [M[p], M[c]];
+    const d = M[c][c];
+    for (let j = 0; j < 2 * n; j++) M[c][j] /= d;
+    for (let r = 0; r < n; r++) if (r !== c) { const f = M[r][c]; for (let j = 0; j < 2 * n; j++) M[r][j] -= f * M[c][j]; }
+  }
+  return M.map(r => r.slice(n));
+}
+const mmul = (A, B) => A.map(r => B[0].map((_, j) => r.reduce((s, v, k) => s + v * B[k][j], 0)));
+const mvec = (A, v) => A.map(r => r.reduce((s, x, k) => s + x * v[k], 0));
+
+/* ============================================================
+   CONTEXTES (independants de la langue)
+   Les regresseurs individuels sont tires autour d'un centre propre a chaque groupe.
+   ============================================================ */
+const CX = [
+  { id: 'insect', L: { y: 'L', a: 'S', b: 'H' }, sq: true,
+    c1: [1, 12], s1: 1.2, d1: 2, c2: [0.35, 0.95], s2: 0.05, d2: 3, bd2: 2,
+    b0: [1.5, 2.5], b1: [0.08, 0.2], b2: [1.5, 3], sig: [0.15, 0.3], sgn: [1, 1] },
+  { id: 'wage', L: { y: 'W', a: 'E', b: 'T' }, sq: false, minSize: 3,
+    c1: [10, 17], s1: 1.5, d1: 2, c2: [3, 25], s2: 4, d2: 2, bd2: 3, int1: true, int2: true,
+    b0: [1.8, 2.3], b1: [0.05, 0.09], b2: [0.008, 0.02], sig: [0.15, 0.25], sgn: [1, 1] },
+  { id: 'housing', L: { y: 'P', a: 'D', b: 'A' }, sq: false, minSize: 3,
+    c1: [0.5, 12], s1: 0.8, d1: 2, c2: [5, 85], s2: 8, d2: 1, bd2: 4, int2: true,
+    b0: [8.2, 8.8], b1: [-0.06, -0.03], b2: [-0.004, -0.0015], sig: [0.1, 0.2], sgn: [-1, -1] },
+  { id: 'energy', L: { y: 'C', a: 'S', b: 'A' }, sq: false, minSize: 2,
+    c1: [3, 15], s1: 1.2, d1: 2, c2: [0.5, 8], s2: 0.6, d2: 2, bd2: 3,
+    b0: [8.2, 8.8], b1: [0.06, 0.1], b2: [0.03, 0.07], sig: [0.1, 0.2], sgn: [1, 1] }
+];
+
+/* ============================================================
+   GENERATEUR PSEUDO-ALEATOIRE
+   ============================================================ */
+let _rand, _activeSeed = 0;
+function initRand(seed) {
+  _activeSeed = seed >>> 0;
+  let s = _activeSeed;
+  _rand = () => {
+    s = (s + 0x6D2B79F5) >>> 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const rI = (a, b) => Math.floor(_rand() * (b - a + 1)) + a;
+const rU = (a, b) => a + (b - a) * _rand();
+const rN = () => { let u = 0; while (u === 0) u = _rand(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * _rand()); };
+
+/* ============================================================
+   GENERATION ET CALCULS
+   ============================================================ */
+function computeD(seed, Nin) {
+  initRand(seed);
+  const ci = rI(0, CX.length - 1), S = CX[ci];
+  const Nauto = rI(5, 9);
+  const N = Nin || Nauto;
+  for (let guard = 0; guard < 100000; guard++) {
+    /* structure d'agregation : tailles de groupes */
+    /* le secret statistique interdit les groupes trop petits dans certains contextes */
+    const sizePool = [[1, 2, 2, 3, 4], [2, 2, 2, 4], [2, 3, 3, 4, 5], [2, 2, 3, 6], [1, 2, 3, 4, 5, 6]][rI(0, 4)].filter(v => v >= (S.minSize || 1));
+    if (new Set(sizePool).size < 2) continue;
+    const m = Array.from({ length: N }, () => sizePool[rI(0, sizePool.length - 1)]);
+    if (new Set(m).size < 2) continue;
+    const cnt = {};
+    m.forEach(v => { cnt[v] = (cnt[v] || 0) + 1; });
+    const maxc = Math.max(...Object.values(cnt));
+    const mStar = Math.min(...Object.keys(cnt).filter(k => cnt[k] === maxc).map(Number));
+    const n = m.reduce((a, b) => a + b, 0);
+    if (n > 40) continue;
+    /* parametres */
+    const beta = [rU(...S.b0), rU(...S.b1), rU(...S.b2)], sig = rU(...S.sig);
+    /* donnees individuelles puis moyennes par groupe (valeurs affichees : entiers mis a l'echelle) */
+    const Zi = [], X1i = [], X2i = [];
+    for (let j = 0; j < N; j++) {
+      const c1 = rU(...S.c1), c2 = rU(...S.c2);
+      let sz = 0, s1 = 0, s2 = 0;
+      for (let k = 0; k < m[j]; k++) {
+        let a = c1 + S.s1 * rN(), b = c2 + S.s2 * rN();
+        a = Math.max(S.c1[0] * 0.5, a); b = Math.max(S.c2[0] * 0.5, b);
+        if (S.int1) a = Math.round(a);
+        if (S.int2) b = Math.round(b);
+        if (S.sq) b = Math.min(0.99, Math.round(b * 100) / 100);
+        const x2 = S.sq ? b * b : b;
+        const ly = beta[0] + beta[1] * a + beta[2] * x2 + sig * rN();
+        sz += ly; s1 += a; s2 += x2;
+      }
+      Zi.push(Math.round(sz / m[j] * 1000));
+      X1i.push(Math.round(s1 / m[j] * P10[S.d1]));
+      X2i.push(Math.round(s2 / m[j] * P10[S.d2]));
+    }
+    const d1 = S.d1, d2 = S.d2;
+    const Z = Zi.map(v => v / 1000), X1 = X1i.map(v => v / P10[d1]), X2 = X2i.map(v => v / P10[d2]);
+    /* matrices exactes (entiers mis a l'echelle) */
+    const scaled = (w) => {
+      const s = (f) => { let t = 0; for (let j = 0; j < N; j++) t += w[j] * f(j); return t; };
+      return {
+        XX: [[s(() => 1), s(j => X1i[j]), s(j => X2i[j])],
+             [s(j => X1i[j]), s(j => X1i[j] * X1i[j]), s(j => X1i[j] * X2i[j])],
+             [s(j => X2i[j]), s(j => X1i[j] * X2i[j]), s(j => X2i[j] * X2i[j])]],
+        XZ: [s(j => Zi[j]), s(j => X1i[j] * Zi[j]), s(j => X2i[j] * Zi[j])]
+      };
+    };
+    const decXX = [[0, d1, d2], [d1, 2 * d1, d1 + d2], [d2, d1 + d2, 2 * d2]], decXZ = [3, d1 + 3, d2 + 3];
+    const toF = (M, V) => ({ A: M.map((r, i) => r.map((v, k) => v / P10[decXX[i][k]])), b: V.map((v, i) => v / P10[decXZ[i]]) });
+    const SM = scaled(m), S1 = scaled(m.map(() => 1));
+    const G = toF(SM.XX, SM.XZ), O = toF(S1.XX, S1.XZ);
+    const GiA = inv(G.A), OiA = inv(O.A);
+    const gG = mvec(GiA, G.b), gO = mvec(OiA, O.b);
+    /* signes attendus et ecart visible entre les deux estimations */
+    if (Math.sign(gG[1]) !== S.sgn[0] || Math.sign(gG[2]) !== S.sgn[1]) continue;
+    const cond = Math.max(...G.A.map((r, i) => Math.abs(r[i]))) * Math.max(...GiA.map((r, i) => Math.abs(r[i])));
+    if (cond > 1e7) continue;
+    /* variance estimee et ecarts-types */
+    const X = Z.map((_, j) => [1, X1[j], X2[j]]);
+    const eG = Z.map((z, j) => z - (gG[0] + gG[1] * X1[j] + gG[2] * X2[j]));
+    const w = m.map(v => v / mStar);
+    const s2 = eG.reduce((a, e, j) => a + w[j] * e * e, 0) / (N - 3);
+    const VG = GiA.map(r => r.map(v => v * s2 * mStar));
+    const Om = m.map(v => mStar / v);
+    const XOX = [0, 1, 2].map(i => [0, 1, 2].map(k => X.reduce((a, r, j) => a + r[i] * Om[j] * r[k], 0)));
+    const VO = mmul(mmul(OiA, XOX), OiA).map(r => r.map(v => v * s2));
+    const ratio = [0, 1, 2].map(i => VO[i][i] / VG[i][i]);
+    if (Math.max(ratio[1], ratio[2]) < 1.03) continue;
+    if (Math.abs(gG[1] - gO[1]) < 0.02 * Math.abs(gG[1]) && Math.abs(gG[2] - gO[2]) < 0.02 * Math.abs(gG[2])) continue;
+    const bounds = []; let acc = 0;
+    m.forEach(v => { bounds.push([acc + 1, acc + v]); acc += v; });
+    return { sc: ci, id: S.id, S, N, n, m, mStar, bounds, beta, sig, Zi, X1i, X2i, Z, X1, X2, d1, d2, SM, S1, decXX, decXZ,
+      G, O, GiA, OiA, gG, gO, s2, VG, VO, ratio, meanH: S.sq ? Math.sqrt(X2.reduce((a, b) => a + b, 0) / N) : 0 };
+  }
+  throw new Error('generation');
+}
+
+/* ============================================================
+   AFFICHAGE COMMUN
+   ============================================================ */
+const pmat = rows => `\\begin{pmatrix}${rows.map(r => r.join('&')).join('\\\\')}\\end{pmatrix}`;
+const exM = (D, M) => pmat(M.map((r, i) => r.map((v, k) => fx(v, D.decXX[i][k], true))));
+const exV = (D, V) => pmat(V.map((v, i) => [fx(v, D.decXZ[i], true)]));
+const flM = M => pmat(M.map(r => r.map(v => fS(v, 4, true))));
+const flV = V => pmat(V.map(v => [fS(v, 5, true)]));
+function dtable(head, rows, cap, narrow) {
+  return `<div class="dtable-wrap"><table class="dtable${narrow ? ' dtable-narrow' : ''}">${cap ? `<caption>${cap}</caption>` : ''}` +
+    `<tr>${head.map(h => `<th>${h}</th>`).join('')}</tr>` +
+    rows.map(r => `<tr>${r.map((c, j) => `<td${j > 0 ? ' class="num"' : ''}>${c}</td>`).join('')}</tr>`).join('') + `</table></div>`;
+}
+/* notations dependant du contexte */
+function notes(D) {
+  const L = D.S.L, i = 'i';
+  return {
+    ly: `\\ln(${L.y}_${i})`, a: `${L.a}_${i}`, bb: D.S.sq ? `${L.b}_${i}^2` : `${L.b}_${i}`,
+    model: `\\ln(${L.y}_i)=\\beta_0+\\beta_1${L.a}_i+\\beta_2${D.S.sq ? `${L.b}_i^2` : `${L.b}_i`}+\\varepsilon_i`
+  };
+}
+function groupTable(D, L) {
+  return dtable(L.gHead, D.m.map((v, j) => [String(j + 1), `${D.bounds[j][0]}${v > 1 ? ` ${L.to} ${D.bounds[j][1]}` : ''}`, String(v)]), L.gCap, true);
+}
+function dataTable(D, L) {
+  const T = L.ctx[D.id];
+  return dtable(['\\(j\\)', '\\(m_j\\)', '\\(Z_j\\)', '\\(X_j^{(1)}\\)', '\\(X_j^{(2)}\\)'],
+    D.m.map((v, j) => [String(j + 1), String(v), fx(D.Zi[j], 3), fx(D.X1i[j], D.d1), fx(D.X2i[j], D.d2)]), L.dCap(T), true);
+}
+
+/* ============================================================
+   DICTIONNAIRE BILINGUE  /  BILINGUAL DICTIONARY
+   ============================================================ */
+const I18N = {
+  fr: {
+    "htmlLang": "fr",
+    "title": "Générateur d'exercices - Données agrégées et hétéroscédasticité",
+    "k-badge": "ÉCONOMÉTRIE",
+    "k-h1": "Données agrégées et hétéroscédasticité",
+    "k-sub": "© Thomas Hossen – Version du 17 septembre 2026",
+    "k-seed": "Seed de reproductibilité",
+    "k-seedtip": "Vide = aléatoire à chaque génération",
+    "k-n": "Groupes <em>(N)</em>",
+    "k-ntip": "5 – 9, auto si vide",
+    "k-gen": "Générer",
+    "k-welcome": "Configurez les paramètres (ou laissez vide pour de l'aléatoire), puis cliquez sur Générer.",
+    "k-seedbadge": "Seed&nbsp;:",
+    "k-tag-ex": "Énoncé",
+    "k-cardtitle": "Moindres carrés généralisés",
+    "k-tag-sol": "Corrigé",
+    "k-cardtitle2": "Moindres carrés généralisés",
+    "phSeed": "auto",
+    "phN": "auto",
+    "showSol": "Afficher le corrigé",
+    "hideSol": "Masquer le corrigé",
+    to: "à",
+    gHead: ["Groupe \\(j\\)", "Observations regroupées", "Effectif \\(m_j\\)"],
+    gCap: "Composition des groupes.",
+    dCap: T => `Données agrégées disponibles (moyennes par ${T.groupSing}).`,
+    resHead: ["Coefficient", "MCO", "Écart-type MCO", "MCG", "Écart-type MCG", "Rapport des variances"],
+    ctx: {
+      insect: {
+        title: "Abondance d'une espèce d'insecte", fem: true, unit: "stations d'observation", unitSing: "station", group: "secteurs", groupSing: "secteur",
+        intro: D => `On étudie ${D.n} stations d'observation. Pour toute station \\(i\\), on note \\(L_i\\) l'abondance d'une espèce particulière d'insecte (nombre d'individus recensés), \\(S_i\\) la surface de la station (en hectares) et \\(H_i\\) son humidité relative (exprimée en proportion, entre 0 et 1). On suppose qu'il existe une relation linéaire entre \\(\\ln(L_i)\\), \\(S_i\\) et \\(H_i^2\\), valable pour toute station \\(i\\).`,
+        why: "Pour des raisons de coût, le protocole de collecte ne conserve que des moyennes par secteur, chaque secteur regroupant des stations voisines",
+        x2note: "la moyenne des carrés des humidités, et non le carré de l'humidité moyenne",
+        i1: (g, pct) => `Selon l'estimation des MCG, un hectare de surface supplémentaire est associé, toutes choses égales par ailleurs, à une abondance plus élevée d'environ ${pct} %.`,
+        i2: (g, h, pct) => `Le terme en \\(H_i^2\\) rend l'effet de l'humidité croissant avec l'humidité elle-même : \\(\\partial\\ln(L_i)/\\partial H_i=2\\beta_2H_i\\). Pour une humidité de ${h}, une hausse de 0.01 de l'humidité est ainsi associée à une abondance plus élevée d'environ ${pct} %.`
+      },
+      wage: {
+        title: "Salaires et secret statistique", unit: "salariés", unitSing: "salarié", group: "établissements", groupSing: "établissement",
+        intro: D => `On étudie ${D.n} salariés. Pour tout salarié \\(i\\), on note \\(W_i\\) son salaire horaire (en euros), \\(E_i\\) son nombre d'années d'études et \\(T_i\\) son ancienneté dans l'entreprise (en années). On suppose qu'il existe une relation linéaire entre \\(\\ln(W_i)\\), \\(E_i\\) et \\(T_i\\), valable pour tout salarié \\(i\\).`,
+        why: "Pour respecter le secret statistique, l'administration ne diffuse que des moyennes par établissement",
+        x2note: "l'ancienneté moyenne de l'établissement",
+        i1: (g, pct) => `Selon l'estimation des MCG, une année d'études supplémentaire est associée, toutes choses égales par ailleurs, à un salaire horaire plus élevé d'environ ${pct} % (rendement de l'éducation).`,
+        i2: (g, h, pct) => `De même, une année d'ancienneté supplémentaire est associée à un salaire horaire plus élevé d'environ ${pct} %.`
+      },
+      housing: {
+        title: "Prix de l'immobilier par îlot", unit: "logements vendus", unitSing: "logement", group: "îlots", groupSing: "îlot",
+        intro: D => `On étudie ${D.n} ventes de logements dans une agglomération. Pour toute vente \\(i\\), on note \\(P_i\\) le prix au mètre carré (en euros), \\(D_i\\) la distance du logement au centre-ville (en kilomètres) et \\(A_i\\) l'âge du bâtiment (en années). On suppose qu'il existe une relation linéaire entre \\(\\ln(P_i)\\), \\(D_i\\) et \\(A_i\\), valable pour toute vente \\(i\\).`,
+        why: "Pour préserver la confidentialité des transactions, les données publiques ne sont diffusées que sous forme de moyennes par îlot",
+        x2note: "l'âge moyen des bâtiments de l'îlot",
+        i1: (g, pct) => `Selon l'estimation des MCG, chaque kilomètre supplémentaire d'éloignement du centre est associé, toutes choses égales par ailleurs, à un prix au mètre carré plus faible d'environ ${pct} %.`,
+        i2: (g, h, pct) => `De même, chaque année d'âge supplémentaire du bâtiment est associée à un prix au mètre carré plus faible d'environ ${pct} %.`
+      },
+      energy: {
+        title: "Consommation d'énergie des logements", unit: "logements", unitSing: "logement", group: "immeubles", groupSing: "immeuble",
+        intro: D => `On étudie ${D.n} logements. Pour tout logement \\(i\\), on note \\(C_i\\) sa consommation annuelle d'énergie (en kWh), \\(S_i\\) sa surface (en dizaines de mètres carrés) et \\(A_i\\) l'âge du bâtiment (en décennies). On suppose qu'il existe une relation linéaire entre \\(\\ln(C_i)\\), \\(S_i\\) et \\(A_i\\), valable pour tout logement \\(i\\).`,
+        why: "Le chauffage étant collectif, les relevés ne sont disponibles qu'en moyenne par immeuble",
+        x2note: "l'âge moyen (en décennies) de l'immeuble",
+        i1: (g, pct) => `Selon l'estimation des MCG, dix mètres carrés de surface supplémentaires sont associés, toutes choses égales par ailleurs, à une consommation plus élevée d'environ ${pct} %.`,
+        i2: (g, h, pct) => `De même, une décennie d'âge supplémentaire est associée à une consommation plus élevée d'environ ${pct} %.`
+      }
+    },
+
+    ex: function (D) {
+      const T = this.ctx[D.id], L = D.S.L, Nn = notes(D);
+      return `
+      <div class="context-block">
+        ${T.intro(D)} On cherche donc des réels \\(\\beta_0\\), \\(\\beta_1\\) et \\(\\beta_2\\) tels que, pour tout entier \\(i\\) compris entre 1 et ${D.n},
+        \\[${Nn.model}\\]
+        où le terme d'erreur \\(\\varepsilon_i\\) vérifie \\(\\mathbb{E}[\\varepsilon_i]=0\\), \\(\\textbf{Cov}(\\varepsilon_i,\\varepsilon_k)=0\\) pour \\(i\\neq k\\) et \\(\\textbf{Var}(\\varepsilon_i)=\\sigma_\\varepsilon^2\\) pour un certain réel \\(\\sigma_\\varepsilon>0\\). On suppose enfin que les vecteurs \\((1,\\ldots,1)\\), \\((${L.a}_1,\\ldots,${L.a}_{${D.n}})\\) et \\((${D.S.sq ? `${L.b}_1^2,\\ldots,${L.b}_{${D.n}}^2` : `${L.b}_1,\\ldots,${L.b}_{${D.n}}`})\\) sont linéairement indépendants.
+        <p style="margin-top:.6rem">${T.why} : les ${D.n} ${T.unit} sont réparti${T.fem ? "e" : ""}s en \\(N=${D.N}\\) ${T.group}, le groupe \\(j\\) réunissant les ${T.unit} d'indices appartenant à un ensemble \\(G_j\\) de cardinal \\(m_j\\) :</p>
+        ${groupTable(D, this)}
+        Pour tout entier \\(j\\) compris entre 1 et ${D.N}, seules les moyennes suivantes sont disponibles :
+        \\[Z_j:=\\frac{1}{m_j}\\sum_{i\\in G_j}\\ln(${L.y}_i),\\qquad X_j^{(1)}:=\\frac{1}{m_j}\\sum_{i\\in G_j}${L.a}_i,\\qquad X_j^{(2)}:=\\frac{1}{m_j}\\sum_{i\\in G_j}${Nn.bb}\\]
+        Le modèle se réécrit alors, pour tout entier \\(j\\) compris entre 1 et ${D.N}, \\(Z_j=\\gamma_0+\\gamma_1X_j^{(1)}+\\gamma_2X_j^{(2)}+\\eta_j\\) (relation notée \\((\\star)\\)), avec \\(\\gamma_0:=\\beta_0\\), \\(\\gamma_1:=\\beta_1\\), \\(\\gamma_2:=\\beta_2\\) et \\(\\eta_j:=\\frac{1}{m_j}\\sum_{i\\in G_j}\\varepsilon_i\\).
+      </div>
+      <div class="questions"><ol>
+        <li><div class="q-text">Écrire le modèle \\((\\star)\\) sous forme matricielle en utilisant les notations \\(\\textbf{Z}\\), \\(\\textbf{X}\\), \\(\\boldsymbol{\\eta}\\) et \\(\\boldsymbol{\\gamma}\\) (vecteur des paramètres à estimer).</div></li>
+        <li><div class="q-text">Montrer que la matrice de variances-covariances du vecteur \\(\\boldsymbol{\\eta}\\) peut s'écrire \\(\\textbf{Var}(\\boldsymbol{\\eta})=\\sigma^2\\boldsymbol{\\Omega}\\), avec \\(\\sigma^2:=\\sigma_\\varepsilon^2/${D.mStar}\\), où \\(\\boldsymbol{\\Omega}\\) est une matrice dont on donnera l'expression.</div></li>
+        <li><div class="q-text">Est-il pertinent d'utiliser l'estimateur des moindres carrés ordinaires ? Si tel n'est pas le cas, pourquoi ? Existe-t-il un estimateur plus pertinent ?</div></li>
+        <li><div class="q-text">Montrer que cet estimateur revient à appliquer la méthode des moindres carrés ordinaires à un modèle transformé, que l'on explicitera.</div></li>
+        <li><div class="q-text">Donner l'expression de cet estimateur de \\(\\boldsymbol{\\gamma}\\), puis justifier qu'il est BLUE (sans biais et de variance minimale parmi les estimateurs linéaires sans biais de \\(\\boldsymbol{\\gamma}\\)).</div></li>
+        <li><div class="q-text">Les données agrégées sont les suivantes (\\(X_j^{(2)}\\) désigne ${T.x2note}) :
+        ${dataTable(D, this)}
+        <ol>
+          <li>Montrer que l'estimateur de la question 5 coïncide avec l'estimateur des moindres carrés pondérés par les effectifs \\(m_j\\), puis le calculer.</li>
+          <li>Calculer l'estimateur des moindres carrés ordinaires et le comparer au précédent.</li>
+          <li>Estimer \\(\\sigma^2\\) à partir des résidus du modèle transformé, puis comparer les écarts-types des deux estimateurs de \\(\\gamma_1\\) et de \\(\\gamma_2\\) (on utilisera, pour les moindres carrés ordinaires, la formule de variance valable en présence d'hétéroscédasticité). Commenter.</li>
+          <li>Interpréter les coefficients estimés par la méthode de la question 5.</li>
+        </ol></div></li>
+      </ol></div>`;
+    },
+
+    sol: function (D) {
+      const T = this.ctx[D.id], L = D.S.L, N = D.N, ms = D.mStar;
+      const omDiag = D.m.map(v => frT(ms, v)).join(',\\,');
+      const omH = D.m.map(v => sqrtFr(ms, v)).join(',\\,');
+      const omIH = D.m.map(v => sqrtFr(v, ms)).join(',\\,');
+      const mDiag = D.m.join(',\\,');
+      const g = D.gG, o = D.gO;
+      const se = V => [0, 1, 2].map(i => Math.sqrt(V[i][i]));
+      const seG = se(D.VG), seO = se(D.VO);
+      const rows = ['\\(\\gamma_0\\)', '\\(\\gamma_1\\)', '\\(\\gamma_2\\)'].map((nm, i) => [nm, fS(o[i], 5), fS(seO[i], 4), fS(g[i], 5), fS(seG[i], 4), fxf(D.ratio[i], 3)]);
+      const pct1 = fxf(100 * Math.abs(Math.exp(g[1]) - 1), 2, false);
+      const hRef = D.S.sq ? Math.round(D.meanH * 100) / 100 : 0;
+      const pct2 = D.S.sq ? fxf(100 * (Math.exp(2 * g[2] * hRef * 0.01) - 1), 2, false) : fxf(100 * Math.abs(Math.exp(g[2]) - 1), 2, false);
+      const gain = D.ratio[1] >= D.ratio[2] ? 1 : 2;
+      return `<div class="st"><ol>
+
+      <li><div class="q-content">
+        <p>La relation \\((\\star)\\) s'écrit pour chacun des ${N} groupes. En empilant ces ${N} égalités, on obtient :
+        \\[\\underbrace{\\begin{pmatrix}Z_1\\\\\\vdots\\\\Z_{${N}}\\end{pmatrix}}_{=:\\textbf{Z}}=\\underbrace{\\begin{pmatrix}1&X_1^{(1)}&X_1^{(2)}\\\\\\vdots&\\vdots&\\vdots\\\\1&X_{${N}}^{(1)}&X_{${N}}^{(2)}\\end{pmatrix}}_{=:\\textbf{X}}\\underbrace{\\begin{pmatrix}\\gamma_0\\\\\\gamma_1\\\\\\gamma_2\\end{pmatrix}}_{=:\\boldsymbol{\\gamma}}+\\underbrace{\\begin{pmatrix}\\eta_1\\\\\\vdots\\\\\\eta_{${N}}\\end{pmatrix}}_{=:\\boldsymbol{\\eta}}\\]
+        c'est-à-dire \\(\\textbf{Z}=\\textbf{X}\\boldsymbol{\\gamma}+\\boldsymbol{\\eta}\\), où \\(\\textbf{X}\\) est une matrice de taille \\(${N}\\times 3\\).</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <p>La matrice \\(\\textbf{Var}(\\boldsymbol{\\eta})\\) est la matrice symétrique d'ordre ${N} dont le terme de la ligne \\(j\\) et de la colonne \\(k\\) vaut \\(\\textbf{Cov}(\\eta_j,\\eta_k)\\). On utilise la bilinéarité de la covariance et le fait que les erreurs sont deux à deux non corrélées et de même variance.</p>
+        <ul>
+          <li>Pour tout \\(j\\), on a
+          \\[\\textbf{Var}(\\eta_j)=\\frac{1}{m_j^2}\\,\\textbf{Var}\\Big(\\sum_{i\\in G_j}\\varepsilon_i\\Big)=\\frac{1}{m_j^2}\\sum_{i\\in G_j}\\textbf{Var}(\\varepsilon_i)=\\frac{m_j\\,\\sigma_\\varepsilon^2}{m_j^2}=\\frac{\\sigma_\\varepsilon^2}{m_j}\\]
+          la deuxième égalité résultant de l'absence de corrélation entre les erreurs.</li>
+          <li>Pour \\(j\\neq k\\), les ensembles \\(G_j\\) et \\(G_k\\) sont disjoints, donc
+          \\[\\textbf{Cov}(\\eta_j,\\eta_k)=\\frac{1}{m_jm_k}\\sum_{i\\in G_j}\\sum_{l\\in G_k}\\textbf{Cov}(\\varepsilon_i,\\varepsilon_l)=0\\]</li>
+        </ul>
+        <p>La matrice \\(\\textbf{Var}(\\boldsymbol{\\eta})\\) est donc diagonale, de terme général \\(\\sigma_\\varepsilon^2/m_j\\). Comme \\(\\sigma_\\varepsilon^2/m_j=\\sigma^2\\times ${ms}/m_j\\) avec \\(\\sigma^2:=\\sigma_\\varepsilon^2/${ms}\\), il vient \\(\\textbf{Var}(\\boldsymbol{\\eta})=\\sigma^2\\boldsymbol{\\Omega}\\), où
+        \\[\\boldsymbol{\\Omega}=\\text{diag}\\left(\\frac{${ms}}{m_1},\\ldots,\\frac{${ms}}{m_{${N}}}\\right)=\\text{diag}\\left(${omDiag}\\right)\\]
+        La normalisation par \\(${ms}\\), effectif le plus fréquent, fait apparaître le plus grand nombre possible de 1 sur la diagonale ; elle est arbitraire, et l'on pourrait tout aussi bien écrire \\(\\textbf{Var}(\\boldsymbol{\\eta})=\\sigma_\\varepsilon^2\\,\\text{diag}(1/m_1,\\ldots,1/m_{${N}})\\).</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <p>La matrice \\(\\boldsymbol{\\Omega}\\) est diagonale, si bien que les perturbations \\(\\eta_j\\) restent non corrélées ; mais sa diagonale n'est pas constante, car les groupes n'ont pas tous le même effectif (${[...new Set(D.m)].sort((a, b) => a - b).join(', ')}). L'hypothèse d'homoscédasticité de Gauss-Markov est donc violée : une moyenne calculée sur un grand groupe est plus précise qu'une moyenne calculée sur un petit groupe.</p>
+        <p>L'estimateur des moindres carrés ordinaires reste sans biais (son biais ne dépend que de \\(\\mathbb{E}[\\boldsymbol{\\eta}]=\\textbf{0}\\)), mais il n'est plus de variance minimale parmi les estimateurs linéaires sans biais, et la formule usuelle \\(\\widehat{\\sigma}^2(\\textbf{X}^T\\textbf{X})^{-1}\\) de sa variance est fausse, ce qui invalide les tests usuels. Comme \\(\\boldsymbol{\\Omega}\\) est connue (elle ne dépend que des effectifs \\(m_j\\)), on lui préfère l'estimateur des moindres carrés généralisés (MCG). Si \\(\\boldsymbol{\\Omega}\\) était inconnue et devait être estimée, on utiliserait les moindres carrés quasi généralisés (MCQG).</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <p>La matrice \\(\\boldsymbol{\\Omega}\\) étant diagonale à termes strictement positifs, la matrice diagonale \\(\\boldsymbol{\\Omega}^{1/2}:=\\text{diag}(${omH})\\) est symétrique et vérifie \\(\\boldsymbol{\\Omega}^{1/2}(\\boldsymbol{\\Omega}^{1/2})^T=\\boldsymbol{\\Omega}\\). Elle est inversible, d'inverse
+        \\[\\boldsymbol{\\Omega}^{-1/2}=\\text{diag}\\left(\\sqrt{\\frac{m_1}{${ms}}},\\ldots,\\sqrt{\\frac{m_{${N}}}{${ms}}}\\right)=\\text{diag}\\left(${omIH}\\right)\\]
+        En multipliant à gauche le modèle \\(\\textbf{Z}=\\textbf{X}\\boldsymbol{\\gamma}+\\boldsymbol{\\eta}\\) par \\(\\boldsymbol{\\Omega}^{-1/2}\\), on obtient le modèle transformé \\(\\textbf{Z}^*=\\textbf{X}^*\\boldsymbol{\\gamma}+\\boldsymbol{\\eta}^*\\), avec \\(\\textbf{Z}^*:=\\boldsymbol{\\Omega}^{-1/2}\\textbf{Z}\\), \\(\\textbf{X}^*:=\\boldsymbol{\\Omega}^{-1/2}\\textbf{X}\\) et \\(\\boldsymbol{\\eta}^*:=\\boldsymbol{\\Omega}^{-1/2}\\boldsymbol{\\eta}\\) : concrètement, la ligne \\(j\\) du modèle est multipliée par \\(\\sqrt{m_j/${ms}}\\). Ce modèle vérifie les hypothèses de Gauss-Markov. D'une part, par linéarité de l'espérance, \\(\\mathbb{E}[\\boldsymbol{\\eta}^*]=\\boldsymbol{\\Omega}^{-1/2}\\mathbb{E}[\\boldsymbol{\\eta}]=\\textbf{0}\\). D'autre part :
+        \\[\\textbf{Var}(\\boldsymbol{\\eta}^*)=\\boldsymbol{\\Omega}^{-1/2}\\,\\textbf{Var}(\\boldsymbol{\\eta})\\,(\\boldsymbol{\\Omega}^{-1/2})^T=\\sigma^2\\,\\boldsymbol{\\Omega}^{-1/2}\\boldsymbol{\\Omega}\\boldsymbol{\\Omega}^{-1/2}=\\sigma^2\\textbf{I}_{${N}}\\]
+        Enfin, \\(\\boldsymbol{\\Omega}^{-1/2}\\) étant inversible, \\(\\textbf{X}^*\\) est, comme \\(\\textbf{X}\\), de rang 3. On peut donc appliquer les moindres carrés ordinaires au modèle transformé : c'est le principe des moindres carrés généralisés.</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <p>L'estimateur des MCG est l'estimateur des MCO du modèle transformé :
+        \\[\\widehat{\\boldsymbol{\\gamma}}_{\\text{MCG}}=\\big((\\textbf{X}^*)^T\\textbf{X}^*\\big)^{-1}(\\textbf{X}^*)^T\\textbf{Z}^*=\\big(\\textbf{X}^T(\\boldsymbol{\\Omega}^{-1/2})^T\\boldsymbol{\\Omega}^{-1/2}\\textbf{X}\\big)^{-1}\\textbf{X}^T(\\boldsymbol{\\Omega}^{-1/2})^T\\boldsymbol{\\Omega}^{-1/2}\\textbf{Z}=\\big(\\textbf{X}^T\\boldsymbol{\\Omega}^{-1}\\textbf{X}\\big)^{-1}\\textbf{X}^T\\boldsymbol{\\Omega}^{-1}\\textbf{Z}\\]
+        puisque \\(\\boldsymbol{\\Omega}^{-1/2}\\) est symétrique et que \\(\\boldsymbol{\\Omega}^{-1/2}\\boldsymbol{\\Omega}^{-1/2}=\\boldsymbol{\\Omega}^{-1}\\). La matrice \\(\\textbf{X}^T\\boldsymbol{\\Omega}^{-1}\\textbf{X}\\) est inversible car \\(\\textbf{X}\\) est de rang 3 (c'est le rôle de l'hypothèse d'indépendance linéaire des vecteurs de l'énoncé). Or, sous les hypothèses de Gauss-Markov, l'estimateur des MCO est BLUE. Le modèle transformé vérifiant ces hypothèses, son estimateur des MCO, c'est-à-dire \\(\\widehat{\\boldsymbol{\\gamma}}_{\\text{MCG}}\\), est linéaire en \\(\\textbf{Z}\\), sans biais et de variance minimale parmi les estimateurs linéaires sans biais de \\(\\boldsymbol{\\gamma}\\) (théorème d'Aitken). Sa matrice de variances-covariances vaut \\(\\sigma^2(\\textbf{X}^T\\boldsymbol{\\Omega}^{-1}\\textbf{X})^{-1}\\).</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <ol>
+        <li><p>Comme \\(\\boldsymbol{\\Omega}^{-1}=\\text{diag}(m_1,\\ldots,m_{${N}})/${ms}=\\textbf{M}/${ms}\\), avec \\(\\textbf{M}:=\\text{diag}(${mDiag})\\), le facteur \\(1/${ms}\\) se simplifie :
+        \\[\\widehat{\\boldsymbol{\\gamma}}_{\\text{MCG}}=\\big(\\textbf{X}^T\\textbf{M}\\textbf{X}\\big)^{-1}\\textbf{X}^T\\textbf{M}\\textbf{Z}\\]
+        C'est l'estimateur qui minimise \\(\\sum_j m_j\\big(Z_j-\\gamma_0-\\gamma_1X_j^{(1)}-\\gamma_2X_j^{(2)}\\big)^2\\) : les moindres carrés pondérés par les effectifs, qui donnent davantage de poids aux moyennes les plus précises. À partir des données, on calcule :
+        \\[\\textbf{X}^T\\textbf{M}\\textbf{X}=${exM(D, D.SM.XX)}\\qquad\\textbf{X}^T\\textbf{M}\\textbf{Z}=${exV(D, D.SM.XZ)}\\]
+        puis
+        \\[\\big(\\textbf{X}^T\\textbf{M}\\textbf{X}\\big)^{-1}\\approx ${flM(D.GiA)}\\qquad\\text{d'où}\\qquad\\widehat{\\boldsymbol{\\gamma}}_{\\text{MCG}}\\approx ${flV(g)}\\]</p></li>
+        <li><p>L'estimateur des MCO utilise les mêmes formules avec des poids égaux :
+        \\[\\textbf{X}^T\\textbf{X}=${exM(D, D.S1.XX)}\\qquad\\textbf{X}^T\\textbf{Z}=${exV(D, D.S1.XZ)}\\]
+        \\[\\big(\\textbf{X}^T\\textbf{X}\\big)^{-1}\\approx ${flM(D.OiA)}\\qquad\\text{d'où}\\qquad\\widehat{\\boldsymbol{\\gamma}}_{\\text{MCO}}\\approx ${flV(o)}\\]
+        Les deux estimateurs sont sans biais : leur écart ne traduit pas un biais, mais le fait que les MCO accordent autant de poids à un groupe de ${Math.min(...D.m)} ${T.unitSing}${Math.min(...D.m) > 1 ? 's' : ''} qu'à un groupe de ${Math.max(...D.m)} ${T.unit}.</p></li>
+        <li><p>Un estimateur sans biais de \\(\\sigma^2\\) est donné par la somme des carrés des résidus du modèle transformé, divisée par \\(N-3=${N - 3}\\) :
+        \\[\\widehat{\\sigma}^2=\\frac{1}{${N}-3}\\sum_{j=1}^{${N}}\\frac{m_j}{${ms}}\\big(Z_j-\\widehat{\\gamma}_0-\\widehat{\\gamma}_1X_j^{(1)}-\\widehat{\\gamma}_2X_j^{(2)}\\big)^2\\approx ${fS(D.s2, 4, true)}\\]
+        où les \\(\\widehat{\\gamma}_k\\) sont les estimations des MCG. On en déduit les matrices de variances-covariances estimées
+        \\[\\widehat{\\textbf{Var}}(\\widehat{\\boldsymbol{\\gamma}}_{\\text{MCG}})=\\widehat{\\sigma}^2\\big(\\textbf{X}^T\\boldsymbol{\\Omega}^{-1}\\textbf{X}\\big)^{-1}\\qquad\\text{et}\\qquad\\widehat{\\textbf{Var}}(\\widehat{\\boldsymbol{\\gamma}}_{\\text{MCO}})=\\widehat{\\sigma}^2\\big(\\textbf{X}^T\\textbf{X}\\big)^{-1}\\textbf{X}^T\\boldsymbol{\\Omega}\\textbf{X}\\big(\\textbf{X}^T\\textbf{X}\\big)^{-1}\\]
+        la seconde étant la variance des MCO lorsque \\(\\textbf{Var}(\\boldsymbol{\\eta})=\\sigma^2\\boldsymbol{\\Omega}\\). Leurs racines diagonales donnent les écarts-types suivants :</p>
+        ${dtable(this.resHead, rows, '', false)}
+        <p>Conformément au théorème d'Aitken, la variance de chaque estimateur des MCO est supérieure à celle de l'estimateur des MCG correspondant : le rapport des variances atteint ${fxf(D.ratio[gain], 3, false)} pour \\(\\gamma_${gain}\\). Utiliser les MCO reviendrait donc à se priver d'une partie de l'information apportée par les effectifs des groupes${Math.max(D.ratio[1], D.ratio[2]) < 1.1 ? ' ; le gain reste ici modeste, car les effectifs sont peu dispersés' : ''}. Le gain d'efficacité est d'autant plus important que les effectifs \\(m_j\\) sont hétérogènes ; il disparaîtrait si tous les groupes avaient la même taille, auquel cas les deux estimateurs coïncideraient. En pratique, on obtient directement l'estimateur des MCG avec ${'<code>lm(Z ~ X1 + X2, weights = m)</code>'} en R ou ${'<code>smf.wls("Z ~ X1 + X2", data, weights=m).fit()</code>'} en Python : les écarts-types affichés sont alors ceux de la colonne MCG, car le logiciel estime \\(${ms}\\,\\sigma^2\\) et multiplie par \\((\\textbf{X}^T\\textbf{M}\\textbf{X})^{-1}\\).</p></li>
+        <li><p>Le modèle étant semi-logarithmique, \\(100\\,\\gamma_k\\) mesure approximativement la variation en pourcentage de \\(${L.y}_i\\) consécutive à une hausse d'une unité du régresseur correspondant (plus précisément, \\(100(e^{\\gamma_k}-1)\\) %). ${T.i1(g, pct1)} ${T.i2(g, fxf(hRef, 2, false), pct2)} Ces coefficients décrivent le comportement des ${T.unit} ${T.fem ? "elles" : "eux"}-mêmes, et non celui des ${T.group} : l'agrégation n'a pas modifié les paramètres, seulement la précision avec laquelle on peut les estimer.</p></li>
+        </ol>
+      </div></li>
+
+      </ol></div>`;
+    }
+  },
+
+  en: {
+    "htmlLang": "en",
+    "title": "Exercise generator - Aggregated data and heteroscedasticity",
+    "k-badge": "ECONOMETRICS",
+    "k-h1": "Aggregated Data and Heteroscedasticity",
+    "k-sub": "© Thomas Hossen – September 17, 2026 Version",
+    "k-seed": "Reproducibility seed",
+    "k-seedtip": "Empty = random at each generation",
+    "k-n": "Groups <em>(N)</em>",
+    "k-ntip": "5 – 9, auto if left empty",
+    "k-gen": "Generate",
+    "k-welcome": "Configure the parameters (or leave them empty for random values), then click Generate.",
+    "k-seedbadge": "Seed:",
+    "k-tag-ex": "Problem",
+    "k-cardtitle": "Generalised least squares",
+    "k-tag-sol": "Solution",
+    "k-cardtitle2": "Generalised least squares",
+    "phSeed": "auto",
+    "phN": "auto",
+    "showSol": "Show the solution",
+    "hideSol": "Hide the solution",
+    to: "to",
+    gHead: ["Group \\(j\\)", "Pooled observations", "Size \\(m_j\\)"],
+    gCap: "Composition of the groups.",
+    dCap: T => `Available aggregated data (means by ${T.groupSing}).`,
+    resHead: ["Coefficient", "OLS", "OLS std. error", "GLS", "GLS std. error", "Variance ratio"],
+    ctx: {
+      insect: {
+        title: "Abundance of an insect species", unit: "observation stations", unitSing: "station", group: "sectors", groupSing: "sector",
+        intro: D => `We study ${D.n} observation stations. For every station \\(i\\), we write \\(L_i\\) for the abundance of a particular insect species (number of individuals counted), \\(S_i\\) for the area of the station (in hectares) and \\(H_i\\) for its relative humidity (expressed as a proportion, between 0 and 1). We assume that there is a linear relationship between \\(\\ln(L_i)\\), \\(S_i\\) and \\(H_i^2\\), valid for every station \\(i\\).`,
+        why: "For cost reasons, the data collection protocol only keeps averages by sector, each sector grouping neighbouring stations",
+        x2note: "the mean of the squared humidities, not the square of the mean humidity",
+        i1: (g, pct) => `According to the GLS estimate, one additional hectare of area is associated, all else being equal, with an abundance higher by about ${pct} %.`,
+        i2: (g, h, pct) => `The term in \\(H_i^2\\) makes the effect of humidity increase with humidity itself: \\(\\partial\\ln(L_i)/\\partial H_i=2\\beta_2H_i\\). For a humidity of ${h}, a rise of 0.01 in humidity is thus associated with an abundance higher by about ${pct} %.`
+      },
+      wage: {
+        title: "Wages and statistical confidentiality", unit: "employees", unitSing: "employee", group: "establishments", groupSing: "establishment",
+        intro: D => `We study ${D.n} employees. For every employee \\(i\\), we write \\(W_i\\) for their hourly wage (in euros), \\(E_i\\) for their number of years of education and \\(T_i\\) for their tenure in the firm (in years). We assume that there is a linear relationship between \\(\\ln(W_i)\\), \\(E_i\\) and \\(T_i\\), valid for every employee \\(i\\).`,
+        why: "To comply with statistical confidentiality, the administration only releases averages by establishment",
+        x2note: "the average tenure in the establishment",
+        i1: (g, pct) => `According to the GLS estimate, one additional year of education is associated, all else being equal, with an hourly wage higher by about ${pct} % (return to education).`,
+        i2: (g, h, pct) => `Likewise, one additional year of tenure is associated with an hourly wage higher by about ${pct} %.`
+      },
+      housing: {
+        title: "Housing prices by block", unit: "dwellings sold", unitSing: "dwelling", group: "blocks", groupSing: "block",
+        intro: D => `We study ${D.n} housing sales in an urban area. For every sale \\(i\\), we write \\(P_i\\) for the price per square metre (in euros), \\(D_i\\) for the distance from the dwelling to the city centre (in kilometres) and \\(A_i\\) for the age of the building (in years). We assume that there is a linear relationship between \\(\\ln(P_i)\\), \\(D_i\\) and \\(A_i\\), valid for every sale \\(i\\).`,
+        why: "To protect the confidentiality of transactions, public data are only released as averages by block",
+        x2note: "the average age of the buildings in the block",
+        i1: (g, pct) => `According to the GLS estimate, each additional kilometre from the centre is associated, all else being equal, with a price per square metre lower by about ${pct} %.`,
+        i2: (g, h, pct) => `Likewise, each additional year of building age is associated with a price per square metre lower by about ${pct} %.`
+      },
+      energy: {
+        title: "Energy consumption of dwellings", unit: "dwellings", unitSing: "dwelling", group: "buildings", groupSing: "building",
+        intro: D => `We study ${D.n} dwellings. For every dwelling \\(i\\), we write \\(C_i\\) for its annual energy consumption (in kWh), \\(S_i\\) for its floor area (in tens of square metres) and \\(A_i\\) for the age of the building (in decades). We assume that there is a linear relationship between \\(\\ln(C_i)\\), \\(S_i\\) and \\(A_i\\), valid for every dwelling \\(i\\).`,
+        why: "Since heating is collective, meter readings are only available as averages by building",
+        x2note: "the average age (in decades) of the building",
+        i1: (g, pct) => `According to the GLS estimate, ten additional square metres of floor area are associated, all else being equal, with a consumption higher by about ${pct} %.`,
+        i2: (g, h, pct) => `Likewise, one additional decade of age is associated with a consumption higher by about ${pct} %.`
+      }
+    },
+
+    ex: function (D) {
+      const T = this.ctx[D.id], L = D.S.L, Nn = notes(D);
+      return `
+      <div class="context-block">
+        ${T.intro(D)} We therefore look for real numbers \\(\\beta_0\\), \\(\\beta_1\\) and \\(\\beta_2\\) such that, for every integer \\(i\\) between 1 and ${D.n},
+        \\[${Nn.model}\\]
+        where the error term \\(\\varepsilon_i\\) satisfies \\(\\mathbb{E}[\\varepsilon_i]=0\\), \\(\\textbf{Cov}(\\varepsilon_i,\\varepsilon_k)=0\\) for \\(i\\neq k\\) and \\(\\textbf{Var}(\\varepsilon_i)=\\sigma_\\varepsilon^2\\) for some real \\(\\sigma_\\varepsilon>0\\). Finally, we assume that the vectors \\((1,\\ldots,1)\\), \\((${L.a}_1,\\ldots,${L.a}_{${D.n}})\\) and \\((${D.S.sq ? `${L.b}_1^2,\\ldots,${L.b}_{${D.n}}^2` : `${L.b}_1,\\ldots,${L.b}_{${D.n}}`})\\) are linearly independent.
+        <p style="margin-top:.6rem">${T.why}: the ${D.n} ${T.unit} are split into \\(N=${D.N}\\) ${T.group}, group \\(j\\) gathering the ${T.unit} whose indices belong to a set \\(G_j\\) of cardinality \\(m_j\\):</p>
+        ${groupTable(D, this)}
+        For every integer \\(j\\) between 1 and ${D.N}, only the following averages are available:
+        \\[Z_j:=\\frac{1}{m_j}\\sum_{i\\in G_j}\\ln(${L.y}_i),\\qquad X_j^{(1)}:=\\frac{1}{m_j}\\sum_{i\\in G_j}${L.a}_i,\\qquad X_j^{(2)}:=\\frac{1}{m_j}\\sum_{i\\in G_j}${Nn.bb}\\]
+        The model can then be rewritten, for every integer \\(j\\) between 1 and ${D.N}, as \\(Z_j=\\gamma_0+\\gamma_1X_j^{(1)}+\\gamma_2X_j^{(2)}+\\eta_j\\) (relation denoted \\((\\star)\\)), with \\(\\gamma_0:=\\beta_0\\), \\(\\gamma_1:=\\beta_1\\), \\(\\gamma_2:=\\beta_2\\) and \\(\\eta_j:=\\frac{1}{m_j}\\sum_{i\\in G_j}\\varepsilon_i\\).
+      </div>
+      <div class="questions"><ol>
+        <li><div class="q-text">Write model \\((\\star)\\) in matrix form using the notations \\(\\textbf{Z}\\), \\(\\textbf{X}\\), \\(\\boldsymbol{\\eta}\\) and \\(\\boldsymbol{\\gamma}\\) (vector of parameters to be estimated).</div></li>
+        <li><div class="q-text">Show that the variance-covariance matrix of the vector \\(\\boldsymbol{\\eta}\\) can be written \\(\\textbf{Var}(\\boldsymbol{\\eta})=\\sigma^2\\boldsymbol{\\Omega}\\), with \\(\\sigma^2:=\\sigma_\\varepsilon^2/${D.mStar}\\), where \\(\\boldsymbol{\\Omega}\\) is a matrix whose expression should be given.</div></li>
+        <li><div class="q-text">Is it appropriate to use the ordinary least squares estimator? If not, why? Is there a more appropriate estimator?</div></li>
+        <li><div class="q-text">Show that this estimator amounts to applying ordinary least squares to a transformed model, to be made explicit.</div></li>
+        <li><div class="q-text">Give the expression of this estimator of \\(\\boldsymbol{\\gamma}\\), then justify that it is BLUE (unbiased and with minimum variance among linear unbiased estimators of \\(\\boldsymbol{\\gamma}\\)).</div></li>
+        <li><div class="q-text">The aggregated data are as follows (\\(X_j^{(2)}\\) denotes ${T.x2note}):
+        ${dataTable(D, this)}
+        <ol>
+          <li>Show that the estimator of question 5 coincides with the least squares estimator weighted by the group sizes \\(m_j\\), then compute it.</li>
+          <li>Compute the ordinary least squares estimator and compare it with the previous one.</li>
+          <li>Estimate \\(\\sigma^2\\) from the residuals of the transformed model, then compare the standard errors of the two estimators of \\(\\gamma_1\\) and \\(\\gamma_2\\) (for ordinary least squares, use the variance formula that is valid under heteroscedasticity). Comment.</li>
+          <li>Interpret the coefficients estimated by the method of question 5.</li>
+        </ol></div></li>
+      </ol></div>`;
+    },
+
+    sol: function (D) {
+      const T = this.ctx[D.id], L = D.S.L, N = D.N, ms = D.mStar;
+      const omDiag = D.m.map(v => frT(ms, v)).join(',\\,');
+      const omH = D.m.map(v => sqrtFr(ms, v)).join(',\\,');
+      const omIH = D.m.map(v => sqrtFr(v, ms)).join(',\\,');
+      const mDiag = D.m.join(',\\,');
+      const g = D.gG, o = D.gO;
+      const se = V => [0, 1, 2].map(i => Math.sqrt(V[i][i]));
+      const seG = se(D.VG), seO = se(D.VO);
+      const rows = ['\\(\\gamma_0\\)', '\\(\\gamma_1\\)', '\\(\\gamma_2\\)'].map((nm, i) => [nm, fS(o[i], 5), fS(seO[i], 4), fS(g[i], 5), fS(seG[i], 4), fxf(D.ratio[i], 3)]);
+      const pct1 = fxf(100 * Math.abs(Math.exp(g[1]) - 1), 2, false);
+      const hRef = D.S.sq ? Math.round(D.meanH * 100) / 100 : 0;
+      const pct2 = D.S.sq ? fxf(100 * (Math.exp(2 * g[2] * hRef * 0.01) - 1), 2, false) : fxf(100 * Math.abs(Math.exp(g[2]) - 1), 2, false);
+      const gain = D.ratio[1] >= D.ratio[2] ? 1 : 2;
+      return `<div class="st"><ol>
+
+      <li><div class="q-content">
+        <p>Relation \\((\\star)\\) holds for each of the ${N} groups. Stacking these ${N} equalities, we get:
+        \\[\\underbrace{\\begin{pmatrix}Z_1\\\\\\vdots\\\\Z_{${N}}\\end{pmatrix}}_{=:\\textbf{Z}}=\\underbrace{\\begin{pmatrix}1&X_1^{(1)}&X_1^{(2)}\\\\\\vdots&\\vdots&\\vdots\\\\1&X_{${N}}^{(1)}&X_{${N}}^{(2)}\\end{pmatrix}}_{=:\\textbf{X}}\\underbrace{\\begin{pmatrix}\\gamma_0\\\\\\gamma_1\\\\\\gamma_2\\end{pmatrix}}_{=:\\boldsymbol{\\gamma}}+\\underbrace{\\begin{pmatrix}\\eta_1\\\\\\vdots\\\\\\eta_{${N}}\\end{pmatrix}}_{=:\\boldsymbol{\\eta}}\\]
+        that is \\(\\textbf{Z}=\\textbf{X}\\boldsymbol{\\gamma}+\\boldsymbol{\\eta}\\), where \\(\\textbf{X}\\) is a \\(${N}\\times 3\\) matrix.</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <p>The matrix \\(\\textbf{Var}(\\boldsymbol{\\eta})\\) is the symmetric matrix of order ${N} whose entry in row \\(j\\) and column \\(k\\) is \\(\\textbf{Cov}(\\eta_j,\\eta_k)\\). We use the bilinearity of covariance and the fact that the errors are pairwise uncorrelated with the same variance.</p>
+        <ul>
+          <li>For every \\(j\\), we have
+          \\[\\textbf{Var}(\\eta_j)=\\frac{1}{m_j^2}\\,\\textbf{Var}\\Big(\\sum_{i\\in G_j}\\varepsilon_i\\Big)=\\frac{1}{m_j^2}\\sum_{i\\in G_j}\\textbf{Var}(\\varepsilon_i)=\\frac{m_j\\,\\sigma_\\varepsilon^2}{m_j^2}=\\frac{\\sigma_\\varepsilon^2}{m_j}\\]
+          the second equality following from the absence of correlation between the errors.</li>
+          <li>For \\(j\\neq k\\), the sets \\(G_j\\) and \\(G_k\\) are disjoint, hence
+          \\[\\textbf{Cov}(\\eta_j,\\eta_k)=\\frac{1}{m_jm_k}\\sum_{i\\in G_j}\\sum_{l\\in G_k}\\textbf{Cov}(\\varepsilon_i,\\varepsilon_l)=0\\]</li>
+        </ul>
+        <p>The matrix \\(\\textbf{Var}(\\boldsymbol{\\eta})\\) is therefore diagonal, with general term \\(\\sigma_\\varepsilon^2/m_j\\). Since \\(\\sigma_\\varepsilon^2/m_j=\\sigma^2\\times ${ms}/m_j\\) with \\(\\sigma^2:=\\sigma_\\varepsilon^2/${ms}\\), we get \\(\\textbf{Var}(\\boldsymbol{\\eta})=\\sigma^2\\boldsymbol{\\Omega}\\), where
+        \\[\\boldsymbol{\\Omega}=\\text{diag}\\left(\\frac{${ms}}{m_1},\\ldots,\\frac{${ms}}{m_{${N}}}\\right)=\\text{diag}\\left(${omDiag}\\right)\\]
+        Normalising by \\(${ms}\\), the most frequent group size, makes as many diagonal entries as possible equal to 1; this choice is arbitrary, and one could equally write \\(\\textbf{Var}(\\boldsymbol{\\eta})=\\sigma_\\varepsilon^2\\,\\text{diag}(1/m_1,\\ldots,1/m_{${N}})\\).</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <p>The matrix \\(\\boldsymbol{\\Omega}\\) is diagonal, so the disturbances \\(\\eta_j\\) remain uncorrelated; but its diagonal is not constant, since the groups do not all have the same size (${[...new Set(D.m)].sort((a, b) => a - b).join(', ')}). The Gauss-Markov homoscedasticity assumption is therefore violated: an average computed over a large group is more precise than an average computed over a small group.</p>
+        <p>The ordinary least squares estimator remains unbiased (its bias only depends on \\(\\mathbb{E}[\\boldsymbol{\\eta}]=\\textbf{0}\\)), but it no longer has minimum variance among linear unbiased estimators, and the usual formula \\(\\widehat{\\sigma}^2(\\textbf{X}^T\\textbf{X})^{-1}\\) for its variance is wrong, which invalidates the usual tests. Since \\(\\boldsymbol{\\Omega}\\) is known (it only depends on the group sizes \\(m_j\\)), the generalised least squares (GLS) estimator is preferred. If \\(\\boldsymbol{\\Omega}\\) were unknown and had to be estimated, feasible generalised least squares (FGLS) would be used.</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <p>Since \\(\\boldsymbol{\\Omega}\\) is diagonal with strictly positive entries, the diagonal matrix \\(\\boldsymbol{\\Omega}^{1/2}:=\\text{diag}(${omH})\\) is symmetric and satisfies \\(\\boldsymbol{\\Omega}^{1/2}(\\boldsymbol{\\Omega}^{1/2})^T=\\boldsymbol{\\Omega}\\). It is invertible, with inverse
+        \\[\\boldsymbol{\\Omega}^{-1/2}=\\text{diag}\\left(\\sqrt{\\frac{m_1}{${ms}}},\\ldots,\\sqrt{\\frac{m_{${N}}}{${ms}}}\\right)=\\text{diag}\\left(${omIH}\\right)\\]
+        Premultiplying the model \\(\\textbf{Z}=\\textbf{X}\\boldsymbol{\\gamma}+\\boldsymbol{\\eta}\\) by \\(\\boldsymbol{\\Omega}^{-1/2}\\), we obtain the transformed model \\(\\textbf{Z}^*=\\textbf{X}^*\\boldsymbol{\\gamma}+\\boldsymbol{\\eta}^*\\), with \\(\\textbf{Z}^*:=\\boldsymbol{\\Omega}^{-1/2}\\textbf{Z}\\), \\(\\textbf{X}^*:=\\boldsymbol{\\Omega}^{-1/2}\\textbf{X}\\) and \\(\\boldsymbol{\\eta}^*:=\\boldsymbol{\\Omega}^{-1/2}\\boldsymbol{\\eta}\\): in practice, row \\(j\\) of the model is multiplied by \\(\\sqrt{m_j/${ms}}\\). This model satisfies the Gauss-Markov assumptions. On the one hand, by linearity of expectation, \\(\\mathbb{E}[\\boldsymbol{\\eta}^*]=\\boldsymbol{\\Omega}^{-1/2}\\mathbb{E}[\\boldsymbol{\\eta}]=\\textbf{0}\\). On the other hand:
+        \\[\\textbf{Var}(\\boldsymbol{\\eta}^*)=\\boldsymbol{\\Omega}^{-1/2}\\,\\textbf{Var}(\\boldsymbol{\\eta})\\,(\\boldsymbol{\\Omega}^{-1/2})^T=\\sigma^2\\,\\boldsymbol{\\Omega}^{-1/2}\\boldsymbol{\\Omega}\\boldsymbol{\\Omega}^{-1/2}=\\sigma^2\\textbf{I}_{${N}}\\]
+        Finally, since \\(\\boldsymbol{\\Omega}^{-1/2}\\) is invertible, \\(\\textbf{X}^*\\) has rank 3, like \\(\\textbf{X}\\). Ordinary least squares can therefore be applied to the transformed model: this is the principle of generalised least squares.</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <p>The GLS estimator is the OLS estimator of the transformed model:
+        \\[\\widehat{\\boldsymbol{\\gamma}}_{\\text{GLS}}=\\big((\\textbf{X}^*)^T\\textbf{X}^*\\big)^{-1}(\\textbf{X}^*)^T\\textbf{Z}^*=\\big(\\textbf{X}^T(\\boldsymbol{\\Omega}^{-1/2})^T\\boldsymbol{\\Omega}^{-1/2}\\textbf{X}\\big)^{-1}\\textbf{X}^T(\\boldsymbol{\\Omega}^{-1/2})^T\\boldsymbol{\\Omega}^{-1/2}\\textbf{Z}=\\big(\\textbf{X}^T\\boldsymbol{\\Omega}^{-1}\\textbf{X}\\big)^{-1}\\textbf{X}^T\\boldsymbol{\\Omega}^{-1}\\textbf{Z}\\]
+        since \\(\\boldsymbol{\\Omega}^{-1/2}\\) is symmetric and \\(\\boldsymbol{\\Omega}^{-1/2}\\boldsymbol{\\Omega}^{-1/2}=\\boldsymbol{\\Omega}^{-1}\\). The matrix \\(\\textbf{X}^T\\boldsymbol{\\Omega}^{-1}\\textbf{X}\\) is invertible because \\(\\textbf{X}\\) has rank 3 (this is the role of the linear independence assumption in the statement). Under the Gauss-Markov assumptions, the OLS estimator is BLUE. Since the transformed model satisfies these assumptions, its OLS estimator, that is \\(\\widehat{\\boldsymbol{\\gamma}}_{\\text{GLS}}\\), is linear in \\(\\textbf{Z}\\), unbiased and has minimum variance among linear unbiased estimators of \\(\\boldsymbol{\\gamma}\\) (Aitken's theorem). Its variance-covariance matrix is \\(\\sigma^2(\\textbf{X}^T\\boldsymbol{\\Omega}^{-1}\\textbf{X})^{-1}\\).</p>
+      </div></li>
+
+      <li><div class="q-content">
+        <ol>
+        <li><p>Since \\(\\boldsymbol{\\Omega}^{-1}=\\text{diag}(m_1,\\ldots,m_{${N}})/${ms}=\\textbf{M}/${ms}\\), with \\(\\textbf{M}:=\\text{diag}(${mDiag})\\), the factor \\(1/${ms}\\) cancels out:
+        \\[\\widehat{\\boldsymbol{\\gamma}}_{\\text{GLS}}=\\big(\\textbf{X}^T\\textbf{M}\\textbf{X}\\big)^{-1}\\textbf{X}^T\\textbf{M}\\textbf{Z}\\]
+        This is the estimator that minimises \\(\\sum_j m_j\\big(Z_j-\\gamma_0-\\gamma_1X_j^{(1)}-\\gamma_2X_j^{(2)}\\big)^2\\): least squares weighted by group sizes, which give more weight to the most precise averages. From the data, we compute:
+        \\[\\textbf{X}^T\\textbf{M}\\textbf{X}=${exM(D, D.SM.XX)}\\qquad\\textbf{X}^T\\textbf{M}\\textbf{Z}=${exV(D, D.SM.XZ)}\\]
+        then
+        \\[\\big(\\textbf{X}^T\\textbf{M}\\textbf{X}\\big)^{-1}\\approx ${flM(D.GiA)}\\qquad\\text{hence}\\qquad\\widehat{\\boldsymbol{\\gamma}}_{\\text{GLS}}\\approx ${flV(g)}\\]</p></li>
+        <li><p>The OLS estimator uses the same formulas with equal weights:
+        \\[\\textbf{X}^T\\textbf{X}=${exM(D, D.S1.XX)}\\qquad\\textbf{X}^T\\textbf{Z}=${exV(D, D.S1.XZ)}\\]
+        \\[\\big(\\textbf{X}^T\\textbf{X}\\big)^{-1}\\approx ${flM(D.OiA)}\\qquad\\text{hence}\\qquad\\widehat{\\boldsymbol{\\gamma}}_{\\text{OLS}}\\approx ${flV(o)}\\]
+        Both estimators are unbiased: their difference does not reflect a bias, but the fact that OLS gives as much weight to a group of ${Math.min(...D.m)} ${Math.min(...D.m) > 1 ? T.unit : T.unitSing} as to a group of ${Math.max(...D.m)} ${T.unit}.</p></li>
+        <li><p>An unbiased estimator of \\(\\sigma^2\\) is given by the residual sum of squares of the transformed model, divided by \\(N-3=${N - 3}\\):
+        \\[\\widehat{\\sigma}^2=\\frac{1}{${N}-3}\\sum_{j=1}^{${N}}\\frac{m_j}{${ms}}\\big(Z_j-\\widehat{\\gamma}_0-\\widehat{\\gamma}_1X_j^{(1)}-\\widehat{\\gamma}_2X_j^{(2)}\\big)^2\\approx ${fS(D.s2, 4, true)}\\]
+        where the \\(\\widehat{\\gamma}_k\\) are the GLS estimates. We deduce the estimated variance-covariance matrices
+        \\[\\widehat{\\textbf{Var}}(\\widehat{\\boldsymbol{\\gamma}}_{\\text{GLS}})=\\widehat{\\sigma}^2\\big(\\textbf{X}^T\\boldsymbol{\\Omega}^{-1}\\textbf{X}\\big)^{-1}\\qquad\\text{and}\\qquad\\widehat{\\textbf{Var}}(\\widehat{\\boldsymbol{\\gamma}}_{\\text{OLS}})=\\widehat{\\sigma}^2\\big(\\textbf{X}^T\\textbf{X}\\big)^{-1}\\textbf{X}^T\\boldsymbol{\\Omega}\\textbf{X}\\big(\\textbf{X}^T\\textbf{X}\\big)^{-1}\\]
+        the latter being the variance of OLS when \\(\\textbf{Var}(\\boldsymbol{\\eta})=\\sigma^2\\boldsymbol{\\Omega}\\). The square roots of their diagonals give the following standard errors:</p>
+        ${dtable(this.resHead, rows, '', false)}
+        <p>In line with Aitken's theorem, the variance of each OLS estimator exceeds that of the corresponding GLS estimator: the variance ratio reaches ${fxf(D.ratio[gain], 3, false)} for \\(\\gamma_${gain}\\). Using OLS would therefore waste part of the information carried by the group sizes${Math.max(D.ratio[1], D.ratio[2]) < 1.1 ? '; the gain is modest here, since group sizes vary little' : ''}. The efficiency gain is all the larger as the sizes \\(m_j\\) are heterogeneous; it would vanish if all groups had the same size, in which case both estimators would coincide. In practice, the GLS estimator is obtained directly with ${'<code>lm(Z ~ X1 + X2, weights = m)</code>'} in R or ${'<code>smf.wls("Z ~ X1 + X2", data, weights=m).fit()</code>'} in Python: the standard errors displayed are then those of the GLS column, since the software estimates \\(${ms}\\,\\sigma^2\\) and multiplies it by \\((\\textbf{X}^T\\textbf{M}\\textbf{X})^{-1}\\).</p></li>
+        <li><p>Since the model is semi-logarithmic, \\(100\\,\\gamma_k\\) approximately measures the percentage change in \\(${L.y}_i\\) following a one-unit rise in the corresponding regressor (more precisely, \\(100(e^{\\gamma_k}-1)\\) %). ${T.i1(g, pct1)} ${T.i2(g, fxf(hRef, 2, false), pct2)} These coefficients describe the behaviour of the ${T.unit} themselves, not that of the ${T.group}: aggregation has not changed the parameters, only the precision with which they can be estimated.</p></li>
+        </ol>
+      </div></li>
+
+      </ol></div>`;
+    }
+  }
+};
+
+/* ============================================================
+   GESTION DE LA LANGUE  /  LANGUAGE HANDLING
+   ============================================================ */
+let LANG = 'fr';
+
+function detectLang() {
+    try {
+        const q = new URLSearchParams(window.location.search).get('lang');
+        if (q && I18N[q.toLowerCase()]) return q.toLowerCase();
+    } catch (e) {}
+    const h = (window.location.hash || '').replace('#', '').toLowerCase();
+    if (I18N[h]) return h;
+    return 'fr';
+}
+
+function applyLang() {
+    const D = I18N[LANG];
+    document.documentElement.lang = D.htmlLang;
+    document.title = D.title;
+    document.querySelectorAll('[data-k]').forEach(function (el) {
+        const key = el.getAttribute('data-k');
+        if (D[key] !== undefined) el.innerHTML = D[key];
+    });
+    const si = document.getElementById('seed-input');
+    if (si) si.placeholder = D.phSeed;
+    const ni = document.getElementById('param-n');
+    if (ni) ni.placeholder = D.phN;
+    const tb = document.getElementById('toggle-btn');
+    if (tb) tb.textContent = solVisible ? D.hideSol : D.showSol;
+    document.getElementById('flag-fr').classList.toggle('active', LANG === 'fr');
+    document.getElementById('flag-en').classList.toggle('active', LANG === 'en');
+}
+
+function setLang(lang) {
+    if (!I18N[lang] || lang === LANG) return;
+    LANG = lang;
+    try {
+        const u = new URL(window.location.href);
+        u.searchParams.set('lang', lang);
+        history.replaceState(null, '', u.toString());
+    } catch (e) {}
+    applyLang();
+    if (document.getElementById('ex-area').style.display !== 'none') {
+        const wasVis = solVisible;
+        document.getElementById('seed-input').value = _activeSeed;
+        generateFromControls();
+        if (wasVis) toggleSol();
+    }
+}
+
+// ════════════════════════════════════════
+// GENERATION  /  RENDERING
+// ════════════════════════════════════════
+function regen() {
+  document.getElementById('seed-input').value = '';
+  generateFromControls();
+}
+
+function readN() {
+  const v = parseInt(document.getElementById('param-n').value, 10);
+  if (isNaN(v)) return 0;
+  return Math.min(9, Math.max(5, v));
+}
+
+function generateFromControls() {
+  const seedInp = document.getElementById('seed-input').value;
+  const seed = seedInp ? parseInt(seedInp, 10) : Math.floor(Math.random() * 10000000);
+  const D = computeD(seed, readN());
+  const T = I18N[LANG].ctx[D.id];
+
+  document.getElementById('seed-disp').textContent = _activeSeed;
+  document.getElementById('modal-seed').textContent = _activeSeed;
+  document.getElementById('card-title').textContent = T.title;
+  document.getElementById('card-title2').textContent = T.title;
+  document.getElementById('ex-content').innerHTML = I18N[LANG].ex(D);
+  document.getElementById('sol-content').innerHTML = I18N[LANG].sol(D);
+
+  document.getElementById('welcome').style.display = 'none';
+  document.getElementById('ex-area').style.display = 'block';
+  solVisible = false;
+  const solC = document.getElementById('sol-card'), btn = document.getElementById('toggle-btn');
+  solC.classList.remove('visible'); btn.classList.remove('shown'); btn.textContent = I18N[LANG].showSol;
+
+  if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise();
+}
+
+function toggleSol(){
+  solVisible = !solVisible;
+  const sol = document.getElementById('sol-card'), btn = document.getElementById('toggle-btn');
+  if(solVisible){sol.classList.add('visible'); btn.classList.add('shown'); btn.textContent = I18N[LANG].hideSol;}
+  else{sol.classList.remove('visible'); btn.classList.remove('shown'); btn.textContent = I18N[LANG].showSol;}
+}
+
+/* Initialisation */
+LANG = detectLang();
+applyLang();
+</script>
+
+
+<!-- KIT:JS:START v1 -->
+<div id="pdf-ov" onclick="closePdfModal()"></div>
+<div id="pdf-modal">
+  <div class="mh">
+    <h3 data-kit="modalTitle">Exporter en PDF</h3>
+    <button type="button" class="mclose" onclick="closePdfModal()">&#10005;</button>
+  </div>
+  <div class="mb2">
+    <div class="seed-note"><span data-kit="seedPre">Seed&nbsp;:</span> <strong id="modal-seed">&mdash;</strong> <span data-kit="seedPost">&mdash; notez cette valeur pour reproduire exactement cet exercice.</span></div>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-header" checked>
+      <span class="opt-txt"><span class="opt-lbl" data-kit="optHeader">Inclure l'en-t&ecirc;te de page</span>
+           <span class="opt-desc" data-kit="optHeaderD">Titre, badge de mati&egrave;re et intitul&eacute; de l'exercice</span></span>
+    </label>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-sol">
+      <span class="opt-txt"><span class="opt-lbl" data-kit="optSol">Inclure le corrig&eacute; complet</span>
+           <span class="opt-desc" data-kit="optSolD">L'ensemble des d&eacute;veloppements et commentaires du corrig&eacute;</span></span>
+    </label>
+    <div class="mactions">
+      <button type="button" class="btn-print" onclick="doPrint()"><span data-kit="print">&#128424;&nbsp;Imprimer / Sauvegarder PDF</span></button>
+      <button type="button" class="btn-cancel" onclick="closePdfModal()"><span data-kit="cancel">Annuler</span></button>
+    </div>
+  </div>
+</div>
+
+<script id="kit-docx">
+/* =============================================================================
+   EXPORT WORD NATIF (.docx)
+   Trois briques, sans aucune dépendance externe :
+     1. mml2omml  — MathML -> OMML, le format d'équation natif de Word
+     2. zip       — écriture d'une archive ZIP (entrées « stored » + CRC32)
+     3. html2wml  — HTML de la page -> WordprocessingML
+   ============================================================================= */
+(function (root) {
+'use strict';
+
+/* --------------------------------------------------------------- utilitaires */
+function esc(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                  .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function kids(n) {
+  var out = [], c = n.firstChild;
+  while (c) { if (c.nodeType === 1) out.push(c); c = c.nextSibling; }
+  return out;
+}
+function txt(n) { return (n.textContent || '').replace(/\u200b/g, '').trim(); }
+
+/* ============================================================================
+   1. MathML -> OMML
+   ========================================================================== */
+var OPEN = '([{\u27e8\u2308\u230a|\u2016';
+var CLOSE = ')]}\u27e9\u2309\u230b|\u2016';
+var BIGOPS = '\u2211\u220f\u222b\u222c\u222d\u222e\u22c3\u22c2\u2210';
+var ACCENTS = {
+  '\u005e': '\u0302', '\u02c6': '\u0302', '^': '\u0302',
+  '\u00af': '\u0304', '\u2015': '\u0304', '\u2212': '\u0304', '_': '\u0304',
+  '~': '\u0303', '\u02dc': '\u0303', '\u02d9': '\u0307',
+  '\u2192': '\u20d7', '\u21c0': '\u20d1', '\u02c7': '\u030c', '\u02d8': '\u0306'
+};
+
+function run(text, style) {
+  if (text === '') return '';
+  var rPr = '<w:rPr><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/></w:rPr>';
+  var mPr = style ? '<m:rPr><m:sty m:val="' + style + '"/></m:rPr>' : '';
+  return '<m:r>' + mPr + rPr + '<m:t xml:space="preserve">' + esc(text) + '</m:t></m:r>';
+}
+
+/* Un grand opérateur (somme, intégrale…) absorbe la suite de la ligne comme
+   opérande : sans cela Word affiche un cadre vide à la place de l'argument. */
+function naryHere(n) {
+  if (!n || n.nodeType !== 1) return null;
+  var t = n.nodeName.toLowerCase().replace(/^.*:/, ''), k = kids(n);
+  if (t === 'munderover' || t === 'msubsup') return { base: k[0], sub: k[1], sup: k[2] };
+  if (t === 'munder' || t === 'msub') return { base: k[0], sub: k[1], sup: null };
+  if (t === 'mover' || t === 'msup') return { base: k[0], sub: null, sup: k[1] };
+  if (t === 'mo') return { base: n, sub: null, sup: null };
+  return null;
+}
+function isBigOp(n) {
+  if (!n || n.nodeType !== 1) return false;
+  var c = txt(n);
+  return n.nodeName.toLowerCase().replace(/^.*:/, '') === 'mo' &&
+         c.length === 1 && BIGOPS.indexOf(c) !== -1;
+}
+
+function seq(nodes) {
+  var s = '';
+  for (var i = 0; i < nodes.length; i++) {
+    var info = naryHere(nodes[i]);
+    if (info && isBigOp(info.base) && i + 1 < nodes.length) {
+      s += naryFull(info, nodes.slice(i + 1));
+      return s;
+    }
+    s += mml(nodes[i]);
+  }
+  return s;
+}
+
+function naryFull(info, rest) {
+  return '<m:nary><m:naryPr><m:chr m:val="' + esc(txt(info.base)) + '"/>' +
+         '<m:limLoc m:val="undOvr"/>' +
+         '<m:subHide m:val="' + (info.sub ? '0' : '1') + '"/>' +
+         '<m:supHide m:val="' + (info.sup ? '0' : '1') + '"/><m:ctrlPr/></m:naryPr>' +
+         '<m:sub>' + (info.sub ? mml(info.sub) : '') + '</m:sub>' +
+         '<m:sup>' + (info.sup ? mml(info.sup) : '') + '</m:sup>' +
+         '<m:e>' + seq(rest) + '</m:e></m:nary>';
+}
+
+/* mrow entouré de délimiteurs -> m:d, pour des parenthèses étirables natives */
+function fenced(ks) {
+  if (ks.length < 2) return null;
+  var a = ks[0], b = ks[ks.length - 1];
+  if (a.nodeName.toLowerCase() !== 'mo' || b.nodeName.toLowerCase() !== 'mo') return null;
+  var o = txt(a), c = txt(b);
+  if (o.length !== 1 || c.length !== 1) return null;
+  if (OPEN.indexOf(o) === -1 || CLOSE.indexOf(c) === -1) return null;
+  var inner = ks.slice(1, -1);
+  /* séparateurs de premier niveau -> plusieurs m:e */
+  var parts = [[]];
+  for (var i = 0; i < inner.length; i++) {
+    if (inner[i].nodeName.toLowerCase() === 'mo' && txt(inner[i]) === ',' && parts.length < 8) {
+      parts.push([]);
+    } else { parts[parts.length - 1].push(inner[i]); }
+  }
+  var sep = parts.length > 1 ? ',' : '';
+  var body = '';
+  for (var j = 0; j < parts.length; j++) body += '<m:e>' + seq(parts[j]) + '</m:e>';
+  return '<m:d><m:dPr><m:begChr m:val="' + esc(o) + '"/><m:sepChr m:val="' + esc(sep) +
+         '"/><m:endChr m:val="' + esc(c) + '"/><m:ctrlPr/></m:dPr>' + body + '</m:d>';
+}
+
+function naryOf(base, sub, sup) {
+  var ch = txt(base);
+  if (ch.length !== 1 || BIGOPS.indexOf(ch) === -1) return null;
+  return '<m:nary><m:naryPr><m:chr m:val="' + esc(ch) + '"/><m:limLoc m:val="undOvr"/>' +
+         '<m:subHide m:val="' + (sub ? '0' : '1') + '"/>' +
+         '<m:supHide m:val="' + (sup ? '0' : '1') + '"/><m:ctrlPr/></m:naryPr>' +
+         '<m:sub>' + (sub ? mml(sub) : '') + '</m:sub>' +
+         '<m:sup>' + (sup ? mml(sup) : '') + '</m:sup>' +
+         '<m:e></m:e></m:nary>';
+}
+
+function mml(n) {
+  if (!n) return '';
+  if (n.nodeType === 3) return run(n.nodeValue);
+  if (n.nodeType !== 1) return '';
+  var t = n.nodeName.toLowerCase().replace(/^.*:/, '');
+  var k = kids(n), s;
+
+  switch (t) {
+    case 'math':
+    case 'semantics':
+    case 'mstyle':
+    case 'mpadded':
+    case 'menclose':
+      return seq(k);
+
+    case 'annotation':
+    case 'annotation-xml':
+    case 'mphantom':
+      return '';
+
+    case 'mrow':
+      s = fenced(k);
+      return s !== null ? s : seq(k);
+
+    case 'mi':      return run(txt(n), txt(n).length === 1 ? 'i' : 'p');
+    case 'mn':      return run(txt(n), 'p');
+    case 'mo':      return run(txt(n), 'p');
+    case 'merror':  return run(txt(n), 'p');
+    case 'ms':      return run(txt(n), 'p');
+
+    case 'mtext':
+      var v = n.textContent || '';
+      return v === '' ? '' :
+        '<m:r><m:rPr><m:nor/></m:rPr><w:rPr><w:rFonts w:ascii="Cambria" w:hAnsi="Cambria"/></w:rPr>' +
+        '<m:t xml:space="preserve">' + esc(v) + '</m:t></m:r>';
+
+    case 'mspace':
+      return run(' ', 'p');
+
+    case 'mfrac':
+      return '<m:f><m:fPr><m:type m:val="' +
+             (n.getAttribute('linethickness') === '0' ? 'noBar' : 'bar') +
+             '"/><m:ctrlPr/></m:fPr><m:num>' + mml(k[0]) + '</m:num><m:den>' +
+             mml(k[1]) + '</m:den></m:f>';
+
+    case 'msup':
+      s = naryOf(k[0], null, k[1]); if (s) return s;
+      return '<m:sSup><m:sSupPr><m:ctrlPr/></m:sSupPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sup>' + mml(k[1]) + '</m:sup></m:sSup>';
+
+    case 'msub':
+      s = naryOf(k[0], k[1], null); if (s) return s;
+      return '<m:sSub><m:sSubPr><m:ctrlPr/></m:sSubPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sub>' + mml(k[1]) + '</m:sub></m:sSub>';
+
+    case 'msubsup':
+      s = naryOf(k[0], k[1], k[2]); if (s) return s;
+      return '<m:sSubSup><m:sSubSupPr><m:ctrlPr/></m:sSubSupPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sub>' + mml(k[1]) + '</m:sub><m:sup>' + mml(k[2]) +
+             '</m:sup></m:sSubSup>';
+
+    case 'msqrt':
+      return '<m:rad><m:radPr><m:degHide m:val="1"/><m:ctrlPr/></m:radPr>' +
+             '<m:deg/><m:e>' + seq(k) + '</m:e></m:rad>';
+
+    case 'mroot':
+      return '<m:rad><m:radPr><m:degHide m:val="0"/><m:ctrlPr/></m:radPr><m:deg>' +
+             mml(k[1]) + '</m:deg><m:e>' + mml(k[0]) + '</m:e></m:rad>';
+
+    case 'mover':
+      var ao = txt(k[1]);
+      if (ACCENTS[ao]) {
+        return '<m:acc><m:accPr><m:chr m:val="' + esc(ACCENTS[ao]) +
+               '"/><m:ctrlPr/></m:accPr><m:e>' + mml(k[0]) + '</m:e></m:acc>';
+      }
+      s = naryOf(k[0], null, k[1]); if (s) return s;
+      return '<m:limUpp><m:limUppPr><m:ctrlPr/></m:limUppPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limUpp>';
+
+    case 'munder':
+      s = naryOf(k[0], k[1], null); if (s) return s;
+      return '<m:limLow><m:limLowPr><m:ctrlPr/></m:limLowPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limLow>';
+
+    case 'munderover':
+      s = naryOf(k[0], k[1], k[2]); if (s) return s;
+      return '<m:limUpp><m:limUppPr><m:ctrlPr/></m:limUppPr><m:e>' +
+             '<m:limLow><m:limLowPr><m:ctrlPr/></m:limLowPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limLow></m:e><m:lim>' +
+             mml(k[2]) + '</m:lim></m:limUpp>';
+
+    case 'mtable':
+      var rows = k.filter(function (r) { return /mtr$/.test(r.nodeName.toLowerCase()); });
+      var ncol = 0;
+      rows.forEach(function (r) { ncol = Math.max(ncol, kids(r).length); });
+      var props = '<m:mPr><m:baseJc m:val="center"/><m:plcHide m:val="1"/><m:mcs><m:mc><m:mcPr>' +
+                  '<m:count m:val="' + (ncol || 1) + '"/><m:mcJc m:val="center"/></m:mcPr></m:mc></m:mcs>' +
+                  '<m:ctrlPr/></m:mPr>';
+      var body = '';
+      rows.forEach(function (r) {
+        body += '<m:mr>';
+        var cells = kids(r);
+        for (var i = 0; i < (ncol || 1); i++) body += '<m:e>' + (cells[i] ? seq(kids(cells[i])) : '') + '</m:e>';
+        body += '</m:mr>';
+      });
+      return '<m:m>' + props + body + '</m:m>';
+
+    case 'mtr':
+    case 'mtd':
+      return seq(k);
+
+    default:
+      return k.length ? seq(k) : run(txt(n), 'p');
+  }
+}
+
+function mathmlToOmml(mathEl) { return mml(mathEl); }
+
+/* ============================================================================
+   2. Écriture ZIP (entrées non compressées + CRC32)
+   ========================================================================== */
+var CRCT = (function () {
+  var t = new Int32Array(256);
+  for (var i = 0; i < 256; i++) {
+    var c = i;
+    for (var j = 0; j < 8; j++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[i] = c;
+  }
+  return t;
+})();
+function crc32(buf) {
+  var c = -1;
+  for (var i = 0; i < buf.length; i++) c = CRCT[(c ^ buf[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ -1) >>> 0;
+}
+function utf8(str) {
+  if (typeof TextEncoder !== 'undefined') return new TextEncoder().encode(str);
+  var b = unescape(encodeURIComponent(str)), a = new Uint8Array(b.length);
+  for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i);
+  return a;
+}
+function zip(files) {
+  var parts = [], central = [], offset = 0;
+  function u16(v) { return [v & 0xFF, (v >>> 8) & 0xFF]; }
+  function u32(v) { return [v & 0xFF, (v >>> 8) & 0xFF, (v >>> 16) & 0xFF, (v >>> 24) & 0xFF]; }
+
+  files.forEach(function (f) {
+    var name = utf8(f.name), data = f.bin ? f.bin : utf8(f.data), c = crc32(data);
+    var local = [].concat(u32(0x04034b50), u16(20), u16(0x0800), u16(0), u16(0), u16(0),
+                          u32(c), u32(data.length), u32(data.length),
+                          u16(name.length), u16(0));
+    parts.push(new Uint8Array(local), name, data);
+    central.push({ name: name, crc: c, size: data.length, off: offset });
+    offset += local.length + name.length + data.length;
+  });
+
+  var cd = [];
+  central.forEach(function (e) {
+    cd = cd.concat(u32(0x02014b50), u16(20), u16(20), u16(0x0800), u16(0), u16(0), u16(0),
+                   u32(e.crc), u32(e.size), u32(e.size),
+                   u16(e.name.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(e.off));
+    cd = cd.concat(Array.prototype.slice.call(e.name));
+  });
+  var cdArr = new Uint8Array(cd);
+  var eocd = new Uint8Array([].concat(u32(0x06054b50), u16(0), u16(0),
+                                      u16(files.length), u16(files.length),
+                                      u32(cdArr.length), u32(offset), u16(0)));
+  parts.push(cdArr, eocd);
+
+  var total = parts.reduce(function (n, p) { return n + p.length; }, 0);
+  var out = new Uint8Array(total), pos = 0;
+  parts.forEach(function (p) { out.set(p, pos); pos += p.length; });
+  return out;
+}
+
+/* ============================================================================
+   3. HTML -> WordprocessingML
+   ========================================================================== */
+var SKIP = { script: 1, style: 1, button: 1, input: 1, noscript: 1 };
+var IMAGES = [];           /* { bin, w, h } collectées pendant le parcours */
+var EMU = 9525;            /* EMU par pixel */
+var MAXW = 5760000;        /* largeur utile de la page, en EMU */
+
+function b64bin(b64) {
+  var raw = atob(b64), a = new Uint8Array(raw.length);
+  for (var i = 0; i < raw.length; i++) a[i] = raw.charCodeAt(i);
+  return a;
+}
+
+function imageXml(dataUrl, wpx, hpx) {
+  var m = /^data:image\/png;base64,(.*)$/.exec(dataUrl || '');
+  if (!m) return '';
+  var cx = Math.round(wpx * EMU), cy = Math.round(hpx * EMU);
+  if (cx > MAXW) { cy = Math.round(cy * MAXW / cx); cx = MAXW; }
+  IMAGES.push({ bin: b64bin(m[1]) });
+  var id = IMAGES.length, rid = 'rIdImg' + id;
+  return '<w:p><w:pPr><w:pStyle w:val="Figure"/><w:jc w:val="center"/></w:pPr><w:r><w:drawing>' +
+    '<wp:inline distT="0" distB="0" distL="0" distR="0">' +
+    '<wp:extent cx="' + cx + '" cy="' + cy + '"/>' +
+    '<wp:effectExtent l="0" t="0" r="0" b="0"/>' +
+    '<wp:docPr id="' + id + '" name="Graphique ' + id + '"/>' +
+    '<wp:cNvGraphicFramePr><a:graphicFrameLocks ' +
+      'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/>' +
+    '</wp:cNvGraphicFramePr>' +
+    '<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">' +
+    '<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+    '<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+    '<pic:nvPicPr><pic:cNvPr id="' + id + '" name="Graphique ' + id + '"/><pic:cNvPicPr/></pic:nvPicPr>' +
+    '<pic:blipFill><a:blip r:embed="' + rid + '"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>' +
+    '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' + cx + '" cy="' + cy + '"/></a:xfrm>' +
+    '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>' +
+    '</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>';
+}
+var BLOCK = { p: 1, div: 1, h1: 1, h2: 1, h3: 1, h4: 1, li: 1, tr: 1, td: 1, th: 1,
+              table: 1, ul: 1, ol: 1, section: 1, article: 1, header: 1, blockquote: 1 };
+
+function W() {
+  this.body = '';
+  this.para = null;      /* { style, runs, numId, ilvl } */
+}
+W.prototype.open = function (style, numId, ilvl) {
+  this.close();
+  this.para = { style: style || 'Corps', runs: '', numId: numId || 0, ilvl: ilvl || 0 };
+};
+W.prototype.close = function () {
+  var p = this.para;
+  this.para = null;
+  if (!p || (p.runs === '' && !p.numId)) return;
+  if (p.runs === '') return;
+  var pPr = '<w:pPr><w:pStyle w:val="' + p.style + '"/>';
+  if (p.numId) pPr += '<w:numPr><w:ilvl w:val="' + p.ilvl + '"/><w:numId w:val="' + p.numId + '"/></w:numPr>';
+  pPr += '</w:pPr>';
+  this.body += '<w:p>' + pPr + p.runs + '</w:p>';
+};
+W.prototype.add = function (xml) {
+  if (!this.para) this.open('Corps');
+  this.para.runs += xml;
+};
+W.prototype.raw = function (xml) { this.close(); this.body += xml; };
+
+function textRun(s, fmt) {
+  if (!s) return '';
+  var rPr = '';
+  if (fmt.b) rPr += '<w:b/>';
+  if (fmt.i) rPr += '<w:i/>';
+  if (fmt.sup) rPr += '<w:vertAlign w:val="superscript"/>';
+  if (fmt.sub) rPr += '<w:vertAlign w:val="subscript"/>';
+  if (fmt.mono) rPr += '<w:rFonts w:ascii="Consolas" w:hAnsi="Consolas"/>';
+  return '<w:r>' + (rPr ? '<w:rPr>' + rPr + '</w:rPr>' : '') +
+         '<w:t xml:space="preserve">' + esc(s) + '</w:t></w:r>';
+}
+
+function walk(node, w, fmt, list) {
+  var i, cs = node.childNodes;
+  for (i = 0; i < cs.length; i++) {
+    var n = cs[i];
+
+    if (n.nodeType === 3) {
+      var s = n.nodeValue.replace(/\s+/g, ' ');
+      if (s.trim() === '' && !/\S/.test(s)) { if (w.para && w.para.runs) w.add(textRun(' ', fmt)); continue; }
+      w.add(textRun(s, fmt));
+      continue;
+    }
+    if (n.nodeType !== 1) continue;
+
+    var tag = n.nodeName.toLowerCase();
+    if (SKIP[tag]) continue;
+    if (n.classList && (n.classList.contains('top-bar') || n.classList.contains('top-actions') ||
+                        n.classList.contains('sol-toggle-wrap'))) continue;
+
+    /* --- équations --- */
+    if (tag === 'mjx-container') {
+      var math = n.querySelector('mjx-assistive-mml math, math');
+      var display = n.getAttribute('display') === 'true';
+      if (math) {
+        var omml = mathmlToOmml(math);
+        if (display) {
+          w.close();
+          w.body += '<w:p><w:pPr><w:pStyle w:val="Formule"/>' +
+                    '<w:jc w:val="center"/></w:pPr>' +
+                    '<m:oMath>' + omml + '</m:oMath></w:p>';
+        } else {
+          w.add('<m:oMath>' + omml + '</m:oMath>');
+        }
+      } else {
+        w.add(textRun(txt(n), fmt));
+      }
+      continue;
+    }
+    if (tag === 'mjx-assistive-mml' || tag === 'math') continue;
+
+    /* --- graphiques --- */
+    if (tag === 'svg' || tag === 'img') {
+      var png = n.getAttribute('data-kit-png');
+      if (png) {
+        w.close();
+        w.body += imageXml(png, +n.getAttribute('data-kit-w') || 600,
+                                +n.getAttribute('data-kit-h') || 380);
+      }
+      continue;
+    }
+
+    /* --- tableaux --- */
+    if (tag === 'table') { w.close(); w.body += table(n); continue; }
+
+    /* --- listes --- */
+    if (tag === 'ul' || tag === 'ol') {
+      w.close();
+      var nid = tag === 'ol' ? 2 : 1;
+      var lvl = list ? Math.min(list.ilvl + 1, 2) : 0;
+      var items = kids(n).filter(function (x) { return x.nodeName.toLowerCase() === 'li'; });
+      items.forEach(function (li) {
+        /* L'item est composé à part : son numéro doit se poser sur le premier
+           paragraphe produit, même si le <li> enveloppe son texte dans un <div>. */
+        var wb = new W();
+        walk(li, wb, fmt, { ilvl: lvl });
+        wb.close();
+        var xml = wb.body;
+        if (!xml) return;
+        var numPr = '<w:pStyle w:val="Liste"/><w:numPr><w:ilvl w:val="' + lvl +
+                    '"/><w:numId w:val="' + nid + '"/></w:numPr>';
+        if (xml.indexOf('<w:pStyle w:val="Corps"/>') !== -1) {
+          xml = xml.replace('<w:pStyle w:val="Corps"/>', numPr);
+        } else {
+          xml = '<w:p><w:pPr>' + numPr + '</w:pPr></w:p>' + xml;
+        }
+        w.body += xml;
+      });
+      continue;
+    }
+
+    /* --- titres --- */
+    if (tag === 'h1' || tag === 'h2') { w.close(); w.open('Titre1'); walk(n, w, fmt, list); w.close(); continue; }
+    if (tag === 'h3' || tag === 'h4') { w.close(); w.open('Titre2'); walk(n, w, fmt, list); w.close(); continue; }
+
+    /* --- titres internes du corrigé --- */
+    if (n.classList && (n.classList.contains('sol-sub') || n.classList.contains('sol-q') ||
+                        n.classList.contains('dossier-title'))) {
+      w.close(); w.open('Titre2'); walk(n, w, { b: true }, list); w.close(); continue;
+    }
+    if (n.classList && n.classList.contains('persp-box')) {
+      w.close();
+      var wb = new W();
+      walk(n, wb, fmt, list);
+      wb.close();
+      w.body += wb.body.replace(/w:val="Corps"/g, 'w:val="Encadre"')
+                       .replace(/w:val="Titre2"/g, 'w:val="EncadreTitre"');
+      continue;
+    }
+
+    /* --- mise en forme inline --- */
+    var f2 = { b: fmt.b, i: fmt.i, sup: fmt.sup, sub: fmt.sub, mono: fmt.mono };
+    if (tag === 'strong' || tag === 'b') f2.b = true;
+    if (tag === 'em' || tag === 'i') f2.i = true;
+    if (tag === 'sup') f2.sup = true;
+    if (tag === 'sub') f2.sub = true;
+    if (tag === 'code' || tag === 'kbd') f2.mono = true;
+
+    /* intertitre écrit en style en ligne (span display:block + gras) */
+    var st = n.getAttribute && n.getAttribute('style');
+    if (st && /display\s*:\s*block/.test(st) && /font-weight\s*:\s*(6|7|8|9|bold)/.test(st)) {
+      w.close(); w.open('Titre3');
+      walk(n, w, { b: true }, list);
+      w.close();
+      continue;
+    }
+
+    if ((tag === 'strong' || tag === 'b') &&
+        (!w.para || w.para.runs === '') &&
+        n.nextElementSibling && n.nextElementSibling.nodeName.toLowerCase() === 'br') {
+      w.close(); w.open('Titre3');
+      walk(n, w, { b: true }, list);
+      w.close();
+      i++;                       /* le <br> qui suit devient inutile */
+      continue;
+    }
+
+    if (tag === 'br') { w.add('<w:r><w:br/></w:r>'); continue; }
+    if (tag === 'hr') { w.close(); continue; }
+
+    if (BLOCK[tag]) { w.close(); w.open('Corps'); walk(n, w, f2, list); w.close(); }
+    else { walk(n, w, f2, list); }
+  }
+}
+
+function cellXml(td, isHead) {
+  var w2 = new W();
+  walk(td, w2, { b: !!isHead }, null);
+  w2.close();
+  var content = w2.body || '<w:p><w:pPr><w:pStyle w:val="Cellule"/></w:pPr></w:p>';
+  content = content.replace(/w:val="Corps"/g, 'w:val="Cellule"');
+  var span = parseInt(td.getAttribute('colspan') || '1', 10);
+  var shd = isHead ? '<w:shd w:val="clear" w:fill="EDE9DF"/>' : '';
+  return '<w:tc><w:tcPr>' + (span > 1 ? '<w:gridSpan w:val="' + span + '"/>' : '') +
+         shd + '<w:vAlign w:val="center"/></w:tcPr>' + content + '</w:tc>';
+}
+
+function table(tbl) {
+  var rows = tbl.querySelectorAll('tr'), out = '', ncol = 0, i, j;
+  for (i = 0; i < rows.length; i++) {
+    var c = rows[i].children, n = 0;
+    for (j = 0; j < c.length; j++) n += parseInt(c[j].getAttribute('colspan') || '1', 10);
+    ncol = Math.max(ncol, n);
+  }
+  if (!ncol) return '';
+  var grid = '<w:tblGrid>';
+  for (i = 0; i < ncol; i++) grid += '<w:gridCol w:w="' + Math.floor(9360 / ncol) + '"/>';
+  grid += '</w:tblGrid>';
+
+  for (i = 0; i < rows.length; i++) {
+    var cells = rows[i].children, xml = '';
+    var head = rows[i].parentNode.nodeName.toLowerCase() === 'thead' ||
+               (cells.length && cells[0].nodeName.toLowerCase() === 'th');
+    for (j = 0; j < cells.length; j++) xml += cellXml(cells[j], head);
+    out += '<w:tr>' + (head ? '<w:trPr><w:tblHeader/></w:trPr>' : '') + xml + '</w:tr>';
+  }
+  return '<w:tbl><w:tblPr><w:tblStyle w:val="Grille"/>' +
+         '<w:tblW w:w="5000" w:type="pct"/><w:tblLayout w:type="fixed"/></w:tblPr>' +
+         grid + out + '</w:tbl><w:p><w:pPr><w:pStyle w:val="Apres"/></w:pPr></w:p>';
+}
+
+/* ============================================================================
+   Assemblage du fichier
+   ========================================================================== */
+var NS =
+  'xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" ' +
+  'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
+  'xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" ' +
+  'xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" ' +
+  'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+  'xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture" ' +
+  'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+  'xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" ' +
+  'mc:Ignorable="w14"';
+
+function style(id, name, opts) {
+  var o = opts || {};
+  return '<w:style w:type="paragraph" w:styleId="' + id + '"><w:name w:val="' + name + '"/>' +
+         '<w:basedOn w:val="Corps"/><w:pPr>' +
+         (o.keep ? '<w:keepNext/>' : '') +
+         '<w:spacing w:before="' + (o.before || 0) + '" w:after="' + (o.after || 120) +
+         '" w:line="' + (o.line || 276) + '" w:lineRule="auto"/>' +
+         (o.jc ? '<w:jc w:val="' + o.jc + '"/>' : '') +
+         (o.ind ? '<w:ind w:left="' + o.ind + '"/>' : '') +
+         (o.border ? '<w:pBdr><w:left w:val="single" w:sz="18" w:space="8" w:color="1A2E42"/></w:pBdr>' : '') +
+         '</w:pPr><w:rPr>' +
+         (o.font ? '<w:rFonts w:ascii="' + o.font + '" w:hAnsi="' + o.font + '"/>' : '') +
+         (o.b ? '<w:b/>' : '') + (o.i ? '<w:i/>' : '') +
+         (o.sz ? '<w:sz w:val="' + o.sz + '"/>' : '') +
+         (o.color ? '<w:color w:val="' + o.color + '"/>' : '') +
+         '</w:rPr></w:style>';
+}
+
+function stylesXml() {
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles ' + NS + '>' +
+    '<w:docDefaults><w:rPrDefault><w:rPr>' +
+      '<w:rFonts w:ascii="Cambria" w:hAnsi="Cambria" w:cs="Cambria"/>' +
+      '<w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="fr-FR"/>' +
+    '</w:rPr></w:rPrDefault><w:pPrDefault><w:pPr>' +
+      '<w:spacing w:after="120" w:line="276" w:lineRule="auto"/><w:jc w:val="both"/>' +
+    '</w:pPr></w:pPrDefault></w:docDefaults>' +
+    '<w:style w:type="paragraph" w:default="1" w:styleId="Corps"><w:name w:val="Normal"/>' +
+      '<w:pPr><w:spacing w:after="120" w:line="276" w:lineRule="auto"/><w:jc w:val="both"/></w:pPr>' +
+      '<w:rPr><w:rFonts w:ascii="Cambria" w:hAnsi="Cambria"/><w:sz w:val="22"/></w:rPr></w:style>' +
+    style('TitreDoc', 'Title', { font: 'Cambria', b: true, sz: 40, color: '0D1B2A', jc: 'left', after: 60, line: 240 }) +
+    style('SousTitre', 'Subtitle', { i: true, sz: 20, color: '5A5A5A', jc: 'left', after: 280, line: 240 }) +
+    style('Titre1', 'heading 1', { b: true, sz: 28, color: '0D1B2A', before: 320, after: 140, jc: 'left', keep: true, line: 240 }) +
+    style('Titre2', 'heading 2', { b: true, sz: 23, color: '1A2E42', before: 240, after: 100, jc: 'left', keep: true, line: 240 }) +
+    style('Formule', 'Formula', { jc: 'center', before: 120, after: 120, line: 240 }) +
+    style('Liste', 'List Paragraph', { after: 100, ind: 360 }) +
+    style('Cellule', 'Table Text', { sz: 20, after: 40, jc: 'left', line: 240 }) +
+    style('Encadre', 'Aside', { ind: 240, border: true, sz: 21, before: 200, after: 200 }) +
+    style('Apres', 'After Table', { after: 200, sz: 12 }) +
+    style('Figure', 'Figure', { jc: 'center', before: 160, after: 200, line: 240 }) +
+    style('Titre3', 'heading 3', { b: true, sz: 22, color: '1A2E42', before: 200,
+                                   after: 60, jc: 'left', keep: true, line: 240 }) +
+    style('EncadreTitre', 'Aside Heading', { ind: 240, border: true, b: true, sz: 22,
+                                             color: '1A2E42', before: 200, after: 60, jc: 'left' }) +
+    '<w:style w:type="table" w:styleId="Grille"><w:name w:val="Table Grid"/><w:tblPr>' +
+      '<w:tblBorders>' +
+      ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(function (b) {
+        return '<w:' + b + ' w:val="single" w:sz="4" w:space="0" w:color="9A9A9A"/>';
+      }).join('') +
+      '</w:tblBorders><w:tblCellMar>' +
+      '<w:top w:w="60" w:type="dxa"/><w:left w:w="90" w:type="dxa"/>' +
+      '<w:bottom w:w="60" w:type="dxa"/><w:right w:w="90" w:type="dxa"/>' +
+      '</w:tblCellMar></w:tblPr></w:style>' +
+    '</w:styles>';
+}
+
+function numberingXml() {
+  function lvl(i, fmt, txtv, ind) {
+    return '<w:lvl w:ilvl="' + i + '"><w:start w:val="1"/><w:numFmt w:val="' + fmt + '"/>' +
+           '<w:lvlText w:val="' + txtv + '"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="' +
+           ind + '" w:hanging="360"/></w:pPr>' +
+           (fmt === 'bullet' ? '<w:rPr><w:rFonts w:ascii="Symbol" w:hAnsi="Symbol"/></w:rPr>' : '') +
+           '</w:lvl>';
+  }
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:numbering ' + NS + '>' +
+    '<w:abstractNum w:abstractNumId="1"><w:multiLevelType w:val="hybridMultilevel"/>' +
+      lvl(0, 'bullet', '\uF0B7', 360) + lvl(1, 'bullet', 'o', 720) + lvl(2, 'bullet', '\uF0A7', 1080) +
+    '</w:abstractNum>' +
+    '<w:abstractNum w:abstractNumId="2"><w:multiLevelType w:val="hybridMultilevel"/>' +
+      lvl(0, 'decimal', '%1.', 360) + lvl(1, 'lowerLetter', '%2.', 720) + lvl(2, 'lowerRoman', '%3.', 1080) +
+    '</w:abstractNum>' +
+    '<w:num w:numId="1"><w:abstractNumId w:val="1"/></w:num>' +
+    '<w:num w:numId="2"><w:abstractNumId w:val="2"/></w:num>' +
+    '</w:numbering>';
+}
+
+function buildDocx(opts) {
+  IMAGES = [];
+  var w = new W();
+
+  if (opts.title) {
+    w.body += '<w:p><w:pPr><w:pStyle w:val="TitreDoc"/></w:pPr>' +
+              textRun(opts.title, {}) + '</w:p>';
+  }
+  if (opts.subtitle) {
+    w.body += '<w:p><w:pPr><w:pStyle w:val="SousTitre"/></w:pPr>' +
+              textRun(opts.subtitle, {}) + '</w:p>';
+  }
+  opts.sections.forEach(function (sec) {
+    if (sec.heading) {
+      w.body += '<w:p><w:pPr><w:pStyle w:val="Titre1"/></w:pPr>' + textRun(sec.heading, {}) + '</w:p>';
+    }
+    walk(sec.node, w, {}, null);
+    w.close();
+  });
+  w.close();
+
+  var doc = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ' + NS + '><w:body>' +
+    w.body +
+    '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/>' +
+    '<w:pgMar w:top="1247" w:right="1247" w:bottom="1247" w:left="1247" ' +
+    'w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>';
+
+  var media = [], rels = '', ctypes = '';
+  IMAGES.forEach(function (im, i) {
+    media.push({ name: 'word/media/image' + (i + 1) + '.png', bin: im.bin });
+    rels += '<Relationship Id="rIdImg' + (i + 1) + '" Type="http://schemas.openxmlformats.org/' +
+            'officeDocument/2006/relationships/image" Target="media/image' + (i + 1) + '.png"/>';
+  });
+  if (IMAGES.length) ctypes = '<Default Extension="png" ContentType="image/png"/>';
+
+  return zip([
+    { name: '[Content_Types].xml',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+        '<Default Extension="xml" ContentType="application/xml"/>' + ctypes +
+        '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+        '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>' +
+        '<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>' +
+        '</Types>' },
+    { name: '_rels/.rels',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+        '</Relationships>' },
+    { name: 'word/_rels/document.xml.rels',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' +
+        '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>' +
+        rels + '</Relationships>' },
+    { name: 'word/document.xml', data: doc },
+    { name: 'word/styles.xml', data: stylesXml() },
+    { name: 'word/numbering.xml', data: numberingXml() }
+  ].concat(media));
+}
+
+root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: W, _walk: walk };
+
+})(window);
+
+</script>
+<script id="kit-js">
+/* ============================================================
+   KIT D'UNIFORMISATION — logique partagée (modale PDF, export Word,
+   libellés de la barre d'actions). Autonome : ne dépend d'aucun
+   dictionnaire I18N propre à la page.
+   ============================================================ */
+(function(){
+  var T = {
+    fr:{ modalTitle:"Exporter en PDF", seedPre:"Seed\u00a0:",
+         seedPost:"\u2014 notez cette valeur pour reproduire exactement cet exercice.",
+         optHeader:"Inclure l'en-t\u00eate de page",
+         optHeaderD:"Titre, badge de mati\u00e8re et intitul\u00e9 de l'exercice",
+         optSol:"Inclure le corrig\u00e9 complet",
+         optSolD:"L'ensemble des d\u00e9veloppements et commentaires du corrig\u00e9",
+         print:"\uD83D\uDDA8\u00a0Imprimer / Sauvegarder PDF", cancel:"Annuler",
+         btnNew:"\u21ba Nouvel \u00e9nonc\u00e9", btnPdf:"\u2b07 Exporter PDF", btnDoc:"\u2b07 Exporter Word",
+         btnCopy:"\u29c9 Copier", copied:"\u2713 Copi\u00e9e", seedLabel:"Seed de reproductibilit\u00e9",
+         docFile:"exercice.doc" },
+    en:{ modalTitle:"Export to PDF", seedPre:"Seed:",
+         seedPost:"\u2014 note this value to reproduce this exact exercise.",
+         optHeader:"Include the page header",
+         optHeaderD:"Title, subject badge and exercise heading",
+         optSol:"Include the full solution",
+         optSolD:"All the workings and comments of the solution",
+         print:"\uD83D\uDDA8\u00a0Print / Save as PDF", cancel:"Cancel",
+         btnNew:"\u21ba New exercise", btnPdf:"\u2b07 Export PDF", btnDoc:"\u2b07 Export Word",
+         btnCopy:"\u29c9 Copy", copied:"\u2713 Copied", seedLabel:"Reproducibility seed",
+         docFile:"exercise.doc" }
+  };
+
+  function lang(){
+    var l = (window.LANG || document.documentElement.lang || 'fr').toLowerCase();
+    return (l.indexOf('en') === 0) ? 'en' : 'fr';
+  }
+  function t(k){ return T[lang()][k]; }
+
+  window.KIT = { T:T, lang:lang, t:t };
+
+  /* --- libellés du kit (modale + barre d'actions) --- */
+  function paint(){
+    var d = T[lang()];
+    document.querySelectorAll('[data-kit]').forEach(function(el){
+      var k = el.getAttribute('data-kit');
+      if (d[k] !== undefined) el.innerHTML = d[k];
+    });
+  }
+  window.KIT.paint = paint;
+
+  /* Se raccroche au changement de langue de la page sans la modifier. */
+  function hookLang(){
+    if (typeof window.setLang === 'function' && !window.setLang.__kit){
+      var orig = window.setLang;
+      var wrapped = function(){ var r = orig.apply(this, arguments); paint(); return r; };
+      wrapped.__kit = true;
+      window.setLang = wrapped;
+    }
+  }
+
+  /* --- Copie de la seed active --- */
+  window.copySeed = function(btn){
+    var el = document.getElementById('seed-disp');
+    if (!el) return;
+    var v = (el.textContent || '').trim();
+    if (!v || v === '\u2014') return;
+    var done = function(){
+      var b = btn || document.getElementById('btn-copy-seed');
+      if (!b) return;
+      var old = b.innerHTML;
+      b.innerHTML = t('copied');
+      setTimeout(function(){ b.innerHTML = old; paint(); }, 1400);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(v).then(done, done);
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = v; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch(e){}
+      document.body.removeChild(ta); done();
+    }
+  };
+
+  /* --- Modale PDF --- */
+  window.openPdfModal = function(){
+    var s = document.getElementById('modal-seed');
+    var src = document.getElementById('seed-disp');
+    if (s && src) s.textContent = (src.textContent || '\u2014').trim();
+    /* la case « corrigé » reflète l'état d'affichage courant */
+    var sol = document.getElementById('sol-card');
+    var box = document.getElementById('opt-sol');
+    if (box) box.checked = !!(window.solVisible ||
+        (sol && (sol.classList.contains('visible') || sol.style.display === 'block')));
+    paint();
+    document.getElementById('pdf-ov').classList.add('open');
+    document.getElementById('pdf-modal').classList.add('open');
+  };
+  window.closePdfModal = function(){
+    document.getElementById('pdf-ov').classList.remove('open');
+    document.getElementById('pdf-modal').classList.remove('open');
+  };
+  var PRINTCLS = ['print-no-header', 'print-force-solution', 'print-no-solution'];
+
+  function clearPrintClasses() {
+    var b = document.body;
+    for (var i = 0; i < PRINTCLS.length; i++) b.classList.remove(PRINTCLS[i]);
+  }
+
+  window.doPrint = function () {
+    var noHdr   = !document.getElementById('opt-header').checked;
+    var inclSol =  document.getElementById('opt-sol').checked;
+    var b = document.body;
+
+    clearPrintClasses();
+    if (noHdr) b.classList.add('print-no-header');
+    b.classList.add(inclSol ? 'print-force-solution' : 'print-no-solution');
+    closePdfModal();
+
+    /* Le nettoyage doit attendre la fin réelle de l'impression. Un simple
+       minuteur ne convient pas : selon le navigateur, window.print() rend la
+       main avant que l'aperçu ne soit composé, et les options seraient alors
+       déjà effacées au moment où le PDF est produit. */
+    var done = false;
+    function finish() {
+      if (done) return;
+      done = true;
+      clearPrintClasses();
+      window.removeEventListener('afterprint', finish);
+      if (mq && mq.removeListener) mq.removeListener(onMq);
+      if (mq && mq.removeEventListener) mq.removeEventListener('change', onMq);
+    }
+    function onMq(e) { if (!e.matches) finish(); }
+
+    var mq = window.matchMedia ? window.matchMedia('print') : null;
+    window.addEventListener('afterprint', finish);
+    if (mq && mq.addEventListener) mq.addEventListener('change', onMq);
+    else if (mq && mq.addListener) mq.addListener(onMq);
+    /* filet de sécurité si le navigateur n'émet aucun de ces signaux */
+    setTimeout(finish, 120000);
+
+    setTimeout(function () { window.print(); }, 120);
+  };
+
+  /* --- Rasterisation des graphiques SVG ---
+     Word ne sait pas lire le SVG. On le convertit en PNG en recopiant d'abord
+     les styles calculés, sinon les couleurs héritées de la feuille disparaissent. */
+  var SVGPROPS = ['fill', 'stroke', 'stroke-width', 'stroke-dasharray', 'stroke-linecap',
+                  'stroke-linejoin', 'opacity', 'fill-opacity', 'stroke-opacity',
+                  'font-family', 'font-size', 'font-weight', 'font-style',
+                  'text-anchor', 'dominant-baseline'];
+
+  function inlineStyles(src, dst) {
+    var a = src.querySelectorAll('*'), b = dst.querySelectorAll('*'), i, j;
+    for (i = 0; i < a.length && i < b.length; i++) {
+      var cs = window.getComputedStyle(a[i]);
+      for (j = 0; j < SVGPROPS.length; j++) {
+        var v = cs.getPropertyValue(SVGPROPS[j]);
+        if (v) b[i].setAttribute(SVGPROPS[j], v);
+      }
+    }
+  }
+
+  function svgSize(svg) {
+    var vb = svg.viewBox && svg.viewBox.baseVal;
+    if (vb && vb.width) return { w: vb.width, h: vb.height };
+    var r = svg.getBoundingClientRect();
+    if (r.width) return { w: r.width, h: r.height };
+    return { w: 600, h: 380 };
+  }
+
+  function svgToPng(svg) {
+    return new Promise(function (resolve) {
+      var done = false;
+      var res = function (v) { if (!done) { done = true; resolve(v); } };
+      /* garde-fou : un graphique qui ne se charge pas ne doit jamais
+         bloquer l'export, on l'omet et le reste du document part quand même */
+      setTimeout(function () { res(null); }, 5000);
+      try {
+        var d = svgSize(svg), SC = 2;
+        var c = svg.cloneNode(true);
+        c.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        c.setAttribute('width', d.w);
+        c.setAttribute('height', d.h);
+        inlineStyles(svg, c);
+        var bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        bg.setAttribute('x', 0); bg.setAttribute('y', 0);
+        bg.setAttribute('width', '100%'); bg.setAttribute('height', '100%');
+        bg.setAttribute('fill', '#ffffff');
+        c.insertBefore(bg, c.firstChild);
+        var xml = new XMLSerializer().serializeToString(c);
+        var img = new Image();
+        img.onload = function () {
+          try {
+            var cv = document.createElement('canvas');
+            cv.width = Math.round(d.w * SC); cv.height = Math.round(d.h * SC);
+            var ctx = cv.getContext('2d');
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, cv.width, cv.height);
+            ctx.drawImage(img, 0, 0, cv.width, cv.height);
+            res({ png: cv.toDataURL('image/png'), w: d.w, h: d.h });
+          } catch (e) { res(null); }
+        };
+        img.onerror = function () { res(null); };
+        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml);
+      } catch (e) { res(null); }
+    });
+  }
+
+  /* --- Export Word natif (.docx) ---
+     Les formules sont converties en OMML, le format d'équation natif de Word :
+     elles restent éditables et se composent avec Cambria Math. */
+  window.exportWord = function () {
+    var area = document.getElementById('ex-area');
+    if (!area || !window.DocxExport) { return; }
+
+    var btn = document.querySelector('.btn-sm.doc');
+    if (btn) { btn.disabled = true; btn.style.opacity = '.5'; }
+
+    var svgs = Array.prototype.slice.call(area.querySelectorAll('svg'));
+    Promise.all(svgs.map(svgToPng)).then(function (pngs) {
+      svgs.forEach(function (sv, i) {
+        if (!pngs[i]) return;
+        sv.setAttribute('data-kit-png', pngs[i].png);
+        sv.setAttribute('data-kit-w', pngs[i].w);
+        sv.setAttribute('data-kit-h', pngs[i].h);
+      });
+      try { writeDocx(area); } finally {
+        svgs.forEach(function (sv) {
+          sv.removeAttribute('data-kit-png');
+          sv.removeAttribute('data-kit-w');
+          sv.removeAttribute('data-kit-h');
+        });
+        if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+      }
+    });
+  };
+
+  function writeDocx(area) {
+
+    var h1 = document.querySelector('header h1');
+    var badge = document.querySelector('.header-badge, #lbl-badge');
+    var seed = document.getElementById('seed-disp');
+    var bits = [];
+    if (badge && badge.textContent.trim()) bits.push(badge.textContent.trim());
+    if (seed && seed.textContent.trim() && seed.textContent.trim() !== '\u2014') {
+      bits.push('seed ' + seed.textContent.trim());
+    }
+    bits.push('Thomas Hossen');
+
+    var sections = [];
+    var cards = area.querySelectorAll('.card');
+    for (var i = 0; i < cards.length; i++) {
+      var body = cards[i].querySelector('.card-body');
+      if (!body) continue;
+      var tag = cards[i].querySelector('.card-header .tag');
+      var h2 = cards[i].querySelector('.card-header h2');
+      var head = [tag ? tag.textContent.trim() : '', h2 ? h2.textContent.trim() : '']
+                   .filter(Boolean).join(' \u2014 ');
+      sections.push({ heading: head, node: body });
+    }
+    if (!sections.length) sections = [{ heading: '', node: area }];
+
+    var bytes = window.DocxExport.build({
+      title: h1 ? h1.textContent.trim() : document.title,
+      subtitle: bits.join(' \u00b7 '),
+      sections: sections
+    });
+
+    var name = (h1 ? h1.textContent : 'exercice').normalize('NFD')
+                 .replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9]+/g, '_')
+                 .replace(/^_|_$/g, '').slice(0, 60) || 'exercice';
+    var blob = new Blob([bytes], {
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = name + '.docx';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){ hookLang(); paint(); });
+  if (document.readyState !== 'loading'){ hookLang(); paint(); }
+})();
+</script>
+<!-- KIT:JS:END -->
+</body>
+</html>
