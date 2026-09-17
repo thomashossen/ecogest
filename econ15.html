@@ -681,6 +681,9 @@ function computeD(seed, Gin) {
       return { a: P.a, b: P.b, Ip, ss, dd, nn, d2, F: Fp, p: pp };
     });
     if (!ok) continue;
+    /* les p-valeurs doivent rester distinctes des seuils de Bonferroni comme de ceux de Holm */
+    const sorted = pr.map(x => x.p).sort((u, v) => u - v);
+    if (sorted.some((pp, r) => Math.abs(pp - 0.05 / (m - r)) < 0.05 * (0.05 / (m - r)))) continue;
     const nRej = pr.filter(x => x.p < aB).length;
     if (p < 0.05 && nRej === 0) continue;     /* rejet global sans paire identifiee : cas trop delicat pour l'exercice */
     Q7 = { scen, nG, N, og, all, dS, Ig, Iall, Ssum, diff, df1, df2, F, p, q95: fq(0.95, df1, df2), pr, m, aB, qB: fq(1 - aB, q, pr[0].d2), nRej,
@@ -723,6 +726,36 @@ function q7Pairs(D, L) {
 }
 
 /* ============================================================
+   ENCADRE : CORRECTION DE BONFERRONI ET PROCEDURE DE HOLM
+   ============================================================ */
+function holm(ps) {
+  const m = ps.length, idx = ps.map((p, i) => i).sort((a, b) => ps[a] - ps[b]);
+  const adjB = ps.map(p => Math.min(1, m * p));
+  const adjH = new Array(m);
+  let run = 0;
+  idx.forEach((i, r) => { run = Math.max(run, Math.min(1, (m - r) * ps[i])); adjH[i] = run; });
+  return { idx, adjB, adjH, thr: idx.map((_, r) => 0.05 / (m - r)) };
+}
+function bonfBox(D, L) {
+  const Q = D.Q7, T = L.ctx[D.id], B = L.bonf, m = Q.m;
+  const ps = Q.pr.map(x => x.p), H = holm(ps);
+  const name = i => `${T.gG(Q.pr[i].a)} – ${T.gG(Q.pr[i].b)}`;
+  const rows = H.idx.map((i, r) => [String(r + 1), name(i), fP(ps[i]), fS(H.thr[r], 4), fP(H.adjB[i]), fP(H.adjH[i])]);
+  const rejB = ps.map((p, i) => H.adjB[i] < 0.05), rejH = ps.map((p, i) => H.adjH[i] < 0.05);
+  const extra = ps.map((p, i) => i).filter(i => rejH[i] && !rejB[i]).map(name);
+  const fwer = 1 - Math.pow(0.95, m);
+  return `<div class="persp-box">
+    <div class="sol-sub">${B.title}</div>
+    <p>${B.p1(m, fxf(100 * fwer, 1, false))}</p>
+    <p>${B.p2}</p>
+    <p>${B.p3(m, fxf(100 * 0.05 / m, 3, false))}</p>
+    <p>${B.p4}</p>
+    ${dtable(B.head, rows, B.cap, false)}
+    <p>${B.p5(rejB.filter(Boolean).length, rejH.filter(Boolean).length, extra)}</p>
+    <p>${B.p6}</p>
+  </div>`;
+}
+/* ============================================================
    DICTIONNAIRE BILINGUE  /  BILINGUAL DICTIONARY
    ============================================================ */
 const I18N = {
@@ -753,6 +786,17 @@ const I18N = {
     capPairs: "Sommes des carrés des résidus des régressions estimées sur chaque paire de groupes réunis.",
     pairHead: ["Paire", "\\(\\text{SCR}_{g}+\\text{SCR}_{h}\\)", "Statistique \\(F\\)", "p-valeur", "Rejet au niveau corrigé ?", "Rejet au niveau de 5 % ?"],
     yes: "oui", no: "non",
+    bonf: {
+      title: "Encadré : la correction de Bonferroni",
+      head: ["Rang", "Paire", "p-valeur", "Seuil de Holm", "p ajustée (Bonferroni)", "p ajustée (Holm)"],
+      cap: "Paires classées par p-valeur croissante, avec les seuils et les p-valeurs ajustées.",
+      p1: (m, f) => `Un test réalisé au niveau de 5 % rejette à tort l'hypothèse nulle, quand elle est vraie, une fois sur vingt. Ce risque est acceptable pour un test isolé, mais il se cumule dès que l'on en réalise plusieurs : si les ${m} tests de la question 7c étaient indépendants et si toutes les égalités étaient vraies, la probabilité de rejeter à tort au moins l'une d'entre elles vaudrait \\(1-(1-0.05)^{${m}}\\approx ${f}\\,\\%\\). Autrement dit, en multipliant les comparaisons, on finit presque mécaniquement par « trouver » une différence qui n'existe pas. C'est le problème des comparaisons multiples, ou des faux positifs.`,
+      p2: `On distingue deux façons de contrôler ce risque. Le <em>risque par comparaison</em> est la probabilité de rejeter à tort une hypothèse donnée ; c'est celui que fixe un test isolé. Le <em>risque global</em> (<em>family-wise error rate</em>, FWER) est la probabilité de rejeter à tort <strong>au moins une</strong> des hypothèses de la famille considérée. C'est ce second risque que la correction de Bonferroni maîtrise.`,
+      p3: (m, a) => `<strong>Principe.</strong> On réalise chacun des \\(m\\) tests non plus au niveau \\(\\alpha\\), mais au niveau \\(\\alpha/m\\) : ici, \\(5\\,\\%/${m}\\approx ${a}\\,\\%\\). De façon équivalente, on compare au niveau \\(\\alpha\\) les <em>p-valeurs ajustées</em> \\(\\min(1,\\,m\\,p_i)\\). <em>Démonstration.</em> Notons \\(A_i\\) l'événement « le test \\(i\\) rejette à tort ». Si toutes les hypothèses nulles sont vraies, \\(\\mathbb{P}(A_i)=\\alpha/m\\) pour chaque \\(i\\), et l'inégalité de Boole (sous-additivité de la probabilité) donne \\[\\mathbb{P}\\Big(\\bigcup_{i=1}^{m}A_i\\Big)\\leq\\sum_{i=1}^{m}\\mathbb{P}(A_i)=m\\times\\frac{\\alpha}{m}=\\alpha\\] Le risque global reste donc inférieur à \\(\\alpha\\), et ce <strong>quelle que soit la dépendance entre les tests</strong> : c'est la force de la méthode, car les ${m} tests de la question 7c ne sont pas indépendants (ils partagent des groupes, et tous font intervenir les mêmes données).`,
+      p4: `<strong>Le prix à payer.</strong> Abaisser le seuil de chaque test réduit sa puissance : des différences réelles mais modérées ne sont plus détectées, et le risque de seconde espèce augmente. La correction est en outre d'autant plus conservatrice que les tests sont corrélés, car l'inégalité de Boole est alors très large. La procédure de Holm (1979) corrige ce défaut sans rien perdre en garantie : on classe les p-valeurs par ordre croissant \\(p_{(1)}\\leq\\cdots\\leq p_{(m)}\\), puis on les compare successivement aux seuils \\(\\alpha/m,\\ \\alpha/(m-1),\\ \\ldots,\\ \\alpha\\), en s'arrêtant au premier rang où la p-valeur dépasse son seuil ; toutes les hypothèses suivantes sont conservées. Cette procédure contrôle le même risque global, tout en rejetant au moins autant d'hypothèses que Bonferroni. Appliquée aux p-valeurs de la question 7c :`,
+      p5: (nb, nh, extra) => `Bonferroni conduit à ${nb === 0 ? "ne rejeter aucune égalité" : `rejeter ${nb} égalité${nb > 1 ? "s" : ""}`}, Holm à ${nh === 0 ? "n'en rejeter aucune" : `en rejeter ${nh}`}` + (extra.length ? ` : la procédure de Holm détecte en outre ${extra.length > 1 ? "les paires" : "la paire"} ${extra.join(", ")}, dont la p-valeur est inférieure au seuil \\(\\alpha/(m-1)\\) mais non au seuil \\(\\alpha/m\\).` : `. Les deux procédures aboutissent ici à la même conclusion, ce qui est fréquent lorsque les p-valeurs sont soit très petites, soit nettement supérieures aux seuils.`),
+      p6: `<strong>Autres approches.</strong> La correction de Šidák remplace \\(\\alpha/m\\) par \\(1-(1-\\alpha)^{1/m}\\), légèrement moins conservatrice, mais valable seulement si les tests sont indépendants. Lorsque les comparaisons sont très nombreuses, on renonce souvent à contrôler le risque global au profit du <em>taux de faux positifs attendu</em> parmi les rejets (<em>false discovery rate</em>), à l'aide de la procédure de Benjamini-Hochberg (1995), nettement plus puissante. Enfin, ces corrections ne dispensent jamais du test global : ce dernier, ici le test de Chow à \\(G\\) groupes de la question 7b, utilise l'ensemble des données en une seule statistique et reste le point de départ naturel de l'analyse.`
+    },
     pv: p => (p < 1e-4 ? "est inférieure à 0.0001" : `vaut ${p.toFixed(4)}`),
     pde: p => (p < 1e-4 ? "inférieure à 0.0001" : `de ${p.toFixed(4)}`),
     ctx: {
@@ -905,6 +949,7 @@ const I18N = {
       </div></li>
 
       </ol></div>
+      ${bonfBox(D, this)}
       <div class="persp-box">
         <div class="sol-sub">Pour aller plus loin</div>
         <p><strong>Variances différentes.</strong> Lorsque le test préalable rejette l'égalité des variances, on compare directement les deux vecteurs d'estimations à l'aide de la statistique de Wald \\[W=(\\widehat{\\textbf{b}}^{(1)}-\\widehat{\\textbf{b}}^{(2)})^T\\big(\\widehat{\\sigma}_1^2(\\textbf{X}_1^T\\textbf{X}_1)^{-1}+\\widehat{\\sigma}_2^2(\\textbf{X}_2^T\\textbf{X}_2)^{-1}\\big)^{-1}(\\widehat{\\textbf{b}}^{(1)}-\\widehat{\\textbf{b}}^{(2)})\\] qui suit asymptotiquement une loi du \\(\\chi^2\\) à \\(k+1\\) degrés de liberté.</p>
@@ -941,6 +986,17 @@ const I18N = {
     capPairs: "Residual sums of squares of the regressions estimated on each pair of groups pooled.",
     pairHead: ["Pair", "\\(\\text{RSS}_{g}+\\text{RSS}_{h}\\)", "\\(F\\) statistic", "p-value", "Rejected at the corrected level?", "Rejected at the 5 % level?"],
     yes: "yes", no: "no",
+    bonf: {
+      title: "Box: the Bonferroni correction",
+      head: ["Rank", "Pair", "p-value", "Holm threshold", "Adjusted p (Bonferroni)", "Adjusted p (Holm)"],
+      cap: "Pairs ranked by increasing p-value, with the thresholds and adjusted p-values.",
+      p1: (m, f) => `A test carried out at the 5 % level wrongly rejects a true null hypothesis once in twenty. This risk is acceptable for a single test, but it accumulates as soon as several are run: if the ${m} tests of question 7c were independent and all the equalities were true, the probability of wrongly rejecting at least one of them would be \\(1-(1-0.05)^{${m}}\\approx ${f}\\,\\%\\). In other words, by multiplying comparisons, one almost mechanically ends up “finding” a difference that does not exist. This is the multiple comparisons problem, or the problem of false positives.`,
+      p2: `Two risks must be distinguished. The <em>per-comparison error rate</em> is the probability of wrongly rejecting a given hypothesis; this is what a single test controls. The <em>family-wise error rate</em> (FWER) is the probability of wrongly rejecting <strong>at least one</strong> of the hypotheses in the family considered. It is this second risk that the Bonferroni correction controls.`,
+      p3: (m, a) => `<strong>Principle.</strong> Each of the \\(m\\) tests is carried out at level \\(\\alpha/m\\) rather than \\(\\alpha\\): here, \\(5\\,\\%/${m}\\approx ${a}\\,\\%\\). Equivalently, the <em>adjusted p-values</em> \\(\\min(1,\\,m\\,p_i)\\) are compared with \\(\\alpha\\). <em>Proof.</em> Let \\(A_i\\) be the event “test \\(i\\) wrongly rejects”. If all null hypotheses are true, \\(\\mathbb{P}(A_i)=\\alpha/m\\) for each \\(i\\), and Boole's inequality (subadditivity of probability) gives \\[\\mathbb{P}\\Big(\\bigcup_{i=1}^{m}A_i\\Big)\\leq\\sum_{i=1}^{m}\\mathbb{P}(A_i)=m\\times\\frac{\\alpha}{m}=\\alpha\\] The family-wise error rate therefore stays below \\(\\alpha\\), and this holds <strong>whatever the dependence between the tests</strong>: this is the strength of the method, since the ${m} tests of question 7c are not independent (they share groups, and all use the same data).`,
+      p4: `<strong>The price to pay.</strong> Lowering the level of each test reduces its power: real but moderate differences are no longer detected, and the type II error risk increases. The correction is all the more conservative as the tests are correlated, since Boole's inequality is then very loose. Holm's procedure (1979) fixes this without losing any guarantee: the p-values are ranked in increasing order \\(p_{(1)}\\leq\\cdots\\leq p_{(m)}\\), then compared successively with the thresholds \\(\\alpha/m,\\ \\alpha/(m-1),\\ \\ldots,\\ \\alpha\\), stopping at the first rank where the p-value exceeds its threshold; all subsequent hypotheses are retained. This procedure controls the same family-wise error rate while rejecting at least as many hypotheses as Bonferroni. Applied to the p-values of question 7c:`,
+      p5: (nb, nh, extra) => `Bonferroni leads to ${nb === 0 ? "rejecting no equality" : `rejecting ${nb} equalit${nb > 1 ? "ies" : "y"}`}, Holm to ${nh === 0 ? "rejecting none" : `rejecting ${nh}`}` + (extra.length ? `: Holm's procedure additionally detects ${extra.length > 1 ? "the pairs" : "the pair"} ${extra.join(", ")}, whose p-value is below the threshold \\(\\alpha/(m-1)\\) but not below \\(\\alpha/m\\).` : `. Both procedures lead to the same conclusion here, which is common when p-values are either very small or clearly above the thresholds.`),
+      p6: `<strong>Other approaches.</strong> The Šidák correction replaces \\(\\alpha/m\\) with \\(1-(1-\\alpha)^{1/m}\\), which is slightly less conservative but valid only if the tests are independent. When comparisons are very numerous, one often gives up controlling the family-wise error rate in favour of the expected proportion of false positives among rejections (<em>false discovery rate</em>), using the Benjamini-Hochberg procedure (1995), which is far more powerful. Finally, these corrections never replace the joint test: the latter, here the \\(G\\)-group Chow test of question 7b, uses all the data in a single statistic and remains the natural starting point of the analysis.`
+    },
     pv: p => (p < 1e-4 ? "is below 0.0001" : `is ${p.toFixed(4)}`),
     pde: p => (p < 1e-4 ? "below 0.0001" : `of ${p.toFixed(4)}`),
     ctx: {
@@ -1092,6 +1148,7 @@ const I18N = {
       </div></li>
 
       </ol></div>
+      ${bonfBox(D, this)}
       <div class="persp-box">
         <div class="sol-sub">Going further</div>
         <p><strong>Unequal variances.</strong> When the preliminary test rejects equal variances, the two vectors of estimates are compared directly using the Wald statistic \\[W=(\\widehat{\\textbf{b}}^{(1)}-\\widehat{\\textbf{b}}^{(2)})^T\\big(\\widehat{\\sigma}_1^2(\\textbf{X}_1^T\\textbf{X}_1)^{-1}+\\widehat{\\sigma}_2^2(\\textbf{X}_2^T\\textbf{X}_2)^{-1}\\big)^{-1}(\\widehat{\\textbf{b}}^{(1)}-\\widehat{\\textbf{b}}^{(2)})\\] which asymptotically follows a \\(\\chi^2\\) distribution with \\(k+1\\) degrees of freedom.</p>
