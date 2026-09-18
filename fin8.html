@@ -1,0 +1,2250 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Comptabilité - Tableau de flux de trésorerie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['\\[', '\\]']]
+    }
+  };
+</script>
+<script>window.MathJax=window.MathJax||{};window.MathJax.options=window.MathJax.options||{};window.MathJax.options.enableAssistiveMml=true;</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7;text-align:justify;}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 1.5rem;border-bottom:3px solid var(--gold);text-align:left;}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end;background:rgba(255,255,255,.03);padding:1rem 1.5rem;border-radius:6px;border:1px solid rgba(255,255,255,.1)}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.6)}
+.ctrl-inp, .ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.4rem .7rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none;transition:border-color .2s}
+.ctrl-inp:focus, .ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.5rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;transition:background .18s;margin-left:auto}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN & CARDS */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:700}
+
+.top-actions{display:flex;gap:.5rem;}
+.btn-action{background:#fff;border:1px solid var(--border);color:var(--navy);padding:.4rem .8rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.85rem;font-weight:600;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.btn-action:hover{border-color:var(--navy);background:var(--cream-dark);}
+
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem;text-align:left;}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+.event-list{list-style:none;}
+.event-list > li{margin-bottom:1.5rem;padding-left:1.5rem;position:relative;font-size:.95rem;text-align:justify}
+.event-list > li::before{content:"•";position:absolute;left:0;color:var(--gold);font-size:1.5rem;line-height:1}
+
+.sub-list { list-style-type: none; padding-left: 1rem; margin-top: 0.8rem; text-align:justify;}
+.sub-list li { margin-bottom: 0.5rem; }
+
+/* EXAM TABLE */
+.exam-table-wrap { overflow-x: auto; margin: 1.5rem 0; }
+.exam-table{width:100%;border-collapse:collapse;font-size:.85rem;font-family:'Source Serif 4',serif; margin: 0;}
+.exam-table th, .exam-table td{border:1px solid var(--border);padding:.6rem;text-align:center;vertical-align:middle;}
+.exam-table th{background:var(--navy);color:var(--cream);font-weight:600;}
+.exam-table .txt-left{text-align:left;font-weight:600;color:var(--navy);}
+.exam-table .amt{font-family:'JetBrains Mono',monospace;text-align:right;white-space:nowrap;}
+
+.two-col-table { width: 100%; display: flex; gap: 2rem; margin: 1.5rem 0; }
+.col-half { flex: 1; }
+
+/* SOLUTION TOGGLE */
+.sol-toggle-wrap{text-align:left; margin: 1.5rem 0 0 0;}
+.btn-toggle{background:transparent;border:2px solid var(--green);border-bottom:none;color:var(--green);font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;padding:.5rem 1.5rem;border-radius:4px 4px 0 0;cursor:pointer;transition:all .2s; position:relative; z-index:2; top:2px;}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--green);color:var(--cream)}
+.sol-card{border-top:2px solid var(--green);display:none; border-radius: 0 6px 6px 6px; position:relative; z-index:1;}
+.sol-card.visible{display:block;animation:fi .4s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+
+.calc-box{background:#f9fcf9;border:1px solid #c8e6c9;padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.9rem;color:var(--text);line-height:1.6;text-align:justify;}
+
+@media print{
+  body{background:#fff;}
+  header, .ctrls, .sol-toggle-wrap, .top-actions {display:none !important;}
+  .card{box-shadow:none; border:1px solid var(--border); margin-bottom:2rem;}
+  .sol-card{display:block !important; border-top:2px solid var(--green);}
+  #ex-area {display:block !important;}
+}
+
+/* --- Selecteur de langue / Language switch --- */
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem}
+.header-top .header-badge{margin-bottom:0}
+.lang-switch{display:flex;gap:.45rem;flex-shrink:0}
+.flag-btn{background:rgba(255,255,255,.06);border:1px solid rgba(201,149,42,.35);border-radius:3px;padding:3px;cursor:pointer;line-height:0;opacity:.5;transition:opacity .2s,border-color .2s,transform .15s}
+.flag-btn:hover{opacity:1;transform:translateY(-1px)}
+.flag-btn.active{opacity:1;border-color:var(--gold-light);box-shadow:0 0 0 1px rgba(232,184,75,.35)}
+.flag-btn svg{display:block;width:30px;height:20px;border-radius:1px}
+@media print{ .lang-switch{display:none !important;} }
+</style>
+<!-- KIT:CSS:START v1 --><style id="kit-css">
+/* ============================================================
+   KIT D'UNIFORMISATION — bloc partagé, identique sur toutes les pages.
+   Ne rien modifier ici fichier par fichier : régénérer le kit.
+   ============================================================ */
+
+/* --- 1. Mathématiques : jamais de débordement --- */
+mjx-container[display="true"]{
+  overflow-x:auto; overflow-y:hidden; max-width:100%;
+  padding:.15rem 0; margin:1rem 0 !important;
+}
+mjx-container[display="true"]::-webkit-scrollbar{height:5px}
+mjx-container[display="true"]::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+mjx-container{ max-width:100%; }
+.math-formula{ text-align:center; margin:1.2rem 0; overflow-x:auto; max-width:100%; }
+@media (max-width:640px){
+  mjx-container[display="true"]{ font-size:88% }
+}
+
+/* --- 2. Listes à puces entourées (questions ET données de contexte) --- */
+.kit-list, .st > ol,
+.questions > ol,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list), .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list),
+.question-list, .enum-list, .q-list{
+  counter-reset:kitq; list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem;
+}
+.kit-list > li, .st > ol > li,
+.questions > ol > li,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li, .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li,
+.question-list > li, .enum-list > li, .q-list > li{
+  counter-increment:kitq; position:relative;
+  padding-left:2.6rem; margin-bottom:1.3rem;
+  font-size:.95rem; line-height:1.7; text-align:justify;
+  font-weight:400; color:var(--text);
+  display:block;
+}
+.kit-list > li::before, .st > ol > li::before,
+.questions > ol > li::before,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li::before, .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li::before,
+.question-list > li::before, .enum-list > li::before, .q-list > li::before{
+  content:counter(kitq);
+  position:absolute; left:0; top:.1rem;
+  width:28px; min-width:28px; height:28px;
+  background:var(--navy); color:var(--cream);
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.72rem; font-weight:500;
+  flex-shrink:0;
+}
+.questions ol > li .q-text{ flex:1; font-size:.95rem; text-align:justify }
+/* sous-listes : cercle creux, plus discret */
+.enum-sublist, .kit-sublist, .sub-list, .sub-ol, .alpha-list, .enum-subsublist,
+.st ol.sub-ol, .questions ol ol, .st ol ol, .kit-list ol, .q-list ol, .question-list ol{
+  counter-reset:kitsq; list-style:none !important; padding-left:0 !important;
+  margin:.9rem 0 .9rem 0;
+}
+.enum-sublist > li, .kit-sublist > li, .sub-list > li, .sub-ol > li, .alpha-list > li, .enum-subsublist > li,
+.st ol.sub-ol > li, .questions ol ol > li, .st ol ol > li, .kit-list ol > li, .q-list ol > li, .question-list ol > li{
+  counter-increment:kitsq; position:relative;
+  padding-left:2.1rem; margin-bottom:.7rem; font-size:.92rem; text-align:justify;
+}
+.enum-sublist > li::before, .kit-sublist > li::before, .sub-list > li::before, .sub-ol > li::before, .alpha-list > li::before, .enum-subsublist > li::before,
+.st ol.sub-ol > li::before, .questions ol ol > li::before, .st ol ol > li::before, .kit-list ol > li::before, .q-list ol > li::before, .question-list ol > li::before{
+  content:counter(kitsq,lower-alpha);
+  min-width:22px;
+  position:absolute; left:0; top:.05rem;
+  width:22px; height:22px;
+  background:transparent; color:var(--navy);
+  border:1px solid var(--gold);
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.65rem;
+}
+
+/* variante : puces simples non numérotées (listes de données) */
+.kit-simple{ list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem }
+.kit-simple > li{
+  position:relative; padding-left:1.5rem; margin-bottom:1.1rem;
+  font-size:.95rem; line-height:1.7; text-align:justify;
+}
+.kit-simple > li::before{
+  content:"\2022"; position:absolute; left:0; top:-.15rem;
+  color:var(--gold); font-size:1.5rem; line-height:1; background:none;
+  width:auto; height:auto; border:none; border-radius:0;
+}
+/* variante : liste à un seul élément, sans puce */
+.kit-nobullet{ list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem }
+.kit-nobullet > li{
+  padding-left:0; margin-bottom:1rem; font-size:.95rem; line-height:1.7; text-align:justify;
+}
+.kit-nobullet > li::before{ content:none !important; display:none !important }
+/* variante : titres de section numérotés (contenu intercalé entre les puces) */
+.kit-num-scope{ counter-reset:kitn }
+p.kit-num{
+  counter-increment:kitn; position:relative;
+  padding-left:2.6rem; margin:1.8rem 0 1rem;
+  font-weight:600; color:var(--navy); text-align:left;
+  min-height:28px; display:flex; align-items:center;
+}
+p.kit-num:first-of-type{ margin-top:0 }
+p.kit-num::before{
+  content:counter(kitn); position:absolute; left:0; top:0;
+  width:28px; height:28px; background:var(--navy); color:var(--cream);
+  border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.72rem; font-weight:500;
+}
+
+/* titres de dossier */
+.dossier-title{
+  margin:2rem 0 1rem; font-weight:600; color:var(--navy); font-size:1.02rem;
+  border-bottom:1px solid var(--border); padding-bottom:.4rem; text-align:left;
+}
+.dossier-title:first-of-type{ margin-top:0 }
+.dossier-body{ margin-bottom:.5rem }
+
+/* --- 3. Corrigé sobre : plus de multiplication de fonds verts --- */
+.sol-card .calc-box, .sol-card .concl{
+  background:transparent !important;
+  border:none !important;
+  border-left:none !important;
+  padding:0 !important;
+  border-radius:0 !important;
+  margin:0 0 1.6rem 0 !important;
+  font-size:.95rem;
+  line-height:1.7;
+  text-align:justify;
+}
+.sol-card .sol-sub{
+  color:var(--navy); font-weight:600; display:block;
+  margin:0 0 .5rem 0; font-size:1rem;
+}
+/* seuls encadrés conservés : les perspectives « Pour aller plus loin » */
+.sol-card .persp-box{
+  background:#f7f9fc !important;
+  border:1px solid #ccd8e6 !important;
+  border-left:3px solid var(--navy-mid) !important;
+  padding:1.2rem !important;
+  border-radius:4px !important;
+  margin:2rem 0 1rem 0 !important;
+  font-size:.9rem; line-height:1.7; text-align:justify;
+}
+
+.btn-toggle{
+  background:transparent; border:2px solid var(--green); border-bottom:none;
+  color:var(--green); font-family:'Source Serif 4',serif; font-size:.95rem;
+  font-weight:600; padding:.5rem 1.5rem; border-radius:4px 4px 0 0; cursor:pointer;
+  transition:all .2s; position:relative; z-index:2; top:2px;
+}
+.btn-toggle:hover{ background:var(--green); color:var(--cream) }
+
+/* --- 4. Bouton « Afficher le corrigé » (modèle der) --- */
+.sol-toggle-wrap{ text-align:left; margin:1.5rem 0 0 0; }
+.sol-card{
+  border-top:2px solid var(--green); display:none;
+  border-radius:0 6px 6px 6px; position:relative; z-index:1;
+}
+.sol-card.visible{ display:block; animation:kitfi .35s ease }
+.sol-card .card-header{ background:var(--green) }
+.sol-card .card-header .tag{ border-color:rgba(200,240,200,.4); color:#a8d8b0 }
+@keyframes kitfi{ from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+
+/* --- 5. Barre d'actions unifiée --- */
+.top-bar{ display:flex; flex-wrap:wrap; gap:.8rem; align-items:center; justify-content:space-between; margin-bottom:1.2rem }
+.top-bar-left{ display:flex; flex-wrap:wrap; gap:.55rem; order:1 }
+.top-bar .seed-badge{ order:2 }
+.btn-sm{ background:transparent; border:1px solid var(--gold); color:var(--gold); font-family:'JetBrains Mono',monospace; font-size:.67rem; letter-spacing:.08em; text-transform:uppercase; padding:.4rem 1rem; border-radius:3px; cursor:pointer; transition:all .18s; white-space:nowrap }
+.btn-sm:hover{ background:var(--gold); color:var(--navy) }
+.btn-sm.pdf{ border-color:#7bafd4; color:#7bafd4 }
+.btn-sm.pdf:hover{ background:#7bafd4; color:var(--navy) }
+.btn-sm.doc{ border-color:#8fa8c4; color:#8fa8c4 }
+.seed-row{ display:flex; gap:.4rem; align-items:center }
+.btn-copy-seed{
+  background:transparent; border:1px solid rgba(201,149,42,.4); color:rgba(250,247,240,.55);
+  padding:.38rem .55rem; border-radius:3px; cursor:pointer;
+  font-family:'JetBrains Mono',monospace; font-size:.65rem; transition:all .18s; white-space:nowrap;
+}
+.btn-copy-seed:hover{ border-color:var(--gold-light); color:var(--gold-light) }
+.btn-sm.doc:hover{ background:#8fa8c4; color:var(--navy) }
+
+/* --- 6. Modale d'export PDF --- */
+#pdf-ov{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:100; backdrop-filter:blur(2px) }
+#pdf-modal{ display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:101; background:#fff; border-radius:8px; box-shadow:0 20px 60px rgba(0,0,0,.25); width:390px; max-width:95vw; border-top:4px solid #7bafd4; overflow:hidden }
+#pdf-ov.open,#pdf-modal.open{ display:block }
+.mh{ background:var(--navy); color:var(--cream); padding:1rem 1.5rem; display:flex; align-items:center; justify-content:space-between }
+.mh h3{ font-family:'Playfair Display',serif; font-size:1rem; font-weight:600; margin:0 }
+.mclose{ background:none; border:none; color:rgba(255,255,255,.6); cursor:pointer; font-size:1.2rem; line-height:1; padding:2px 6px; border-radius:3px; transition:color .15s }
+.mclose:hover{ color:#fff }
+.mb2{ padding:1.5rem }
+.opt-row{ display:flex; align-items:flex-start; gap:.75rem; margin-bottom:1rem; cursor:pointer }
+.opt-row input[type=checkbox]{ width:16px; height:16px; cursor:pointer; accent-color:var(--navy); flex-shrink:0; margin-top:3px }
+.opt-txt{ display:block }
+.opt-lbl{ font-size:.93rem; display:block }
+.opt-desc{ font-size:.75rem; color:var(--text-muted); display:block }
+.seed-note{ font-family:'JetBrains Mono',monospace; font-size:.7rem; background:var(--cream-dark); border:1px solid var(--border); padding:.55rem .85rem; border-radius:3px; color:var(--text-muted); margin-bottom:1.2rem; line-height:1.5 }
+.mactions{ display:flex; gap:.6rem }
+.btn-print{ flex:1; background:var(--navy); color:var(--cream); border:none; padding:.7rem; border-radius:4px; font-family:'Source Serif 4',serif; font-size:.9rem; cursor:pointer; transition:background .2s }
+.btn-print:hover{ background:var(--navy-mid) }
+.btn-cancel{ background:transparent; border:1px solid var(--border); color:var(--text-muted); padding:.7rem 1rem; border-radius:4px; font-family:'Source Serif 4',serif; font-size:.9rem; cursor:pointer; transition:all .2s }
+.btn-cancel:hover{ border-color:var(--text); color:var(--text) }
+
+/* --- 7. Impression --- */
+@media print{
+  body{ background:#fff; font-size:11pt; -webkit-print-color-adjust:exact; print-color-adjust:exact }
+  header{ display:block !important; padding:1rem 1.5rem .8rem }
+  header .subtitle{ display:none }
+  .ctrls, #controls-bar, .top-actions, .top-bar-left, .sol-toggle-wrap,
+  .lang-switch, #pdf-ov, #pdf-modal{ display:none !important }
+  .top-bar{ display:block !important; margin-bottom:.8rem }
+  .top-bar .seed-badge{
+    display:inline-block !important; background:none; border:1px solid var(--border);
+    color:var(--text-muted); font-family:'JetBrains Mono',monospace; font-size:8.5pt;
+    padding:2pt 6pt; border-radius:2px;
+  }
+  body.print-no-header .top-bar{ display:none !important }
+  main{ padding:1rem 1.5rem; max-width:100% }
+  .card{ box-shadow:none; border-radius:0; page-break-inside:avoid; margin-bottom:1rem }
+  #ex-area{ display:block !important }
+  .sol-card{ display:block !important; border-top:2px solid var(--green) }
+  mjx-container[display="true"]{ overflow:visible !important }
+  body.print-no-header header{ display:none !important }
+  body.print-no-header .ctrls{ display:none !important }
+  body.print-no-solution .sol-card,
+  body.print-no-solution .sol-toggle-wrap{ display:none !important }
+  body.print-force-solution .sol-card{ display:block !important }
+}
+</style><!-- KIT:CSS:END -->
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-top">
+    <div class="header-badge" data-k="k-badge">INFORMATION COMPTABLE ET FINANCIÈRE</div>
+    <div class="lang-switch">
+      <button type="button" class="flag-btn active" id="flag-fr" onclick="setLang('fr')" title="Français" aria-label="Français"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="20" height="40" fill="#002654"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ED2939"/></svg></button>
+      <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
+    </div>
+  </div>
+  <h1 data-k="k-h1">Le tableau de flux de trésorerie</h1>
+  <p class="subtitle" data-k="k-sub">© Thomas Hossen – Version du 18 septembre 2026</p>
+
+  <div class="ctrls">
+    <div class="ctrl-g">
+      <span class="ctrl-lbl" data-k="k-seed">Seed de reproductibilité</span>
+      <div class="seed-row"><input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999"><button type="button" class="btn-copy-seed" id="btn-copy-seed" onclick="copySeed(this)" title="Copier la seed active"><span data-kit="btnCopy">&#10697; Copier</span></button></div>
+    </div>
+    <button class="btn-gen" onclick="generateExercise(false)"><span data-k="k-gen">Générer</span></button>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" style="text-align:center; padding:4rem; color:var(--text-muted); font-style:italic;">
+    <span data-k="k-welcome">Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.</span>
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="seed-badge"><span data-k="k-seedbadge">Seed active :</span> <span id="seed-disp"></span></div>
+      <div class="top-bar-left">
+        <button type="button" class="btn-sm" onclick="generateExercise(true)"><span data-kit="btnNew">&#8634; Nouvel &eacute;nonc&eacute;</span></button>
+        <button type="button" class="btn-sm pdf" onclick="openPdfModal()"><span data-kit="btnPdf">&#11015; Exporter PDF</span></button>
+        <button type="button" class="btn-sm doc" onclick="exportWord()"><span data-kit="btnDoc">&#11015; Exporter Word</span></button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="tag" data-k="k-tag-ex">Énoncé</span><h2 data-k="k-cardtitle">Construction et commentaire d'un tableau de flux de trésorerie</h2></div>
+      <div class="card-body">
+        <div class="context-block" id="context-text"></div>
+        <div id="enonce-table-container"></div>
+        <div class="context-block" id="additional-info" style="margin-top:1.5rem; background:#fff; border-left:3px solid var(--navy); border-radius:0;"></div>
+
+        <p style="margin-bottom:1rem; font-weight:600; color:var(--red); text-align:left;" data-k="k-work">Travail à faire</p>
+        <ul class="event-list" id="events-list"></ul>
+      </div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag" data-k="k-tag-sol">Corrigé</span><h2 data-k="k-cardtitle2">Construction et commentaire d'un tableau de flux de trésorerie</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+/* ============================================================
+   PROFILS D'ENTREPRISE  /  COMPANY PROFILES
+   ============================================================ */
+const PROFILES = [
+  { name: "Orvalis",
+    fr: { secteur: "une société de fabrication de mobilier professionnel", marche: "les aménagements de bureaux et de collectivités" },
+    en: { secteur: "a manufacturer of professional furniture", marche: "office and public-sector fit-outs" } },
+  { name: "Tecnoplast",
+    fr: { secteur: "un transformateur de matières plastiques techniques", marche: "les équipementiers de l'automobile et de l'électroménager" },
+    en: { secteur: "a processor of technical plastics", marche: "automotive and household-appliance suppliers" } },
+  { name: "Grand Sud Logistique",
+    fr: { secteur: "un prestataire de transport et d'entreposage", marche: "la distribution alimentaire régionale" },
+    en: { secteur: "a transport and warehousing provider", marche: "regional food distribution" } },
+  { name: "Ardennes Métal",
+    fr: { secteur: "une entreprise de mécanique de précision", marche: "l'énergie et le ferroviaire" },
+    en: { secteur: "a precision engineering company", marche: "the energy and rail industries" } },
+  { name: "Novéane Santé",
+    fr: { secteur: "un fabricant de dispositifs médicaux à usage unique", marche: "les centrales d'achat hospitalières" },
+    en: { secteur: "a manufacturer of single-use medical devices", marche: "hospital purchasing groups" } },
+  { name: "Lumivert",
+    fr: { secteur: "un installateur d'équipements d'efficacité énergétique", marche: "les bailleurs sociaux et les collectivités" },
+    en: { secteur: "an installer of energy-efficiency equipment", marche: "social landlords and local authorities" } }
+];
+
+/* ============================================================
+   DICTIONNAIRE BILINGUE  /  BILINGUAL DICTIONARY
+   ============================================================ */
+const I18N = {
+
+  fr: {
+    "htmlLang": "fr",
+    "title": "Simulateur Comptabilité - Tableau de flux de trésorerie",
+    "locale": "fr-FR",
+    "k-badge": "INFORMATION COMPTABLE ET FINANCIÈRE",
+    "k-h1": "Le tableau de flux de trésorerie",
+    "k-sub": "© Thomas Hossen – Version du 18 septembre 2026",
+    "k-seed": "Seed de reproductibilité",
+    "k-gen": "Générer",
+    "k-welcome": "Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.",
+    "k-seedbadge": "Seed active :",
+    "k-tag-ex": "Énoncé",
+    "k-cardtitle": "Construction et commentaire d'un tableau de flux de trésorerie",
+    "k-tag-sol": "Corrigé",
+    "k-cardtitle2": "Construction et commentaire d'un tableau de flux de trésorerie",
+    "k-work": "Travail à faire",
+    "showSol": "Afficher le corrigé",
+    "hideSol": "Masquer le corrigé",
+    thousands: "\\,",
+    decimal: "{,}",
+
+    cur: v => fmtSigned(v, 'fr'),
+    chartTitle: "Formation de la trésorerie au cours de l'exercice N",
+    chartLabels: { T0: "Trésorerie 01/01", A: "FNTA", I: "FNTI", F: "FNTF", T1: "Trésorerie 31/12" },
+    chartNote: "En vert les flux qui alimentent la trésorerie, en rouge ceux qui la ponctionnent.",
+
+    context: function(D) {
+      const p = D.prof.fr;
+      return `
+        ${D.prof.name} est ${p.secteur} dont les clients se recrutent principalement dans ${p.marche}. Son chiffre d'affaires hors taxes est passé de ${money(D.CA0,'fr')} pour l'exercice N&nbsp;−&nbsp;1 à ${money(D.CA1,'fr')} pour l'exercice N. La direction financière, qui prépare une demande de financement auprès de ses partenaires bancaires, souhaite comprendre pourquoi la trésorerie de l'entreprise a ${D.dT > 0 ? "progressé" : "reculé"} de ${money(Math.abs(D.dT),'fr')} au cours de l'exercice N alors que le compte de résultat fait apparaître un bénéfice de ${money(D.RN,'fr')}. Elle vous confie les informations suivantes, toutes exprimées en euros.
+      `;
+    },
+    table: function(D) {
+      let h = "";
+      h += `<p style="margin:1.4rem 0 .6rem; font-weight:600; color:var(--navy); text-align:left;">Tableau 1 — Extrait du compte de résultat de l'exercice N</p>`;
+      h += `<div class="exam-table-wrap"><table class="exam-table">
+          <tr><th style="width:70%;">Élément</th><th style="width:30%;">Montant</th></tr>
+          <tr><td class="txt-left">Résultat net de l'exercice</td><td class="amt">${money(D.RN,'fr')}</td></tr>
+          <tr><td class="txt-left">Dotations aux amortissements, dépréciations et provisions (DADP)</td><td class="amt">${money(D.DADP,'fr')}</td></tr>
+          <tr><td class="txt-left">Reprises sur amortissements, dépréciations et provisions (RADP)</td><td class="amt">${money(D.RADP,'fr')}</td></tr>
+          <tr><td class="txt-left">Valeur comptable des éléments d'actif cédés (compte 675)</td><td class="amt">${money(D.VCEAC,'fr')}</td></tr>
+          <tr><td class="txt-left">Produits des cessions d'éléments d'actif (compte 775)</td><td class="amt">${money(D.PC,'fr')}</td></tr>
+          <tr><td class="txt-left">Quote-part de subventions d'investissement virée au résultat (compte 777)</td><td class="amt">${money(D.QP,'fr')}</td></tr>
+      </table></div>`;
+
+      h += `<p style="margin:1.6rem 0 .6rem; font-weight:600; color:var(--navy); text-align:left;">Tableau 2 — Postes du bilan aux 31 décembre N&nbsp;−&nbsp;1 et N</p>`;
+      h += `<div class="exam-table-wrap"><table class="exam-table">
+          <tr><th style="width:52%;">Poste</th><th style="width:24%;">31/12/N&nbsp;−&nbsp;1</th><th style="width:24%;">31/12/N</th></tr>
+          <tr><td class="txt-left">Stocks et en-cours</td><td class="amt">${money(D.S0,'fr')}</td><td class="amt">${money(D.S1,'fr')}</td></tr>
+          <tr><td class="txt-left">Créances clients et autres créances d'exploitation</td><td class="amt">${money(D.C0,'fr')}</td><td class="amt">${money(D.C1,'fr')}</td></tr>
+          <tr><td class="txt-left">Dettes fournisseurs et autres dettes d'exploitation</td><td class="amt">${money(D.P0,'fr')}</td><td class="amt">${money(D.P1,'fr')}</td></tr>
+          <tr><td class="txt-left">Créances hors exploitation (créances diverses, charges constatées d'avance)</td><td class="amt">${money(D.CH0,'fr')}</td><td class="amt">${money(D.CH1,'fr')}</td></tr>
+          <tr><td class="txt-left">Dettes hors exploitation (dette d'impôt sur les sociétés, dettes diverses)</td><td class="amt">${money(D.PH0,'fr')}</td><td class="amt">${money(D.PH1,'fr')}</td></tr>
+          <tr><td class="txt-left">Dettes financières (hors concours bancaires courants)</td><td class="amt">${money(D.DF0,'fr')}</td><td class="amt">${money(D.DF1,'fr')}</td></tr>
+          <tr><td class="txt-left">Disponibilités</td><td class="amt">${money(D.dispo0,'fr')}</td><td class="amt">${money(D.dispo1,'fr')}</td></tr>
+          <tr><td class="txt-left">Concours bancaires courants (soldes créditeurs de banque)</td><td class="amt">${money(D.cbc0,'fr')}</td><td class="amt">${money(D.cbc1,'fr')}</td></tr>
+      </table></div>`;
+
+      h += `<p style="margin:1.6rem 0 .6rem; font-weight:600; color:var(--navy); text-align:left;">Tableau 3 — Opérations d'investissement et de financement de l'exercice N</p>`;
+      h += `<div class="exam-table-wrap"><table class="exam-table">
+          <tr><th style="width:70%;">Opération</th><th style="width:30%;">Montant</th></tr>
+          <tr><td class="txt-left">Acquisitions d'immobilisations incorporelles</td><td class="amt">${money(D.Ainc,'fr')}</td></tr>
+          <tr><td class="txt-left">Acquisitions d'immobilisations corporelles</td><td class="amt">${money(D.Acorp,'fr')}</td></tr>
+          <tr><td class="txt-left">Acquisitions d'immobilisations financières</td><td class="amt">${money(D.Afin,'fr')}</td></tr>
+          <tr><td class="txt-left">Prix de cession des immobilisations corporelles</td><td class="amt">${money(D.PCcorp,'fr')}</td></tr>
+          <tr><td class="txt-left">Prix de cession des immobilisations financières</td><td class="amt">${money(D.PCfin,'fr')}</td></tr>
+          <tr><td class="txt-left">Augmentation de capital de l'exercice, dont ${money(D.AKres,'fr')} par incorporation de réserves</td><td class="amt">${money(D.AK + D.AKres,'fr')}</td></tr>
+          <tr><td class="txt-left">Subventions d'investissement reçues</td><td class="amt">${money(D.SUB,'fr')}</td></tr>
+          <tr><td class="txt-left">Dividendes versés au titre de l'exercice précédent</td><td class="amt">${money(D.DIV,'fr')}</td></tr>
+          <tr><td class="txt-left">Nouveaux emprunts contractés</td><td class="amt">${money(D.EMPnew,'fr')}</td></tr>
+          <tr><td class="txt-left">Remboursements d'emprunts de l'exercice</td><td class="amt">${money(D.EMPrem,'fr')}</td></tr>
+      </table></div>`;
+      return h;
+    },
+    info: function(D) {
+      return `
+        <strong>Hypothèses de travail.</strong> Tous les montants sont exprimés en euros et l'exercice comptable coïncide avec l'année civile. La trésorerie nette est définie comme la différence entre les disponibilités et les concours bancaires courants ; l'entreprise ne détient aucune valeur mobilière de placement. Toutes les acquisitions et cessions d'immobilisations ont été réglées au comptant au cours de l'exercice : il n'existe ni dette sur immobilisations, ni créance sur cession à la clôture. Les subventions d'investissement reçues ont été encaissées et les dividendes décaissés au cours de l'exercice N. Le besoin en fonds de roulement se décompose en une part d'exploitation (stocks, créances et dettes d'exploitation) et une part hors exploitation (créances diverses et dettes hors exploitation, dont la dette d'impôt sur les sociétés) ; aucun autre élément n'est à prendre en compte. On retiendra la présentation du tableau de flux en trois rubriques : activité (FNTA), investissement (FNTI) et financement (FNTF).
+      `;
+    },
+    enonce: function(D) {
+      let h = "";
+      h += `<li><strong>Capacité d'autofinancement.</strong> Calculez la capacité d'autofinancement (CAF) de l'exercice N à partir du résultat net. Justifiez le retraitement des produits des cessions d'éléments d'actif.</li>`;
+      h += `<li><strong>Flux net de trésorerie d'activité.</strong> Déterminez la variation du besoin en fonds de roulement d'exploitation, puis celle du besoin en fonds de roulement hors exploitation, entre les deux exercices. En déduire la variation totale du besoin en fonds de roulement, puis le flux net de trésorerie généré par l'activité (FNTA).</li>`;
+      h += `<li><strong>Flux net de trésorerie d'investissement.</strong> Calculez le flux net de trésorerie lié aux opérations d'investissement (FNTI) et qualifiez la stratégie d'investissement de ${D.prof.name}.</li>`;
+      h += `<li><strong>Flux net de trésorerie de financement.</strong> Calculez le flux net de trésorerie lié aux opérations de financement (FNTF). Attention au traitement de l'augmentation de capital.</li>`;
+      h += `<li><strong>Tableau de flux.</strong> Présentez le tableau de flux de trésorerie complet de l'exercice N et vérifiez la cohérence de la variation obtenue avec les trésoreries d'ouverture et de clôture calculées à partir du bilan.</li>`;
+      h += `<li><strong>Commentaire.</strong> Commentez le tableau obtenu : free cash flow, capacité de remboursement selon ses deux définitions, équilibre entre les trois flux. Formulez une recommandation et indiquez s'il existe un risque de défaut de paiement.</li>`;
+      return h;
+    },
+    sol: function(D) {
+      let s = "";
+      const M = v => money(v, 'fr');
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">1. La capacité d'autofinancement</span>
+        La capacité d'autofinancement est la différence entre les produits encaissables et les charges décaissables : c'est le flux <em>potentiel</em> de trésorerie que l'activité de l'exercice a dégagé, avant prise en compte des décalages de règlement. Calculée à partir du résultat de l'exercice, elle s'obtient en neutralisant les charges et les produits calculés : on ajoute au résultat net les dotations aux amortissements, dépréciations et provisions ainsi que la valeur comptable des éléments d'actif cédés, puis on retire les reprises sur amortissements, dépréciations et provisions, les produits des cessions d'éléments d'actif et la quote-part de subventions d'investissement virée au résultat.
+        <div class="math-formula">\\[\\text{CAF} = \\text{RN} + \\text{DADP} + \\text{VCEAC} - \\text{RADP} - \\text{PCEA} - \\text{QP subv.}\\]</div>
+        Soit numériquement : $\\text{CAF} = ${texI(D.RN)} + ${texI(D.DADP)} + ${texI(D.VCEAC)} - ${texI(D.RADP)} - ${texI(D.PC)} - ${texI(D.QP)} = ${texI(D.CAF)}$ euros.<br><br>
+        Le retraitement des produits des cessions mérite une justification. Ces produits (compte 775) donnent bien lieu à un encaissement, mais le plan comptable général les exclut de la CAF parce qu'ils ne relèvent pas de l'activité courante : ils sont le produit d'une opération d'investissement, et c'est à ce titre qu'ils réapparaîtront à la question 3, dans le flux d'investissement. Les retenir dans la CAF reviendrait à les compter deux fois. Symétriquement, la valeur comptable des éléments cédés est une charge purement calculée, sans décaissement : on la réintègre. C'est la différence entre les deux — ici une ${D.PC >= D.VCEAC ? "plus-value" : "moins-value"} de cession de ${M(Math.abs(D.PC - D.VCEAC))} — qui explique l'écart entre le résultat comptable et la trésorerie réellement dégagée par l'opération.<br><br>
+        On notera l'ampleur de l'écart entre le résultat net (${M(D.RN)}) et la capacité d'autofinancement (${M(D.CAF)}) : ${D.CAF > D.RN ? `la CAF représente ${fmtNb(D.CAF / D.RN, 2)} fois le résultat net, l'essentiel de la différence tenant aux dotations, qui constatent l'usure de l'outil de production sans provoquer aucune sortie de fonds` : `la CAF est inférieure au résultat net, ce qui traduit le poids des produits calculés et des produits de cession dans la formation du bénéfice`}.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">2. Le flux net de trésorerie généré par l'activité</span>
+        La CAF n'est qu'un flux potentiel : elle raisonne en produits et en charges, non en encaissements et en décaissements. Pour passer au flux réel, il faut tenir compte des décalages de règlement, c'est-à-dire de la variation du besoin en fonds de roulement. On en distingue deux composantes. Le <strong>besoin en fonds de roulement d'exploitation</strong> naît du cycle achats-production-ventes — stocks, créances clients, dettes fournisseurs — et croît en principe avec l'activité. Le <strong>besoin en fonds de roulement hors exploitation</strong> regroupe les créances et les dettes étrangères à ce cycle : créances diverses, charges constatées d'avance, dette d'impôt sur les sociétés, dettes diverses. Le premier est structurel, le second erratique ; mais l'un et l'autre pèsent exactement du même poids sur la trésorerie, et c'est bien leur somme qu'il faut retrancher à la CAF.
+        <div class="math-formula">\\[\\Delta \\text{BFRE} = \\Delta \\text{Stocks} + \\Delta \\text{Créances d'exploitation} - \\Delta \\text{Dettes d'exploitation}\\]</div>
+        Les variations d'exploitation de l'exercice s'établissent comme suit : les stocks ${D.dS >= 0 ? "augmentent" : "diminuent"} de ${M(Math.abs(D.dS))} (${texI(D.S1)} − ${texI(D.S0)}), les créances d'exploitation ${D.dC >= 0 ? "augmentent" : "diminuent"} de ${M(Math.abs(D.dC))} et les dettes d'exploitation ${D.dP >= 0 ? "augmentent" : "diminuent"} de ${M(Math.abs(D.dP))}. D'où
+        <div class="math-formula">\\[\\Delta \\text{BFRE} = ${texSign(D.dS)} ${texSign2(D.dC)} ${texSign2(-D.dP)} = ${texI(D.dBFRE)}\\ \\text{euros}\\]</div>
+        Le besoin en fonds de roulement d'exploitation ${D.dBFRE >= 0 ? "s'est donc alourdi" : "s'est donc allégé"} de ${M(Math.abs(D.dBFRE))}, passant de ${M(D.BFRE0)} à ${M(D.BFRE1)}, ce qui ${D.dBFRE >= 0 ? "ponctionne" : "libère"} d'autant la trésorerie. On rapprochera utilement cette évolution de celle de l'activité : le chiffre d'affaires a ${D.gCA >= 0 ? "progressé" : "reculé"} de ${fmtNb(Math.abs(D.gCA) * 100, 1)} % sur l'exercice, ${fillG(D.bfrVsCAFr, D)}.<br><br>
+        Hors exploitation, les créances ${D.dCH >= 0 ? "augmentent" : "diminuent"} de ${M(Math.abs(D.dCH))} et les dettes ${D.dPH >= 0 ? "augmentent" : "diminuent"} de ${M(Math.abs(D.dPH))} :
+        <div class="math-formula">\\[\\Delta \\text{BFRHE} = \\Delta \\text{Créances HE} - \\Delta \\text{Dettes HE} = ${texSign(D.dCH)} ${texSign2(-D.dPH)} = ${texI(D.dBFRHE)}\\ \\text{euros}\\]</div>
+        ${D.dBFRHE > 0
+          ? `Le hors-exploitation constitue donc ici un <strong>emploi</strong> supplémentaire de ${M(D.dBFRHE)}, qui vient s'ajouter au besoin d'exploitation. Une telle évolution provient le plus souvent d'un alourdissement des créances diverses ou, symétriquement, d'un règlement de la dette d'impôt sur les sociétés constatée à la clôture précédente : elle est ponctuelle et ne présage pas de l'exercice suivant.`
+          : `Le hors-exploitation dégage au contraire une <strong>ressource</strong> de ${M(Math.abs(D.dBFRHE))}, qui vient en atténuation du besoin d'exploitation. Le cas est fréquent lorsque la dette d'impôt sur les sociétés s'alourdit à la clôture ou que des créances diverses sont encaissées. Cette ressource est toutefois précaire : elle ne procède d'aucun gain de gestion durable et se retournera mécaniquement à l'exercice suivant.`}
+        ${D.BFRHE0 < 0 && D.BFRHE1 < 0 ? `On observera d'ailleurs que le besoin hors exploitation est structurellement négatif (${M(D.BFRHE0)} puis ${M(D.BFRHE1)}) : les dettes hors exploitation excèdent les créances correspondantes, si bien que cette masse finance l'entreprise au lieu de la ponctionner.` : `Le besoin hors exploitation passe de ${M(D.BFRHE0)} à ${M(D.BFRHE1)}.`}<br><br>
+        La variation totale du besoin en fonds de roulement s'établit dès lors à
+        <div class="math-formula">\\[\\Delta \\text{BFR} = \\Delta \\text{BFRE} + \\Delta \\text{BFRHE} = ${texI(D.dBFRE)} ${texSign2(D.dBFRHE)} = ${texI(D.dBFR)}\\ \\text{euros}\\]</div>
+        Le flux net de trésorerie généré par l'activité en découle :
+        <div class="math-formula">\\[\\text{FNTA} = \\text{CAF} - \\Delta \\text{BFR} = ${texI(D.CAF)} - (${texI(D.dBFR)}) = ${texI(D.FNTA)}\\ \\text{euros}\\]</div>
+        ${D.FNTA > 0
+          ? `Le flux d'activité est positif : une fois financés les décalages d'exploitation, le cycle courant dégage ${M(D.FNTA)} de trésorerie disponible pour investir, rembourser et rémunérer les apporteurs de capitaux. C'est la condition première de la solidité financière — une entreprise peut survivre à un exercice déficitaire, rarement à une activité qui consomme durablement de la trésorerie.`
+          : `Le flux d'activité est <strong>négatif</strong> : malgré une capacité d'autofinancement de ${M(D.CAF)}, l'alourdissement du besoin en fonds de roulement absorbe davantage que ce que l'activité dégage. L'exploitation, loin de financer l'entreprise, la ponctionne de ${M(Math.abs(D.FNTA))} — situation typique d'une croissance mal maîtrisée, où le développement du chiffre d'affaires se paie d'une immobilisation croissante de trésorerie dans les stocks et le crédit client.`}
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">3. Le flux net de trésorerie d'investissement</span>
+        Le flux d'investissement retrace les décisions qui font évoluer l'actif immobilisé : les décaissements liés aux acquisitions d'une part, les encaissements liés aux cessions d'autre part. Les cessions sont retenues pour leur <em>prix de cession</em>, c'est-à-dire pour le flux de trésorerie effectivement encaissé, et non pour la valeur comptable des biens sortis ou pour la plus-value dégagée.
+        <div class="math-formula">\\[\\text{FNTI} = -\\left(${texI(D.Ainc)} + ${texI(D.Acorp)} + ${texI(D.Afin)}\\right) + \\left(${texI(D.PCcorp)} + ${texI(D.PCfin)}\\right) = ${texI(D.FNTI)}\\ \\text{euros}\\]</div>
+        Les investissements bruts de l'exercice s'élèvent donc à ${M(D.INV)} et les cessions à ${M(D.PC)}, soit un effort net d'investissement de ${M(Math.abs(D.FNTI))}. On vérifie au passage la cohérence de l'énoncé : le total des prix de cession (${texI(D.PCcorp)} + ${texI(D.PCfin)} = ${texI(D.PC)}) est bien égal au montant du compte 775 retiré de la CAF à la question 1.<br><br>
+        <strong>Qualification de la stratégie.</strong> ${D.stratFR} Rapportés aux dotations aux amortissements de l'exercice (${M(D.DADP)}), les investissements bruts représentent un taux de renouvellement de l'outil productif de ${fmtNb(D.rInv * 100, 0)} %${D.rInv >= 1 ? ", ce qui traduit un renouvellement au moins intégral des capacités" : ", inférieur à 100 % : l'entreprise n'a pas remplacé l'intégralité de ce que l'usure de son outil a consommé"}.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">4. Le flux net de trésorerie de financement</span>
+        Le flux de financement regroupe les encaissements provenant des apporteurs de capitaux et les décaissements qui les rémunèrent ou les remboursent. On distingue les flux liés aux capitaux propres — augmentation de capital par apports nouveaux, subventions d'investissement reçues, dividendes versés — et les flux liés aux capitaux étrangers — emprunts nouveaux et remboursements.<br><br>
+        <strong>Le point de vigilance</strong> porte sur l'augmentation de capital. Celle-ci s'élève à ${M(D.AK + D.AKres)} au total, mais ${M(D.AKres)} proviennent d'une incorporation de réserves : cette opération est un simple jeu d'écritures au sein des capitaux propres, qui ne procure aucune trésorerie nouvelle à l'entreprise. Seuls les ${M(D.AK)} d'apports nouveaux constituent un flux de trésorerie.
+        <div class="math-formula">\\[\\text{FNTF} = ${texI(D.AK)} + ${texI(D.SUB)} - ${texI(D.DIV)} + ${texI(D.EMPnew)} - ${texI(D.EMPrem)} = ${texI(D.FNTF)}\\ \\text{euros}\\]</div>
+        Les flux issus des capitaux propres ressortent à ${M(D.FNTFcp)} et ceux issus des capitaux étrangers à ${M(D.FNTFce)}. On vérifie la cohérence avec le bilan : les dettes financières passent de ${M(D.DF0)} à ${M(D.DF1)}, soit une variation de ${M(D.DF1 - D.DF0)} qui correspond exactement aux nouveaux emprunts diminués des remboursements (${texI(D.EMPnew)} − ${texI(D.EMPrem)}).
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">5. Le tableau de flux de trésorerie de l'exercice N</span>
+        ${flowTable(D, 'fr')}
+        <strong>Vérification.</strong> La trésorerie nette se définit comme la différence entre les disponibilités et les concours bancaires courants. À l'ouverture, elle s'établit à $${texI(D.dispo0)} - ${texI(D.cbc0)} = ${texI(D.T0)}$ euros ; à la clôture, à $${texI(D.dispo1)} - ${texI(D.cbc1)} = ${texI(D.T1)}$ euros. La variation constatée au bilan, soit ${M(D.dT)}, est bien égale à la somme des trois flux :
+        <div class="math-formula">\\[\\text{FNTA} + \\text{FNTI} + \\text{FNTF} = ${texI(D.FNTA)} ${texSign2(D.FNTI)} ${texSign2(D.FNTF)} = ${texI(D.dT)}\\]</div>
+        ${chartSVG(D, 'fr')}
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">6. Commentaire</span>
+        <strong>La trésorerie.</strong> L'entreprise ouvre l'exercice avec une trésorerie nette ${D.T0 >= 0 ? "positive" : "négative"} de ${M(Math.abs(D.T0))} et le clôt avec une trésorerie ${D.T1 >= 0 ? "positive" : "négative"} de ${M(Math.abs(D.T1))}, soit ${D.dT >= 0 ? "une amélioration" : "une dégradation"} de ${M(Math.abs(D.dT))}. ${D.T1 < 0 ? "Une trésorerie de clôture négative signifie que l'exploitation courante est financée par des concours bancaires à court terme, révocables et coûteux : c'est la position la plus fragile qui soit, puisqu'elle expose l'entreprise à un retrait unilatéral de son banquier." : "La trésorerie de clôture est positive, ce qui place l'entreprise à l'abri d'une rupture de liquidité immédiate."}<br><br>
+        <strong>Le free cash flow.</strong> Somme du flux d'activité et du flux d'investissement, il mesure la trésorerie que l'entreprise dégage une fois son outil de production entretenu et développé — celle qui reste disponible pour se désendetter, rémunérer ses actionnaires ou constituer une réserve :
+        <div class="math-formula">\\[\\text{FCF} = \\text{FNTA} + \\text{FNTI} = ${texI(D.FNTA)} ${texSign2(D.FNTI)} = ${texI(D.FCF)}\\ \\text{euros}\\]</div>
+        ${D.FCF >= 0
+          ? `Il est <strong>positif</strong> : l'activité finance intégralement les investissements de l'exercice et laisse encore ${M(D.FCF)} de marge de manœuvre. L'entreprise est autonome au sens où son cycle d'exploitation suffit à porter sa croissance.`
+          : `Il est <strong>négatif</strong> à hauteur de ${M(Math.abs(D.FCF))} : l'activité ne suffit pas à financer l'effort d'investissement, lequel doit donc être couvert par des ressources externes — endettement, apports nouveaux — ou par un prélèvement sur la trésorerie existante. Ce n'est pas anormal dans une phase de croissance, mais cela ne peut se prolonger indéfiniment.`}<br><br>
+        <strong>La capacité de remboursement.</strong> Deux lectures complémentaires sont admises. La première rapporte les remboursements d'emprunts de l'exercice au flux d'activité : $\\frac{${texI(D.EMPrem)}}{${texI(D.FNTA)}} = ${D.FNTA > 0 ? texD(D.ratio1 * 100, 1) + "\\,\\%" : "\\text{non significatif}"}$${D.FNTA > 0 ? `, à comparer au seuil d'alerte de 50 % : ${D.ratio1 <= 0.5 ? "le service de la dette absorbe moins de la moitié du flux d'activité, ce qui laisse une marge confortable" : "le service de la dette absorbe plus de la moitié du flux d'activité, ce qui ne laisse qu'une marge étroite pour investir ou absorber un retournement"}` : ` — le ratio perd son sens dès lors que le flux d'activité est négatif, ce qui constitue en soi le signal d'alerte le plus net`}. La seconde rapporte l'encours de dettes financières à la capacité d'autofinancement : $\\frac{${texI(D.DF1)}}{${texI(D.CAF)}} = ${texD(D.ratio2, 2)}$, soit ${fmtNb(D.ratio2, 2)} années de CAF nécessaires pour rembourser l'intégralité de la dette, ${D.ratio2 <= 4 ? "en deçà du seuil critique de quatre années : la capacité d'endettement de l'entreprise reste intacte" : "au-delà du seuil critique de quatre années : la capacité d'endettement est saturée et un nouveau concours bancaire serait difficile à obtenir"}.<br><br>
+        <strong>L'équilibre d'ensemble.</strong> ${D.equilibreFR}<br><br>
+        <strong>Recommandation.</strong> ${D.recoFR}
+      </div>`;
+
+      s += `<div class="persp-box">
+        <span class="sol-sub">Pour aller plus loin — un état facultatif en France, obligatoire ailleurs</span>
+        Le tableau de flux de trésorerie n'appartient pas aux documents de synthèse obligatoires des comptes individuels français : le plan comptable général se borne à en autoriser la présentation en annexe, à titre facultatif. Il devient en revanche obligatoire pour les sociétés qui établissent des comptes consolidés — le règlement ANC n° 2020-01 le range, avec le tableau de variation des capitaux propres, parmi les informations que doit contenir l'annexe des comptes consolidés — et pour les sociétés cotées appliquant les normes internationales.
+        <p style="margin-top:.8rem;">La différence de statut est significative. Sous IAS 7, le tableau des flux de trésorerie est un <em>état financier primaire</em>, présenté au même rang que le bilan et le compte de résultat ; en normes françaises, il demeure une information d'annexe. Cette hiérarchie reflète deux conceptions de l'information comptable : la tradition française, patrimoniale, fait du bilan le document central, tandis que la logique anglo-saxonne, orientée vers l'investisseur, privilégie la capacité de l'entité à générer de la trésorerie. La filiation historique du modèle français est d'ailleurs claire : l'avis n° 30 de l'Ordre des experts-comptables, publié en 1997, a servi de matrice aux textes ultérieurs.</p>
+        <p style="margin-top:.8rem;">Deux méthodes de construction coexistent pour le flux d'activité. La <em>méthode directe</em> recense les encaissements et décaissements réels — encaissements clients, décaissements fournisseurs, salaires versés, impôts payés. La <em>méthode indirecte</em>, celle retenue dans cet exercice, part du résultat ou de la CAF et neutralise les éléments sans incidence sur la trésorerie ainsi que les décalages de règlement. IAS 7 encourage la méthode directe, plus lisible pour l'utilisateur, mais la méthode indirecte reste très largement dominante en pratique : elle se reconstitue à partir des seuls états de synthèse, sans retraiter la comptabilité auxiliaire. Les deux méthodes aboutissent naturellement au même flux d'activité.</p>
+        <p style="margin-top:.8rem;">Un dernier point mérite attention : le classement des intérêts et des dividendes. IAS 7 laisse une latitude — les intérêts versés peuvent figurer en activité ou en financement, les dividendes reçus en activité ou en investissement — dès lors que le choix est appliqué de façon permanente. Cette souplesse nuit à la comparabilité entre émetteurs : deux entreprises identiques peuvent afficher des flux d'activité sensiblement différents. Dans la présentation française retenue ici, les intérêts versés sont inclus dans la CAF, donc dans le flux d'activité.</p>
+      </div>`;
+
+      s += `<div class="persp-box">
+        <span class="sol-sub">Pour aller plus loin — ce que la trésorerie dit du résultat</span>
+        L'intérêt du tableau de flux tient à ce qu'il échappe pour l'essentiel aux conventions comptables. Le résultat dépend de choix — durées d'amortissement, niveau des dépréciations, rattachement des produits à l'exercice, activation ou non des frais de développement — dont la variation de trésorerie est indépendante : les liquidités ne se décrètent pas. C'est la raison pour laquelle l'analyse financière moderne accorde une place croissante à cet état, et pourquoi les défaillances d'entreprises apparemment rentables ont cessé d'être une curiosité.
+        <p style="margin-top:.8rem;">L'écart entre le résultat net et le flux d'activité porte d'ailleurs un nom en recherche comptable : ce sont les <em>accruals</em>, c'est-à-dire la composante non monétaire du résultat. La littérature empirique, depuis les travaux de Sloan (1996), a établi que la part du résultat expliquée par les accruals se révèle nettement moins persistante que sa composante monétaire — un résultat élevé et durablement adossé à un flux d'activité faible constitue donc un signal d'alerte, et l'un des indicateurs les plus robustes de manipulation comptable. Dans notre cas, le résultat net de ${M(D.RN)} s'accompagne d'un flux d'activité de ${M(D.FNTA)}, ${D.FNTA >= D.RN ? "soit une conversion en trésorerie supérieure à l'unité : le résultat est solidement adossé à des flux réels" : "soit une conversion en trésorerie inférieure à l'unité : une partie du bénéfice n'a pas encore pris la forme de liquidités"}.</p>
+        <p style="margin-top:.8rem;">Ces indicateurs ne sont pas pour autant inviolables. Le flux d'activité d'un exercice peut être flatté par des décisions de fin d'année dépourvues de contenu économique : retarder de quelques jours le règlement des fournisseurs, accélérer les relances clients, différer une commande de stocks, céder un poste de créances par affacturage. Un flux d'activité doit donc s'apprécier sur plusieurs exercices, et sa décomposition entre CAF et variation du BFR examinée avec autant d'attention que son montant. Une CAF stable accompagnée d'un BFR qui dérive raconte une tout autre histoire qu'un flux d'activité équivalent obtenu par une CAF en forte hausse.</p>
+      </div>`;
+
+      return s;
+    }
+  },
+
+  en: {
+    "htmlLang": "en",
+    "title": "Accounting Simulator - Cash Flow Statement",
+    "locale": "en-GB",
+    "k-badge": "ACCOUNTING AND FINANCIAL INFORMATION",
+    "k-h1": "The cash flow statement",
+    "k-sub": "© Thomas Hossen – Version of 18 September 2026",
+    "k-seed": "Reproducibility seed",
+    "k-gen": "Generate",
+    "k-welcome": "Set the parameters and click Generate to create a new exercise.",
+    "k-seedbadge": "Active seed:",
+    "k-tag-ex": "Statement",
+    "k-cardtitle": "Building and commenting on a cash flow statement",
+    "k-tag-sol": "Solution",
+    "k-cardtitle2": "Building and commenting on a cash flow statement",
+    "k-work": "Required work",
+    "showSol": "Show solution",
+    "hideSol": "Hide solution",
+    thousands: ",",
+    decimal: ".",
+
+    cur: v => fmtSigned(v, 'en'),
+    chartTitle: "How cash was formed during year N",
+    chartLabels: { T0: "Cash 01/01", A: "Operating", I: "Investing", F: "Financing", T1: "Cash 31/12" },
+    chartNote: "Green bars feed cash, red bars drain it.",
+
+    context: function(D) {
+      const p = D.prof.en;
+      return `
+        ${D.prof.name} is ${p.secteur} whose customers are drawn mainly from ${p.marche}. Its revenue, net of tax, rose from ${money(D.CA0,'en')} in year N&nbsp;−&nbsp;1 to ${money(D.CA1,'en')} in year N. The finance department, currently preparing a funding request for its banking partners, wants to understand why the company's cash position ${D.dT > 0 ? "improved" : "deteriorated"} by ${money(Math.abs(D.dT),'en')} during year N even though the income statement shows a profit of ${money(D.RN,'en')}. It provides you with the following information, all amounts in euros.
+      `;
+    },
+    table: function(D) {
+      let h = "";
+      h += `<p style="margin:1.4rem 0 .6rem; font-weight:600; color:var(--navy); text-align:left;">Table 1 — Extract from the year N income statement</p>`;
+      h += `<div class="exam-table-wrap"><table class="exam-table">
+          <tr><th style="width:70%;">Item</th><th style="width:30%;">Amount</th></tr>
+          <tr><td class="txt-left">Net income for the year</td><td class="amt">${money(D.RN,'en')}</td></tr>
+          <tr><td class="txt-left">Depreciation, amortisation and provision charges</td><td class="amt">${money(D.DADP,'en')}</td></tr>
+          <tr><td class="txt-left">Reversals of depreciation, amortisation and provisions</td><td class="amt">${money(D.RADP,'en')}</td></tr>
+          <tr><td class="txt-left">Net book value of assets disposed of (account 675)</td><td class="amt">${money(D.VCEAC,'en')}</td></tr>
+          <tr><td class="txt-left">Proceeds from disposals of fixed assets (account 775)</td><td class="amt">${money(D.PC,'en')}</td></tr>
+          <tr><td class="txt-left">Investment grants released to income (account 777)</td><td class="amt">${money(D.QP,'en')}</td></tr>
+      </table></div>`;
+
+      h += `<p style="margin:1.6rem 0 .6rem; font-weight:600; color:var(--navy); text-align:left;">Table 2 — Balance sheet items at 31 December N&nbsp;−&nbsp;1 and N</p>`;
+      h += `<div class="exam-table-wrap"><table class="exam-table">
+          <tr><th style="width:52%;">Item</th><th style="width:24%;">31/12/N&nbsp;−&nbsp;1</th><th style="width:24%;">31/12/N</th></tr>
+          <tr><td class="txt-left">Inventories and work in progress</td><td class="amt">${money(D.S0,'en')}</td><td class="amt">${money(D.S1,'en')}</td></tr>
+          <tr><td class="txt-left">Trade and other operating receivables</td><td class="amt">${money(D.C0,'en')}</td><td class="amt">${money(D.C1,'en')}</td></tr>
+          <tr><td class="txt-left">Trade and other operating payables</td><td class="amt">${money(D.P0,'en')}</td><td class="amt">${money(D.P1,'en')}</td></tr>
+          <tr><td class="txt-left">Non-operating receivables (sundry receivables, prepaid expenses)</td><td class="amt">${money(D.CH0,'en')}</td><td class="amt">${money(D.CH1,'en')}</td></tr>
+          <tr><td class="txt-left">Non-operating payables (corporate income tax payable, sundry payables)</td><td class="amt">${money(D.PH0,'en')}</td><td class="amt">${money(D.PH1,'en')}</td></tr>
+          <tr><td class="txt-left">Financial debt (excluding bank overdrafts)</td><td class="amt">${money(D.DF0,'en')}</td><td class="amt">${money(D.DF1,'en')}</td></tr>
+          <tr><td class="txt-left">Cash at bank and in hand</td><td class="amt">${money(D.dispo0,'en')}</td><td class="amt">${money(D.dispo1,'en')}</td></tr>
+          <tr><td class="txt-left">Bank overdrafts</td><td class="amt">${money(D.cbc0,'en')}</td><td class="amt">${money(D.cbc1,'en')}</td></tr>
+      </table></div>`;
+
+      h += `<p style="margin:1.6rem 0 .6rem; font-weight:600; color:var(--navy); text-align:left;">Table 3 — Investing and financing transactions of year N</p>`;
+      h += `<div class="exam-table-wrap"><table class="exam-table">
+          <tr><th style="width:70%;">Transaction</th><th style="width:30%;">Amount</th></tr>
+          <tr><td class="txt-left">Acquisitions of intangible assets</td><td class="amt">${money(D.Ainc,'en')}</td></tr>
+          <tr><td class="txt-left">Acquisitions of tangible assets</td><td class="amt">${money(D.Acorp,'en')}</td></tr>
+          <tr><td class="txt-left">Acquisitions of financial assets</td><td class="amt">${money(D.Afin,'en')}</td></tr>
+          <tr><td class="txt-left">Disposal price of tangible assets</td><td class="amt">${money(D.PCcorp,'en')}</td></tr>
+          <tr><td class="txt-left">Disposal price of financial assets</td><td class="amt">${money(D.PCfin,'en')}</td></tr>
+          <tr><td class="txt-left">Capital increase during the year, of which ${money(D.AKres,'en')} by capitalisation of reserves</td><td class="amt">${money(D.AK + D.AKres,'en')}</td></tr>
+          <tr><td class="txt-left">Investment grants received</td><td class="amt">${money(D.SUB,'en')}</td></tr>
+          <tr><td class="txt-left">Dividends paid in respect of the previous year</td><td class="amt">${money(D.DIV,'en')}</td></tr>
+          <tr><td class="txt-left">New borrowings raised</td><td class="amt">${money(D.EMPnew,'en')}</td></tr>
+          <tr><td class="txt-left">Repayments of borrowings during the year</td><td class="amt">${money(D.EMPrem,'en')}</td></tr>
+      </table></div>`;
+      return h;
+    },
+    info: function(D) {
+      return `
+        <strong>Working assumptions.</strong> All amounts are in euros and the financial year coincides with the calendar year. Net cash is defined as cash at bank and in hand less bank overdrafts; the company holds no marketable securities. All acquisitions and disposals of fixed assets were settled in cash during the year: there are neither payables on fixed assets nor receivables on disposals at the closing date. Investment grants were received and dividends paid in cash during year N. Working capital requirement splits into an operating component (inventories, operating receivables and payables) and a non-operating component (sundry receivables and non-operating payables, including corporate income tax payable); no other item is to be taken into account. The statement is to be presented in three sections: operating (FNTA), investing (FNTI) and financing (FNTF).
+      `;
+    },
+    enonce: function(D) {
+      let h = "";
+      h += `<li><strong>Cash flow capacity.</strong> Compute the <em>capacité d'autofinancement</em> (CAF) for year N starting from net income. Justify the treatment of the proceeds from disposals of fixed assets.</li>`;
+      h += `<li><strong>Net operating cash flow.</strong> Determine the change in operating working capital requirement, then that of non-operating working capital requirement, between the two years. Deduce the total change in working capital requirement, then the net cash flow generated by operating activities (FNTA).</li>`;
+      h += `<li><strong>Net investing cash flow.</strong> Compute the net cash flow from investing activities (FNTI) and characterise ${D.prof.name}'s investment strategy.</li>`;
+      h += `<li><strong>Net financing cash flow.</strong> Compute the net cash flow from financing activities (FNTF). Pay attention to the treatment of the capital increase.</li>`;
+      h += `<li><strong>Cash flow statement.</strong> Present the full cash flow statement for year N and check that the resulting change is consistent with the opening and closing cash positions derived from the balance sheet.</li>`;
+      h += `<li><strong>Commentary.</strong> Comment on the statement obtained: free cash flow, debt service capacity under both of its definitions, balance between the three flows. Make a recommendation and state whether there is a risk of payment default.</li>`;
+      return h;
+    },
+    sol: function(D) {
+      let s = "";
+      const M = v => money(v, 'en');
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">1. Cash flow capacity (CAF)</span>
+        The <em>capacité d'autofinancement</em> is the difference between cash-generating income and cash-absorbing expenses: it is the <em>potential</em> cash flow generated by the year's activity, before any settlement lags are taken into account. Computed from net income, it is obtained by neutralising non-cash expenses and income: depreciation, amortisation and provision charges are added back, as is the net book value of assets disposed of, while reversals of depreciation and provisions, proceeds from disposals of fixed assets and investment grants released to income are deducted.
+        <div class="math-formula">\\[\\text{CAF} = \\text{Net income} + \\text{Depreciation} + \\text{NBV of disposals} - \\text{Reversals} - \\text{Disposal proceeds} - \\text{Grants released}\\]</div>
+        Numerically: $\\text{CAF} = ${texI(D.RN)} + ${texI(D.DADP)} + ${texI(D.VCEAC)} - ${texI(D.RADP)} - ${texI(D.PC)} - ${texI(D.QP)} = ${texI(D.CAF)}$ euros.<br><br>
+        The treatment of disposal proceeds deserves a justification. Those proceeds (account 775) do give rise to a cash inflow, but the French general accounting plan excludes them from the CAF because they do not arise from ordinary operations: they are the product of an investing decision, and it is on that basis that they will reappear in question 3, within the investing cash flow. Keeping them in the CAF would amount to counting them twice. Symmetrically, the net book value of the assets disposed of is a purely accounting charge involving no cash outflow, and is therefore added back. The difference between the two — here a disposal ${D.PC >= D.VCEAC ? "gain" : "loss"} of ${M(Math.abs(D.PC - D.VCEAC))} — is precisely what explains the gap between accounting profit and the cash actually generated by the transaction.<br><br>
+        The gap between net income (${M(D.RN)}) and cash flow capacity (${M(D.CAF)}) is worth noting: ${D.CAF > D.RN ? `the CAF is ${fmtNb(D.CAF / D.RN, 2)} times net income, most of the difference coming from depreciation charges, which record the wear and tear of productive assets without any outflow of funds` : `the CAF is lower than net income, which reflects the weight of non-cash income and disposal proceeds in the formation of the profit`}.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">2. Net operating cash flow</span>
+        The CAF is only a potential flow: it reasons in terms of income and expenses, not of receipts and payments. To move to the actual flow, settlement lags must be taken into account — that is, the change in working capital requirement. Two components are distinguished. <strong>Operating working capital requirement</strong> arises from the purchasing-production-sales cycle — inventories, trade receivables, trade payables — and in principle grows with activity. <strong>Non-operating working capital requirement</strong> gathers the receivables and payables that lie outside that cycle: sundry receivables, prepaid expenses, corporate income tax payable, sundry payables. The first is structural, the second erratic; but both weigh exactly the same on cash, and it is indeed their sum that must be deducted from the CAF.
+        <div class="math-formula">\\[\\Delta \\text{WCR}_{\\text{op}} = \\Delta \\text{Inventories} + \\Delta \\text{Operating receivables} - \\Delta \\text{Operating payables}\\]</div>
+        The operating changes over the year are as follows: inventories ${D.dS >= 0 ? "rose" : "fell"} by ${M(Math.abs(D.dS))} (${texI(D.S1)} − ${texI(D.S0)}), operating receivables ${D.dC >= 0 ? "rose" : "fell"} by ${M(Math.abs(D.dC))} and operating payables ${D.dP >= 0 ? "rose" : "fell"} by ${M(Math.abs(D.dP))}. Hence
+        <div class="math-formula">\\[\\Delta \\text{WCR}_{\\text{op}} = ${texSign(D.dS)} ${texSign2(D.dC)} ${texSign2(-D.dP)} = ${texI(D.dBFRE)}\\ \\text{euros}\\]</div>
+        Operating working capital requirement therefore ${D.dBFRE >= 0 ? "increased" : "decreased"} by ${M(Math.abs(D.dBFRE))}, moving from ${M(D.BFRE0)} to ${M(D.BFRE1)}, which ${D.dBFRE >= 0 ? "drains" : "releases"} cash accordingly. It is worth relating this to the level of activity: revenue ${D.gCA >= 0 ? "grew" : "fell"} by ${fmtNb(Math.abs(D.gCA) * 100, 1)}% over the year, ${fillG(D.bfrVsCAEn, D)}.<br><br>
+        On the non-operating side, receivables ${D.dCH >= 0 ? "rose" : "fell"} by ${M(Math.abs(D.dCH))} and payables ${D.dPH >= 0 ? "rose" : "fell"} by ${M(Math.abs(D.dPH))}:
+        <div class="math-formula">\\[\\Delta \\text{WCR}_{\\text{non-op}} = \\Delta \\text{Non-op. receivables} - \\Delta \\text{Non-op. payables} = ${texSign(D.dCH)} ${texSign2(-D.dPH)} = ${texI(D.dBFRHE)}\\ \\text{euros}\\]</div>
+        ${D.dBFRHE > 0
+          ? `The non-operating component is therefore an additional <strong>use</strong> of funds of ${M(D.dBFRHE)}, adding to the operating requirement. Such a move usually comes from a rise in sundry receivables or, symmetrically, from the settlement of the corporate income tax liability recognised at the previous year end: it is a one-off and says nothing about the following year.`
+          : `The non-operating component, by contrast, releases a <strong>resource</strong> of ${M(Math.abs(D.dBFRHE))}, offsetting part of the operating requirement. This is common when the corporate income tax liability grows at the year end or when sundry receivables are collected. The resource is nonetheless precarious: it stems from no lasting management gain and will mechanically reverse next year.`}
+        ${D.BFRHE0 < 0 && D.BFRHE1 < 0 ? `Note also that the non-operating requirement is structurally negative (${M(D.BFRHE0)} then ${M(D.BFRHE1)}): non-operating payables exceed the corresponding receivables, so that this block finances the company rather than draining it.` : `The non-operating requirement moves from ${M(D.BFRHE0)} to ${M(D.BFRHE1)}.`}<br><br>
+        The total change in working capital requirement is therefore
+        <div class="math-formula">\\[\\Delta \\text{WCR} = \\Delta \\text{WCR}_{\\text{op}} + \\Delta \\text{WCR}_{\\text{non-op}} = ${texI(D.dBFRE)} ${texSign2(D.dBFRHE)} = ${texI(D.dBFR)}\\ \\text{euros}\\]</div>
+        The net cash flow from operating activities follows:
+        <div class="math-formula">\\[\\text{FNTA} = \\text{CAF} - \\Delta \\text{WCR} = ${texI(D.CAF)} - (${texI(D.dBFR)}) = ${texI(D.FNTA)}\\ \\text{euros}\\]</div>
+        ${D.FNTA > 0
+          ? `Operating cash flow is positive: once operating lags have been financed, the ordinary cycle generates ${M(D.FNTA)} of cash available to invest, repay debt and remunerate capital providers. This is the first condition of financial soundness — a company can survive a loss-making year, rarely an activity that consumes cash year after year.`
+          : `Operating cash flow is <strong>negative</strong>: despite a cash flow capacity of ${M(D.CAF)}, the increase in working capital requirement absorbs more than the activity generates. Far from financing the company, operations drain ${M(Math.abs(D.FNTA))} from it — the typical picture of poorly controlled growth, where rising revenue is paid for by an ever-growing amount of cash tied up in inventories and customer credit.`}
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">3. Net investing cash flow</span>
+        The investing flow records the decisions that change fixed assets: cash outflows on acquisitions on the one hand, cash inflows from disposals on the other. Disposals are taken at their <em>selling price</em>, that is, at the cash actually received, and not at the net book value of the assets removed or at the gain realised.
+        <div class="math-formula">\\[\\text{FNTI} = -\\left(${texI(D.Ainc)} + ${texI(D.Acorp)} + ${texI(D.Afin)}\\right) + \\left(${texI(D.PCcorp)} + ${texI(D.PCfin)}\\right) = ${texI(D.FNTI)}\\ \\text{euros}\\]</div>
+        Gross investment for the year therefore amounts to ${M(D.INV)} and disposals to ${M(D.PC)}, that is a net investment effort of ${M(Math.abs(D.FNTI))}. This also confirms the internal consistency of the data: total disposal prices (${texI(D.PCcorp)} + ${texI(D.PCfin)} = ${texI(D.PC)}) exactly match the amount of account 775 deducted from the CAF in question 1.<br><br>
+        <strong>Characterising the strategy.</strong> ${D.stratEN} Measured against the year's depreciation charges (${M(D.DADP)}), gross investment represents a replacement rate of ${fmtNb(D.rInv * 100, 0)}%${D.rInv >= 1 ? ", which indicates at least full renewal of capacity" : ", below 100%: the company has not replaced everything that the wear and tear of its productive assets consumed"}.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">4. Net financing cash flow</span>
+        The financing flow gathers the inflows provided by capital providers and the outflows that remunerate or repay them. A distinction is drawn between flows relating to equity — capital increases in cash, investment grants received, dividends paid — and flows relating to borrowed capital — new borrowings and repayments.<br><br>
+        <strong>The point to watch</strong> is the capital increase. It amounts to ${M(D.AK + D.AKres)} in total, but ${M(D.AKres)} arises from a capitalisation of reserves: that transaction is a mere reclassification within equity and brings no new cash into the company. Only the ${M(D.AK)} of fresh contributions constitutes a cash flow.
+        <div class="math-formula">\\[\\text{FNTF} = ${texI(D.AK)} + ${texI(D.SUB)} - ${texI(D.DIV)} + ${texI(D.EMPnew)} - ${texI(D.EMPrem)} = ${texI(D.FNTF)}\\ \\text{euros}\\]</div>
+        Flows from equity amount to ${M(D.FNTFcp)} and flows from borrowed capital to ${M(D.FNTFce)}. Consistency with the balance sheet can be checked: financial debt moves from ${M(D.DF0)} to ${M(D.DF1)}, a change of ${M(D.DF1 - D.DF0)} which exactly matches new borrowings less repayments (${texI(D.EMPnew)} − ${texI(D.EMPrem)}).
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">5. The year N cash flow statement</span>
+        ${flowTable(D, 'en')}
+        <strong>Check.</strong> Net cash is defined as cash at bank and in hand less bank overdrafts. At opening it stands at $${texI(D.dispo0)} - ${texI(D.cbc0)} = ${texI(D.T0)}$ euros; at closing, at $${texI(D.dispo1)} - ${texI(D.cbc1)} = ${texI(D.T1)}$ euros. The change recorded in the balance sheet, ${M(D.dT)}, is indeed equal to the sum of the three flows:
+        <div class="math-formula">\\[\\text{FNTA} + \\text{FNTI} + \\text{FNTF} = ${texI(D.FNTA)} ${texSign2(D.FNTI)} ${texSign2(D.FNTF)} = ${texI(D.dT)}\\]</div>
+        ${chartSVG(D, 'en')}
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">6. Commentary</span>
+        <strong>Cash position.</strong> The company opens the year with a ${D.T0 >= 0 ? "positive" : "negative"} net cash position of ${M(Math.abs(D.T0))} and closes it with a ${D.T1 >= 0 ? "positive" : "negative"} position of ${M(Math.abs(D.T1))}, that is ${D.dT >= 0 ? "an improvement" : "a deterioration"} of ${M(Math.abs(D.dT))}. ${D.T1 < 0 ? "A negative closing cash position means that ordinary operations are being financed by short-term bank facilities, which are revocable and costly: this is the most fragile position there is, since it exposes the company to a unilateral withdrawal by its banker." : "The closing cash position is positive, which puts the company beyond the reach of an immediate liquidity squeeze."}<br><br>
+        <strong>Free cash flow.</strong> The sum of operating and investing flows measures the cash the company generates once its productive base has been maintained and developed — the cash left to deleverage, remunerate shareholders or build a reserve:
+        <div class="math-formula">\\[\\text{FCF} = \\text{FNTA} + \\text{FNTI} = ${texI(D.FNTA)} ${texSign2(D.FNTI)} = ${texI(D.FCF)}\\ \\text{euros}\\]</div>
+        ${D.FCF >= 0
+          ? `It is <strong>positive</strong>: operations fully finance the year's investment and still leave ${M(D.FCF)} of headroom. The company is self-sufficient in the sense that its operating cycle is enough to carry its growth.`
+          : `It is <strong>negative</strong>, by ${M(Math.abs(D.FCF))}: operations are not sufficient to finance the investment effort, which must therefore be covered by external resources — borrowing, fresh equity — or by drawing on existing cash. That is not abnormal in a growth phase, but it cannot continue indefinitely.`}<br><br>
+        <strong>Debt service capacity.</strong> Two complementary readings are accepted. The first relates the year's loan repayments to operating cash flow: $\\frac{${texI(D.EMPrem)}}{${texI(D.FNTA)}} = ${D.FNTA > 0 ? texD(D.ratio1 * 100, 1) + "\\,\\%" : "\\text{not meaningful}"}$${D.FNTA > 0 ? `, to be compared with the 50% alert threshold: ${D.ratio1 <= 0.5 ? "debt service absorbs less than half of operating cash flow, which leaves comfortable headroom" : "debt service absorbs more than half of operating cash flow, leaving only a narrow margin to invest or to absorb a downturn"}` : ` — the ratio loses its meaning once operating cash flow is negative, which is in itself the clearest warning signal`}. The second relates outstanding financial debt to cash flow capacity: $\\frac{${texI(D.DF1)}}{${texI(D.CAF)}} = ${texD(D.ratio2, 2)}$, that is ${fmtNb(D.ratio2, 2)} years of CAF needed to repay the whole debt, ${D.ratio2 <= 4 ? "below the critical threshold of four years: the company's borrowing capacity remains intact" : "above the critical threshold of four years: borrowing capacity is saturated and a new bank facility would be hard to obtain"}.<br><br>
+        <strong>Overall balance.</strong> ${D.equilibreEN}<br><br>
+        <strong>Recommendation.</strong> ${D.recoEN}
+      </div>`;
+
+      s += `<div class="persp-box">
+        <span class="sol-sub">Going further — an optional statement in France, mandatory elsewhere</span>
+        The cash flow statement is not one of the mandatory financial statements in French individual accounts: the general accounting plan merely permits its presentation in the notes, on an optional basis. It does become mandatory for companies preparing consolidated accounts — ANC regulation no. 2020-01 places it, together with the statement of changes in equity, among the information that the notes to the consolidated accounts must contain — and for listed companies applying international standards.
+        <p style="margin-top:.8rem;">The difference in status is significant. Under IAS 7, the cash flow statement is a <em>primary financial statement</em>, presented on the same footing as the balance sheet and the income statement; under French standards it remains a note disclosure. That hierarchy reflects two conceptions of accounting information: the French tradition, focused on net worth, makes the balance sheet the central document, whereas the Anglo-Saxon logic, oriented towards the investor, gives priority to the entity's ability to generate cash. The historical lineage of the French model is clear enough: opinion no. 30 of the Ordre des experts-comptables, issued in 1997, served as the template for the later texts.</p>
+        <p style="margin-top:.8rem;">Two construction methods coexist for the operating flow. The <em>direct method</em> lists actual receipts and payments — cash collected from customers, paid to suppliers, wages paid, taxes paid. The <em>indirect method</em>, used in this exercise, starts from profit or from the CAF and neutralises items with no cash impact as well as settlement lags. IAS 7 encourages the direct method, which is more readable for users, but the indirect method remains overwhelmingly dominant in practice: it can be reconstructed from the financial statements alone, without reworking the subsidiary ledgers. Both methods naturally lead to the same operating flow.</p>
+        <p style="margin-top:.8rem;">One last point deserves attention: the classification of interest and dividends. IAS 7 allows latitude — interest paid may be shown under operating or financing activities, dividends received under operating or investing — provided the choice is applied consistently. That flexibility harms comparability across issuers: two otherwise identical companies may report appreciably different operating flows. In the French presentation used here, interest paid is included in the CAF and therefore in the operating flow.</p>
+      </div>`;
+
+      s += `<div class="persp-box">
+        <span class="sol-sub">Going further — what cash tells us about profit</span>
+        The value of the cash flow statement lies in the fact that it largely escapes accounting conventions. Profit depends on choices — useful lives, the level of impairment, the period to which income is allocated, whether or not development costs are capitalised — from which the change in cash is independent: liquidity cannot be decreed. That is why modern financial analysis gives this statement a growing place, and why the failure of apparently profitable companies has ceased to be a curiosity.
+        <p style="margin-top:.8rem;">The gap between net income and operating cash flow has a name in accounting research: <em>accruals</em>, that is, the non-cash component of earnings. The empirical literature, since Sloan (1996), has established that the share of earnings explained by accruals is markedly less persistent than its cash component — persistently high earnings backed by weak operating cash flow is therefore a warning signal, and one of the most robust indicators of accounting manipulation. In our case, net income of ${M(D.RN)} comes with operating cash flow of ${M(D.FNTA)}, ${D.FNTA >= D.RN ? "a cash conversion above one: the profit is solidly backed by real flows" : "a cash conversion below one: part of the profit has not yet taken the form of liquidity"}.</p>
+        <p style="margin-top:.8rem;">These indicators are not, however, beyond manipulation. A year's operating flow can be flattered by year-end decisions devoid of economic substance: delaying supplier payments by a few days, stepping up collection efforts, postponing an inventory order, factoring a batch of receivables. Operating cash flow must therefore be assessed over several years, and its breakdown between CAF and the change in working capital examined as carefully as its amount. A stable CAF accompanied by drifting working capital tells a very different story from the same operating flow obtained through a sharply rising CAF.</p>
+      </div>`;
+
+      return s;
+    }
+  }
+};
+
+/* ============================================================
+   GESTION DE LA LANGUE  /  LANGUAGE HANDLING
+   ============================================================ */
+let LANG = 'fr';
+
+function detectLang() {
+    try {
+        const q = new URLSearchParams(window.location.search).get('lang');
+        if (q && I18N[q.toLowerCase()]) return q.toLowerCase();
+    } catch (e) {}
+    const h = (window.location.hash || '').replace('#', '').toLowerCase();
+    if (I18N[h]) return h;
+    return 'fr';
+}
+
+function applyLang() {
+    const D = I18N[LANG];
+    document.documentElement.lang = D.htmlLang;
+    document.title = D.title;
+
+    document.querySelectorAll('[data-k]').forEach(function (el) {
+        const key = el.getAttribute('data-k');
+        if (D[key] !== undefined) el.innerHTML = D[key];
+    });
+
+    const btn = document.getElementById('toggle-btn');
+    if (btn) btn.innerText = document.getElementById('sol-card').classList.contains('visible') ? D.hideSol : D.showSol;
+
+    document.getElementById('flag-fr').classList.toggle('active', LANG === 'fr');
+    document.getElementById('flag-en').classList.toggle('active', LANG === 'en');
+}
+
+function setLang(lang) {
+    if (!I18N[lang] || lang === LANG) return;
+    LANG = lang;
+
+    try {
+        const u = new URL(window.location.href);
+        u.searchParams.set('lang', lang);
+        history.replaceState(null, '', u.toString());
+    } catch (e) {}
+
+    applyLang();
+
+    if (document.getElementById('ex-area').style.display !== 'none') {
+        const solWasVisible = document.getElementById('sol-card').classList.contains('visible');
+        generateExercise(false);
+        if (solWasVisible) toggleSol();
+    }
+}
+
+// --- PRNG (Mulberry32) ---
+let currentSeed = 0;
+function seedPRNG(seed) {
+    return function() {
+      let t = seed += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+let random = Math.random;
+
+function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
+function pick(arr) { return arr[randInt(0, arr.length - 1)]; }
+
+/* --- formatage --- */
+function texD(num, dec) {
+    let sign = num < 0 ? "-" : "";
+    let parts = Math.abs(num).toFixed(dec).split('.');
+    let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, I18N[LANG].thousands);
+    return sign + intPart + (parts.length > 1 ? I18N[LANG].decimal + parts[1] : "");
+}
+function texI(num) { return texD(num, 0); }
+function texM(num) { return texD(num, 2); }
+function texSign(num)  { return texI(num); }
+function texSign2(num) { return (num < 0 ? "- " : "+ ") + texI(Math.abs(num)); }
+function fmtNb(num, dec) {
+    return num.toLocaleString(I18N[LANG].locale, {minimumFractionDigits: dec, maximumFractionDigits: dec});
+}
+function money(v, lang) {
+    const s = Math.abs(v).toLocaleString(I18N[lang].locale, {minimumFractionDigits: 0, maximumFractionDigits: 0});
+    const body = (lang === 'fr') ? (s + '\u00a0€') : ('€' + s);
+    return (v < 0 ? '−' + body : body);
+}
+function fmtSigned(v, lang) {
+    const s = Math.abs(v).toLocaleString(I18N[lang].locale, {minimumFractionDigits: 0, maximumFractionDigits: 0});
+    if (v === 0) return '0';
+    return (v < 0 ? '(' + s + ')' : s);
+}
+
+/* ============================================================
+   MODÈLE  /  MODEL
+   ============================================================ */
+function computeModel() {
+    let D = null;
+    for (let attempt = 0; attempt < 60; attempt++) {
+        const cand = drawModel();
+        if (cand) { D = cand; break; }
+    }
+    if (!D) D = drawModel(true);
+    return D;
+}
+
+function drawModel(force) {
+    const prof = PROFILES[randInt(0, PROFILES.length - 1)];
+
+    // --- Activité ---
+    const CA0 = randInt(24, 90) * 250000 / 5;          // 1.2 M€ .. 4.5 M€, pas de 50 000
+    const CA1 = CA0 + randInt(-4, 22) * 50000;
+
+    // --- Compte de résultat ---
+    const RN    = randInt(6, 80) * 5000;               // 30 000 .. 400 000
+    const DADP  = randInt(18, 90) * 5000;              // 90 000 .. 450 000
+    const RADP  = randInt(2, 12) * 2500;               // 5 000 .. 30 000
+    const VCEAC = randInt(8, 40) * 2500;               // 20 000 .. 100 000
+    const PCcorp = VCEAC + randInt(-6, 14) * 2500;     // prix de cession corporel
+    const PCfin  = pick([0, 0, randInt(2, 14) * 2500]);
+    const PC = PCcorp + PCfin;
+    const QP = pick([0, randInt(1, 8) * 2500]);
+
+    const CAF = RN + DADP + VCEAC - RADP - PC - QP;
+
+    // --- BFR d'exploitation ---
+    const S0 = randInt(20, 60) * 10000;
+    const C0 = randInt(30, 80) * 10000;
+    const P0 = randInt(25, 70) * 10000;
+    const dS = randInt(-8, 24) * 5000;
+    const dC = randInt(-6, 34) * 5000;
+    const dP = randInt(-10, 16) * 5000;
+    const S1 = S0 + dS, C1 = C0 + dC, P1 = P0 + dP;
+    const BFRE0 = S0 + C0 - P0, BFRE1 = S1 + C1 - P1;
+    const dBFRE = dS + dC - dP;
+
+    // --- BFR hors exploitation ---
+    const CH0 = randInt(2, 20) * 5000;                 // 10 000 .. 100 000
+    const PH0 = randInt(4, 32) * 5000;                 // 20 000 .. 160 000
+    const dCH = randInt(-6, 14) * 2500;
+    const dPH = randInt(-10, 16) * 2500;
+    const CH1 = CH0 + dCH, PH1 = PH0 + dPH;
+    const BFRHE0 = CH0 - PH0, BFRHE1 = CH1 - PH1;
+    const dBFRHE = dCH - dPH;
+
+    const dBFR = dBFRE + dBFRHE;
+    const FNTA = CAF - dBFR;
+
+    // --- Investissement ---
+    const Ainc  = pick([0, randInt(2, 12) * 5000]);
+    const Acorp = randInt(20, 100) * 5000;             // 100 000 .. 500 000
+    const Afin  = pick([0, 0, randInt(1, 10) * 5000]);
+    const INV = Ainc + Acorp + Afin;
+    const FNTI = -INV + PC;
+
+    // --- Financement ---
+    const AK     = pick([0, 0, randInt(10, 60) * 5000]);
+    const AKres  = randInt(2, 24) * 5000;
+    const SUB    = pick([0, randInt(1, 12) * 2500]);
+    const DIV    = pick([0, randInt(2, 30) * 2500]);
+    const EMPnew = pick([0, randInt(4, 60) * 5000]);
+    const EMPrem = randInt(5, 50) * 5000;
+    const FNTFcp = AK + SUB - DIV;
+    const FNTFce = EMPnew - EMPrem;
+    const FNTF = FNTFcp + FNTFce;
+
+    const DF0 = randInt(40, 300) * 5000;
+    const DF1 = DF0 + EMPnew - EMPrem;
+
+    // --- Trésorerie ---
+    const dispo0 = randInt(5, 40) * 2500;
+    const cbc0   = pick([0, randInt(2, 30) * 2500]);
+    const T0 = dispo0 - cbc0;
+    const dT = FNTA + FNTI + FNTF;
+    const T1 = T0 + dT;
+    let cbc1 = pick([0, randInt(2, 30) * 2500]);
+    if (T1 + cbc1 < 5000) cbc1 = Math.ceil((5000 - T1) / 2500) * 2500;
+    const dispo1 = T1 + cbc1;
+
+    // --- Garde-fous de plausibilité ---
+    if (!force) {
+        if (CAF <= 0) return null;
+        if (PCcorp <= 0 || PC <= 0) return null;
+        if (Math.abs(FNTA) < 15000) return null;          // évite les ratios non significatifs
+        if (DF1 <= 0) return null;
+        if (S1 <= 0 || C1 <= 0 || P1 <= 0) return null;
+        if (CH1 <= 0 || PH1 <= 0) return null;
+        if (BFRE0 <= 0) return null;
+        if (Math.abs(dBFRHE) < 2500) return null;
+        if (dispo1 < 5000 || cbc1 < 0) return null;
+        if (Math.abs(dT) < 5000) return null;             // une variation lisible
+        if (CA1 <= 0) return null;
+        if (DF1 / CAF > 12) return null;                  // endettement absurde
+    }
+
+    // --- Indicateurs ---
+    const FCF = FNTA + FNTI;
+    const ratio1 = EMPrem / FNTA;
+    const ratio2 = DF1 / CAF;
+    const rInv = INV / DADP;
+    const rCess = PC / INV;
+    const gCA = (CA1 - CA0) / CA0;
+    const gBFRE = dBFRE / BFRE0;
+
+    // --- Branches qualitatives ---
+    let bfrVsCA;
+    if (dBFRE > 0 && gCA > 0 && gBFRE > gCA + 0.02)
+        bfrVsCA = { fr: "et le besoin en fonds de roulement s'alourdit plus vite encore ({g} %) : les décalages d'exploitation se dégradent indépendamment de l'effet volume",
+                    en: "while working capital requirement grew faster still ({g}%): operating lags are deteriorating independently of the volume effect" };
+    else if (dBFRE > 0 && gCA > 0)
+        bfrVsCA = { fr: "et le besoin en fonds de roulement progresse de {g} %, dans des proportions comparables : l'alourdissement s'explique pour l'essentiel par l'effet volume",
+                    en: "and working capital requirement grew by {g}%, in comparable proportions: the increase is essentially a volume effect" };
+    else if (dBFRE > 0)
+        bfrVsCA = { fr: "alors même que le besoin en fonds de roulement s'alourdit de {g} % : la dégradation ne s'explique donc pas par la croissance, mais par un allongement des délais ou un gonflement des stocks",
+                    en: "even though working capital requirement rose by {g}%: the deterioration is therefore not explained by growth, but by longer payment terms or swelling inventories" };
+    else
+        bfrVsCA = { fr: "tandis que le besoin en fonds de roulement se contracte de {g} % : l'entreprise a amélioré la rotation de son cycle d'exploitation, ce qui libère de la trésorerie",
+                    en: "while working capital requirement contracted by {g}%: the company improved the turnover of its operating cycle, which releases cash" };
+
+    let strat;
+    if (rInv >= 1.2 && rCess < 0.25)
+        strat = { fr: "Les investissements sont élevés et les cessions marginales : l'entreprise est clairement dans une <strong>stratégie de croissance</strong>, elle accroît ses capacités de production.",
+                  en: "Investment is high and disposals marginal: the company is clearly pursuing a <strong>growth strategy</strong>, expanding its productive capacity." };
+    else if (rInv >= 1.2)
+        strat = { fr: "Les investissements sont élevés mais s'accompagnent de cessions significatives : on reconnaît une <strong>stratégie de croissance et de reconfiguration</strong>, où l'entreprise renouvelle son appareil productif en se séparant simultanément d'actifs devenus périphériques.",
+                  en: "Investment is high but accompanied by significant disposals: this is a <strong>growth and reconfiguration strategy</strong>, in which the company renews its productive base while simultaneously shedding assets that have become peripheral." };
+    else if (rCess >= 0.5)
+        strat = { fr: "Les investissements sont limités tandis que les cessions sont importantes : le profil est celui d'une <strong>stratégie de recentrage</strong>, l'entreprise cédant des actifs pour se concentrer sur son cœur de métier.",
+                  en: "Investment is limited while disposals are substantial: the profile is that of a <strong>refocusing strategy</strong>, the company selling assets to concentrate on its core business." };
+    else
+        strat = { fr: "Les investissements comme les cessions restent modérés : l'entreprise adopte une <strong>stratégie d'attente</strong>, se contentant d'entretenir son outil sans engager de développement majeur.",
+                  en: "Both investment and disposals remain moderate: the company is adopting a <strong>wait-and-see strategy</strong>, maintaining its assets without committing to any major development." };
+
+    let equilibre;
+    const sA = FNTA > 0, sI = FNTI > 0, sF = FNTF > 0;
+    if (sA && !sI && !sF)
+        equilibre = { fr: "La configuration des trois flux est celle d'une entreprise mature et saine : l'activité dégage de la trésorerie, l'investissement en consomme et le financement également, puisque l'entreprise rembourse ses dettes et rémunère ses actionnaires plus qu'elle ne lève de ressources nouvelles. C'est le profil recherché, celui d'une entreprise qui s'autofinance.",
+                      en: "The configuration of the three flows is that of a mature, healthy company: operations generate cash, investing consumes it, and so does financing, since the company repays debt and remunerates shareholders more than it raises new resources. This is the sought-after profile, that of a self-financing company." };
+    else if (sA && !sI && sF)
+        equilibre = { fr: "L'activité dégage de la trésorerie et l'entreprise lève par ailleurs des ressources externes pour financer un effort d'investissement supérieur à ce que son exploitation peut porter. C'est la configuration classique d'une phase de croissance financée : elle n'est soutenable qu'aussi longtemps que les investissements consentis se traduiront demain par un flux d'activité accru.",
+                      en: "Operations generate cash and the company also raises external resources to finance an investment effort larger than operations can carry. This is the classic configuration of a funded growth phase: it is sustainable only as long as today's investment translates into higher operating flows tomorrow." };
+    else if (!sA && sF)
+        equilibre = { fr: "La configuration est préoccupante : l'activité ne dégage pas de trésorerie et c'est le financement externe qui assure la soudure. Une entreprise qui emprunte pour financer son exploitation courante, et non ses investissements, entre dans une spirale dont elle ne sort que par un redressement rapide de son cycle d'exploitation.",
+                      en: "The configuration is worrying: operations generate no cash and it is external financing that bridges the gap. A company that borrows to fund its ordinary operations, rather than its investment, enters a spiral from which only a rapid recovery of its operating cycle offers a way out." };
+    else if (!sA)
+        equilibre = { fr: "L'activité ne dégage pas de trésorerie et le financement n'apporte pas de ressource nette : c'est donc la trésorerie existante, ou les cessions d'actifs, qui absorbent le choc. Une telle configuration ne peut se répéter deux exercices de suite sans mettre la continuité d'exploitation en question.",
+                      en: "Operations generate no cash and financing brings in no net resource: it is therefore existing cash, or asset disposals, that absorb the shock. Such a configuration cannot repeat itself two years running without calling the going concern into question." };
+    else
+        equilibre = { fr: "La lecture croisée des trois flux montre une entreprise dont l'activité finance l'essentiel de ses besoins, les opérations d'investissement et de financement venant ajuster à la marge la position de trésorerie. L'équilibre est satisfaisant, sans être pour autant confortable.",
+                      en: "Read together, the three flows show a company whose operations finance most of its needs, with investing and financing transactions adjusting the cash position at the margin. The balance is satisfactory, without being comfortable." };
+
+    let reco;
+    const risque = (T1 < 0 && (FNTA <= 0 || ratio2 > 4));
+    if (risque)
+        reco = { fr: "Le risque de défaut de paiement doit être pris au sérieux : la trésorerie de clôture est négative et " + (FNTA <= 0 ? "l'exploitation elle-même consomme des liquidités" : "la capacité de remboursement dépasse le seuil critique de quatre années de CAF") + ". Il faudrait agir sans attendre sur le besoin en fonds de roulement — réduction des stocks, raccourcissement du crédit client, négociation des délais fournisseurs —, différer les investissements non engagés et, si la structure financière le permet encore, renforcer les capitaux propres par des apports nouveaux plutôt que par un endettement supplémentaire que la CAF ne pourrait pas servir.",
+                 en: "The risk of payment default must be taken seriously: closing cash is negative and " + (FNTA <= 0 ? "operations themselves consume liquidity" : "debt service capacity exceeds the critical threshold of four years of CAF") + ". Action should be taken without delay on working capital — reducing inventories, shortening customer credit, negotiating supplier terms — postponing uncommitted investment and, if the capital structure still allows it, strengthening equity through fresh contributions rather than through additional debt that the CAF could not service." };
+    else if (FCF < 0)
+        reco = { fr: "Il n'existe pas de risque de défaut immédiat, mais le <em>free cash flow</em> négatif appelle une vigilance : l'entreprise doit s'assurer que le financement de son effort d'investissement repose sur des ressources stables, et non sur un simple prélèvement de trésorerie ou sur des concours bancaires à court terme. Un échéancier de remboursement calé sur la montée en charge des flux d'activité attendus, et un suivi mensuel du besoin en fonds de roulement, constitueraient les deux garde-fous utiles.",
+                 en: "There is no immediate risk of default, but the negative free cash flow calls for vigilance: the company must ensure that its investment effort is funded from stable resources, and not merely by drawing down cash or by short-term bank facilities. A repayment schedule aligned with the expected ramp-up in operating flows, together with monthly monitoring of working capital, would be the two useful safeguards." };
+    else
+        reco = { fr: "Aucun risque de défaut de paiement n'apparaît à ce stade : l'activité dégage un flux positif, le <em>free cash flow</em> est excédentaire et la capacité de remboursement demeure dans les normes. L'entreprise dispose donc d'une marge de manœuvre qu'elle peut employer soit à accélérer son désendettement, soit à financer un nouveau cycle d'investissement. Le maintien d'une surveillance du besoin en fonds de roulement reste néanmoins la condition de cette situation favorable.",
+                 en: "No risk of payment default appears at this stage: operations generate a positive flow, free cash flow is in surplus and debt service capacity remains within normal bounds. The company therefore has headroom, which it may use either to accelerate deleveraging or to fund a new investment cycle. Continued monitoring of working capital nonetheless remains the condition of this favourable position." };
+
+    return {
+        prof, CA0, CA1, gCA,
+        RN, DADP, RADP, VCEAC, PCcorp, PCfin, PC, QP, CAF,
+        S0, C0, P0, S1, C1, P1, dS, dC, dP, BFRE0, BFRE1, dBFRE,
+        CH0, PH0, CH1, PH1, dCH, dPH, BFRHE0, BFRHE1, dBFRHE, dBFR, FNTA,
+        Ainc, Acorp, Afin, INV, FNTI,
+        AK, AKres, SUB, DIV, EMPnew, EMPrem, FNTFcp, FNTFce, FNTF, DF0, DF1,
+        dispo0, cbc0, T0, dispo1, cbc1, T1, dT,
+        FCF, ratio1, ratio2, rInv, rCess, gBFRE,
+        bfrVsCAFr: bfrVsCA.fr, bfrVsCAEn: bfrVsCA.en,
+        stratFR: strat.fr, stratEN: strat.en,
+        equilibreFR: equilibre.fr, equilibreEN: equilibre.en,
+        recoFR: reco.fr, recoEN: reco.en
+    };
+}
+
+/* ============================================================
+   TABLEAU DE FLUX ET GRAPHIQUE  /  FLOW TABLE AND CHART
+   ============================================================ */
+function flowTable(D, lang) {
+    const c = v => fmtSigned(v, lang);
+    const fr = (lang === 'fr');
+    const rows = [
+        ['h', fr ? "Trésorerie nette au 1<sup>er</sup> janvier N" : "Net cash at 1 January N", D.T0],
+        ['d', fr ? "Capacité d'autofinancement" : "Cash flow capacity (CAF)", D.CAF],
+        ['d', fr ? "Variation des stocks" : "Change in inventories", -D.dS],
+        ['d', fr ? "Variation des créances d'exploitation" : "Change in operating receivables", -D.dC],
+        ['d', fr ? "Variation des dettes d'exploitation" : "Change in operating payables", D.dP],
+        ['d', fr ? "Variation des créances hors exploitation" : "Change in non-operating receivables", -D.dCH],
+        ['d', fr ? "Variation des dettes hors exploitation" : "Change in non-operating payables", D.dPH],
+        ['s', fr ? "= Flux net de trésorerie d'activité (FNTA)" : "= Net cash flow from operating activities (FNTA)", D.FNTA],
+        ['d', fr ? "Acquisitions d'immobilisations incorporelles" : "Acquisitions of intangible assets", -D.Ainc],
+        ['d', fr ? "Acquisitions d'immobilisations corporelles" : "Acquisitions of tangible assets", -D.Acorp],
+        ['d', fr ? "Acquisitions d'immobilisations financières" : "Acquisitions of financial assets", -D.Afin],
+        ['d', fr ? "Cessions d'immobilisations corporelles" : "Disposals of tangible assets", D.PCcorp],
+        ['d', fr ? "Cessions d'immobilisations financières" : "Disposals of financial assets", D.PCfin],
+        ['s', fr ? "= Flux net de trésorerie d'investissement (FNTI)" : "= Net cash flow from investing activities (FNTI)", D.FNTI],
+        ['d', fr ? "Augmentation de capital par apports nouveaux" : "Capital increase in cash", D.AK],
+        ['d', fr ? "Subventions d'investissement reçues" : "Investment grants received", D.SUB],
+        ['d', fr ? "Dividendes versés" : "Dividends paid", -D.DIV],
+        ['d', fr ? "Nouveaux emprunts" : "New borrowings", D.EMPnew],
+        ['d', fr ? "Remboursements d'emprunts" : "Repayments of borrowings", -D.EMPrem],
+        ['s', fr ? "= Flux net de trésorerie de financement (FNTF)" : "= Net cash flow from financing activities (FNTF)", D.FNTF],
+        ['s', fr ? "= Variation de la trésorerie" : "= Change in net cash", D.dT],
+        ['h', fr ? "Trésorerie nette au 31 décembre N" : "Net cash at 31 December N", D.T1]
+    ];
+    let body = "";
+    rows.forEach(function (r) {
+        const [kind, label, val] = r;
+        if (kind === 'h')
+            body += `<tr style="background:var(--cream-dark);"><td class="txt-left" style="font-weight:700;">${label}</td><td class="amt" style="font-weight:700;">${c(val)}</td></tr>`;
+        else if (kind === 's')
+            body += `<tr style="background:#f4f1ea;"><td class="txt-left" style="font-weight:600;">${label}</td><td class="amt" style="font-weight:600;">${c(val)}</td></tr>`;
+        else
+            body += `<tr><td class="txt-left" style="font-weight:400;padding-left:1.6rem;">${label}</td><td class="amt">${c(val)}</td></tr>`;
+    });
+    return `<div class="exam-table-wrap"><table class="exam-table">
+        <tr><th style="width:72%;">${fr ? "Rubrique" : "Item"}</th><th style="width:28%;">${fr ? "Montant (euros)" : "Amount (euros)"}</th></tr>
+        ${body}
+      </table></div>
+      <p style="font-size:.82rem;color:var(--text-muted);font-style:italic;margin:.4rem 0 1.2rem;text-align:left;">${fr ? "Les montants entre parenthèses correspondent à des sorties de trésorerie." : "Amounts in brackets are cash outflows."}</p>`;
+}
+
+function chartSVG(D, lang) {
+    const L = I18N[lang], CL = L.chartLabels;
+    const W = 680, H = 320, mL = 72, mR = 18, mT = 34, mB = 56;
+    const pw = W - mL - mR, ph = H - mT - mB;
+
+    const c1 = D.T0, c2 = D.T0 + D.FNTA, c3 = c2 + D.FNTI, c4 = D.T1;
+    const levels = [0, c1, c2, c3, c4];
+    let lo = Math.min.apply(null, levels), hi = Math.max.apply(null, levels);
+    const span = (hi - lo) || 1;
+    lo -= span * 0.12; hi += span * 0.16;
+    const y = v => mT + ph - (v - lo) / (hi - lo) * ph;
+
+    const bars = [
+        { lab: CL.T0, from: 0,  to: c1, kind: 'tot' },
+        { lab: CL.A,  from: c1, to: c2, kind: D.FNTA >= 0 ? 'up' : 'dn' },
+        { lab: CL.I,  from: c2, to: c3, kind: D.FNTI >= 0 ? 'up' : 'dn' },
+        { lab: CL.F,  from: c3, to: c4, kind: D.FNTF >= 0 ? 'up' : 'dn' },
+        { lab: CL.T1, from: 0,  to: c4, kind: 'tot' }
+    ];
+    const vals = [D.T0, D.FNTA, D.FNTI, D.FNTF, D.T1];
+    const colors = { tot: '#1a2e42', up: '#2d6b4a', dn: '#b94040' };
+
+    // graduations
+    const step = niceStep((hi - lo) / 5);
+    let g = '';
+    for (let v = Math.ceil(lo / step) * step; v <= hi; v += step) {
+        const yy = y(v);
+        g += `<line x1="${mL}" y1="${yy.toFixed(1)}" x2="${W - mR}" y2="${yy.toFixed(1)}" stroke="#e2ded4" stroke-width="1"/>`;
+        g += `<text x="${mL - 8}" y="${(yy + 4).toFixed(1)}" text-anchor="end" font-family="'JetBrains Mono',monospace" font-size="9.5" fill="#5a5a5a">${shortNum(v, lang)}</text>`;
+    }
+
+    const slot = pw / 5, bw = slot * 0.44;
+    bars.forEach(function (b, i) {
+        const cx = mL + slot * i + slot / 2;
+        const yA = y(b.from), yB = y(b.to);
+        const top = Math.min(yA, yB), h2 = Math.max(Math.abs(yA - yB), 2);
+        g += `<rect x="${(cx - bw / 2).toFixed(1)}" y="${top.toFixed(1)}" width="${bw.toFixed(1)}" height="${h2.toFixed(1)}" fill="${colors[b.kind]}" rx="2"/>`;
+        if (i < 4) {
+            const xEnd = mL + slot * (i + 1) + slot / 2 - bw / 2;
+            g += `<line x1="${(cx + bw / 2).toFixed(1)}" y1="${y(b.to).toFixed(1)}" x2="${xEnd.toFixed(1)}" y2="${y(b.to).toFixed(1)}" stroke="#9a9488" stroke-width="1" stroke-dasharray="3 3"/>`;
+        }
+        const v = vals[i];
+        const ty = (v >= 0 ? top - 7 : top + h2 + 14);
+        g += `<text x="${cx.toFixed(1)}" y="${ty.toFixed(1)}" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="10.5" font-weight="700" fill="${colors[b.kind]}">${(v >= 0 ? '+' : '−') + shortNum(Math.abs(v), lang)}</text>`;
+        g += `<text x="${cx.toFixed(1)}" y="${(mT + ph + 20).toFixed(1)}" text-anchor="middle" font-family="'Source Serif 4',serif" font-size="11.5" fill="#1e1e1e">${b.lab}</text>`;
+    });
+
+    const y0 = y(0);
+    return `<div style="margin:1.4rem 0; overflow-x:auto;">
+      <svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" role="img">
+        <text x="${mL}" y="20" font-family="'Playfair Display',serif" font-size="14" font-weight="600" fill="#0d1b2a">${L.chartTitle}</text>
+        ${g}
+        <line x1="${mL}" y1="${y0.toFixed(1)}" x2="${W - mR}" y2="${y0.toFixed(1)}" stroke="#0d1b2a" stroke-width="1.5"/>
+        <line x1="${mL}" y1="${mT}" x2="${mL}" y2="${mT + ph}" stroke="#0d1b2a" stroke-width="1.5"/>
+        <text x="${mL}" y="${H - 6}" font-family="'Source Serif 4',serif" font-size="10" font-style="italic" fill="#5a5a5a">${L.chartNote}</text>
+      </svg>
+    </div>`;
+}
+
+function fillG(tpl, D) { return tpl.replace('{g}', fmtNb(Math.abs(D.gBFRE) * 100, 1)); }
+
+function niceStep(raw) {
+    const p = Math.pow(10, Math.floor(Math.log10(Math.max(raw, 1))));
+    const n = raw / p;
+    return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * p;
+}
+function shortNum(v, lang) {
+    const a = Math.abs(v);
+    if (a >= 1000) {
+        const s = (v / 1000).toLocaleString(I18N[lang].locale, {minimumFractionDigits: 0, maximumFractionDigits: 0});
+        return s + ' k';
+    }
+    return v.toLocaleString(I18N[lang].locale, {minimumFractionDigits: 0, maximumFractionDigits: 0});
+}
+
+/* ============================================================
+   GÉNÉRATION  /  GENERATION
+   ============================================================ */
+function generateExercise(forceNew = false) {
+    if (forceNew) {
+        document.getElementById('seed-input').value = "";
+    }
+    let seedVal = document.getElementById('seed-input').value;
+    currentSeed = seedVal ? parseInt(seedVal) : Math.floor(Math.random() * 99999999);
+    document.getElementById('seed-disp').innerText = currentSeed;
+    document.getElementById('seed-input').value = currentSeed;
+    random = seedPRNG(currentSeed);
+
+    const DIC = I18N[LANG];
+    const D = computeModel();
+
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('ex-area').style.display = 'block';
+    document.getElementById('sol-card').classList.remove('visible');
+    document.getElementById('toggle-btn').innerText = DIC.showSol;
+    document.getElementById('toggle-btn').classList.remove('shown');
+
+    document.getElementById('context-text').innerHTML = DIC.context(D);
+    document.getElementById('enonce-table-container').innerHTML = DIC.table(D);
+    document.getElementById('additional-info').innerHTML = DIC.info(D);
+    document.getElementById('events-list').innerHTML = DIC.enonce(D);
+    document.getElementById('sol-content').innerHTML = DIC.sol(D);
+
+    if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
+        MathJax.typesetPromise().catch(function (err) { console.error('MathJax :', err); });
+    }
+}
+
+function toggleSol() {
+    let solCard = document.getElementById('sol-card');
+    let btn = document.getElementById('toggle-btn');
+    if (solCard.classList.contains('visible')) {
+        solCard.classList.remove('visible');
+        btn.innerText = I18N[LANG].showSol;
+        btn.classList.remove('shown');
+    } else {
+        solCard.classList.add('visible');
+        btn.innerText = I18N[LANG].hideSol;
+        btn.classList.add('shown');
+        solCard.scrollIntoView({behavior: 'smooth', block: 'start'});
+    }
+}
+
+/* Initialisation */
+LANG = detectLang();
+applyLang();
+</script>
+<!-- KIT:JS:START v1 -->
+<div id="pdf-ov" onclick="closePdfModal()"></div>
+<div id="pdf-modal">
+  <div class="mh">
+    <h3 data-kit="modalTitle">Exporter en PDF</h3>
+    <button type="button" class="mclose" onclick="closePdfModal()">&#10005;</button>
+  </div>
+  <div class="mb2">
+    <div class="seed-note"><span data-kit="seedPre">Seed&nbsp;:</span> <strong id="modal-seed">&mdash;</strong> <span data-kit="seedPost">&mdash; notez cette valeur pour reproduire exactement cet exercice.</span></div>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-header" checked>
+      <span class="opt-txt"><span class="opt-lbl" data-kit="optHeader">Inclure l'en-t&ecirc;te de page</span>
+           <span class="opt-desc" data-kit="optHeaderD">Titre, badge de mati&egrave;re et intitul&eacute; de l'exercice</span></span>
+    </label>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-sol">
+      <span class="opt-txt"><span class="opt-lbl" data-kit="optSol">Inclure le corrig&eacute; complet</span>
+           <span class="opt-desc" data-kit="optSolD">L'ensemble des d&eacute;veloppements et commentaires du corrig&eacute;</span></span>
+    </label>
+    <div class="mactions">
+      <button type="button" class="btn-print" onclick="doPrint()"><span data-kit="print">&#128424;&nbsp;Imprimer / Sauvegarder PDF</span></button>
+      <button type="button" class="btn-cancel" onclick="closePdfModal()"><span data-kit="cancel">Annuler</span></button>
+    </div>
+  </div>
+</div>
+
+<script id="kit-docx">
+/* =============================================================================
+   EXPORT WORD NATIF (.docx)
+   Trois briques, sans aucune dépendance externe :
+     1. mml2omml  — MathML -> OMML, le format d'équation natif de Word
+     2. zip       — écriture d'une archive ZIP (entrées « stored » + CRC32)
+     3. html2wml  — HTML de la page -> WordprocessingML
+   ============================================================================= */
+(function (root) {
+'use strict';
+
+/* --------------------------------------------------------------- utilitaires */
+function esc(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                  .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function kids(n) {
+  var out = [], c = n.firstChild;
+  while (c) { if (c.nodeType === 1) out.push(c); c = c.nextSibling; }
+  return out;
+}
+function txt(n) { return (n.textContent || '').replace(/\u200b/g, '').trim(); }
+
+/* ============================================================================
+   1. MathML -> OMML
+   ========================================================================== */
+var OPEN = '([{\u27e8\u2308\u230a|\u2016';
+var CLOSE = ')]}\u27e9\u2309\u230b|\u2016';
+var BIGOPS = '\u2211\u220f\u222b\u222c\u222d\u222e\u22c3\u22c2\u2210';
+var ACCENTS = {
+  '\u005e': '\u0302', '\u02c6': '\u0302', '^': '\u0302',
+  '\u00af': '\u0304', '\u2015': '\u0304', '\u2212': '\u0304', '_': '\u0304',
+  '~': '\u0303', '\u02dc': '\u0303', '\u02d9': '\u0307',
+  '\u2192': '\u20d7', '\u21c0': '\u20d1', '\u02c7': '\u030c', '\u02d8': '\u0306'
+};
+
+function run(text, style) {
+  if (text === '') return '';
+  var rPr = '<w:rPr><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/></w:rPr>';
+  var mPr = style ? '<m:rPr><m:sty m:val="' + style + '"/></m:rPr>' : '';
+  return '<m:r>' + mPr + rPr + '<m:t xml:space="preserve">' + esc(text) + '</m:t></m:r>';
+}
+
+/* Un grand opérateur (somme, intégrale…) absorbe la suite de la ligne comme
+   opérande : sans cela Word affiche un cadre vide à la place de l'argument. */
+function naryHere(n) {
+  if (!n || n.nodeType !== 1) return null;
+  var t = n.nodeName.toLowerCase().replace(/^.*:/, ''), k = kids(n);
+  if (t === 'munderover' || t === 'msubsup') return { base: k[0], sub: k[1], sup: k[2] };
+  if (t === 'munder' || t === 'msub') return { base: k[0], sub: k[1], sup: null };
+  if (t === 'mover' || t === 'msup') return { base: k[0], sub: null, sup: k[1] };
+  if (t === 'mo') return { base: n, sub: null, sup: null };
+  return null;
+}
+function isBigOp(n) {
+  if (!n || n.nodeType !== 1) return false;
+  var c = txt(n);
+  return n.nodeName.toLowerCase().replace(/^.*:/, '') === 'mo' &&
+         c.length === 1 && BIGOPS.indexOf(c) !== -1;
+}
+
+function seq(nodes) {
+  var s = '';
+  for (var i = 0; i < nodes.length; i++) {
+    var info = naryHere(nodes[i]);
+    if (info && isBigOp(info.base) && i + 1 < nodes.length) {
+      s += naryFull(info, nodes.slice(i + 1));
+      return s;
+    }
+    s += mml(nodes[i]);
+  }
+  return s;
+}
+
+function naryFull(info, rest) {
+  return '<m:nary><m:naryPr><m:chr m:val="' + esc(txt(info.base)) + '"/>' +
+         '<m:limLoc m:val="undOvr"/>' +
+         '<m:subHide m:val="' + (info.sub ? '0' : '1') + '"/>' +
+         '<m:supHide m:val="' + (info.sup ? '0' : '1') + '"/><m:ctrlPr/></m:naryPr>' +
+         '<m:sub>' + (info.sub ? mml(info.sub) : '') + '</m:sub>' +
+         '<m:sup>' + (info.sup ? mml(info.sup) : '') + '</m:sup>' +
+         '<m:e>' + seq(rest) + '</m:e></m:nary>';
+}
+
+/* mrow entouré de délimiteurs -> m:d, pour des parenthèses étirables natives */
+function fenced(ks) {
+  if (ks.length < 2) return null;
+  var a = ks[0], b = ks[ks.length - 1];
+  if (a.nodeName.toLowerCase() !== 'mo' || b.nodeName.toLowerCase() !== 'mo') return null;
+  var o = txt(a), c = txt(b);
+  if (o.length !== 1 || c.length !== 1) return null;
+  if (OPEN.indexOf(o) === -1 || CLOSE.indexOf(c) === -1) return null;
+  var inner = ks.slice(1, -1);
+  /* séparateurs de premier niveau -> plusieurs m:e */
+  var parts = [[]];
+  for (var i = 0; i < inner.length; i++) {
+    if (inner[i].nodeName.toLowerCase() === 'mo' && txt(inner[i]) === ',' && parts.length < 8) {
+      parts.push([]);
+    } else { parts[parts.length - 1].push(inner[i]); }
+  }
+  var sep = parts.length > 1 ? ',' : '';
+  var body = '';
+  for (var j = 0; j < parts.length; j++) body += '<m:e>' + seq(parts[j]) + '</m:e>';
+  return '<m:d><m:dPr><m:begChr m:val="' + esc(o) + '"/><m:sepChr m:val="' + esc(sep) +
+         '"/><m:endChr m:val="' + esc(c) + '"/><m:ctrlPr/></m:dPr>' + body + '</m:d>';
+}
+
+function naryOf(base, sub, sup) {
+  var ch = txt(base);
+  if (ch.length !== 1 || BIGOPS.indexOf(ch) === -1) return null;
+  return '<m:nary><m:naryPr><m:chr m:val="' + esc(ch) + '"/><m:limLoc m:val="undOvr"/>' +
+         '<m:subHide m:val="' + (sub ? '0' : '1') + '"/>' +
+         '<m:supHide m:val="' + (sup ? '0' : '1') + '"/><m:ctrlPr/></m:naryPr>' +
+         '<m:sub>' + (sub ? mml(sub) : '') + '</m:sub>' +
+         '<m:sup>' + (sup ? mml(sup) : '') + '</m:sup>' +
+         '<m:e></m:e></m:nary>';
+}
+
+function mml(n) {
+  if (!n) return '';
+  if (n.nodeType === 3) return run(n.nodeValue);
+  if (n.nodeType !== 1) return '';
+  var t = n.nodeName.toLowerCase().replace(/^.*:/, '');
+  var k = kids(n), s;
+
+  switch (t) {
+    case 'math':
+    case 'semantics':
+    case 'mstyle':
+    case 'mpadded':
+    case 'menclose':
+      return seq(k);
+
+    case 'annotation':
+    case 'annotation-xml':
+    case 'mphantom':
+      return '';
+
+    case 'mrow':
+      s = fenced(k);
+      return s !== null ? s : seq(k);
+
+    case 'mi':      return run(txt(n), txt(n).length === 1 ? 'i' : 'p');
+    case 'mn':      return run(txt(n), 'p');
+    case 'mo':      return run(txt(n), 'p');
+    case 'merror':  return run(txt(n), 'p');
+    case 'ms':      return run(txt(n), 'p');
+
+    case 'mtext':
+      var v = n.textContent || '';
+      return v === '' ? '' :
+        '<m:r><m:rPr><m:nor/></m:rPr><w:rPr><w:rFonts w:ascii="Cambria" w:hAnsi="Cambria"/></w:rPr>' +
+        '<m:t xml:space="preserve">' + esc(v) + '</m:t></m:r>';
+
+    case 'mspace':
+      return run(' ', 'p');
+
+    case 'mfrac':
+      return '<m:f><m:fPr><m:type m:val="' +
+             (n.getAttribute('linethickness') === '0' ? 'noBar' : 'bar') +
+             '"/><m:ctrlPr/></m:fPr><m:num>' + mml(k[0]) + '</m:num><m:den>' +
+             mml(k[1]) + '</m:den></m:f>';
+
+    case 'msup':
+      s = naryOf(k[0], null, k[1]); if (s) return s;
+      return '<m:sSup><m:sSupPr><m:ctrlPr/></m:sSupPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sup>' + mml(k[1]) + '</m:sup></m:sSup>';
+
+    case 'msub':
+      s = naryOf(k[0], k[1], null); if (s) return s;
+      return '<m:sSub><m:sSubPr><m:ctrlPr/></m:sSubPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sub>' + mml(k[1]) + '</m:sub></m:sSub>';
+
+    case 'msubsup':
+      s = naryOf(k[0], k[1], k[2]); if (s) return s;
+      return '<m:sSubSup><m:sSubSupPr><m:ctrlPr/></m:sSubSupPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sub>' + mml(k[1]) + '</m:sub><m:sup>' + mml(k[2]) +
+             '</m:sup></m:sSubSup>';
+
+    case 'msqrt':
+      return '<m:rad><m:radPr><m:degHide m:val="1"/><m:ctrlPr/></m:radPr>' +
+             '<m:deg/><m:e>' + seq(k) + '</m:e></m:rad>';
+
+    case 'mroot':
+      return '<m:rad><m:radPr><m:degHide m:val="0"/><m:ctrlPr/></m:radPr><m:deg>' +
+             mml(k[1]) + '</m:deg><m:e>' + mml(k[0]) + '</m:e></m:rad>';
+
+    case 'mover':
+      var ao = txt(k[1]);
+      if (ACCENTS[ao]) {
+        return '<m:acc><m:accPr><m:chr m:val="' + esc(ACCENTS[ao]) +
+               '"/><m:ctrlPr/></m:accPr><m:e>' + mml(k[0]) + '</m:e></m:acc>';
+      }
+      s = naryOf(k[0], null, k[1]); if (s) return s;
+      return '<m:limUpp><m:limUppPr><m:ctrlPr/></m:limUppPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limUpp>';
+
+    case 'munder':
+      s = naryOf(k[0], k[1], null); if (s) return s;
+      return '<m:limLow><m:limLowPr><m:ctrlPr/></m:limLowPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limLow>';
+
+    case 'munderover':
+      s = naryOf(k[0], k[1], k[2]); if (s) return s;
+      return '<m:limUpp><m:limUppPr><m:ctrlPr/></m:limUppPr><m:e>' +
+             '<m:limLow><m:limLowPr><m:ctrlPr/></m:limLowPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limLow></m:e><m:lim>' +
+             mml(k[2]) + '</m:lim></m:limUpp>';
+
+    case 'mtable':
+      var rows = k.filter(function (r) { return /mtr$/.test(r.nodeName.toLowerCase()); });
+      var ncol = 0;
+      rows.forEach(function (r) { ncol = Math.max(ncol, kids(r).length); });
+      var props = '<m:mPr><m:baseJc m:val="center"/><m:plcHide m:val="1"/><m:mcs><m:mc><m:mcPr>' +
+                  '<m:count m:val="' + (ncol || 1) + '"/><m:mcJc m:val="center"/></m:mcPr></m:mc></m:mcs>' +
+                  '<m:ctrlPr/></m:mPr>';
+      var body = '';
+      rows.forEach(function (r) {
+        body += '<m:mr>';
+        var cells = kids(r);
+        for (var i = 0; i < (ncol || 1); i++) body += '<m:e>' + (cells[i] ? seq(kids(cells[i])) : '') + '</m:e>';
+        body += '</m:mr>';
+      });
+      return '<m:m>' + props + body + '</m:m>';
+
+    case 'mtr':
+    case 'mtd':
+      return seq(k);
+
+    default:
+      return k.length ? seq(k) : run(txt(n), 'p');
+  }
+}
+
+function mathmlToOmml(mathEl) { return mml(mathEl); }
+
+/* ============================================================================
+   2. Écriture ZIP (entrées non compressées + CRC32)
+   ========================================================================== */
+var CRCT = (function () {
+  var t = new Int32Array(256);
+  for (var i = 0; i < 256; i++) {
+    var c = i;
+    for (var j = 0; j < 8; j++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[i] = c;
+  }
+  return t;
+})();
+function crc32(buf) {
+  var c = -1;
+  for (var i = 0; i < buf.length; i++) c = CRCT[(c ^ buf[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ -1) >>> 0;
+}
+function utf8(str) {
+  if (typeof TextEncoder !== 'undefined') return new TextEncoder().encode(str);
+  var b = unescape(encodeURIComponent(str)), a = new Uint8Array(b.length);
+  for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i);
+  return a;
+}
+function zip(files) {
+  var parts = [], central = [], offset = 0;
+  function u16(v) { return [v & 0xFF, (v >>> 8) & 0xFF]; }
+  function u32(v) { return [v & 0xFF, (v >>> 8) & 0xFF, (v >>> 16) & 0xFF, (v >>> 24) & 0xFF]; }
+
+  files.forEach(function (f) {
+    var name = utf8(f.name), data = f.bin ? f.bin : utf8(f.data), c = crc32(data);
+    var local = [].concat(u32(0x04034b50), u16(20), u16(0x0800), u16(0), u16(0), u16(0),
+                          u32(c), u32(data.length), u32(data.length),
+                          u16(name.length), u16(0));
+    parts.push(new Uint8Array(local), name, data);
+    central.push({ name: name, crc: c, size: data.length, off: offset });
+    offset += local.length + name.length + data.length;
+  });
+
+  var cd = [];
+  central.forEach(function (e) {
+    cd = cd.concat(u32(0x02014b50), u16(20), u16(20), u16(0x0800), u16(0), u16(0), u16(0),
+                   u32(e.crc), u32(e.size), u32(e.size),
+                   u16(e.name.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(e.off));
+    cd = cd.concat(Array.prototype.slice.call(e.name));
+  });
+  var cdArr = new Uint8Array(cd);
+  var eocd = new Uint8Array([].concat(u32(0x06054b50), u16(0), u16(0),
+                                      u16(files.length), u16(files.length),
+                                      u32(cdArr.length), u32(offset), u16(0)));
+  parts.push(cdArr, eocd);
+
+  var total = parts.reduce(function (n, p) { return n + p.length; }, 0);
+  var out = new Uint8Array(total), pos = 0;
+  parts.forEach(function (p) { out.set(p, pos); pos += p.length; });
+  return out;
+}
+
+/* ============================================================================
+   3. HTML -> WordprocessingML
+   ========================================================================== */
+var SKIP = { script: 1, style: 1, button: 1, input: 1, noscript: 1 };
+var IMAGES = [];           /* { bin, w, h } collectées pendant le parcours */
+var EMU = 9525;            /* EMU par pixel */
+var MAXW = 5760000;        /* largeur utile de la page, en EMU */
+
+function b64bin(b64) {
+  var raw = atob(b64), a = new Uint8Array(raw.length);
+  for (var i = 0; i < raw.length; i++) a[i] = raw.charCodeAt(i);
+  return a;
+}
+
+function imageXml(dataUrl, wpx, hpx) {
+  var m = /^data:image\/png;base64,(.*)$/.exec(dataUrl || '');
+  if (!m) return '';
+  var cx = Math.round(wpx * EMU), cy = Math.round(hpx * EMU);
+  if (cx > MAXW) { cy = Math.round(cy * MAXW / cx); cx = MAXW; }
+  IMAGES.push({ bin: b64bin(m[1]) });
+  var id = IMAGES.length, rid = 'rIdImg' + id;
+  return '<w:p><w:pPr><w:pStyle w:val="Figure"/><w:jc w:val="center"/></w:pPr><w:r><w:drawing>' +
+    '<wp:inline distT="0" distB="0" distL="0" distR="0">' +
+    '<wp:extent cx="' + cx + '" cy="' + cy + '"/>' +
+    '<wp:effectExtent l="0" t="0" r="0" b="0"/>' +
+    '<wp:docPr id="' + id + '" name="Graphique ' + id + '"/>' +
+    '<wp:cNvGraphicFramePr><a:graphicFrameLocks ' +
+      'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/>' +
+    '</wp:cNvGraphicFramePr>' +
+    '<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">' +
+    '<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+    '<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+    '<pic:nvPicPr><pic:cNvPr id="' + id + '" name="Graphique ' + id + '"/><pic:cNvPicPr/></pic:nvPicPr>' +
+    '<pic:blipFill><a:blip r:embed="' + rid + '"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>' +
+    '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' + cx + '" cy="' + cy + '"/></a:xfrm>' +
+    '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>' +
+    '</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>';
+}
+var BLOCK = { p: 1, div: 1, h1: 1, h2: 1, h3: 1, h4: 1, li: 1, tr: 1, td: 1, th: 1,
+              table: 1, ul: 1, ol: 1, section: 1, article: 1, header: 1, blockquote: 1 };
+
+function W() {
+  this.body = '';
+  this.para = null;      /* { style, runs, numId, ilvl } */
+}
+W.prototype.open = function (style, numId, ilvl) {
+  this.close();
+  this.para = { style: style || 'Corps', runs: '', numId: numId || 0, ilvl: ilvl || 0 };
+};
+W.prototype.close = function () {
+  var p = this.para;
+  this.para = null;
+  if (!p || (p.runs === '' && !p.numId)) return;
+  if (p.runs === '') return;
+  var pPr = '<w:pPr><w:pStyle w:val="' + p.style + '"/>';
+  if (p.numId) pPr += '<w:numPr><w:ilvl w:val="' + p.ilvl + '"/><w:numId w:val="' + p.numId + '"/></w:numPr>';
+  pPr += '</w:pPr>';
+  this.body += '<w:p>' + pPr + p.runs + '</w:p>';
+};
+W.prototype.add = function (xml) {
+  if (!this.para) this.open('Corps');
+  this.para.runs += xml;
+};
+W.prototype.raw = function (xml) { this.close(); this.body += xml; };
+
+function textRun(s, fmt) {
+  if (!s) return '';
+  var rPr = '';
+  if (fmt.b) rPr += '<w:b/>';
+  if (fmt.i) rPr += '<w:i/>';
+  if (fmt.sup) rPr += '<w:vertAlign w:val="superscript"/>';
+  if (fmt.sub) rPr += '<w:vertAlign w:val="subscript"/>';
+  if (fmt.mono) rPr += '<w:rFonts w:ascii="Consolas" w:hAnsi="Consolas"/>';
+  return '<w:r>' + (rPr ? '<w:rPr>' + rPr + '</w:rPr>' : '') +
+         '<w:t xml:space="preserve">' + esc(s) + '</w:t></w:r>';
+}
+
+function walk(node, w, fmt, list) {
+  var i, cs = node.childNodes;
+  for (i = 0; i < cs.length; i++) {
+    var n = cs[i];
+
+    if (n.nodeType === 3) {
+      var s = n.nodeValue.replace(/\s+/g, ' ');
+      if (s.trim() === '' && !/\S/.test(s)) { if (w.para && w.para.runs) w.add(textRun(' ', fmt)); continue; }
+      w.add(textRun(s, fmt));
+      continue;
+    }
+    if (n.nodeType !== 1) continue;
+
+    var tag = n.nodeName.toLowerCase();
+    if (SKIP[tag]) continue;
+    if (n.classList && (n.classList.contains('top-bar') || n.classList.contains('top-actions') ||
+                        n.classList.contains('sol-toggle-wrap'))) continue;
+
+    /* --- équations --- */
+    if (tag === 'mjx-container') {
+      var math = n.querySelector('mjx-assistive-mml math, math');
+      var display = n.getAttribute('display') === 'true';
+      if (math) {
+        var omml = mathmlToOmml(math);
+        if (display) {
+          w.close();
+          w.body += '<w:p><w:pPr><w:pStyle w:val="Formule"/>' +
+                    '<w:jc w:val="center"/></w:pPr>' +
+                    '<m:oMath>' + omml + '</m:oMath></w:p>';
+        } else {
+          w.add('<m:oMath>' + omml + '</m:oMath>');
+        }
+      } else {
+        w.add(textRun(txt(n), fmt));
+      }
+      continue;
+    }
+    if (tag === 'mjx-assistive-mml' || tag === 'math') continue;
+
+    /* --- graphiques --- */
+    if (tag === 'svg' || tag === 'img') {
+      var png = n.getAttribute('data-kit-png');
+      if (png) {
+        w.close();
+        w.body += imageXml(png, +n.getAttribute('data-kit-w') || 600,
+                                +n.getAttribute('data-kit-h') || 380);
+      }
+      continue;
+    }
+
+    /* --- tableaux --- */
+    if (tag === 'table') { w.close(); w.body += table(n); continue; }
+
+    /* --- listes --- */
+    if (tag === 'ul' || tag === 'ol') {
+      w.close();
+      var nid = tag === 'ol' ? 2 : 1;
+      var lvl = list ? Math.min(list.ilvl + 1, 2) : 0;
+      var items = kids(n).filter(function (x) { return x.nodeName.toLowerCase() === 'li'; });
+      items.forEach(function (li) {
+        /* L'item est composé à part : son numéro doit se poser sur le premier
+           paragraphe produit, même si le <li> enveloppe son texte dans un <div>. */
+        var wb = new W();
+        walk(li, wb, fmt, { ilvl: lvl });
+        wb.close();
+        var xml = wb.body;
+        if (!xml) return;
+        var numPr = '<w:pStyle w:val="Liste"/><w:numPr><w:ilvl w:val="' + lvl +
+                    '"/><w:numId w:val="' + nid + '"/></w:numPr>';
+        if (xml.indexOf('<w:pStyle w:val="Corps"/>') !== -1) {
+          xml = xml.replace('<w:pStyle w:val="Corps"/>', numPr);
+        } else {
+          xml = '<w:p><w:pPr>' + numPr + '</w:pPr></w:p>' + xml;
+        }
+        w.body += xml;
+      });
+      continue;
+    }
+
+    /* --- titres --- */
+    if (tag === 'h1' || tag === 'h2') { w.close(); w.open('Titre1'); walk(n, w, fmt, list); w.close(); continue; }
+    if (tag === 'h3' || tag === 'h4') { w.close(); w.open('Titre2'); walk(n, w, fmt, list); w.close(); continue; }
+
+    /* --- titres internes du corrigé --- */
+    if (n.classList && (n.classList.contains('sol-sub') || n.classList.contains('sol-q') ||
+                        n.classList.contains('dossier-title'))) {
+      w.close(); w.open('Titre2'); walk(n, w, { b: true }, list); w.close(); continue;
+    }
+    if (n.classList && n.classList.contains('persp-box')) {
+      w.close();
+      var wb = new W();
+      walk(n, wb, fmt, list);
+      wb.close();
+      w.body += wb.body.replace(/w:val="Corps"/g, 'w:val="Encadre"')
+                       .replace(/w:val="Titre2"/g, 'w:val="EncadreTitre"');
+      continue;
+    }
+
+    /* --- mise en forme inline --- */
+    var f2 = { b: fmt.b, i: fmt.i, sup: fmt.sup, sub: fmt.sub, mono: fmt.mono };
+    if (tag === 'strong' || tag === 'b') f2.b = true;
+    if (tag === 'em' || tag === 'i') f2.i = true;
+    if (tag === 'sup') f2.sup = true;
+    if (tag === 'sub') f2.sub = true;
+    if (tag === 'code' || tag === 'kbd') f2.mono = true;
+
+    /* intertitre écrit en style en ligne (span display:block + gras) */
+    var st = n.getAttribute && n.getAttribute('style');
+    if (st && /display\s*:\s*block/.test(st) && /font-weight\s*:\s*(6|7|8|9|bold)/.test(st)) {
+      w.close(); w.open('Titre3');
+      walk(n, w, { b: true }, list);
+      w.close();
+      continue;
+    }
+
+    if ((tag === 'strong' || tag === 'b') &&
+        (!w.para || w.para.runs === '') &&
+        n.nextElementSibling && n.nextElementSibling.nodeName.toLowerCase() === 'br') {
+      w.close(); w.open('Titre3');
+      walk(n, w, { b: true }, list);
+      w.close();
+      i++;                       /* le <br> qui suit devient inutile */
+      continue;
+    }
+
+    if (tag === 'br') { w.add('<w:r><w:br/></w:r>'); continue; }
+    if (tag === 'hr') { w.close(); continue; }
+
+    if (BLOCK[tag]) { w.close(); w.open('Corps'); walk(n, w, f2, list); w.close(); }
+    else { walk(n, w, f2, list); }
+  }
+}
+
+function cellXml(td, isHead) {
+  var w2 = new W();
+  walk(td, w2, { b: !!isHead }, null);
+  w2.close();
+  var content = w2.body || '<w:p><w:pPr><w:pStyle w:val="Cellule"/></w:pPr></w:p>';
+  content = content.replace(/w:val="Corps"/g, 'w:val="Cellule"');
+  var span = parseInt(td.getAttribute('colspan') || '1', 10);
+  var shd = isHead ? '<w:shd w:val="clear" w:fill="EDE9DF"/>' : '';
+  return '<w:tc><w:tcPr>' + (span > 1 ? '<w:gridSpan w:val="' + span + '"/>' : '') +
+         shd + '<w:vAlign w:val="center"/></w:tcPr>' + content + '</w:tc>';
+}
+
+function table(tbl) {
+  var rows = tbl.querySelectorAll('tr'), out = '', ncol = 0, i, j;
+  for (i = 0; i < rows.length; i++) {
+    var c = rows[i].children, n = 0;
+    for (j = 0; j < c.length; j++) n += parseInt(c[j].getAttribute('colspan') || '1', 10);
+    ncol = Math.max(ncol, n);
+  }
+  if (!ncol) return '';
+  var grid = '<w:tblGrid>';
+  for (i = 0; i < ncol; i++) grid += '<w:gridCol w:w="' + Math.floor(9360 / ncol) + '"/>';
+  grid += '</w:tblGrid>';
+
+  for (i = 0; i < rows.length; i++) {
+    var cells = rows[i].children, xml = '';
+    var head = rows[i].parentNode.nodeName.toLowerCase() === 'thead' ||
+               (cells.length && cells[0].nodeName.toLowerCase() === 'th');
+    for (j = 0; j < cells.length; j++) xml += cellXml(cells[j], head);
+    out += '<w:tr>' + (head ? '<w:trPr><w:tblHeader/></w:trPr>' : '') + xml + '</w:tr>';
+  }
+  return '<w:tbl><w:tblPr><w:tblStyle w:val="Grille"/>' +
+         '<w:tblW w:w="5000" w:type="pct"/><w:tblLayout w:type="fixed"/></w:tblPr>' +
+         grid + out + '</w:tbl><w:p><w:pPr><w:pStyle w:val="Apres"/></w:pPr></w:p>';
+}
+
+/* ============================================================================
+   Assemblage du fichier
+   ========================================================================== */
+var NS =
+  'xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" ' +
+  'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
+  'xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" ' +
+  'xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" ' +
+  'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+  'xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture" ' +
+  'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+  'xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" ' +
+  'mc:Ignorable="w14"';
+
+function style(id, name, opts) {
+  var o = opts || {};
+  return '<w:style w:type="paragraph" w:styleId="' + id + '"><w:name w:val="' + name + '"/>' +
+         '<w:basedOn w:val="Corps"/><w:pPr>' +
+         (o.keep ? '<w:keepNext/>' : '') +
+         '<w:spacing w:before="' + (o.before || 0) + '" w:after="' + (o.after || 120) +
+         '" w:line="' + (o.line || 276) + '" w:lineRule="auto"/>' +
+         (o.jc ? '<w:jc w:val="' + o.jc + '"/>' : '') +
+         (o.ind ? '<w:ind w:left="' + o.ind + '"/>' : '') +
+         (o.border ? '<w:pBdr><w:left w:val="single" w:sz="18" w:space="8" w:color="1A2E42"/></w:pBdr>' : '') +
+         '</w:pPr><w:rPr>' +
+         (o.font ? '<w:rFonts w:ascii="' + o.font + '" w:hAnsi="' + o.font + '"/>' : '') +
+         (o.b ? '<w:b/>' : '') + (o.i ? '<w:i/>' : '') +
+         (o.sz ? '<w:sz w:val="' + o.sz + '"/>' : '') +
+         (o.color ? '<w:color w:val="' + o.color + '"/>' : '') +
+         '</w:rPr></w:style>';
+}
+
+function stylesXml() {
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles ' + NS + '>' +
+    '<w:docDefaults><w:rPrDefault><w:rPr>' +
+      '<w:rFonts w:ascii="Cambria" w:hAnsi="Cambria" w:cs="Cambria"/>' +
+      '<w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="fr-FR"/>' +
+    '</w:rPr></w:rPrDefault><w:pPrDefault><w:pPr>' +
+      '<w:spacing w:after="120" w:line="276" w:lineRule="auto"/><w:jc w:val="both"/>' +
+    '</w:pPr></w:pPrDefault></w:docDefaults>' +
+    '<w:style w:type="paragraph" w:default="1" w:styleId="Corps"><w:name w:val="Normal"/>' +
+      '<w:pPr><w:spacing w:after="120" w:line="276" w:lineRule="auto"/><w:jc w:val="both"/></w:pPr>' +
+      '<w:rPr><w:rFonts w:ascii="Cambria" w:hAnsi="Cambria"/><w:sz w:val="22"/></w:rPr></w:style>' +
+    style('TitreDoc', 'Title', { font: 'Cambria', b: true, sz: 40, color: '0D1B2A', jc: 'left', after: 60, line: 240 }) +
+    style('SousTitre', 'Subtitle', { i: true, sz: 20, color: '5A5A5A', jc: 'left', after: 280, line: 240 }) +
+    style('Titre1', 'heading 1', { b: true, sz: 28, color: '0D1B2A', before: 320, after: 140, jc: 'left', keep: true, line: 240 }) +
+    style('Titre2', 'heading 2', { b: true, sz: 23, color: '1A2E42', before: 240, after: 100, jc: 'left', keep: true, line: 240 }) +
+    style('Formule', 'Formula', { jc: 'center', before: 120, after: 120, line: 240 }) +
+    style('Liste', 'List Paragraph', { after: 100, ind: 360 }) +
+    style('Cellule', 'Table Text', { sz: 20, after: 40, jc: 'left', line: 240 }) +
+    style('Encadre', 'Aside', { ind: 240, border: true, sz: 21, before: 200, after: 200 }) +
+    style('Apres', 'After Table', { after: 200, sz: 12 }) +
+    style('Figure', 'Figure', { jc: 'center', before: 160, after: 200, line: 240 }) +
+    style('Titre3', 'heading 3', { b: true, sz: 22, color: '1A2E42', before: 200,
+                                   after: 60, jc: 'left', keep: true, line: 240 }) +
+    style('EncadreTitre', 'Aside Heading', { ind: 240, border: true, b: true, sz: 22,
+                                             color: '1A2E42', before: 200, after: 60, jc: 'left' }) +
+    '<w:style w:type="table" w:styleId="Grille"><w:name w:val="Table Grid"/><w:tblPr>' +
+      '<w:tblBorders>' +
+      ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(function (b) {
+        return '<w:' + b + ' w:val="single" w:sz="4" w:space="0" w:color="9A9A9A"/>';
+      }).join('') +
+      '</w:tblBorders><w:tblCellMar>' +
+      '<w:top w:w="60" w:type="dxa"/><w:left w:w="90" w:type="dxa"/>' +
+      '<w:bottom w:w="60" w:type="dxa"/><w:right w:w="90" w:type="dxa"/>' +
+      '</w:tblCellMar></w:tblPr></w:style>' +
+    '</w:styles>';
+}
+
+function numberingXml() {
+  function lvl(i, fmt, txtv, ind) {
+    return '<w:lvl w:ilvl="' + i + '"><w:start w:val="1"/><w:numFmt w:val="' + fmt + '"/>' +
+           '<w:lvlText w:val="' + txtv + '"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="' +
+           ind + '" w:hanging="360"/></w:pPr>' +
+           (fmt === 'bullet' ? '<w:rPr><w:rFonts w:ascii="Symbol" w:hAnsi="Symbol"/></w:rPr>' : '') +
+           '</w:lvl>';
+  }
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:numbering ' + NS + '>' +
+    '<w:abstractNum w:abstractNumId="1"><w:multiLevelType w:val="hybridMultilevel"/>' +
+      lvl(0, 'bullet', '\uF0B7', 360) + lvl(1, 'bullet', 'o', 720) + lvl(2, 'bullet', '\uF0A7', 1080) +
+    '</w:abstractNum>' +
+    '<w:abstractNum w:abstractNumId="2"><w:multiLevelType w:val="hybridMultilevel"/>' +
+      lvl(0, 'decimal', '%1.', 360) + lvl(1, 'lowerLetter', '%2.', 720) + lvl(2, 'lowerRoman', '%3.', 1080) +
+    '</w:abstractNum>' +
+    '<w:num w:numId="1"><w:abstractNumId w:val="1"/></w:num>' +
+    '<w:num w:numId="2"><w:abstractNumId w:val="2"/></w:num>' +
+    '</w:numbering>';
+}
+
+function buildDocx(opts) {
+  IMAGES = [];
+  var w = new W();
+
+  if (opts.title) {
+    w.body += '<w:p><w:pPr><w:pStyle w:val="TitreDoc"/></w:pPr>' +
+              textRun(opts.title, {}) + '</w:p>';
+  }
+  if (opts.subtitle) {
+    w.body += '<w:p><w:pPr><w:pStyle w:val="SousTitre"/></w:pPr>' +
+              textRun(opts.subtitle, {}) + '</w:p>';
+  }
+  opts.sections.forEach(function (sec) {
+    if (sec.heading) {
+      w.body += '<w:p><w:pPr><w:pStyle w:val="Titre1"/></w:pPr>' + textRun(sec.heading, {}) + '</w:p>';
+    }
+    walk(sec.node, w, {}, null);
+    w.close();
+  });
+  w.close();
+
+  var doc = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ' + NS + '><w:body>' +
+    w.body +
+    '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/>' +
+    '<w:pgMar w:top="1247" w:right="1247" w:bottom="1247" w:left="1247" ' +
+    'w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>';
+
+  var media = [], rels = '', ctypes = '';
+  IMAGES.forEach(function (im, i) {
+    media.push({ name: 'word/media/image' + (i + 1) + '.png', bin: im.bin });
+    rels += '<Relationship Id="rIdImg' + (i + 1) + '" Type="http://schemas.openxmlformats.org/' +
+            'officeDocument/2006/relationships/image" Target="media/image' + (i + 1) + '.png"/>';
+  });
+  if (IMAGES.length) ctypes = '<Default Extension="png" ContentType="image/png"/>';
+
+  return zip([
+    { name: '[Content_Types].xml',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+        '<Default Extension="xml" ContentType="application/xml"/>' + ctypes +
+        '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+        '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>' +
+        '<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>' +
+        '</Types>' },
+    { name: '_rels/.rels',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+        '</Relationships>' },
+    { name: 'word/_rels/document.xml.rels',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' +
+        '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>' +
+        rels + '</Relationships>' },
+    { name: 'word/document.xml', data: doc },
+    { name: 'word/styles.xml', data: stylesXml() },
+    { name: 'word/numbering.xml', data: numberingXml() }
+  ].concat(media));
+}
+
+root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: W, _walk: walk };
+
+})(window);
+
+</script>
+<script id="kit-js">
+/* ============================================================
+   KIT D'UNIFORMISATION — logique partagée (modale PDF, export Word,
+   libellés de la barre d'actions). Autonome : ne dépend d'aucun
+   dictionnaire I18N propre à la page.
+   ============================================================ */
+(function(){
+  var T = {
+    fr:{ modalTitle:"Exporter en PDF", seedPre:"Seed\u00a0:",
+         seedPost:"\u2014 notez cette valeur pour reproduire exactement cet exercice.",
+         optHeader:"Inclure l'en-t\u00eate de page",
+         optHeaderD:"Titre, badge de mati\u00e8re et intitul\u00e9 de l'exercice",
+         optSol:"Inclure le corrig\u00e9 complet",
+         optSolD:"L'ensemble des d\u00e9veloppements et commentaires du corrig\u00e9",
+         print:"\uD83D\uDDA8\u00a0Imprimer / Sauvegarder PDF", cancel:"Annuler",
+         btnNew:"\u21ba Nouvel \u00e9nonc\u00e9", btnPdf:"\u2b07 Exporter PDF", btnDoc:"\u2b07 Exporter Word",
+         btnCopy:"\u29c9 Copier", copied:"\u2713 Copi\u00e9e", seedLabel:"Seed de reproductibilit\u00e9",
+         docFile:"exercice.doc" },
+    en:{ modalTitle:"Export to PDF", seedPre:"Seed:",
+         seedPost:"\u2014 note this value to reproduce this exact exercise.",
+         optHeader:"Include the page header",
+         optHeaderD:"Title, subject badge and exercise heading",
+         optSol:"Include the full solution",
+         optSolD:"All the workings and comments of the solution",
+         print:"\uD83D\uDDA8\u00a0Print / Save as PDF", cancel:"Cancel",
+         btnNew:"\u21ba New exercise", btnPdf:"\u2b07 Export PDF", btnDoc:"\u2b07 Export Word",
+         btnCopy:"\u29c9 Copy", copied:"\u2713 Copied", seedLabel:"Reproducibility seed",
+         docFile:"exercise.doc" }
+  };
+
+  function lang(){
+    var l = (window.LANG || document.documentElement.lang || 'fr').toLowerCase();
+    return (l.indexOf('en') === 0) ? 'en' : 'fr';
+  }
+  function t(k){ return T[lang()][k]; }
+
+  window.KIT = { T:T, lang:lang, t:t };
+
+  /* --- libellés du kit (modale + barre d'actions) --- */
+  function paint(){
+    var d = T[lang()];
+    document.querySelectorAll('[data-kit]').forEach(function(el){
+      var k = el.getAttribute('data-kit');
+      if (d[k] !== undefined) el.innerHTML = d[k];
+    });
+  }
+  window.KIT.paint = paint;
+
+  /* Se raccroche au changement de langue de la page sans la modifier. */
+  function hookLang(){
+    if (typeof window.setLang === 'function' && !window.setLang.__kit){
+      var orig = window.setLang;
+      var wrapped = function(){ var r = orig.apply(this, arguments); paint(); return r; };
+      wrapped.__kit = true;
+      window.setLang = wrapped;
+    }
+  }
+
+  /* --- Copie de la seed active --- */
+  window.copySeed = function(btn){
+    var el = document.getElementById('seed-disp');
+    if (!el) return;
+    var v = (el.textContent || '').trim();
+    if (!v || v === '\u2014') return;
+    var done = function(){
+      var b = btn || document.getElementById('btn-copy-seed');
+      if (!b) return;
+      var old = b.innerHTML;
+      b.innerHTML = t('copied');
+      setTimeout(function(){ b.innerHTML = old; paint(); }, 1400);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(v).then(done, done);
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = v; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch(e){}
+      document.body.removeChild(ta); done();
+    }
+  };
+
+  /* --- Modale PDF --- */
+  window.openPdfModal = function(){
+    var s = document.getElementById('modal-seed');
+    var src = document.getElementById('seed-disp');
+    if (s && src) s.textContent = (src.textContent || '\u2014').trim();
+    /* la case « corrigé » reflète l'état d'affichage courant */
+    var sol = document.getElementById('sol-card');
+    var box = document.getElementById('opt-sol');
+    if (box) box.checked = !!(window.solVisible ||
+        (sol && (sol.classList.contains('visible') || sol.style.display === 'block')));
+    paint();
+    document.getElementById('pdf-ov').classList.add('open');
+    document.getElementById('pdf-modal').classList.add('open');
+  };
+  window.closePdfModal = function(){
+    document.getElementById('pdf-ov').classList.remove('open');
+    document.getElementById('pdf-modal').classList.remove('open');
+  };
+  var PRINTCLS = ['print-no-header', 'print-force-solution', 'print-no-solution'];
+
+  function clearPrintClasses() {
+    var b = document.body;
+    for (var i = 0; i < PRINTCLS.length; i++) b.classList.remove(PRINTCLS[i]);
+  }
+
+  window.doPrint = function () {
+    var noHdr   = !document.getElementById('opt-header').checked;
+    var inclSol =  document.getElementById('opt-sol').checked;
+    var b = document.body;
+
+    clearPrintClasses();
+    if (noHdr) b.classList.add('print-no-header');
+    b.classList.add(inclSol ? 'print-force-solution' : 'print-no-solution');
+    closePdfModal();
+
+    /* Le nettoyage doit attendre la fin réelle de l'impression. Un simple
+       minuteur ne convient pas : selon le navigateur, window.print() rend la
+       main avant que l'aperçu ne soit composé, et les options seraient alors
+       déjà effacées au moment où le PDF est produit. */
+    var done = false;
+    function finish() {
+      if (done) return;
+      done = true;
+      clearPrintClasses();
+      window.removeEventListener('afterprint', finish);
+      if (mq && mq.removeListener) mq.removeListener(onMq);
+      if (mq && mq.removeEventListener) mq.removeEventListener('change', onMq);
+    }
+    function onMq(e) { if (!e.matches) finish(); }
+
+    var mq = window.matchMedia ? window.matchMedia('print') : null;
+    window.addEventListener('afterprint', finish);
+    if (mq && mq.addEventListener) mq.addEventListener('change', onMq);
+    else if (mq && mq.addListener) mq.addListener(onMq);
+    /* filet de sécurité si le navigateur n'émet aucun de ces signaux */
+    setTimeout(finish, 120000);
+
+    setTimeout(function () { window.print(); }, 120);
+  };
+
+  /* --- Rasterisation des graphiques SVG ---
+     Word ne sait pas lire le SVG. On le convertit en PNG en recopiant d'abord
+     les styles calculés, sinon les couleurs héritées de la feuille disparaissent. */
+  var SVGPROPS = ['fill', 'stroke', 'stroke-width', 'stroke-dasharray', 'stroke-linecap',
+                  'stroke-linejoin', 'opacity', 'fill-opacity', 'stroke-opacity',
+                  'font-family', 'font-size', 'font-weight', 'font-style',
+                  'text-anchor', 'dominant-baseline'];
+
+  function inlineStyles(src, dst) {
+    var a = src.querySelectorAll('*'), b = dst.querySelectorAll('*'), i, j;
+    for (i = 0; i < a.length && i < b.length; i++) {
+      var cs = window.getComputedStyle(a[i]);
+      for (j = 0; j < SVGPROPS.length; j++) {
+        var v = cs.getPropertyValue(SVGPROPS[j]);
+        if (v) b[i].setAttribute(SVGPROPS[j], v);
+      }
+    }
+  }
+
+  function svgSize(svg) {
+    var vb = svg.viewBox && svg.viewBox.baseVal;
+    if (vb && vb.width) return { w: vb.width, h: vb.height };
+    var r = svg.getBoundingClientRect();
+    if (r.width) return { w: r.width, h: r.height };
+    return { w: 600, h: 380 };
+  }
+
+  function svgToPng(svg) {
+    return new Promise(function (resolve) {
+      var done = false;
+      var res = function (v) { if (!done) { done = true; resolve(v); } };
+      /* garde-fou : un graphique qui ne se charge pas ne doit jamais
+         bloquer l'export, on l'omet et le reste du document part quand même */
+      setTimeout(function () { res(null); }, 5000);
+      try {
+        var d = svgSize(svg), SC = 2;
+        var c = svg.cloneNode(true);
+        c.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        c.setAttribute('width', d.w);
+        c.setAttribute('height', d.h);
+        inlineStyles(svg, c);
+        var bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        bg.setAttribute('x', 0); bg.setAttribute('y', 0);
+        bg.setAttribute('width', '100%'); bg.setAttribute('height', '100%');
+        bg.setAttribute('fill', '#ffffff');
+        c.insertBefore(bg, c.firstChild);
+        var xml = new XMLSerializer().serializeToString(c);
+        var img = new Image();
+        img.onload = function () {
+          try {
+            var cv = document.createElement('canvas');
+            cv.width = Math.round(d.w * SC); cv.height = Math.round(d.h * SC);
+            var ctx = cv.getContext('2d');
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, cv.width, cv.height);
+            ctx.drawImage(img, 0, 0, cv.width, cv.height);
+            res({ png: cv.toDataURL('image/png'), w: d.w, h: d.h });
+          } catch (e) { res(null); }
+        };
+        img.onerror = function () { res(null); };
+        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml);
+      } catch (e) { res(null); }
+    });
+  }
+
+  /* --- Export Word natif (.docx) ---
+     Les formules sont converties en OMML, le format d'équation natif de Word :
+     elles restent éditables et se composent avec Cambria Math. */
+  window.exportWord = function () {
+    var area = document.getElementById('ex-area');
+    if (!area || !window.DocxExport) { return; }
+
+    var btn = document.querySelector('.btn-sm.doc');
+    if (btn) { btn.disabled = true; btn.style.opacity = '.5'; }
+
+    var svgs = Array.prototype.slice.call(area.querySelectorAll('svg'));
+    Promise.all(svgs.map(svgToPng)).then(function (pngs) {
+      svgs.forEach(function (sv, i) {
+        if (!pngs[i]) return;
+        sv.setAttribute('data-kit-png', pngs[i].png);
+        sv.setAttribute('data-kit-w', pngs[i].w);
+        sv.setAttribute('data-kit-h', pngs[i].h);
+      });
+      try { writeDocx(area); } finally {
+        svgs.forEach(function (sv) {
+          sv.removeAttribute('data-kit-png');
+          sv.removeAttribute('data-kit-w');
+          sv.removeAttribute('data-kit-h');
+        });
+        if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+      }
+    });
+  };
+
+  function writeDocx(area) {
+
+    var h1 = document.querySelector('header h1');
+    var badge = document.querySelector('.header-badge, #lbl-badge');
+    var seed = document.getElementById('seed-disp');
+    var bits = [];
+    if (badge && badge.textContent.trim()) bits.push(badge.textContent.trim());
+    if (seed && seed.textContent.trim() && seed.textContent.trim() !== '\u2014') {
+      bits.push('seed ' + seed.textContent.trim());
+    }
+    bits.push('Thomas Hossen');
+
+    var sections = [];
+    var cards = area.querySelectorAll('.card');
+    for (var i = 0; i < cards.length; i++) {
+      var body = cards[i].querySelector('.card-body');
+      if (!body) continue;
+      var tag = cards[i].querySelector('.card-header .tag');
+      var h2 = cards[i].querySelector('.card-header h2');
+      var head = [tag ? tag.textContent.trim() : '', h2 ? h2.textContent.trim() : '']
+                   .filter(Boolean).join(' \u2014 ');
+      sections.push({ heading: head, node: body });
+    }
+    if (!sections.length) sections = [{ heading: '', node: area }];
+
+    var bytes = window.DocxExport.build({
+      title: h1 ? h1.textContent.trim() : document.title,
+      subtitle: bits.join(' \u00b7 '),
+      sections: sections
+    });
+
+    var name = (h1 ? h1.textContent : 'exercice').normalize('NFD')
+                 .replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9]+/g, '_')
+                 .replace(/^_|_$/g, '').slice(0, 60) || 'exercice';
+    var blob = new Blob([bytes], {
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = name + '.docx';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){ hookLang(); paint(); });
+  if (document.readyState !== 'loading'){ hookLang(); paint(); }
+})();
+</script>
+<!-- KIT:JS:END -->
+
+</body>
+</html>

@@ -1,0 +1,2269 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Comptabilité de Gestion - Centres d'analyse</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['\\[', '\\]']]
+    }
+  };
+</script>
+<script>window.MathJax=window.MathJax||{};window.MathJax.options=window.MathJax.options||{};window.MathJax.options.enableAssistiveMml=true;</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7;text-align:justify;}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 1.5rem;border-bottom:3px solid var(--gold);text-align:left;}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end;background:rgba(255,255,255,.03);padding:1rem 1.5rem;border-radius:6px;border:1px solid rgba(255,255,255,.1)}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.6)}
+.ctrl-inp, .ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.4rem .7rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none;transition:border-color .2s}
+.ctrl-inp:focus, .ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.5rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;transition:background .18s;margin-left:auto}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN & CARDS */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:700}
+
+.top-actions{display:flex;gap:.5rem;}
+.btn-action{background:#fff;border:1px solid var(--border);color:var(--navy);padding:.4rem .8rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.85rem;font-weight:600;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.btn-action:hover{border-color:var(--navy);background:var(--cream-dark);}
+
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem;text-align:left;}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+.event-list{list-style:none;}
+.event-list > li{margin-bottom:1.5rem;padding-left:1.5rem;position:relative;font-size:.95rem;text-align:justify}
+.event-list > li::before{content:"•";position:absolute;left:0;color:var(--gold);font-size:1.5rem;line-height:1}
+
+.sub-list { list-style-type: none; padding-left: 1rem; margin-top: 0.8rem; text-align:justify;}
+.sub-list li { margin-bottom: 0.5rem; }
+
+/* EXAM TABLE */
+.exam-table-wrap { overflow-x: auto; margin: 1.5rem 0; }
+.exam-table{width:100%;border-collapse:collapse;font-size:.85rem;font-family:'Source Serif 4',serif; margin: 0;}
+.exam-table th, .exam-table td{border:1px solid var(--border);padding:.6rem;text-align:center;vertical-align:middle;}
+.exam-table th{background:var(--navy);color:var(--cream);font-weight:600;}
+.exam-table .txt-left{text-align:left;font-weight:600;color:var(--navy);}
+.exam-table .amt{font-family:'JetBrains Mono',monospace;text-align:right;white-space:nowrap;}
+
+.two-col-table { width: 100%; display: flex; gap: 2rem; margin: 1.5rem 0; }
+.col-half { flex: 1; }
+
+/* SOLUTION TOGGLE */
+.sol-toggle-wrap{text-align:left; margin: 1.5rem 0 0 0;}
+.btn-toggle{background:transparent;border:2px solid var(--green);border-bottom:none;color:var(--green);font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;padding:.5rem 1.5rem;border-radius:4px 4px 0 0;cursor:pointer;transition:all .2s; position:relative; z-index:2; top:2px;}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--green);color:var(--cream)}
+.sol-card{border-top:2px solid var(--green);display:none; border-radius: 0 6px 6px 6px; position:relative; z-index:1;}
+.sol-card.visible{display:block;animation:fi .4s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+
+.calc-box{background:#f9fcf9;border:1px solid #c8e6c9;padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.9rem;color:var(--text);line-height:1.6;text-align:justify;}
+
+@media print{
+  body{background:#fff;}
+  header, .ctrls, .sol-toggle-wrap, .top-actions {display:none !important;}
+  .card{box-shadow:none; border:1px solid var(--border); margin-bottom:2rem;}
+  .sol-card{display:block !important; border-top:2px solid var(--green);}
+  #ex-area {display:block !important;}
+}
+
+/* --- Selecteur de langue / Language switch --- */
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem}
+.header-top .header-badge{margin-bottom:0}
+.lang-switch{display:flex;gap:.45rem;flex-shrink:0}
+.flag-btn{background:rgba(255,255,255,.06);border:1px solid rgba(201,149,42,.35);border-radius:3px;padding:3px;cursor:pointer;line-height:0;opacity:.5;transition:opacity .2s,border-color .2s,transform .15s}
+.flag-btn:hover{opacity:1;transform:translateY(-1px)}
+.flag-btn.active{opacity:1;border-color:var(--gold-light);box-shadow:0 0 0 1px rgba(232,184,75,.35)}
+.flag-btn svg{display:block;width:30px;height:20px;border-radius:1px}
+@media print{ .lang-switch{display:none !important;} }
+</style>
+<!-- KIT:CSS:START v1 --><style id="kit-css">
+/* ============================================================
+   KIT D'UNIFORMISATION — bloc partagé, identique sur toutes les pages.
+   Ne rien modifier ici fichier par fichier : régénérer le kit.
+   ============================================================ */
+
+/* --- 1. Mathématiques : jamais de débordement --- */
+mjx-container[display="true"]{
+  overflow-x:auto; overflow-y:hidden; max-width:100%;
+  padding:.15rem 0; margin:1rem 0 !important;
+}
+mjx-container[display="true"]::-webkit-scrollbar{height:5px}
+mjx-container[display="true"]::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+mjx-container{ max-width:100%; }
+.math-formula{ text-align:center; margin:1.2rem 0; overflow-x:auto; max-width:100%; }
+@media (max-width:640px){
+  mjx-container[display="true"]{ font-size:88% }
+}
+
+/* --- 2. Listes à puces entourées (questions ET données de contexte) --- */
+.kit-list, .st > ol,
+.questions > ol,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list), .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list),
+.question-list, .enum-list, .q-list{
+  counter-reset:kitq; list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem;
+}
+.kit-list > li, .st > ol > li,
+.questions > ol > li,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li, .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li,
+.question-list > li, .enum-list > li, .q-list > li{
+  counter-increment:kitq; position:relative;
+  padding-left:2.6rem; margin-bottom:1.3rem;
+  font-size:.95rem; line-height:1.7; text-align:justify;
+  font-weight:400; color:var(--text);
+  display:block;
+}
+.kit-list > li::before, .st > ol > li::before,
+.questions > ol > li::before,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li::before, .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li::before,
+.question-list > li::before, .enum-list > li::before, .q-list > li::before{
+  content:counter(kitq);
+  position:absolute; left:0; top:.1rem;
+  width:28px; min-width:28px; height:28px;
+  background:var(--navy); color:var(--cream);
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.72rem; font-weight:500;
+  flex-shrink:0;
+}
+.questions ol > li .q-text{ flex:1; font-size:.95rem; text-align:justify }
+/* sous-listes : cercle creux, plus discret */
+.enum-sublist, .kit-sublist, .sub-list, .sub-ol, .alpha-list, .enum-subsublist,
+.st ol.sub-ol, .questions ol ol, .st ol ol, .kit-list ol, .q-list ol, .question-list ol{
+  counter-reset:kitsq; list-style:none !important; padding-left:0 !important;
+  margin:.9rem 0 .9rem 0;
+}
+.enum-sublist > li, .kit-sublist > li, .sub-list > li, .sub-ol > li, .alpha-list > li, .enum-subsublist > li,
+.st ol.sub-ol > li, .questions ol ol > li, .st ol ol > li, .kit-list ol > li, .q-list ol > li, .question-list ol > li{
+  counter-increment:kitsq; position:relative;
+  padding-left:2.1rem; margin-bottom:.7rem; font-size:.92rem; text-align:justify;
+}
+.enum-sublist > li::before, .kit-sublist > li::before, .sub-list > li::before, .sub-ol > li::before, .alpha-list > li::before, .enum-subsublist > li::before,
+.st ol.sub-ol > li::before, .questions ol ol > li::before, .st ol ol > li::before, .kit-list ol > li::before, .q-list ol > li::before, .question-list ol > li::before{
+  content:counter(kitsq,lower-alpha);
+  min-width:22px;
+  position:absolute; left:0; top:.05rem;
+  width:22px; height:22px;
+  background:transparent; color:var(--navy);
+  border:1px solid var(--gold);
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.65rem;
+}
+
+/* variante : puces simples non numérotées (listes de données) */
+.kit-simple{ list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem }
+.kit-simple > li{
+  position:relative; padding-left:1.5rem; margin-bottom:1.1rem;
+  font-size:.95rem; line-height:1.7; text-align:justify;
+}
+.kit-simple > li::before{
+  content:"\2022"; position:absolute; left:0; top:-.15rem;
+  color:var(--gold); font-size:1.5rem; line-height:1; background:none;
+  width:auto; height:auto; border:none; border-radius:0;
+}
+/* variante : liste à un seul élément, sans puce */
+.kit-nobullet{ list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem }
+.kit-nobullet > li{
+  padding-left:0; margin-bottom:1rem; font-size:.95rem; line-height:1.7; text-align:justify;
+}
+.kit-nobullet > li::before{ content:none !important; display:none !important }
+/* variante : titres de section numérotés (contenu intercalé entre les puces) */
+.kit-num-scope{ counter-reset:kitn }
+p.kit-num{
+  counter-increment:kitn; position:relative;
+  padding-left:2.6rem; margin:1.8rem 0 1rem;
+  font-weight:600; color:var(--navy); text-align:left;
+  min-height:28px; display:flex; align-items:center;
+}
+p.kit-num:first-of-type{ margin-top:0 }
+p.kit-num::before{
+  content:counter(kitn); position:absolute; left:0; top:0;
+  width:28px; height:28px; background:var(--navy); color:var(--cream);
+  border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.72rem; font-weight:500;
+}
+
+/* titres de dossier */
+.dossier-title{
+  margin:2rem 0 1rem; font-weight:600; color:var(--navy); font-size:1.02rem;
+  border-bottom:1px solid var(--border); padding-bottom:.4rem; text-align:left;
+}
+.dossier-title:first-of-type{ margin-top:0 }
+.dossier-body{ margin-bottom:.5rem }
+
+/* --- 3. Corrigé sobre : plus de multiplication de fonds verts --- */
+.sol-card .calc-box, .sol-card .concl{
+  background:transparent !important;
+  border:none !important;
+  border-left:none !important;
+  padding:0 !important;
+  border-radius:0 !important;
+  margin:0 0 1.6rem 0 !important;
+  font-size:.95rem;
+  line-height:1.7;
+  text-align:justify;
+}
+.sol-card .sol-sub{
+  color:var(--navy); font-weight:600; display:block;
+  margin:0 0 .5rem 0; font-size:1rem;
+}
+/* seuls encadrés conservés : les perspectives « Pour aller plus loin » */
+.sol-card .persp-box{
+  background:#f7f9fc !important;
+  border:1px solid #ccd8e6 !important;
+  border-left:3px solid var(--navy-mid) !important;
+  padding:1.2rem !important;
+  border-radius:4px !important;
+  margin:2rem 0 1rem 0 !important;
+  font-size:.9rem; line-height:1.7; text-align:justify;
+}
+
+.btn-toggle{
+  background:transparent; border:2px solid var(--green); border-bottom:none;
+  color:var(--green); font-family:'Source Serif 4',serif; font-size:.95rem;
+  font-weight:600; padding:.5rem 1.5rem; border-radius:4px 4px 0 0; cursor:pointer;
+  transition:all .2s; position:relative; z-index:2; top:2px;
+}
+.btn-toggle:hover{ background:var(--green); color:var(--cream) }
+
+/* --- 4. Bouton « Afficher le corrigé » (modèle der) --- */
+.sol-toggle-wrap{ text-align:left; margin:1.5rem 0 0 0; }
+.sol-card{
+  border-top:2px solid var(--green); display:none;
+  border-radius:0 6px 6px 6px; position:relative; z-index:1;
+}
+.sol-card.visible{ display:block; animation:kitfi .35s ease }
+.sol-card .card-header{ background:var(--green) }
+.sol-card .card-header .tag{ border-color:rgba(200,240,200,.4); color:#a8d8b0 }
+@keyframes kitfi{ from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+
+/* --- 5. Barre d'actions unifiée --- */
+.top-bar{ display:flex; flex-wrap:wrap; gap:.8rem; align-items:center; justify-content:space-between; margin-bottom:1.2rem }
+.top-bar-left{ display:flex; flex-wrap:wrap; gap:.55rem; order:1 }
+.top-bar .seed-badge{ order:2 }
+.btn-sm{ background:transparent; border:1px solid var(--gold); color:var(--gold); font-family:'JetBrains Mono',monospace; font-size:.67rem; letter-spacing:.08em; text-transform:uppercase; padding:.4rem 1rem; border-radius:3px; cursor:pointer; transition:all .18s; white-space:nowrap }
+.btn-sm:hover{ background:var(--gold); color:var(--navy) }
+.btn-sm.pdf{ border-color:#7bafd4; color:#7bafd4 }
+.btn-sm.pdf:hover{ background:#7bafd4; color:var(--navy) }
+.btn-sm.doc{ border-color:#8fa8c4; color:#8fa8c4 }
+.seed-row{ display:flex; gap:.4rem; align-items:center }
+.btn-copy-seed{
+  background:transparent; border:1px solid rgba(201,149,42,.4); color:rgba(250,247,240,.55);
+  padding:.38rem .55rem; border-radius:3px; cursor:pointer;
+  font-family:'JetBrains Mono',monospace; font-size:.65rem; transition:all .18s; white-space:nowrap;
+}
+.btn-copy-seed:hover{ border-color:var(--gold-light); color:var(--gold-light) }
+.btn-sm.doc:hover{ background:#8fa8c4; color:var(--navy) }
+
+/* --- 6. Modale d'export PDF --- */
+#pdf-ov{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:100; backdrop-filter:blur(2px) }
+#pdf-modal{ display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:101; background:#fff; border-radius:8px; box-shadow:0 20px 60px rgba(0,0,0,.25); width:390px; max-width:95vw; border-top:4px solid #7bafd4; overflow:hidden }
+#pdf-ov.open,#pdf-modal.open{ display:block }
+.mh{ background:var(--navy); color:var(--cream); padding:1rem 1.5rem; display:flex; align-items:center; justify-content:space-between }
+.mh h3{ font-family:'Playfair Display',serif; font-size:1rem; font-weight:600; margin:0 }
+.mclose{ background:none; border:none; color:rgba(255,255,255,.6); cursor:pointer; font-size:1.2rem; line-height:1; padding:2px 6px; border-radius:3px; transition:color .15s }
+.mclose:hover{ color:#fff }
+.mb2{ padding:1.5rem }
+.opt-row{ display:flex; align-items:flex-start; gap:.75rem; margin-bottom:1rem; cursor:pointer }
+.opt-row input[type=checkbox]{ width:16px; height:16px; cursor:pointer; accent-color:var(--navy); flex-shrink:0; margin-top:3px }
+.opt-txt{ display:block }
+.opt-lbl{ font-size:.93rem; display:block }
+.opt-desc{ font-size:.75rem; color:var(--text-muted); display:block }
+.seed-note{ font-family:'JetBrains Mono',monospace; font-size:.7rem; background:var(--cream-dark); border:1px solid var(--border); padding:.55rem .85rem; border-radius:3px; color:var(--text-muted); margin-bottom:1.2rem; line-height:1.5 }
+.mactions{ display:flex; gap:.6rem }
+.btn-print{ flex:1; background:var(--navy); color:var(--cream); border:none; padding:.7rem; border-radius:4px; font-family:'Source Serif 4',serif; font-size:.9rem; cursor:pointer; transition:background .2s }
+.btn-print:hover{ background:var(--navy-mid) }
+.btn-cancel{ background:transparent; border:1px solid var(--border); color:var(--text-muted); padding:.7rem 1rem; border-radius:4px; font-family:'Source Serif 4',serif; font-size:.9rem; cursor:pointer; transition:all .2s }
+.btn-cancel:hover{ border-color:var(--text); color:var(--text) }
+
+/* --- 7. Impression --- */
+@media print{
+  body{ background:#fff; font-size:11pt; -webkit-print-color-adjust:exact; print-color-adjust:exact }
+  header{ display:block !important; padding:1rem 1.5rem .8rem }
+  header .subtitle{ display:none }
+  .ctrls, #controls-bar, .top-actions, .top-bar-left, .sol-toggle-wrap,
+  .lang-switch, #pdf-ov, #pdf-modal{ display:none !important }
+  .top-bar{ display:block !important; margin-bottom:.8rem }
+  .top-bar .seed-badge{
+    display:inline-block !important; background:none; border:1px solid var(--border);
+    color:var(--text-muted); font-family:'JetBrains Mono',monospace; font-size:8.5pt;
+    padding:2pt 6pt; border-radius:2px;
+  }
+  body.print-no-header .top-bar{ display:none !important }
+  main{ padding:1rem 1.5rem; max-width:100% }
+  .card{ box-shadow:none; border-radius:0; page-break-inside:avoid; margin-bottom:1rem }
+  #ex-area{ display:block !important }
+  .sol-card{ display:block !important; border-top:2px solid var(--green) }
+  mjx-container[display="true"]{ overflow:visible !important }
+  body.print-no-header header{ display:none !important }
+  body.print-no-header .ctrls{ display:none !important }
+  body.print-no-solution .sol-card,
+  body.print-no-solution .sol-toggle-wrap{ display:none !important }
+  body.print-force-solution .sol-card{ display:block !important }
+}
+</style><!-- KIT:CSS:END -->
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-top">
+    <div class="header-badge" data-k="k-badge">INFORMATION COMPTABLE ET FINANCIÈRE</div>
+    <div class="lang-switch">
+      <button type="button" class="flag-btn active" id="flag-fr" onclick="setLang('fr')" title="Français" aria-label="Français"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="20" height="40" fill="#002654"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ED2939"/></svg></button>
+      <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
+    </div>
+  </div>
+  <h1 data-k="k-h1">La méthode des centres d'analyse</h1>
+  <p class="subtitle" data-k="k-sub">© Thomas Hossen – Version du 18 septembre 2026</p>
+
+  <div class="ctrls">
+    <div class="ctrl-g">
+      <span class="ctrl-lbl" data-k="k-seed">Seed de reproductibilité</span>
+      <div class="seed-row"><input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999"><button type="button" class="btn-copy-seed" id="btn-copy-seed" onclick="copySeed(this)" title="Copier la seed active"><span data-kit="btnCopy">&#10697; Copier</span></button></div>
+    </div>
+    <button class="btn-gen" onclick="generateExercise(false)"><span data-k="k-gen">Générer</span></button>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" style="text-align:center; padding:4rem; color:var(--text-muted); font-style:italic;">
+    <span data-k="k-welcome">Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.</span>
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="seed-badge"><span data-k="k-seedbadge">Seed active :</span> <span id="seed-disp"></span></div>
+      <div class="top-bar-left">
+        <button type="button" class="btn-sm" onclick="generateExercise(true)"><span data-kit="btnNew">&#8634; Nouvel &eacute;nonc&eacute;</span></button>
+        <button type="button" class="btn-sm pdf" onclick="openPdfModal()"><span data-kit="btnPdf">&#11015; Exporter PDF</span></button>
+        <button type="button" class="btn-sm doc" onclick="exportWord()"><span data-kit="btnDoc">&#11015; Exporter Word</span></button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="tag" data-k="k-tag-ex">Énoncé</span><h2 data-k="k-cardtitle">Coûts complets, prestations réciproques et concordance</h2></div>
+      <div class="card-body">
+        <div class="context-block" id="context-text"></div>
+        <div id="enonce-table-container"></div>
+        <div class="context-block" id="additional-info" style="margin-top:1.5rem; background:#fff; border-left:3px solid var(--navy); border-radius:0;"></div>
+
+        <p style="margin-bottom:1rem; font-weight:600; color:var(--red); text-align:left;" data-k="k-work">Travail à faire</p>
+        <ul class="event-list" id="events-list"></ul>
+      </div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag" data-k="k-tag-sol">Corrigé</span><h2 data-k="k-cardtitle2">Coûts complets, prestations réciproques et concordance</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+/* ============================================================
+   PROFILS  /  PROFILES
+   ============================================================ */
+const PROFILES = [
+  { name: "Ateliers Mervant",
+    fr: { secteur: "une menuiserie industrielle", matiere: "panneaux de hêtre massif", unite: "kg", p1: "plans de travail", p2: "étagères murales", uProd: "heure de main-d'œuvre directe" },
+    en: { secteur: "an industrial joinery", matiere: "solid beech panels", unite: "kg", p1: "worktops", p2: "wall shelves", uProd: "direct labour hour" } },
+  { name: "Cuivrerie du Forez",
+    fr: { secteur: "une entreprise de robinetterie", matiere: "alliage de cuivre", unite: "kg", p1: "robinets thermostatiques", p2: "mitigeurs standards", uProd: "heure de main-d'œuvre directe" },
+    en: { secteur: "a tap and fittings manufacturer", matiere: "copper alloy", unite: "kg", p1: "thermostatic taps", p2: "standard mixer taps", uProd: "direct labour hour" } },
+  { name: "Plastiflex Industrie",
+    fr: { secteur: "un transformateur de matières plastiques", matiere: "granulés de polypropylène", unite: "kg", p1: "caisses-palettes", p2: "bacs de manutention", uProd: "heure de main-d'œuvre directe" },
+    en: { secteur: "a plastics processor", matiere: "polypropylene granules", unite: "kg", p1: "pallet boxes", p2: "handling crates", uProd: "direct labour hour" } },
+  { name: "Maison Chapelier",
+    fr: { secteur: "une fabrique de maroquinerie", matiere: "cuir pleine fleur", unite: "kg", p1: "sacs de voyage", p2: "porte-documents", uProd: "heure de main-d'œuvre directe" },
+    en: { secteur: "a leather goods manufacturer", matiere: "full-grain leather", unite: "kg", p1: "travel bags", p2: "document cases", uProd: "direct labour hour" } },
+  { name: "Verrerie de l'Allier",
+    fr: { secteur: "une verrerie industrielle", matiere: "calcin et sable siliceux", unite: "kg", p1: "bouteilles sérigraphiées", p2: "bocaux standards", uProd: "heure de main-d'œuvre directe" },
+    en: { secteur: "an industrial glassworks", matiere: "cullet and silica sand", unite: "kg", p1: "screen-printed bottles", p2: "standard jars", uProd: "direct labour hour" } },
+  { name: "Métallerie Souchon",
+    fr: { secteur: "une entreprise de métallerie", matiere: "tôle d'acier galvanisé", unite: "kg", p1: "coffrets techniques", p2: "supports de rayonnage", uProd: "heure de main-d'œuvre directe" },
+    en: { secteur: "a metalworking company", matiere: "galvanised steel sheet", unite: "kg", p1: "technical cabinets", p2: "shelving brackets", uProd: "direct labour hour" } }
+];
+
+/* ============================================================
+   DICTIONNAIRE BILINGUE  /  BILINGUAL DICTIONARY
+   ============================================================ */
+const I18N = {
+
+  fr: {
+    "htmlLang": "fr",
+    "title": "Simulateur Comptabilité de Gestion - Centres d'analyse",
+    "locale": "fr-FR",
+    "k-badge": "INFORMATION COMPTABLE ET FINANCIÈRE",
+    "k-h1": "La méthode des centres d'analyse",
+    "k-sub": "© Thomas Hossen – Version du 18 septembre 2026",
+    "k-seed": "Seed de reproductibilité",
+    "k-gen": "Générer",
+    "k-welcome": "Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.",
+    "k-seedbadge": "Seed active :",
+    "k-tag-ex": "Énoncé",
+    "k-cardtitle": "Coûts complets, prestations réciproques et concordance",
+    "k-tag-sol": "Corrigé",
+    "k-cardtitle2": "Coûts complets, prestations réciproques et concordance",
+    "k-work": "Travail à faire",
+    "showSol": "Afficher le corrigé",
+    "hideSol": "Masquer le corrigé",
+    thousands: "\\,",
+    decimal: "{,}",
+
+    centres: ["Gestion du personnel", "Entretien", "Approvisionnement", "Production", "Distribution"],
+    uoNames: ["kg de matière achetée", "heure de main-d'œuvre directe", "100 € de chiffre d'affaires"],
+    chartTitle: "Chiffre d'affaires et coût de revient par produit",
+    chartNote: "L'écart entre les deux barres est le résultat analytique du produit.",
+    lblCA: "chiffre d'affaires",
+    lblCR: "coût de revient",
+
+    context: function(D) {
+      const p = D.prof.fr;
+      return `
+        ${D.prof.name} est ${p.secteur} qui fabrique deux produits à partir d'une même matière première, des ${p.matiere} : des ${p.p1} (produit A) et des ${p.p2} (produit B). Sa comptabilité de gestion repose sur la méthode des centres d'analyse, avec deux centres auxiliaires — la gestion du personnel et l'entretien — qui se rendent mutuellement des prestations, et trois centres principaux. La direction souhaite connaître le coût de revient et le résultat analytique de chaque produit pour le mois de ${D.mois}, puis vérifier la cohérence de ces résultats avec ceux de la comptabilité générale.
+      `;
+    },
+    table: function(D) {
+      const C = I18N.fr.centres;
+      let h = "";
+      h += `<p style="margin:1.4rem 0 .6rem; font-weight:600; color:var(--navy); text-align:left;">Tableau 1 — Répartition primaire des charges indirectes et clés de répartition secondaire</p>`;
+      h += `<div class="exam-table-wrap"><table class="exam-table">
+          <tr><th style="width:34%;">Centre</th><th>Répartition primaire</th><th>Part de « Gestion du personnel »</th><th>Part de « Entretien »</th></tr>
+          <tr><td class="txt-left">${C[0]}</td><td class="amt">${fmtNb(D.a0,0)}</td><td class="amt">—</td><td class="amt">${fmtNb(D.beta,0)} %</td></tr>
+          <tr><td class="txt-left">${C[1]}</td><td class="amt">${fmtNb(D.e0,0)}</td><td class="amt">${fmtNb(D.alpha,0)} %</td><td class="amt">—</td></tr>
+          <tr><td class="txt-left">${C[2]}</td><td class="amt">${fmtNb(D.prim[0],0)}</td><td class="amt">${fmtNb(D.pA[0],0)} %</td><td class="amt">${fmtNb(D.pE[0],0)} %</td></tr>
+          <tr><td class="txt-left">${C[3]}</td><td class="amt">${fmtNb(D.prim[1],0)}</td><td class="amt">${fmtNb(D.pA[1],0)} %</td><td class="amt">${fmtNb(D.pE[1],0)} %</td></tr>
+          <tr><td class="txt-left">${C[4]}</td><td class="amt">${fmtNb(D.prim[2],0)}</td><td class="amt">${fmtNb(D.pA[2],0)} %</td><td class="amt">${fmtNb(D.pE[2],0)} %</td></tr>
+          <tr style="background:var(--cream-dark);"><td class="txt-left" style="font-weight:700;">Total</td><td class="amt" style="font-weight:700;">${fmtNb(D.totalPrim,0)}</td><td class="amt" style="font-weight:700;">100 %</td><td class="amt" style="font-weight:700;">100 %</td></tr>
+      </table></div>
+      <p style="font-size:.82rem;color:var(--text-muted);font-style:italic;margin:.4rem 0 0;text-align:left;">Les unités d'œuvre retenues sont le ${I18N.fr.uoNames[0]} pour l'approvisionnement, l'${I18N.fr.uoNames[1]} pour la production et les ${I18N.fr.uoNames[2]} pour la distribution.</p>`;
+
+      h += `<p style="margin:1.6rem 0 .6rem; font-weight:600; color:var(--navy); text-align:left;">Tableau 2 — Données d'exploitation du mois</p>`;
+      h += `<div class="exam-table-wrap"><table class="exam-table">
+          <tr><th style="width:52%;">Élément</th><th>Produit A</th><th>Produit B</th></tr>
+          <tr><td class="txt-left">Matière consommée (${D.prof.fr.unite})</td><td class="amt">${fmtNb(D.q[0],0)}</td><td class="amt">${fmtNb(D.q[1],0)}</td></tr>
+          <tr><td class="txt-left">Heures de main-d'œuvre directe</td><td class="amt">${fmtNb(D.h[0],0)}</td><td class="amt">${fmtNb(D.h[1],0)}</td></tr>
+          <tr><td class="txt-left">Production du mois (unités)</td><td class="amt">${fmtNb(D.n[0],0)}</td><td class="amt">${fmtNb(D.n[1],0)}</td></tr>
+          <tr><td class="txt-left">Stock initial de produits finis (unités)</td><td class="amt">${fmtNb(D.n0[0],0)}</td><td class="amt">${fmtNb(D.n0[1],0)}</td></tr>
+          <tr><td class="txt-left">Valeur du stock initial de produits finis</td><td class="amt">${fmtNb(D.V0pf[0],2)}</td><td class="amt">${fmtNb(D.V0pf[1],2)}</td></tr>
+          <tr><td class="txt-left">Quantités vendues (unités)</td><td class="amt">${fmtNb(D.v[0],0)}</td><td class="amt">${fmtNb(D.v[1],0)}</td></tr>
+          <tr><td class="txt-left">Prix de vente unitaire</td><td class="amt">${fmtNb(D.pv[0],0)}</td><td class="amt">${fmtNb(D.pv[1],0)}</td></tr>
+      </table></div>`;
+
+      h += `<p style="margin:1.6rem 0 .6rem; font-weight:600; color:var(--navy); text-align:left;">Tableau 3 — Matière première, main-d'œuvre et éléments de concordance</p>`;
+      h += `<div class="exam-table-wrap"><table class="exam-table">
+          <tr><th style="width:62%;">Élément</th><th style="width:38%;">Valeur</th></tr>
+          <tr><td class="txt-left">Stock initial de matière</td><td class="txt-left" style="font-weight:400;">${fmtNb(D.q0,0)} ${D.prof.fr.unite} pour ${money(D.V0,'fr',2)}</td></tr>
+          <tr><td class="txt-left">Achats du mois</td><td class="txt-left" style="font-weight:400;">${fmtNb(D.qA,0)} ${D.prof.fr.unite} à ${money(D.pu,'fr',2)} le ${D.prof.fr.unite}</td></tr>
+          <tr><td class="txt-left">Taux horaire de la main-d'œuvre directe</td><td class="amt">${money(D.tMOD,'fr',2)}</td></tr>
+          <tr><td class="txt-left">Stock final réel de matière (inventaire physique)</td><td class="amt">${fmtNb(D.sfReel,0)} ${D.prof.fr.unite}</td></tr>
+          <tr><td class="txt-left">Charges non incorporables du mois</td><td class="amt">${money(D.NI,'fr',0)}</td></tr>
+          <tr><td class="txt-left">Charges supplétives du mois</td><td class="amt">${money(D.SUP,'fr',0)}</td></tr>
+          <tr><td class="txt-left">Résultat de la comptabilité générale du mois</td><td class="amt">${money(D.RCG,'fr',2)}</td></tr>
+      </table></div>`;
+      return h;
+    },
+    info: function(D) {
+      return `
+        <strong>Hypothèses de travail.</strong> Les sorties de stocks, de matière comme de produits finis, sont valorisées au coût unitaire moyen pondéré calculé après chaque entrée, arrondi au centime. Il n'existe ni en-cours de production au début ni à la fin du mois, de sorte que la production du mois correspond exactement aux quantités achevées. Les charges de main-d'œuvre directe et les consommations de matière constituent les seules charges directes ; toutes les autres charges transitent par les centres d'analyse. La différence d'inventaire sur la matière est valorisée au coût unitaire moyen pondéré et constitue un élément de la concordance entre les deux comptabilités. Tous les montants sont arrondis au centime le plus proche.
+      `;
+    },
+    enonce: function(D) {
+      let h = "";
+      h += `<li><strong>Répartition secondaire.</strong> Les deux centres auxiliaires se rendent des prestations réciproques. Posez le système d'équations correspondant, résolvez-le, puis achevez le tableau de répartition des charges indirectes.</li>`;
+      h += `<li><strong>Coût des unités d'œuvre.</strong> Déterminez le nombre d'unités d'œuvre de chaque centre principal et calculez le coût de l'unité d'œuvre correspondant.</li>`;
+      h += `<li><strong>Coût d'achat et stock de matière.</strong> Calculez le coût d'achat de la matière première du mois, puis le coût unitaire moyen pondéré de sortie du stock de matière.</li>`;
+      h += `<li><strong>Coûts de production.</strong> Calculez le coût de production de chacun des deux produits, puis le coût unitaire moyen pondéré de sortie du stock de produits finis.</li>`;
+      h += `<li><strong>Coûts de revient et résultats analytiques.</strong> Déterminez le coût de revient et le résultat analytique de chaque produit, ainsi que le résultat analytique global.</li>`;
+      h += `<li><strong>Concordance et commentaire.</strong> Établissez le rapprochement entre le résultat analytique global et le résultat de la comptabilité générale. Commentez la rentabilité respective des deux produits et indiquez les limites de la méthode.</li>`;
+      return h;
+    },
+    sol: function(D) {
+      const M = v => money(v, 'fr', 2), M0 = v => money(v, 'fr', 0);
+      const C = I18N.fr.centres;
+      let s = "";
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">1. La répartition secondaire et les prestations réciproques</span>
+        La difficulté tient à ce que chacun des deux centres auxiliaires travaille pour l'autre : on ne peut vider le premier sans connaître ce qu'il reçoit du second, et réciproquement. Il faut donc raisonner sur les totaux <em>après</em> répartition secondaire. En notant $A$ le total du centre « ${C[0]} » et $E$ celui du centre « ${C[1]} » une fois reçues les prestations de l'autre centre, on écrit :
+        <div class="math-formula">\\[\\begin{cases} A = ${texI(D.a0)} + ${texD(D.beta,0)}\\,\\% \\times E \\\\ E = ${texI(D.e0)} + ${texD(D.alpha,0)}\\,\\% \\times A \\end{cases}\\]</div>
+        En substituant la seconde équation dans la première, il vient $A = ${texI(D.a0)} + ${texD(D.beta,0)}\\,\\% \\times \\left(${texI(D.e0)} + ${texD(D.alpha,0)}\\,\\% \\times A\\right)$, soit
+        <div class="math-formula">\\[A \\times \\left(1 - ${texD(D.alpha,0)}\\,\\% \\times ${texD(D.beta,0)}\\,\\%\\right) = ${texI(D.a0)} + ${texD(D.beta,0)}\\,\\% \\times ${texI(D.e0)} \\quad \\Longrightarrow \\quad A = ${texI(D.A)}\\ \\text{euros}\\]</div>
+        puis $E = ${texI(D.e0)} + ${texD(D.alpha,0)}\\,\\% \\times ${texI(D.A)} = ${texI(D.E)}$ euros. Ces deux montants dépassent les totaux primaires, ce qui est normal : ils incluent les prestations reçues, qui seront ensuite reversées.
+        ${repartTable(D, 'fr')}
+        <strong>Le contrôle est essentiel.</strong> Le total réparti sur les trois centres principaux, ${M(D.totPrinc)}, est exactement égal au total des charges indirectes de la répartition primaire, ${M(D.totalPrim)} : les prestations réciproques se sont neutralisées. Une répartition secondaire qui ne boucle pas signale immanquablement une erreur de résolution du système.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">2. Le coût des unités d'œuvre</span>
+        L'unité d'œuvre est la grandeur censée expliquer la consommation de ressources du centre : les charges du centre lui sont proportionnelles, et c'est par elle que le coût du centre sera imputé aux produits.
+        <div class="math-formula">\\[\\text{Coût de l'unité d'œuvre} = \\frac{\\text{Total du centre après répartition secondaire}}{\\text{Nombre d'unités d'œuvre}}\\]</div>
+        ${uoTable(D, 'fr')}
+        Le nombre d'unités d'œuvre de l'approvisionnement est celui des ${D.prof.fr.unite} achetés, soit ${fmtNb(D.qA,0)}, et non celui des ${D.prof.fr.unite} consommés : le centre travaille sur les entrées. Celui de la production est le total des heures de main-d'œuvre directe, ${fmtNb(D.h[0],0)} + ${fmtNb(D.h[1],0)} = ${fmtNb(D.hTot,0)} heures. Celui de la distribution s'obtient en divisant le chiffre d'affaires du mois, ${M(D.CAtot)}, par cent.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">3. Le coût d'achat et le stock de matière</span>
+        Le coût d'achat ne se limite pas au prix facturé : il comprend les charges du centre approvisionnement, imputées à raison de ${M(D.cUO[0])} par ${D.prof.fr.unite} acheté.
+        ${achatTable(D, 'fr')}
+        Les sorties de stock sont valorisées au coût unitaire moyen pondéré calculé après l'entrée du mois, qui mélange le stock initial et les achats :
+        <div class="math-formula">\\[\\text{CUMP} = \\frac{${texM(D.V0)} + ${texM(D.coutAchat)}}{${texI(D.q0)} + ${texI(D.qA)}} = \\frac{${texM(D.V0 + D.coutAchat)}}{${texI(D.q0 + D.qA)}} = ${texM(D.cump)}\\ \\text{euros par ${D.prof.fr.unite}}\\]</div>
+        ${D.cump > D.pu
+          ? `Le coût unitaire de sortie, ${M(D.cump)}, dépasse le prix d'achat unitaire de ${M(D.pu)} : l'écart tient aux frais d'approvisionnement incorporés et, le cas échéant, à la valorisation du stock initial.`
+          : `Le coût unitaire de sortie s'établit à ${M(D.cump)}, en deçà du prix d'achat du mois : le stock initial, valorisé à un coût plus faible, tire la moyenne vers le bas.`}
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">4. Les coûts de production</span>
+        Le coût de production réunit les charges directes — matière consommée valorisée au coût unitaire moyen pondéré et main-d'œuvre directe — et la quote-part de charges indirectes du centre production, imputée à raison de ${M(D.cUO[1])} par heure de main-d'œuvre directe.
+        ${prodTable(D, 'fr')}
+        Les sorties de produits finis sont à leur tour valorisées au coût unitaire moyen pondéré, stock initial compris : pour le produit A, $\\frac{${texM(D.V0pf[0])} + ${texM(D.coutProd[0])}}{${texI(D.n0[0])} + ${texI(D.n[0])}} = ${texM(D.cumpPF[0])}$ euros l'unité, et ${M(D.cumpPF[1])} pour le produit B.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">5. Les coûts de revient et les résultats analytiques</span>
+        Le coût de revient d'un produit vendu ajoute au coût de production des quantités vendues la quote-part de charges de distribution, imputée à raison de ${M(D.cUO[2])} par tranche de 100 euros de chiffre d'affaires.
+        ${revientTable(D, 'fr')}
+        ${chartSVG(D, 'fr')}
+        Le résultat analytique global s'élève à ${M(D.RAtot)}. ${D.RA[0] >= 0 && D.RA[1] >= 0
+          ? `Les deux produits y contribuent positivement, le produit ${D.RA[0] >= D.RA[1] ? 'A' : 'B'} pour l'essentiel.`
+          : (D.RA[0] < 0 && D.RA[1] < 0
+            ? `Les deux produits sont déficitaires : c'est la structure de coûts dans son ensemble qu'il faut revoir.`
+            : `Il masque toutefois une situation contrastée : le produit ${D.RA[0] < 0 ? 'A' : 'B'} est vendu à perte, à hauteur de ${M(Math.abs(D.RA[D.RA[0] < 0 ? 0 : 1]))}, et c'est le produit ${D.RA[0] < 0 ? 'B' : 'A'} qui porte seul la rentabilité de l'entreprise.`)}
+        Rapportés au chiffre d'affaires, les taux de marge ressortent à ${fmtNb(D.marge[0]*100,2)} % pour le produit A et ${fmtNb(D.marge[1]*100,2)} % pour le produit B.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">6. La concordance et le commentaire</span>
+        Les deux comptabilités ne retiennent pas les mêmes charges, et leurs résultats diffèrent donc nécessairement. Trois retraitements permettent de passer de l'un à l'autre. Les <strong>charges supplétives</strong> — ${M0(D.SUP)} ici, essentiellement la rémunération conventionnelle des capitaux propres — sont incorporées aux coûts alors qu'elles ne figurent pas en comptabilité générale : il faut donc les ajouter au résultat analytique. Les <strong>charges non incorporables</strong> — ${M0(D.NI)} — suivent la logique inverse : réelles mais écartées des coûts, elles doivent être retranchées. La <strong>différence d'inventaire</strong>, enfin, constate l'écart entre le stock théorique et le stock physique : le stock final théorique de matière s'élève à $${texI(D.q0)} + ${texI(D.qA)} - ${texI(D.q[0])} - ${texI(D.q[1])} = ${texI(D.sfTheo)}$ ${D.prof.fr.unite}, contre ${fmtNb(D.sfReel,0)} ${D.prof.fr.unite} à l'inventaire physique, soit un mali de ${fmtNb(D.ecartQ,0)} ${D.prof.fr.unite} valorisé à ${M(D.mali)}.
+        ${concordanceTable(D, 'fr')}
+        On retrouve exactement le résultat de la comptabilité générale communiqué dans l'énoncé, ${M(D.RCG)} : la concordance est vérifiée.<br><br>
+        <strong>Que retenir de ces résultats ?</strong> ${D.marge[0] > D.marge[1]
+          ? `Le produit A dégage le meilleur taux de marge, ${fmtNb(D.marge[0]*100,2)} % contre ${fmtNb(D.marge[1]*100,2)} % pour le produit B.`
+          : `Le produit B dégage le meilleur taux de marge, ${fmtNb(D.marge[1]*100,2)} % contre ${fmtNb(D.marge[0]*100,2)} % pour le produit A.`} La tentation serait d'en conclure qu'il faut développer l'un et abandonner l'autre. Ce serait aller vite en besogne, pour deux raisons. D'une part, une partie des charges indirectes est structurelle : supprimer un produit ne les fait pas disparaître, elle les reporte sur les produits restants, dont le coût de revient augmenterait aussitôt. D'autre part, et surtout, ces coûts de revient dépendent entièrement des clés de répartition retenues.<br><br>
+        <strong>Les limites de la méthode.</strong> L'imputation des charges indirectes repose ici sur trois unités d'œuvre volumiques : les ${D.prof.fr.unite} achetés, les heures de main-d'œuvre directe et le chiffre d'affaires. Or rien ne garantit que les charges du centre production soient réellement proportionnelles aux heures de main-d'œuvre : un produit fabriqué en petites séries consomme des réglages, des contrôles et de l'ordonnancement sans consommer davantage d'heures de main-d'œuvre. Le produit fabriqué en grandes séries se voit alors imputer des charges qu'il n'a pas engendrées — c'est le phénomène de <em>subventionnement croisé</em>, et il s'aggrave à mesure que la part des charges indirectes augmente dans la structure de coûts. La méthode des centres d'analyse a été conçue pour des entreprises industrielles où la main-d'œuvre directe dominait ; elle perd en pertinence lorsque les activités de support prennent le pas. C'est précisément le constat qui a conduit à la méthode ABC, qui substitue aux unités d'œuvre volumiques des inducteurs propres à chaque activité.
+      </div>`;
+
+      s += `<div class="persp-box">
+        <span class="sol-sub">Pour aller plus loin — l'arbitraire des clés et ce qu'il coûte</span>
+        Le coût complet n'est pas une grandeur objective : c'est une construction. La matière consommée et la main-d'œuvre directe sont mesurables sans ambiguïté, mais tout le reste — ${fmtNb(D.totalPrim / (D.totalPrim + D.mod[0] + D.mod[1] + D.matCons[0] + D.matCons[1]) * 100, 0)} % des charges incorporées dans cet exercice — ne rejoint les produits qu'au terme d'une chaîne de conventions : le découpage en centres, le choix des clés de répartition secondaire, la sélection des unités d'œuvre. Changez l'une de ces conventions et les coûts de revient changent, sans qu'aucune ressource n'ait été consommée différemment.
+        <p style="margin-top:.8rem;">Ce caractère conventionnel a une conséquence pratique que les manuels soulignent rarement : le coût complet est un mauvais outil de décision à court terme. Pour décider d'accepter une commande supplémentaire, d'abandonner un produit ou de sous-traiter une fabrication, ce sont les coûts <em>pertinents</em> qui comptent, c'est-à-dire ceux qui varieront effectivement avec la décision. Les charges indirectes de structure, réparties entre les produits par des clés, ne disparaissent pas si l'un d'eux est abandonné. Un produit dont le résultat analytique est négatif peut donc parfaitement mériter d'être conservé, dès lors que son prix de vente couvre ses charges directes et contribue à l'absorption des charges fixes — c'est tout l'objet du raisonnement en coûts partiels et en marge sur coût variable.</p>
+        <p style="margin-top:.8rem;">Le coût complet garde en revanche deux domaines de pertinence incontestables. En comptabilité financière d'abord : l'évaluation des stocks de produits finis au bilan s'effectue au coût de production, et le règlement ANC relatif au plan comptable général en impose la méthode. Dans la fixation des prix ensuite, lorsque l'entreprise raisonne à long terme ou opère dans un cadre réglementé — marchés publics, tarifs administrés, prix de transfert intragroupe —, où le prix doit couvrir l'intégralité des charges. La question n'est donc pas de savoir si le coût complet est « juste », mais de savoir à quelle décision il est destiné.</p>
+      </div>`;
+
+      return s;
+    }
+  },
+
+  en: {
+    "htmlLang": "en",
+    "title": "Management Accounting Simulator - Cost centres",
+    "locale": "en-GB",
+    "k-badge": "FINANCIAL ASSET VALUATION METHODS",
+    "k-h1": "The cost centre method",
+    "k-sub": "© Thomas Hossen – Version of 18 September 2026",
+    "k-seed": "Reproducibility seed",
+    "k-gen": "Generate",
+    "k-welcome": "Set the parameters and click Generate to create a new exercise.",
+    "k-seedbadge": "Active seed:",
+    "k-tag-ex": "Statement",
+    "k-cardtitle": "Full costing, reciprocal services and reconciliation",
+    "k-tag-sol": "Solution",
+    "k-cardtitle2": "Full costing, reciprocal services and reconciliation",
+    "k-work": "Required work",
+    "showSol": "Show solution",
+    "hideSol": "Hide solution",
+    thousands: ",",
+    decimal: ".",
+
+    centres: ["Personnel management", "Maintenance", "Purchasing", "Production", "Distribution"],
+    uoNames: ["kg of material purchased", "direct labour hour", "€100 of revenue"],
+    chartTitle: "Revenue and cost of sales by product",
+    chartNote: "The gap between the two bars is the product's analytical result.",
+    lblCA: "revenue",
+    lblCR: "cost of sales",
+
+    context: function(D) {
+      const p = D.prof.en;
+      return `
+        ${D.prof.name} is ${p.secteur} making two products from a single raw material, ${p.matiere}: ${p.p1} (product A) and ${p.p2} (product B). Its management accounting relies on the cost centre method, with two service centres — personnel management and maintenance — which provide services to one another, and three operating centres. Management wishes to know the cost of sales and the analytical result of each product for the month of ${D.moisEn}, then to check that these results tie in with those of the financial accounts.
+      `;
+    },
+    table: function(D) {
+      const C = I18N.en.centres;
+      let h = "";
+      h += `<p style="margin:1.4rem 0 .6rem; font-weight:600; color:var(--navy); text-align:left;">Table 1 — Primary allocation of indirect costs and secondary allocation keys</p>`;
+      h += `<div class="exam-table-wrap"><table class="exam-table">
+          <tr><th style="width:34%;">Centre</th><th>Primary allocation</th><th>Share of "Personnel management"</th><th>Share of "Maintenance"</th></tr>
+          <tr><td class="txt-left">${C[0]}</td><td class="amt">${fmtNb(D.a0,0)}</td><td class="amt">—</td><td class="amt">${fmtNb(D.beta,0)}%</td></tr>
+          <tr><td class="txt-left">${C[1]}</td><td class="amt">${fmtNb(D.e0,0)}</td><td class="amt">${fmtNb(D.alpha,0)}%</td><td class="amt">—</td></tr>
+          <tr><td class="txt-left">${C[2]}</td><td class="amt">${fmtNb(D.prim[0],0)}</td><td class="amt">${fmtNb(D.pA[0],0)}%</td><td class="amt">${fmtNb(D.pE[0],0)}%</td></tr>
+          <tr><td class="txt-left">${C[3]}</td><td class="amt">${fmtNb(D.prim[1],0)}</td><td class="amt">${fmtNb(D.pA[1],0)}%</td><td class="amt">${fmtNb(D.pE[1],0)}%</td></tr>
+          <tr><td class="txt-left">${C[4]}</td><td class="amt">${fmtNb(D.prim[2],0)}</td><td class="amt">${fmtNb(D.pA[2],0)}%</td><td class="amt">${fmtNb(D.pE[2],0)}%</td></tr>
+          <tr style="background:var(--cream-dark);"><td class="txt-left" style="font-weight:700;">Total</td><td class="amt" style="font-weight:700;">${fmtNb(D.totalPrim,0)}</td><td class="amt" style="font-weight:700;">100%</td><td class="amt" style="font-weight:700;">100%</td></tr>
+      </table></div>
+      <p style="font-size:.82rem;color:var(--text-muted);font-style:italic;margin:.4rem 0 0;text-align:left;">The cost units used are the ${I18N.en.uoNames[0]} for purchasing, the ${I18N.en.uoNames[1]} for production and ${I18N.en.uoNames[2]} for distribution.</p>`;
+
+      h += `<p style="margin:1.6rem 0 .6rem; font-weight:600; color:var(--navy); text-align:left;">Table 2 — Operating data for the month</p>`;
+      h += `<div class="exam-table-wrap"><table class="exam-table">
+          <tr><th style="width:52%;">Item</th><th>Product A</th><th>Product B</th></tr>
+          <tr><td class="txt-left">Material consumed (${D.prof.en.unite})</td><td class="amt">${fmtNb(D.q[0],0)}</td><td class="amt">${fmtNb(D.q[1],0)}</td></tr>
+          <tr><td class="txt-left">Direct labour hours</td><td class="amt">${fmtNb(D.h[0],0)}</td><td class="amt">${fmtNb(D.h[1],0)}</td></tr>
+          <tr><td class="txt-left">Output for the month (units)</td><td class="amt">${fmtNb(D.n[0],0)}</td><td class="amt">${fmtNb(D.n[1],0)}</td></tr>
+          <tr><td class="txt-left">Opening inventory of finished goods (units)</td><td class="amt">${fmtNb(D.n0[0],0)}</td><td class="amt">${fmtNb(D.n0[1],0)}</td></tr>
+          <tr><td class="txt-left">Value of opening inventory of finished goods</td><td class="amt">${fmtNb(D.V0pf[0],2)}</td><td class="amt">${fmtNb(D.V0pf[1],2)}</td></tr>
+          <tr><td class="txt-left">Quantities sold (units)</td><td class="amt">${fmtNb(D.v[0],0)}</td><td class="amt">${fmtNb(D.v[1],0)}</td></tr>
+          <tr><td class="txt-left">Unit selling price</td><td class="amt">${fmtNb(D.pv[0],0)}</td><td class="amt">${fmtNb(D.pv[1],0)}</td></tr>
+      </table></div>`;
+
+      h += `<p style="margin:1.6rem 0 .6rem; font-weight:600; color:var(--navy); text-align:left;">Table 3 — Raw material, labour and reconciliation items</p>`;
+      h += `<div class="exam-table-wrap"><table class="exam-table">
+          <tr><th style="width:62%;">Item</th><th style="width:38%;">Value</th></tr>
+          <tr><td class="txt-left">Opening inventory of raw material</td><td class="txt-left" style="font-weight:400;">${fmtNb(D.q0,0)} ${D.prof.en.unite} for ${money(D.V0,'en',2)}</td></tr>
+          <tr><td class="txt-left">Purchases for the month</td><td class="txt-left" style="font-weight:400;">${fmtNb(D.qA,0)} ${D.prof.en.unite} at ${money(D.pu,'en',2)} per ${D.prof.en.unite}</td></tr>
+          <tr><td class="txt-left">Hourly rate of direct labour</td><td class="amt">${money(D.tMOD,'en',2)}</td></tr>
+          <tr><td class="txt-left">Actual closing inventory of material (physical count)</td><td class="amt">${fmtNb(D.sfReel,0)} ${D.prof.en.unite}</td></tr>
+          <tr><td class="txt-left">Non-incorporable charges for the month</td><td class="amt">${money(D.NI,'en',0)}</td></tr>
+          <tr><td class="txt-left">Notional charges for the month</td><td class="amt">${money(D.SUP,'en',0)}</td></tr>
+          <tr><td class="txt-left">Profit per the financial accounts for the month</td><td class="amt">${money(D.RCG,'en',2)}</td></tr>
+      </table></div>`;
+      return h;
+    },
+    info: function(D) {
+      return `
+        <strong>Working assumptions.</strong> Inventory issues, of both material and finished goods, are valued at the weighted average unit cost computed after each receipt, rounded to the cent. There is no work in progress at either the beginning or the end of the month, so that output for the month corresponds exactly to the quantities completed. Direct labour costs and material consumption are the only direct costs; all other charges pass through the cost centres. The inventory difference on the raw material is valued at the weighted average unit cost and forms part of the reconciliation between the two sets of accounts. All amounts are rounded to the nearest cent.
+      `;
+    },
+    enonce: function(D) {
+      let h = "";
+      h += `<li><strong>Secondary allocation.</strong> The two service centres provide reciprocal services to each other. Set out the corresponding system of equations, solve it, then complete the indirect cost allocation table.</li>`;
+      h += `<li><strong>Cost per cost unit.</strong> Determine the number of cost units of each operating centre and compute the corresponding cost per cost unit.</li>`;
+      h += `<li><strong>Purchase cost and material inventory.</strong> Compute the purchase cost of the month's raw material, then the weighted average unit cost of issues from the material inventory.</li>`;
+      h += `<li><strong>Production costs.</strong> Compute the production cost of each of the two products, then the weighted average unit cost of issues from the finished goods inventory.</li>`;
+      h += `<li><strong>Costs of sales and analytical results.</strong> Determine the cost of sales and the analytical result of each product, together with the overall analytical result.</li>`;
+      h += `<li><strong>Reconciliation and commentary.</strong> Reconcile the overall analytical result with the profit shown by the financial accounts. Comment on the relative profitability of the two products and set out the limitations of the method.</li>`;
+      return h;
+    },
+    sol: function(D) {
+      const M = v => money(v, 'en', 2), M0 = v => money(v, 'en', 0);
+      const C = I18N.en.centres;
+      let s = "";
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">1. Secondary allocation and reciprocal services</span>
+        The difficulty lies in the fact that each service centre works for the other: neither can be emptied without knowing what it receives from the other. The reasoning must therefore bear on the totals <em>after</em> secondary allocation. Writing $A$ for the total of the "${C[0]}" centre and $E$ for that of the "${C[1]}" centre, once the other centre's services have been received:
+        <div class="math-formula">\\[\\begin{cases} A = ${texI(D.a0)} + ${texD(D.beta,0)}\\,\\% \\times E \\\\ E = ${texI(D.e0)} + ${texD(D.alpha,0)}\\,\\% \\times A \\end{cases}\\]</div>
+        Substituting the second equation into the first gives $A = ${texI(D.a0)} + ${texD(D.beta,0)}\\,\\% \\times \\left(${texI(D.e0)} + ${texD(D.alpha,0)}\\,\\% \\times A\\right)$, hence
+        <div class="math-formula">\\[A \\times \\left(1 - ${texD(D.alpha,0)}\\,\\% \\times ${texD(D.beta,0)}\\,\\%\\right) = ${texI(D.a0)} + ${texD(D.beta,0)}\\,\\% \\times ${texI(D.e0)} \\quad \\Longrightarrow \\quad A = ${texI(D.A)}\\ \\text{euros}\\]</div>
+        then $E = ${texI(D.e0)} + ${texD(D.alpha,0)}\\,\\% \\times ${texI(D.A)} = ${texI(D.E)}$ euros. Both amounts exceed the primary totals, which is as it should be: they include the services received, which will then be passed on.
+        ${repartTable(D, 'en')}
+        <strong>The check is essential.</strong> The total allocated to the three operating centres, ${M(D.totPrinc)}, is exactly equal to the total indirect costs of the primary allocation, ${M(D.totalPrim)}: the reciprocal services have cancelled out. A secondary allocation that does not tie invariably signals an error in solving the system.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">2. The cost per cost unit</span>
+        The cost unit is the measure deemed to explain the centre's consumption of resources: the centre's costs are proportional to it, and it is through it that the centre's cost will be charged to the products.
+        <div class="math-formula">\\[\\text{Cost per cost unit} = \\frac{\\text{Centre total after secondary allocation}}{\\text{Number of cost units}}\\]</div>
+        ${uoTable(D, 'en')}
+        The number of cost units for purchasing is that of the ${D.prof.en.unite} purchased, ${fmtNb(D.qA,0)}, and not that of the ${D.prof.en.unite} consumed: the centre works on inputs. For production it is total direct labour hours, ${fmtNb(D.h[0],0)} + ${fmtNb(D.h[1],0)} = ${fmtNb(D.hTot,0)} hours. For distribution it is obtained by dividing the month's revenue, ${M(D.CAtot)}, by one hundred.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">3. Purchase cost and material inventory</span>
+        The purchase cost is not limited to the invoiced price: it includes the purchasing centre's costs, charged at ${M(D.cUO[0])} per ${D.prof.en.unite} purchased.
+        ${achatTable(D, 'en')}
+        Inventory issues are valued at the weighted average unit cost computed after the month's receipt, which blends opening inventory and purchases:
+        <div class="math-formula">\\[\\text{WAUC} = \\frac{${texM(D.V0)} + ${texM(D.coutAchat)}}{${texI(D.q0)} + ${texI(D.qA)}} = \\frac{${texM(D.V0 + D.coutAchat)}}{${texI(D.q0 + D.qA)}} = ${texM(D.cump)}\\ \\text{euros per ${D.prof.en.unite}}\\]</div>
+        ${D.cump > D.pu
+          ? `The unit cost of issues, ${M(D.cump)}, exceeds the unit purchase price of ${M(D.pu)}: the gap comes from the purchasing costs incorporated and, where applicable, from the valuation of opening inventory.`
+          : `The unit cost of issues comes to ${M(D.cump)}, below the month's purchase price: opening inventory, valued at a lower cost, pulls the average down.`}
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">4. Production costs</span>
+        The production cost brings together direct costs — material consumed, valued at the weighted average unit cost, and direct labour — and the share of the production centre's indirect costs, charged at ${M(D.cUO[1])} per direct labour hour.
+        ${prodTable(D, 'en')}
+        Issues of finished goods are in turn valued at the weighted average unit cost, including opening inventory: for product A, $\\frac{${texM(D.V0pf[0])} + ${texM(D.coutProd[0])}}{${texI(D.n0[0])} + ${texI(D.n[0])}} = ${texM(D.cumpPF[0])}$ euros per unit, and ${M(D.cumpPF[1])} for product B.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">5. Costs of sales and analytical results</span>
+        The cost of sales of a product adds to the production cost of the quantities sold the share of distribution costs, charged at ${M(D.cUO[2])} per €100 of revenue.
+        ${revientTable(D, 'en')}
+        ${chartSVG(D, 'en')}
+        The overall analytical result amounts to ${M(D.RAtot)}. ${D.RA[0] >= 0 && D.RA[1] >= 0
+          ? `Both products contribute positively to it, product ${D.RA[0] >= D.RA[1] ? 'A' : 'B'} for the greater part.`
+          : (D.RA[0] < 0 && D.RA[1] < 0
+            ? `Both products are loss-making: it is the cost structure as a whole that must be reviewed.`
+            : `It nonetheless conceals a contrasting picture: product ${D.RA[0] < 0 ? 'A' : 'B'} is sold at a loss, of ${M(Math.abs(D.RA[D.RA[0] < 0 ? 0 : 1]))}, and product ${D.RA[0] < 0 ? 'B' : 'A'} alone carries the company's profitability.`)}
+        Related to revenue, margin rates come to ${fmtNb(D.marge[0]*100,2)}% for product A and ${fmtNb(D.marge[1]*100,2)}% for product B.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">6. Reconciliation and commentary</span>
+        The two sets of accounts do not include the same charges, and their results therefore necessarily differ. Three adjustments bridge the gap. <strong>Notional charges</strong> — ${M0(D.SUP)} here, essentially the conventional remuneration of equity — are incorporated into costs although they do not appear in the financial accounts: they must therefore be added back to the analytical result. <strong>Non-incorporable charges</strong> — ${M0(D.NI)} — follow the opposite logic: real but excluded from costs, they must be deducted. The <strong>inventory difference</strong>, finally, records the gap between theoretical and physical inventory: the theoretical closing inventory of material comes to $${texI(D.q0)} + ${texI(D.qA)} - ${texI(D.q[0])} - ${texI(D.q[1])} = ${texI(D.sfTheo)}$ ${D.prof.en.unite}, against ${fmtNb(D.sfReel,0)} ${D.prof.en.unite} on physical count, that is a shortfall of ${fmtNb(D.ecartQ,0)} ${D.prof.en.unite} valued at ${M(D.mali)}.
+        ${concordanceTable(D, 'en')}
+        This gives back exactly the profit per the financial accounts stated in the question, ${M(D.RCG)}: the reconciliation checks out.<br><br>
+        <strong>What should be made of these results?</strong> ${D.marge[0] > D.marge[1]
+          ? `Product A shows the better margin rate, ${fmtNb(D.marge[0]*100,2)}% against ${fmtNb(D.marge[1]*100,2)}% for product B.`
+          : `Product B shows the better margin rate, ${fmtNb(D.marge[1]*100,2)}% against ${fmtNb(D.marge[0]*100,2)}% for product A.`} The temptation would be to conclude that one should be expanded and the other dropped. That would be premature, for two reasons. First, part of the indirect costs is structural: dropping a product does not make them disappear, it shifts them onto the remaining products, whose cost of sales would immediately rise. Second, and above all, these costs of sales depend entirely on the allocation keys chosen.<br><br>
+        <strong>The limitations of the method.</strong> Indirect costs are charged here on the basis of three volume-related cost units: ${D.prof.en.unite} purchased, direct labour hours and revenue. Yet nothing guarantees that the production centre's costs are genuinely proportional to labour hours: a product made in small batches consumes set-ups, inspections and scheduling without consuming more labour hours. The product made in long runs is then charged with costs it did not cause — this is <em>cross-subsidisation</em>, and it worsens as the share of indirect costs in the cost structure grows. The cost centre method was designed for industrial companies in which direct labour dominated; it loses relevance once support activities take over. That is precisely the finding that led to activity-based costing, which replaces volume-related cost units with drivers specific to each activity.
+      </div>`;
+
+      s += `<div class="persp-box">
+        <span class="sol-sub">Going further — the arbitrariness of allocation keys and what it costs</span>
+        Full cost is not an objective magnitude: it is a construction. Material consumed and direct labour are measurable without ambiguity, but everything else — ${fmtNb(D.totalPrim / (D.totalPrim + D.mod[0] + D.mod[1] + D.matCons[0] + D.matCons[1]) * 100, 0)}% of the charges incorporated in this exercise — only reaches the products at the end of a chain of conventions: the division into centres, the choice of secondary allocation keys, the selection of cost units. Change any one of those conventions and costs of sales change, without a single resource having been consumed differently.
+        <p style="margin-top:.8rem;">That conventional character has a practical consequence textbooks rarely stress: full cost is a poor tool for short-term decisions. To decide whether to accept an additional order, drop a product or subcontract a process, what matters are the <em>relevant</em> costs, that is, those that will actually vary with the decision. Structural indirect costs, spread across products by allocation keys, do not disappear if one of them is dropped. A product showing a negative analytical result may therefore well deserve to be kept, provided its selling price covers its direct costs and contributes to absorbing fixed costs — which is the whole point of partial costing and of contribution margin analysis.</p>
+        <p style="margin-top:.8rem;">Full costing nonetheless retains two undisputed areas of relevance. In financial accounting first: finished goods inventories are measured at production cost in the balance sheet, and the ANC regulation on the general accounting plan prescribes the method. In price setting next, where the company reasons for the long term or operates within a regulated framework — public procurement, administered tariffs, intragroup transfer pricing — and the price must cover all charges. The question is therefore not whether full cost is "right", but which decision it is meant to serve.</p>
+      </div>`;
+
+      return s;
+    }
+  }
+};
+
+/* ============================================================
+   GESTION DE LA LANGUE  /  LANGUAGE HANDLING
+   ============================================================ */
+let LANG = 'fr';
+
+function detectLang() {
+    try {
+        const q = new URLSearchParams(window.location.search).get('lang');
+        if (q && I18N[q.toLowerCase()]) return q.toLowerCase();
+    } catch (e) {}
+    const h = (window.location.hash || '').replace('#', '').toLowerCase();
+    if (I18N[h]) return h;
+    return 'fr';
+}
+
+function applyLang() {
+    const D = I18N[LANG];
+    document.documentElement.lang = D.htmlLang;
+    document.title = D.title;
+
+    document.querySelectorAll('[data-k]').forEach(function (el) {
+        const key = el.getAttribute('data-k');
+        if (D[key] !== undefined) el.innerHTML = D[key];
+    });
+
+    const btn = document.getElementById('toggle-btn');
+    if (btn) btn.innerText = document.getElementById('sol-card').classList.contains('visible') ? D.hideSol : D.showSol;
+
+    document.getElementById('flag-fr').classList.toggle('active', LANG === 'fr');
+    document.getElementById('flag-en').classList.toggle('active', LANG === 'en');
+}
+
+function setLang(lang) {
+    if (!I18N[lang] || lang === LANG) return;
+    LANG = lang;
+
+    try {
+        const u = new URL(window.location.href);
+        u.searchParams.set('lang', lang);
+        history.replaceState(null, '', u.toString());
+    } catch (e) {}
+
+    applyLang();
+
+    if (document.getElementById('ex-area').style.display !== 'none') {
+        const solWasVisible = document.getElementById('sol-card').classList.contains('visible');
+        generateExercise(false);
+        if (solWasVisible) toggleSol();
+    }
+}
+
+// --- PRNG (Mulberry32) ---
+let currentSeed = 0;
+function seedPRNG(seed) {
+    return function() {
+      let t = seed += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+let random = Math.random;
+
+function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
+function pick(arr) { return arr[randInt(0, arr.length - 1)]; }
+const r2 = x => Math.round(x * 100) / 100;
+
+/* --- formatage --- */
+function texD(num, dec) {
+    let sign = num < 0 ? "-" : "";
+    let parts = Math.abs(num).toFixed(dec).split('.');
+    let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, I18N[LANG].thousands);
+    return sign + intPart + (parts.length > 1 ? I18N[LANG].decimal + parts[1] : "");
+}
+function texI(num) { return texD(num, 0); }
+function texM(num) { return texD(num, 2); }
+function fmtNb(num, dec) {
+    return num.toLocaleString(I18N[LANG].locale, {minimumFractionDigits: dec, maximumFractionDigits: dec});
+}
+function money(v, lang, dec) {
+    const d = dec === undefined ? 0 : dec;
+    const s = Math.abs(v).toLocaleString(I18N[lang].locale, {minimumFractionDigits: d, maximumFractionDigits: d});
+    const body = (lang === 'fr') ? (s + '\u00a0€') : ('€' + s);
+    return (v < 0 ? '−' + body : body);
+}
+function num(v, lang, dec) {
+    const d = dec === undefined ? 2 : dec;
+    const s = Math.abs(v).toLocaleString(I18N[lang].locale, {minimumFractionDigits: d, maximumFractionDigits: d});
+    return (v < 0 ? '(' + s + ')' : s);
+}
+
+/* ============================================================
+   MODÈLE  /  MODEL
+   ============================================================ */
+function computeModel() {
+    let D = null;
+    for (let attempt = 0; attempt < 150; attempt++) {
+        const cand = drawModel();
+        if (cand) { D = cand; break; }
+    }
+    if (!D) D = drawModel(true);
+    return D;
+}
+
+function drawModel(force) {
+    const prof = PROFILES[randInt(0, PROFILES.length - 1)];
+    const moisIdx = randInt(0, 11);
+    const mois = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"][moisIdx];
+    const moisEn = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][moisIdx];
+
+    // --- prestations réciproques : on choisit la solution, on en déduit les primaires ---
+    const alpha = pick([5, 10, 15, 20]);      // part de A cédée à E
+    const beta  = pick([10, 15, 20, 25]);     // part de E cédée à A
+    const pA = splitKeys(100 - alpha);        // clés vers les centres principaux
+    const pE = splitKeys(100 - beta);
+
+    // --- quantités ---
+    const qA  = randInt(24, 60) * 500;                 // kg achetés
+    const pu  = r2(randInt(600, 2400) / 100);          // prix d'achat au kg
+    const q0  = randInt(4, 16) * 250;                  // stock initial matière
+    const p0  = r2(pu * randInt(88, 112) / 100);
+    const V0  = r2(q0 * p0);
+
+    const k1 = randInt(3, 9), k2 = randInt(2, 7);      // kg par unité produite
+    const qDispo = q0 + qA;
+    const qCible = Math.round(qDispo * randInt(76, 90) / 100);
+    const partA = randInt(35, 65) / 100;
+    const n  = [Math.max(100, Math.round(qCible * partA / k1 / 50) * 50),
+                Math.max(100, Math.round(qCible * (1 - partA) / k2 / 50) * 50)];
+    const q  = [n[0] * k1, n[1] * k2];
+    const hU = [randInt(10, 45) / 100, randInt(8, 35) / 100];
+    const h  = [Math.max(50, Math.round(n[0] * hU[0] / 50) * 50), Math.max(50, Math.round(n[1] * hU[1] / 50) * 50)];
+    if ((h[0] + h[1]) % 100 !== 0) h[1] += 50;
+    const hTot = h[0] + h[1];
+    const tMOD = r2(randInt(1800, 2900) / 100);
+
+    // --- coûts d'unité d'œuvre choisis, totaux de centre déduits ---
+    const cUO = [r2(randInt(30, 110) / 100), r2(randInt(1400, 3600) / 100), randInt(4, 12)];
+    const totAppro = r2(cUO[0] * qA);
+    const totProd  = r2(cUO[1] * hTot);
+
+    // --- stocks de produits finis et ventes ---
+    const n0 = [randInt(1, 6) * 50, randInt(1, 8) * 50];
+    const v  = [Math.round((n0[0] + n[0]) * randInt(70, 95) / 100 / 20) * 20,
+                Math.round((n0[1] + n[1]) * randInt(70, 95) / 100 / 20) * 20];
+
+    // --- enchaînement des coûts ---
+    const fraisAppro = r2(cUO[0] * qA);
+    const coutAchat = r2(qA * pu + fraisAppro);
+    const cump = r2((V0 + coutAchat) / (q0 + qA));
+    const matCons = [r2(q[0] * cump), r2(q[1] * cump)];
+    const mod = [r2(h[0] * tMOD), r2(h[1] * tMOD)];
+    const indProd = [r2(h[0] * cUO[1]), r2(h[1] * cUO[1])];
+    const coutProd = [r2(matCons[0] + mod[0] + indProd[0]), r2(matCons[1] + mod[1] + indProd[1])];
+
+    const cuProd = [coutProd[0] / n[0], coutProd[1] / n[1]];
+    const V0pf = [r2(n0[0] * cuProd[0] * randInt(92, 108) / 100), r2(n0[1] * cuProd[1] * randInt(92, 108) / 100)];
+    const cumpPF = [r2((V0pf[0] + coutProd[0]) / (n0[0] + n[0])), r2((V0pf[1] + coutProd[1]) / (n0[1] + n[1]))];
+
+    // --- prix de vente calibrés sur une marge cible ---
+    const cUOd = cUO[2];
+    const mCible = [randInt(8, 26) / 100, randInt(-6, 20) / 100];
+    const pv = [Math.round(cumpPF[0] * (1 + mCible[0]) / (1 - cUOd / 100) / 5) * 5,
+                Math.round(cumpPF[1] * (1 + mCible[1]) / (1 - cUOd / 100) / 5) * 5];
+    const CA = [v[0] * pv[0], v[1] * pv[1]];
+    const CAtot = CA[0] + CA[1];
+    const nbUOd = CAtot / 100;
+    const totDistrib = r2(cUO[2] * nbUOd);
+
+    // --- centres auxiliaires : on choisit les totaux après répartition, on en déduit les primaires ---
+    const totPrincSum = r2(totAppro + totProd + totDistrib);
+    const A = Math.round(totPrincSum * randInt(8, 16) / 100 / 1000) * 1000;
+    const E = Math.round(totPrincSum * randInt(6, 12) / 100 / 1000) * 1000;
+    const a0 = A - beta / 100 * E;
+    const e0 = E - alpha / 100 * A;
+    const recuA = pA.map(p => A * p / 100);
+    const recuE = pE.map(p => E * p / 100);
+
+    // primaires des centres principaux
+    const prim = [
+        r2(totAppro - recuA[0] - recuE[0]),
+        r2(totProd - recuA[1] - recuE[1]),
+        r2(totDistrib - recuA[2] - recuE[2])
+    ];
+    const totalPrim = r2(a0 + e0 + prim[0] + prim[1] + prim[2]);
+    const totPrinc = r2(totAppro + totProd + totDistrib);
+
+    // --- coûts de revient ---
+    const prodVendu = [r2(v[0] * cumpPF[0]), r2(v[1] * cumpPF[1])];
+    const distrib = [r2(cUO[2] * CA[0] / 100), r2(cUO[2] * CA[1] / 100)];
+    const coutRevient = [r2(prodVendu[0] + distrib[0]), r2(prodVendu[1] + distrib[1])];
+    const RA = [r2(CA[0] - coutRevient[0]), r2(CA[1] - coutRevient[1])];
+    const RAtot = r2(RA[0] + RA[1]);
+    const marge = [RA[0] / CA[0], RA[1] / CA[1]];
+
+    // --- concordance ---
+    const sfTheo = q0 + qA - q[0] - q[1];
+    const ecartQ = randInt(2, 14) * 5;
+    const sfReel = sfTheo - ecartQ;
+    const mali = r2(ecartQ * cump);
+    const SUP = randInt(10, 40) * 250;
+    const NI  = randInt(8, 36) * 250;
+    const RCG = r2(RAtot + SUP - NI - mali);
+
+    const D = {
+        prof, mois, moisEn, alpha, beta, A, E, a0, e0, pA, pE, recuA, recuE,
+        qA, pu, q0, p0, V0, k1, k2, n, q, h, hTot, tMOD,
+        cUO, totAppro, totProd, totDistrib, prim, totalPrim, totPrinc, nbUOd,
+        n0, v, V0pf, fraisAppro, coutAchat, cump, matCons, mod, indProd, coutProd, cuProd, cumpPF,
+        pv, CA, CAtot, prodVendu, distrib, coutRevient, RA, RAtot, marge,
+        sfTheo, sfReel, ecartQ, mali, SUP, NI, RCG
+    };
+
+    if (!force) {
+        if (a0 <= 0 || e0 <= 0) return null;
+        if (![a0, e0, prim[0], prim[1], prim[2], totAppro, totProd, totDistrib].every(Number.isInteger)) return null;
+        const totCentres = [totAppro, totProd, totDistrib];
+        for (let k = 0; k < 3; k++) if (prim[k] <= 0.2 * totCentres[k]) return null;
+        if (prim[0] <= 5000 || prim[1] <= 5000 || prim[2] <= 3000) return null;
+        if (q[0] + q[1] >= q0 + qA - 400) return null;          // il doit rester du stock
+        if (sfTheo - ecartQ <= 100) return null;
+        if (v[0] > n0[0] + n[0] || v[1] > n0[1] + n[1]) return null;
+        if (v[0] <= 0 || v[1] <= 0) return null;
+        if (pv[0] <= 0 || pv[1] <= 0) return null;
+        if (CA[0] % 100 !== 0 || CA[1] % 100 !== 0) return null;
+        if (RAtot <= 0) return null;                             // l'entreprise reste globalement bénéficiaire
+        if (Math.abs(marge[0]) > 0.45 || Math.abs(marge[1]) > 0.45) return null;
+        if (cumpPF[0] <= 0 || cumpPF[1] <= 0) return null;
+        if (!Number.isInteger(h[0]) || !Number.isInteger(h[1])) return null;
+        if (hTot <= 0) return null;
+        // contrôle de bouclage de la répartition secondaire
+        if (Math.abs(totPrinc - totalPrim) > 0.005) return null;
+    }
+    return D;
+}
+
+/* clés de répartition vers les trois centres principaux, multiples de 5 */
+function splitKeys(total) {
+    const u = total / 5;
+    let a = randInt(2, u - 4), b = randInt(2, u - a - 2);
+    return [a * 5, b * 5, total - a * 5 - b * 5];
+}
+
+/* ============================================================
+   TABLEAUX  /  TABLES
+   ============================================================ */
+function repartTable(D, lang) {
+    const fr = lang === 'fr', C = I18N[lang].centres;
+    const N = v => num(v, lang, 2);
+    const head = fr
+        ? ['Centre', 'Répartition primaire', 'Gestion du personnel', 'Entretien', 'Total après répartition']
+        : ['Centre', 'Primary allocation', 'Personnel management', 'Maintenance', 'Total after allocation'];
+    let rows = `<tr>
+        <td class="txt-left">${C[0]}</td><td class="amt">${N(D.a0)}</td>
+        <td class="amt">(${num(D.A, lang, 2)})</td><td class="amt">${N(r2(D.beta / 100 * D.E))}</td>
+        <td class="amt">0.00</td></tr>
+      <tr>
+        <td class="txt-left">${C[1]}</td><td class="amt">${N(D.e0)}</td>
+        <td class="amt">${N(r2(D.alpha / 100 * D.A))}</td><td class="amt">(${num(D.E, lang, 2)})</td>
+        <td class="amt">0.00</td></tr>`;
+    const tot = [D.totAppro, D.totProd, D.totDistrib];
+    for (let k = 0; k < 3; k++) {
+        rows += `<tr>
+            <td class="txt-left">${C[k + 2]}</td><td class="amt">${N(D.prim[k])}</td>
+            <td class="amt">${N(r2(D.recuA[k]))}</td><td class="amt">${N(r2(D.recuE[k]))}</td>
+            <td class="amt" style="font-weight:700;">${N(tot[k])}</td></tr>`;
+    }
+    rows += `<tr style="background:var(--cream-dark);">
+        <td class="txt-left" style="font-weight:700;">Total</td>
+        <td class="amt" style="font-weight:700;">${N(D.totalPrim)}</td>
+        <td class="amt"></td><td class="amt"></td>
+        <td class="amt" style="font-weight:700;">${N(D.totPrinc)}</td></tr>`;
+    return `<div class="exam-table-wrap"><table class="exam-table">
+        <tr>${head.map(x => `<th>${x}</th>`).join('')}</tr>${rows}
+    </table></div>
+    <p style="font-size:.82rem;color:var(--text-muted);font-style:italic;margin:.4rem 0 1.2rem;text-align:left;">${fr ? "Les montants entre parenthèses sont les totaux vidés des centres auxiliaires." : "Amounts in brackets are the service centre totals being cleared."}</p>`;
+}
+
+function uoTable(D, lang) {
+    const fr = lang === 'fr', C = I18N[lang].centres, U = I18N[lang].uoNames;
+    const head = fr
+        ? ['Centre principal', 'Total du centre', "Nature de l'unité d'œuvre", "Nombre d'unités d'œuvre", "Coût de l'unité d'œuvre"]
+        : ['Operating centre', 'Centre total', 'Nature of the cost unit', 'Number of cost units', 'Cost per cost unit'];
+    const tot = [D.totAppro, D.totProd, D.totDistrib];
+    const nb = [D.qA, D.hTot, D.nbUOd];
+    let rows = '';
+    for (let k = 0; k < 3; k++) {
+        rows += `<tr>
+            <td class="txt-left">${C[k + 2]}</td>
+            <td class="amt">${num(tot[k], lang, 2)}</td>
+            <td class="txt-left" style="font-weight:400;">${U[k]}</td>
+            <td class="amt">${fmtNb(nb[k], 0)}</td>
+            <td class="amt" style="font-weight:700;">${num(D.cUO[k], lang, 2)}</td></tr>`;
+    }
+    return `<div class="exam-table-wrap"><table class="exam-table">
+        <tr>${head.map(x => `<th>${x}</th>`).join('')}</tr>${rows}
+    </table></div>`;
+}
+
+function achatTable(D, lang) {
+    const fr = lang === 'fr';
+    const rows = [
+        [fr ? "Prix d'achat" : "Purchase price", fmtNb(D.qA, 0), num(D.pu, lang, 2), num(r2(D.qA * D.pu), lang, 2)],
+        [fr ? "Charges du centre approvisionnement" : "Purchasing centre costs", fmtNb(D.qA, 0), num(D.cUO[0], lang, 2), num(D.fraisAppro, lang, 2)],
+        [fr ? "= Coût d'achat de la matière" : "= Purchase cost of the material", fmtNb(D.qA, 0), num(r2(D.coutAchat / D.qA), lang, 2), num(D.coutAchat, lang, 2)]
+    ];
+    let body = '';
+    rows.forEach(function (r, i) {
+        const strong = i === rows.length - 1;
+        body += `<tr${strong ? ' style="background:#f4f1ea;"' : ''}>
+            <td class="txt-left" style="font-weight:${strong ? 700 : 400};">${r[0]}</td>
+            <td class="amt">${r[1]}</td><td class="amt">${r[2]}</td>
+            <td class="amt" style="font-weight:${strong ? 700 : 400};">${r[3]}</td></tr>`;
+    });
+    return `<div class="exam-table-wrap"><table class="exam-table">
+        <tr><th style="width:46%;">${fr ? "Coût d'achat" : "Purchase cost"}</th><th>${fr ? "Quantité" : "Quantity"}</th><th>${fr ? "Coût unitaire" : "Unit cost"}</th><th>${fr ? "Montant" : "Amount"}</th></tr>
+        ${body}
+    </table></div>`;
+}
+
+function prodTable(D, lang) {
+    const fr = lang === 'fr';
+    const N = v => num(v, lang, 2);
+    const rows = [
+        { l: fr ? "Matière consommée" : "Material consumed", q: [fmtNb(D.q[0], 0), fmtNb(D.q[1], 0)], cu: [N(D.cump), N(D.cump)], m: [D.matCons[0], D.matCons[1]] },
+        { l: fr ? "Main-d'œuvre directe" : "Direct labour", q: [fmtNb(D.h[0], 0), fmtNb(D.h[1], 0)], cu: [N(D.tMOD), N(D.tMOD)], m: [D.mod[0], D.mod[1]] },
+        { l: fr ? "Charges du centre production" : "Production centre costs", q: [fmtNb(D.h[0], 0), fmtNb(D.h[1], 0)], cu: [N(D.cUO[1]), N(D.cUO[1])], m: [D.indProd[0], D.indProd[1]] },
+        { l: fr ? "= Coût de production" : "= Production cost", q: [fmtNb(D.n[0], 0), fmtNb(D.n[1], 0)], cu: [N(r2(D.coutProd[0] / D.n[0])), N(r2(D.coutProd[1] / D.n[1]))], m: [D.coutProd[0], D.coutProd[1]], strong: true }
+    ];
+    let body = '';
+    rows.forEach(function (r) {
+        body += `<tr${r.strong ? ' style="background:#f4f1ea;"' : ''}>
+            <td class="txt-left" style="font-weight:${r.strong ? 700 : 400};">${r.l}</td>
+            <td class="amt">${r.q[0]}</td><td class="amt">${r.cu[0]}</td><td class="amt" style="font-weight:${r.strong ? 700 : 400};">${N(r.m[0])}</td>
+            <td class="amt">${r.q[1]}</td><td class="amt">${r.cu[1]}</td><td class="amt" style="font-weight:${r.strong ? 700 : 400};">${N(r.m[1])}</td></tr>`;
+    });
+    return `<div class="exam-table-wrap"><table class="exam-table">
+        <tr><th rowspan="2" style="width:26%;">${fr ? "Coût de production" : "Production cost"}</th><th colspan="3">${fr ? "Produit A" : "Product A"}</th><th colspan="3">${fr ? "Produit B" : "Product B"}</th></tr>
+        <tr><th>${fr ? "Qté" : "Qty"}</th><th>${fr ? "C. unit." : "Unit"}</th><th>${fr ? "Montant" : "Amount"}</th><th>${fr ? "Qté" : "Qty"}</th><th>${fr ? "C. unit." : "Unit"}</th><th>${fr ? "Montant" : "Amount"}</th></tr>
+        ${body}
+    </table></div>`;
+}
+
+function revientTable(D, lang) {
+    const fr = lang === 'fr';
+    const N = v => num(v, lang, 2);
+    const rows = [
+        { l: fr ? "Coût de production des produits vendus" : "Production cost of goods sold", q: [fmtNb(D.v[0], 0), fmtNb(D.v[1], 0)], cu: [N(D.cumpPF[0]), N(D.cumpPF[1])], m: [D.prodVendu[0], D.prodVendu[1]] },
+        { l: fr ? "Charges du centre distribution" : "Distribution centre costs", q: [fmtNb(D.CA[0] / 100, 0), fmtNb(D.CA[1] / 100, 0)], cu: [N(D.cUO[2]), N(D.cUO[2])], m: [D.distrib[0], D.distrib[1]] },
+        { l: fr ? "= Coût de revient" : "= Cost of sales", q: [fmtNb(D.v[0], 0), fmtNb(D.v[1], 0)], cu: [N(r2(D.coutRevient[0] / D.v[0])), N(r2(D.coutRevient[1] / D.v[1]))], m: [D.coutRevient[0], D.coutRevient[1]], strong: true },
+        { l: fr ? "Chiffre d'affaires" : "Revenue", q: [fmtNb(D.v[0], 0), fmtNb(D.v[1], 0)], cu: [N(D.pv[0]), N(D.pv[1])], m: [D.CA[0], D.CA[1]] },
+        { l: fr ? "= Résultat analytique" : "= Analytical result", q: ['', ''], cu: ['', ''], m: [D.RA[0], D.RA[1]], head: true }
+    ];
+    let body = '';
+    rows.forEach(function (r) {
+        const bg = r.head ? 'background:var(--cream-dark);' : (r.strong ? 'background:#f4f1ea;' : '');
+        const w = (r.strong || r.head) ? 700 : 400;
+        body += `<tr style="${bg}">
+            <td class="txt-left" style="font-weight:${w};">${r.l}</td>
+            <td class="amt">${r.q[0]}</td><td class="amt">${r.cu[0]}</td><td class="amt" style="font-weight:${w};${r.head && r.m[0] < 0 ? 'color:var(--red);' : ''}">${N(r.m[0])}</td>
+            <td class="amt">${r.q[1]}</td><td class="amt">${r.cu[1]}</td><td class="amt" style="font-weight:${w};${r.head && r.m[1] < 0 ? 'color:var(--red);' : ''}">${N(r.m[1])}</td></tr>`;
+    });
+    return `<div class="exam-table-wrap"><table class="exam-table">
+        <tr><th rowspan="2" style="width:26%;">${fr ? "Coût de revient" : "Cost of sales"}</th><th colspan="3">${fr ? "Produit A" : "Product A"}</th><th colspan="3">${fr ? "Produit B" : "Product B"}</th></tr>
+        <tr><th>${fr ? "Qté" : "Qty"}</th><th>${fr ? "C. unit." : "Unit"}</th><th>${fr ? "Montant" : "Amount"}</th><th>${fr ? "Qté" : "Qty"}</th><th>${fr ? "C. unit." : "Unit"}</th><th>${fr ? "Montant" : "Amount"}</th></tr>
+        ${body}
+    </table></div>
+    <p style="font-size:.82rem;color:var(--text-muted);font-style:italic;margin:.4rem 0 1.2rem;text-align:left;">${fr ? "Les montants entre parenthèses sont négatifs." : "Amounts in brackets are negative."}</p>`;
+}
+
+function concordanceTable(D, lang) {
+    const fr = lang === 'fr';
+    const rows = [
+        [fr ? "Résultat analytique global" : "Overall analytical result", D.RAtot, true],
+        [fr ? "+ Charges supplétives" : "+ Notional charges", D.SUP, false],
+        [fr ? "− Charges non incorporables" : "− Non-incorporable charges", -D.NI, false],
+        [fr ? "− Différence d'inventaire sur matière (mali)" : "− Inventory difference on material (shortfall)", -D.mali, false],
+        [fr ? "= Résultat de la comptabilité générale" : "= Profit per the financial accounts", D.RCG, true]
+    ];
+    let body = '';
+    rows.forEach(function (r, i) {
+        const last = i === rows.length - 1;
+        body += `<tr${last ? ' style="background:var(--cream-dark);"' : (r[2] ? ' style="background:#f4f1ea;"' : '')}>
+            <td class="txt-left" style="font-weight:${r[2] ? 700 : 400};">${r[0]}</td>
+            <td class="amt" style="font-weight:${r[2] ? 700 : 400};">${num(r[1], lang, 2)}</td></tr>`;
+    });
+    return `<div class="exam-table-wrap"><table class="exam-table">
+        <tr><th style="width:70%;">${fr ? "Concordance des résultats" : "Reconciliation of results"}</th><th>${fr ? "Montant" : "Amount"}</th></tr>
+        ${body}
+    </table></div>`;
+}
+
+/* ============================================================
+   GRAPHIQUE  /  CHART
+   ============================================================ */
+function chartSVG(D, lang) {
+    const L = I18N[lang];
+    const W = 680, H = 300, mL = 76, mR = 18, mT = 46, mB = 50;
+    const pw = W - mL - mR, ph = H - mT - mB;
+    const hi0 = Math.max(D.CA[0], D.CA[1], D.coutRevient[0], D.coutRevient[1]);
+    const hi = hi0 * 1.12, lo = 0;
+    const y = v => mT + ph - (v - lo) / (hi - lo) * ph;
+
+    let g = '';
+    const step = niceStep((hi - lo) / 5);
+    for (let v = 0; v <= hi; v += step) {
+        g += `<line x1="${mL}" y1="${y(v).toFixed(1)}" x2="${W - mR}" y2="${y(v).toFixed(1)}" stroke="#e2ded4" stroke-width="1"/>`;
+        g += `<text x="${mL - 8}" y="${(y(v) + 4).toFixed(1)}" text-anchor="end" font-family="'JetBrains Mono',monospace" font-size="9.5" fill="#5a5a5a">${fmtNb(v / 1000, 0)} k</text>`;
+    }
+
+    const slot = pw / 2, bw = slot * 0.24;
+    const names = [lang === 'fr' ? "Produit A" : "Product A", lang === 'fr' ? "Produit B" : "Product B"];
+    for (let k = 0; k < 2; k++) {
+        const cx = mL + slot * k + slot / 2;
+        [[D.CA[k], cx - bw * 0.65, '#1a2e42'], [D.coutRevient[k], cx + bw * 0.65, '#c9952a']].forEach(function (b) {
+            const [v, x, col] = b;
+            const yy = y(v);
+            g += `<rect x="${(x - bw / 2).toFixed(1)}" y="${yy.toFixed(1)}" width="${bw.toFixed(1)}" height="${(mT + ph - yy).toFixed(1)}" fill="${col}" rx="2"/>`;
+            g += `<text x="${x.toFixed(1)}" y="${(yy - 6).toFixed(1)}" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="9.5" font-weight="700" fill="${col}">${fmtNb(v / 1000, 1)}</text>`;
+        });
+        const col = D.RA[k] >= 0 ? '#2d6b4a' : '#b94040';
+        g += `<text x="${cx.toFixed(1)}" y="${(mT + ph + 20).toFixed(1)}" text-anchor="middle" font-family="'Source Serif 4',serif" font-size="11.5" fill="#1e1e1e">${names[k]}</text>`;
+        g += `<text x="${cx.toFixed(1)}" y="${(mT + ph + 36).toFixed(1)}" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="10" font-weight="700" fill="${col}">${(D.RA[k] >= 0 ? '+' : '−') + fmtNb(Math.abs(D.RA[k]) / 1000, 1)} k</text>`;
+    }
+
+    return `<div style="margin:1.4rem 0; overflow-x:auto;">
+      <svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" role="img">
+        <text x="${mL}" y="20" font-family="'Playfair Display',serif" font-size="13.5" font-weight="600" fill="#0d1b2a">${L.chartTitle}</text>
+        <rect x="${mL}" y="30" width="11" height="11" fill="#1a2e42" rx="2"/>
+        <text x="${mL + 16}" y="39.5" font-family="'Source Serif 4',serif" font-size="10.5" fill="#5a5a5a">${L.lblCA}</text>
+        <rect x="${mL + 120}" y="30" width="11" height="11" fill="#c9952a" rx="2"/>
+        <text x="${mL + 136}" y="39.5" font-family="'Source Serif 4',serif" font-size="10.5" fill="#5a5a5a">${L.lblCR}</text>
+        ${g}
+        <line x1="${mL}" y1="${(mT + ph).toFixed(1)}" x2="${W - mR}" y2="${(mT + ph).toFixed(1)}" stroke="#0d1b2a" stroke-width="1.5"/>
+        <line x1="${mL}" y1="${mT}" x2="${mL}" y2="${mT + ph}" stroke="#0d1b2a" stroke-width="1.5"/>
+        <text x="${mL}" y="${H - 6}" font-family="'Source Serif 4',serif" font-size="10" font-style="italic" fill="#5a5a5a">${L.chartNote}</text>
+      </svg>
+    </div>`;
+}
+
+function niceStep(raw) {
+    const p = Math.pow(10, Math.floor(Math.log10(Math.max(raw, 1))));
+    const nn = raw / p;
+    return (nn <= 1 ? 1 : nn <= 2 ? 2 : nn <= 5 ? 5 : 10) * p;
+}
+
+/* ============================================================
+   GÉNÉRATION  /  GENERATION
+   ============================================================ */
+function generateExercise(forceNew = false) {
+    if (forceNew) {
+        document.getElementById('seed-input').value = "";
+    }
+    let seedVal = document.getElementById('seed-input').value;
+    currentSeed = seedVal ? parseInt(seedVal) : Math.floor(Math.random() * 99999999);
+    document.getElementById('seed-disp').innerText = currentSeed;
+    document.getElementById('seed-input').value = currentSeed;
+    random = seedPRNG(currentSeed);
+
+    const DIC = I18N[LANG];
+    const D = computeModel();
+
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('ex-area').style.display = 'block';
+    document.getElementById('sol-card').classList.remove('visible');
+    document.getElementById('toggle-btn').innerText = DIC.showSol;
+    document.getElementById('toggle-btn').classList.remove('shown');
+
+    document.getElementById('context-text').innerHTML = DIC.context(D);
+    document.getElementById('enonce-table-container').innerHTML = DIC.table(D);
+    document.getElementById('additional-info').innerHTML = DIC.info(D);
+    document.getElementById('events-list').innerHTML = DIC.enonce(D);
+    document.getElementById('sol-content').innerHTML = DIC.sol(D);
+
+    if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
+        MathJax.typesetPromise().catch(function (err) { console.error('MathJax :', err); });
+    }
+}
+
+function toggleSol() {
+    let solCard = document.getElementById('sol-card');
+    let btn = document.getElementById('toggle-btn');
+    if (solCard.classList.contains('visible')) {
+        solCard.classList.remove('visible');
+        btn.innerText = I18N[LANG].showSol;
+        btn.classList.remove('shown');
+    } else {
+        solCard.classList.add('visible');
+        btn.innerText = I18N[LANG].hideSol;
+        btn.classList.add('shown');
+        solCard.scrollIntoView({behavior: 'smooth', block: 'start'});
+    }
+}
+
+/* Initialisation */
+LANG = detectLang();
+applyLang();
+</script>
+<!-- KIT:JS:START v1 -->
+<div id="pdf-ov" onclick="closePdfModal()"></div>
+<div id="pdf-modal">
+  <div class="mh">
+    <h3 data-kit="modalTitle">Exporter en PDF</h3>
+    <button type="button" class="mclose" onclick="closePdfModal()">&#10005;</button>
+  </div>
+  <div class="mb2">
+    <div class="seed-note"><span data-kit="seedPre">Seed&nbsp;:</span> <strong id="modal-seed">&mdash;</strong> <span data-kit="seedPost">&mdash; notez cette valeur pour reproduire exactement cet exercice.</span></div>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-header" checked>
+      <span class="opt-txt"><span class="opt-lbl" data-kit="optHeader">Inclure l'en-t&ecirc;te de page</span>
+           <span class="opt-desc" data-kit="optHeaderD">Titre, badge de mati&egrave;re et intitul&eacute; de l'exercice</span></span>
+    </label>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-sol">
+      <span class="opt-txt"><span class="opt-lbl" data-kit="optSol">Inclure le corrig&eacute; complet</span>
+           <span class="opt-desc" data-kit="optSolD">L'ensemble des d&eacute;veloppements et commentaires du corrig&eacute;</span></span>
+    </label>
+    <div class="mactions">
+      <button type="button" class="btn-print" onclick="doPrint()"><span data-kit="print">&#128424;&nbsp;Imprimer / Sauvegarder PDF</span></button>
+      <button type="button" class="btn-cancel" onclick="closePdfModal()"><span data-kit="cancel">Annuler</span></button>
+    </div>
+  </div>
+</div>
+
+<script id="kit-docx">
+/* =============================================================================
+   EXPORT WORD NATIF (.docx)
+   Trois briques, sans aucune dépendance externe :
+     1. mml2omml  — MathML -> OMML, le format d'équation natif de Word
+     2. zip       — écriture d'une archive ZIP (entrées « stored » + CRC32)
+     3. html2wml  — HTML de la page -> WordprocessingML
+   ============================================================================= */
+(function (root) {
+'use strict';
+
+/* --------------------------------------------------------------- utilitaires */
+function esc(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                  .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function kids(n) {
+  var out = [], c = n.firstChild;
+  while (c) { if (c.nodeType === 1) out.push(c); c = c.nextSibling; }
+  return out;
+}
+function txt(n) { return (n.textContent || '').replace(/\u200b/g, '').trim(); }
+
+/* ============================================================================
+   1. MathML -> OMML
+   ========================================================================== */
+var OPEN = '([{\u27e8\u2308\u230a|\u2016';
+var CLOSE = ')]}\u27e9\u2309\u230b|\u2016';
+var BIGOPS = '\u2211\u220f\u222b\u222c\u222d\u222e\u22c3\u22c2\u2210';
+var ACCENTS = {
+  '\u005e': '\u0302', '\u02c6': '\u0302', '^': '\u0302',
+  '\u00af': '\u0304', '\u2015': '\u0304', '\u2212': '\u0304', '_': '\u0304',
+  '~': '\u0303', '\u02dc': '\u0303', '\u02d9': '\u0307',
+  '\u2192': '\u20d7', '\u21c0': '\u20d1', '\u02c7': '\u030c', '\u02d8': '\u0306'
+};
+
+function run(text, style) {
+  if (text === '') return '';
+  var rPr = '<w:rPr><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/></w:rPr>';
+  var mPr = style ? '<m:rPr><m:sty m:val="' + style + '"/></m:rPr>' : '';
+  return '<m:r>' + mPr + rPr + '<m:t xml:space="preserve">' + esc(text) + '</m:t></m:r>';
+}
+
+/* Un grand opérateur (somme, intégrale…) absorbe la suite de la ligne comme
+   opérande : sans cela Word affiche un cadre vide à la place de l'argument. */
+function naryHere(n) {
+  if (!n || n.nodeType !== 1) return null;
+  var t = n.nodeName.toLowerCase().replace(/^.*:/, ''), k = kids(n);
+  if (t === 'munderover' || t === 'msubsup') return { base: k[0], sub: k[1], sup: k[2] };
+  if (t === 'munder' || t === 'msub') return { base: k[0], sub: k[1], sup: null };
+  if (t === 'mover' || t === 'msup') return { base: k[0], sub: null, sup: k[1] };
+  if (t === 'mo') return { base: n, sub: null, sup: null };
+  return null;
+}
+function isBigOp(n) {
+  if (!n || n.nodeType !== 1) return false;
+  var c = txt(n);
+  return n.nodeName.toLowerCase().replace(/^.*:/, '') === 'mo' &&
+         c.length === 1 && BIGOPS.indexOf(c) !== -1;
+}
+
+function seq(nodes) {
+  var s = '';
+  for (var i = 0; i < nodes.length; i++) {
+    var info = naryHere(nodes[i]);
+    if (info && isBigOp(info.base) && i + 1 < nodes.length) {
+      s += naryFull(info, nodes.slice(i + 1));
+      return s;
+    }
+    s += mml(nodes[i]);
+  }
+  return s;
+}
+
+function naryFull(info, rest) {
+  return '<m:nary><m:naryPr><m:chr m:val="' + esc(txt(info.base)) + '"/>' +
+         '<m:limLoc m:val="undOvr"/>' +
+         '<m:subHide m:val="' + (info.sub ? '0' : '1') + '"/>' +
+         '<m:supHide m:val="' + (info.sup ? '0' : '1') + '"/><m:ctrlPr/></m:naryPr>' +
+         '<m:sub>' + (info.sub ? mml(info.sub) : '') + '</m:sub>' +
+         '<m:sup>' + (info.sup ? mml(info.sup) : '') + '</m:sup>' +
+         '<m:e>' + seq(rest) + '</m:e></m:nary>';
+}
+
+/* mrow entouré de délimiteurs -> m:d, pour des parenthèses étirables natives */
+function fenced(ks) {
+  if (ks.length < 2) return null;
+  var a = ks[0], b = ks[ks.length - 1];
+  if (a.nodeName.toLowerCase() !== 'mo' || b.nodeName.toLowerCase() !== 'mo') return null;
+  var o = txt(a), c = txt(b);
+  if (o.length !== 1 || c.length !== 1) return null;
+  if (OPEN.indexOf(o) === -1 || CLOSE.indexOf(c) === -1) return null;
+  var inner = ks.slice(1, -1);
+  /* séparateurs de premier niveau -> plusieurs m:e */
+  var parts = [[]];
+  for (var i = 0; i < inner.length; i++) {
+    if (inner[i].nodeName.toLowerCase() === 'mo' && txt(inner[i]) === ',' && parts.length < 8) {
+      parts.push([]);
+    } else { parts[parts.length - 1].push(inner[i]); }
+  }
+  var sep = parts.length > 1 ? ',' : '';
+  var body = '';
+  for (var j = 0; j < parts.length; j++) body += '<m:e>' + seq(parts[j]) + '</m:e>';
+  return '<m:d><m:dPr><m:begChr m:val="' + esc(o) + '"/><m:sepChr m:val="' + esc(sep) +
+         '"/><m:endChr m:val="' + esc(c) + '"/><m:ctrlPr/></m:dPr>' + body + '</m:d>';
+}
+
+function naryOf(base, sub, sup) {
+  var ch = txt(base);
+  if (ch.length !== 1 || BIGOPS.indexOf(ch) === -1) return null;
+  return '<m:nary><m:naryPr><m:chr m:val="' + esc(ch) + '"/><m:limLoc m:val="undOvr"/>' +
+         '<m:subHide m:val="' + (sub ? '0' : '1') + '"/>' +
+         '<m:supHide m:val="' + (sup ? '0' : '1') + '"/><m:ctrlPr/></m:naryPr>' +
+         '<m:sub>' + (sub ? mml(sub) : '') + '</m:sub>' +
+         '<m:sup>' + (sup ? mml(sup) : '') + '</m:sup>' +
+         '<m:e></m:e></m:nary>';
+}
+
+function mml(n) {
+  if (!n) return '';
+  if (n.nodeType === 3) return run(n.nodeValue);
+  if (n.nodeType !== 1) return '';
+  var t = n.nodeName.toLowerCase().replace(/^.*:/, '');
+  var k = kids(n), s;
+
+  switch (t) {
+    case 'math':
+    case 'semantics':
+    case 'mstyle':
+    case 'mpadded':
+    case 'menclose':
+      return seq(k);
+
+    case 'annotation':
+    case 'annotation-xml':
+    case 'mphantom':
+      return '';
+
+    case 'mrow':
+      s = fenced(k);
+      return s !== null ? s : seq(k);
+
+    case 'mi':      return run(txt(n), txt(n).length === 1 ? 'i' : 'p');
+    case 'mn':      return run(txt(n), 'p');
+    case 'mo':      return run(txt(n), 'p');
+    case 'merror':  return run(txt(n), 'p');
+    case 'ms':      return run(txt(n), 'p');
+
+    case 'mtext':
+      var v = n.textContent || '';
+      return v === '' ? '' :
+        '<m:r><m:rPr><m:nor/></m:rPr><w:rPr><w:rFonts w:ascii="Cambria" w:hAnsi="Cambria"/></w:rPr>' +
+        '<m:t xml:space="preserve">' + esc(v) + '</m:t></m:r>';
+
+    case 'mspace':
+      return run(' ', 'p');
+
+    case 'mfrac':
+      return '<m:f><m:fPr><m:type m:val="' +
+             (n.getAttribute('linethickness') === '0' ? 'noBar' : 'bar') +
+             '"/><m:ctrlPr/></m:fPr><m:num>' + mml(k[0]) + '</m:num><m:den>' +
+             mml(k[1]) + '</m:den></m:f>';
+
+    case 'msup':
+      s = naryOf(k[0], null, k[1]); if (s) return s;
+      return '<m:sSup><m:sSupPr><m:ctrlPr/></m:sSupPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sup>' + mml(k[1]) + '</m:sup></m:sSup>';
+
+    case 'msub':
+      s = naryOf(k[0], k[1], null); if (s) return s;
+      return '<m:sSub><m:sSubPr><m:ctrlPr/></m:sSubPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sub>' + mml(k[1]) + '</m:sub></m:sSub>';
+
+    case 'msubsup':
+      s = naryOf(k[0], k[1], k[2]); if (s) return s;
+      return '<m:sSubSup><m:sSubSupPr><m:ctrlPr/></m:sSubSupPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sub>' + mml(k[1]) + '</m:sub><m:sup>' + mml(k[2]) +
+             '</m:sup></m:sSubSup>';
+
+    case 'msqrt':
+      return '<m:rad><m:radPr><m:degHide m:val="1"/><m:ctrlPr/></m:radPr>' +
+             '<m:deg/><m:e>' + seq(k) + '</m:e></m:rad>';
+
+    case 'mroot':
+      return '<m:rad><m:radPr><m:degHide m:val="0"/><m:ctrlPr/></m:radPr><m:deg>' +
+             mml(k[1]) + '</m:deg><m:e>' + mml(k[0]) + '</m:e></m:rad>';
+
+    case 'mover':
+      var ao = txt(k[1]);
+      if (ACCENTS[ao]) {
+        return '<m:acc><m:accPr><m:chr m:val="' + esc(ACCENTS[ao]) +
+               '"/><m:ctrlPr/></m:accPr><m:e>' + mml(k[0]) + '</m:e></m:acc>';
+      }
+      s = naryOf(k[0], null, k[1]); if (s) return s;
+      return '<m:limUpp><m:limUppPr><m:ctrlPr/></m:limUppPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limUpp>';
+
+    case 'munder':
+      s = naryOf(k[0], k[1], null); if (s) return s;
+      return '<m:limLow><m:limLowPr><m:ctrlPr/></m:limLowPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limLow>';
+
+    case 'munderover':
+      s = naryOf(k[0], k[1], k[2]); if (s) return s;
+      return '<m:limUpp><m:limUppPr><m:ctrlPr/></m:limUppPr><m:e>' +
+             '<m:limLow><m:limLowPr><m:ctrlPr/></m:limLowPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limLow></m:e><m:lim>' +
+             mml(k[2]) + '</m:lim></m:limUpp>';
+
+    case 'mtable':
+      var rows = k.filter(function (r) { return /mtr$/.test(r.nodeName.toLowerCase()); });
+      var ncol = 0;
+      rows.forEach(function (r) { ncol = Math.max(ncol, kids(r).length); });
+      var props = '<m:mPr><m:baseJc m:val="center"/><m:plcHide m:val="1"/><m:mcs><m:mc><m:mcPr>' +
+                  '<m:count m:val="' + (ncol || 1) + '"/><m:mcJc m:val="center"/></m:mcPr></m:mc></m:mcs>' +
+                  '<m:ctrlPr/></m:mPr>';
+      var body = '';
+      rows.forEach(function (r) {
+        body += '<m:mr>';
+        var cells = kids(r);
+        for (var i = 0; i < (ncol || 1); i++) body += '<m:e>' + (cells[i] ? seq(kids(cells[i])) : '') + '</m:e>';
+        body += '</m:mr>';
+      });
+      return '<m:m>' + props + body + '</m:m>';
+
+    case 'mtr':
+    case 'mtd':
+      return seq(k);
+
+    default:
+      return k.length ? seq(k) : run(txt(n), 'p');
+  }
+}
+
+function mathmlToOmml(mathEl) { return mml(mathEl); }
+
+/* ============================================================================
+   2. Écriture ZIP (entrées non compressées + CRC32)
+   ========================================================================== */
+var CRCT = (function () {
+  var t = new Int32Array(256);
+  for (var i = 0; i < 256; i++) {
+    var c = i;
+    for (var j = 0; j < 8; j++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[i] = c;
+  }
+  return t;
+})();
+function crc32(buf) {
+  var c = -1;
+  for (var i = 0; i < buf.length; i++) c = CRCT[(c ^ buf[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ -1) >>> 0;
+}
+function utf8(str) {
+  if (typeof TextEncoder !== 'undefined') return new TextEncoder().encode(str);
+  var b = unescape(encodeURIComponent(str)), a = new Uint8Array(b.length);
+  for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i);
+  return a;
+}
+function zip(files) {
+  var parts = [], central = [], offset = 0;
+  function u16(v) { return [v & 0xFF, (v >>> 8) & 0xFF]; }
+  function u32(v) { return [v & 0xFF, (v >>> 8) & 0xFF, (v >>> 16) & 0xFF, (v >>> 24) & 0xFF]; }
+
+  files.forEach(function (f) {
+    var name = utf8(f.name), data = f.bin ? f.bin : utf8(f.data), c = crc32(data);
+    var local = [].concat(u32(0x04034b50), u16(20), u16(0x0800), u16(0), u16(0), u16(0),
+                          u32(c), u32(data.length), u32(data.length),
+                          u16(name.length), u16(0));
+    parts.push(new Uint8Array(local), name, data);
+    central.push({ name: name, crc: c, size: data.length, off: offset });
+    offset += local.length + name.length + data.length;
+  });
+
+  var cd = [];
+  central.forEach(function (e) {
+    cd = cd.concat(u32(0x02014b50), u16(20), u16(20), u16(0x0800), u16(0), u16(0), u16(0),
+                   u32(e.crc), u32(e.size), u32(e.size),
+                   u16(e.name.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(e.off));
+    cd = cd.concat(Array.prototype.slice.call(e.name));
+  });
+  var cdArr = new Uint8Array(cd);
+  var eocd = new Uint8Array([].concat(u32(0x06054b50), u16(0), u16(0),
+                                      u16(files.length), u16(files.length),
+                                      u32(cdArr.length), u32(offset), u16(0)));
+  parts.push(cdArr, eocd);
+
+  var total = parts.reduce(function (n, p) { return n + p.length; }, 0);
+  var out = new Uint8Array(total), pos = 0;
+  parts.forEach(function (p) { out.set(p, pos); pos += p.length; });
+  return out;
+}
+
+/* ============================================================================
+   3. HTML -> WordprocessingML
+   ========================================================================== */
+var SKIP = { script: 1, style: 1, button: 1, input: 1, noscript: 1 };
+var IMAGES = [];           /* { bin, w, h } collectées pendant le parcours */
+var EMU = 9525;            /* EMU par pixel */
+var MAXW = 5760000;        /* largeur utile de la page, en EMU */
+
+function b64bin(b64) {
+  var raw = atob(b64), a = new Uint8Array(raw.length);
+  for (var i = 0; i < raw.length; i++) a[i] = raw.charCodeAt(i);
+  return a;
+}
+
+function imageXml(dataUrl, wpx, hpx) {
+  var m = /^data:image\/png;base64,(.*)$/.exec(dataUrl || '');
+  if (!m) return '';
+  var cx = Math.round(wpx * EMU), cy = Math.round(hpx * EMU);
+  if (cx > MAXW) { cy = Math.round(cy * MAXW / cx); cx = MAXW; }
+  IMAGES.push({ bin: b64bin(m[1]) });
+  var id = IMAGES.length, rid = 'rIdImg' + id;
+  return '<w:p><w:pPr><w:pStyle w:val="Figure"/><w:jc w:val="center"/></w:pPr><w:r><w:drawing>' +
+    '<wp:inline distT="0" distB="0" distL="0" distR="0">' +
+    '<wp:extent cx="' + cx + '" cy="' + cy + '"/>' +
+    '<wp:effectExtent l="0" t="0" r="0" b="0"/>' +
+    '<wp:docPr id="' + id + '" name="Graphique ' + id + '"/>' +
+    '<wp:cNvGraphicFramePr><a:graphicFrameLocks ' +
+      'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/>' +
+    '</wp:cNvGraphicFramePr>' +
+    '<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">' +
+    '<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+    '<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+    '<pic:nvPicPr><pic:cNvPr id="' + id + '" name="Graphique ' + id + '"/><pic:cNvPicPr/></pic:nvPicPr>' +
+    '<pic:blipFill><a:blip r:embed="' + rid + '"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>' +
+    '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' + cx + '" cy="' + cy + '"/></a:xfrm>' +
+    '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>' +
+    '</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>';
+}
+var BLOCK = { p: 1, div: 1, h1: 1, h2: 1, h3: 1, h4: 1, li: 1, tr: 1, td: 1, th: 1,
+              table: 1, ul: 1, ol: 1, section: 1, article: 1, header: 1, blockquote: 1 };
+
+function W() {
+  this.body = '';
+  this.para = null;      /* { style, runs, numId, ilvl } */
+}
+W.prototype.open = function (style, numId, ilvl) {
+  this.close();
+  this.para = { style: style || 'Corps', runs: '', numId: numId || 0, ilvl: ilvl || 0 };
+};
+W.prototype.close = function () {
+  var p = this.para;
+  this.para = null;
+  if (!p || (p.runs === '' && !p.numId)) return;
+  if (p.runs === '') return;
+  var pPr = '<w:pPr><w:pStyle w:val="' + p.style + '"/>';
+  if (p.numId) pPr += '<w:numPr><w:ilvl w:val="' + p.ilvl + '"/><w:numId w:val="' + p.numId + '"/></w:numPr>';
+  pPr += '</w:pPr>';
+  this.body += '<w:p>' + pPr + p.runs + '</w:p>';
+};
+W.prototype.add = function (xml) {
+  if (!this.para) this.open('Corps');
+  this.para.runs += xml;
+};
+W.prototype.raw = function (xml) { this.close(); this.body += xml; };
+
+function textRun(s, fmt) {
+  if (!s) return '';
+  var rPr = '';
+  if (fmt.b) rPr += '<w:b/>';
+  if (fmt.i) rPr += '<w:i/>';
+  if (fmt.sup) rPr += '<w:vertAlign w:val="superscript"/>';
+  if (fmt.sub) rPr += '<w:vertAlign w:val="subscript"/>';
+  if (fmt.mono) rPr += '<w:rFonts w:ascii="Consolas" w:hAnsi="Consolas"/>';
+  return '<w:r>' + (rPr ? '<w:rPr>' + rPr + '</w:rPr>' : '') +
+         '<w:t xml:space="preserve">' + esc(s) + '</w:t></w:r>';
+}
+
+function walk(node, w, fmt, list) {
+  var i, cs = node.childNodes;
+  for (i = 0; i < cs.length; i++) {
+    var n = cs[i];
+
+    if (n.nodeType === 3) {
+      var s = n.nodeValue.replace(/\s+/g, ' ');
+      if (s.trim() === '' && !/\S/.test(s)) { if (w.para && w.para.runs) w.add(textRun(' ', fmt)); continue; }
+      w.add(textRun(s, fmt));
+      continue;
+    }
+    if (n.nodeType !== 1) continue;
+
+    var tag = n.nodeName.toLowerCase();
+    if (SKIP[tag]) continue;
+    if (n.classList && (n.classList.contains('top-bar') || n.classList.contains('top-actions') ||
+                        n.classList.contains('sol-toggle-wrap'))) continue;
+
+    /* --- équations --- */
+    if (tag === 'mjx-container') {
+      var math = n.querySelector('mjx-assistive-mml math, math');
+      var display = n.getAttribute('display') === 'true';
+      if (math) {
+        var omml = mathmlToOmml(math);
+        if (display) {
+          w.close();
+          w.body += '<w:p><w:pPr><w:pStyle w:val="Formule"/>' +
+                    '<w:jc w:val="center"/></w:pPr>' +
+                    '<m:oMath>' + omml + '</m:oMath></w:p>';
+        } else {
+          w.add('<m:oMath>' + omml + '</m:oMath>');
+        }
+      } else {
+        w.add(textRun(txt(n), fmt));
+      }
+      continue;
+    }
+    if (tag === 'mjx-assistive-mml' || tag === 'math') continue;
+
+    /* --- graphiques --- */
+    if (tag === 'svg' || tag === 'img') {
+      var png = n.getAttribute('data-kit-png');
+      if (png) {
+        w.close();
+        w.body += imageXml(png, +n.getAttribute('data-kit-w') || 600,
+                                +n.getAttribute('data-kit-h') || 380);
+      }
+      continue;
+    }
+
+    /* --- tableaux --- */
+    if (tag === 'table') { w.close(); w.body += table(n); continue; }
+
+    /* --- listes --- */
+    if (tag === 'ul' || tag === 'ol') {
+      w.close();
+      var nid = tag === 'ol' ? 2 : 1;
+      var lvl = list ? Math.min(list.ilvl + 1, 2) : 0;
+      var items = kids(n).filter(function (x) { return x.nodeName.toLowerCase() === 'li'; });
+      items.forEach(function (li) {
+        /* L'item est composé à part : son numéro doit se poser sur le premier
+           paragraphe produit, même si le <li> enveloppe son texte dans un <div>. */
+        var wb = new W();
+        walk(li, wb, fmt, { ilvl: lvl });
+        wb.close();
+        var xml = wb.body;
+        if (!xml) return;
+        var numPr = '<w:pStyle w:val="Liste"/><w:numPr><w:ilvl w:val="' + lvl +
+                    '"/><w:numId w:val="' + nid + '"/></w:numPr>';
+        if (xml.indexOf('<w:pStyle w:val="Corps"/>') !== -1) {
+          xml = xml.replace('<w:pStyle w:val="Corps"/>', numPr);
+        } else {
+          xml = '<w:p><w:pPr>' + numPr + '</w:pPr></w:p>' + xml;
+        }
+        w.body += xml;
+      });
+      continue;
+    }
+
+    /* --- titres --- */
+    if (tag === 'h1' || tag === 'h2') { w.close(); w.open('Titre1'); walk(n, w, fmt, list); w.close(); continue; }
+    if (tag === 'h3' || tag === 'h4') { w.close(); w.open('Titre2'); walk(n, w, fmt, list); w.close(); continue; }
+
+    /* --- titres internes du corrigé --- */
+    if (n.classList && (n.classList.contains('sol-sub') || n.classList.contains('sol-q') ||
+                        n.classList.contains('dossier-title'))) {
+      w.close(); w.open('Titre2'); walk(n, w, { b: true }, list); w.close(); continue;
+    }
+    if (n.classList && n.classList.contains('persp-box')) {
+      w.close();
+      var wb = new W();
+      walk(n, wb, fmt, list);
+      wb.close();
+      w.body += wb.body.replace(/w:val="Corps"/g, 'w:val="Encadre"')
+                       .replace(/w:val="Titre2"/g, 'w:val="EncadreTitre"');
+      continue;
+    }
+
+    /* --- mise en forme inline --- */
+    var f2 = { b: fmt.b, i: fmt.i, sup: fmt.sup, sub: fmt.sub, mono: fmt.mono };
+    if (tag === 'strong' || tag === 'b') f2.b = true;
+    if (tag === 'em' || tag === 'i') f2.i = true;
+    if (tag === 'sup') f2.sup = true;
+    if (tag === 'sub') f2.sub = true;
+    if (tag === 'code' || tag === 'kbd') f2.mono = true;
+
+    /* intertitre écrit en style en ligne (span display:block + gras) */
+    var st = n.getAttribute && n.getAttribute('style');
+    if (st && /display\s*:\s*block/.test(st) && /font-weight\s*:\s*(6|7|8|9|bold)/.test(st)) {
+      w.close(); w.open('Titre3');
+      walk(n, w, { b: true }, list);
+      w.close();
+      continue;
+    }
+
+    if ((tag === 'strong' || tag === 'b') &&
+        (!w.para || w.para.runs === '') &&
+        n.nextElementSibling && n.nextElementSibling.nodeName.toLowerCase() === 'br') {
+      w.close(); w.open('Titre3');
+      walk(n, w, { b: true }, list);
+      w.close();
+      i++;                       /* le <br> qui suit devient inutile */
+      continue;
+    }
+
+    if (tag === 'br') { w.add('<w:r><w:br/></w:r>'); continue; }
+    if (tag === 'hr') { w.close(); continue; }
+
+    if (BLOCK[tag]) { w.close(); w.open('Corps'); walk(n, w, f2, list); w.close(); }
+    else { walk(n, w, f2, list); }
+  }
+}
+
+function cellXml(td, isHead) {
+  var w2 = new W();
+  walk(td, w2, { b: !!isHead }, null);
+  w2.close();
+  var content = w2.body || '<w:p><w:pPr><w:pStyle w:val="Cellule"/></w:pPr></w:p>';
+  content = content.replace(/w:val="Corps"/g, 'w:val="Cellule"');
+  var span = parseInt(td.getAttribute('colspan') || '1', 10);
+  var shd = isHead ? '<w:shd w:val="clear" w:fill="EDE9DF"/>' : '';
+  return '<w:tc><w:tcPr>' + (span > 1 ? '<w:gridSpan w:val="' + span + '"/>' : '') +
+         shd + '<w:vAlign w:val="center"/></w:tcPr>' + content + '</w:tc>';
+}
+
+function table(tbl) {
+  var rows = tbl.querySelectorAll('tr'), out = '', ncol = 0, i, j;
+  for (i = 0; i < rows.length; i++) {
+    var c = rows[i].children, n = 0;
+    for (j = 0; j < c.length; j++) n += parseInt(c[j].getAttribute('colspan') || '1', 10);
+    ncol = Math.max(ncol, n);
+  }
+  if (!ncol) return '';
+  var grid = '<w:tblGrid>';
+  for (i = 0; i < ncol; i++) grid += '<w:gridCol w:w="' + Math.floor(9360 / ncol) + '"/>';
+  grid += '</w:tblGrid>';
+
+  for (i = 0; i < rows.length; i++) {
+    var cells = rows[i].children, xml = '';
+    var head = rows[i].parentNode.nodeName.toLowerCase() === 'thead' ||
+               (cells.length && cells[0].nodeName.toLowerCase() === 'th');
+    for (j = 0; j < cells.length; j++) xml += cellXml(cells[j], head);
+    out += '<w:tr>' + (head ? '<w:trPr><w:tblHeader/></w:trPr>' : '') + xml + '</w:tr>';
+  }
+  return '<w:tbl><w:tblPr><w:tblStyle w:val="Grille"/>' +
+         '<w:tblW w:w="5000" w:type="pct"/><w:tblLayout w:type="fixed"/></w:tblPr>' +
+         grid + out + '</w:tbl><w:p><w:pPr><w:pStyle w:val="Apres"/></w:pPr></w:p>';
+}
+
+/* ============================================================================
+   Assemblage du fichier
+   ========================================================================== */
+var NS =
+  'xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" ' +
+  'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
+  'xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" ' +
+  'xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" ' +
+  'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+  'xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture" ' +
+  'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+  'xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" ' +
+  'mc:Ignorable="w14"';
+
+function style(id, name, opts) {
+  var o = opts || {};
+  return '<w:style w:type="paragraph" w:styleId="' + id + '"><w:name w:val="' + name + '"/>' +
+         '<w:basedOn w:val="Corps"/><w:pPr>' +
+         (o.keep ? '<w:keepNext/>' : '') +
+         '<w:spacing w:before="' + (o.before || 0) + '" w:after="' + (o.after || 120) +
+         '" w:line="' + (o.line || 276) + '" w:lineRule="auto"/>' +
+         (o.jc ? '<w:jc w:val="' + o.jc + '"/>' : '') +
+         (o.ind ? '<w:ind w:left="' + o.ind + '"/>' : '') +
+         (o.border ? '<w:pBdr><w:left w:val="single" w:sz="18" w:space="8" w:color="1A2E42"/></w:pBdr>' : '') +
+         '</w:pPr><w:rPr>' +
+         (o.font ? '<w:rFonts w:ascii="' + o.font + '" w:hAnsi="' + o.font + '"/>' : '') +
+         (o.b ? '<w:b/>' : '') + (o.i ? '<w:i/>' : '') +
+         (o.sz ? '<w:sz w:val="' + o.sz + '"/>' : '') +
+         (o.color ? '<w:color w:val="' + o.color + '"/>' : '') +
+         '</w:rPr></w:style>';
+}
+
+function stylesXml() {
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles ' + NS + '>' +
+    '<w:docDefaults><w:rPrDefault><w:rPr>' +
+      '<w:rFonts w:ascii="Cambria" w:hAnsi="Cambria" w:cs="Cambria"/>' +
+      '<w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="fr-FR"/>' +
+    '</w:rPr></w:rPrDefault><w:pPrDefault><w:pPr>' +
+      '<w:spacing w:after="120" w:line="276" w:lineRule="auto"/><w:jc w:val="both"/>' +
+    '</w:pPr></w:pPrDefault></w:docDefaults>' +
+    '<w:style w:type="paragraph" w:default="1" w:styleId="Corps"><w:name w:val="Normal"/>' +
+      '<w:pPr><w:spacing w:after="120" w:line="276" w:lineRule="auto"/><w:jc w:val="both"/></w:pPr>' +
+      '<w:rPr><w:rFonts w:ascii="Cambria" w:hAnsi="Cambria"/><w:sz w:val="22"/></w:rPr></w:style>' +
+    style('TitreDoc', 'Title', { font: 'Cambria', b: true, sz: 40, color: '0D1B2A', jc: 'left', after: 60, line: 240 }) +
+    style('SousTitre', 'Subtitle', { i: true, sz: 20, color: '5A5A5A', jc: 'left', after: 280, line: 240 }) +
+    style('Titre1', 'heading 1', { b: true, sz: 28, color: '0D1B2A', before: 320, after: 140, jc: 'left', keep: true, line: 240 }) +
+    style('Titre2', 'heading 2', { b: true, sz: 23, color: '1A2E42', before: 240, after: 100, jc: 'left', keep: true, line: 240 }) +
+    style('Formule', 'Formula', { jc: 'center', before: 120, after: 120, line: 240 }) +
+    style('Liste', 'List Paragraph', { after: 100, ind: 360 }) +
+    style('Cellule', 'Table Text', { sz: 20, after: 40, jc: 'left', line: 240 }) +
+    style('Encadre', 'Aside', { ind: 240, border: true, sz: 21, before: 200, after: 200 }) +
+    style('Apres', 'After Table', { after: 200, sz: 12 }) +
+    style('Figure', 'Figure', { jc: 'center', before: 160, after: 200, line: 240 }) +
+    style('Titre3', 'heading 3', { b: true, sz: 22, color: '1A2E42', before: 200,
+                                   after: 60, jc: 'left', keep: true, line: 240 }) +
+    style('EncadreTitre', 'Aside Heading', { ind: 240, border: true, b: true, sz: 22,
+                                             color: '1A2E42', before: 200, after: 60, jc: 'left' }) +
+    '<w:style w:type="table" w:styleId="Grille"><w:name w:val="Table Grid"/><w:tblPr>' +
+      '<w:tblBorders>' +
+      ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(function (b) {
+        return '<w:' + b + ' w:val="single" w:sz="4" w:space="0" w:color="9A9A9A"/>';
+      }).join('') +
+      '</w:tblBorders><w:tblCellMar>' +
+      '<w:top w:w="60" w:type="dxa"/><w:left w:w="90" w:type="dxa"/>' +
+      '<w:bottom w:w="60" w:type="dxa"/><w:right w:w="90" w:type="dxa"/>' +
+      '</w:tblCellMar></w:tblPr></w:style>' +
+    '</w:styles>';
+}
+
+function numberingXml() {
+  function lvl(i, fmt, txtv, ind) {
+    return '<w:lvl w:ilvl="' + i + '"><w:start w:val="1"/><w:numFmt w:val="' + fmt + '"/>' +
+           '<w:lvlText w:val="' + txtv + '"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="' +
+           ind + '" w:hanging="360"/></w:pPr>' +
+           (fmt === 'bullet' ? '<w:rPr><w:rFonts w:ascii="Symbol" w:hAnsi="Symbol"/></w:rPr>' : '') +
+           '</w:lvl>';
+  }
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:numbering ' + NS + '>' +
+    '<w:abstractNum w:abstractNumId="1"><w:multiLevelType w:val="hybridMultilevel"/>' +
+      lvl(0, 'bullet', '\uF0B7', 360) + lvl(1, 'bullet', 'o', 720) + lvl(2, 'bullet', '\uF0A7', 1080) +
+    '</w:abstractNum>' +
+    '<w:abstractNum w:abstractNumId="2"><w:multiLevelType w:val="hybridMultilevel"/>' +
+      lvl(0, 'decimal', '%1.', 360) + lvl(1, 'lowerLetter', '%2.', 720) + lvl(2, 'lowerRoman', '%3.', 1080) +
+    '</w:abstractNum>' +
+    '<w:num w:numId="1"><w:abstractNumId w:val="1"/></w:num>' +
+    '<w:num w:numId="2"><w:abstractNumId w:val="2"/></w:num>' +
+    '</w:numbering>';
+}
+
+function buildDocx(opts) {
+  IMAGES = [];
+  var w = new W();
+
+  if (opts.title) {
+    w.body += '<w:p><w:pPr><w:pStyle w:val="TitreDoc"/></w:pPr>' +
+              textRun(opts.title, {}) + '</w:p>';
+  }
+  if (opts.subtitle) {
+    w.body += '<w:p><w:pPr><w:pStyle w:val="SousTitre"/></w:pPr>' +
+              textRun(opts.subtitle, {}) + '</w:p>';
+  }
+  opts.sections.forEach(function (sec) {
+    if (sec.heading) {
+      w.body += '<w:p><w:pPr><w:pStyle w:val="Titre1"/></w:pPr>' + textRun(sec.heading, {}) + '</w:p>';
+    }
+    walk(sec.node, w, {}, null);
+    w.close();
+  });
+  w.close();
+
+  var doc = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ' + NS + '><w:body>' +
+    w.body +
+    '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/>' +
+    '<w:pgMar w:top="1247" w:right="1247" w:bottom="1247" w:left="1247" ' +
+    'w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>';
+
+  var media = [], rels = '', ctypes = '';
+  IMAGES.forEach(function (im, i) {
+    media.push({ name: 'word/media/image' + (i + 1) + '.png', bin: im.bin });
+    rels += '<Relationship Id="rIdImg' + (i + 1) + '" Type="http://schemas.openxmlformats.org/' +
+            'officeDocument/2006/relationships/image" Target="media/image' + (i + 1) + '.png"/>';
+  });
+  if (IMAGES.length) ctypes = '<Default Extension="png" ContentType="image/png"/>';
+
+  return zip([
+    { name: '[Content_Types].xml',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+        '<Default Extension="xml" ContentType="application/xml"/>' + ctypes +
+        '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+        '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>' +
+        '<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>' +
+        '</Types>' },
+    { name: '_rels/.rels',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+        '</Relationships>' },
+    { name: 'word/_rels/document.xml.rels',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' +
+        '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>' +
+        rels + '</Relationships>' },
+    { name: 'word/document.xml', data: doc },
+    { name: 'word/styles.xml', data: stylesXml() },
+    { name: 'word/numbering.xml', data: numberingXml() }
+  ].concat(media));
+}
+
+root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: W, _walk: walk };
+
+})(window);
+
+</script>
+<script id="kit-js">
+/* ============================================================
+   KIT D'UNIFORMISATION — logique partagée (modale PDF, export Word,
+   libellés de la barre d'actions). Autonome : ne dépend d'aucun
+   dictionnaire I18N propre à la page.
+   ============================================================ */
+(function(){
+  var T = {
+    fr:{ modalTitle:"Exporter en PDF", seedPre:"Seed\u00a0:",
+         seedPost:"\u2014 notez cette valeur pour reproduire exactement cet exercice.",
+         optHeader:"Inclure l'en-t\u00eate de page",
+         optHeaderD:"Titre, badge de mati\u00e8re et intitul\u00e9 de l'exercice",
+         optSol:"Inclure le corrig\u00e9 complet",
+         optSolD:"L'ensemble des d\u00e9veloppements et commentaires du corrig\u00e9",
+         print:"\uD83D\uDDA8\u00a0Imprimer / Sauvegarder PDF", cancel:"Annuler",
+         btnNew:"\u21ba Nouvel \u00e9nonc\u00e9", btnPdf:"\u2b07 Exporter PDF", btnDoc:"\u2b07 Exporter Word",
+         btnCopy:"\u29c9 Copier", copied:"\u2713 Copi\u00e9e", seedLabel:"Seed de reproductibilit\u00e9",
+         docFile:"exercice.doc" },
+    en:{ modalTitle:"Export to PDF", seedPre:"Seed:",
+         seedPost:"\u2014 note this value to reproduce this exact exercise.",
+         optHeader:"Include the page header",
+         optHeaderD:"Title, subject badge and exercise heading",
+         optSol:"Include the full solution",
+         optSolD:"All the workings and comments of the solution",
+         print:"\uD83D\uDDA8\u00a0Print / Save as PDF", cancel:"Cancel",
+         btnNew:"\u21ba New exercise", btnPdf:"\u2b07 Export PDF", btnDoc:"\u2b07 Export Word",
+         btnCopy:"\u29c9 Copy", copied:"\u2713 Copied", seedLabel:"Reproducibility seed",
+         docFile:"exercise.doc" }
+  };
+
+  function lang(){
+    var l = (window.LANG || document.documentElement.lang || 'fr').toLowerCase();
+    return (l.indexOf('en') === 0) ? 'en' : 'fr';
+  }
+  function t(k){ return T[lang()][k]; }
+
+  window.KIT = { T:T, lang:lang, t:t };
+
+  /* --- libellés du kit (modale + barre d'actions) --- */
+  function paint(){
+    var d = T[lang()];
+    document.querySelectorAll('[data-kit]').forEach(function(el){
+      var k = el.getAttribute('data-kit');
+      if (d[k] !== undefined) el.innerHTML = d[k];
+    });
+  }
+  window.KIT.paint = paint;
+
+  /* Se raccroche au changement de langue de la page sans la modifier. */
+  function hookLang(){
+    if (typeof window.setLang === 'function' && !window.setLang.__kit){
+      var orig = window.setLang;
+      var wrapped = function(){ var r = orig.apply(this, arguments); paint(); return r; };
+      wrapped.__kit = true;
+      window.setLang = wrapped;
+    }
+  }
+
+  /* --- Copie de la seed active --- */
+  window.copySeed = function(btn){
+    var el = document.getElementById('seed-disp');
+    if (!el) return;
+    var v = (el.textContent || '').trim();
+    if (!v || v === '\u2014') return;
+    var done = function(){
+      var b = btn || document.getElementById('btn-copy-seed');
+      if (!b) return;
+      var old = b.innerHTML;
+      b.innerHTML = t('copied');
+      setTimeout(function(){ b.innerHTML = old; paint(); }, 1400);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(v).then(done, done);
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = v; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch(e){}
+      document.body.removeChild(ta); done();
+    }
+  };
+
+  /* --- Modale PDF --- */
+  window.openPdfModal = function(){
+    var s = document.getElementById('modal-seed');
+    var src = document.getElementById('seed-disp');
+    if (s && src) s.textContent = (src.textContent || '\u2014').trim();
+    /* la case « corrigé » reflète l'état d'affichage courant */
+    var sol = document.getElementById('sol-card');
+    var box = document.getElementById('opt-sol');
+    if (box) box.checked = !!(window.solVisible ||
+        (sol && (sol.classList.contains('visible') || sol.style.display === 'block')));
+    paint();
+    document.getElementById('pdf-ov').classList.add('open');
+    document.getElementById('pdf-modal').classList.add('open');
+  };
+  window.closePdfModal = function(){
+    document.getElementById('pdf-ov').classList.remove('open');
+    document.getElementById('pdf-modal').classList.remove('open');
+  };
+  var PRINTCLS = ['print-no-header', 'print-force-solution', 'print-no-solution'];
+
+  function clearPrintClasses() {
+    var b = document.body;
+    for (var i = 0; i < PRINTCLS.length; i++) b.classList.remove(PRINTCLS[i]);
+  }
+
+  window.doPrint = function () {
+    var noHdr   = !document.getElementById('opt-header').checked;
+    var inclSol =  document.getElementById('opt-sol').checked;
+    var b = document.body;
+
+    clearPrintClasses();
+    if (noHdr) b.classList.add('print-no-header');
+    b.classList.add(inclSol ? 'print-force-solution' : 'print-no-solution');
+    closePdfModal();
+
+    /* Le nettoyage doit attendre la fin réelle de l'impression. Un simple
+       minuteur ne convient pas : selon le navigateur, window.print() rend la
+       main avant que l'aperçu ne soit composé, et les options seraient alors
+       déjà effacées au moment où le PDF est produit. */
+    var done = false;
+    function finish() {
+      if (done) return;
+      done = true;
+      clearPrintClasses();
+      window.removeEventListener('afterprint', finish);
+      if (mq && mq.removeListener) mq.removeListener(onMq);
+      if (mq && mq.removeEventListener) mq.removeEventListener('change', onMq);
+    }
+    function onMq(e) { if (!e.matches) finish(); }
+
+    var mq = window.matchMedia ? window.matchMedia('print') : null;
+    window.addEventListener('afterprint', finish);
+    if (mq && mq.addEventListener) mq.addEventListener('change', onMq);
+    else if (mq && mq.addListener) mq.addListener(onMq);
+    /* filet de sécurité si le navigateur n'émet aucun de ces signaux */
+    setTimeout(finish, 120000);
+
+    setTimeout(function () { window.print(); }, 120);
+  };
+
+  /* --- Rasterisation des graphiques SVG ---
+     Word ne sait pas lire le SVG. On le convertit en PNG en recopiant d'abord
+     les styles calculés, sinon les couleurs héritées de la feuille disparaissent. */
+  var SVGPROPS = ['fill', 'stroke', 'stroke-width', 'stroke-dasharray', 'stroke-linecap',
+                  'stroke-linejoin', 'opacity', 'fill-opacity', 'stroke-opacity',
+                  'font-family', 'font-size', 'font-weight', 'font-style',
+                  'text-anchor', 'dominant-baseline'];
+
+  function inlineStyles(src, dst) {
+    var a = src.querySelectorAll('*'), b = dst.querySelectorAll('*'), i, j;
+    for (i = 0; i < a.length && i < b.length; i++) {
+      var cs = window.getComputedStyle(a[i]);
+      for (j = 0; j < SVGPROPS.length; j++) {
+        var v = cs.getPropertyValue(SVGPROPS[j]);
+        if (v) b[i].setAttribute(SVGPROPS[j], v);
+      }
+    }
+  }
+
+  function svgSize(svg) {
+    var vb = svg.viewBox && svg.viewBox.baseVal;
+    if (vb && vb.width) return { w: vb.width, h: vb.height };
+    var r = svg.getBoundingClientRect();
+    if (r.width) return { w: r.width, h: r.height };
+    return { w: 600, h: 380 };
+  }
+
+  function svgToPng(svg) {
+    return new Promise(function (resolve) {
+      var done = false;
+      var res = function (v) { if (!done) { done = true; resolve(v); } };
+      /* garde-fou : un graphique qui ne se charge pas ne doit jamais
+         bloquer l'export, on l'omet et le reste du document part quand même */
+      setTimeout(function () { res(null); }, 5000);
+      try {
+        var d = svgSize(svg), SC = 2;
+        var c = svg.cloneNode(true);
+        c.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        c.setAttribute('width', d.w);
+        c.setAttribute('height', d.h);
+        inlineStyles(svg, c);
+        var bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        bg.setAttribute('x', 0); bg.setAttribute('y', 0);
+        bg.setAttribute('width', '100%'); bg.setAttribute('height', '100%');
+        bg.setAttribute('fill', '#ffffff');
+        c.insertBefore(bg, c.firstChild);
+        var xml = new XMLSerializer().serializeToString(c);
+        var img = new Image();
+        img.onload = function () {
+          try {
+            var cv = document.createElement('canvas');
+            cv.width = Math.round(d.w * SC); cv.height = Math.round(d.h * SC);
+            var ctx = cv.getContext('2d');
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, cv.width, cv.height);
+            ctx.drawImage(img, 0, 0, cv.width, cv.height);
+            res({ png: cv.toDataURL('image/png'), w: d.w, h: d.h });
+          } catch (e) { res(null); }
+        };
+        img.onerror = function () { res(null); };
+        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml);
+      } catch (e) { res(null); }
+    });
+  }
+
+  /* --- Export Word natif (.docx) ---
+     Les formules sont converties en OMML, le format d'équation natif de Word :
+     elles restent éditables et se composent avec Cambria Math. */
+  window.exportWord = function () {
+    var area = document.getElementById('ex-area');
+    if (!area || !window.DocxExport) { return; }
+
+    var btn = document.querySelector('.btn-sm.doc');
+    if (btn) { btn.disabled = true; btn.style.opacity = '.5'; }
+
+    var svgs = Array.prototype.slice.call(area.querySelectorAll('svg'));
+    Promise.all(svgs.map(svgToPng)).then(function (pngs) {
+      svgs.forEach(function (sv, i) {
+        if (!pngs[i]) return;
+        sv.setAttribute('data-kit-png', pngs[i].png);
+        sv.setAttribute('data-kit-w', pngs[i].w);
+        sv.setAttribute('data-kit-h', pngs[i].h);
+      });
+      try { writeDocx(area); } finally {
+        svgs.forEach(function (sv) {
+          sv.removeAttribute('data-kit-png');
+          sv.removeAttribute('data-kit-w');
+          sv.removeAttribute('data-kit-h');
+        });
+        if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+      }
+    });
+  };
+
+  function writeDocx(area) {
+
+    var h1 = document.querySelector('header h1');
+    var badge = document.querySelector('.header-badge, #lbl-badge');
+    var seed = document.getElementById('seed-disp');
+    var bits = [];
+    if (badge && badge.textContent.trim()) bits.push(badge.textContent.trim());
+    if (seed && seed.textContent.trim() && seed.textContent.trim() !== '\u2014') {
+      bits.push('seed ' + seed.textContent.trim());
+    }
+    bits.push('Thomas Hossen');
+
+    var sections = [];
+    var cards = area.querySelectorAll('.card');
+    for (var i = 0; i < cards.length; i++) {
+      var body = cards[i].querySelector('.card-body');
+      if (!body) continue;
+      var tag = cards[i].querySelector('.card-header .tag');
+      var h2 = cards[i].querySelector('.card-header h2');
+      var head = [tag ? tag.textContent.trim() : '', h2 ? h2.textContent.trim() : '']
+                   .filter(Boolean).join(' \u2014 ');
+      sections.push({ heading: head, node: body });
+    }
+    if (!sections.length) sections = [{ heading: '', node: area }];
+
+    var bytes = window.DocxExport.build({
+      title: h1 ? h1.textContent.trim() : document.title,
+      subtitle: bits.join(' \u00b7 '),
+      sections: sections
+    });
+
+    var name = (h1 ? h1.textContent : 'exercice').normalize('NFD')
+                 .replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9]+/g, '_')
+                 .replace(/^_|_$/g, '').slice(0, 60) || 'exercice';
+    var blob = new Blob([bytes], {
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = name + '.docx';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){ hookLang(); paint(); });
+  if (document.readyState !== 'loading'){ hookLang(); paint(); }
+})();
+</script>
+<!-- KIT:JS:END -->
+
+</body>
+</html>

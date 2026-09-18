@@ -1,0 +1,2245 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Comptabilité de Gestion - Budget de trésorerie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['\\[', '\\]']]
+    }
+  };
+</script>
+<script>window.MathJax=window.MathJax||{};window.MathJax.options=window.MathJax.options||{};window.MathJax.options.enableAssistiveMml=true;</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7;text-align:justify;}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 1.5rem;border-bottom:3px solid var(--gold);text-align:left;}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end;background:rgba(255,255,255,.03);padding:1rem 1.5rem;border-radius:6px;border:1px solid rgba(255,255,255,.1)}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.6)}
+.ctrl-inp, .ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.4rem .7rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none;transition:border-color .2s}
+.ctrl-inp:focus, .ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.5rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;transition:background .18s;margin-left:auto}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN & CARDS */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:700}
+
+.top-actions{display:flex;gap:.5rem;}
+.btn-action{background:#fff;border:1px solid var(--border);color:var(--navy);padding:.4rem .8rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.85rem;font-weight:600;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.btn-action:hover{border-color:var(--navy);background:var(--cream-dark);}
+
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem;text-align:left;}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+.event-list{list-style:none;}
+.event-list > li{margin-bottom:1.5rem;padding-left:1.5rem;position:relative;font-size:.95rem;text-align:justify}
+.event-list > li::before{content:"•";position:absolute;left:0;color:var(--gold);font-size:1.5rem;line-height:1}
+
+.sub-list { list-style-type: none; padding-left: 1rem; margin-top: 0.8rem; text-align:justify;}
+.sub-list li { margin-bottom: 0.5rem; }
+
+/* EXAM TABLE */
+.exam-table-wrap { overflow-x: auto; margin: 1.5rem 0; }
+.exam-table{width:100%;border-collapse:collapse;font-size:.85rem;font-family:'Source Serif 4',serif; margin: 0;}
+.exam-table th, .exam-table td{border:1px solid var(--border);padding:.6rem;text-align:center;vertical-align:middle;}
+.exam-table th{background:var(--navy);color:var(--cream);font-weight:600;}
+.exam-table .txt-left{text-align:left;font-weight:600;color:var(--navy);}
+.exam-table .amt{font-family:'JetBrains Mono',monospace;text-align:right;white-space:nowrap;}
+
+.two-col-table { width: 100%; display: flex; gap: 2rem; margin: 1.5rem 0; }
+.col-half { flex: 1; }
+
+/* SOLUTION TOGGLE */
+.sol-toggle-wrap{text-align:left; margin: 1.5rem 0 0 0;}
+.btn-toggle{background:transparent;border:2px solid var(--green);border-bottom:none;color:var(--green);font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;padding:.5rem 1.5rem;border-radius:4px 4px 0 0;cursor:pointer;transition:all .2s; position:relative; z-index:2; top:2px;}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--green);color:var(--cream)}
+.sol-card{border-top:2px solid var(--green);display:none; border-radius: 0 6px 6px 6px; position:relative; z-index:1;}
+.sol-card.visible{display:block;animation:fi .4s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+
+.calc-box{background:#f9fcf9;border:1px solid #c8e6c9;padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.9rem;color:var(--text);line-height:1.6;text-align:justify;}
+
+@media print{
+  body{background:#fff;}
+  header, .ctrls, .sol-toggle-wrap, .top-actions {display:none !important;}
+  .card{box-shadow:none; border:1px solid var(--border); margin-bottom:2rem;}
+  .sol-card{display:block !important; border-top:2px solid var(--green);}
+  #ex-area {display:block !important;}
+}
+
+/* --- Selecteur de langue / Language switch --- */
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem}
+.header-top .header-badge{margin-bottom:0}
+.lang-switch{display:flex;gap:.45rem;flex-shrink:0}
+.flag-btn{background:rgba(255,255,255,.06);border:1px solid rgba(201,149,42,.35);border-radius:3px;padding:3px;cursor:pointer;line-height:0;opacity:.5;transition:opacity .2s,border-color .2s,transform .15s}
+.flag-btn:hover{opacity:1;transform:translateY(-1px)}
+.flag-btn.active{opacity:1;border-color:var(--gold-light);box-shadow:0 0 0 1px rgba(232,184,75,.35)}
+.flag-btn svg{display:block;width:30px;height:20px;border-radius:1px}
+@media print{ .lang-switch{display:none !important;} }
+</style>
+<!-- KIT:CSS:START v1 --><style id="kit-css">
+/* ============================================================
+   KIT D'UNIFORMISATION — bloc partagé, identique sur toutes les pages.
+   Ne rien modifier ici fichier par fichier : régénérer le kit.
+   ============================================================ */
+
+/* --- 1. Mathématiques : jamais de débordement --- */
+mjx-container[display="true"]{
+  overflow-x:auto; overflow-y:hidden; max-width:100%;
+  padding:.15rem 0; margin:1rem 0 !important;
+}
+mjx-container[display="true"]::-webkit-scrollbar{height:5px}
+mjx-container[display="true"]::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+mjx-container{ max-width:100%; }
+.math-formula{ text-align:center; margin:1.2rem 0; overflow-x:auto; max-width:100%; }
+@media (max-width:640px){
+  mjx-container[display="true"]{ font-size:88% }
+}
+
+/* --- 2. Listes à puces entourées (questions ET données de contexte) --- */
+.kit-list, .st > ol,
+.questions > ol,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list), .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list),
+.question-list, .enum-list, .q-list{
+  counter-reset:kitq; list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem;
+}
+.kit-list > li, .st > ol > li,
+.questions > ol > li,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li, .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li,
+.question-list > li, .enum-list > li, .q-list > li{
+  counter-increment:kitq; position:relative;
+  padding-left:2.6rem; margin-bottom:1.3rem;
+  font-size:.95rem; line-height:1.7; text-align:justify;
+  font-weight:400; color:var(--text);
+  display:block;
+}
+.kit-list > li::before, .st > ol > li::before,
+.questions > ol > li::before,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li::before, .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li::before,
+.question-list > li::before, .enum-list > li::before, .q-list > li::before{
+  content:counter(kitq);
+  position:absolute; left:0; top:.1rem;
+  width:28px; min-width:28px; height:28px;
+  background:var(--navy); color:var(--cream);
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.72rem; font-weight:500;
+  flex-shrink:0;
+}
+.questions ol > li .q-text{ flex:1; font-size:.95rem; text-align:justify }
+/* sous-listes : cercle creux, plus discret */
+.enum-sublist, .kit-sublist, .sub-list, .sub-ol, .alpha-list, .enum-subsublist,
+.st ol.sub-ol, .questions ol ol, .st ol ol, .kit-list ol, .q-list ol, .question-list ol{
+  counter-reset:kitsq; list-style:none !important; padding-left:0 !important;
+  margin:.9rem 0 .9rem 0;
+}
+.enum-sublist > li, .kit-sublist > li, .sub-list > li, .sub-ol > li, .alpha-list > li, .enum-subsublist > li,
+.st ol.sub-ol > li, .questions ol ol > li, .st ol ol > li, .kit-list ol > li, .q-list ol > li, .question-list ol > li{
+  counter-increment:kitsq; position:relative;
+  padding-left:2.1rem; margin-bottom:.7rem; font-size:.92rem; text-align:justify;
+}
+.enum-sublist > li::before, .kit-sublist > li::before, .sub-list > li::before, .sub-ol > li::before, .alpha-list > li::before, .enum-subsublist > li::before,
+.st ol.sub-ol > li::before, .questions ol ol > li::before, .st ol ol > li::before, .kit-list ol > li::before, .q-list ol > li::before, .question-list ol > li::before{
+  content:counter(kitsq,lower-alpha);
+  min-width:22px;
+  position:absolute; left:0; top:.05rem;
+  width:22px; height:22px;
+  background:transparent; color:var(--navy);
+  border:1px solid var(--gold);
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.65rem;
+}
+
+/* variante : puces simples non numérotées (listes de données) */
+.kit-simple{ list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem }
+.kit-simple > li{
+  position:relative; padding-left:1.5rem; margin-bottom:1.1rem;
+  font-size:.95rem; line-height:1.7; text-align:justify;
+}
+.kit-simple > li::before{
+  content:"\2022"; position:absolute; left:0; top:-.15rem;
+  color:var(--gold); font-size:1.5rem; line-height:1; background:none;
+  width:auto; height:auto; border:none; border-radius:0;
+}
+/* variante : liste à un seul élément, sans puce */
+.kit-nobullet{ list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem }
+.kit-nobullet > li{
+  padding-left:0; margin-bottom:1rem; font-size:.95rem; line-height:1.7; text-align:justify;
+}
+.kit-nobullet > li::before{ content:none !important; display:none !important }
+/* variante : titres de section numérotés (contenu intercalé entre les puces) */
+.kit-num-scope{ counter-reset:kitn }
+p.kit-num{
+  counter-increment:kitn; position:relative;
+  padding-left:2.6rem; margin:1.8rem 0 1rem;
+  font-weight:600; color:var(--navy); text-align:left;
+  min-height:28px; display:flex; align-items:center;
+}
+p.kit-num:first-of-type{ margin-top:0 }
+p.kit-num::before{
+  content:counter(kitn); position:absolute; left:0; top:0;
+  width:28px; height:28px; background:var(--navy); color:var(--cream);
+  border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.72rem; font-weight:500;
+}
+
+/* titres de dossier */
+.dossier-title{
+  margin:2rem 0 1rem; font-weight:600; color:var(--navy); font-size:1.02rem;
+  border-bottom:1px solid var(--border); padding-bottom:.4rem; text-align:left;
+}
+.dossier-title:first-of-type{ margin-top:0 }
+.dossier-body{ margin-bottom:.5rem }
+
+/* --- 3. Corrigé sobre : plus de multiplication de fonds verts --- */
+.sol-card .calc-box, .sol-card .concl{
+  background:transparent !important;
+  border:none !important;
+  border-left:none !important;
+  padding:0 !important;
+  border-radius:0 !important;
+  margin:0 0 1.6rem 0 !important;
+  font-size:.95rem;
+  line-height:1.7;
+  text-align:justify;
+}
+.sol-card .sol-sub{
+  color:var(--navy); font-weight:600; display:block;
+  margin:0 0 .5rem 0; font-size:1rem;
+}
+/* seuls encadrés conservés : les perspectives « Pour aller plus loin » */
+.sol-card .persp-box{
+  background:#f7f9fc !important;
+  border:1px solid #ccd8e6 !important;
+  border-left:3px solid var(--navy-mid) !important;
+  padding:1.2rem !important;
+  border-radius:4px !important;
+  margin:2rem 0 1rem 0 !important;
+  font-size:.9rem; line-height:1.7; text-align:justify;
+}
+
+.btn-toggle{
+  background:transparent; border:2px solid var(--green); border-bottom:none;
+  color:var(--green); font-family:'Source Serif 4',serif; font-size:.95rem;
+  font-weight:600; padding:.5rem 1.5rem; border-radius:4px 4px 0 0; cursor:pointer;
+  transition:all .2s; position:relative; z-index:2; top:2px;
+}
+.btn-toggle:hover{ background:var(--green); color:var(--cream) }
+
+/* --- 4. Bouton « Afficher le corrigé » (modèle der) --- */
+.sol-toggle-wrap{ text-align:left; margin:1.5rem 0 0 0; }
+.sol-card{
+  border-top:2px solid var(--green); display:none;
+  border-radius:0 6px 6px 6px; position:relative; z-index:1;
+}
+.sol-card.visible{ display:block; animation:kitfi .35s ease }
+.sol-card .card-header{ background:var(--green) }
+.sol-card .card-header .tag{ border-color:rgba(200,240,200,.4); color:#a8d8b0 }
+@keyframes kitfi{ from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+
+/* --- 5. Barre d'actions unifiée --- */
+.top-bar{ display:flex; flex-wrap:wrap; gap:.8rem; align-items:center; justify-content:space-between; margin-bottom:1.2rem }
+.top-bar-left{ display:flex; flex-wrap:wrap; gap:.55rem; order:1 }
+.top-bar .seed-badge{ order:2 }
+.btn-sm{ background:transparent; border:1px solid var(--gold); color:var(--gold); font-family:'JetBrains Mono',monospace; font-size:.67rem; letter-spacing:.08em; text-transform:uppercase; padding:.4rem 1rem; border-radius:3px; cursor:pointer; transition:all .18s; white-space:nowrap }
+.btn-sm:hover{ background:var(--gold); color:var(--navy) }
+.btn-sm.pdf{ border-color:#7bafd4; color:#7bafd4 }
+.btn-sm.pdf:hover{ background:#7bafd4; color:var(--navy) }
+.btn-sm.doc{ border-color:#8fa8c4; color:#8fa8c4 }
+.seed-row{ display:flex; gap:.4rem; align-items:center }
+.btn-copy-seed{
+  background:transparent; border:1px solid rgba(201,149,42,.4); color:rgba(250,247,240,.55);
+  padding:.38rem .55rem; border-radius:3px; cursor:pointer;
+  font-family:'JetBrains Mono',monospace; font-size:.65rem; transition:all .18s; white-space:nowrap;
+}
+.btn-copy-seed:hover{ border-color:var(--gold-light); color:var(--gold-light) }
+.btn-sm.doc:hover{ background:#8fa8c4; color:var(--navy) }
+
+/* --- 6. Modale d'export PDF --- */
+#pdf-ov{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:100; backdrop-filter:blur(2px) }
+#pdf-modal{ display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:101; background:#fff; border-radius:8px; box-shadow:0 20px 60px rgba(0,0,0,.25); width:390px; max-width:95vw; border-top:4px solid #7bafd4; overflow:hidden }
+#pdf-ov.open,#pdf-modal.open{ display:block }
+.mh{ background:var(--navy); color:var(--cream); padding:1rem 1.5rem; display:flex; align-items:center; justify-content:space-between }
+.mh h3{ font-family:'Playfair Display',serif; font-size:1rem; font-weight:600; margin:0 }
+.mclose{ background:none; border:none; color:rgba(255,255,255,.6); cursor:pointer; font-size:1.2rem; line-height:1; padding:2px 6px; border-radius:3px; transition:color .15s }
+.mclose:hover{ color:#fff }
+.mb2{ padding:1.5rem }
+.opt-row{ display:flex; align-items:flex-start; gap:.75rem; margin-bottom:1rem; cursor:pointer }
+.opt-row input[type=checkbox]{ width:16px; height:16px; cursor:pointer; accent-color:var(--navy); flex-shrink:0; margin-top:3px }
+.opt-txt{ display:block }
+.opt-lbl{ font-size:.93rem; display:block }
+.opt-desc{ font-size:.75rem; color:var(--text-muted); display:block }
+.seed-note{ font-family:'JetBrains Mono',monospace; font-size:.7rem; background:var(--cream-dark); border:1px solid var(--border); padding:.55rem .85rem; border-radius:3px; color:var(--text-muted); margin-bottom:1.2rem; line-height:1.5 }
+.mactions{ display:flex; gap:.6rem }
+.btn-print{ flex:1; background:var(--navy); color:var(--cream); border:none; padding:.7rem; border-radius:4px; font-family:'Source Serif 4',serif; font-size:.9rem; cursor:pointer; transition:background .2s }
+.btn-print:hover{ background:var(--navy-mid) }
+.btn-cancel{ background:transparent; border:1px solid var(--border); color:var(--text-muted); padding:.7rem 1rem; border-radius:4px; font-family:'Source Serif 4',serif; font-size:.9rem; cursor:pointer; transition:all .2s }
+.btn-cancel:hover{ border-color:var(--text); color:var(--text) }
+
+/* --- 7. Impression --- */
+@media print{
+  body{ background:#fff; font-size:11pt; -webkit-print-color-adjust:exact; print-color-adjust:exact }
+  header{ display:block !important; padding:1rem 1.5rem .8rem }
+  header .subtitle{ display:none }
+  .ctrls, #controls-bar, .top-actions, .top-bar-left, .sol-toggle-wrap,
+  .lang-switch, #pdf-ov, #pdf-modal{ display:none !important }
+  .top-bar{ display:block !important; margin-bottom:.8rem }
+  .top-bar .seed-badge{
+    display:inline-block !important; background:none; border:1px solid var(--border);
+    color:var(--text-muted); font-family:'JetBrains Mono',monospace; font-size:8.5pt;
+    padding:2pt 6pt; border-radius:2px;
+  }
+  body.print-no-header .top-bar{ display:none !important }
+  main{ padding:1rem 1.5rem; max-width:100% }
+  .card{ box-shadow:none; border-radius:0; page-break-inside:avoid; margin-bottom:1rem }
+  #ex-area{ display:block !important }
+  .sol-card{ display:block !important; border-top:2px solid var(--green) }
+  mjx-container[display="true"]{ overflow:visible !important }
+  body.print-no-header header{ display:none !important }
+  body.print-no-header .ctrls{ display:none !important }
+  body.print-no-solution .sol-card,
+  body.print-no-solution .sol-toggle-wrap{ display:none !important }
+  body.print-force-solution .sol-card{ display:block !important }
+}
+</style><!-- KIT:CSS:END -->
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-top">
+    <div class="header-badge" data-k="k-badge">INFORMATION COMPTABLE ET FINANCIÈRE</div>
+    <div class="lang-switch">
+      <button type="button" class="flag-btn active" id="flag-fr" onclick="setLang('fr')" title="Français" aria-label="Français"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="20" height="40" fill="#002654"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ED2939"/></svg></button>
+      <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
+    </div>
+  </div>
+  <h1 data-k="k-h1">Le budget de trésorerie</h1>
+  <p class="subtitle" data-k="k-sub">© Thomas Hossen – Version du 18 septembre 2026</p>
+
+  <div class="ctrls">
+    <div class="ctrl-g">
+      <span class="ctrl-lbl" data-k="k-seed">Seed de reproductibilité</span>
+      <div class="seed-row"><input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999"><button type="button" class="btn-copy-seed" id="btn-copy-seed" onclick="copySeed(this)" title="Copier la seed active"><span data-kit="btnCopy">&#10697; Copier</span></button></div>
+    </div>
+    <button class="btn-gen" onclick="generateExercise(false)"><span data-k="k-gen">Générer</span></button>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" style="text-align:center; padding:4rem; color:var(--text-muted); font-style:italic;">
+    <span data-k="k-welcome">Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.</span>
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="seed-badge"><span data-k="k-seedbadge">Seed active :</span> <span id="seed-disp"></span></div>
+      <div class="top-bar-left">
+        <button type="button" class="btn-sm" onclick="generateExercise(true)"><span data-kit="btnNew">&#8634; Nouvel &eacute;nonc&eacute;</span></button>
+        <button type="button" class="btn-sm pdf" onclick="openPdfModal()"><span data-kit="btnPdf">&#11015; Exporter PDF</span></button>
+        <button type="button" class="btn-sm doc" onclick="exportWord()"><span data-kit="btnDoc">&#11015; Exporter Word</span></button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="tag" data-k="k-tag-ex">Énoncé</span><h2 data-k="k-cardtitle">Construction et exploitation d'un budget de trésorerie</h2></div>
+      <div class="card-body">
+        <div class="context-block" id="context-text"></div>
+        <div id="enonce-table-container"></div>
+        <div class="context-block" id="additional-info" style="margin-top:1.5rem; background:#fff; border-left:3px solid var(--navy); border-radius:0;"></div>
+
+        <p style="margin-bottom:1rem; font-weight:600; color:var(--red); text-align:left;" data-k="k-work">Travail à faire</p>
+        <ul class="event-list" id="events-list"></ul>
+      </div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag" data-k="k-tag-sol">Corrigé</span><h2 data-k="k-cardtitle2">Construction et exploitation d'un budget de trésorerie</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+/* ============================================================
+   PROFILS — chaque profil porte sa propre saisonnalité
+   PROFILES — each profile carries its own seasonal pattern
+   ============================================================ */
+const PROFILES = [
+  { name: "Jardilène", coef: [0.55, 0.75, 1.25, 1.55, 1.40, 1.00, 0.80],
+    fr: { secteur: "une jardinerie disposant de trois points de vente", saison: "les ventes se concentrent sur la période de plantation, de mars à mai", stock: "la mise en place des végétaux et des terreaux précède d'un mois la saison de vente" },
+    en: { secteur: "a garden centre operating three outlets", saison: "sales are concentrated in the planting season, from March to May", stock: "plants and compost are stocked one month ahead of the selling season" } },
+  { name: "Océalis Nautisme", coef: [0.50, 0.60, 0.85, 1.20, 1.55, 1.70, 1.60],
+    fr: { secteur: "un distributeur d'équipements nautiques", saison: "l'activité monte régulièrement jusqu'au pic de l'été", stock: "les approvisionnements précèdent d'un mois la saison de vente" },
+    en: { secteur: "a distributor of boating equipment", saison: "activity builds steadily towards the summer peak", stock: "purchases are made one month ahead of the selling season" } },
+  { name: "Maison Vertel", coef: [0.70, 0.80, 1.10, 1.30, 1.20, 1.05, 0.95],
+    fr: { secteur: "un négociant en matériaux de construction", saison: "l'activité redémarre avec la reprise des chantiers au printemps", stock: "les commandes aux fabricants sont passées un mois avant la pose" },
+    en: { secteur: "a builders' merchant", saison: "activity picks up as building sites restart in the spring", stock: "orders to manufacturers are placed one month before installation" } },
+  { name: "Ludibraire", coef: [0.65, 0.70, 0.85, 0.95, 1.10, 1.35, 1.45],
+    fr: { secteur: "une chaîne de magasins de jeux et de loisirs créatifs", saison: "les ventes progressent à l'approche des vacances scolaires d'été", stock: "les collections sont référencées un mois avant leur mise en rayon" },
+    en: { secteur: "a chain of games and craft stores", saison: "sales rise as the summer holidays approach", stock: "collections are ordered one month before they reach the shelves" } },
+  { name: "Frigelac", coef: [0.60, 0.70, 0.90, 1.15, 1.45, 1.65, 1.55],
+    fr: { secteur: "un fabricant de crèmes glacées artisanales", saison: "la demande croît fortement avec les premières chaleurs", stock: "les matières premières sont achetées un mois avant la production" },
+    en: { secteur: "a maker of artisanal ice cream", saison: "demand rises sharply with the first warm weather", stock: "raw materials are bought one month ahead of production" } },
+  { name: "Textil'Sud", coef: [0.75, 0.95, 1.30, 1.35, 1.10, 0.85, 1.20],
+    fr: { secteur: "un grossiste en prêt-à-porter", saison: "la collection de printemps concentre les ventes de mars et d'avril", stock: "les commandes aux façonniers sont passées un mois avant la livraison aux détaillants" },
+    en: { secteur: "a wholesaler of ready-to-wear clothing", saison: "the spring collection concentrates sales in March and April", stock: "orders to manufacturers are placed one month before delivery to retailers" } }
+];
+
+const MONTHS = {
+  fr: ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet"],
+  en: ["January", "February", "March", "April", "May", "June", "July"]
+};
+
+/* ============================================================
+   DICTIONNAIRE BILINGUE  /  BILINGUAL DICTIONARY
+   ============================================================ */
+const I18N = {
+
+  fr: {
+    "htmlLang": "fr",
+    "title": "Simulateur Comptabilité de Gestion - Budget de trésorerie",
+    "locale": "fr-FR",
+    "k-badge": "INFORMATION COMPTABLE ET FINANCIÈRE",
+    "k-h1": "Le budget de trésorerie",
+    "k-sub": "© Thomas Hossen – Version du 18 septembre 2026",
+    "k-seed": "Seed de reproductibilité",
+    "k-gen": "Générer",
+    "k-welcome": "Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.",
+    "k-seedbadge": "Seed active :",
+    "k-tag-ex": "Énoncé",
+    "k-cardtitle": "Construction et exploitation d'un budget de trésorerie",
+    "k-tag-sol": "Corrigé",
+    "k-cardtitle2": "Construction et exploitation d'un budget de trésorerie",
+    "k-work": "Travail à faire",
+    "showSol": "Afficher le corrigé",
+    "hideSol": "Masquer le corrigé",
+    thousands: "\\,",
+    decimal: "{,}",
+
+    chartTitle: "Solde de trésorerie en fin de mois",
+    chartNote: "Barres : budget initial. Points reliés : budget après report de l'investissement.",
+    lblInit: "budget initial",
+    lblScen: "avec report de l'investissement",
+
+    context: function(D) {
+      const p = D.prof.fr;
+      return `
+        ${D.prof.name} est ${p.secteur}. Son activité est saisonnière : ${p.saison}, et ${p.stock}. La direction financière établit son budget de trésorerie pour le premier semestre ${D.Y} afin d'anticiper ses besoins de financement à court terme, d'autant qu'un investissement de ${money(D.INV,'fr')} hors taxes est programmé en ${MONTHS.fr[D.mInv].toLowerCase()}. Elle vous communique les prévisions suivantes, tous les montants étant exprimés en euros.
+      `;
+    },
+    table: function(D) {
+      const m = MONTHS.fr;
+      let h = "";
+      h += `<p style="margin:1.4rem 0 .6rem; font-weight:600; color:var(--navy); text-align:left;">Tableau 1 — Prévisions d'activité (montants hors taxes)</p>`;
+      h += `<div class="exam-table-wrap"><table class="exam-table">
+          <tr><th style="width:22%;">Élément</th>${m.map(x => `<th>${x}</th>`).join('')}</tr>
+          <tr><td class="txt-left">Ventes</td>${D.V.map(v => `<td class="amt">${fmtNb(v,0)}</td>`).join('')}</tr>
+          <tr><td class="txt-left">Achats</td>${D.A.map(v => `<td class="amt">${fmtNb(v,0)}</td>`).join('')}<td class="amt">—</td></tr>
+      </table></div>
+      <p style="font-size:.82rem;color:var(--text-muted);font-style:italic;margin:.4rem 0 0;text-align:left;">Les ventes de juillet ne sont données que pour mémoire : elles déterminent les achats de juin, l'entreprise s'approvisionnant un mois avant la vente à hauteur de ${fmtNb(D.alphaPct,0)} % des ventes du mois suivant.</p>`;
+
+      h += `<p style="margin:1.6rem 0 .6rem; font-weight:600; color:var(--navy); text-align:left;">Tableau 2 — Conditions de règlement et charges courantes</p>`;
+      h += `<div class="exam-table-wrap"><table class="exam-table">
+          <tr><th style="width:55%;">Élément</th><th style="width:45%;">Modalité</th></tr>
+          <tr><td class="txt-left">Règlement des clients</td><td class="txt-left" style="font-weight:400;">${fmtNb(D.pc[0],0)} % au comptant, ${fmtNb(D.pc[1],0)} % à 30 jours, ${fmtNb(D.pc[2],0)} % à 60 jours</td></tr>
+          <tr><td class="txt-left">Règlement des fournisseurs</td><td class="txt-left" style="font-weight:400;">${fmtNb(D.pf[0],0)} % à 30 jours, ${fmtNb(D.pf[1],0)} % à 60 jours</td></tr>
+          <tr><td class="txt-left">Autres charges externes (mensuelles, HT)</td><td class="amt">${fmtNb(D.OC,0)}</td></tr>
+          <tr><td class="txt-left">Salaires nets mensuels</td><td class="amt">${fmtNb(D.SAL,0)}</td></tr>
+          <tr><td class="txt-left">Charges sociales mensuelles</td><td class="amt">${fmtNb(D.CS,0)}</td></tr>
+          <tr><td class="txt-left">Taux de TVA</td><td class="amt">20 %</td></tr>
+      </table></div>`;
+
+      h += `<p style="margin:1.6rem 0 .6rem; font-weight:600; color:var(--navy); text-align:left;">Tableau 3 — Situation au 31 décembre ${D.Y - 1} et opérations prévues</p>`;
+      h += `<div class="exam-table-wrap"><table class="exam-table">
+          <tr><th style="width:62%;">Élément</th><th style="width:38%;">Montant et échéance</th></tr>
+          <tr><td class="txt-left">Trésorerie disponible</td><td class="amt">${money(D.T0,'fr')}</td></tr>
+          <tr><td class="txt-left">Créances clients (toutes taxes comprises)</td><td class="txt-left" style="font-weight:400;">${money(D.CLI0,'fr')}, encaissées à ${fmtNb(D.pCli,0)} % en janvier et pour le solde en février</td></tr>
+          <tr><td class="txt-left">Dettes fournisseurs (toutes taxes comprises)</td><td class="txt-left" style="font-weight:400;">${money(D.FOU0,'fr')}, réglées à ${fmtNb(D.pFou,0)} % en janvier et pour le solde en février</td></tr>
+          <tr><td class="txt-left">TVA à décaisser au titre de décembre</td><td class="txt-left" style="font-weight:400;">${money(D.TVA0,'fr')}, payée en janvier</td></tr>
+          <tr><td class="txt-left">Dettes sociales de décembre</td><td class="txt-left" style="font-weight:400;">${money(D.CS0,'fr')}, payées en janvier</td></tr>
+          <tr><td class="txt-left">Investissement (matériel, HT)</td><td class="txt-left" style="font-weight:400;">${money(D.INV,'fr')}, acquis et réglé comptant en ${MONTHS.fr[D.mInv].toLowerCase()}</td></tr>
+          ${D.EMP > 0 ? `<tr><td class="txt-left">Emprunt destiné au financement partiel de l'investissement</td><td class="txt-left" style="font-weight:400;">${money(D.EMP,'fr')}, encaissés en ${MONTHS.fr[D.mInv].toLowerCase()}</td></tr>` : ''}
+          <tr><td class="txt-left">Échéances de l'emprunt en cours</td><td class="txt-left" style="font-weight:400;">${money(D.REMB,'fr')} en mars et en juin</td></tr>
+          ${D.DIV > 0 ? `<tr><td class="txt-left">Dividendes</td><td class="txt-left" style="font-weight:400;">${money(D.DIV,'fr')}, versés en ${MONTHS.fr[D.mDiv].toLowerCase()}</td></tr>` : ''}
+      </table></div>`;
+      return h;
+    },
+    info: function(D) {
+      return `
+        <strong>Hypothèses de travail.</strong> Le taux de TVA est de 20 % sur les ventes, les achats, les autres charges externes et l'investissement. La TVA est exigible au titre du mois de la livraison, qu'il s'agisse des ventes ou des achats, et la TVA due au titre d'un mois est décaissée le mois suivant ; un éventuel crédit de TVA est reporté sur le mois suivant et non remboursé. Les autres charges externes sont réglées au comptant, les salaires nets sont versés le mois même et les charges sociales le mois suivant. Les créances et dettes figurant au bilan d'ouverture correspondent aux opérations des mois de novembre et décembre. Aucun autre encaissement ni décaissement n'est prévu sur la période.
+      `;
+    },
+    enonce: function(D) {
+      let h = "";
+      h += `<li><strong>Budget des encaissements.</strong> Présentez le budget des encaissements du premier semestre ${D.Y}, en distinguant les règlements des ventes de la période et ceux des créances figurant au bilan d'ouverture.</li>`;
+      h += `<li><strong>Budget de TVA.</strong> Établissez le budget de TVA du semestre : TVA collectée, TVA déductible sur les achats et les autres charges externes, TVA déductible sur l'immobilisation, puis TVA à décaisser ou crédit de TVA reporté.</li>`;
+      h += `<li><strong>Budget des décaissements.</strong> Présentez le budget des décaissements du semestre, en n'omettant aucune des charges et opérations mentionnées dans l'énoncé.</li>`;
+      h += `<li><strong>Budget de trésorerie.</strong> Dressez le budget de trésorerie mensuel et déterminez le solde de trésorerie à la fin de chaque mois ainsi qu'au 30 juin.</li>`;
+      h += `<li><strong>Commentaire.</strong> Identifiez le mois le plus critique et le besoin de financement maximal. Expliquez les causes de la dégradation constatée : quelle part revient à la saisonnalité, quelle part à l'investissement ?</li>`;
+      h += `<li><strong>Solutions.</strong> Chiffrez le coût d'un découvert bancaire couvrant les soldes débiteurs au taux de ${fmtNb(D.tDecPct,1)} % l'an, puis mesurez l'effet d'un report de deux mois de l'investissement. Proposez d'autres pistes d'amélioration.</li>`;
+      return h;
+    },
+    sol: function(D) {
+      const M = v => money(v, 'fr');
+      const m = MONTHS.fr;
+      const B = D.B;
+      let s = "";
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">1. Le budget des encaissements</span>
+        Le budget de trésorerie ne raisonne ni en produits ni en charges, mais en <em>flux réels</em> : chaque ligne doit être exprimée toutes taxes comprises et rattachée au mois où l'argent entre ou sort effectivement. Les ventes du mois ${m[0].toLowerCase()}, par exemple, s'élèvent à ${M(D.V[0])} hors taxes, soit ${M(D.Vttc[0])} toutes taxes comprises, encaissées à hauteur de ${fmtNb(D.pc[0],0)} % le mois même, ${fmtNb(D.pc[1],0)} % en ${m[1].toLowerCase()} et ${fmtNb(D.pc[2],0)} % en ${m[2].toLowerCase()}.<br><br>
+        Les créances figurant au bilan d'ouverture sont le reflet des ventes de novembre et décembre : elles ne doivent surtout pas être oubliées, faute de quoi les deux premiers mois du budget seraient artificiellement déficitaires.
+        ${encTable(D, 'fr')}
+        Le total encaissé sur le semestre atteint ${M(B.encTot)}. On peut le contrôler : les ventes du semestre représentent ${M(D.VttcTot)} toutes taxes comprises, auxquelles s'ajoutent les créances initiales de ${M(D.CLI0)}${D.EMP > 0 ? ` et l'emprunt de ${M(D.EMP)}` : ''} ; les ${M(D.encReste)} qui n'apparaissent pas au budget correspondent aux ventes de ${m[4].toLowerCase()} et de ${m[5].toLowerCase()} dont l'échéance est postérieure au 30 juin.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">2. Le budget de TVA</span>
+        Le budget de TVA doit être établi avant celui des décaissements, puisqu'il en détermine une ligne. La TVA collectée porte sur les ventes du mois, la TVA déductible sur les achats et les autres charges externes du même mois — la taxe est exigible à la livraison, indépendamment de la date de règlement, ce qui explique que le budget de TVA ne coïncide jamais avec les flux de trésorerie correspondants.<br><br>
+        L'investissement de ${M(D.INV)} acquis en ${m[D.mInv].toLowerCase()} ouvre droit à une déduction de ${M(D.tvaInv)}, imputée sur la TVA du mois d'acquisition.
+        ${tvaTable(D, 'fr')}
+        ${B.anyCredit
+          ? `On notera qu'en ${B.creditMonths.map(j => m[j].toLowerCase()).join(' et en ')}, la TVA déductible excède la TVA collectée : il n'y a alors rien à décaisser, et le crédit de TVA vient s'imputer sur la taxe due au titre du mois suivant. Ce report, et non un remboursement immédiat, est la règle pour une entreprise soumise au régime normal mensuel qui ne demande pas de remboursement.`
+          : `La TVA collectée excède la TVA déductible chaque mois du semestre : aucun crédit de TVA n'apparaît, et la taxe due au titre d'un mois est systématiquement décaissée le mois suivant.`}
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">3. Le budget des décaissements</span>
+        Les achats du mois sont réglés à ${fmtNb(D.pf[0],0)} % le mois suivant et à ${fmtNb(D.pf[1],0)} % le mois d'après : aucun décaissement d'achats de la période n'intervient donc en ${m[0].toLowerCase()}, où seules les dettes fournisseurs d'ouverture sont réglées. C'est précisément ce décalage qui fait l'intérêt du budget de trésorerie : l'entreprise paie en ${m[2].toLowerCase()} et ${m[3].toLowerCase()} les marchandises qu'elle a achetées en ${m[1].toLowerCase()} pour vendre au printemps.
+        ${decTable(D, 'fr')}
+        Le total décaissé s'élève à ${M(B.decTot)}, dont ${M(D.INVttc)} au seul titre de l'investissement, soit ${fmtNb(D.INVttc / B.decTot * 100, 1)} % de l'ensemble.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">4. Le budget de trésorerie</span>
+        Le budget de trésorerie proprement dit se borne à articuler les deux précédents : le solde de début de mois, augmenté des encaissements et diminué des décaissements, donne le solde de fin de mois, qui devient le solde de début du mois suivant.
+        ${tresoTable(D, 'fr')}
+        La trésorerie, partie de ${M(D.T0)} au 1<sup>er</sup> janvier, s'établit à ${M(B.fin[5])} au 30 juin. Mais ce solde final ${B.fin[5] >= 0 ? "positif" : "négatif"} ne doit pas masquer l'essentiel : le budget passe par un point bas de ${M(B.minVal)} en ${m[B.minIdx].toLowerCase()}, et la trésorerie est débitrice pendant ${B.nbNeg} mois sur six.
+        ${chartSVG(D, 'fr')}
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">5. Commentaire</span>
+        <strong>Le mois critique.</strong> Le point bas est atteint fin ${m[B.minIdx].toLowerCase()}, avec un solde de ${M(B.minVal)} : c'est le besoin de financement maximal à couvrir, et c'est sur ce montant que doit être calibrée toute solution de trésorerie. Retenir le solde du 30 juin (${M(B.fin[5])}) conduirait à sous-dimensionner gravement le concours nécessaire — l'erreur la plus fréquente sur ce type d'exercice.<br><br>
+        <strong>Les causes.</strong> Deux effets se cumulent. Le premier est structurel et tient à la saisonnalité : l'entreprise achète avant de vendre et encaisse après avoir vendu. En ${m[B.minIdx].toLowerCase()}, elle règle ${M(B.decAchats[B.minIdx])} d'achats correspondant aux ventes des mois suivants, tandis qu'elle n'encaisse que ${M(B.encVentes[B.minIdx])} au titre de ventes déjà anciennes. Ce décalage est la traduction, en trésorerie, du besoin en fonds de roulement que le cycle d'exploitation engendre mécaniquement. Le second effet est ponctuel : l'investissement de ${M(D.INVttc)} toutes taxes comprises, décaissé d'un seul coup en ${m[D.mInv].toLowerCase()}${D.EMP > 0 ? `, n'est financé qu'à hauteur de ${M(D.EMP)} par l'emprunt, soit ${fmtNb(D.EMP / D.INVttc * 100, 0)} % du décaissement` : ` sans aucun financement externe adossé`}.<br><br>
+        <strong>La part de chacun.</strong> La comparaison des deux scénarios de la question suivante permet de les départager : en l'absence de l'investissement, le point bas ${D.sansInv.minVal >= 0 ? `disparaîtrait, le solde minimal remontant à ${M(D.sansInv.minVal)}` : `serait ramené à ${M(D.sansInv.minVal)}, soit ${M(Math.abs(D.sansInv.minVal - B.minVal))} de moins`}. L'investissement explique donc ${fmtNb(Math.min(100, Math.abs(D.sansInv.minVal - B.minVal) / Math.abs(B.minVal) * 100), 0)} % de la dégradation, le solde revenant au cycle d'exploitation lui-même.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">6. Les solutions envisageables</span>
+        <strong>Le découvert bancaire.</strong> C'est la solution la plus immédiate : l'entreprise fait financer ses soldes débiteurs par sa banque, au taux de ${fmtNb(D.tDecPct,1)} % l'an. En retenant chaque solde débiteur de fin de mois comme encours moyen du mois, les agios s'établissent comme suit :
+        <div class="math-formula">\\[\\text{Agios} = \\sum_{\\text{mois débiteurs}} |\\text{solde}| \\times ${texD(D.tDecPct,1)}\\,\\% \\times \\frac{30}{360} = ${texM(D.agios)}\\ \\text{euros}\\]</div>
+        ${B.negMonths.map(j => `${m[j].toLowerCase()} : ${fmtNb(Math.abs(B.fin[j]),0)} × ${fmtNb(D.tDecPct,1)} % × 30/360 = ${fmtNb(Math.abs(B.fin[j]) * D.tDec / 12, 2)} €`).join(' ; ')}. Le coût reste modeste au regard des montants en jeu, mais il suppose que la banque accepte une autorisation d'au moins ${M(Math.abs(B.minVal))}, ce qui n'a rien d'acquis : un découvert de cette ampleur, non confirmé, peut être réduit à tout moment.<br><br>
+        <strong>Le report de l'investissement.</strong> Décaler de deux mois l'acquisition, de ${m[D.mInv].toLowerCase()} à ${m[D.mInv + 2].toLowerCase()}, revient à déplacer un décaissement de ${M(D.INVttc)}${D.EMP > 0 ? ` et l'encaissement de l'emprunt de ${M(D.EMP)}` : ''} vers un mois où la trésorerie est ${D.report.fin[D.mInv] > B.fin[D.mInv] ? "mieux garnie" : "moins tendue"}. Le budget devient alors :
+        ${miniTresoTable(D, 'fr')}
+        Le point bas passe de ${M(B.minVal)} à ${M(D.report.minVal)}, soit ${D.report.minVal > B.minVal ? `une amélioration de ${M(D.report.minVal - B.minVal)}` : `une dégradation de ${M(Math.abs(D.report.minVal - B.minVal))}`}. ${D.report.minVal >= 0
+          ? `Le report suffit donc à lui seul à éviter tout recours au crédit à court terme : c'est la solution à privilégier si le calendrier industriel le permet.`
+          : `Le besoin subsiste donc, réduit mais non supprimé : le report soulage la trésorerie sans dispenser d'un concours bancaire, qui pourra toutefois être calibré sur ${M(Math.abs(D.report.minVal))} au lieu de ${M(Math.abs(B.minVal))}.`}<br><br>
+        <strong>Les autres leviers.</strong> Sur les encaissements, l'entreprise peut mobiliser ses créances — escompte d'effets, cession Dailly ou affacturage —, ce qui transforme en trésorerie immédiate des créances à 30 et 60 jours ; elle peut aussi demander un acompte à la commande, particulièrement justifié sur une activité saisonnière, ou accorder un escompte de règlement pour accélérer les paiements comptant. Sur les décaissements, la négociation d'un délai supplémentaire auprès des fournisseurs de saison est souvent la mesure la plus efficace, car elle porte directement sur le poste qui creuse le solde ; un étalement du règlement de l'investissement, ou son financement par crédit-bail plutôt que par achat comptant, produirait le même effet. Enfin, sur la structure, un renforcement du fonds de roulement — apport en compte courant ou emprunt à moyen terme — traiterait la cause plutôt que le symptôme : un besoin de trésorerie qui revient chaque année à la même saison n'est pas un accident de trésorerie, c'est un besoin en fonds de roulement mal financé.
+      </div>`;
+
+      s += `<div class="persp-box">
+        <span class="sol-sub">Pour aller plus loin — ce que le budget de trésorerie voit et ce qu'il ne voit pas</span>
+        Le budget de trésorerie est le seul document prévisionnel qui raisonne en encaissements et en décaissements. Un compte de résultat prévisionnel peut afficher un bénéfice confortable pendant que la trésorerie s'effondre : c'est exactement la situation de notre entreprise, dont l'activité dégage une marge sur l'ensemble du semestre alors que le solde bancaire devient débiteur. Les deux documents ne mesurent pas la même chose — la performance d'un côté, la liquidité de l'autre — et une entreprise ne dépose pas son bilan parce qu'elle perd de l'argent, mais parce qu'elle n'arrive plus à payer.
+        <p style="margin-top:.8rem;">La construction obéit à un ordre contraignant qu'il faut respecter : budget des ventes, budget des approvisionnements et de la production, budget des investissements, budget de TVA, puis seulement budget de trésorerie, et enfin bilan et compte de résultat prévisionnels. Le budget de TVA occupe une place particulière parce qu'il est à la fois un budget de synthèse — il dépend des ventes, des achats et des investissements — et une entrée du budget de trésorerie. L'oublier, ou le rattacher au mauvais mois, est la cause la plus fréquente d'un budget faux.</p>
+        <p style="margin-top:.8rem;">Trois limites méritent d'être gardées à l'esprit. D'abord, le pas mensuel masque les tensions infra-mensuelles : un solde de fin de mois positif peut recouvrir une position très débitrice le 10, jour de paie et d'échéance de TVA. Les trésoriers d'entreprise travaillent pour cette raison en position quotidienne, voire en date de valeur. Ensuite, les taux de règlement retenus sont des moyennes historiques : un allongement de quelques jours du délai clients, ou une défaillance sur un gros compte, déforme sensiblement le budget — d'où l'intérêt de le décliner en plusieurs scénarios. Enfin, le budget est un document glissant : il perd sa valeur s'il n'est pas actualisé chaque mois par confrontation aux réalisations, exercice qui constitue en lui-même le cœur du contrôle de gestion de trésorerie.</p>
+      </div>`;
+
+      return s;
+    }
+  },
+
+  en: {
+    "htmlLang": "en",
+    "title": "Management Accounting Simulator - Cash budget",
+    "locale": "en-GB",
+    "k-badge": "FINANCIAL ASSET VALUATION METHODS",
+    "k-h1": "The cash budget",
+    "k-sub": "© Thomas Hossen – Version of 18 September 2026",
+    "k-seed": "Reproducibility seed",
+    "k-gen": "Generate",
+    "k-welcome": "Set the parameters and click Generate to create a new exercise.",
+    "k-seedbadge": "Active seed:",
+    "k-tag-ex": "Statement",
+    "k-cardtitle": "Building and using a cash budget",
+    "k-tag-sol": "Solution",
+    "k-cardtitle2": "Building and using a cash budget",
+    "k-work": "Required work",
+    "showSol": "Show solution",
+    "hideSol": "Hide solution",
+    thousands: ",",
+    decimal: ".",
+
+    chartTitle: "Month-end cash balance",
+    chartNote: "Bars: initial budget. Connected dots: budget after deferral of the investment.",
+    lblInit: "initial budget",
+    lblScen: "with the investment deferred",
+
+    context: function(D) {
+      const p = D.prof.en;
+      return `
+        ${D.prof.name} is ${p.secteur}. Its business is seasonal: ${p.saison}, and ${p.stock}. The finance department is preparing its cash budget for the first half of ${D.Y} in order to anticipate its short-term funding needs, all the more so as an investment of ${money(D.INV,'en')} excluding tax is scheduled for ${MONTHS.en[D.mInv]}. It provides you with the following forecasts, all amounts in euros.
+      `;
+    },
+    table: function(D) {
+      const m = MONTHS.en;
+      let h = "";
+      h += `<p style="margin:1.4rem 0 .6rem; font-weight:600; color:var(--navy); text-align:left;">Table 1 — Activity forecasts (amounts excluding tax)</p>`;
+      h += `<div class="exam-table-wrap"><table class="exam-table">
+          <tr><th style="width:22%;">Item</th>${m.map(x => `<th>${x}</th>`).join('')}</tr>
+          <tr><td class="txt-left">Sales</td>${D.V.map(v => `<td class="amt">${fmtNb(v,0)}</td>`).join('')}</tr>
+          <tr><td class="txt-left">Purchases</td>${D.A.map(v => `<td class="amt">${fmtNb(v,0)}</td>`).join('')}<td class="amt">—</td></tr>
+      </table></div>
+      <p style="font-size:.82rem;color:var(--text-muted);font-style:italic;margin:.4rem 0 0;text-align:left;">July sales are given for information only: they determine June purchases, the company buying one month ahead of the sale at ${fmtNb(D.alphaPct,0)}% of the following month's sales.</p>`;
+
+      h += `<p style="margin:1.6rem 0 .6rem; font-weight:600; color:var(--navy); text-align:left;">Table 2 — Settlement terms and recurring charges</p>`;
+      h += `<div class="exam-table-wrap"><table class="exam-table">
+          <tr><th style="width:55%;">Item</th><th style="width:45%;">Terms</th></tr>
+          <tr><td class="txt-left">Customer settlement</td><td class="txt-left" style="font-weight:400;">${fmtNb(D.pc[0],0)}% in cash, ${fmtNb(D.pc[1],0)}% at 30 days, ${fmtNb(D.pc[2],0)}% at 60 days</td></tr>
+          <tr><td class="txt-left">Supplier settlement</td><td class="txt-left" style="font-weight:400;">${fmtNb(D.pf[0],0)}% at 30 days, ${fmtNb(D.pf[1],0)}% at 60 days</td></tr>
+          <tr><td class="txt-left">Other external charges (monthly, excl. tax)</td><td class="amt">${fmtNb(D.OC,0)}</td></tr>
+          <tr><td class="txt-left">Monthly net wages</td><td class="amt">${fmtNb(D.SAL,0)}</td></tr>
+          <tr><td class="txt-left">Monthly social security contributions</td><td class="amt">${fmtNb(D.CS,0)}</td></tr>
+          <tr><td class="txt-left">VAT rate</td><td class="amt">20%</td></tr>
+      </table></div>`;
+
+      h += `<p style="margin:1.6rem 0 .6rem; font-weight:600; color:var(--navy); text-align:left;">Table 3 — Position at 31 December ${D.Y - 1} and planned transactions</p>`;
+      h += `<div class="exam-table-wrap"><table class="exam-table">
+          <tr><th style="width:62%;">Item</th><th style="width:38%;">Amount and timing</th></tr>
+          <tr><td class="txt-left">Cash available</td><td class="amt">${money(D.T0,'en')}</td></tr>
+          <tr><td class="txt-left">Trade receivables (including tax)</td><td class="txt-left" style="font-weight:400;">${money(D.CLI0,'en')}, collected ${fmtNb(D.pCli,0)}% in January and the balance in February</td></tr>
+          <tr><td class="txt-left">Trade payables (including tax)</td><td class="txt-left" style="font-weight:400;">${money(D.FOU0,'en')}, settled ${fmtNb(D.pFou,0)}% in January and the balance in February</td></tr>
+          <tr><td class="txt-left">VAT payable in respect of December</td><td class="txt-left" style="font-weight:400;">${money(D.TVA0,'en')}, paid in January</td></tr>
+          <tr><td class="txt-left">December social security liabilities</td><td class="txt-left" style="font-weight:400;">${money(D.CS0,'en')}, paid in January</td></tr>
+          <tr><td class="txt-left">Investment (equipment, excl. tax)</td><td class="txt-left" style="font-weight:400;">${money(D.INV,'en')}, acquired and paid in cash in ${MONTHS.en[D.mInv]}</td></tr>
+          ${D.EMP > 0 ? `<tr><td class="txt-left">Loan partly funding the investment</td><td class="txt-left" style="font-weight:400;">${money(D.EMP,'en')}, received in ${MONTHS.en[D.mInv]}</td></tr>` : ''}
+          <tr><td class="txt-left">Instalments on the existing loan</td><td class="txt-left" style="font-weight:400;">${money(D.REMB,'en')} in March and in June</td></tr>
+          ${D.DIV > 0 ? `<tr><td class="txt-left">Dividends</td><td class="txt-left" style="font-weight:400;">${money(D.DIV,'en')}, paid in ${MONTHS.en[D.mDiv]}</td></tr>` : ''}
+      </table></div>`;
+      return h;
+    },
+    info: function(D) {
+      return `
+        <strong>Working assumptions.</strong> The VAT rate is 20% on sales, purchases, other external charges and the investment. VAT becomes chargeable in the month of delivery, for both sales and purchases, and the VAT due in respect of a month is paid in the following month; any VAT credit is carried forward to the following month rather than refunded. Other external charges are settled in cash, net wages are paid in the month itself and social security contributions in the following month. The receivables and payables shown in the opening balance sheet relate to November and December transactions. No other receipts or payments are expected over the period.
+      `;
+    },
+    enonce: function(D) {
+      let h = "";
+      h += `<li><strong>Budget of cash receipts.</strong> Present the budget of cash receipts for the first half of ${D.Y}, distinguishing settlements of the period's sales from those of the receivables shown in the opening balance sheet.</li>`;
+      h += `<li><strong>VAT budget.</strong> Draw up the VAT budget for the half-year: output VAT, input VAT on purchases and other external charges, input VAT on the fixed asset, then VAT payable or VAT credit carried forward.</li>`;
+      h += `<li><strong>Budget of cash payments.</strong> Present the budget of cash payments for the half-year, omitting none of the charges and transactions mentioned above.</li>`;
+      h += `<li><strong>Cash budget.</strong> Draw up the monthly cash budget and determine the cash balance at the end of each month and at 30 June.</li>`;
+      h += `<li><strong>Commentary.</strong> Identify the most critical month and the maximum funding requirement. Explain the causes of the deterioration observed: how much is due to seasonality, how much to the investment?</li>`;
+      h += `<li><strong>Solutions.</strong> Quantify the cost of a bank overdraft covering the debit balances at a rate of ${fmtNb(D.tDecPct,1)}% a year, then measure the effect of deferring the investment by two months. Suggest other courses of action.</li>`;
+      return h;
+    },
+    sol: function(D) {
+      const M = v => money(v, 'en');
+      const m = MONTHS.en;
+      const B = D.B;
+      let s = "";
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">1. The budget of cash receipts</span>
+        A cash budget reasons neither in income nor in expenses, but in <em>actual flows</em>: every line must be stated inclusive of tax and allocated to the month in which the money actually comes in or goes out. Sales in ${m[0]}, for instance, amount to ${M(D.V[0])} excluding tax, that is ${M(D.Vttc[0])} including tax, collected ${fmtNb(D.pc[0],0)}% in the same month, ${fmtNb(D.pc[1],0)}% in ${m[1]} and ${fmtNb(D.pc[2],0)}% in ${m[2]}.<br><br>
+        The receivables shown in the opening balance sheet reflect November and December sales: they must on no account be forgotten, otherwise the first two months of the budget would appear artificially in deficit.
+        ${encTable(D, 'en')}
+        Total receipts over the half-year come to ${M(B.encTot)}. This can be checked: sales for the half-year amount to ${M(D.VttcTot)} including tax, to which the opening receivables of ${M(D.CLI0)}${D.EMP > 0 ? ` and the ${M(D.EMP)} loan` : ''} must be added; the ${M(D.encReste)} that do not appear in the budget correspond to ${m[4]} and ${m[5]} sales falling due after 30 June.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">2. The VAT budget</span>
+        The VAT budget must be prepared before the payments budget, since it determines one of its lines. Output VAT relates to the month's sales, input VAT to the purchases and other external charges of the same month — the tax becomes chargeable on delivery, irrespective of the settlement date, which is why the VAT budget never coincides with the corresponding cash flows.<br><br>
+        The ${M(D.INV)} investment acquired in ${m[D.mInv]} gives rise to a deduction of ${M(D.tvaInv)}, set against the VAT of the month of acquisition.
+        ${tvaTable(D, 'en')}
+        ${B.anyCredit
+          ? `Note that in ${B.creditMonths.map(j => m[j]).join(' and ')}, input VAT exceeds output VAT: nothing is then payable, and the VAT credit is set against the tax due in respect of the following month. That carry-forward, rather than an immediate refund, is the rule for a company under the standard monthly regime that does not claim a repayment.`
+          : `Output VAT exceeds input VAT in every month of the half-year: no VAT credit arises, and the tax due in respect of a month is always paid in the following month.`}
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">3. The budget of cash payments</span>
+        The month's purchases are settled ${fmtNb(D.pf[0],0)}% in the following month and ${fmtNb(D.pf[1],0)}% in the month after: no payment for the period's purchases therefore occurs in ${m[0]}, where only the opening trade payables are settled. This lag is precisely what makes the cash budget worth building: the company pays in ${m[2]} and ${m[3]} for the goods it bought in ${m[1]} in order to sell them in the spring.
+        ${decTable(D, 'en')}
+        Total payments amount to ${M(B.decTot)}, of which ${M(D.INVttc)} for the investment alone, that is ${fmtNb(D.INVttc / B.decTot * 100, 1)}% of the whole.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">4. The cash budget</span>
+        The cash budget itself simply links the two previous ones: the opening balance for the month, plus receipts and less payments, gives the closing balance, which becomes the following month's opening balance.
+        ${tresoTable(D, 'en')}
+        Cash, starting at ${M(D.T0)} on 1 January, stands at ${M(B.fin[5])} on 30 June. But that ${B.fin[5] >= 0 ? "positive" : "negative"} closing balance must not obscure the essential point: the budget goes through a low of ${M(B.minVal)} in ${m[B.minIdx]}, and cash is in debit for ${B.nbNeg} months out of six.
+        ${chartSVG(D, 'en')}
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">5. Commentary</span>
+        <strong>The critical month.</strong> The low point is reached at the end of ${m[B.minIdx]}, with a balance of ${M(B.minVal)}: this is the maximum funding requirement to be covered, and it is the figure on which any cash solution must be sized. Taking the 30 June balance (${M(B.fin[5])}) would seriously undersize the facility needed — the most frequent mistake on this type of exercise.<br><br>
+        <strong>The causes.</strong> Two effects combine. The first is structural and stems from seasonality: the company buys before it sells and collects after it has sold. In ${m[B.minIdx]}, it pays ${M(B.decAchats[B.minIdx])} of purchases relating to the following months' sales, while collecting only ${M(B.encVentes[B.minIdx])} in respect of older sales. That lag is the cash translation of the working capital requirement which the operating cycle mechanically generates. The second effect is a one-off: the ${M(D.INVttc)} investment including tax, paid in a single instalment in ${m[D.mInv]}${D.EMP > 0 ? `, is funded only up to ${M(D.EMP)} by the loan, that is ${fmtNb(D.EMP / D.INVttc * 100, 0)}% of the payment` : ` with no matching external funding at all`}.<br><br>
+        <strong>How much each contributes.</strong> Comparing the two scenarios in the next question settles the point: without the investment, the low point ${D.sansInv.minVal >= 0 ? `would disappear, the minimum balance rising to ${M(D.sansInv.minVal)}` : `would be brought back to ${M(D.sansInv.minVal)}, that is ${M(Math.abs(D.sansInv.minVal - B.minVal))} less`}. The investment therefore explains ${fmtNb(Math.min(100, Math.abs(D.sansInv.minVal - B.minVal) / Math.abs(B.minVal) * 100), 0)}% of the deterioration, the remainder being attributable to the operating cycle itself.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">6. Possible solutions</span>
+        <strong>The bank overdraft.</strong> This is the most immediate solution: the company has its debit balances funded by its bank at ${fmtNb(D.tDecPct,1)}% a year. Taking each month-end debit balance as the month's average outstanding, the interest charges are as follows:
+        <div class="math-formula">\\[\\text{Interest} = \\sum_{\\text{debit months}} |\\text{balance}| \\times ${texD(D.tDecPct,1)}\\,\\% \\times \\frac{30}{360} = ${texM(D.agios)}\\ \\text{euros}\\]</div>
+        ${B.negMonths.map(j => `${m[j]}: ${fmtNb(Math.abs(B.fin[j]),0)} × ${fmtNb(D.tDecPct,1)}% × 30/360 = €${fmtNb(Math.abs(B.fin[j]) * D.tDec / 12, 2)}`).join('; ')}. The cost remains modest relative to the amounts involved, but it assumes the bank agrees to a facility of at least ${M(Math.abs(B.minVal))}, which is by no means guaranteed: an overdraft of that size, if not formally confirmed, can be cut back at any time.<br><br>
+        <strong>Deferring the investment.</strong> Postponing the acquisition by two months, from ${m[D.mInv]} to ${m[D.mInv + 2]}, shifts a payment of ${M(D.INVttc)}${D.EMP > 0 ? ` and the receipt of the ${M(D.EMP)} loan` : ''} into a month where cash is ${D.report.fin[D.mInv] > B.fin[D.mInv] ? "better supplied" : "less strained"}. The budget then becomes:
+        ${miniTresoTable(D, 'en')}
+        The low point moves from ${M(B.minVal)} to ${M(D.report.minVal)}, that is ${D.report.minVal > B.minVal ? `an improvement of ${M(D.report.minVal - B.minVal)}` : `a deterioration of ${M(Math.abs(D.report.minVal - B.minVal))}`}. ${D.report.minVal >= 0
+          ? `Deferral alone is therefore enough to avoid any recourse to short-term credit: this is the solution to favour if the operational timetable allows it.`
+          : `The requirement therefore remains, reduced but not eliminated: deferral relieves cash without removing the need for a bank facility, which can however be sized at ${M(Math.abs(D.report.minVal))} instead of ${M(Math.abs(B.minVal))}.`}<br><br>
+        <strong>The other levers.</strong> On the receipts side, the company can mobilise its receivables — bill discounting, a Dailly assignment or factoring — turning receivables at 30 and 60 days into immediate cash; it can also ask for a deposit on order, which is particularly justified in a seasonal business, or offer a settlement discount to speed up cash payments. On the payments side, negotiating additional credit with seasonal suppliers is often the most effective measure, since it bears directly on the item that drains the balance; spreading payment for the investment, or funding it through a finance lease rather than an outright purchase, would have the same effect. Finally, on the structural side, strengthening working capital — a shareholder current-account contribution or a medium-term loan — would treat the cause rather than the symptom: a cash requirement that recurs every year in the same season is not a cash accident, it is a working capital requirement that has been badly funded.
+      </div>`;
+
+      s += `<div class="persp-box">
+        <span class="sol-sub">Going further — what the cash budget sees, and what it does not</span>
+        The cash budget is the only forecast document that reasons in receipts and payments. A forecast income statement may show a comfortable profit while cash collapses: this is exactly our company's situation, with activity generating a margin over the half-year as a whole and a bank balance turning negative. The two documents do not measure the same thing — performance on one side, liquidity on the other — and a company does not fail because it loses money, but because it can no longer pay.
+        <p style="margin-top:.8rem;">Construction follows a binding order that must be respected: sales budget, purchasing and production budget, investment budget, VAT budget, then and only then the cash budget, and finally the forecast balance sheet and income statement. The VAT budget occupies a special place because it is at once a summary budget — depending on sales, purchases and investment — and an input to the cash budget. Forgetting it, or allocating it to the wrong month, is the most frequent cause of an incorrect budget.</p>
+        <p style="margin-top:.8rem;">Three limitations are worth keeping in mind. First, the monthly step conceals intra-month strains: a positive month-end balance may hide a deeply negative position on the 10th, payday and VAT due date. Corporate treasurers therefore work on a daily position, or even in value dates. Second, the settlement percentages used are historical averages: a few days' lengthening of customer terms, or a default on a large account, distorts the budget appreciably — hence the value of running several scenarios. Finally, the budget is a rolling document: it loses its value unless it is updated each month against actual figures, an exercise which is itself the core of treasury management control.</p>
+      </div>`;
+
+      return s;
+    }
+  }
+};
+
+/* ============================================================
+   GESTION DE LA LANGUE  /  LANGUAGE HANDLING
+   ============================================================ */
+let LANG = 'fr';
+
+function detectLang() {
+    try {
+        const q = new URLSearchParams(window.location.search).get('lang');
+        if (q && I18N[q.toLowerCase()]) return q.toLowerCase();
+    } catch (e) {}
+    const h = (window.location.hash || '').replace('#', '').toLowerCase();
+    if (I18N[h]) return h;
+    return 'fr';
+}
+
+function applyLang() {
+    const D = I18N[LANG];
+    document.documentElement.lang = D.htmlLang;
+    document.title = D.title;
+
+    document.querySelectorAll('[data-k]').forEach(function (el) {
+        const key = el.getAttribute('data-k');
+        if (D[key] !== undefined) el.innerHTML = D[key];
+    });
+
+    const btn = document.getElementById('toggle-btn');
+    if (btn) btn.innerText = document.getElementById('sol-card').classList.contains('visible') ? D.hideSol : D.showSol;
+
+    document.getElementById('flag-fr').classList.toggle('active', LANG === 'fr');
+    document.getElementById('flag-en').classList.toggle('active', LANG === 'en');
+}
+
+function setLang(lang) {
+    if (!I18N[lang] || lang === LANG) return;
+    LANG = lang;
+
+    try {
+        const u = new URL(window.location.href);
+        u.searchParams.set('lang', lang);
+        history.replaceState(null, '', u.toString());
+    } catch (e) {}
+
+    applyLang();
+
+    if (document.getElementById('ex-area').style.display !== 'none') {
+        const solWasVisible = document.getElementById('sol-card').classList.contains('visible');
+        generateExercise(false);
+        if (solWasVisible) toggleSol();
+    }
+}
+
+// --- PRNG (Mulberry32) ---
+let currentSeed = 0;
+function seedPRNG(seed) {
+    return function() {
+      let t = seed += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+let random = Math.random;
+
+function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
+function pick(arr) { return arr[randInt(0, arr.length - 1)]; }
+
+/* --- formatage --- */
+function texD(num, dec) {
+    let sign = num < 0 ? "-" : "";
+    let parts = Math.abs(num).toFixed(dec).split('.');
+    let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, I18N[LANG].thousands);
+    return sign + intPart + (parts.length > 1 ? I18N[LANG].decimal + parts[1] : "");
+}
+function texI(num) { return texD(num, 0); }
+function texM(num) { return texD(num, 2); }
+function fmtNb(num, dec) {
+    return num.toLocaleString(I18N[LANG].locale, {minimumFractionDigits: dec, maximumFractionDigits: dec});
+}
+function money(v, lang, dec) {
+    const d = dec === undefined ? 0 : dec;
+    const s = Math.abs(v).toLocaleString(I18N[lang].locale, {minimumFractionDigits: d, maximumFractionDigits: d});
+    const body = (lang === 'fr') ? (s + '\u00a0€') : ('€' + s);
+    return (v < 0 ? '−' + body : body);
+}
+function cell(v, lang) {
+    if (!v) return '';
+    const s = Math.abs(v).toLocaleString(I18N[lang].locale, {minimumFractionDigits: 0, maximumFractionDigits: 0});
+    return (v < 0 ? '(' + s + ')' : s);
+}
+
+/* ============================================================
+   MODÈLE  /  MODEL
+   ============================================================ */
+const TVAR = 0.20;
+const ttc = v => v + Math.round(v * TVAR);
+const tva = v => Math.round(v * TVAR);
+const pct = (v, p) => Math.round(v * p / 100);
+
+/* Construit le budget complet à partir des paramètres ; opt.invShift décale
+   l'investissement (et l'emprunt adossé) de n mois, opt.noInv le supprime. */
+function buildBudget(D, opt) {
+    opt = opt || {};
+    const mInv = D.mInv + (opt.invShift || 0);
+    const withInv = !opt.noInv;
+
+    const enc = { ventes: [], creances: [], emprunt: [], tot: [] };
+    const dec = { achats: [], fournisseurs: [], autres: [], salaires: [], sociales: [], tva: [], invest: [], remb: [], div: [], tot: [] };
+
+    // --- budget de TVA ---
+    const coll = [], ded = [], due = [], cred = [], dedInv = [];
+    let creditPrev = 0;
+    for (let i = 0; i < 6; i++) {
+        coll[i] = tva(D.V[i]);
+        dedInv[i] = (withInv && i === mInv) ? tva(D.INV) : 0;
+        ded[i] = tva(D.A[i]) + tva(D.OC) + dedInv[i];
+        const solde = coll[i] - ded[i] - creditPrev;
+        if (solde >= 0) { due[i] = solde; cred[i] = 0; }
+        else { due[i] = 0; cred[i] = -solde; }
+        creditPrev = cred[i];
+    }
+
+    for (let i = 0; i < 6; i++) {
+        // encaissements
+        let v = pct(D.Vttc[i], D.pc[0]);
+        if (i >= 1) v += pct(D.Vttc[i-1], D.pc[1]);
+        if (i >= 2) v += pct(D.Vttc[i-2], D.pc[2]);
+        enc.ventes[i] = v;
+        enc.creances[i] = i === 0 ? pct(D.CLI0, D.pCli) : (i === 1 ? D.CLI0 - pct(D.CLI0, D.pCli) : 0);
+        enc.emprunt[i] = (withInv && D.EMP > 0 && i === mInv) ? D.EMP : 0;
+        enc.tot[i] = enc.ventes[i] + enc.creances[i] + enc.emprunt[i];
+
+        // décaissements
+        let ac = 0;
+        if (i >= 1) ac += pct(D.Attc[i-1], D.pf[0]);
+        if (i >= 2) ac += pct(D.Attc[i-2], D.pf[1]);
+        dec.achats[i] = ac;
+        dec.fournisseurs[i] = i === 0 ? pct(D.FOU0, D.pFou) : (i === 1 ? D.FOU0 - pct(D.FOU0, D.pFou) : 0);
+        dec.autres[i] = D.OCttc;
+        dec.salaires[i] = D.SAL;
+        dec.sociales[i] = i === 0 ? D.CS0 : D.CS;
+        dec.tva[i] = i === 0 ? D.TVA0 : due[i-1];
+        dec.invest[i] = (withInv && i === mInv) ? D.INVttc : 0;
+        dec.remb[i] = (i === 2 || i === 5) ? D.REMB : 0;
+        dec.div[i] = (D.DIV > 0 && i === D.mDiv) ? D.DIV : 0;
+        dec.tot[i] = dec.achats[i] + dec.fournisseurs[i] + dec.autres[i] + dec.salaires[i]
+                   + dec.sociales[i] + dec.tva[i] + dec.invest[i] + dec.remb[i] + dec.div[i];
+    }
+
+    const debut = [], fin = [];
+    let t = D.T0;
+    for (let i = 0; i < 6; i++) {
+        debut[i] = t;
+        fin[i] = t + enc.tot[i] - dec.tot[i];
+        t = fin[i];
+    }
+
+    let minIdx = 0;
+    for (let i = 1; i < 6; i++) if (fin[i] < fin[minIdx]) minIdx = i;
+    const negMonths = [];
+    for (let i = 0; i < 6; i++) if (fin[i] < 0) negMonths.push(i);
+    const creditMonths = [];
+    for (let i = 0; i < 6; i++) if (cred[i] > 0) creditMonths.push(i);
+
+    return {
+        enc, dec, coll, ded, dedInv, due, cred, debut, fin,
+        encVentes: enc.ventes, decAchats: dec.achats,
+        encTot: enc.tot.reduce((a, b) => a + b, 0),
+        decTot: dec.tot.reduce((a, b) => a + b, 0),
+        minIdx, minVal: fin[minIdx], negMonths, nbNeg: negMonths.length,
+        creditMonths, anyCredit: creditMonths.length > 0, mInv
+    };
+}
+
+function computeModel() {
+    let D = null;
+    for (let attempt = 0; attempt < 80; attempt++) {
+        const cand = drawModel();
+        if (cand) { D = cand; break; }
+    }
+    if (!D) D = drawModel(true);
+    return D;
+}
+
+function drawModel(force) {
+    const prof = PROFILES[randInt(0, PROFILES.length - 1)];
+    const Y = pick([2026, 2027, 2028]);
+
+    // --- ventes (saisonnalité propre au profil) ---
+    const base = randInt(16, 34) * 10000;                 // 160 000 .. 340 000
+    const V = prof.coef.map(c => Math.round(base * c * (1 + randInt(-4, 4) / 100) / 1000) * 1000);
+
+    // --- achats : un mois d'avance, en pourcentage des ventes du mois suivant ---
+    const alphaPct = randInt(48, 58);
+    const A = [];
+    for (let i = 0; i < 6; i++) A[i] = Math.round(V[i+1] * alphaPct / 100 / 500) * 500;
+
+    const Vttc = V.map(ttc), Attc = A.map(ttc);
+    const Vmean = (V[0] + V[1] + V[2] + V[3] + V[4] + V[5]) / 6;
+
+    // --- conditions de règlement ---
+    const pc0 = pick([20, 25, 30, 35, 40]);
+    const pc1 = pick([30, 35, 40, 45]);
+    const pc2 = 100 - pc0 - pc1;
+    const pf0 = pick([40, 50, 60]);
+    const pf1 = 100 - pf0;
+
+    // --- charges courantes ---
+    const OC  = Math.round(Vmean * randInt(7, 10) / 100 / 500) * 500;
+    const SAL = Math.round(Vmean * randInt(13, 17) / 100 / 500) * 500;
+    const CS  = Math.round(SAL * randInt(40, 50) / 100 / 500) * 500;
+
+    // --- bilan d'ouverture ---
+    const T0    = Math.round(Vmean * randInt(6, 14) / 100 / 1000) * 1000;
+    const CLI0  = Math.round(Vmean * randInt(55, 85) / 100 / 1000) * 1000;
+    const FOU0  = Math.round(Vmean * randInt(35, 60) / 100 / 1000) * 1000;
+    const TVA0  = Math.round(Vmean * randInt(4, 8) / 100 / 500) * 500;
+    const CS0   = CS;
+    const pCli  = pick([50, 55, 60, 65, 70]);
+    const pFou  = pick([50, 60, 70]);
+
+    // --- opérations de la période ---
+    const mInv = pick([1, 2, 3]);
+    const INV  = Math.round(Vmean * randInt(35, 75) / 100 / 1000) * 1000;
+    const EMP  = pick([0, Math.round(INV * randInt(30, 60) / 100 / 1000) * 1000]);
+    const REMB = Math.round(Vmean * randInt(6, 12) / 100 / 500) * 500;
+    const DIV  = pick([0, Math.round(Vmean * randInt(10, 25) / 100 / 1000) * 1000]);
+    const mDiv = pick([4, 5]);
+    const tDecPct = randInt(70, 105) / 10;                // 7.0 .. 10.5 %
+
+    const D = {
+        prof, Y, V, A, Vttc, Attc, alphaPct, Vmean,
+        pc: [pc0, pc1, pc2], pf: [pf0, pf1],
+        OC, OCttc: ttc(OC), SAL, CS,
+        T0, CLI0, FOU0, TVA0, CS0, pCli, pFou,
+        mInv, INV, INVttc: ttc(INV), tvaInv: tva(INV), EMP, REMB, DIV, mDiv,
+        tDecPct, tDec: tDecPct / 100
+    };
+
+    D.B = buildBudget(D);
+    D.report = buildBudget(D, { invShift: 2 });
+    D.sansInv = buildBudget(D, { noInv: true });
+
+    D.VttcTot = Vttc.slice(0, 6).reduce((a, b) => a + b, 0);
+    D.encReste = D.VttcTot + D.CLI0 + D.EMP - D.B.encTot;
+    D.agios = D.B.negMonths.reduce((a, j) => a + Math.abs(D.B.fin[j]) * D.tDec / 12, 0);
+
+    if (!force) {
+        // marge commerciale positive : le profil doit rester plausible
+        const margeMens = Vmean - Vmean * alphaPct / 100 - OC - SAL - CS;
+        if (margeMens <= 0.03 * Vmean) return null;
+        // l'exercice n'a d'intérêt que s'il existe un besoin de trésorerie
+        if (D.B.minVal >= 0) return null;
+        if (D.B.minIdx === 0) return null;
+        if (D.B.fin[0] < 0) return null;          // la trésorerie doit se dégrader, pas partir débitrice
+        if (Math.abs(D.B.minVal) < 0.10 * Vmean) return null;
+        if (Math.abs(D.B.minVal) > 2.5 * Vmean) return null;
+        // le report doit rester dans l'horizon et soulager la trésorerie
+        if (mInv + 2 > 5) return null;
+        if (D.report.minVal <= D.B.minVal) return null;
+        // l'investissement doit expliquer une part significative, sans tout expliquer
+        if (D.sansInv.minVal <= D.B.minVal) return null;
+        if (D.encReste <= 0) return null;
+        if (pc2 < 15 || pc2 > 45) return null;
+        if (D.T0 <= 0) return null;
+    }
+    return D;
+}
+
+/* ============================================================
+   TABLEAUX  /  TABLES
+   ============================================================ */
+function budgetTable(D, lang, rows, title) {
+    const m = MONTHS[lang].slice(0, 6);
+    const head = `<tr><th style="width:30%;">${title}</th>${m.map(x => `<th>${x}</th>`).join('')}<th>${lang === 'fr' ? 'Total' : 'Total'}</th></tr>`;
+    let body = '';
+    rows.forEach(function (r) {
+        const tot = r.v.reduce((a, b) => a + b, 0);
+        const strong = r.strong;
+        body += `<tr${strong ? ' style="background:#f4f1ea;"' : ''}>
+            <td class="txt-left" style="font-weight:${strong ? 700 : 400};${strong ? '' : 'padding-left:1.2rem;'}">${r.l}</td>
+            ${r.v.map(v => `<td class="amt"${strong ? ' style="font-weight:700;"' : ''}>${cell(v, lang)}</td>`).join('')}
+            <td class="amt" style="font-weight:${strong ? 700 : 600};">${cell(tot, lang)}</td>
+        </tr>`;
+    });
+    return `<div class="exam-table-wrap"><table class="exam-table">${head}${body}</table></div>`;
+}
+
+function encTable(D, lang) {
+    const fr = lang === 'fr', B = D.B;
+    const rows = [
+        { l: fr ? "Ventes du semestre (TTC)" : "Sales of the half-year (incl. tax)", v: B.enc.ventes },
+        { l: fr ? "Créances au 31/12 (TTC)" : "Receivables at 31/12 (incl. tax)", v: B.enc.creances }
+    ];
+    if (D.EMP > 0) rows.push({ l: fr ? "Emprunt encaissé" : "Loan received", v: B.enc.emprunt });
+    rows.push({ l: fr ? "TOTAL DES ENCAISSEMENTS" : "TOTAL RECEIPTS", v: B.enc.tot, strong: true });
+    return budgetTable(D, lang, rows, fr ? "Encaissements" : "Receipts");
+}
+
+function decTable(D, lang) {
+    const fr = lang === 'fr', B = D.B;
+    const rows = [
+        { l: fr ? "Achats du semestre (TTC)" : "Purchases of the half-year (incl. tax)", v: B.dec.achats },
+        { l: fr ? "Dettes fournisseurs au 31/12" : "Trade payables at 31/12", v: B.dec.fournisseurs },
+        { l: fr ? "Autres charges externes (TTC)" : "Other external charges (incl. tax)", v: B.dec.autres },
+        { l: fr ? "Salaires nets" : "Net wages", v: B.dec.salaires },
+        { l: fr ? "Charges sociales" : "Social security contributions", v: B.dec.sociales },
+        { l: fr ? "TVA à décaisser" : "VAT paid", v: B.dec.tva },
+        { l: fr ? "Investissement (TTC)" : "Investment (incl. tax)", v: B.dec.invest },
+        { l: fr ? "Échéances d'emprunt" : "Loan instalments", v: B.dec.remb }
+    ];
+    if (D.DIV > 0) rows.push({ l: fr ? "Dividendes" : "Dividends", v: B.dec.div });
+    rows.push({ l: fr ? "TOTAL DES DÉCAISSEMENTS" : "TOTAL PAYMENTS", v: B.dec.tot, strong: true });
+    return budgetTable(D, lang, rows, fr ? "Décaissements" : "Payments");
+}
+
+function tvaTable(D, lang) {
+    const fr = lang === 'fr', B = D.B;
+    const m = MONTHS[lang].slice(0, 6);
+    const rows = [
+        { l: fr ? "TVA collectée (ventes)" : "Output VAT (sales)", v: B.coll },
+        { l: fr ? "TVA déductible (achats et autres charges)" : "Input VAT (purchases and other charges)", v: B.ded.map((v, i) => v - B.dedInv[i]) },
+        { l: fr ? "TVA déductible (immobilisation)" : "Input VAT (fixed asset)", v: B.dedInv },
+        { l: fr ? "Crédit de TVA du mois précédent" : "VAT credit from the previous month", v: B.cred.map((v, i) => i === 0 ? 0 : B.cred[i-1]) },
+        { l: fr ? "= TVA à décaisser" : "= VAT payable", v: B.due, strong: true },
+        { l: fr ? "Crédit de TVA reporté" : "VAT credit carried forward", v: B.cred }
+    ];
+    let body = '';
+    rows.forEach(function (r) {
+        body += `<tr${r.strong ? ' style="background:#f4f1ea;"' : ''}>
+            <td class="txt-left" style="font-weight:${r.strong ? 700 : 400};${r.strong ? '' : 'padding-left:1.2rem;'}">${r.l}</td>
+            ${r.v.map(v => `<td class="amt"${r.strong ? ' style="font-weight:700;"' : ''}>${cell(v, lang)}</td>`).join('')}
+        </tr>`;
+    });
+    return `<div class="exam-table-wrap"><table class="exam-table">
+        <tr><th style="width:32%;">${fr ? "Budget de TVA" : "VAT budget"}</th>${m.map(x => `<th>${x}</th>`).join('')}</tr>
+        ${body}
+      </table></div>
+      <p style="font-size:.82rem;color:var(--text-muted);font-style:italic;margin:.4rem 0 1.2rem;text-align:left;">${fr ? "La TVA due au titre d'un mois est décaissée le mois suivant ; celle de juin sera donc payée en juillet." : "VAT due for a month is paid in the following month; the June amount will therefore be paid in July."}</p>`;
+}
+
+function tresoTable(D, lang) {
+    const fr = lang === 'fr', B = D.B;
+    const m = MONTHS[lang].slice(0, 6);
+    const rows = [
+        { l: fr ? "Solde de début de mois" : "Opening balance", v: B.debut },
+        { l: fr ? "+ Total des encaissements" : "+ Total receipts", v: B.enc.tot },
+        { l: fr ? "− Total des décaissements" : "− Total payments", v: B.dec.tot },
+        { l: fr ? "= Solde de fin de mois" : "= Closing balance", v: B.fin, strong: true }
+    ];
+    let body = '';
+    rows.forEach(function (r) {
+        body += `<tr${r.strong ? ' style="background:var(--cream-dark);"' : ''}>
+            <td class="txt-left" style="font-weight:${r.strong ? 700 : 400};">${r.l}</td>
+            ${r.v.map((v, i) => `<td class="amt" style="font-weight:${r.strong ? 700 : 400};${r.strong && v < 0 ? 'color:var(--red);' : ''}">${cell(v, lang)}</td>`).join('')}
+        </tr>`;
+    });
+    return `<div class="exam-table-wrap"><table class="exam-table">
+        <tr><th style="width:30%;">${fr ? "Budget de trésorerie" : "Cash budget"}</th>${m.map(x => `<th>${x}</th>`).join('')}</tr>
+        ${body}
+      </table></div>
+      <p style="font-size:.82rem;color:var(--text-muted);font-style:italic;margin:.4rem 0 1.2rem;text-align:left;">${fr ? "Les soldes entre parenthèses, en rouge, correspondent à des positions débitrices." : "Balances in brackets, in red, are debit positions."}</p>`;
+}
+
+function miniTresoTable(D, lang) {
+    const fr = lang === 'fr';
+    const m = MONTHS[lang].slice(0, 6);
+    const rows = [
+        { l: fr ? "Solde initial (budget de la question 4)" : "Initial budget (question 4)", v: D.B.fin },
+        { l: fr ? "Solde après report de l'investissement" : "Balance after deferral of the investment", v: D.report.fin, strong: true }
+    ];
+    let body = '';
+    rows.forEach(function (r) {
+        body += `<tr${r.strong ? ' style="background:var(--cream-dark);"' : ''}>
+            <td class="txt-left" style="font-weight:${r.strong ? 700 : 400};">${r.l}</td>
+            ${r.v.map(v => `<td class="amt" style="font-weight:${r.strong ? 700 : 400};${v < 0 ? 'color:var(--red);' : ''}">${cell(v, lang)}</td>`).join('')}
+        </tr>`;
+    });
+    return `<div class="exam-table-wrap"><table class="exam-table">
+        <tr><th style="width:36%;">${fr ? "Solde de fin de mois" : "Month-end balance"}</th>${m.map(x => `<th>${x}</th>`).join('')}</tr>
+        ${body}
+      </table></div>`;
+}
+
+/* ============================================================
+   GRAPHIQUE  /  CHART
+   ============================================================ */
+function chartSVG(D, lang) {
+    const L = I18N[lang], m = MONTHS[lang].slice(0, 6);
+    const W = 680, H = 320, mL = 70, mR = 18, mT = 46, mB = 52;
+    const pw = W - mL - mR, ph = H - mT - mB;
+
+    const all = D.B.fin.concat(D.report.fin).concat([0]);
+    let lo = Math.min.apply(null, all), hi = Math.max.apply(null, all);
+    const span = (hi - lo) || 1;
+    lo -= span * 0.12; hi += span * 0.14;
+    const y = v => mT + ph - (v - lo) / (hi - lo) * ph;
+
+    let g = '';
+    const step = niceStep((hi - lo) / 5);
+    for (let v = Math.ceil(lo / step) * step; v <= hi; v += step) {
+        g += `<line x1="${mL}" y1="${y(v).toFixed(1)}" x2="${W - mR}" y2="${y(v).toFixed(1)}" stroke="#e2ded4" stroke-width="1"/>`;
+        g += `<text x="${mL - 8}" y="${(y(v) + 4).toFixed(1)}" text-anchor="end" font-family="'JetBrains Mono',monospace" font-size="9.5" fill="#5a5a5a">${fmtNb(v / 1000, 0)} k</text>`;
+    }
+
+    const slot = pw / 6, bw = slot * 0.42;
+    const y0 = y(0);
+    D.B.fin.forEach(function (v, i) {
+        const cx = mL + slot * i + slot / 2;
+        const yy = y(v);
+        const top = Math.min(yy, y0), h2 = Math.max(Math.abs(yy - y0), 1.5);
+        g += `<rect x="${(cx - bw / 2).toFixed(1)}" y="${top.toFixed(1)}" width="${bw.toFixed(1)}" height="${h2.toFixed(1)}" fill="${v < 0 ? '#b94040' : '#1a2e42'}" rx="2"/>`;
+        g += `<text x="${cx.toFixed(1)}" y="${(v < 0 ? top + h2 + 13 : top - 6).toFixed(1)}" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="9.5" font-weight="700" fill="${v < 0 ? '#b94040' : '#1a2e42'}">${fmtNb(v / 1000, 0)}</text>`;
+        g += `<text x="${cx.toFixed(1)}" y="${(mT + ph + 20).toFixed(1)}" text-anchor="middle" font-family="'Source Serif 4',serif" font-size="11" fill="#1e1e1e">${m[i]}</text>`;
+    });
+
+    const pts = D.report.fin.map((v, i) => ({ x: mL + slot * i + slot / 2, y: y(v) }));
+    g += `<path d="${pts.map((p, i) => (i === 0 ? 'M' : 'L') + p.x.toFixed(1) + ' ' + p.y.toFixed(1)).join(' ')}" fill="none" stroke="#c9952a" stroke-width="2" stroke-dasharray="5 3"/>`;
+    pts.forEach(p => { g += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.5" fill="#c9952a"/>`; });
+
+    return `<div style="margin:1.4rem 0; overflow-x:auto;">
+      <svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" role="img">
+        <text x="${mL}" y="20" font-family="'Playfair Display',serif" font-size="13.5" font-weight="600" fill="#0d1b2a">${L.chartTitle}</text>
+        <rect x="${mL}" y="30" width="11" height="11" fill="#1a2e42" rx="2"/>
+        <text x="${mL + 16}" y="39.5" font-family="'Source Serif 4',serif" font-size="10.5" fill="#5a5a5a">${L.lblInit}</text>
+        <line x1="${mL + 130}" y1="35.5" x2="${mL + 154}" y2="35.5" stroke="#c9952a" stroke-width="2" stroke-dasharray="5 3"/>
+        <text x="${mL + 160}" y="39.5" font-family="'Source Serif 4',serif" font-size="10.5" fill="#5a5a5a">${L.lblScen}</text>
+        ${g}
+        <line x1="${mL}" y1="${y0.toFixed(1)}" x2="${W - mR}" y2="${y0.toFixed(1)}" stroke="#0d1b2a" stroke-width="1.5"/>
+        <line x1="${mL}" y1="${mT}" x2="${mL}" y2="${mT + ph}" stroke="#0d1b2a" stroke-width="1.5"/>
+        <text x="${mL}" y="${H - 6}" font-family="'Source Serif 4',serif" font-size="10" font-style="italic" fill="#5a5a5a">${L.chartNote}</text>
+      </svg>
+    </div>`;
+}
+
+function niceStep(raw) {
+    const p = Math.pow(10, Math.floor(Math.log10(Math.max(raw, 1))));
+    const nn = raw / p;
+    return (nn <= 1 ? 1 : nn <= 2 ? 2 : nn <= 5 ? 5 : 10) * p;
+}
+
+/* ============================================================
+   GÉNÉRATION  /  GENERATION
+   ============================================================ */
+function generateExercise(forceNew = false) {
+    if (forceNew) {
+        document.getElementById('seed-input').value = "";
+    }
+    let seedVal = document.getElementById('seed-input').value;
+    currentSeed = seedVal ? parseInt(seedVal) : Math.floor(Math.random() * 99999999);
+    document.getElementById('seed-disp').innerText = currentSeed;
+    document.getElementById('seed-input').value = currentSeed;
+    random = seedPRNG(currentSeed);
+
+    const DIC = I18N[LANG];
+    const D = computeModel();
+
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('ex-area').style.display = 'block';
+    document.getElementById('sol-card').classList.remove('visible');
+    document.getElementById('toggle-btn').innerText = DIC.showSol;
+    document.getElementById('toggle-btn').classList.remove('shown');
+
+    document.getElementById('context-text').innerHTML = DIC.context(D);
+    document.getElementById('enonce-table-container').innerHTML = DIC.table(D);
+    document.getElementById('additional-info').innerHTML = DIC.info(D);
+    document.getElementById('events-list').innerHTML = DIC.enonce(D);
+    document.getElementById('sol-content').innerHTML = DIC.sol(D);
+
+    if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
+        MathJax.typesetPromise().catch(function (err) { console.error('MathJax :', err); });
+    }
+}
+
+function toggleSol() {
+    let solCard = document.getElementById('sol-card');
+    let btn = document.getElementById('toggle-btn');
+    if (solCard.classList.contains('visible')) {
+        solCard.classList.remove('visible');
+        btn.innerText = I18N[LANG].showSol;
+        btn.classList.remove('shown');
+    } else {
+        solCard.classList.add('visible');
+        btn.innerText = I18N[LANG].hideSol;
+        btn.classList.add('shown');
+        solCard.scrollIntoView({behavior: 'smooth', block: 'start'});
+    }
+}
+
+/* Initialisation */
+LANG = detectLang();
+applyLang();
+</script>
+<!-- KIT:JS:START v1 -->
+<div id="pdf-ov" onclick="closePdfModal()"></div>
+<div id="pdf-modal">
+  <div class="mh">
+    <h3 data-kit="modalTitle">Exporter en PDF</h3>
+    <button type="button" class="mclose" onclick="closePdfModal()">&#10005;</button>
+  </div>
+  <div class="mb2">
+    <div class="seed-note"><span data-kit="seedPre">Seed&nbsp;:</span> <strong id="modal-seed">&mdash;</strong> <span data-kit="seedPost">&mdash; notez cette valeur pour reproduire exactement cet exercice.</span></div>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-header" checked>
+      <span class="opt-txt"><span class="opt-lbl" data-kit="optHeader">Inclure l'en-t&ecirc;te de page</span>
+           <span class="opt-desc" data-kit="optHeaderD">Titre, badge de mati&egrave;re et intitul&eacute; de l'exercice</span></span>
+    </label>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-sol">
+      <span class="opt-txt"><span class="opt-lbl" data-kit="optSol">Inclure le corrig&eacute; complet</span>
+           <span class="opt-desc" data-kit="optSolD">L'ensemble des d&eacute;veloppements et commentaires du corrig&eacute;</span></span>
+    </label>
+    <div class="mactions">
+      <button type="button" class="btn-print" onclick="doPrint()"><span data-kit="print">&#128424;&nbsp;Imprimer / Sauvegarder PDF</span></button>
+      <button type="button" class="btn-cancel" onclick="closePdfModal()"><span data-kit="cancel">Annuler</span></button>
+    </div>
+  </div>
+</div>
+
+<script id="kit-docx">
+/* =============================================================================
+   EXPORT WORD NATIF (.docx)
+   Trois briques, sans aucune dépendance externe :
+     1. mml2omml  — MathML -> OMML, le format d'équation natif de Word
+     2. zip       — écriture d'une archive ZIP (entrées « stored » + CRC32)
+     3. html2wml  — HTML de la page -> WordprocessingML
+   ============================================================================= */
+(function (root) {
+'use strict';
+
+/* --------------------------------------------------------------- utilitaires */
+function esc(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                  .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function kids(n) {
+  var out = [], c = n.firstChild;
+  while (c) { if (c.nodeType === 1) out.push(c); c = c.nextSibling; }
+  return out;
+}
+function txt(n) { return (n.textContent || '').replace(/\u200b/g, '').trim(); }
+
+/* ============================================================================
+   1. MathML -> OMML
+   ========================================================================== */
+var OPEN = '([{\u27e8\u2308\u230a|\u2016';
+var CLOSE = ')]}\u27e9\u2309\u230b|\u2016';
+var BIGOPS = '\u2211\u220f\u222b\u222c\u222d\u222e\u22c3\u22c2\u2210';
+var ACCENTS = {
+  '\u005e': '\u0302', '\u02c6': '\u0302', '^': '\u0302',
+  '\u00af': '\u0304', '\u2015': '\u0304', '\u2212': '\u0304', '_': '\u0304',
+  '~': '\u0303', '\u02dc': '\u0303', '\u02d9': '\u0307',
+  '\u2192': '\u20d7', '\u21c0': '\u20d1', '\u02c7': '\u030c', '\u02d8': '\u0306'
+};
+
+function run(text, style) {
+  if (text === '') return '';
+  var rPr = '<w:rPr><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/></w:rPr>';
+  var mPr = style ? '<m:rPr><m:sty m:val="' + style + '"/></m:rPr>' : '';
+  return '<m:r>' + mPr + rPr + '<m:t xml:space="preserve">' + esc(text) + '</m:t></m:r>';
+}
+
+/* Un grand opérateur (somme, intégrale…) absorbe la suite de la ligne comme
+   opérande : sans cela Word affiche un cadre vide à la place de l'argument. */
+function naryHere(n) {
+  if (!n || n.nodeType !== 1) return null;
+  var t = n.nodeName.toLowerCase().replace(/^.*:/, ''), k = kids(n);
+  if (t === 'munderover' || t === 'msubsup') return { base: k[0], sub: k[1], sup: k[2] };
+  if (t === 'munder' || t === 'msub') return { base: k[0], sub: k[1], sup: null };
+  if (t === 'mover' || t === 'msup') return { base: k[0], sub: null, sup: k[1] };
+  if (t === 'mo') return { base: n, sub: null, sup: null };
+  return null;
+}
+function isBigOp(n) {
+  if (!n || n.nodeType !== 1) return false;
+  var c = txt(n);
+  return n.nodeName.toLowerCase().replace(/^.*:/, '') === 'mo' &&
+         c.length === 1 && BIGOPS.indexOf(c) !== -1;
+}
+
+function seq(nodes) {
+  var s = '';
+  for (var i = 0; i < nodes.length; i++) {
+    var info = naryHere(nodes[i]);
+    if (info && isBigOp(info.base) && i + 1 < nodes.length) {
+      s += naryFull(info, nodes.slice(i + 1));
+      return s;
+    }
+    s += mml(nodes[i]);
+  }
+  return s;
+}
+
+function naryFull(info, rest) {
+  return '<m:nary><m:naryPr><m:chr m:val="' + esc(txt(info.base)) + '"/>' +
+         '<m:limLoc m:val="undOvr"/>' +
+         '<m:subHide m:val="' + (info.sub ? '0' : '1') + '"/>' +
+         '<m:supHide m:val="' + (info.sup ? '0' : '1') + '"/><m:ctrlPr/></m:naryPr>' +
+         '<m:sub>' + (info.sub ? mml(info.sub) : '') + '</m:sub>' +
+         '<m:sup>' + (info.sup ? mml(info.sup) : '') + '</m:sup>' +
+         '<m:e>' + seq(rest) + '</m:e></m:nary>';
+}
+
+/* mrow entouré de délimiteurs -> m:d, pour des parenthèses étirables natives */
+function fenced(ks) {
+  if (ks.length < 2) return null;
+  var a = ks[0], b = ks[ks.length - 1];
+  if (a.nodeName.toLowerCase() !== 'mo' || b.nodeName.toLowerCase() !== 'mo') return null;
+  var o = txt(a), c = txt(b);
+  if (o.length !== 1 || c.length !== 1) return null;
+  if (OPEN.indexOf(o) === -1 || CLOSE.indexOf(c) === -1) return null;
+  var inner = ks.slice(1, -1);
+  /* séparateurs de premier niveau -> plusieurs m:e */
+  var parts = [[]];
+  for (var i = 0; i < inner.length; i++) {
+    if (inner[i].nodeName.toLowerCase() === 'mo' && txt(inner[i]) === ',' && parts.length < 8) {
+      parts.push([]);
+    } else { parts[parts.length - 1].push(inner[i]); }
+  }
+  var sep = parts.length > 1 ? ',' : '';
+  var body = '';
+  for (var j = 0; j < parts.length; j++) body += '<m:e>' + seq(parts[j]) + '</m:e>';
+  return '<m:d><m:dPr><m:begChr m:val="' + esc(o) + '"/><m:sepChr m:val="' + esc(sep) +
+         '"/><m:endChr m:val="' + esc(c) + '"/><m:ctrlPr/></m:dPr>' + body + '</m:d>';
+}
+
+function naryOf(base, sub, sup) {
+  var ch = txt(base);
+  if (ch.length !== 1 || BIGOPS.indexOf(ch) === -1) return null;
+  return '<m:nary><m:naryPr><m:chr m:val="' + esc(ch) + '"/><m:limLoc m:val="undOvr"/>' +
+         '<m:subHide m:val="' + (sub ? '0' : '1') + '"/>' +
+         '<m:supHide m:val="' + (sup ? '0' : '1') + '"/><m:ctrlPr/></m:naryPr>' +
+         '<m:sub>' + (sub ? mml(sub) : '') + '</m:sub>' +
+         '<m:sup>' + (sup ? mml(sup) : '') + '</m:sup>' +
+         '<m:e></m:e></m:nary>';
+}
+
+function mml(n) {
+  if (!n) return '';
+  if (n.nodeType === 3) return run(n.nodeValue);
+  if (n.nodeType !== 1) return '';
+  var t = n.nodeName.toLowerCase().replace(/^.*:/, '');
+  var k = kids(n), s;
+
+  switch (t) {
+    case 'math':
+    case 'semantics':
+    case 'mstyle':
+    case 'mpadded':
+    case 'menclose':
+      return seq(k);
+
+    case 'annotation':
+    case 'annotation-xml':
+    case 'mphantom':
+      return '';
+
+    case 'mrow':
+      s = fenced(k);
+      return s !== null ? s : seq(k);
+
+    case 'mi':      return run(txt(n), txt(n).length === 1 ? 'i' : 'p');
+    case 'mn':      return run(txt(n), 'p');
+    case 'mo':      return run(txt(n), 'p');
+    case 'merror':  return run(txt(n), 'p');
+    case 'ms':      return run(txt(n), 'p');
+
+    case 'mtext':
+      var v = n.textContent || '';
+      return v === '' ? '' :
+        '<m:r><m:rPr><m:nor/></m:rPr><w:rPr><w:rFonts w:ascii="Cambria" w:hAnsi="Cambria"/></w:rPr>' +
+        '<m:t xml:space="preserve">' + esc(v) + '</m:t></m:r>';
+
+    case 'mspace':
+      return run(' ', 'p');
+
+    case 'mfrac':
+      return '<m:f><m:fPr><m:type m:val="' +
+             (n.getAttribute('linethickness') === '0' ? 'noBar' : 'bar') +
+             '"/><m:ctrlPr/></m:fPr><m:num>' + mml(k[0]) + '</m:num><m:den>' +
+             mml(k[1]) + '</m:den></m:f>';
+
+    case 'msup':
+      s = naryOf(k[0], null, k[1]); if (s) return s;
+      return '<m:sSup><m:sSupPr><m:ctrlPr/></m:sSupPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sup>' + mml(k[1]) + '</m:sup></m:sSup>';
+
+    case 'msub':
+      s = naryOf(k[0], k[1], null); if (s) return s;
+      return '<m:sSub><m:sSubPr><m:ctrlPr/></m:sSubPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sub>' + mml(k[1]) + '</m:sub></m:sSub>';
+
+    case 'msubsup':
+      s = naryOf(k[0], k[1], k[2]); if (s) return s;
+      return '<m:sSubSup><m:sSubSupPr><m:ctrlPr/></m:sSubSupPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sub>' + mml(k[1]) + '</m:sub><m:sup>' + mml(k[2]) +
+             '</m:sup></m:sSubSup>';
+
+    case 'msqrt':
+      return '<m:rad><m:radPr><m:degHide m:val="1"/><m:ctrlPr/></m:radPr>' +
+             '<m:deg/><m:e>' + seq(k) + '</m:e></m:rad>';
+
+    case 'mroot':
+      return '<m:rad><m:radPr><m:degHide m:val="0"/><m:ctrlPr/></m:radPr><m:deg>' +
+             mml(k[1]) + '</m:deg><m:e>' + mml(k[0]) + '</m:e></m:rad>';
+
+    case 'mover':
+      var ao = txt(k[1]);
+      if (ACCENTS[ao]) {
+        return '<m:acc><m:accPr><m:chr m:val="' + esc(ACCENTS[ao]) +
+               '"/><m:ctrlPr/></m:accPr><m:e>' + mml(k[0]) + '</m:e></m:acc>';
+      }
+      s = naryOf(k[0], null, k[1]); if (s) return s;
+      return '<m:limUpp><m:limUppPr><m:ctrlPr/></m:limUppPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limUpp>';
+
+    case 'munder':
+      s = naryOf(k[0], k[1], null); if (s) return s;
+      return '<m:limLow><m:limLowPr><m:ctrlPr/></m:limLowPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limLow>';
+
+    case 'munderover':
+      s = naryOf(k[0], k[1], k[2]); if (s) return s;
+      return '<m:limUpp><m:limUppPr><m:ctrlPr/></m:limUppPr><m:e>' +
+             '<m:limLow><m:limLowPr><m:ctrlPr/></m:limLowPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limLow></m:e><m:lim>' +
+             mml(k[2]) + '</m:lim></m:limUpp>';
+
+    case 'mtable':
+      var rows = k.filter(function (r) { return /mtr$/.test(r.nodeName.toLowerCase()); });
+      var ncol = 0;
+      rows.forEach(function (r) { ncol = Math.max(ncol, kids(r).length); });
+      var props = '<m:mPr><m:baseJc m:val="center"/><m:plcHide m:val="1"/><m:mcs><m:mc><m:mcPr>' +
+                  '<m:count m:val="' + (ncol || 1) + '"/><m:mcJc m:val="center"/></m:mcPr></m:mc></m:mcs>' +
+                  '<m:ctrlPr/></m:mPr>';
+      var body = '';
+      rows.forEach(function (r) {
+        body += '<m:mr>';
+        var cells = kids(r);
+        for (var i = 0; i < (ncol || 1); i++) body += '<m:e>' + (cells[i] ? seq(kids(cells[i])) : '') + '</m:e>';
+        body += '</m:mr>';
+      });
+      return '<m:m>' + props + body + '</m:m>';
+
+    case 'mtr':
+    case 'mtd':
+      return seq(k);
+
+    default:
+      return k.length ? seq(k) : run(txt(n), 'p');
+  }
+}
+
+function mathmlToOmml(mathEl) { return mml(mathEl); }
+
+/* ============================================================================
+   2. Écriture ZIP (entrées non compressées + CRC32)
+   ========================================================================== */
+var CRCT = (function () {
+  var t = new Int32Array(256);
+  for (var i = 0; i < 256; i++) {
+    var c = i;
+    for (var j = 0; j < 8; j++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[i] = c;
+  }
+  return t;
+})();
+function crc32(buf) {
+  var c = -1;
+  for (var i = 0; i < buf.length; i++) c = CRCT[(c ^ buf[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ -1) >>> 0;
+}
+function utf8(str) {
+  if (typeof TextEncoder !== 'undefined') return new TextEncoder().encode(str);
+  var b = unescape(encodeURIComponent(str)), a = new Uint8Array(b.length);
+  for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i);
+  return a;
+}
+function zip(files) {
+  var parts = [], central = [], offset = 0;
+  function u16(v) { return [v & 0xFF, (v >>> 8) & 0xFF]; }
+  function u32(v) { return [v & 0xFF, (v >>> 8) & 0xFF, (v >>> 16) & 0xFF, (v >>> 24) & 0xFF]; }
+
+  files.forEach(function (f) {
+    var name = utf8(f.name), data = f.bin ? f.bin : utf8(f.data), c = crc32(data);
+    var local = [].concat(u32(0x04034b50), u16(20), u16(0x0800), u16(0), u16(0), u16(0),
+                          u32(c), u32(data.length), u32(data.length),
+                          u16(name.length), u16(0));
+    parts.push(new Uint8Array(local), name, data);
+    central.push({ name: name, crc: c, size: data.length, off: offset });
+    offset += local.length + name.length + data.length;
+  });
+
+  var cd = [];
+  central.forEach(function (e) {
+    cd = cd.concat(u32(0x02014b50), u16(20), u16(20), u16(0x0800), u16(0), u16(0), u16(0),
+                   u32(e.crc), u32(e.size), u32(e.size),
+                   u16(e.name.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(e.off));
+    cd = cd.concat(Array.prototype.slice.call(e.name));
+  });
+  var cdArr = new Uint8Array(cd);
+  var eocd = new Uint8Array([].concat(u32(0x06054b50), u16(0), u16(0),
+                                      u16(files.length), u16(files.length),
+                                      u32(cdArr.length), u32(offset), u16(0)));
+  parts.push(cdArr, eocd);
+
+  var total = parts.reduce(function (n, p) { return n + p.length; }, 0);
+  var out = new Uint8Array(total), pos = 0;
+  parts.forEach(function (p) { out.set(p, pos); pos += p.length; });
+  return out;
+}
+
+/* ============================================================================
+   3. HTML -> WordprocessingML
+   ========================================================================== */
+var SKIP = { script: 1, style: 1, button: 1, input: 1, noscript: 1 };
+var IMAGES = [];           /* { bin, w, h } collectées pendant le parcours */
+var EMU = 9525;            /* EMU par pixel */
+var MAXW = 5760000;        /* largeur utile de la page, en EMU */
+
+function b64bin(b64) {
+  var raw = atob(b64), a = new Uint8Array(raw.length);
+  for (var i = 0; i < raw.length; i++) a[i] = raw.charCodeAt(i);
+  return a;
+}
+
+function imageXml(dataUrl, wpx, hpx) {
+  var m = /^data:image\/png;base64,(.*)$/.exec(dataUrl || '');
+  if (!m) return '';
+  var cx = Math.round(wpx * EMU), cy = Math.round(hpx * EMU);
+  if (cx > MAXW) { cy = Math.round(cy * MAXW / cx); cx = MAXW; }
+  IMAGES.push({ bin: b64bin(m[1]) });
+  var id = IMAGES.length, rid = 'rIdImg' + id;
+  return '<w:p><w:pPr><w:pStyle w:val="Figure"/><w:jc w:val="center"/></w:pPr><w:r><w:drawing>' +
+    '<wp:inline distT="0" distB="0" distL="0" distR="0">' +
+    '<wp:extent cx="' + cx + '" cy="' + cy + '"/>' +
+    '<wp:effectExtent l="0" t="0" r="0" b="0"/>' +
+    '<wp:docPr id="' + id + '" name="Graphique ' + id + '"/>' +
+    '<wp:cNvGraphicFramePr><a:graphicFrameLocks ' +
+      'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/>' +
+    '</wp:cNvGraphicFramePr>' +
+    '<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">' +
+    '<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+    '<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+    '<pic:nvPicPr><pic:cNvPr id="' + id + '" name="Graphique ' + id + '"/><pic:cNvPicPr/></pic:nvPicPr>' +
+    '<pic:blipFill><a:blip r:embed="' + rid + '"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>' +
+    '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' + cx + '" cy="' + cy + '"/></a:xfrm>' +
+    '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>' +
+    '</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>';
+}
+var BLOCK = { p: 1, div: 1, h1: 1, h2: 1, h3: 1, h4: 1, li: 1, tr: 1, td: 1, th: 1,
+              table: 1, ul: 1, ol: 1, section: 1, article: 1, header: 1, blockquote: 1 };
+
+function W() {
+  this.body = '';
+  this.para = null;      /* { style, runs, numId, ilvl } */
+}
+W.prototype.open = function (style, numId, ilvl) {
+  this.close();
+  this.para = { style: style || 'Corps', runs: '', numId: numId || 0, ilvl: ilvl || 0 };
+};
+W.prototype.close = function () {
+  var p = this.para;
+  this.para = null;
+  if (!p || (p.runs === '' && !p.numId)) return;
+  if (p.runs === '') return;
+  var pPr = '<w:pPr><w:pStyle w:val="' + p.style + '"/>';
+  if (p.numId) pPr += '<w:numPr><w:ilvl w:val="' + p.ilvl + '"/><w:numId w:val="' + p.numId + '"/></w:numPr>';
+  pPr += '</w:pPr>';
+  this.body += '<w:p>' + pPr + p.runs + '</w:p>';
+};
+W.prototype.add = function (xml) {
+  if (!this.para) this.open('Corps');
+  this.para.runs += xml;
+};
+W.prototype.raw = function (xml) { this.close(); this.body += xml; };
+
+function textRun(s, fmt) {
+  if (!s) return '';
+  var rPr = '';
+  if (fmt.b) rPr += '<w:b/>';
+  if (fmt.i) rPr += '<w:i/>';
+  if (fmt.sup) rPr += '<w:vertAlign w:val="superscript"/>';
+  if (fmt.sub) rPr += '<w:vertAlign w:val="subscript"/>';
+  if (fmt.mono) rPr += '<w:rFonts w:ascii="Consolas" w:hAnsi="Consolas"/>';
+  return '<w:r>' + (rPr ? '<w:rPr>' + rPr + '</w:rPr>' : '') +
+         '<w:t xml:space="preserve">' + esc(s) + '</w:t></w:r>';
+}
+
+function walk(node, w, fmt, list) {
+  var i, cs = node.childNodes;
+  for (i = 0; i < cs.length; i++) {
+    var n = cs[i];
+
+    if (n.nodeType === 3) {
+      var s = n.nodeValue.replace(/\s+/g, ' ');
+      if (s.trim() === '' && !/\S/.test(s)) { if (w.para && w.para.runs) w.add(textRun(' ', fmt)); continue; }
+      w.add(textRun(s, fmt));
+      continue;
+    }
+    if (n.nodeType !== 1) continue;
+
+    var tag = n.nodeName.toLowerCase();
+    if (SKIP[tag]) continue;
+    if (n.classList && (n.classList.contains('top-bar') || n.classList.contains('top-actions') ||
+                        n.classList.contains('sol-toggle-wrap'))) continue;
+
+    /* --- équations --- */
+    if (tag === 'mjx-container') {
+      var math = n.querySelector('mjx-assistive-mml math, math');
+      var display = n.getAttribute('display') === 'true';
+      if (math) {
+        var omml = mathmlToOmml(math);
+        if (display) {
+          w.close();
+          w.body += '<w:p><w:pPr><w:pStyle w:val="Formule"/>' +
+                    '<w:jc w:val="center"/></w:pPr>' +
+                    '<m:oMath>' + omml + '</m:oMath></w:p>';
+        } else {
+          w.add('<m:oMath>' + omml + '</m:oMath>');
+        }
+      } else {
+        w.add(textRun(txt(n), fmt));
+      }
+      continue;
+    }
+    if (tag === 'mjx-assistive-mml' || tag === 'math') continue;
+
+    /* --- graphiques --- */
+    if (tag === 'svg' || tag === 'img') {
+      var png = n.getAttribute('data-kit-png');
+      if (png) {
+        w.close();
+        w.body += imageXml(png, +n.getAttribute('data-kit-w') || 600,
+                                +n.getAttribute('data-kit-h') || 380);
+      }
+      continue;
+    }
+
+    /* --- tableaux --- */
+    if (tag === 'table') { w.close(); w.body += table(n); continue; }
+
+    /* --- listes --- */
+    if (tag === 'ul' || tag === 'ol') {
+      w.close();
+      var nid = tag === 'ol' ? 2 : 1;
+      var lvl = list ? Math.min(list.ilvl + 1, 2) : 0;
+      var items = kids(n).filter(function (x) { return x.nodeName.toLowerCase() === 'li'; });
+      items.forEach(function (li) {
+        /* L'item est composé à part : son numéro doit se poser sur le premier
+           paragraphe produit, même si le <li> enveloppe son texte dans un <div>. */
+        var wb = new W();
+        walk(li, wb, fmt, { ilvl: lvl });
+        wb.close();
+        var xml = wb.body;
+        if (!xml) return;
+        var numPr = '<w:pStyle w:val="Liste"/><w:numPr><w:ilvl w:val="' + lvl +
+                    '"/><w:numId w:val="' + nid + '"/></w:numPr>';
+        if (xml.indexOf('<w:pStyle w:val="Corps"/>') !== -1) {
+          xml = xml.replace('<w:pStyle w:val="Corps"/>', numPr);
+        } else {
+          xml = '<w:p><w:pPr>' + numPr + '</w:pPr></w:p>' + xml;
+        }
+        w.body += xml;
+      });
+      continue;
+    }
+
+    /* --- titres --- */
+    if (tag === 'h1' || tag === 'h2') { w.close(); w.open('Titre1'); walk(n, w, fmt, list); w.close(); continue; }
+    if (tag === 'h3' || tag === 'h4') { w.close(); w.open('Titre2'); walk(n, w, fmt, list); w.close(); continue; }
+
+    /* --- titres internes du corrigé --- */
+    if (n.classList && (n.classList.contains('sol-sub') || n.classList.contains('sol-q') ||
+                        n.classList.contains('dossier-title'))) {
+      w.close(); w.open('Titre2'); walk(n, w, { b: true }, list); w.close(); continue;
+    }
+    if (n.classList && n.classList.contains('persp-box')) {
+      w.close();
+      var wb = new W();
+      walk(n, wb, fmt, list);
+      wb.close();
+      w.body += wb.body.replace(/w:val="Corps"/g, 'w:val="Encadre"')
+                       .replace(/w:val="Titre2"/g, 'w:val="EncadreTitre"');
+      continue;
+    }
+
+    /* --- mise en forme inline --- */
+    var f2 = { b: fmt.b, i: fmt.i, sup: fmt.sup, sub: fmt.sub, mono: fmt.mono };
+    if (tag === 'strong' || tag === 'b') f2.b = true;
+    if (tag === 'em' || tag === 'i') f2.i = true;
+    if (tag === 'sup') f2.sup = true;
+    if (tag === 'sub') f2.sub = true;
+    if (tag === 'code' || tag === 'kbd') f2.mono = true;
+
+    /* intertitre écrit en style en ligne (span display:block + gras) */
+    var st = n.getAttribute && n.getAttribute('style');
+    if (st && /display\s*:\s*block/.test(st) && /font-weight\s*:\s*(6|7|8|9|bold)/.test(st)) {
+      w.close(); w.open('Titre3');
+      walk(n, w, { b: true }, list);
+      w.close();
+      continue;
+    }
+
+    if ((tag === 'strong' || tag === 'b') &&
+        (!w.para || w.para.runs === '') &&
+        n.nextElementSibling && n.nextElementSibling.nodeName.toLowerCase() === 'br') {
+      w.close(); w.open('Titre3');
+      walk(n, w, { b: true }, list);
+      w.close();
+      i++;                       /* le <br> qui suit devient inutile */
+      continue;
+    }
+
+    if (tag === 'br') { w.add('<w:r><w:br/></w:r>'); continue; }
+    if (tag === 'hr') { w.close(); continue; }
+
+    if (BLOCK[tag]) { w.close(); w.open('Corps'); walk(n, w, f2, list); w.close(); }
+    else { walk(n, w, f2, list); }
+  }
+}
+
+function cellXml(td, isHead) {
+  var w2 = new W();
+  walk(td, w2, { b: !!isHead }, null);
+  w2.close();
+  var content = w2.body || '<w:p><w:pPr><w:pStyle w:val="Cellule"/></w:pPr></w:p>';
+  content = content.replace(/w:val="Corps"/g, 'w:val="Cellule"');
+  var span = parseInt(td.getAttribute('colspan') || '1', 10);
+  var shd = isHead ? '<w:shd w:val="clear" w:fill="EDE9DF"/>' : '';
+  return '<w:tc><w:tcPr>' + (span > 1 ? '<w:gridSpan w:val="' + span + '"/>' : '') +
+         shd + '<w:vAlign w:val="center"/></w:tcPr>' + content + '</w:tc>';
+}
+
+function table(tbl) {
+  var rows = tbl.querySelectorAll('tr'), out = '', ncol = 0, i, j;
+  for (i = 0; i < rows.length; i++) {
+    var c = rows[i].children, n = 0;
+    for (j = 0; j < c.length; j++) n += parseInt(c[j].getAttribute('colspan') || '1', 10);
+    ncol = Math.max(ncol, n);
+  }
+  if (!ncol) return '';
+  var grid = '<w:tblGrid>';
+  for (i = 0; i < ncol; i++) grid += '<w:gridCol w:w="' + Math.floor(9360 / ncol) + '"/>';
+  grid += '</w:tblGrid>';
+
+  for (i = 0; i < rows.length; i++) {
+    var cells = rows[i].children, xml = '';
+    var head = rows[i].parentNode.nodeName.toLowerCase() === 'thead' ||
+               (cells.length && cells[0].nodeName.toLowerCase() === 'th');
+    for (j = 0; j < cells.length; j++) xml += cellXml(cells[j], head);
+    out += '<w:tr>' + (head ? '<w:trPr><w:tblHeader/></w:trPr>' : '') + xml + '</w:tr>';
+  }
+  return '<w:tbl><w:tblPr><w:tblStyle w:val="Grille"/>' +
+         '<w:tblW w:w="5000" w:type="pct"/><w:tblLayout w:type="fixed"/></w:tblPr>' +
+         grid + out + '</w:tbl><w:p><w:pPr><w:pStyle w:val="Apres"/></w:pPr></w:p>';
+}
+
+/* ============================================================================
+   Assemblage du fichier
+   ========================================================================== */
+var NS =
+  'xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" ' +
+  'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
+  'xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" ' +
+  'xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" ' +
+  'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+  'xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture" ' +
+  'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+  'xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" ' +
+  'mc:Ignorable="w14"';
+
+function style(id, name, opts) {
+  var o = opts || {};
+  return '<w:style w:type="paragraph" w:styleId="' + id + '"><w:name w:val="' + name + '"/>' +
+         '<w:basedOn w:val="Corps"/><w:pPr>' +
+         (o.keep ? '<w:keepNext/>' : '') +
+         '<w:spacing w:before="' + (o.before || 0) + '" w:after="' + (o.after || 120) +
+         '" w:line="' + (o.line || 276) + '" w:lineRule="auto"/>' +
+         (o.jc ? '<w:jc w:val="' + o.jc + '"/>' : '') +
+         (o.ind ? '<w:ind w:left="' + o.ind + '"/>' : '') +
+         (o.border ? '<w:pBdr><w:left w:val="single" w:sz="18" w:space="8" w:color="1A2E42"/></w:pBdr>' : '') +
+         '</w:pPr><w:rPr>' +
+         (o.font ? '<w:rFonts w:ascii="' + o.font + '" w:hAnsi="' + o.font + '"/>' : '') +
+         (o.b ? '<w:b/>' : '') + (o.i ? '<w:i/>' : '') +
+         (o.sz ? '<w:sz w:val="' + o.sz + '"/>' : '') +
+         (o.color ? '<w:color w:val="' + o.color + '"/>' : '') +
+         '</w:rPr></w:style>';
+}
+
+function stylesXml() {
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles ' + NS + '>' +
+    '<w:docDefaults><w:rPrDefault><w:rPr>' +
+      '<w:rFonts w:ascii="Cambria" w:hAnsi="Cambria" w:cs="Cambria"/>' +
+      '<w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="fr-FR"/>' +
+    '</w:rPr></w:rPrDefault><w:pPrDefault><w:pPr>' +
+      '<w:spacing w:after="120" w:line="276" w:lineRule="auto"/><w:jc w:val="both"/>' +
+    '</w:pPr></w:pPrDefault></w:docDefaults>' +
+    '<w:style w:type="paragraph" w:default="1" w:styleId="Corps"><w:name w:val="Normal"/>' +
+      '<w:pPr><w:spacing w:after="120" w:line="276" w:lineRule="auto"/><w:jc w:val="both"/></w:pPr>' +
+      '<w:rPr><w:rFonts w:ascii="Cambria" w:hAnsi="Cambria"/><w:sz w:val="22"/></w:rPr></w:style>' +
+    style('TitreDoc', 'Title', { font: 'Cambria', b: true, sz: 40, color: '0D1B2A', jc: 'left', after: 60, line: 240 }) +
+    style('SousTitre', 'Subtitle', { i: true, sz: 20, color: '5A5A5A', jc: 'left', after: 280, line: 240 }) +
+    style('Titre1', 'heading 1', { b: true, sz: 28, color: '0D1B2A', before: 320, after: 140, jc: 'left', keep: true, line: 240 }) +
+    style('Titre2', 'heading 2', { b: true, sz: 23, color: '1A2E42', before: 240, after: 100, jc: 'left', keep: true, line: 240 }) +
+    style('Formule', 'Formula', { jc: 'center', before: 120, after: 120, line: 240 }) +
+    style('Liste', 'List Paragraph', { after: 100, ind: 360 }) +
+    style('Cellule', 'Table Text', { sz: 20, after: 40, jc: 'left', line: 240 }) +
+    style('Encadre', 'Aside', { ind: 240, border: true, sz: 21, before: 200, after: 200 }) +
+    style('Apres', 'After Table', { after: 200, sz: 12 }) +
+    style('Figure', 'Figure', { jc: 'center', before: 160, after: 200, line: 240 }) +
+    style('Titre3', 'heading 3', { b: true, sz: 22, color: '1A2E42', before: 200,
+                                   after: 60, jc: 'left', keep: true, line: 240 }) +
+    style('EncadreTitre', 'Aside Heading', { ind: 240, border: true, b: true, sz: 22,
+                                             color: '1A2E42', before: 200, after: 60, jc: 'left' }) +
+    '<w:style w:type="table" w:styleId="Grille"><w:name w:val="Table Grid"/><w:tblPr>' +
+      '<w:tblBorders>' +
+      ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(function (b) {
+        return '<w:' + b + ' w:val="single" w:sz="4" w:space="0" w:color="9A9A9A"/>';
+      }).join('') +
+      '</w:tblBorders><w:tblCellMar>' +
+      '<w:top w:w="60" w:type="dxa"/><w:left w:w="90" w:type="dxa"/>' +
+      '<w:bottom w:w="60" w:type="dxa"/><w:right w:w="90" w:type="dxa"/>' +
+      '</w:tblCellMar></w:tblPr></w:style>' +
+    '</w:styles>';
+}
+
+function numberingXml() {
+  function lvl(i, fmt, txtv, ind) {
+    return '<w:lvl w:ilvl="' + i + '"><w:start w:val="1"/><w:numFmt w:val="' + fmt + '"/>' +
+           '<w:lvlText w:val="' + txtv + '"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="' +
+           ind + '" w:hanging="360"/></w:pPr>' +
+           (fmt === 'bullet' ? '<w:rPr><w:rFonts w:ascii="Symbol" w:hAnsi="Symbol"/></w:rPr>' : '') +
+           '</w:lvl>';
+  }
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:numbering ' + NS + '>' +
+    '<w:abstractNum w:abstractNumId="1"><w:multiLevelType w:val="hybridMultilevel"/>' +
+      lvl(0, 'bullet', '\uF0B7', 360) + lvl(1, 'bullet', 'o', 720) + lvl(2, 'bullet', '\uF0A7', 1080) +
+    '</w:abstractNum>' +
+    '<w:abstractNum w:abstractNumId="2"><w:multiLevelType w:val="hybridMultilevel"/>' +
+      lvl(0, 'decimal', '%1.', 360) + lvl(1, 'lowerLetter', '%2.', 720) + lvl(2, 'lowerRoman', '%3.', 1080) +
+    '</w:abstractNum>' +
+    '<w:num w:numId="1"><w:abstractNumId w:val="1"/></w:num>' +
+    '<w:num w:numId="2"><w:abstractNumId w:val="2"/></w:num>' +
+    '</w:numbering>';
+}
+
+function buildDocx(opts) {
+  IMAGES = [];
+  var w = new W();
+
+  if (opts.title) {
+    w.body += '<w:p><w:pPr><w:pStyle w:val="TitreDoc"/></w:pPr>' +
+              textRun(opts.title, {}) + '</w:p>';
+  }
+  if (opts.subtitle) {
+    w.body += '<w:p><w:pPr><w:pStyle w:val="SousTitre"/></w:pPr>' +
+              textRun(opts.subtitle, {}) + '</w:p>';
+  }
+  opts.sections.forEach(function (sec) {
+    if (sec.heading) {
+      w.body += '<w:p><w:pPr><w:pStyle w:val="Titre1"/></w:pPr>' + textRun(sec.heading, {}) + '</w:p>';
+    }
+    walk(sec.node, w, {}, null);
+    w.close();
+  });
+  w.close();
+
+  var doc = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ' + NS + '><w:body>' +
+    w.body +
+    '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/>' +
+    '<w:pgMar w:top="1247" w:right="1247" w:bottom="1247" w:left="1247" ' +
+    'w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>';
+
+  var media = [], rels = '', ctypes = '';
+  IMAGES.forEach(function (im, i) {
+    media.push({ name: 'word/media/image' + (i + 1) + '.png', bin: im.bin });
+    rels += '<Relationship Id="rIdImg' + (i + 1) + '" Type="http://schemas.openxmlformats.org/' +
+            'officeDocument/2006/relationships/image" Target="media/image' + (i + 1) + '.png"/>';
+  });
+  if (IMAGES.length) ctypes = '<Default Extension="png" ContentType="image/png"/>';
+
+  return zip([
+    { name: '[Content_Types].xml',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+        '<Default Extension="xml" ContentType="application/xml"/>' + ctypes +
+        '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+        '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>' +
+        '<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>' +
+        '</Types>' },
+    { name: '_rels/.rels',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+        '</Relationships>' },
+    { name: 'word/_rels/document.xml.rels',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' +
+        '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>' +
+        rels + '</Relationships>' },
+    { name: 'word/document.xml', data: doc },
+    { name: 'word/styles.xml', data: stylesXml() },
+    { name: 'word/numbering.xml', data: numberingXml() }
+  ].concat(media));
+}
+
+root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: W, _walk: walk };
+
+})(window);
+
+</script>
+<script id="kit-js">
+/* ============================================================
+   KIT D'UNIFORMISATION — logique partagée (modale PDF, export Word,
+   libellés de la barre d'actions). Autonome : ne dépend d'aucun
+   dictionnaire I18N propre à la page.
+   ============================================================ */
+(function(){
+  var T = {
+    fr:{ modalTitle:"Exporter en PDF", seedPre:"Seed\u00a0:",
+         seedPost:"\u2014 notez cette valeur pour reproduire exactement cet exercice.",
+         optHeader:"Inclure l'en-t\u00eate de page",
+         optHeaderD:"Titre, badge de mati\u00e8re et intitul\u00e9 de l'exercice",
+         optSol:"Inclure le corrig\u00e9 complet",
+         optSolD:"L'ensemble des d\u00e9veloppements et commentaires du corrig\u00e9",
+         print:"\uD83D\uDDA8\u00a0Imprimer / Sauvegarder PDF", cancel:"Annuler",
+         btnNew:"\u21ba Nouvel \u00e9nonc\u00e9", btnPdf:"\u2b07 Exporter PDF", btnDoc:"\u2b07 Exporter Word",
+         btnCopy:"\u29c9 Copier", copied:"\u2713 Copi\u00e9e", seedLabel:"Seed de reproductibilit\u00e9",
+         docFile:"exercice.doc" },
+    en:{ modalTitle:"Export to PDF", seedPre:"Seed:",
+         seedPost:"\u2014 note this value to reproduce this exact exercise.",
+         optHeader:"Include the page header",
+         optHeaderD:"Title, subject badge and exercise heading",
+         optSol:"Include the full solution",
+         optSolD:"All the workings and comments of the solution",
+         print:"\uD83D\uDDA8\u00a0Print / Save as PDF", cancel:"Cancel",
+         btnNew:"\u21ba New exercise", btnPdf:"\u2b07 Export PDF", btnDoc:"\u2b07 Export Word",
+         btnCopy:"\u29c9 Copy", copied:"\u2713 Copied", seedLabel:"Reproducibility seed",
+         docFile:"exercise.doc" }
+  };
+
+  function lang(){
+    var l = (window.LANG || document.documentElement.lang || 'fr').toLowerCase();
+    return (l.indexOf('en') === 0) ? 'en' : 'fr';
+  }
+  function t(k){ return T[lang()][k]; }
+
+  window.KIT = { T:T, lang:lang, t:t };
+
+  /* --- libellés du kit (modale + barre d'actions) --- */
+  function paint(){
+    var d = T[lang()];
+    document.querySelectorAll('[data-kit]').forEach(function(el){
+      var k = el.getAttribute('data-kit');
+      if (d[k] !== undefined) el.innerHTML = d[k];
+    });
+  }
+  window.KIT.paint = paint;
+
+  /* Se raccroche au changement de langue de la page sans la modifier. */
+  function hookLang(){
+    if (typeof window.setLang === 'function' && !window.setLang.__kit){
+      var orig = window.setLang;
+      var wrapped = function(){ var r = orig.apply(this, arguments); paint(); return r; };
+      wrapped.__kit = true;
+      window.setLang = wrapped;
+    }
+  }
+
+  /* --- Copie de la seed active --- */
+  window.copySeed = function(btn){
+    var el = document.getElementById('seed-disp');
+    if (!el) return;
+    var v = (el.textContent || '').trim();
+    if (!v || v === '\u2014') return;
+    var done = function(){
+      var b = btn || document.getElementById('btn-copy-seed');
+      if (!b) return;
+      var old = b.innerHTML;
+      b.innerHTML = t('copied');
+      setTimeout(function(){ b.innerHTML = old; paint(); }, 1400);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(v).then(done, done);
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = v; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch(e){}
+      document.body.removeChild(ta); done();
+    }
+  };
+
+  /* --- Modale PDF --- */
+  window.openPdfModal = function(){
+    var s = document.getElementById('modal-seed');
+    var src = document.getElementById('seed-disp');
+    if (s && src) s.textContent = (src.textContent || '\u2014').trim();
+    /* la case « corrigé » reflète l'état d'affichage courant */
+    var sol = document.getElementById('sol-card');
+    var box = document.getElementById('opt-sol');
+    if (box) box.checked = !!(window.solVisible ||
+        (sol && (sol.classList.contains('visible') || sol.style.display === 'block')));
+    paint();
+    document.getElementById('pdf-ov').classList.add('open');
+    document.getElementById('pdf-modal').classList.add('open');
+  };
+  window.closePdfModal = function(){
+    document.getElementById('pdf-ov').classList.remove('open');
+    document.getElementById('pdf-modal').classList.remove('open');
+  };
+  var PRINTCLS = ['print-no-header', 'print-force-solution', 'print-no-solution'];
+
+  function clearPrintClasses() {
+    var b = document.body;
+    for (var i = 0; i < PRINTCLS.length; i++) b.classList.remove(PRINTCLS[i]);
+  }
+
+  window.doPrint = function () {
+    var noHdr   = !document.getElementById('opt-header').checked;
+    var inclSol =  document.getElementById('opt-sol').checked;
+    var b = document.body;
+
+    clearPrintClasses();
+    if (noHdr) b.classList.add('print-no-header');
+    b.classList.add(inclSol ? 'print-force-solution' : 'print-no-solution');
+    closePdfModal();
+
+    /* Le nettoyage doit attendre la fin réelle de l'impression. Un simple
+       minuteur ne convient pas : selon le navigateur, window.print() rend la
+       main avant que l'aperçu ne soit composé, et les options seraient alors
+       déjà effacées au moment où le PDF est produit. */
+    var done = false;
+    function finish() {
+      if (done) return;
+      done = true;
+      clearPrintClasses();
+      window.removeEventListener('afterprint', finish);
+      if (mq && mq.removeListener) mq.removeListener(onMq);
+      if (mq && mq.removeEventListener) mq.removeEventListener('change', onMq);
+    }
+    function onMq(e) { if (!e.matches) finish(); }
+
+    var mq = window.matchMedia ? window.matchMedia('print') : null;
+    window.addEventListener('afterprint', finish);
+    if (mq && mq.addEventListener) mq.addEventListener('change', onMq);
+    else if (mq && mq.addListener) mq.addListener(onMq);
+    /* filet de sécurité si le navigateur n'émet aucun de ces signaux */
+    setTimeout(finish, 120000);
+
+    setTimeout(function () { window.print(); }, 120);
+  };
+
+  /* --- Rasterisation des graphiques SVG ---
+     Word ne sait pas lire le SVG. On le convertit en PNG en recopiant d'abord
+     les styles calculés, sinon les couleurs héritées de la feuille disparaissent. */
+  var SVGPROPS = ['fill', 'stroke', 'stroke-width', 'stroke-dasharray', 'stroke-linecap',
+                  'stroke-linejoin', 'opacity', 'fill-opacity', 'stroke-opacity',
+                  'font-family', 'font-size', 'font-weight', 'font-style',
+                  'text-anchor', 'dominant-baseline'];
+
+  function inlineStyles(src, dst) {
+    var a = src.querySelectorAll('*'), b = dst.querySelectorAll('*'), i, j;
+    for (i = 0; i < a.length && i < b.length; i++) {
+      var cs = window.getComputedStyle(a[i]);
+      for (j = 0; j < SVGPROPS.length; j++) {
+        var v = cs.getPropertyValue(SVGPROPS[j]);
+        if (v) b[i].setAttribute(SVGPROPS[j], v);
+      }
+    }
+  }
+
+  function svgSize(svg) {
+    var vb = svg.viewBox && svg.viewBox.baseVal;
+    if (vb && vb.width) return { w: vb.width, h: vb.height };
+    var r = svg.getBoundingClientRect();
+    if (r.width) return { w: r.width, h: r.height };
+    return { w: 600, h: 380 };
+  }
+
+  function svgToPng(svg) {
+    return new Promise(function (resolve) {
+      var done = false;
+      var res = function (v) { if (!done) { done = true; resolve(v); } };
+      /* garde-fou : un graphique qui ne se charge pas ne doit jamais
+         bloquer l'export, on l'omet et le reste du document part quand même */
+      setTimeout(function () { res(null); }, 5000);
+      try {
+        var d = svgSize(svg), SC = 2;
+        var c = svg.cloneNode(true);
+        c.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        c.setAttribute('width', d.w);
+        c.setAttribute('height', d.h);
+        inlineStyles(svg, c);
+        var bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        bg.setAttribute('x', 0); bg.setAttribute('y', 0);
+        bg.setAttribute('width', '100%'); bg.setAttribute('height', '100%');
+        bg.setAttribute('fill', '#ffffff');
+        c.insertBefore(bg, c.firstChild);
+        var xml = new XMLSerializer().serializeToString(c);
+        var img = new Image();
+        img.onload = function () {
+          try {
+            var cv = document.createElement('canvas');
+            cv.width = Math.round(d.w * SC); cv.height = Math.round(d.h * SC);
+            var ctx = cv.getContext('2d');
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, cv.width, cv.height);
+            ctx.drawImage(img, 0, 0, cv.width, cv.height);
+            res({ png: cv.toDataURL('image/png'), w: d.w, h: d.h });
+          } catch (e) { res(null); }
+        };
+        img.onerror = function () { res(null); };
+        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml);
+      } catch (e) { res(null); }
+    });
+  }
+
+  /* --- Export Word natif (.docx) ---
+     Les formules sont converties en OMML, le format d'équation natif de Word :
+     elles restent éditables et se composent avec Cambria Math. */
+  window.exportWord = function () {
+    var area = document.getElementById('ex-area');
+    if (!area || !window.DocxExport) { return; }
+
+    var btn = document.querySelector('.btn-sm.doc');
+    if (btn) { btn.disabled = true; btn.style.opacity = '.5'; }
+
+    var svgs = Array.prototype.slice.call(area.querySelectorAll('svg'));
+    Promise.all(svgs.map(svgToPng)).then(function (pngs) {
+      svgs.forEach(function (sv, i) {
+        if (!pngs[i]) return;
+        sv.setAttribute('data-kit-png', pngs[i].png);
+        sv.setAttribute('data-kit-w', pngs[i].w);
+        sv.setAttribute('data-kit-h', pngs[i].h);
+      });
+      try { writeDocx(area); } finally {
+        svgs.forEach(function (sv) {
+          sv.removeAttribute('data-kit-png');
+          sv.removeAttribute('data-kit-w');
+          sv.removeAttribute('data-kit-h');
+        });
+        if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+      }
+    });
+  };
+
+  function writeDocx(area) {
+
+    var h1 = document.querySelector('header h1');
+    var badge = document.querySelector('.header-badge, #lbl-badge');
+    var seed = document.getElementById('seed-disp');
+    var bits = [];
+    if (badge && badge.textContent.trim()) bits.push(badge.textContent.trim());
+    if (seed && seed.textContent.trim() && seed.textContent.trim() !== '\u2014') {
+      bits.push('seed ' + seed.textContent.trim());
+    }
+    bits.push('Thomas Hossen');
+
+    var sections = [];
+    var cards = area.querySelectorAll('.card');
+    for (var i = 0; i < cards.length; i++) {
+      var body = cards[i].querySelector('.card-body');
+      if (!body) continue;
+      var tag = cards[i].querySelector('.card-header .tag');
+      var h2 = cards[i].querySelector('.card-header h2');
+      var head = [tag ? tag.textContent.trim() : '', h2 ? h2.textContent.trim() : '']
+                   .filter(Boolean).join(' \u2014 ');
+      sections.push({ heading: head, node: body });
+    }
+    if (!sections.length) sections = [{ heading: '', node: area }];
+
+    var bytes = window.DocxExport.build({
+      title: h1 ? h1.textContent.trim() : document.title,
+      subtitle: bits.join(' \u00b7 '),
+      sections: sections
+    });
+
+    var name = (h1 ? h1.textContent : 'exercice').normalize('NFD')
+                 .replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9]+/g, '_')
+                 .replace(/^_|_$/g, '').slice(0, 60) || 'exercice';
+    var blob = new Blob([bytes], {
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = name + '.docx';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){ hookLang(); paint(); });
+  if (document.readyState !== 'loading'){ hookLang(); paint(); }
+})();
+</script>
+<!-- KIT:JS:END -->
+
+</body>
+</html>

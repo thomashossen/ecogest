@@ -1,0 +1,2158 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Analyse Financière - Emprunt ou crédit-bail</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['\\[', '\\]']]
+    }
+  };
+</script>
+<script>window.MathJax=window.MathJax||{};window.MathJax.options=window.MathJax.options||{};window.MathJax.options.enableAssistiveMml=true;</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7;text-align:justify;}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 1.5rem;border-bottom:3px solid var(--gold);text-align:left;}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end;background:rgba(255,255,255,.03);padding:1rem 1.5rem;border-radius:6px;border:1px solid rgba(255,255,255,.1)}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.6)}
+.ctrl-inp, .ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.4rem .7rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none;transition:border-color .2s}
+.ctrl-inp:focus, .ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.5rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;transition:background .18s;margin-left:auto}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN & CARDS */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:700}
+
+.top-actions{display:flex;gap:.5rem;}
+.btn-action{background:#fff;border:1px solid var(--border);color:var(--navy);padding:.4rem .8rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.85rem;font-weight:600;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.btn-action:hover{border-color:var(--navy);background:var(--cream-dark);}
+
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem;text-align:left;}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+.event-list{list-style:none;}
+.event-list > li{margin-bottom:1.5rem;padding-left:1.5rem;position:relative;font-size:.95rem;text-align:justify}
+.event-list > li::before{content:"•";position:absolute;left:0;color:var(--gold);font-size:1.5rem;line-height:1}
+
+.sub-list { list-style-type: none; padding-left: 1rem; margin-top: 0.8rem; text-align:justify;}
+.sub-list li { margin-bottom: 0.5rem; }
+
+/* EXAM TABLE */
+.exam-table-wrap { overflow-x: auto; margin: 1.5rem 0; }
+.exam-table{width:100%;border-collapse:collapse;font-size:.85rem;font-family:'Source Serif 4',serif; margin: 0;}
+.exam-table th, .exam-table td{border:1px solid var(--border);padding:.6rem;text-align:center;vertical-align:middle;}
+.exam-table th{background:var(--navy);color:var(--cream);font-weight:600;}
+.exam-table .txt-left{text-align:left;font-weight:600;color:var(--navy);}
+.exam-table .amt{font-family:'JetBrains Mono',monospace;text-align:right;white-space:nowrap;}
+
+.two-col-table { width: 100%; display: flex; gap: 2rem; margin: 1.5rem 0; }
+.col-half { flex: 1; }
+
+/* SOLUTION TOGGLE */
+.sol-toggle-wrap{text-align:left; margin: 1.5rem 0 0 0;}
+.btn-toggle{background:transparent;border:2px solid var(--green);border-bottom:none;color:var(--green);font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;padding:.5rem 1.5rem;border-radius:4px 4px 0 0;cursor:pointer;transition:all .2s; position:relative; z-index:2; top:2px;}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--green);color:var(--cream)}
+.sol-card{border-top:2px solid var(--green);display:none; border-radius: 0 6px 6px 6px; position:relative; z-index:1;}
+.sol-card.visible{display:block;animation:fi .4s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+
+.calc-box{background:#f9fcf9;border:1px solid #c8e6c9;padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.9rem;color:var(--text);line-height:1.6;text-align:justify;}
+
+@media print{
+  body{background:#fff;}
+  header, .ctrls, .sol-toggle-wrap, .top-actions {display:none !important;}
+  .card{box-shadow:none; border:1px solid var(--border); margin-bottom:2rem;}
+  .sol-card{display:block !important; border-top:2px solid var(--green);}
+  #ex-area {display:block !important;}
+}
+
+/* --- Selecteur de langue / Language switch --- */
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem}
+.header-top .header-badge{margin-bottom:0}
+.lang-switch{display:flex;gap:.45rem;flex-shrink:0}
+.flag-btn{background:rgba(255,255,255,.06);border:1px solid rgba(201,149,42,.35);border-radius:3px;padding:3px;cursor:pointer;line-height:0;opacity:.5;transition:opacity .2s,border-color .2s,transform .15s}
+.flag-btn:hover{opacity:1;transform:translateY(-1px)}
+.flag-btn.active{opacity:1;border-color:var(--gold-light);box-shadow:0 0 0 1px rgba(232,184,75,.35)}
+.flag-btn svg{display:block;width:30px;height:20px;border-radius:1px}
+@media print{ .lang-switch{display:none !important;} }
+</style>
+<!-- KIT:CSS:START v1 --><style id="kit-css">
+/* ============================================================
+   KIT D'UNIFORMISATION — bloc partagé, identique sur toutes les pages.
+   Ne rien modifier ici fichier par fichier : régénérer le kit.
+   ============================================================ */
+
+/* --- 1. Mathématiques : jamais de débordement --- */
+mjx-container[display="true"]{
+  overflow-x:auto; overflow-y:hidden; max-width:100%;
+  padding:.15rem 0; margin:1rem 0 !important;
+}
+mjx-container[display="true"]::-webkit-scrollbar{height:5px}
+mjx-container[display="true"]::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+mjx-container{ max-width:100%; }
+.math-formula{ text-align:center; margin:1.2rem 0; overflow-x:auto; max-width:100%; }
+@media (max-width:640px){
+  mjx-container[display="true"]{ font-size:88% }
+}
+
+/* --- 2. Listes à puces entourées (questions ET données de contexte) --- */
+.kit-list, .st > ol,
+.questions > ol,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list), .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list),
+.question-list, .enum-list, .q-list{
+  counter-reset:kitq; list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem;
+}
+.kit-list > li, .st > ol > li,
+.questions > ol > li,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li, .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li,
+.question-list > li, .enum-list > li, .q-list > li{
+  counter-increment:kitq; position:relative;
+  padding-left:2.6rem; margin-bottom:1.3rem;
+  font-size:.95rem; line-height:1.7; text-align:justify;
+  font-weight:400; color:var(--text);
+  display:block;
+}
+.kit-list > li::before, .st > ol > li::before,
+.questions > ol > li::before,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li::before, .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li::before,
+.question-list > li::before, .enum-list > li::before, .q-list > li::before{
+  content:counter(kitq);
+  position:absolute; left:0; top:.1rem;
+  width:28px; min-width:28px; height:28px;
+  background:var(--navy); color:var(--cream);
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.72rem; font-weight:500;
+  flex-shrink:0;
+}
+.questions ol > li .q-text{ flex:1; font-size:.95rem; text-align:justify }
+/* sous-listes : cercle creux, plus discret */
+.enum-sublist, .kit-sublist, .sub-list, .sub-ol, .alpha-list, .enum-subsublist,
+.st ol.sub-ol, .questions ol ol, .st ol ol, .kit-list ol, .q-list ol, .question-list ol{
+  counter-reset:kitsq; list-style:none !important; padding-left:0 !important;
+  margin:.9rem 0 .9rem 0;
+}
+.enum-sublist > li, .kit-sublist > li, .sub-list > li, .sub-ol > li, .alpha-list > li, .enum-subsublist > li,
+.st ol.sub-ol > li, .questions ol ol > li, .st ol ol > li, .kit-list ol > li, .q-list ol > li, .question-list ol > li{
+  counter-increment:kitsq; position:relative;
+  padding-left:2.1rem; margin-bottom:.7rem; font-size:.92rem; text-align:justify;
+}
+.enum-sublist > li::before, .kit-sublist > li::before, .sub-list > li::before, .sub-ol > li::before, .alpha-list > li::before, .enum-subsublist > li::before,
+.st ol.sub-ol > li::before, .questions ol ol > li::before, .st ol ol > li::before, .kit-list ol > li::before, .q-list ol > li::before, .question-list ol > li::before{
+  content:counter(kitsq,lower-alpha);
+  min-width:22px;
+  position:absolute; left:0; top:.05rem;
+  width:22px; height:22px;
+  background:transparent; color:var(--navy);
+  border:1px solid var(--gold);
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.65rem;
+}
+
+/* variante : puces simples non numérotées (listes de données) */
+.kit-simple{ list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem }
+.kit-simple > li{
+  position:relative; padding-left:1.5rem; margin-bottom:1.1rem;
+  font-size:.95rem; line-height:1.7; text-align:justify;
+}
+.kit-simple > li::before{
+  content:"\2022"; position:absolute; left:0; top:-.15rem;
+  color:var(--gold); font-size:1.5rem; line-height:1; background:none;
+  width:auto; height:auto; border:none; border-radius:0;
+}
+/* variante : liste à un seul élément, sans puce */
+.kit-nobullet{ list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem }
+.kit-nobullet > li{
+  padding-left:0; margin-bottom:1rem; font-size:.95rem; line-height:1.7; text-align:justify;
+}
+.kit-nobullet > li::before{ content:none !important; display:none !important }
+/* variante : titres de section numérotés (contenu intercalé entre les puces) */
+.kit-num-scope{ counter-reset:kitn }
+p.kit-num{
+  counter-increment:kitn; position:relative;
+  padding-left:2.6rem; margin:1.8rem 0 1rem;
+  font-weight:600; color:var(--navy); text-align:left;
+  min-height:28px; display:flex; align-items:center;
+}
+p.kit-num:first-of-type{ margin-top:0 }
+p.kit-num::before{
+  content:counter(kitn); position:absolute; left:0; top:0;
+  width:28px; height:28px; background:var(--navy); color:var(--cream);
+  border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.72rem; font-weight:500;
+}
+
+/* titres de dossier */
+.dossier-title{
+  margin:2rem 0 1rem; font-weight:600; color:var(--navy); font-size:1.02rem;
+  border-bottom:1px solid var(--border); padding-bottom:.4rem; text-align:left;
+}
+.dossier-title:first-of-type{ margin-top:0 }
+.dossier-body{ margin-bottom:.5rem }
+
+/* --- 3. Corrigé sobre : plus de multiplication de fonds verts --- */
+.sol-card .calc-box, .sol-card .concl{
+  background:transparent !important;
+  border:none !important;
+  border-left:none !important;
+  padding:0 !important;
+  border-radius:0 !important;
+  margin:0 0 1.6rem 0 !important;
+  font-size:.95rem;
+  line-height:1.7;
+  text-align:justify;
+}
+.sol-card .sol-sub{
+  color:var(--navy); font-weight:600; display:block;
+  margin:0 0 .5rem 0; font-size:1rem;
+}
+/* seuls encadrés conservés : les perspectives « Pour aller plus loin » */
+.sol-card .persp-box{
+  background:#f7f9fc !important;
+  border:1px solid #ccd8e6 !important;
+  border-left:3px solid var(--navy-mid) !important;
+  padding:1.2rem !important;
+  border-radius:4px !important;
+  margin:2rem 0 1rem 0 !important;
+  font-size:.9rem; line-height:1.7; text-align:justify;
+}
+
+.btn-toggle{
+  background:transparent; border:2px solid var(--green); border-bottom:none;
+  color:var(--green); font-family:'Source Serif 4',serif; font-size:.95rem;
+  font-weight:600; padding:.5rem 1.5rem; border-radius:4px 4px 0 0; cursor:pointer;
+  transition:all .2s; position:relative; z-index:2; top:2px;
+}
+.btn-toggle:hover{ background:var(--green); color:var(--cream) }
+
+/* --- 4. Bouton « Afficher le corrigé » (modèle der) --- */
+.sol-toggle-wrap{ text-align:left; margin:1.5rem 0 0 0; }
+.sol-card{
+  border-top:2px solid var(--green); display:none;
+  border-radius:0 6px 6px 6px; position:relative; z-index:1;
+}
+.sol-card.visible{ display:block; animation:kitfi .35s ease }
+.sol-card .card-header{ background:var(--green) }
+.sol-card .card-header .tag{ border-color:rgba(200,240,200,.4); color:#a8d8b0 }
+@keyframes kitfi{ from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+
+/* --- 5. Barre d'actions unifiée --- */
+.top-bar{ display:flex; flex-wrap:wrap; gap:.8rem; align-items:center; justify-content:space-between; margin-bottom:1.2rem }
+.top-bar-left{ display:flex; flex-wrap:wrap; gap:.55rem; order:1 }
+.top-bar .seed-badge{ order:2 }
+.btn-sm{ background:transparent; border:1px solid var(--gold); color:var(--gold); font-family:'JetBrains Mono',monospace; font-size:.67rem; letter-spacing:.08em; text-transform:uppercase; padding:.4rem 1rem; border-radius:3px; cursor:pointer; transition:all .18s; white-space:nowrap }
+.btn-sm:hover{ background:var(--gold); color:var(--navy) }
+.btn-sm.pdf{ border-color:#7bafd4; color:#7bafd4 }
+.btn-sm.pdf:hover{ background:#7bafd4; color:var(--navy) }
+.btn-sm.doc{ border-color:#8fa8c4; color:#8fa8c4 }
+.seed-row{ display:flex; gap:.4rem; align-items:center }
+.btn-copy-seed{
+  background:transparent; border:1px solid rgba(201,149,42,.4); color:rgba(250,247,240,.55);
+  padding:.38rem .55rem; border-radius:3px; cursor:pointer;
+  font-family:'JetBrains Mono',monospace; font-size:.65rem; transition:all .18s; white-space:nowrap;
+}
+.btn-copy-seed:hover{ border-color:var(--gold-light); color:var(--gold-light) }
+.btn-sm.doc:hover{ background:#8fa8c4; color:var(--navy) }
+
+/* --- 6. Modale d'export PDF --- */
+#pdf-ov{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:100; backdrop-filter:blur(2px) }
+#pdf-modal{ display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:101; background:#fff; border-radius:8px; box-shadow:0 20px 60px rgba(0,0,0,.25); width:390px; max-width:95vw; border-top:4px solid #7bafd4; overflow:hidden }
+#pdf-ov.open,#pdf-modal.open{ display:block }
+.mh{ background:var(--navy); color:var(--cream); padding:1rem 1.5rem; display:flex; align-items:center; justify-content:space-between }
+.mh h3{ font-family:'Playfair Display',serif; font-size:1rem; font-weight:600; margin:0 }
+.mclose{ background:none; border:none; color:rgba(255,255,255,.6); cursor:pointer; font-size:1.2rem; line-height:1; padding:2px 6px; border-radius:3px; transition:color .15s }
+.mclose:hover{ color:#fff }
+.mb2{ padding:1.5rem }
+.opt-row{ display:flex; align-items:flex-start; gap:.75rem; margin-bottom:1rem; cursor:pointer }
+.opt-row input[type=checkbox]{ width:16px; height:16px; cursor:pointer; accent-color:var(--navy); flex-shrink:0; margin-top:3px }
+.opt-txt{ display:block }
+.opt-lbl{ font-size:.93rem; display:block }
+.opt-desc{ font-size:.75rem; color:var(--text-muted); display:block }
+.seed-note{ font-family:'JetBrains Mono',monospace; font-size:.7rem; background:var(--cream-dark); border:1px solid var(--border); padding:.55rem .85rem; border-radius:3px; color:var(--text-muted); margin-bottom:1.2rem; line-height:1.5 }
+.mactions{ display:flex; gap:.6rem }
+.btn-print{ flex:1; background:var(--navy); color:var(--cream); border:none; padding:.7rem; border-radius:4px; font-family:'Source Serif 4',serif; font-size:.9rem; cursor:pointer; transition:background .2s }
+.btn-print:hover{ background:var(--navy-mid) }
+.btn-cancel{ background:transparent; border:1px solid var(--border); color:var(--text-muted); padding:.7rem 1rem; border-radius:4px; font-family:'Source Serif 4',serif; font-size:.9rem; cursor:pointer; transition:all .2s }
+.btn-cancel:hover{ border-color:var(--text); color:var(--text) }
+
+/* --- 7. Impression --- */
+@media print{
+  body{ background:#fff; font-size:11pt; -webkit-print-color-adjust:exact; print-color-adjust:exact }
+  header{ display:block !important; padding:1rem 1.5rem .8rem }
+  header .subtitle{ display:none }
+  .ctrls, #controls-bar, .top-actions, .top-bar-left, .sol-toggle-wrap,
+  .lang-switch, #pdf-ov, #pdf-modal{ display:none !important }
+  .top-bar{ display:block !important; margin-bottom:.8rem }
+  .top-bar .seed-badge{
+    display:inline-block !important; background:none; border:1px solid var(--border);
+    color:var(--text-muted); font-family:'JetBrains Mono',monospace; font-size:8.5pt;
+    padding:2pt 6pt; border-radius:2px;
+  }
+  body.print-no-header .top-bar{ display:none !important }
+  main{ padding:1rem 1.5rem; max-width:100% }
+  .card{ box-shadow:none; border-radius:0; page-break-inside:avoid; margin-bottom:1rem }
+  #ex-area{ display:block !important }
+  .sol-card{ display:block !important; border-top:2px solid var(--green) }
+  mjx-container[display="true"]{ overflow:visible !important }
+  body.print-no-header header{ display:none !important }
+  body.print-no-header .ctrls{ display:none !important }
+  body.print-no-solution .sol-card,
+  body.print-no-solution .sol-toggle-wrap{ display:none !important }
+  body.print-force-solution .sol-card{ display:block !important }
+}
+</style><!-- KIT:CSS:END -->
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-top">
+    <div class="header-badge" data-k="k-badge">MÉTHODE D'ÉVALUATION DES ACTIFS FINANCIERS</div>
+    <div class="lang-switch">
+      <button type="button" class="flag-btn active" id="flag-fr" onclick="setLang('fr')" title="Français" aria-label="Français"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="20" height="40" fill="#002654"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ED2939"/></svg></button>
+      <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
+    </div>
+  </div>
+  <h1 data-k="k-h1">Emprunt ou crédit-bail : le choix du mode de financement</h1>
+  <p class="subtitle" data-k="k-sub">© Thomas Hossen – Version du 18 septembre 2026</p>
+
+  <div class="ctrls">
+    <div class="ctrl-g">
+      <span class="ctrl-lbl" data-k="k-seed">Seed de reproductibilité</span>
+      <div class="seed-row"><input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999"><button type="button" class="btn-copy-seed" id="btn-copy-seed" onclick="copySeed(this)" title="Copier la seed active"><span data-kit="btnCopy">&#10697; Copier</span></button></div>
+    </div>
+    <button class="btn-gen" onclick="generateExercise(false)"><span data-k="k-gen">Générer</span></button>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" style="text-align:center; padding:4rem; color:var(--text-muted); font-style:italic;">
+    <span data-k="k-welcome">Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.</span>
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="seed-badge"><span data-k="k-seedbadge">Seed active :</span> <span id="seed-disp"></span></div>
+      <div class="top-bar-left">
+        <button type="button" class="btn-sm" onclick="generateExercise(true)"><span data-kit="btnNew">&#8634; Nouvel &eacute;nonc&eacute;</span></button>
+        <button type="button" class="btn-sm pdf" onclick="openPdfModal()"><span data-kit="btnPdf">&#11015; Exporter PDF</span></button>
+        <button type="button" class="btn-sm doc" onclick="exportWord()"><span data-kit="btnDoc">&#11015; Exporter Word</span></button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="tag" data-k="k-tag-ex">Énoncé</span><h2 data-k="k-cardtitle">Comparaison d'un financement par emprunt et par crédit-bail</h2></div>
+      <div class="card-body">
+        <div class="context-block" id="context-text"></div>
+        <div id="enonce-table-container"></div>
+        <div class="context-block" id="additional-info" style="margin-top:1.5rem; background:#fff; border-left:3px solid var(--navy); border-radius:0;"></div>
+
+        <p style="margin-bottom:1rem; font-weight:600; color:var(--red); text-align:left;" data-k="k-work">Travail à faire</p>
+        <ul class="event-list" id="events-list"></ul>
+      </div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag" data-k="k-tag-sol">Corrigé</span><h2 data-k="k-cardtitle2">Comparaison d'un financement par emprunt et par crédit-bail</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+/* ============================================================
+   PROFILS  /  PROFILES
+   ============================================================ */
+const PROFILES = [
+  { name: "Alpha Distribution", ville: "Perpignan",
+    fr: { secteur: "une enseigne de distribution spécialisée", projet: "l'ouverture d'un nouveau point de vente", bien: "l'agencement complet du magasin et son équipement frigorifique" },
+    en: { secteur: "a specialist retail chain", projet: "the opening of a new sales outlet", bien: "the complete store fit-out and its refrigeration equipment" } },
+  { name: "Bastide Logistique", ville: "Nantes",
+    fr: { secteur: "un opérateur de logistique urbaine", projet: "la création d'une plateforme de distribution", bien: "la flotte de véhicules utilitaires électriques" },
+    en: { secteur: "an urban logistics operator", projet: "the creation of a distribution hub", bien: "the fleet of electric utility vehicles" } },
+  { name: "Céramyx Industries", ville: "Limoges",
+    fr: { secteur: "un fabricant de céramiques techniques", projet: "la modernisation de sa ligne de cuisson", bien: "le four tunnel et son système de pilotage" },
+    en: { secteur: "a manufacturer of technical ceramics", projet: "the modernisation of its firing line", bien: "the tunnel kiln and its control system" } },
+  { name: "Delmas Travaux Publics", ville: "Bordeaux",
+    fr: { secteur: "une entreprise de travaux publics", projet: "le renouvellement de son parc d'engins", bien: "les pelles hydrauliques et les chargeuses" },
+    en: { secteur: "a civil engineering company", projet: "the renewal of its machinery fleet", bien: "the hydraulic excavators and loaders" } },
+  { name: "Éolis Maintenance", ville: "Amiens",
+    fr: { secteur: "un prestataire de maintenance industrielle", projet: "l'ouverture d'une antenne régionale", bien: "l'atelier mobile et son outillage spécialisé" },
+    en: { secteur: "an industrial maintenance provider", projet: "the opening of a regional branch", bien: "the mobile workshop and its specialised tooling" } },
+  { name: "Ferralia Packaging", ville: "Metz",
+    fr: { secteur: "un producteur d'emballages métalliques", projet: "l'automatisation de sa ligne de conditionnement", bien: "la ligne de conditionnement robotisée" },
+    en: { secteur: "a producer of metal packaging", projet: "the automation of its packaging line", bien: "the robotised packaging line" } }
+];
+
+/* ============================================================
+   DICTIONNAIRE BILINGUE  /  BILINGUAL DICTIONARY
+   ============================================================ */
+const I18N = {
+
+  fr: {
+    "htmlLang": "fr",
+    "title": "Simulateur Analyse Financière - Emprunt ou crédit-bail",
+    "locale": "fr-FR",
+    "k-badge": "MÉTHODE D'ÉVALUATION DES ACTIFS FINANCIERS",
+    "k-h1": "Emprunt ou crédit-bail : le choix du mode de financement",
+    "k-sub": "© Thomas Hossen – Version du 18 septembre 2026",
+    "k-seed": "Seed de reproductibilité",
+    "k-gen": "Générer",
+    "k-welcome": "Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.",
+    "k-seedbadge": "Seed active :",
+    "k-tag-ex": "Énoncé",
+    "k-cardtitle": "Comparaison d'un financement par emprunt et par crédit-bail",
+    "k-tag-sol": "Corrigé",
+    "k-cardtitle2": "Comparaison d'un financement par emprunt et par crédit-bail",
+    "k-work": "Travail à faire",
+    "showSol": "Afficher le corrigé",
+    "hideSol": "Masquer le corrigé",
+    thousands: "\\,",
+    decimal: "{,}",
+
+    chartTitle: "Valeur actuelle nette du montage crédit-bail selon le taux d'actualisation",
+    chartX: "taux d'actualisation",
+    chartY: "VAN (milliers d'euros)",
+    chartNote: "Le coût du crédit-bail est le taux qui annule la VAN ; à gauche de ce point, le montage détruit de la valeur.",
+    lblTRI: "coût du crédit-bail",
+    lblLoan: "coût de l'emprunt après IS",
+
+    context: function(D) {
+      const p = D.prof.fr;
+      return `
+        Nous sommes le 1<sup>er</sup> janvier ${D.Y0}. ${D.prof.name}, ${p.secteur}, a validé un projet portant sur ${p.projet} à ${D.prof.ville}. La composante majeure de ce projet — ${p.bien} — représente un montant de ${money(D.M,'fr')} et doit être financée en totalité par un financement externe. Le directeur administratif et financier hésite entre deux propositions : un emprunt bancaire classique et un contrat de crédit-bail. Il vous demande de départager les deux solutions.
+      `;
+    },
+    table: function(D) {
+      let h = "";
+      h += `<p style="margin:1.4rem 0 .6rem; font-weight:600; color:var(--navy); text-align:left;">Proposition n° 1 — financement par emprunt</p>`;
+      h += `<div class="exam-table-wrap"><table class="exam-table">
+          <tr><th style="width:62%;">Caractéristique</th><th style="width:38%;">Modalité</th></tr>
+          <tr><td class="txt-left">Montant emprunté</td><td class="amt">${money(D.M,'fr')}</td></tr>
+          <tr><td class="txt-left">Durée</td><td class="amt">${D.n} ans</td></tr>
+          <tr><td class="txt-left">Taux nominal annuel</td><td class="amt">${fmtNb(D.iPct,2)} %</td></tr>
+          <tr><td class="txt-left">Modalité de remboursement</td><td class="txt-left" style="font-weight:400;">Annuités constantes, la première étant versée fin ${D.Y0}</td></tr>
+          <tr><td class="txt-left">Amortissement du bien acquis</td><td class="txt-left" style="font-weight:400;">Linéaire sur ${D.n} ans</td></tr>
+      </table></div>`;
+
+      h += `<p style="margin:1.6rem 0 .6rem; font-weight:600; color:var(--navy); text-align:left;">Proposition n° 2 — financement par crédit-bail</p>`;
+      h += `<div class="exam-table-wrap"><table class="exam-table">
+          <tr><th style="width:62%;">Caractéristique</th><th style="width:38%;">Modalité</th></tr>
+          <tr><td class="txt-left">Nombre de redevances annuelles</td><td class="amt">${D.k}</td></tr>
+          <tr><td class="txt-left">Montant de chaque redevance</td><td class="amt">${money(D.R,'fr')}</td></tr>
+          <tr><td class="txt-left">Date de paiement des redevances</td><td class="txt-left" style="font-weight:400;">En début de période, la première le 1<sup>er</sup> janvier ${D.Y0}</td></tr>
+          <tr><td class="txt-left">Option d'achat</td><td class="amt">${money(D.OA,'fr')}</td></tr>
+          <tr><td class="txt-left">Date de levée de l'option</td><td class="txt-left" style="font-weight:400;">Fin de la ${D.k}<sup>e</sup> année, soit fin ${D.Y0 + D.k - 1}</td></tr>
+          <tr><td class="txt-left">Amortissement de l'option levée</td><td class="txt-left" style="font-weight:400;">En une seule fois sur la ${D.n}<sup>e</sup> année, soit ${D.Y0 + D.n - 1}</td></tr>
+      </table></div>`;
+      return h;
+    },
+    info: function(D) {
+      return `
+        <strong>Hypothèses de travail.</strong> Le taux normal de l'impôt sur les sociétés est de ${fmtNb(D.ISPct,0)} %, et l'entreprise est supposée bénéficiaire sur toute la durée du projet, de sorte qu'elle peut effectivement imputer les économies d'impôt. Toutes les économies et pertes d'économies d'impôt sont réputées perçues ou supportées à la clôture de l'exercice au cours duquel la charge correspondante est déduite. Le bien, s'il était acquis, serait amorti linéairement sur ${D.n} ans sans valeur résiduelle ; en crédit-bail, seule l'option d'achat levée est amortie, en une seule fois sur la dernière année. Le coût de chaque financement s'entend comme son taux actuariel après impôt, c'est-à-dire le taux qui égalise la ressource obtenue et la valeur actuelle des décaissements nets qu'elle entraîne. Les montants sont arrondis à l'euro le plus proche et les taux à deux décimales, tous les calculs intermédiaires étant conduits en pleine précision.
+      `;
+    },
+    enonce: function(D) {
+      let h = "";
+      h += `<li><strong>Emprunt : annuité et tableau d'amortissement.</strong> Calculez l'annuité constante de l'emprunt de ${money(D.M,'fr')} sur ${D.n} ans au taux de ${fmtNb(D.iPct,2)} %, puis présentez le tableau d'amortissement de cet emprunt.</li>`;
+      h += `<li><strong>Coût de l'emprunt après impôt.</strong> Déterminez les flux de trésorerie après impôt sur les sociétés engendrés par ce financement, puis calculez son coût actuariel après impôt. Que constatez-vous par rapport au taux nominal ?</li>`;
+      h += `<li><strong>Crédit-bail : tableau des flux.</strong> Présentez le tableau des flux nets de trésorerie du financement par crédit-bail, en distinguant l'économie d'investissement, les économies d'impôt sur les redevances, la perte d'économie d'impôt sur les amortissements, le paiement de l'option d'achat et l'économie d'impôt liée à son amortissement.</li>`;
+      h += `<li><strong>Coût du crédit-bail.</strong> Calculez le coût actuariel du crédit-bail, en encadrant le taux recherché puis en procédant par interpolation linéaire.</li>`;
+      h += `<li><strong>Conclusion chiffrée.</strong> Comparez les deux coûts, chiffrez en valeur actuelle l'avantage de la solution retenue et concluez sur le financement à privilégier.</li>`;
+      h += `<li><strong>Analyse qualitative.</strong> Présentez deux avantages et deux inconvénients du recours à l'endettement, puis les arguments propres au crédit-bail. Dans quelles circonstances la conclusion purement financière pourrait-elle être renversée ?</li>`;
+      return h;
+    },
+    sol: function(D) {
+      const M = v => money(v, 'fr'), M2 = v => money(v, 'fr', 2);
+      let s = "";
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">1. L'emprunt : annuité constante et tableau d'amortissement</span>
+        Un emprunt remboursable par annuités constantes se caractérise par une annuité $a$ identique à chaque échéance, couvrant à la fois les intérêts de la période et une fraction du capital. La valeur actuelle de ces ${D.n} annuités, au taux de l'emprunt, doit être égale au capital prêté :
+        <div class="math-formula">\\[M = a \\times \\frac{1 - (1+i)^{-n}}{i} \\quad \\Longleftrightarrow \\quad a = M \\times \\frac{i}{1 - (1+i)^{-n}}\\]</div>
+        Avec $M = ${texI(D.M)}$ euros, $i = ${texD(D.iPct,2)}\\,\\%$ et $n = ${D.n}$, il vient
+        <div class="math-formula">\\[a = ${texI(D.M)} \\times \\frac{${texD(D.i,4)}}{1 - (1+${texD(D.i,4)})^{-${D.n}}} = ${texM(D.a)}\\ \\text{euros}\\]</div>
+        Le tableau d'amortissement se construit ensuite ligne à ligne : les intérêts de la période s'obtiennent en appliquant le taux au capital restant dû en début de période, l'amortissement du capital est le solde de l'annuité, et le capital restant dû diminue d'autant.
+        ${loanTable(D, 'fr')}
+        Le total des amortissements du capital est bien égal au montant emprunté (${M(D.M)}), et le coût brut de l'emprunt — la somme des intérêts versés — s'élève à ${M2(D.totalInt)}, soit ${fmtNb(D.totalInt / D.M * 100, 1)} % du capital sur l'ensemble de la période.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">2. Le coût de l'emprunt après impôt</span>
+        Le taux facial ne mesure pas le coût réellement supporté, car les intérêts versés sont déductibles du résultat imposable : chaque euro d'intérêt procure une économie d'impôt de ${fmtNb(D.ISPct,0)} centimes. L'amortissement du capital, en revanche, n'est pas une charge et ne procure aucune économie. Les flux après impôt du financement par emprunt s'écrivent donc : un encaissement de ${M(D.M)} à la mise en place, puis, à chaque échéance, un décaissement égal à l'annuité diminuée de l'économie d'impôt sur les intérêts de la période.
+        ${loanFlowTable(D, 'fr')}
+        Le coût actuariel après impôt est le taux $r$ qui annule la valeur actuelle nette de cette séquence :
+        <div class="math-formula">\\[${texI(D.M)} = \\sum_{t=1}^{${D.n}} \\frac{a - \\text{IS} \\times I_t}{(1+r)^{t}} \\quad \\Longrightarrow \\quad r = ${texD(D.rLoan*100,2)}\\,\\%\\]</div>
+        <strong>Ce résultat n'est pas fortuit.</strong> Le flux de la période $t$ s'écrit $A_t + I_t - \\text{IS} \\times I_t = A_t + (1-\\text{IS}) \\times I_t$, où $A_t$ désigne l'amortissement du capital et $I_t = i \\times C_{t-1}$ les intérêts calculés sur le capital restant dû. La séquence obtenue est donc exactement celle d'un emprunt de même capital, remboursé selon le même échéancier en capital, mais rémunéré au taux $i(1-\\text{IS})$. Le coût après impôt d'une dette dont les intérêts sont intégralement déductibles vaut ainsi, quel que soit le profil de remboursement,
+        <div class="math-formula">\\[r = i \\times (1 - \\text{IS}) = ${texD(D.iPct,2)}\\,\\% \\times (1 - ${texD(D.ISPct,0)}\\,\\%) = ${texD(D.rLoan*100,2)}\\,\\%\\]</div>
+        ce que le calcul actuariel confirme au centième de point près. C'est ce taux de ${fmtNb(D.rLoan*100,2)} % qui servira de référence pour juger le crédit-bail.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">3. Le crédit-bail : tableau des flux nets de trésorerie</span>
+        Le raisonnement consiste à mesurer ce que le crédit-bail apporte et ce qu'il coûte <em>par rapport à l'acquisition du bien</em>. Cinq éléments doivent être recensés.<br><br>
+        <strong>À l'actif du montage.</strong> En ne devenant pas propriétaire, l'entreprise évite le décaissement immédiat du prix du bien : elle conserve ${M(D.M)} en trésorerie, ce qui constitue une <em>économie d'investissement</em> assimilable à un encaissement initial. Les redevances, ensuite, sont des charges déductibles : chacune procure une économie d'impôt de ${fmtNb(D.ISPct,0)} % × ${M(D.R)} = ${M2(D.ecoR)}, perçue à la clôture de l'exercice au cours duquel la redevance est déduite. Enfin, l'option d'achat levée pour ${M(D.OA)} est amortie en une seule fois la dernière année, ce qui procure une ultime économie d'impôt de ${M2(D.ecoOA)}.<br><br>
+        <strong>Au passif du montage.</strong> L'entreprise décaisse ${D.k} redevances de ${M(D.R)} en début de période, puis le prix de l'option d'achat. Surtout — et c'est le point que l'on oublie le plus souvent — elle <em>perd</em> l'économie d'impôt qu'aurait procurée l'amortissement du bien acquis : ${M(D.M)} ÷ ${D.n} = ${M2(D.Dam)} par an, soit une perte annuelle de ${fmtNb(D.ISPct,0)} % × ${M2(D.Dam)} = ${M2(D.perteAm)} pendant ${D.n} ans. Ne pas être propriétaire prive du bouclier fiscal attaché à la propriété.
+        ${leaseFlowTable(D, 'fr')}
+        La lecture du tableau est limpide : le crédit-bail procure un flux initial positif de ${M2(D.F[0])}, différence entre l'économie d'investissement et la première redevance payée d'avance, puis une série de décaissements nets échelonnés sur ${D.n} ans. C'est précisément le profil d'un emprunt — une ressource immédiate contre des décaissements futurs —, ce qui autorise à en calculer le taux.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">4. Le coût du crédit-bail</span>
+        Le coût du crédit-bail est le taux actuariel $t$ qui égalise le flux initial et la valeur actuelle des décaissements nets ultérieurs :
+        <div class="math-formula">\\[${texM(D.F[0])} = ${D.F.slice(1).map((f, idx) => `\\frac{${texM(-f)}}{(1+t)^{${idx+1}}}`).join(' + ')}\\]</div>
+        Cette équation n'a pas de solution analytique : on procède par encadrement. En actualisant les décaissements à ${fmtNb(D.rLo*100,0)} %, leur valeur actuelle s'élève à ${M2(D.pvLo)}, ${D.pvLo > D.F[0] ? "supérieure" : "inférieure"} au flux initial de ${M2(D.F[0])} : la valeur actuelle nette du montage vaut alors ${M2(D.vanLo)}. En actualisant à ${fmtNb(D.rHi*100,0)} %, elle ressort à ${M2(D.vanHi)}. Le taux recherché, qui annule cette valeur actuelle nette, est donc compris entre ${fmtNb(D.rLo*100,0)} % et ${fmtNb(D.rHi*100,0)} %. L'interpolation linéaire donne
+        <div class="math-formula">\\[t \\approx ${texD(D.rLo*100,0)}\\,\\% + \\left(${texD(D.rHi*100,0)}\\,\\% - ${texD(D.rLo*100,0)}\\,\\%\\right) \\times \\frac{${texM(-D.vanLo)}}{${texM(D.vanHi - D.vanLo)}} = ${texD(D.rInterp*100,2)}\\,\\%\\]</div>
+        Le calcul exact, conduit par itérations, donne ${fmtNb(D.rCB*100,2)} % : l'interpolation linéaire, qui remplace une courbe par une corde, ${Math.abs(D.rInterp - D.rCB) < 0.0005 ? "en fournit ici une approximation quasi parfaite" : "surestime très légèrement le taux, l'écart restant inférieur à " + fmtNb(Math.abs(D.rInterp - D.rCB) * 10000, 0) + " points de base"}. Le coût implicite annuel du crédit-bail s'établit donc à <strong>${fmtNb(D.rCB*100,2)} %</strong>.
+        ${chartSVG(D, 'fr')}
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">5. Conclusion chiffrée</span>
+        Les deux financements peuvent désormais être comparés sur une base homogène, celle du taux actuariel après impôt : l'emprunt revient à ${fmtNb(D.rLoan*100,2)} % l'an, le crédit-bail à ${fmtNb(D.rCB*100,2)} % l'an, soit un écart de ${fmtNb(Math.abs(D.rCB - D.rLoan) * 10000, 0)} points de base ${D.empruntGagne ? "en faveur de l'emprunt" : "en faveur du crédit-bail"}.<br><br>
+        Cet écart de taux peut être traduit en euros. En actualisant l'ensemble des flux du montage crédit-bail au coût de l'emprunt après impôt — c'est-à-dire en se demandant ce que vaut aujourd'hui le fait de recourir au crédit-bail plutôt qu'à la dette bancaire —, on obtient une valeur actuelle nette de ${M2(D.vanAuCoutEmprunt)} :
+        <div class="math-formula">\\[\\text{VAN}_{\\text{crédit-bail}} = \\sum_{t=0}^{${D.n}} \\frac{F_t}{(1+${texD(D.rLoan*100,2)}\\,\\%)^{t}} = ${texM(D.vanAuCoutEmprunt)}\\ \\text{euros}\\]</div>
+        ${D.empruntGagne
+          ? `Cette valeur actuelle nette est <strong>négative</strong> : rapporté au montant financé de ${M(D.M)}, le crédit-bail coûte ${M2(Math.abs(D.vanAuCoutEmprunt))} de plus que l'emprunt en valeur d'aujourd'hui, soit ${fmtNb(Math.abs(D.vanAuCoutEmprunt) / D.M * 100, 2)} % du capital. D'un point de vue strictement financier, <strong>l'emprunt doit être privilégié</strong>, sous réserve que ${D.prof.name} accepte la dégradation de son autonomie financière et maîtrise le risque attaché à un endettement accru.`
+          : `Cette valeur actuelle nette est <strong>positive</strong> : rapporté au montant financé de ${M(D.M)}, le crédit-bail dégage ${M2(D.vanAuCoutEmprunt)} de valeur par rapport à l'emprunt, soit ${fmtNb(D.vanAuCoutEmprunt / D.M * 100, 2)} % du capital. D'un point de vue strictement financier, <strong>le crédit-bail doit être privilégié</strong> — conclusion moins fréquente en pratique, qui tient ici à la modération des redevances et au prix réduit de l'option d'achat.`}<br><br>
+        Une précision de méthode s'impose. Comparer deux taux actuariels n'est licite que parce que les deux montages financent le même bien, pour le même montant et sur la même durée : les séquences de flux sont directement substituables. Dès que les durées ou les montants diffèrent, la comparaison des taux internes devient trompeuse et il faut revenir au critère de la valeur actuelle nette calculée au coût du capital, comme nous venons de le faire à titre de contrôle.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">6. Analyse qualitative</span>
+        <strong>Deux avantages de l'endettement.</strong> Le recours à l'emprunt permet d'abord de mobiliser rapidement un montant important sans procéder à une augmentation de capital : la propriété et le pouvoir de décision des associés en place ne sont pas dilués, et le contrôle de l'entreprise est préservé. Il procure ensuite un avantage fiscal, puisque les intérêts sont déductibles du résultat imposable — c'est exactement ce que traduit le passage d'un taux facial de ${fmtNb(D.iPct,2)} % à un coût après impôt de ${fmtNb(D.rLoan*100,2)} %. Tant que la rentabilité économique du projet excède ce coût, l'endettement amplifie la rentabilité des capitaux propres : c'est l'effet de levier.<br><br>
+        <strong>Deux inconvénients.</strong> L'emprunt suppose d'abord une capacité d'endettement disponible et une structure financière que les prêteurs jugent solide ; à défaut, l'accès au crédit sera refusé ou assorti de garanties et de covenants contraignants. Il dégrade ensuite l'autonomie financière et accroît le risque financier : une baisse de la rentabilité économique se répercute de façon amplifiée sur la rentabilité des actionnaires — l'effet de levier joue alors en sens inverse, en effet de massue — et les annuités de ${M2(D.a)} deviennent une charge fixe que la trésorerie devra honorer quelle que soit la conjoncture.<br><br>
+        <strong>Les arguments propres au crédit-bail.</strong> Le crédit-bail finance le bien à 100 % sans apport initial et ne figure pas au bilan des comptes individuels : il préserve donc, au moins en apparence, les ratios d'endettement et la capacité d'emprunt résiduelle. Il transfère au bailleur le risque d'obsolescence, puisque l'entreprise reste libre de ne pas lever l'option, et s'accompagne fréquemment de services annexes — maintenance, assurance, remplacement. Il est enfin plus accessible aux entreprises jeunes ou peu capitalisées, le bailleur demeurant propriétaire du bien, ce qui constitue pour lui une garantie naturelle. En contrepartie, il est presque toujours plus coûteux : le loyer rémunère non seulement le capital mais aussi le risque et les services du bailleur, et l'entreprise n'est propriétaire de rien avant la levée de l'option.<br><br>
+        <strong>Ce qui pourrait renverser la conclusion.</strong> ${D.empruntGagne ? "Trois circonstances au moins." : "La conclusion financière est ici favorable au crédit-bail ; trois circonstances la conforteraient encore."} La première tient à la situation fiscale : une entreprise déficitaire, ou dont le résultat est insuffisant pour absorber les amortissements, ne peut pas valoriser le bouclier fiscal attaché à la propriété — toute l'arithmétique de la question 3 s'effondre et le crédit-bail redevient compétitif. La deuxième tient à la capacité d'emprunt : si la banque refuse le concours ou si l'endettement supplémentaire compromet le respect d'un covenant, la comparaison des taux devient sans objet, faute d'alternative disponible. La troisième tient au risque d'obsolescence : pour un matériel à renouvellement rapide, la faculté de ne pas lever l'option a une valeur d'option réelle que le calcul actuariel, mené ici sur des flux certains, ignore entièrement.
+      </div>`;
+
+      s += `<div class="persp-box">
+        <span class="sol-sub">Pour aller plus loin — le crédit-bail au bilan : trois référentiels, trois réponses</span>
+        Le crédit-bail est défini à l'article L. 313-7 du code monétaire et financier comme une opération de location de biens assortie, au profit du locataire, d'une faculté d'acquérir tout ou partie du bien loué. Cette qualification juridique — une location, non une vente — commande son traitement comptable en normes françaises individuelles : le bien ne figure pas à l'actif du preneur, les redevances sont enregistrées en charges externes (compte 612) et seule l'annexe informe le lecteur de l'engagement pris. C'est ce qu'on appelle un financement hors bilan.
+        <p style="margin-top:.8rem;">Ce traitement a longtemps nourri une critique de fond : deux entreprises économiquement identiques, l'une propriétaire endettée, l'autre crédit-preneuse, affichaient des bilans et des ratios d'endettement incomparables. Les analystes financiers y répondaient par un retraitement systématique — réintégration du bien à l'actif et d'une dette financière équivalente au passif — pour restituer la réalité économique de l'opération.</p>
+        <p style="margin-top:.8rem;">Les référentiels ont fini par entériner cette lecture. En comptes consolidés français, le règlement ANC n° 2020-01, applicable depuis 2021, rend <em>obligatoire</em> l'inscription au bilan du preneur des contrats de crédit-bail et assimilés, là où le règlement CRC 99-02 n'en faisait qu'une méthode préférentielle : le bien est porté à l'actif et une dette financière au passif, la redevance étant annulée au profit d'une dotation aux amortissements et d'une charge d'intérêts. En normes internationales, IFRS 16, applicable depuis le 1<sup>er</sup> janvier 2019, va plus loin encore : elle supprime, chez le preneur, la distinction entre location simple et location-financement et impose de comptabiliser un actif au titre du droit d'utilisation en contrepartie d'une dette de loyers pour la quasi-totalité des contrats de location, crédit-bail ou non.</p>
+        <p style="margin-top:.8rem;">Les conséquences sont loin d'être cosmétiques : l'activation gonfle l'actif et la dette financière, dégrade le ratio d'autonomie financière, mais améliore mécaniquement l'EBITDA — la redevance, charge d'exploitation, est remplacée par un amortissement et des intérêts situés plus bas dans le compte de résultat. Pour les secteurs intensifs en location, distribution et transport aérien au premier chef, le passage à IFRS 16 a modifié substantiellement les agrégats publiés sans qu'aucun flux de trésorerie n'ait changé. L'argument du « hors bilan » qui figure encore dans bien des plaquettes commerciales ne vaut donc plus, en pratique, que pour les comptes individuels d'entreprises non consolidées.</p>
+      </div>`;
+
+      s += `<div class="persp-box">
+        <span class="sol-sub">Pour aller plus loin — pourquoi le crédit-bail est presque toujours plus cher, et quand il ne l'est pas</span>
+        Le résultat obtenu ici n'est pas une curiosité de l'énoncé. Sur des marchés de capitaux raisonnablement concurrentiels, le crédit-bail est structurellement plus coûteux que la dette bancaire, pour trois raisons convergentes. Le bailleur supporte un risque de crédit au moins égal à celui du banquier et y ajoute un risque de valeur résiduelle sur le bien qu'il conserve en propriété ; il refacture des services — gestion, assurance, parfois maintenance — que l'emprunteur assumerait lui-même ; et il se refinance sur le marché à des conditions qui ne peuvent être meilleures que celles d'une banque de dépôts. Le loyer rémunère donc plus que du capital.
+        <p style="margin-top:.8rem;">La contrepartie est réelle et n'apparaît nulle part dans le calcul actuariel. Le crédit-bail finance 100 % du bien quand la banque exige souvent un apport ; il est accessible à des entreprises que le crédit classique refuserait, le bailleur restant propriétaire et donc naturellement garanti ; il n'exige ni hypothèque, ni nantissement, ni caution personnelle du dirigeant. En ce sens, le surcoût mesuré à la question 5 — ${M2(Math.abs(D.vanAuCoutEmprunt))} en valeur actuelle — s'interprète moins comme un gaspillage que comme le prix d'une option : celle de conserver intacte sa capacité d'emprunt pour d'autres projets.</p>
+        <p style="margin-top:.8rem;">Deux situations renversent franchement l'arbitrage. La première est fiscale : le calcul mené ici suppose l'entreprise bénéficiaire, donc capable d'imputer les ${M2(D.perteAm)} d'économie annuelle sur amortissements. Une entreprise déficitaire perd cet avantage ; le bailleur, lui, le conserve et peut en rétrocéder une partie dans le loyer. C'est le fondement historique du crédit-bail : un transfert du bouclier fiscal vers l'agent capable de l'utiliser. La seconde est l'obsolescence : lorsque la valeur résiduelle du bien est très incertaine — informatique, matériel médical, véhicules soumis à une réglementation mouvante —, la faculté de ne pas lever l'option vaut mieux que son prix, et le calcul sur flux certains conduit alors à sous-estimer systématiquement l'intérêt du crédit-bail.</p>
+      </div>`;
+
+      return s;
+    }
+  },
+
+  en: {
+    "htmlLang": "en",
+    "title": "Financial Analysis Simulator - Loan or finance lease",
+    "locale": "en-GB",
+    "k-badge": "FINANCIAL ASSET VALUATION METHODS",
+    "k-h1": "Loan or finance lease: choosing the funding method",
+    "k-sub": "© Thomas Hossen – Version of 18 September 2026",
+    "k-seed": "Reproducibility seed",
+    "k-gen": "Generate",
+    "k-welcome": "Set the parameters and click Generate to create a new exercise.",
+    "k-seedbadge": "Active seed:",
+    "k-tag-ex": "Statement",
+    "k-cardtitle": "Comparing debt financing and a finance lease",
+    "k-tag-sol": "Solution",
+    "k-cardtitle2": "Comparing debt financing and a finance lease",
+    "k-work": "Required work",
+    "showSol": "Show solution",
+    "hideSol": "Hide solution",
+    thousands: ",",
+    decimal: ".",
+
+    chartTitle: "Net present value of the lease package by discount rate",
+    chartX: "discount rate",
+    chartY: "NPV (thousands of euros)",
+    chartNote: "The cost of the lease is the rate that sets the NPV to zero; to the left of that point, the package destroys value.",
+    lblTRI: "cost of the lease",
+    lblLoan: "after-tax cost of the loan",
+
+    context: function(D) {
+      const p = D.prof.en;
+      return `
+        It is 1 January ${D.Y0}. ${D.prof.name}, ${p.secteur}, has approved a project covering ${p.projet} in ${D.prof.ville}. The main component of that project — ${p.bien} — amounts to ${money(D.M,'en')} and must be funded entirely from external sources. The chief financial officer is hesitating between two proposals: a conventional bank loan and a finance lease. You are asked to decide between them.
+      `;
+    },
+    table: function(D) {
+      let h = "";
+      h += `<p style="margin:1.4rem 0 .6rem; font-weight:600; color:var(--navy); text-align:left;">Proposal no. 1 — bank loan</p>`;
+      h += `<div class="exam-table-wrap"><table class="exam-table">
+          <tr><th style="width:62%;">Feature</th><th style="width:38%;">Terms</th></tr>
+          <tr><td class="txt-left">Amount borrowed</td><td class="amt">${money(D.M,'en')}</td></tr>
+          <tr><td class="txt-left">Term</td><td class="amt">${D.n} years</td></tr>
+          <tr><td class="txt-left">Nominal annual rate</td><td class="amt">${fmtNb(D.iPct,2)}%</td></tr>
+          <tr><td class="txt-left">Repayment method</td><td class="txt-left" style="font-weight:400;">Constant annual instalments, the first paid at the end of ${D.Y0}</td></tr>
+          <tr><td class="txt-left">Depreciation of the asset acquired</td><td class="txt-left" style="font-weight:400;">Straight-line over ${D.n} years</td></tr>
+      </table></div>`;
+
+      h += `<p style="margin:1.6rem 0 .6rem; font-weight:600; color:var(--navy); text-align:left;">Proposal no. 2 — finance lease</p>`;
+      h += `<div class="exam-table-wrap"><table class="exam-table">
+          <tr><th style="width:62%;">Feature</th><th style="width:38%;">Terms</th></tr>
+          <tr><td class="txt-left">Number of annual lease payments</td><td class="amt">${D.k}</td></tr>
+          <tr><td class="txt-left">Amount of each lease payment</td><td class="amt">${money(D.R,'en')}</td></tr>
+          <tr><td class="txt-left">Payment date</td><td class="txt-left" style="font-weight:400;">At the beginning of each period, the first on 1 January ${D.Y0}</td></tr>
+          <tr><td class="txt-left">Purchase option</td><td class="amt">${money(D.OA,'en')}</td></tr>
+          <tr><td class="txt-left">Exercise date of the option</td><td class="txt-left" style="font-weight:400;">End of year ${D.k}, that is end of ${D.Y0 + D.k - 1}</td></tr>
+          <tr><td class="txt-left">Depreciation of the option once exercised</td><td class="txt-left" style="font-weight:400;">In full over year ${D.n}, that is ${D.Y0 + D.n - 1}</td></tr>
+      </table></div>`;
+      return h;
+    },
+    info: function(D) {
+      return `
+        <strong>Working assumptions.</strong> The standard corporate income tax rate is ${fmtNb(D.ISPct,0)}%, and the company is assumed to be profitable throughout the project, so that it can actually use the tax savings. All tax savings and lost tax savings are deemed received or borne at the end of the financial year in which the corresponding expense is deducted. If purchased, the asset would be depreciated on a straight-line basis over ${D.n} years with no residual value; under the lease, only the purchase option once exercised is depreciated, in full over the final year. The cost of each financing arrangement is its after-tax actuarial rate, that is, the rate that equates the resource obtained with the present value of the net outflows it entails. Amounts are rounded to the nearest euro and rates to two decimal places, with all intermediate computations carried out at full precision.
+      `;
+    },
+    enonce: function(D) {
+      let h = "";
+      h += `<li><strong>Loan: instalment and amortisation schedule.</strong> Compute the constant annual instalment on the ${money(D.M,'en')} loan over ${D.n} years at ${fmtNb(D.iPct,2)}%, then present the loan's amortisation schedule.</li>`;
+      h += `<li><strong>After-tax cost of the loan.</strong> Determine the after-tax cash flows generated by this financing, then compute its after-tax actuarial cost. What do you observe relative to the nominal rate?</li>`;
+      h += `<li><strong>Finance lease: cash flow table.</strong> Present the table of net cash flows for the lease arrangement, distinguishing the investment saving, the tax savings on lease payments, the lost tax savings on depreciation, the payment of the purchase option and the tax saving on its depreciation.</li>`;
+      h += `<li><strong>Cost of the lease.</strong> Compute the actuarial cost of the finance lease, by bracketing the rate sought and then using linear interpolation.</li>`;
+      h += `<li><strong>Quantified conclusion.</strong> Compare the two costs, quantify in present value terms the advantage of the preferred solution and conclude on the financing to be chosen.</li>`;
+      h += `<li><strong>Qualitative analysis.</strong> Set out two advantages and two drawbacks of debt financing, then the arguments specific to the finance lease. Under what circumstances could the purely financial conclusion be reversed?</li>`;
+      return h;
+    },
+    sol: function(D) {
+      const M = v => money(v, 'en'), M2 = v => money(v, 'en', 2);
+      let s = "";
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">1. The loan: constant instalment and amortisation schedule</span>
+        A loan repaid by constant annual instalments is characterised by an identical instalment $a$ at each due date, covering both the period's interest and part of the principal. The present value of those ${D.n} instalments, at the loan rate, must equal the capital lent:
+        <div class="math-formula">\\[M = a \\times \\frac{1 - (1+i)^{-n}}{i} \\quad \\Longleftrightarrow \\quad a = M \\times \\frac{i}{1 - (1+i)^{-n}}\\]</div>
+        With $M = ${texI(D.M)}$ euros, $i = ${texD(D.iPct,2)}\\,\\%$ and $n = ${D.n}$, this gives
+        <div class="math-formula">\\[a = ${texI(D.M)} \\times \\frac{${texD(D.i,4)}}{1 - (1+${texD(D.i,4)})^{-${D.n}}} = ${texM(D.a)}\\ \\text{euros}\\]</div>
+        The amortisation schedule is then built line by line: the period's interest is obtained by applying the rate to the capital outstanding at the start of the period, the principal repayment is the balance of the instalment, and the capital outstanding falls accordingly.
+        ${loanTable(D, 'en')}
+        Total principal repayments do indeed equal the amount borrowed (${M(D.M)}), and the gross cost of the loan — the sum of the interest paid — amounts to ${M2(D.totalInt)}, that is ${fmtNb(D.totalInt / D.M * 100, 1)}% of the capital over the whole period.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">2. The after-tax cost of the loan</span>
+        The headline rate does not measure the cost actually borne, because interest paid is deductible from taxable income: every euro of interest brings a tax saving of ${fmtNb(D.ISPct,0)} cents. Principal repayment, by contrast, is not an expense and brings no saving at all. The after-tax flows of the loan financing are therefore: an inflow of ${M(D.M)} at inception, then, at each due date, an outflow equal to the instalment less the tax saving on the period's interest.
+        ${loanFlowTable(D, 'en')}
+        The after-tax actuarial cost is the rate $r$ that sets the net present value of this sequence to zero:
+        <div class="math-formula">\\[${texI(D.M)} = \\sum_{t=1}^{${D.n}} \\frac{a - \\tau \\times I_t}{(1+r)^{t}} \\quad \\Longrightarrow \\quad r = ${texD(D.rLoan*100,2)}\\,\\%\\]</div>
+        <strong>This result is no accident.</strong> The flow of period $t$ can be written $A_t + I_t - \\tau \\times I_t = A_t + (1-\\tau) \\times I_t$, where $A_t$ is the principal repayment and $I_t = i \\times C_{t-1}$ the interest computed on the capital outstanding. The resulting sequence is exactly that of a loan of the same capital, repaid on the same principal schedule, but carrying a rate of $i(1-\\tau)$. The after-tax cost of debt whose interest is fully deductible is therefore, whatever the repayment profile,
+        <div class="math-formula">\\[r = i \\times (1 - \\tau) = ${texD(D.iPct,2)}\\,\\% \\times (1 - ${texD(D.ISPct,0)}\\,\\%) = ${texD(D.rLoan*100,2)}\\,\\%\\]</div>
+        which the actuarial computation confirms to within a hundredth of a point. It is this rate of ${fmtNb(D.rLoan*100,2)}% that will serve as the benchmark for judging the lease.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">3. The finance lease: table of net cash flows</span>
+        The reasoning consists in measuring what the lease brings in and what it costs <em>relative to purchasing the asset</em>. Five items must be identified.<br><br>
+        <strong>On the credit side.</strong> By not becoming the owner, the company avoids the immediate outlay of the asset's price: it keeps ${M(D.M)} in cash, an <em>investment saving</em> equivalent to an initial inflow. Lease payments, next, are deductible expenses: each brings a tax saving of ${fmtNb(D.ISPct,0)}% × ${M(D.R)} = ${M2(D.ecoR)}, received at the end of the year in which the payment is deducted. Finally, the purchase option exercised for ${M(D.OA)} is depreciated in full in the final year, which brings a last tax saving of ${M2(D.ecoOA)}.<br><br>
+        <strong>On the debit side.</strong> The company pays ${D.k} lease payments of ${M(D.R)} at the beginning of each period, then the price of the purchase option. Above all — and this is the item most often forgotten — it <em>loses</em> the tax saving that depreciation of the purchased asset would have provided: ${M(D.M)} ÷ ${D.n} = ${M2(D.Dam)} a year, that is an annual loss of ${fmtNb(D.ISPct,0)}% × ${M2(D.Dam)} = ${M2(D.perteAm)} for ${D.n} years. Not being the owner forfeits the tax shield attached to ownership.
+        ${leaseFlowTable(D, 'en')}
+        The table reads plainly: the lease provides a positive initial flow of ${M2(D.F[0])}, the difference between the investment saving and the first lease payment made in advance, then a series of net outflows spread over ${D.n} years. That is precisely the profile of a loan — an immediate resource against future outflows — which is what allows its rate to be computed.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">4. The cost of the finance lease</span>
+        The cost of the lease is the actuarial rate $t$ that equates the initial flow with the present value of the subsequent net outflows:
+        <div class="math-formula">\\[${texM(D.F[0])} = ${D.F.slice(1).map((f, idx) => `\\frac{${texM(-f)}}{(1+t)^{${idx+1}}}`).join(' + ')}\\]</div>
+        This equation has no closed-form solution: we proceed by bracketing. Discounting the outflows at ${fmtNb(D.rLo*100,0)}%, their present value amounts to ${M2(D.pvLo)}, ${D.pvLo > D.F[0] ? "above" : "below"} the initial flow of ${M2(D.F[0])}: the net present value of the package is then ${M2(D.vanLo)}. Discounting at ${fmtNb(D.rHi*100,0)}%, it comes to ${M2(D.vanHi)}. The rate sought, which sets that net present value to zero, therefore lies between ${fmtNb(D.rLo*100,0)}% and ${fmtNb(D.rHi*100,0)}%. Linear interpolation gives
+        <div class="math-formula">\\[t \\approx ${texD(D.rLo*100,0)}\\,\\% + \\left(${texD(D.rHi*100,0)}\\,\\% - ${texD(D.rLo*100,0)}\\,\\%\\right) \\times \\frac{${texM(-D.vanLo)}}{${texM(D.vanHi - D.vanLo)}} = ${texD(D.rInterp*100,2)}\\,\\%\\]</div>
+        The exact figure, obtained by iteration, is ${fmtNb(D.rCB*100,2)}%: linear interpolation, which replaces a curve by a chord, ${Math.abs(D.rInterp - D.rCB) < 0.0005 ? "gives an almost perfect approximation here" : "very slightly overstates the rate, the gap remaining below " + fmtNb(Math.abs(D.rInterp - D.rCB) * 10000, 0) + " basis points"}. The implicit annual cost of the lease is therefore <strong>${fmtNb(D.rCB*100,2)}%</strong>.
+        ${chartSVG(D, 'en')}
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">5. Quantified conclusion</span>
+        The two financing arrangements can now be compared on a consistent basis, that of the after-tax actuarial rate: the loan costs ${fmtNb(D.rLoan*100,2)}% a year, the lease ${fmtNb(D.rCB*100,2)}% a year, a gap of ${fmtNb(Math.abs(D.rCB - D.rLoan) * 10000, 0)} basis points ${D.empruntGagne ? "in favour of the loan" : "in favour of the lease"}.<br><br>
+        That rate gap can be translated into euros. Discounting all the flows of the lease package at the after-tax cost of the loan — that is, asking what it is worth today to use a lease rather than bank debt — gives a net present value of ${M2(D.vanAuCoutEmprunt)}:
+        <div class="math-formula">\\[\\text{NPV}_{\\text{lease}} = \\sum_{t=0}^{${D.n}} \\frac{F_t}{(1+${texD(D.rLoan*100,2)}\\,\\%)^{t}} = ${texM(D.vanAuCoutEmprunt)}\\ \\text{euros}\\]</div>
+        ${D.empruntGagne
+          ? `That net present value is <strong>negative</strong>: relative to the ${M(D.M)} financed, the lease costs ${M2(Math.abs(D.vanAuCoutEmprunt))} more than the loan in today's terms, that is ${fmtNb(Math.abs(D.vanAuCoutEmprunt) / D.M * 100, 2)}% of the capital. On strictly financial grounds, <strong>the loan should be preferred</strong>, provided that ${D.prof.name} accepts the deterioration of its financial independence and keeps the risk attached to higher leverage under control.`
+          : `That net present value is <strong>positive</strong>: relative to the ${M(D.M)} financed, the lease creates ${M2(D.vanAuCoutEmprunt)} of value compared with the loan, that is ${fmtNb(D.vanAuCoutEmprunt / D.M * 100, 2)}% of the capital. On strictly financial grounds, <strong>the lease should be preferred</strong> — a less frequent conclusion in practice, which here reflects moderate lease payments and a low purchase option price.`}<br><br>
+        One methodological point. Comparing two actuarial rates is legitimate only because both arrangements finance the same asset, for the same amount and over the same term: the cash flow sequences are directly substitutable. As soon as terms or amounts differ, comparing internal rates becomes misleading and one must return to the net present value criterion computed at the cost of capital, exactly as we have just done as a cross-check.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">6. Qualitative analysis</span>
+        <strong>Two advantages of debt.</strong> Borrowing first allows a large amount to be raised quickly without a capital increase: the ownership and decision-making power of existing shareholders are not diluted, and control of the company is preserved. It then provides a tax advantage, since interest is deductible from taxable income — precisely what the move from a headline rate of ${fmtNb(D.iPct,2)}% to an after-tax cost of ${fmtNb(D.rLoan*100,2)}% reflects. As long as the project's return on capital employed exceeds that cost, debt amplifies the return on equity: this is financial leverage.<br><br>
+        <strong>Two drawbacks.</strong> Borrowing first presupposes available debt capacity and a capital structure that lenders regard as sound; failing that, credit will be refused or made subject to demanding security and covenants. It then erodes financial independence and increases financial risk: a fall in the return on capital employed feeds through to shareholders' returns in amplified form — leverage then works in reverse — and instalments of ${M2(D.a)} become a fixed charge that cash flow must meet whatever the economic climate.<br><br>
+        <strong>The arguments specific to the lease.</strong> A finance lease funds 100% of the asset with no initial contribution and does not appear on the balance sheet of individual accounts: it therefore preserves, at least in appearance, debt ratios and residual borrowing capacity. It transfers the obsolescence risk to the lessor, since the company remains free not to exercise the option, and often comes with ancillary services — maintenance, insurance, replacement. It is finally more accessible to young or thinly capitalised companies, the lessor remaining the owner of the asset, which is a natural security. In return, it is almost always more expensive: the rent remunerates not only capital but also the lessor's risk and services, and the company owns nothing until the option is exercised.<br><br>
+        <strong>What could reverse the conclusion.</strong> ${D.empruntGagne ? "At least three circumstances." : "The financial conclusion here favours the lease; three circumstances would reinforce it further."} The first is the tax position: a loss-making company, or one whose profit is too small to absorb depreciation charges, cannot use the tax shield attached to ownership — the whole arithmetic of question 3 collapses and the lease becomes competitive again. The second is debt capacity: if the bank refuses the facility, or if the additional debt would breach a covenant, comparing rates becomes moot for want of an available alternative. The third is obsolescence risk: for fast-renewing equipment, the freedom not to exercise the option carries a real-option value that an actuarial computation, conducted here on certain cash flows, ignores entirely.
+      </div>`;
+
+      s += `<div class="persp-box">
+        <span class="sol-sub">Going further — leases on the balance sheet: three frameworks, three answers</span>
+        A finance lease is defined in article L. 313-7 of the French Monetary and Financial Code as a leasing transaction coupled with an option, for the lessee, to acquire all or part of the leased asset. That legal characterisation — a lease, not a sale — governs its accounting treatment in French individual accounts: the asset does not appear among the lessee's assets, the payments are recorded as external charges (account 612), and only the notes inform the reader of the commitment undertaken. This is what is known as off-balance-sheet financing.
+        <p style="margin-top:.8rem;">That treatment long attracted a fundamental criticism: two economically identical companies, one an indebted owner, the other a lessee, would show balance sheets and debt ratios that could not be compared. Financial analysts responded with systematic restatement — bringing the asset back onto the balance sheet together with an equivalent financial liability — so as to restore the economic substance of the transaction.</p>
+        <p style="margin-top:.8rem;">The frameworks eventually endorsed that reading. In French consolidated accounts, ANC regulation no. 2020-01, applicable since 2021, makes recognition of finance leases and similar contracts on the lessee's balance sheet <em>mandatory</em>, where CRC regulation 99-02 made it merely a preferred method: the asset is capitalised and a financial liability recognised, the lease payment being reversed in favour of a depreciation charge and an interest expense. Under international standards, IFRS 16, applicable since 1 January 2019, goes further still: for the lessee it removes the distinction between operating and finance leases and requires recognition of a right-of-use asset against a lease liability for virtually all lease contracts, whether or not they are finance leases.</p>
+        <p style="margin-top:.8rem;">The consequences are far from cosmetic: capitalisation inflates assets and financial debt, worsens the financial independence ratio, but mechanically improves EBITDA — the lease payment, an operating expense, is replaced by depreciation and interest sitting lower in the income statement. For lease-intensive sectors, retail and airlines first among them, the move to IFRS 16 substantially changed reported aggregates without a single cash flow changing. The "off-balance-sheet" argument still found in many sales brochures therefore now holds, in practice, only for the individual accounts of unconsolidated companies.</p>
+      </div>`;
+
+      s += `<div class="persp-box">
+        <span class="sol-sub">Going further — why leases are almost always dearer, and when they are not</span>
+        The result obtained here is no quirk of the data. In reasonably competitive capital markets, a finance lease is structurally more expensive than bank debt, for three converging reasons. The lessor bears a credit risk at least equal to the banker's and adds to it a residual value risk on the asset it continues to own; it charges on services — administration, insurance, sometimes maintenance — that a borrower would handle itself; and it refinances on the market on terms that cannot be better than those of a deposit-taking bank. The rent therefore remunerates more than capital alone.
+        <p style="margin-top:.8rem;">The counterpart is real and appears nowhere in the actuarial computation. A lease funds 100% of the asset where a bank often requires a contribution; it is available to companies that conventional credit would turn away, the lessor remaining the owner and therefore naturally secured; it calls for no mortgage, no pledge and no personal guarantee from the director. In that sense the extra cost measured in question 5 — ${M2(Math.abs(D.vanAuCoutEmprunt))} in present value — is less a waste than the price of an option: that of keeping borrowing capacity intact for other projects.</p>
+        <p style="margin-top:.8rem;">Two situations clearly reverse the trade-off. The first is fiscal: the computation carried out here assumes a profitable company, hence able to use the ${M2(D.perteAm)} of annual tax saving on depreciation. A loss-making company loses that advantage; the lessor keeps it and can pass part of it back through the rent. This is the historical rationale of leasing: a transfer of the tax shield to the party able to use it. The second is obsolescence: where the residual value of the asset is highly uncertain — IT, medical equipment, vehicles subject to shifting regulation — the freedom not to exercise the option is worth more than its price, and a computation on certain cash flows then systematically understates the appeal of the lease.</p>
+      </div>`;
+
+      return s;
+    }
+  }
+};
+
+/* ============================================================
+   GESTION DE LA LANGUE  /  LANGUAGE HANDLING
+   ============================================================ */
+let LANG = 'fr';
+
+function detectLang() {
+    try {
+        const q = new URLSearchParams(window.location.search).get('lang');
+        if (q && I18N[q.toLowerCase()]) return q.toLowerCase();
+    } catch (e) {}
+    const h = (window.location.hash || '').replace('#', '').toLowerCase();
+    if (I18N[h]) return h;
+    return 'fr';
+}
+
+function applyLang() {
+    const D = I18N[LANG];
+    document.documentElement.lang = D.htmlLang;
+    document.title = D.title;
+
+    document.querySelectorAll('[data-k]').forEach(function (el) {
+        const key = el.getAttribute('data-k');
+        if (D[key] !== undefined) el.innerHTML = D[key];
+    });
+
+    const btn = document.getElementById('toggle-btn');
+    if (btn) btn.innerText = document.getElementById('sol-card').classList.contains('visible') ? D.hideSol : D.showSol;
+
+    document.getElementById('flag-fr').classList.toggle('active', LANG === 'fr');
+    document.getElementById('flag-en').classList.toggle('active', LANG === 'en');
+}
+
+function setLang(lang) {
+    if (!I18N[lang] || lang === LANG) return;
+    LANG = lang;
+
+    try {
+        const u = new URL(window.location.href);
+        u.searchParams.set('lang', lang);
+        history.replaceState(null, '', u.toString());
+    } catch (e) {}
+
+    applyLang();
+
+    if (document.getElementById('ex-area').style.display !== 'none') {
+        const solWasVisible = document.getElementById('sol-card').classList.contains('visible');
+        generateExercise(false);
+        if (solWasVisible) toggleSol();
+    }
+}
+
+// --- PRNG (Mulberry32) ---
+let currentSeed = 0;
+function seedPRNG(seed) {
+    return function() {
+      let t = seed += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+let random = Math.random;
+
+function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
+function pick(arr) { return arr[randInt(0, arr.length - 1)]; }
+
+/* --- formatage --- */
+function texD(num, dec) {
+    let sign = num < 0 ? "-" : "";
+    let parts = Math.abs(num).toFixed(dec).split('.');
+    let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, I18N[LANG].thousands);
+    return sign + intPart + (parts.length > 1 ? I18N[LANG].decimal + parts[1] : "");
+}
+function texI(num) { return texD(num, 0); }
+function texM(num) { return texD(num, 2); }
+function fmtNb(num, dec) {
+    return num.toLocaleString(I18N[LANG].locale, {minimumFractionDigits: dec, maximumFractionDigits: dec});
+}
+function money(v, lang, dec) {
+    const d = dec === undefined ? 0 : dec;
+    const s = Math.abs(v).toLocaleString(I18N[lang].locale, {minimumFractionDigits: d, maximumFractionDigits: d});
+    const body = (lang === 'fr') ? (s + '\u00a0€') : ('€' + s);
+    return (v < 0 ? '−' + body : body);
+}
+function cell(v, lang) {
+    if (v === 0 || v === undefined || v === null) return '';
+    const s = Math.abs(v).toLocaleString(I18N[lang].locale, {minimumFractionDigits: 0, maximumFractionDigits: 0});
+    return (v < 0 ? '(' + s + ')' : s);
+}
+
+/* ============================================================
+   MODÈLE  /  MODEL
+   ============================================================ */
+function npv(flows, r) {
+    let v = 0;
+    for (let t = 0; t < flows.length; t++) v += flows[t] / Math.pow(1 + r, t);
+    return v;
+}
+function irr(flows) {           // flux F0 > 0 puis F_t < 0 : VAN croissante en r
+    let lo = -0.90, hi = 3.0;
+    if (npv(flows, lo) > 0 || npv(flows, hi) < 0) return NaN;
+    for (let it = 0; it < 200; it++) {
+        const mid = (lo + hi) / 2;
+        if (npv(flows, mid) < 0) lo = mid; else hi = mid;
+    }
+    return (lo + hi) / 2;
+}
+
+function computeModel() {
+    let D = null;
+    for (let attempt = 0; attempt < 80; attempt++) {
+        const cand = drawModel();
+        if (cand) { D = cand; break; }
+    }
+    if (!D) D = drawModel(true);
+    return D;
+}
+
+function drawModel(force) {
+    const prof = PROFILES[randInt(0, PROFILES.length - 1)];
+    const Y0 = pick([2026, 2027, 2028]);
+
+    const ISPct = 25, IS = 0.25;
+    const n = pick([4, 5, 6]);                     // durée d'amortissement et de l'emprunt
+    const k = n - 1;                               // nombre de redevances
+    const Dam = randInt(14, 30) * 5000;            // amortissement annuel : 70 000 .. 150 000
+    const Mont = Dam * n;                          // prix du bien
+
+    const iPct = randInt(25, 65) / 10;             // 2.5 % .. 6.5 %
+    const i = iPct / 100;
+
+    const R = Math.round(Mont * (randInt(97, 114) / 100) / k / 5000) * 5000;
+    const OA = Math.round(Mont * (randInt(6, 15) / 100) / 5000) * 5000;
+
+    // --- Emprunt : annuités constantes ---
+    const a = Mont * i / (1 - Math.pow(1 + i, -n));
+    const sched = [];
+    let crd = Mont, totalInt = 0;
+    for (let t = 1; t <= n; t++) {
+        const int = crd * i;
+        const am = a - int;
+        sched.push({ t: t, crd0: crd, int: int, am: am, a: a, crd1: crd - am });
+        totalInt += int;
+        crd -= am;
+    }
+    const loanFlows = [Mont];
+    for (let t = 1; t <= n; t++) loanFlows.push(-(a - IS * sched[t-1].int));
+    const rLoanNum = irr(loanFlows);
+    const rLoan = i * (1 - IS);
+
+    // --- Crédit-bail ---
+    const ecoR = IS * R, ecoOA = IS * OA, perteAm = IS * Dam;
+    const F = [];
+    F.push(Mont - R);                              // t = 0 : économie d'investissement - 1re redevance
+    for (let t = 1; t <= n; t++) {
+        let f = 0;
+        if (t <= k) f += ecoR;                     // économie d'IS sur la redevance déduite en t
+        if (t <= k - 1) f -= R;                    // redevances payées en début de période
+        if (t === k) f -= OA;                      // levée de l'option
+        if (t === n) f += ecoOA;                   // économie d'IS sur l'amortissement de l'option
+        f -= perteAm;                              // perte d'économie d'IS sur amortissements
+        F.push(f);
+    }
+    const rCB = irr(F);
+
+    // --- Encadrement et interpolation linéaire ---
+    const rLo = Math.floor(rCB * 100) / 100;
+    const rHi = rLo + 0.01;
+    const vanLo = npv(F, rLo), vanHi = npv(F, rHi);
+    const pvLo = F[0] - vanLo;                     // valeur actuelle des décaissements à rLo
+    const rInterp = rLo + (rHi - rLo) * (-vanLo) / (vanHi - vanLo);
+
+    const vanAuCoutEmprunt = npv(F, rLoan);
+    const empruntGagne = rCB > rLoan;
+
+    // --- Garde-fous ---
+    if (!force) {
+        if (!isFinite(rCB) || rCB < 0.01 || rCB > 0.115) return null;
+        if (Math.abs(rCB - rLoan) < 0.004) return null;          // écart lisible
+        if (OA <= 0 || OA >= Dam) return null;                   // option < amortissement annuel
+        if (F[0] <= 0) return null;
+        for (let t = 1; t < F.length; t++) if (F[t] >= 0) return null;
+        if (Math.abs(rLoanNum - rLoan) > 1e-6) return null;      // contrôle du solveur
+        if (rLo <= 0) return null;
+        if (R <= 0) return null;
+        if (R * k + OA <= Mont) return null;                     // le bailleur ne travaille pas à perte
+    }
+
+    return {
+        prof, Y0, ISPct, IS, n, k, Dam, M: Mont, iPct, i, R, OA,
+        a, sched, totalInt, loanFlows, rLoan, rLoanNum,
+        ecoR, ecoOA, perteAm, F, rCB, rLo, rHi, vanLo, vanHi, pvLo, rInterp,
+        vanAuCoutEmprunt, empruntGagne
+    };
+}
+
+/* ============================================================
+   TABLEAUX  /  TABLES
+   ============================================================ */
+function loanTable(D, lang) {
+    const fr = (lang === 'fr');
+    const head = fr
+        ? ['Période', 'Capital restant dû', 'Intérêts', 'Amortissement', 'Annuité', 'Capital restant dû (fin)']
+        : ['Period', 'Capital outstanding', 'Interest', 'Principal', 'Instalment', 'Capital outstanding (end)'];
+    let rows = '';
+    D.sched.forEach(function (l) {
+        rows += `<tr>
+            <td class="txt-left">${fr ? "Fin " : "End of "}${D.Y0 + l.t - 1}</td>
+            <td class="amt">${money(l.crd0, lang, 2)}</td>
+            <td class="amt">${money(l.int, lang, 2)}</td>
+            <td class="amt">${money(l.am, lang, 2)}</td>
+            <td class="amt">${money(l.a, lang, 2)}</td>
+            <td class="amt">${money(Math.abs(l.crd1) < 0.005 ? 0 : l.crd1, lang, 2)}</td>
+        </tr>`;
+    });
+    rows += `<tr style="background:var(--cream-dark);">
+        <td class="txt-left" style="font-weight:700;">${fr ? "Total" : "Total"}</td>
+        <td class="amt"></td>
+        <td class="amt" style="font-weight:700;">${money(D.totalInt, lang, 2)}</td>
+        <td class="amt" style="font-weight:700;">${money(D.M, lang, 2)}</td>
+        <td class="amt" style="font-weight:700;">${money(D.a * D.n, lang, 2)}</td>
+        <td class="amt"></td>
+    </tr>`;
+    return `<div class="exam-table-wrap"><table class="exam-table">
+        <tr>${head.map(h => `<th>${h}</th>`).join('')}</tr>${rows}
+    </table></div>`;
+}
+
+function loanFlowTable(D, lang) {
+    const fr = (lang === 'fr');
+    const head = fr
+        ? ['Période', 'Annuité', "Économie d'IS sur intérêts", 'Flux net après impôt']
+        : ['Period', 'Instalment', 'Tax saving on interest', 'Net after-tax flow'];
+    let rows = `<tr><td class="txt-left">${fr ? "Début " : "Start of "}${D.Y0}</td><td class="amt"></td><td class="amt"></td><td class="amt" style="font-weight:600;">+${money(D.M, lang, 2).replace('−','')}</td></tr>`;
+    D.sched.forEach(function (l) {
+        rows += `<tr>
+            <td class="txt-left">${fr ? "Fin " : "End of "}${D.Y0 + l.t - 1}</td>
+            <td class="amt">${money(l.a, lang, 2)}</td>
+            <td class="amt">${money(D.IS * l.int, lang, 2)}</td>
+            <td class="amt" style="font-weight:600;">${money(-(l.a - D.IS * l.int), lang, 2)}</td>
+        </tr>`;
+    });
+    return `<div class="exam-table-wrap"><table class="exam-table">
+        <tr>${head.map(h => `<th>${h}</th>`).join('')}</tr>${rows}
+    </table></div>`;
+}
+
+function leaseFlowTable(D, lang) {
+    const fr = (lang === 'fr');
+    const cols = [];
+    cols.push(fr ? `Début ${D.Y0}` : `Start ${D.Y0}`);
+    for (let t = 1; t <= D.n; t++) cols.push((fr ? "Fin " : "End ") + (D.Y0 + t - 1));
+
+    const z = () => new Array(D.n + 1).fill(0);
+    const invest = z(); invest[0] = D.M;
+    const ecoLoyers = z(); for (let t = 1; t <= D.k; t++) ecoLoyers[t] = D.ecoR;
+    const ecoOpt = z(); ecoOpt[D.n] = D.ecoOA;
+    const loyers = z(); for (let t = 0; t <= D.k - 1; t++) loyers[t] = D.R;
+    const option = z(); option[D.k] = D.OA;
+    const perte = z(); for (let t = 1; t <= D.n; t++) perte[t] = D.perteAm;
+
+    const line = (label, arr, strong) => `<tr>
+        <td class="txt-left"${strong ? ' style="font-weight:700;"' : ' style="font-weight:400;"'}>${label}</td>
+        ${arr.map(v => `<td class="amt"${strong ? ' style="font-weight:700;"' : ''}>${cell(v, lang)}</td>`).join('')}
+    </tr>`;
+    const header = (label) => `<tr style="background:var(--cream-dark);"><td class="txt-left" style="font-weight:700;" colspan="${D.n + 2}">${label}</td></tr>`;
+
+    let body = '';
+    body += header(fr ? "ENCAISSEMENTS" : "INFLOWS");
+    body += line(fr ? "Économie d'investissement" : "Investment saving", invest);
+    body += line(fr ? `Économie d'IS sur redevances (${D.ISPct} %)` : `Tax saving on lease payments (${D.ISPct}%)`, ecoLoyers);
+    body += line(fr ? "Économie d'IS sur amortissement de l'option" : "Tax saving on depreciation of the option", ecoOpt);
+    body += header(fr ? "DÉCAISSEMENTS" : "OUTFLOWS");
+    body += line(fr ? "Redevances" : "Lease payments", loyers);
+    body += line(fr ? "Option d'achat" : "Purchase option", option);
+    body += line(fr ? `Perte d'économie d'IS sur amortissements (${D.ISPct} %)` : `Lost tax saving on depreciation (${D.ISPct}%)`, perte);
+    body += `<tr style="background:#f4f1ea;">
+        <td class="txt-left" style="font-weight:700;">${fr ? "FLUX NETS DE TRÉSORERIE" : "NET CASH FLOWS"}</td>
+        ${D.F.map(v => `<td class="amt" style="font-weight:700;">${cell(Math.round(v), lang)}</td>`).join('')}
+    </tr>`;
+
+    return `<div class="exam-table-wrap"><table class="exam-table">
+        <tr><th style="width:28%;">${fr ? "Éléments" : "Items"}</th>${cols.map(c => `<th>${c}</th>`).join('')}</tr>
+        ${body}
+      </table></div>
+      <p style="font-size:.82rem;color:var(--text-muted);font-style:italic;margin:.4rem 0 1.2rem;text-align:left;">${fr ? "Les flux nets entre parenthèses correspondent à des décaissements. Les lignes d'encaissements et de décaissements sont exprimées en valeur absolue." : "Net flows in brackets are outflows. The inflow and outflow lines are stated as absolute values."}</p>`;
+}
+
+/* ============================================================
+   GRAPHIQUE : profil de VAN  /  CHART: NPV profile
+   ============================================================ */
+function chartSVG(D, lang) {
+    const L = I18N[lang];
+    const W = 680, H = 320, mL = 66, mR = 20, mT = 34, mB = 56;
+    const pw = W - mL - mR, ph = H - mT - mB;
+
+    const rMax = Math.max(0.12, D.rCB * 1.8, D.rLoan * 2);
+    const pts = [];
+    const NP = 60;
+    for (let j = 0; j <= NP; j++) {
+        const r = rMax * j / NP;
+        pts.push({ r: r, v: npv(D.F, r) / 1000 });
+    }
+    let lo = Math.min.apply(null, pts.map(p => p.v));
+    let hi = Math.max.apply(null, pts.map(p => p.v));
+    const span = (hi - lo) || 1;
+    lo -= span * 0.10; hi += span * 0.12;
+
+    const x = r => mL + (r / rMax) * pw;
+    const y = v => mT + ph - (v - lo) / (hi - lo) * ph;
+
+    let g = '';
+    const stepY = niceStep((hi - lo) / 5);
+    for (let v = Math.ceil(lo / stepY) * stepY; v <= hi; v += stepY) {
+        g += `<line x1="${mL}" y1="${y(v).toFixed(1)}" x2="${W - mR}" y2="${y(v).toFixed(1)}" stroke="#e2ded4" stroke-width="1"/>`;
+        g += `<text x="${mL - 8}" y="${(y(v) + 4).toFixed(1)}" text-anchor="end" font-family="'JetBrains Mono',monospace" font-size="9.5" fill="#5a5a5a">${fmtNb(v, 0)}</text>`;
+    }
+    const stepX = rMax > 0.16 ? 0.04 : 0.02;
+    for (let r = 0; r <= rMax + 1e-9; r += stepX) {
+        g += `<text x="${x(r).toFixed(1)}" y="${(mT + ph + 18).toFixed(1)}" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="9.5" fill="#5a5a5a">${fmtNb(r * 100, 0)} %</text>`;
+    }
+
+    const path = pts.map((p, idx) => (idx === 0 ? 'M' : 'L') + x(p.r).toFixed(1) + ' ' + y(p.v).toFixed(1)).join(' ');
+    g += `<path d="${path}" fill="none" stroke="#1a2e42" stroke-width="2"/>`;
+
+    // repère : coût de l'emprunt après IS
+    g += `<line x1="${x(D.rLoan).toFixed(1)}" y1="${mT}" x2="${x(D.rLoan).toFixed(1)}" y2="${mT + ph}" stroke="#b94040" stroke-width="1.4" stroke-dasharray="4 3"/>`;
+    g += `<circle cx="${x(D.rLoan).toFixed(1)}" cy="${y(npv(D.F, D.rLoan) / 1000).toFixed(1)}" r="4" fill="#b94040"/>`;
+    // repère : TRI du crédit-bail
+    g += `<circle cx="${x(D.rCB).toFixed(1)}" cy="${y(0).toFixed(1)}" r="4.5" fill="#c9952a"/>`;
+
+    const labTRIx = Math.min(x(D.rCB) + 8, W - mR - 130);
+    g += `<text x="${labTRIx.toFixed(1)}" y="${(y(0) - 10).toFixed(1)}" font-family="'Source Serif 4',serif" font-size="11" fill="#8a6414">${L.lblTRI} : ${fmtNb(D.rCB * 100, 2)} %</text>`;
+    const labLoanX = Math.max(x(D.rLoan) - 6, mL + 4);
+    g += `<text x="${labLoanX.toFixed(1)}" y="${(mT + 12).toFixed(1)}" text-anchor="start" font-family="'Source Serif 4',serif" font-size="11" fill="#b94040">${L.lblLoan} : ${fmtNb(D.rLoan * 100, 2)} %</text>`;
+
+    return `<div style="margin:1.4rem 0; overflow-x:auto;">
+      <svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" role="img">
+        <text x="${mL}" y="20" font-family="'Playfair Display',serif" font-size="13.5" font-weight="600" fill="#0d1b2a">${L.chartTitle}</text>
+        ${g}
+        <line x1="${mL}" y1="${y(0).toFixed(1)}" x2="${W - mR}" y2="${y(0).toFixed(1)}" stroke="#0d1b2a" stroke-width="1.5"/>
+        <line x1="${mL}" y1="${mT}" x2="${mL}" y2="${mT + ph}" stroke="#0d1b2a" stroke-width="1.5"/>
+        <text x="${W - mR}" y="${(mT + ph + 34).toFixed(1)}" text-anchor="end" font-family="'JetBrains Mono',monospace" font-size="9.5" fill="#5a5a5a">${L.chartX}</text>
+        <text x="${mL - 58}" y="${(mT + ph / 2).toFixed(1)}" transform="rotate(-90 ${mL - 58} ${(mT + ph / 2).toFixed(1)})" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="9.5" fill="#5a5a5a">${L.chartY}</text>
+        <text x="${mL}" y="${H - 6}" font-family="'Source Serif 4',serif" font-size="10" font-style="italic" fill="#5a5a5a">${L.chartNote}</text>
+      </svg>
+    </div>`;
+}
+
+function niceStep(raw) {
+    const p = Math.pow(10, Math.floor(Math.log10(Math.max(raw, 1e-9))));
+    const nn = raw / p;
+    return (nn <= 1 ? 1 : nn <= 2 ? 2 : nn <= 5 ? 5 : 10) * p;
+}
+
+/* ============================================================
+   GÉNÉRATION  /  GENERATION
+   ============================================================ */
+function generateExercise(forceNew = false) {
+    if (forceNew) {
+        document.getElementById('seed-input').value = "";
+    }
+    let seedVal = document.getElementById('seed-input').value;
+    currentSeed = seedVal ? parseInt(seedVal) : Math.floor(Math.random() * 99999999);
+    document.getElementById('seed-disp').innerText = currentSeed;
+    document.getElementById('seed-input').value = currentSeed;
+    random = seedPRNG(currentSeed);
+
+    const DIC = I18N[LANG];
+    const D = computeModel();
+
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('ex-area').style.display = 'block';
+    document.getElementById('sol-card').classList.remove('visible');
+    document.getElementById('toggle-btn').innerText = DIC.showSol;
+    document.getElementById('toggle-btn').classList.remove('shown');
+
+    document.getElementById('context-text').innerHTML = DIC.context(D);
+    document.getElementById('enonce-table-container').innerHTML = DIC.table(D);
+    document.getElementById('additional-info').innerHTML = DIC.info(D);
+    document.getElementById('events-list').innerHTML = DIC.enonce(D);
+    document.getElementById('sol-content').innerHTML = DIC.sol(D);
+
+    if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
+        MathJax.typesetPromise().catch(function (err) { console.error('MathJax :', err); });
+    }
+}
+
+function toggleSol() {
+    let solCard = document.getElementById('sol-card');
+    let btn = document.getElementById('toggle-btn');
+    if (solCard.classList.contains('visible')) {
+        solCard.classList.remove('visible');
+        btn.innerText = I18N[LANG].showSol;
+        btn.classList.remove('shown');
+    } else {
+        solCard.classList.add('visible');
+        btn.innerText = I18N[LANG].hideSol;
+        btn.classList.add('shown');
+        solCard.scrollIntoView({behavior: 'smooth', block: 'start'});
+    }
+}
+
+/* Initialisation */
+LANG = detectLang();
+applyLang();
+</script>
+<!-- KIT:JS:START v1 -->
+<div id="pdf-ov" onclick="closePdfModal()"></div>
+<div id="pdf-modal">
+  <div class="mh">
+    <h3 data-kit="modalTitle">Exporter en PDF</h3>
+    <button type="button" class="mclose" onclick="closePdfModal()">&#10005;</button>
+  </div>
+  <div class="mb2">
+    <div class="seed-note"><span data-kit="seedPre">Seed&nbsp;:</span> <strong id="modal-seed">&mdash;</strong> <span data-kit="seedPost">&mdash; notez cette valeur pour reproduire exactement cet exercice.</span></div>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-header" checked>
+      <span class="opt-txt"><span class="opt-lbl" data-kit="optHeader">Inclure l'en-t&ecirc;te de page</span>
+           <span class="opt-desc" data-kit="optHeaderD">Titre, badge de mati&egrave;re et intitul&eacute; de l'exercice</span></span>
+    </label>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-sol">
+      <span class="opt-txt"><span class="opt-lbl" data-kit="optSol">Inclure le corrig&eacute; complet</span>
+           <span class="opt-desc" data-kit="optSolD">L'ensemble des d&eacute;veloppements et commentaires du corrig&eacute;</span></span>
+    </label>
+    <div class="mactions">
+      <button type="button" class="btn-print" onclick="doPrint()"><span data-kit="print">&#128424;&nbsp;Imprimer / Sauvegarder PDF</span></button>
+      <button type="button" class="btn-cancel" onclick="closePdfModal()"><span data-kit="cancel">Annuler</span></button>
+    </div>
+  </div>
+</div>
+
+<script id="kit-docx">
+/* =============================================================================
+   EXPORT WORD NATIF (.docx)
+   Trois briques, sans aucune dépendance externe :
+     1. mml2omml  — MathML -> OMML, le format d'équation natif de Word
+     2. zip       — écriture d'une archive ZIP (entrées « stored » + CRC32)
+     3. html2wml  — HTML de la page -> WordprocessingML
+   ============================================================================= */
+(function (root) {
+'use strict';
+
+/* --------------------------------------------------------------- utilitaires */
+function esc(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                  .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function kids(n) {
+  var out = [], c = n.firstChild;
+  while (c) { if (c.nodeType === 1) out.push(c); c = c.nextSibling; }
+  return out;
+}
+function txt(n) { return (n.textContent || '').replace(/\u200b/g, '').trim(); }
+
+/* ============================================================================
+   1. MathML -> OMML
+   ========================================================================== */
+var OPEN = '([{\u27e8\u2308\u230a|\u2016';
+var CLOSE = ')]}\u27e9\u2309\u230b|\u2016';
+var BIGOPS = '\u2211\u220f\u222b\u222c\u222d\u222e\u22c3\u22c2\u2210';
+var ACCENTS = {
+  '\u005e': '\u0302', '\u02c6': '\u0302', '^': '\u0302',
+  '\u00af': '\u0304', '\u2015': '\u0304', '\u2212': '\u0304', '_': '\u0304',
+  '~': '\u0303', '\u02dc': '\u0303', '\u02d9': '\u0307',
+  '\u2192': '\u20d7', '\u21c0': '\u20d1', '\u02c7': '\u030c', '\u02d8': '\u0306'
+};
+
+function run(text, style) {
+  if (text === '') return '';
+  var rPr = '<w:rPr><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/></w:rPr>';
+  var mPr = style ? '<m:rPr><m:sty m:val="' + style + '"/></m:rPr>' : '';
+  return '<m:r>' + mPr + rPr + '<m:t xml:space="preserve">' + esc(text) + '</m:t></m:r>';
+}
+
+/* Un grand opérateur (somme, intégrale…) absorbe la suite de la ligne comme
+   opérande : sans cela Word affiche un cadre vide à la place de l'argument. */
+function naryHere(n) {
+  if (!n || n.nodeType !== 1) return null;
+  var t = n.nodeName.toLowerCase().replace(/^.*:/, ''), k = kids(n);
+  if (t === 'munderover' || t === 'msubsup') return { base: k[0], sub: k[1], sup: k[2] };
+  if (t === 'munder' || t === 'msub') return { base: k[0], sub: k[1], sup: null };
+  if (t === 'mover' || t === 'msup') return { base: k[0], sub: null, sup: k[1] };
+  if (t === 'mo') return { base: n, sub: null, sup: null };
+  return null;
+}
+function isBigOp(n) {
+  if (!n || n.nodeType !== 1) return false;
+  var c = txt(n);
+  return n.nodeName.toLowerCase().replace(/^.*:/, '') === 'mo' &&
+         c.length === 1 && BIGOPS.indexOf(c) !== -1;
+}
+
+function seq(nodes) {
+  var s = '';
+  for (var i = 0; i < nodes.length; i++) {
+    var info = naryHere(nodes[i]);
+    if (info && isBigOp(info.base) && i + 1 < nodes.length) {
+      s += naryFull(info, nodes.slice(i + 1));
+      return s;
+    }
+    s += mml(nodes[i]);
+  }
+  return s;
+}
+
+function naryFull(info, rest) {
+  return '<m:nary><m:naryPr><m:chr m:val="' + esc(txt(info.base)) + '"/>' +
+         '<m:limLoc m:val="undOvr"/>' +
+         '<m:subHide m:val="' + (info.sub ? '0' : '1') + '"/>' +
+         '<m:supHide m:val="' + (info.sup ? '0' : '1') + '"/><m:ctrlPr/></m:naryPr>' +
+         '<m:sub>' + (info.sub ? mml(info.sub) : '') + '</m:sub>' +
+         '<m:sup>' + (info.sup ? mml(info.sup) : '') + '</m:sup>' +
+         '<m:e>' + seq(rest) + '</m:e></m:nary>';
+}
+
+/* mrow entouré de délimiteurs -> m:d, pour des parenthèses étirables natives */
+function fenced(ks) {
+  if (ks.length < 2) return null;
+  var a = ks[0], b = ks[ks.length - 1];
+  if (a.nodeName.toLowerCase() !== 'mo' || b.nodeName.toLowerCase() !== 'mo') return null;
+  var o = txt(a), c = txt(b);
+  if (o.length !== 1 || c.length !== 1) return null;
+  if (OPEN.indexOf(o) === -1 || CLOSE.indexOf(c) === -1) return null;
+  var inner = ks.slice(1, -1);
+  /* séparateurs de premier niveau -> plusieurs m:e */
+  var parts = [[]];
+  for (var i = 0; i < inner.length; i++) {
+    if (inner[i].nodeName.toLowerCase() === 'mo' && txt(inner[i]) === ',' && parts.length < 8) {
+      parts.push([]);
+    } else { parts[parts.length - 1].push(inner[i]); }
+  }
+  var sep = parts.length > 1 ? ',' : '';
+  var body = '';
+  for (var j = 0; j < parts.length; j++) body += '<m:e>' + seq(parts[j]) + '</m:e>';
+  return '<m:d><m:dPr><m:begChr m:val="' + esc(o) + '"/><m:sepChr m:val="' + esc(sep) +
+         '"/><m:endChr m:val="' + esc(c) + '"/><m:ctrlPr/></m:dPr>' + body + '</m:d>';
+}
+
+function naryOf(base, sub, sup) {
+  var ch = txt(base);
+  if (ch.length !== 1 || BIGOPS.indexOf(ch) === -1) return null;
+  return '<m:nary><m:naryPr><m:chr m:val="' + esc(ch) + '"/><m:limLoc m:val="undOvr"/>' +
+         '<m:subHide m:val="' + (sub ? '0' : '1') + '"/>' +
+         '<m:supHide m:val="' + (sup ? '0' : '1') + '"/><m:ctrlPr/></m:naryPr>' +
+         '<m:sub>' + (sub ? mml(sub) : '') + '</m:sub>' +
+         '<m:sup>' + (sup ? mml(sup) : '') + '</m:sup>' +
+         '<m:e></m:e></m:nary>';
+}
+
+function mml(n) {
+  if (!n) return '';
+  if (n.nodeType === 3) return run(n.nodeValue);
+  if (n.nodeType !== 1) return '';
+  var t = n.nodeName.toLowerCase().replace(/^.*:/, '');
+  var k = kids(n), s;
+
+  switch (t) {
+    case 'math':
+    case 'semantics':
+    case 'mstyle':
+    case 'mpadded':
+    case 'menclose':
+      return seq(k);
+
+    case 'annotation':
+    case 'annotation-xml':
+    case 'mphantom':
+      return '';
+
+    case 'mrow':
+      s = fenced(k);
+      return s !== null ? s : seq(k);
+
+    case 'mi':      return run(txt(n), txt(n).length === 1 ? 'i' : 'p');
+    case 'mn':      return run(txt(n), 'p');
+    case 'mo':      return run(txt(n), 'p');
+    case 'merror':  return run(txt(n), 'p');
+    case 'ms':      return run(txt(n), 'p');
+
+    case 'mtext':
+      var v = n.textContent || '';
+      return v === '' ? '' :
+        '<m:r><m:rPr><m:nor/></m:rPr><w:rPr><w:rFonts w:ascii="Cambria" w:hAnsi="Cambria"/></w:rPr>' +
+        '<m:t xml:space="preserve">' + esc(v) + '</m:t></m:r>';
+
+    case 'mspace':
+      return run(' ', 'p');
+
+    case 'mfrac':
+      return '<m:f><m:fPr><m:type m:val="' +
+             (n.getAttribute('linethickness') === '0' ? 'noBar' : 'bar') +
+             '"/><m:ctrlPr/></m:fPr><m:num>' + mml(k[0]) + '</m:num><m:den>' +
+             mml(k[1]) + '</m:den></m:f>';
+
+    case 'msup':
+      s = naryOf(k[0], null, k[1]); if (s) return s;
+      return '<m:sSup><m:sSupPr><m:ctrlPr/></m:sSupPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sup>' + mml(k[1]) + '</m:sup></m:sSup>';
+
+    case 'msub':
+      s = naryOf(k[0], k[1], null); if (s) return s;
+      return '<m:sSub><m:sSubPr><m:ctrlPr/></m:sSubPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sub>' + mml(k[1]) + '</m:sub></m:sSub>';
+
+    case 'msubsup':
+      s = naryOf(k[0], k[1], k[2]); if (s) return s;
+      return '<m:sSubSup><m:sSubSupPr><m:ctrlPr/></m:sSubSupPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sub>' + mml(k[1]) + '</m:sub><m:sup>' + mml(k[2]) +
+             '</m:sup></m:sSubSup>';
+
+    case 'msqrt':
+      return '<m:rad><m:radPr><m:degHide m:val="1"/><m:ctrlPr/></m:radPr>' +
+             '<m:deg/><m:e>' + seq(k) + '</m:e></m:rad>';
+
+    case 'mroot':
+      return '<m:rad><m:radPr><m:degHide m:val="0"/><m:ctrlPr/></m:radPr><m:deg>' +
+             mml(k[1]) + '</m:deg><m:e>' + mml(k[0]) + '</m:e></m:rad>';
+
+    case 'mover':
+      var ao = txt(k[1]);
+      if (ACCENTS[ao]) {
+        return '<m:acc><m:accPr><m:chr m:val="' + esc(ACCENTS[ao]) +
+               '"/><m:ctrlPr/></m:accPr><m:e>' + mml(k[0]) + '</m:e></m:acc>';
+      }
+      s = naryOf(k[0], null, k[1]); if (s) return s;
+      return '<m:limUpp><m:limUppPr><m:ctrlPr/></m:limUppPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limUpp>';
+
+    case 'munder':
+      s = naryOf(k[0], k[1], null); if (s) return s;
+      return '<m:limLow><m:limLowPr><m:ctrlPr/></m:limLowPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limLow>';
+
+    case 'munderover':
+      s = naryOf(k[0], k[1], k[2]); if (s) return s;
+      return '<m:limUpp><m:limUppPr><m:ctrlPr/></m:limUppPr><m:e>' +
+             '<m:limLow><m:limLowPr><m:ctrlPr/></m:limLowPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limLow></m:e><m:lim>' +
+             mml(k[2]) + '</m:lim></m:limUpp>';
+
+    case 'mtable':
+      var rows = k.filter(function (r) { return /mtr$/.test(r.nodeName.toLowerCase()); });
+      var ncol = 0;
+      rows.forEach(function (r) { ncol = Math.max(ncol, kids(r).length); });
+      var props = '<m:mPr><m:baseJc m:val="center"/><m:plcHide m:val="1"/><m:mcs><m:mc><m:mcPr>' +
+                  '<m:count m:val="' + (ncol || 1) + '"/><m:mcJc m:val="center"/></m:mcPr></m:mc></m:mcs>' +
+                  '<m:ctrlPr/></m:mPr>';
+      var body = '';
+      rows.forEach(function (r) {
+        body += '<m:mr>';
+        var cells = kids(r);
+        for (var i = 0; i < (ncol || 1); i++) body += '<m:e>' + (cells[i] ? seq(kids(cells[i])) : '') + '</m:e>';
+        body += '</m:mr>';
+      });
+      return '<m:m>' + props + body + '</m:m>';
+
+    case 'mtr':
+    case 'mtd':
+      return seq(k);
+
+    default:
+      return k.length ? seq(k) : run(txt(n), 'p');
+  }
+}
+
+function mathmlToOmml(mathEl) { return mml(mathEl); }
+
+/* ============================================================================
+   2. Écriture ZIP (entrées non compressées + CRC32)
+   ========================================================================== */
+var CRCT = (function () {
+  var t = new Int32Array(256);
+  for (var i = 0; i < 256; i++) {
+    var c = i;
+    for (var j = 0; j < 8; j++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[i] = c;
+  }
+  return t;
+})();
+function crc32(buf) {
+  var c = -1;
+  for (var i = 0; i < buf.length; i++) c = CRCT[(c ^ buf[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ -1) >>> 0;
+}
+function utf8(str) {
+  if (typeof TextEncoder !== 'undefined') return new TextEncoder().encode(str);
+  var b = unescape(encodeURIComponent(str)), a = new Uint8Array(b.length);
+  for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i);
+  return a;
+}
+function zip(files) {
+  var parts = [], central = [], offset = 0;
+  function u16(v) { return [v & 0xFF, (v >>> 8) & 0xFF]; }
+  function u32(v) { return [v & 0xFF, (v >>> 8) & 0xFF, (v >>> 16) & 0xFF, (v >>> 24) & 0xFF]; }
+
+  files.forEach(function (f) {
+    var name = utf8(f.name), data = f.bin ? f.bin : utf8(f.data), c = crc32(data);
+    var local = [].concat(u32(0x04034b50), u16(20), u16(0x0800), u16(0), u16(0), u16(0),
+                          u32(c), u32(data.length), u32(data.length),
+                          u16(name.length), u16(0));
+    parts.push(new Uint8Array(local), name, data);
+    central.push({ name: name, crc: c, size: data.length, off: offset });
+    offset += local.length + name.length + data.length;
+  });
+
+  var cd = [];
+  central.forEach(function (e) {
+    cd = cd.concat(u32(0x02014b50), u16(20), u16(20), u16(0x0800), u16(0), u16(0), u16(0),
+                   u32(e.crc), u32(e.size), u32(e.size),
+                   u16(e.name.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(e.off));
+    cd = cd.concat(Array.prototype.slice.call(e.name));
+  });
+  var cdArr = new Uint8Array(cd);
+  var eocd = new Uint8Array([].concat(u32(0x06054b50), u16(0), u16(0),
+                                      u16(files.length), u16(files.length),
+                                      u32(cdArr.length), u32(offset), u16(0)));
+  parts.push(cdArr, eocd);
+
+  var total = parts.reduce(function (n, p) { return n + p.length; }, 0);
+  var out = new Uint8Array(total), pos = 0;
+  parts.forEach(function (p) { out.set(p, pos); pos += p.length; });
+  return out;
+}
+
+/* ============================================================================
+   3. HTML -> WordprocessingML
+   ========================================================================== */
+var SKIP = { script: 1, style: 1, button: 1, input: 1, noscript: 1 };
+var IMAGES = [];           /* { bin, w, h } collectées pendant le parcours */
+var EMU = 9525;            /* EMU par pixel */
+var MAXW = 5760000;        /* largeur utile de la page, en EMU */
+
+function b64bin(b64) {
+  var raw = atob(b64), a = new Uint8Array(raw.length);
+  for (var i = 0; i < raw.length; i++) a[i] = raw.charCodeAt(i);
+  return a;
+}
+
+function imageXml(dataUrl, wpx, hpx) {
+  var m = /^data:image\/png;base64,(.*)$/.exec(dataUrl || '');
+  if (!m) return '';
+  var cx = Math.round(wpx * EMU), cy = Math.round(hpx * EMU);
+  if (cx > MAXW) { cy = Math.round(cy * MAXW / cx); cx = MAXW; }
+  IMAGES.push({ bin: b64bin(m[1]) });
+  var id = IMAGES.length, rid = 'rIdImg' + id;
+  return '<w:p><w:pPr><w:pStyle w:val="Figure"/><w:jc w:val="center"/></w:pPr><w:r><w:drawing>' +
+    '<wp:inline distT="0" distB="0" distL="0" distR="0">' +
+    '<wp:extent cx="' + cx + '" cy="' + cy + '"/>' +
+    '<wp:effectExtent l="0" t="0" r="0" b="0"/>' +
+    '<wp:docPr id="' + id + '" name="Graphique ' + id + '"/>' +
+    '<wp:cNvGraphicFramePr><a:graphicFrameLocks ' +
+      'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/>' +
+    '</wp:cNvGraphicFramePr>' +
+    '<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">' +
+    '<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+    '<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+    '<pic:nvPicPr><pic:cNvPr id="' + id + '" name="Graphique ' + id + '"/><pic:cNvPicPr/></pic:nvPicPr>' +
+    '<pic:blipFill><a:blip r:embed="' + rid + '"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>' +
+    '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' + cx + '" cy="' + cy + '"/></a:xfrm>' +
+    '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>' +
+    '</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>';
+}
+var BLOCK = { p: 1, div: 1, h1: 1, h2: 1, h3: 1, h4: 1, li: 1, tr: 1, td: 1, th: 1,
+              table: 1, ul: 1, ol: 1, section: 1, article: 1, header: 1, blockquote: 1 };
+
+function W() {
+  this.body = '';
+  this.para = null;      /* { style, runs, numId, ilvl } */
+}
+W.prototype.open = function (style, numId, ilvl) {
+  this.close();
+  this.para = { style: style || 'Corps', runs: '', numId: numId || 0, ilvl: ilvl || 0 };
+};
+W.prototype.close = function () {
+  var p = this.para;
+  this.para = null;
+  if (!p || (p.runs === '' && !p.numId)) return;
+  if (p.runs === '') return;
+  var pPr = '<w:pPr><w:pStyle w:val="' + p.style + '"/>';
+  if (p.numId) pPr += '<w:numPr><w:ilvl w:val="' + p.ilvl + '"/><w:numId w:val="' + p.numId + '"/></w:numPr>';
+  pPr += '</w:pPr>';
+  this.body += '<w:p>' + pPr + p.runs + '</w:p>';
+};
+W.prototype.add = function (xml) {
+  if (!this.para) this.open('Corps');
+  this.para.runs += xml;
+};
+W.prototype.raw = function (xml) { this.close(); this.body += xml; };
+
+function textRun(s, fmt) {
+  if (!s) return '';
+  var rPr = '';
+  if (fmt.b) rPr += '<w:b/>';
+  if (fmt.i) rPr += '<w:i/>';
+  if (fmt.sup) rPr += '<w:vertAlign w:val="superscript"/>';
+  if (fmt.sub) rPr += '<w:vertAlign w:val="subscript"/>';
+  if (fmt.mono) rPr += '<w:rFonts w:ascii="Consolas" w:hAnsi="Consolas"/>';
+  return '<w:r>' + (rPr ? '<w:rPr>' + rPr + '</w:rPr>' : '') +
+         '<w:t xml:space="preserve">' + esc(s) + '</w:t></w:r>';
+}
+
+function walk(node, w, fmt, list) {
+  var i, cs = node.childNodes;
+  for (i = 0; i < cs.length; i++) {
+    var n = cs[i];
+
+    if (n.nodeType === 3) {
+      var s = n.nodeValue.replace(/\s+/g, ' ');
+      if (s.trim() === '' && !/\S/.test(s)) { if (w.para && w.para.runs) w.add(textRun(' ', fmt)); continue; }
+      w.add(textRun(s, fmt));
+      continue;
+    }
+    if (n.nodeType !== 1) continue;
+
+    var tag = n.nodeName.toLowerCase();
+    if (SKIP[tag]) continue;
+    if (n.classList && (n.classList.contains('top-bar') || n.classList.contains('top-actions') ||
+                        n.classList.contains('sol-toggle-wrap'))) continue;
+
+    /* --- équations --- */
+    if (tag === 'mjx-container') {
+      var math = n.querySelector('mjx-assistive-mml math, math');
+      var display = n.getAttribute('display') === 'true';
+      if (math) {
+        var omml = mathmlToOmml(math);
+        if (display) {
+          w.close();
+          w.body += '<w:p><w:pPr><w:pStyle w:val="Formule"/>' +
+                    '<w:jc w:val="center"/></w:pPr>' +
+                    '<m:oMath>' + omml + '</m:oMath></w:p>';
+        } else {
+          w.add('<m:oMath>' + omml + '</m:oMath>');
+        }
+      } else {
+        w.add(textRun(txt(n), fmt));
+      }
+      continue;
+    }
+    if (tag === 'mjx-assistive-mml' || tag === 'math') continue;
+
+    /* --- graphiques --- */
+    if (tag === 'svg' || tag === 'img') {
+      var png = n.getAttribute('data-kit-png');
+      if (png) {
+        w.close();
+        w.body += imageXml(png, +n.getAttribute('data-kit-w') || 600,
+                                +n.getAttribute('data-kit-h') || 380);
+      }
+      continue;
+    }
+
+    /* --- tableaux --- */
+    if (tag === 'table') { w.close(); w.body += table(n); continue; }
+
+    /* --- listes --- */
+    if (tag === 'ul' || tag === 'ol') {
+      w.close();
+      var nid = tag === 'ol' ? 2 : 1;
+      var lvl = list ? Math.min(list.ilvl + 1, 2) : 0;
+      var items = kids(n).filter(function (x) { return x.nodeName.toLowerCase() === 'li'; });
+      items.forEach(function (li) {
+        /* L'item est composé à part : son numéro doit se poser sur le premier
+           paragraphe produit, même si le <li> enveloppe son texte dans un <div>. */
+        var wb = new W();
+        walk(li, wb, fmt, { ilvl: lvl });
+        wb.close();
+        var xml = wb.body;
+        if (!xml) return;
+        var numPr = '<w:pStyle w:val="Liste"/><w:numPr><w:ilvl w:val="' + lvl +
+                    '"/><w:numId w:val="' + nid + '"/></w:numPr>';
+        if (xml.indexOf('<w:pStyle w:val="Corps"/>') !== -1) {
+          xml = xml.replace('<w:pStyle w:val="Corps"/>', numPr);
+        } else {
+          xml = '<w:p><w:pPr>' + numPr + '</w:pPr></w:p>' + xml;
+        }
+        w.body += xml;
+      });
+      continue;
+    }
+
+    /* --- titres --- */
+    if (tag === 'h1' || tag === 'h2') { w.close(); w.open('Titre1'); walk(n, w, fmt, list); w.close(); continue; }
+    if (tag === 'h3' || tag === 'h4') { w.close(); w.open('Titre2'); walk(n, w, fmt, list); w.close(); continue; }
+
+    /* --- titres internes du corrigé --- */
+    if (n.classList && (n.classList.contains('sol-sub') || n.classList.contains('sol-q') ||
+                        n.classList.contains('dossier-title'))) {
+      w.close(); w.open('Titre2'); walk(n, w, { b: true }, list); w.close(); continue;
+    }
+    if (n.classList && n.classList.contains('persp-box')) {
+      w.close();
+      var wb = new W();
+      walk(n, wb, fmt, list);
+      wb.close();
+      w.body += wb.body.replace(/w:val="Corps"/g, 'w:val="Encadre"')
+                       .replace(/w:val="Titre2"/g, 'w:val="EncadreTitre"');
+      continue;
+    }
+
+    /* --- mise en forme inline --- */
+    var f2 = { b: fmt.b, i: fmt.i, sup: fmt.sup, sub: fmt.sub, mono: fmt.mono };
+    if (tag === 'strong' || tag === 'b') f2.b = true;
+    if (tag === 'em' || tag === 'i') f2.i = true;
+    if (tag === 'sup') f2.sup = true;
+    if (tag === 'sub') f2.sub = true;
+    if (tag === 'code' || tag === 'kbd') f2.mono = true;
+
+    /* intertitre écrit en style en ligne (span display:block + gras) */
+    var st = n.getAttribute && n.getAttribute('style');
+    if (st && /display\s*:\s*block/.test(st) && /font-weight\s*:\s*(6|7|8|9|bold)/.test(st)) {
+      w.close(); w.open('Titre3');
+      walk(n, w, { b: true }, list);
+      w.close();
+      continue;
+    }
+
+    if ((tag === 'strong' || tag === 'b') &&
+        (!w.para || w.para.runs === '') &&
+        n.nextElementSibling && n.nextElementSibling.nodeName.toLowerCase() === 'br') {
+      w.close(); w.open('Titre3');
+      walk(n, w, { b: true }, list);
+      w.close();
+      i++;                       /* le <br> qui suit devient inutile */
+      continue;
+    }
+
+    if (tag === 'br') { w.add('<w:r><w:br/></w:r>'); continue; }
+    if (tag === 'hr') { w.close(); continue; }
+
+    if (BLOCK[tag]) { w.close(); w.open('Corps'); walk(n, w, f2, list); w.close(); }
+    else { walk(n, w, f2, list); }
+  }
+}
+
+function cellXml(td, isHead) {
+  var w2 = new W();
+  walk(td, w2, { b: !!isHead }, null);
+  w2.close();
+  var content = w2.body || '<w:p><w:pPr><w:pStyle w:val="Cellule"/></w:pPr></w:p>';
+  content = content.replace(/w:val="Corps"/g, 'w:val="Cellule"');
+  var span = parseInt(td.getAttribute('colspan') || '1', 10);
+  var shd = isHead ? '<w:shd w:val="clear" w:fill="EDE9DF"/>' : '';
+  return '<w:tc><w:tcPr>' + (span > 1 ? '<w:gridSpan w:val="' + span + '"/>' : '') +
+         shd + '<w:vAlign w:val="center"/></w:tcPr>' + content + '</w:tc>';
+}
+
+function table(tbl) {
+  var rows = tbl.querySelectorAll('tr'), out = '', ncol = 0, i, j;
+  for (i = 0; i < rows.length; i++) {
+    var c = rows[i].children, n = 0;
+    for (j = 0; j < c.length; j++) n += parseInt(c[j].getAttribute('colspan') || '1', 10);
+    ncol = Math.max(ncol, n);
+  }
+  if (!ncol) return '';
+  var grid = '<w:tblGrid>';
+  for (i = 0; i < ncol; i++) grid += '<w:gridCol w:w="' + Math.floor(9360 / ncol) + '"/>';
+  grid += '</w:tblGrid>';
+
+  for (i = 0; i < rows.length; i++) {
+    var cells = rows[i].children, xml = '';
+    var head = rows[i].parentNode.nodeName.toLowerCase() === 'thead' ||
+               (cells.length && cells[0].nodeName.toLowerCase() === 'th');
+    for (j = 0; j < cells.length; j++) xml += cellXml(cells[j], head);
+    out += '<w:tr>' + (head ? '<w:trPr><w:tblHeader/></w:trPr>' : '') + xml + '</w:tr>';
+  }
+  return '<w:tbl><w:tblPr><w:tblStyle w:val="Grille"/>' +
+         '<w:tblW w:w="5000" w:type="pct"/><w:tblLayout w:type="fixed"/></w:tblPr>' +
+         grid + out + '</w:tbl><w:p><w:pPr><w:pStyle w:val="Apres"/></w:pPr></w:p>';
+}
+
+/* ============================================================================
+   Assemblage du fichier
+   ========================================================================== */
+var NS =
+  'xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" ' +
+  'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
+  'xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" ' +
+  'xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" ' +
+  'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+  'xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture" ' +
+  'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+  'xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" ' +
+  'mc:Ignorable="w14"';
+
+function style(id, name, opts) {
+  var o = opts || {};
+  return '<w:style w:type="paragraph" w:styleId="' + id + '"><w:name w:val="' + name + '"/>' +
+         '<w:basedOn w:val="Corps"/><w:pPr>' +
+         (o.keep ? '<w:keepNext/>' : '') +
+         '<w:spacing w:before="' + (o.before || 0) + '" w:after="' + (o.after || 120) +
+         '" w:line="' + (o.line || 276) + '" w:lineRule="auto"/>' +
+         (o.jc ? '<w:jc w:val="' + o.jc + '"/>' : '') +
+         (o.ind ? '<w:ind w:left="' + o.ind + '"/>' : '') +
+         (o.border ? '<w:pBdr><w:left w:val="single" w:sz="18" w:space="8" w:color="1A2E42"/></w:pBdr>' : '') +
+         '</w:pPr><w:rPr>' +
+         (o.font ? '<w:rFonts w:ascii="' + o.font + '" w:hAnsi="' + o.font + '"/>' : '') +
+         (o.b ? '<w:b/>' : '') + (o.i ? '<w:i/>' : '') +
+         (o.sz ? '<w:sz w:val="' + o.sz + '"/>' : '') +
+         (o.color ? '<w:color w:val="' + o.color + '"/>' : '') +
+         '</w:rPr></w:style>';
+}
+
+function stylesXml() {
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles ' + NS + '>' +
+    '<w:docDefaults><w:rPrDefault><w:rPr>' +
+      '<w:rFonts w:ascii="Cambria" w:hAnsi="Cambria" w:cs="Cambria"/>' +
+      '<w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="fr-FR"/>' +
+    '</w:rPr></w:rPrDefault><w:pPrDefault><w:pPr>' +
+      '<w:spacing w:after="120" w:line="276" w:lineRule="auto"/><w:jc w:val="both"/>' +
+    '</w:pPr></w:pPrDefault></w:docDefaults>' +
+    '<w:style w:type="paragraph" w:default="1" w:styleId="Corps"><w:name w:val="Normal"/>' +
+      '<w:pPr><w:spacing w:after="120" w:line="276" w:lineRule="auto"/><w:jc w:val="both"/></w:pPr>' +
+      '<w:rPr><w:rFonts w:ascii="Cambria" w:hAnsi="Cambria"/><w:sz w:val="22"/></w:rPr></w:style>' +
+    style('TitreDoc', 'Title', { font: 'Cambria', b: true, sz: 40, color: '0D1B2A', jc: 'left', after: 60, line: 240 }) +
+    style('SousTitre', 'Subtitle', { i: true, sz: 20, color: '5A5A5A', jc: 'left', after: 280, line: 240 }) +
+    style('Titre1', 'heading 1', { b: true, sz: 28, color: '0D1B2A', before: 320, after: 140, jc: 'left', keep: true, line: 240 }) +
+    style('Titre2', 'heading 2', { b: true, sz: 23, color: '1A2E42', before: 240, after: 100, jc: 'left', keep: true, line: 240 }) +
+    style('Formule', 'Formula', { jc: 'center', before: 120, after: 120, line: 240 }) +
+    style('Liste', 'List Paragraph', { after: 100, ind: 360 }) +
+    style('Cellule', 'Table Text', { sz: 20, after: 40, jc: 'left', line: 240 }) +
+    style('Encadre', 'Aside', { ind: 240, border: true, sz: 21, before: 200, after: 200 }) +
+    style('Apres', 'After Table', { after: 200, sz: 12 }) +
+    style('Figure', 'Figure', { jc: 'center', before: 160, after: 200, line: 240 }) +
+    style('Titre3', 'heading 3', { b: true, sz: 22, color: '1A2E42', before: 200,
+                                   after: 60, jc: 'left', keep: true, line: 240 }) +
+    style('EncadreTitre', 'Aside Heading', { ind: 240, border: true, b: true, sz: 22,
+                                             color: '1A2E42', before: 200, after: 60, jc: 'left' }) +
+    '<w:style w:type="table" w:styleId="Grille"><w:name w:val="Table Grid"/><w:tblPr>' +
+      '<w:tblBorders>' +
+      ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(function (b) {
+        return '<w:' + b + ' w:val="single" w:sz="4" w:space="0" w:color="9A9A9A"/>';
+      }).join('') +
+      '</w:tblBorders><w:tblCellMar>' +
+      '<w:top w:w="60" w:type="dxa"/><w:left w:w="90" w:type="dxa"/>' +
+      '<w:bottom w:w="60" w:type="dxa"/><w:right w:w="90" w:type="dxa"/>' +
+      '</w:tblCellMar></w:tblPr></w:style>' +
+    '</w:styles>';
+}
+
+function numberingXml() {
+  function lvl(i, fmt, txtv, ind) {
+    return '<w:lvl w:ilvl="' + i + '"><w:start w:val="1"/><w:numFmt w:val="' + fmt + '"/>' +
+           '<w:lvlText w:val="' + txtv + '"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="' +
+           ind + '" w:hanging="360"/></w:pPr>' +
+           (fmt === 'bullet' ? '<w:rPr><w:rFonts w:ascii="Symbol" w:hAnsi="Symbol"/></w:rPr>' : '') +
+           '</w:lvl>';
+  }
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:numbering ' + NS + '>' +
+    '<w:abstractNum w:abstractNumId="1"><w:multiLevelType w:val="hybridMultilevel"/>' +
+      lvl(0, 'bullet', '\uF0B7', 360) + lvl(1, 'bullet', 'o', 720) + lvl(2, 'bullet', '\uF0A7', 1080) +
+    '</w:abstractNum>' +
+    '<w:abstractNum w:abstractNumId="2"><w:multiLevelType w:val="hybridMultilevel"/>' +
+      lvl(0, 'decimal', '%1.', 360) + lvl(1, 'lowerLetter', '%2.', 720) + lvl(2, 'lowerRoman', '%3.', 1080) +
+    '</w:abstractNum>' +
+    '<w:num w:numId="1"><w:abstractNumId w:val="1"/></w:num>' +
+    '<w:num w:numId="2"><w:abstractNumId w:val="2"/></w:num>' +
+    '</w:numbering>';
+}
+
+function buildDocx(opts) {
+  IMAGES = [];
+  var w = new W();
+
+  if (opts.title) {
+    w.body += '<w:p><w:pPr><w:pStyle w:val="TitreDoc"/></w:pPr>' +
+              textRun(opts.title, {}) + '</w:p>';
+  }
+  if (opts.subtitle) {
+    w.body += '<w:p><w:pPr><w:pStyle w:val="SousTitre"/></w:pPr>' +
+              textRun(opts.subtitle, {}) + '</w:p>';
+  }
+  opts.sections.forEach(function (sec) {
+    if (sec.heading) {
+      w.body += '<w:p><w:pPr><w:pStyle w:val="Titre1"/></w:pPr>' + textRun(sec.heading, {}) + '</w:p>';
+    }
+    walk(sec.node, w, {}, null);
+    w.close();
+  });
+  w.close();
+
+  var doc = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ' + NS + '><w:body>' +
+    w.body +
+    '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/>' +
+    '<w:pgMar w:top="1247" w:right="1247" w:bottom="1247" w:left="1247" ' +
+    'w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>';
+
+  var media = [], rels = '', ctypes = '';
+  IMAGES.forEach(function (im, i) {
+    media.push({ name: 'word/media/image' + (i + 1) + '.png', bin: im.bin });
+    rels += '<Relationship Id="rIdImg' + (i + 1) + '" Type="http://schemas.openxmlformats.org/' +
+            'officeDocument/2006/relationships/image" Target="media/image' + (i + 1) + '.png"/>';
+  });
+  if (IMAGES.length) ctypes = '<Default Extension="png" ContentType="image/png"/>';
+
+  return zip([
+    { name: '[Content_Types].xml',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+        '<Default Extension="xml" ContentType="application/xml"/>' + ctypes +
+        '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+        '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>' +
+        '<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>' +
+        '</Types>' },
+    { name: '_rels/.rels',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+        '</Relationships>' },
+    { name: 'word/_rels/document.xml.rels',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' +
+        '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>' +
+        rels + '</Relationships>' },
+    { name: 'word/document.xml', data: doc },
+    { name: 'word/styles.xml', data: stylesXml() },
+    { name: 'word/numbering.xml', data: numberingXml() }
+  ].concat(media));
+}
+
+root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: W, _walk: walk };
+
+})(window);
+
+</script>
+<script id="kit-js">
+/* ============================================================
+   KIT D'UNIFORMISATION — logique partagée (modale PDF, export Word,
+   libellés de la barre d'actions). Autonome : ne dépend d'aucun
+   dictionnaire I18N propre à la page.
+   ============================================================ */
+(function(){
+  var T = {
+    fr:{ modalTitle:"Exporter en PDF", seedPre:"Seed\u00a0:",
+         seedPost:"\u2014 notez cette valeur pour reproduire exactement cet exercice.",
+         optHeader:"Inclure l'en-t\u00eate de page",
+         optHeaderD:"Titre, badge de mati\u00e8re et intitul\u00e9 de l'exercice",
+         optSol:"Inclure le corrig\u00e9 complet",
+         optSolD:"L'ensemble des d\u00e9veloppements et commentaires du corrig\u00e9",
+         print:"\uD83D\uDDA8\u00a0Imprimer / Sauvegarder PDF", cancel:"Annuler",
+         btnNew:"\u21ba Nouvel \u00e9nonc\u00e9", btnPdf:"\u2b07 Exporter PDF", btnDoc:"\u2b07 Exporter Word",
+         btnCopy:"\u29c9 Copier", copied:"\u2713 Copi\u00e9e", seedLabel:"Seed de reproductibilit\u00e9",
+         docFile:"exercice.doc" },
+    en:{ modalTitle:"Export to PDF", seedPre:"Seed:",
+         seedPost:"\u2014 note this value to reproduce this exact exercise.",
+         optHeader:"Include the page header",
+         optHeaderD:"Title, subject badge and exercise heading",
+         optSol:"Include the full solution",
+         optSolD:"All the workings and comments of the solution",
+         print:"\uD83D\uDDA8\u00a0Print / Save as PDF", cancel:"Cancel",
+         btnNew:"\u21ba New exercise", btnPdf:"\u2b07 Export PDF", btnDoc:"\u2b07 Export Word",
+         btnCopy:"\u29c9 Copy", copied:"\u2713 Copied", seedLabel:"Reproducibility seed",
+         docFile:"exercise.doc" }
+  };
+
+  function lang(){
+    var l = (window.LANG || document.documentElement.lang || 'fr').toLowerCase();
+    return (l.indexOf('en') === 0) ? 'en' : 'fr';
+  }
+  function t(k){ return T[lang()][k]; }
+
+  window.KIT = { T:T, lang:lang, t:t };
+
+  /* --- libellés du kit (modale + barre d'actions) --- */
+  function paint(){
+    var d = T[lang()];
+    document.querySelectorAll('[data-kit]').forEach(function(el){
+      var k = el.getAttribute('data-kit');
+      if (d[k] !== undefined) el.innerHTML = d[k];
+    });
+  }
+  window.KIT.paint = paint;
+
+  /* Se raccroche au changement de langue de la page sans la modifier. */
+  function hookLang(){
+    if (typeof window.setLang === 'function' && !window.setLang.__kit){
+      var orig = window.setLang;
+      var wrapped = function(){ var r = orig.apply(this, arguments); paint(); return r; };
+      wrapped.__kit = true;
+      window.setLang = wrapped;
+    }
+  }
+
+  /* --- Copie de la seed active --- */
+  window.copySeed = function(btn){
+    var el = document.getElementById('seed-disp');
+    if (!el) return;
+    var v = (el.textContent || '').trim();
+    if (!v || v === '\u2014') return;
+    var done = function(){
+      var b = btn || document.getElementById('btn-copy-seed');
+      if (!b) return;
+      var old = b.innerHTML;
+      b.innerHTML = t('copied');
+      setTimeout(function(){ b.innerHTML = old; paint(); }, 1400);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(v).then(done, done);
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = v; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch(e){}
+      document.body.removeChild(ta); done();
+    }
+  };
+
+  /* --- Modale PDF --- */
+  window.openPdfModal = function(){
+    var s = document.getElementById('modal-seed');
+    var src = document.getElementById('seed-disp');
+    if (s && src) s.textContent = (src.textContent || '\u2014').trim();
+    /* la case « corrigé » reflète l'état d'affichage courant */
+    var sol = document.getElementById('sol-card');
+    var box = document.getElementById('opt-sol');
+    if (box) box.checked = !!(window.solVisible ||
+        (sol && (sol.classList.contains('visible') || sol.style.display === 'block')));
+    paint();
+    document.getElementById('pdf-ov').classList.add('open');
+    document.getElementById('pdf-modal').classList.add('open');
+  };
+  window.closePdfModal = function(){
+    document.getElementById('pdf-ov').classList.remove('open');
+    document.getElementById('pdf-modal').classList.remove('open');
+  };
+  var PRINTCLS = ['print-no-header', 'print-force-solution', 'print-no-solution'];
+
+  function clearPrintClasses() {
+    var b = document.body;
+    for (var i = 0; i < PRINTCLS.length; i++) b.classList.remove(PRINTCLS[i]);
+  }
+
+  window.doPrint = function () {
+    var noHdr   = !document.getElementById('opt-header').checked;
+    var inclSol =  document.getElementById('opt-sol').checked;
+    var b = document.body;
+
+    clearPrintClasses();
+    if (noHdr) b.classList.add('print-no-header');
+    b.classList.add(inclSol ? 'print-force-solution' : 'print-no-solution');
+    closePdfModal();
+
+    /* Le nettoyage doit attendre la fin réelle de l'impression. Un simple
+       minuteur ne convient pas : selon le navigateur, window.print() rend la
+       main avant que l'aperçu ne soit composé, et les options seraient alors
+       déjà effacées au moment où le PDF est produit. */
+    var done = false;
+    function finish() {
+      if (done) return;
+      done = true;
+      clearPrintClasses();
+      window.removeEventListener('afterprint', finish);
+      if (mq && mq.removeListener) mq.removeListener(onMq);
+      if (mq && mq.removeEventListener) mq.removeEventListener('change', onMq);
+    }
+    function onMq(e) { if (!e.matches) finish(); }
+
+    var mq = window.matchMedia ? window.matchMedia('print') : null;
+    window.addEventListener('afterprint', finish);
+    if (mq && mq.addEventListener) mq.addEventListener('change', onMq);
+    else if (mq && mq.addListener) mq.addListener(onMq);
+    /* filet de sécurité si le navigateur n'émet aucun de ces signaux */
+    setTimeout(finish, 120000);
+
+    setTimeout(function () { window.print(); }, 120);
+  };
+
+  /* --- Rasterisation des graphiques SVG ---
+     Word ne sait pas lire le SVG. On le convertit en PNG en recopiant d'abord
+     les styles calculés, sinon les couleurs héritées de la feuille disparaissent. */
+  var SVGPROPS = ['fill', 'stroke', 'stroke-width', 'stroke-dasharray', 'stroke-linecap',
+                  'stroke-linejoin', 'opacity', 'fill-opacity', 'stroke-opacity',
+                  'font-family', 'font-size', 'font-weight', 'font-style',
+                  'text-anchor', 'dominant-baseline'];
+
+  function inlineStyles(src, dst) {
+    var a = src.querySelectorAll('*'), b = dst.querySelectorAll('*'), i, j;
+    for (i = 0; i < a.length && i < b.length; i++) {
+      var cs = window.getComputedStyle(a[i]);
+      for (j = 0; j < SVGPROPS.length; j++) {
+        var v = cs.getPropertyValue(SVGPROPS[j]);
+        if (v) b[i].setAttribute(SVGPROPS[j], v);
+      }
+    }
+  }
+
+  function svgSize(svg) {
+    var vb = svg.viewBox && svg.viewBox.baseVal;
+    if (vb && vb.width) return { w: vb.width, h: vb.height };
+    var r = svg.getBoundingClientRect();
+    if (r.width) return { w: r.width, h: r.height };
+    return { w: 600, h: 380 };
+  }
+
+  function svgToPng(svg) {
+    return new Promise(function (resolve) {
+      var done = false;
+      var res = function (v) { if (!done) { done = true; resolve(v); } };
+      /* garde-fou : un graphique qui ne se charge pas ne doit jamais
+         bloquer l'export, on l'omet et le reste du document part quand même */
+      setTimeout(function () { res(null); }, 5000);
+      try {
+        var d = svgSize(svg), SC = 2;
+        var c = svg.cloneNode(true);
+        c.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        c.setAttribute('width', d.w);
+        c.setAttribute('height', d.h);
+        inlineStyles(svg, c);
+        var bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        bg.setAttribute('x', 0); bg.setAttribute('y', 0);
+        bg.setAttribute('width', '100%'); bg.setAttribute('height', '100%');
+        bg.setAttribute('fill', '#ffffff');
+        c.insertBefore(bg, c.firstChild);
+        var xml = new XMLSerializer().serializeToString(c);
+        var img = new Image();
+        img.onload = function () {
+          try {
+            var cv = document.createElement('canvas');
+            cv.width = Math.round(d.w * SC); cv.height = Math.round(d.h * SC);
+            var ctx = cv.getContext('2d');
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, cv.width, cv.height);
+            ctx.drawImage(img, 0, 0, cv.width, cv.height);
+            res({ png: cv.toDataURL('image/png'), w: d.w, h: d.h });
+          } catch (e) { res(null); }
+        };
+        img.onerror = function () { res(null); };
+        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml);
+      } catch (e) { res(null); }
+    });
+  }
+
+  /* --- Export Word natif (.docx) ---
+     Les formules sont converties en OMML, le format d'équation natif de Word :
+     elles restent éditables et se composent avec Cambria Math. */
+  window.exportWord = function () {
+    var area = document.getElementById('ex-area');
+    if (!area || !window.DocxExport) { return; }
+
+    var btn = document.querySelector('.btn-sm.doc');
+    if (btn) { btn.disabled = true; btn.style.opacity = '.5'; }
+
+    var svgs = Array.prototype.slice.call(area.querySelectorAll('svg'));
+    Promise.all(svgs.map(svgToPng)).then(function (pngs) {
+      svgs.forEach(function (sv, i) {
+        if (!pngs[i]) return;
+        sv.setAttribute('data-kit-png', pngs[i].png);
+        sv.setAttribute('data-kit-w', pngs[i].w);
+        sv.setAttribute('data-kit-h', pngs[i].h);
+      });
+      try { writeDocx(area); } finally {
+        svgs.forEach(function (sv) {
+          sv.removeAttribute('data-kit-png');
+          sv.removeAttribute('data-kit-w');
+          sv.removeAttribute('data-kit-h');
+        });
+        if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+      }
+    });
+  };
+
+  function writeDocx(area) {
+
+    var h1 = document.querySelector('header h1');
+    var badge = document.querySelector('.header-badge, #lbl-badge');
+    var seed = document.getElementById('seed-disp');
+    var bits = [];
+    if (badge && badge.textContent.trim()) bits.push(badge.textContent.trim());
+    if (seed && seed.textContent.trim() && seed.textContent.trim() !== '\u2014') {
+      bits.push('seed ' + seed.textContent.trim());
+    }
+    bits.push('Thomas Hossen');
+
+    var sections = [];
+    var cards = area.querySelectorAll('.card');
+    for (var i = 0; i < cards.length; i++) {
+      var body = cards[i].querySelector('.card-body');
+      if (!body) continue;
+      var tag = cards[i].querySelector('.card-header .tag');
+      var h2 = cards[i].querySelector('.card-header h2');
+      var head = [tag ? tag.textContent.trim() : '', h2 ? h2.textContent.trim() : '']
+                   .filter(Boolean).join(' \u2014 ');
+      sections.push({ heading: head, node: body });
+    }
+    if (!sections.length) sections = [{ heading: '', node: area }];
+
+    var bytes = window.DocxExport.build({
+      title: h1 ? h1.textContent.trim() : document.title,
+      subtitle: bits.join(' \u00b7 '),
+      sections: sections
+    });
+
+    var name = (h1 ? h1.textContent : 'exercice').normalize('NFD')
+                 .replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9]+/g, '_')
+                 .replace(/^_|_$/g, '').slice(0, 60) || 'exercice';
+    var blob = new Blob([bytes], {
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = name + '.docx';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){ hookLang(); paint(); });
+  if (document.readyState !== 'loading'){ hookLang(); paint(); }
+})();
+</script>
+<!-- KIT:JS:END -->
+
+</body>
+</html>

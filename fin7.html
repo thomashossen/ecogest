@@ -1,0 +1,2214 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Analyse Financière - Plan de financement</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['\\[', '\\]']]
+    }
+  };
+</script>
+<script>window.MathJax=window.MathJax||{};window.MathJax.options=window.MathJax.options||{};window.MathJax.options.enableAssistiveMml=true;</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7;text-align:justify;}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 1.5rem;border-bottom:3px solid var(--gold);text-align:left;}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end;background:rgba(255,255,255,.03);padding:1rem 1.5rem;border-radius:6px;border:1px solid rgba(255,255,255,.1)}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.6)}
+.ctrl-inp, .ctrl-sel{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.4rem .7rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none;transition:border-color .2s}
+.ctrl-inp:focus, .ctrl-sel:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.5rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;transition:background .18s;margin-left:auto}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN & CARDS */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:700}
+
+.top-actions{display:flex;gap:.5rem;}
+.btn-action{background:#fff;border:1px solid var(--border);color:var(--navy);padding:.4rem .8rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.85rem;font-weight:600;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.btn-action:hover{border-color:var(--navy);background:var(--cream-dark);}
+
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem;text-align:left;}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+.event-list{list-style:none;}
+.event-list > li{margin-bottom:1.5rem;padding-left:1.5rem;position:relative;font-size:.95rem;text-align:justify}
+.event-list > li::before{content:"•";position:absolute;left:0;color:var(--gold);font-size:1.5rem;line-height:1}
+
+.sub-list { list-style-type: none; padding-left: 1rem; margin-top: 0.8rem; text-align:justify;}
+.sub-list li { margin-bottom: 0.5rem; }
+
+/* EXAM TABLE */
+.exam-table-wrap { overflow-x: auto; margin: 1.5rem 0; }
+.exam-table{width:100%;border-collapse:collapse;font-size:.85rem;font-family:'Source Serif 4',serif; margin: 0;}
+.exam-table th, .exam-table td{border:1px solid var(--border);padding:.6rem;text-align:center;vertical-align:middle;}
+.exam-table th{background:var(--navy);color:var(--cream);font-weight:600;}
+.exam-table .txt-left{text-align:left;font-weight:600;color:var(--navy);}
+.exam-table .amt{font-family:'JetBrains Mono',monospace;text-align:right;white-space:nowrap;}
+
+.two-col-table { width: 100%; display: flex; gap: 2rem; margin: 1.5rem 0; }
+.col-half { flex: 1; }
+
+/* SOLUTION TOGGLE */
+.sol-toggle-wrap{text-align:left; margin: 1.5rem 0 0 0;}
+.btn-toggle{background:transparent;border:2px solid var(--green);border-bottom:none;color:var(--green);font-family:'Source Serif 4',serif;font-size:.95rem;font-weight:600;padding:.5rem 1.5rem;border-radius:4px 4px 0 0;cursor:pointer;transition:all .2s; position:relative; z-index:2; top:2px;}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--green);color:var(--cream)}
+.sol-card{border-top:2px solid var(--green);display:none; border-radius: 0 6px 6px 6px; position:relative; z-index:1;}
+.sol-card.visible{display:block;animation:fi .4s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+
+.calc-box{background:#f9fcf9;border:1px solid #c8e6c9;padding:1.2rem;border-radius:4px;margin-bottom:1.5rem;font-size:.9rem;color:var(--text);line-height:1.6;text-align:justify;}
+
+@media print{
+  body{background:#fff;}
+  header, .ctrls, .sol-toggle-wrap, .top-actions {display:none !important;}
+  .card{box-shadow:none; border:1px solid var(--border); margin-bottom:2rem;}
+  .sol-card{display:block !important; border-top:2px solid var(--green);}
+  #ex-area {display:block !important;}
+}
+
+/* --- Selecteur de langue / Language switch --- */
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem}
+.header-top .header-badge{margin-bottom:0}
+.lang-switch{display:flex;gap:.45rem;flex-shrink:0}
+.flag-btn{background:rgba(255,255,255,.06);border:1px solid rgba(201,149,42,.35);border-radius:3px;padding:3px;cursor:pointer;line-height:0;opacity:.5;transition:opacity .2s,border-color .2s,transform .15s}
+.flag-btn:hover{opacity:1;transform:translateY(-1px)}
+.flag-btn.active{opacity:1;border-color:var(--gold-light);box-shadow:0 0 0 1px rgba(232,184,75,.35)}
+.flag-btn svg{display:block;width:30px;height:20px;border-radius:1px}
+@media print{ .lang-switch{display:none !important;} }
+</style>
+<!-- KIT:CSS:START v1 --><style id="kit-css">
+/* ============================================================
+   KIT D'UNIFORMISATION — bloc partagé, identique sur toutes les pages.
+   Ne rien modifier ici fichier par fichier : régénérer le kit.
+   ============================================================ */
+
+/* --- 1. Mathématiques : jamais de débordement --- */
+mjx-container[display="true"]{
+  overflow-x:auto; overflow-y:hidden; max-width:100%;
+  padding:.15rem 0; margin:1rem 0 !important;
+}
+mjx-container[display="true"]::-webkit-scrollbar{height:5px}
+mjx-container[display="true"]::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+mjx-container{ max-width:100%; }
+.math-formula{ text-align:center; margin:1.2rem 0; overflow-x:auto; max-width:100%; }
+@media (max-width:640px){
+  mjx-container[display="true"]{ font-size:88% }
+}
+
+/* --- 2. Listes à puces entourées (questions ET données de contexte) --- */
+.kit-list, .st > ol,
+.questions > ol,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list), .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list),
+.question-list, .enum-list, .q-list{
+  counter-reset:kitq; list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem;
+}
+.kit-list > li, .st > ol > li,
+.questions > ol > li,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li, .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li,
+.question-list > li, .enum-list > li, .q-list > li{
+  counter-increment:kitq; position:relative;
+  padding-left:2.6rem; margin-bottom:1.3rem;
+  font-size:.95rem; line-height:1.7; text-align:justify;
+  font-weight:400; color:var(--text);
+  display:block;
+}
+.kit-list > li::before, .st > ol > li::before,
+.questions > ol > li::before,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li::before, .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li::before,
+.question-list > li::before, .enum-list > li::before, .q-list > li::before{
+  content:counter(kitq);
+  position:absolute; left:0; top:.1rem;
+  width:28px; min-width:28px; height:28px;
+  background:var(--navy); color:var(--cream);
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.72rem; font-weight:500;
+  flex-shrink:0;
+}
+.questions ol > li .q-text{ flex:1; font-size:.95rem; text-align:justify }
+/* sous-listes : cercle creux, plus discret */
+.enum-sublist, .kit-sublist, .sub-list, .sub-ol, .alpha-list, .enum-subsublist,
+.st ol.sub-ol, .questions ol ol, .st ol ol, .kit-list ol, .q-list ol, .question-list ol{
+  counter-reset:kitsq; list-style:none !important; padding-left:0 !important;
+  margin:.9rem 0 .9rem 0;
+}
+.enum-sublist > li, .kit-sublist > li, .sub-list > li, .sub-ol > li, .alpha-list > li, .enum-subsublist > li,
+.st ol.sub-ol > li, .questions ol ol > li, .st ol ol > li, .kit-list ol > li, .q-list ol > li, .question-list ol > li{
+  counter-increment:kitsq; position:relative;
+  padding-left:2.1rem; margin-bottom:.7rem; font-size:.92rem; text-align:justify;
+}
+.enum-sublist > li::before, .kit-sublist > li::before, .sub-list > li::before, .sub-ol > li::before, .alpha-list > li::before, .enum-subsublist > li::before,
+.st ol.sub-ol > li::before, .questions ol ol > li::before, .st ol ol > li::before, .kit-list ol > li::before, .q-list ol > li::before, .question-list ol > li::before{
+  content:counter(kitsq,lower-alpha);
+  min-width:22px;
+  position:absolute; left:0; top:.05rem;
+  width:22px; height:22px;
+  background:transparent; color:var(--navy);
+  border:1px solid var(--gold);
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.65rem;
+}
+
+/* variante : puces simples non numérotées (listes de données) */
+.kit-simple{ list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem }
+.kit-simple > li{
+  position:relative; padding-left:1.5rem; margin-bottom:1.1rem;
+  font-size:.95rem; line-height:1.7; text-align:justify;
+}
+.kit-simple > li::before{
+  content:"\2022"; position:absolute; left:0; top:-.15rem;
+  color:var(--gold); font-size:1.5rem; line-height:1; background:none;
+  width:auto; height:auto; border:none; border-radius:0;
+}
+/* variante : liste à un seul élément, sans puce */
+.kit-nobullet{ list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem }
+.kit-nobullet > li{
+  padding-left:0; margin-bottom:1rem; font-size:.95rem; line-height:1.7; text-align:justify;
+}
+.kit-nobullet > li::before{ content:none !important; display:none !important }
+/* variante : titres de section numérotés (contenu intercalé entre les puces) */
+.kit-num-scope{ counter-reset:kitn }
+p.kit-num{
+  counter-increment:kitn; position:relative;
+  padding-left:2.6rem; margin:1.8rem 0 1rem;
+  font-weight:600; color:var(--navy); text-align:left;
+  min-height:28px; display:flex; align-items:center;
+}
+p.kit-num:first-of-type{ margin-top:0 }
+p.kit-num::before{
+  content:counter(kitn); position:absolute; left:0; top:0;
+  width:28px; height:28px; background:var(--navy); color:var(--cream);
+  border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.72rem; font-weight:500;
+}
+
+/* titres de dossier */
+.dossier-title{
+  margin:2rem 0 1rem; font-weight:600; color:var(--navy); font-size:1.02rem;
+  border-bottom:1px solid var(--border); padding-bottom:.4rem; text-align:left;
+}
+.dossier-title:first-of-type{ margin-top:0 }
+.dossier-body{ margin-bottom:.5rem }
+
+/* --- 3. Corrigé sobre : plus de multiplication de fonds verts --- */
+.sol-card .calc-box, .sol-card .concl{
+  background:transparent !important;
+  border:none !important;
+  border-left:none !important;
+  padding:0 !important;
+  border-radius:0 !important;
+  margin:0 0 1.6rem 0 !important;
+  font-size:.95rem;
+  line-height:1.7;
+  text-align:justify;
+}
+.sol-card .sol-sub{
+  color:var(--navy); font-weight:600; display:block;
+  margin:0 0 .5rem 0; font-size:1rem;
+}
+/* seuls encadrés conservés : les perspectives « Pour aller plus loin » */
+.sol-card .persp-box{
+  background:#f7f9fc !important;
+  border:1px solid #ccd8e6 !important;
+  border-left:3px solid var(--navy-mid) !important;
+  padding:1.2rem !important;
+  border-radius:4px !important;
+  margin:2rem 0 1rem 0 !important;
+  font-size:.9rem; line-height:1.7; text-align:justify;
+}
+
+.btn-toggle{
+  background:transparent; border:2px solid var(--green); border-bottom:none;
+  color:var(--green); font-family:'Source Serif 4',serif; font-size:.95rem;
+  font-weight:600; padding:.5rem 1.5rem; border-radius:4px 4px 0 0; cursor:pointer;
+  transition:all .2s; position:relative; z-index:2; top:2px;
+}
+.btn-toggle:hover{ background:var(--green); color:var(--cream) }
+
+/* --- 4. Bouton « Afficher le corrigé » (modèle der) --- */
+.sol-toggle-wrap{ text-align:left; margin:1.5rem 0 0 0; }
+.sol-card{
+  border-top:2px solid var(--green); display:none;
+  border-radius:0 6px 6px 6px; position:relative; z-index:1;
+}
+.sol-card.visible{ display:block; animation:kitfi .35s ease }
+.sol-card .card-header{ background:var(--green) }
+.sol-card .card-header .tag{ border-color:rgba(200,240,200,.4); color:#a8d8b0 }
+@keyframes kitfi{ from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+
+/* --- 5. Barre d'actions unifiée --- */
+.top-bar{ display:flex; flex-wrap:wrap; gap:.8rem; align-items:center; justify-content:space-between; margin-bottom:1.2rem }
+.top-bar-left{ display:flex; flex-wrap:wrap; gap:.55rem; order:1 }
+.top-bar .seed-badge{ order:2 }
+.btn-sm{ background:transparent; border:1px solid var(--gold); color:var(--gold); font-family:'JetBrains Mono',monospace; font-size:.67rem; letter-spacing:.08em; text-transform:uppercase; padding:.4rem 1rem; border-radius:3px; cursor:pointer; transition:all .18s; white-space:nowrap }
+.btn-sm:hover{ background:var(--gold); color:var(--navy) }
+.btn-sm.pdf{ border-color:#7bafd4; color:#7bafd4 }
+.btn-sm.pdf:hover{ background:#7bafd4; color:var(--navy) }
+.btn-sm.doc{ border-color:#8fa8c4; color:#8fa8c4 }
+.seed-row{ display:flex; gap:.4rem; align-items:center }
+.btn-copy-seed{
+  background:transparent; border:1px solid rgba(201,149,42,.4); color:rgba(250,247,240,.55);
+  padding:.38rem .55rem; border-radius:3px; cursor:pointer;
+  font-family:'JetBrains Mono',monospace; font-size:.65rem; transition:all .18s; white-space:nowrap;
+}
+.btn-copy-seed:hover{ border-color:var(--gold-light); color:var(--gold-light) }
+.btn-sm.doc:hover{ background:#8fa8c4; color:var(--navy) }
+
+/* --- 6. Modale d'export PDF --- */
+#pdf-ov{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:100; backdrop-filter:blur(2px) }
+#pdf-modal{ display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:101; background:#fff; border-radius:8px; box-shadow:0 20px 60px rgba(0,0,0,.25); width:390px; max-width:95vw; border-top:4px solid #7bafd4; overflow:hidden }
+#pdf-ov.open,#pdf-modal.open{ display:block }
+.mh{ background:var(--navy); color:var(--cream); padding:1rem 1.5rem; display:flex; align-items:center; justify-content:space-between }
+.mh h3{ font-family:'Playfair Display',serif; font-size:1rem; font-weight:600; margin:0 }
+.mclose{ background:none; border:none; color:rgba(255,255,255,.6); cursor:pointer; font-size:1.2rem; line-height:1; padding:2px 6px; border-radius:3px; transition:color .15s }
+.mclose:hover{ color:#fff }
+.mb2{ padding:1.5rem }
+.opt-row{ display:flex; align-items:flex-start; gap:.75rem; margin-bottom:1rem; cursor:pointer }
+.opt-row input[type=checkbox]{ width:16px; height:16px; cursor:pointer; accent-color:var(--navy); flex-shrink:0; margin-top:3px }
+.opt-txt{ display:block }
+.opt-lbl{ font-size:.93rem; display:block }
+.opt-desc{ font-size:.75rem; color:var(--text-muted); display:block }
+.seed-note{ font-family:'JetBrains Mono',monospace; font-size:.7rem; background:var(--cream-dark); border:1px solid var(--border); padding:.55rem .85rem; border-radius:3px; color:var(--text-muted); margin-bottom:1.2rem; line-height:1.5 }
+.mactions{ display:flex; gap:.6rem }
+.btn-print{ flex:1; background:var(--navy); color:var(--cream); border:none; padding:.7rem; border-radius:4px; font-family:'Source Serif 4',serif; font-size:.9rem; cursor:pointer; transition:background .2s }
+.btn-print:hover{ background:var(--navy-mid) }
+.btn-cancel{ background:transparent; border:1px solid var(--border); color:var(--text-muted); padding:.7rem 1rem; border-radius:4px; font-family:'Source Serif 4',serif; font-size:.9rem; cursor:pointer; transition:all .2s }
+.btn-cancel:hover{ border-color:var(--text); color:var(--text) }
+
+/* --- 7. Impression --- */
+@media print{
+  body{ background:#fff; font-size:11pt; -webkit-print-color-adjust:exact; print-color-adjust:exact }
+  header{ display:block !important; padding:1rem 1.5rem .8rem }
+  header .subtitle{ display:none }
+  .ctrls, #controls-bar, .top-actions, .top-bar-left, .sol-toggle-wrap,
+  .lang-switch, #pdf-ov, #pdf-modal{ display:none !important }
+  .top-bar{ display:block !important; margin-bottom:.8rem }
+  .top-bar .seed-badge{
+    display:inline-block !important; background:none; border:1px solid var(--border);
+    color:var(--text-muted); font-family:'JetBrains Mono',monospace; font-size:8.5pt;
+    padding:2pt 6pt; border-radius:2px;
+  }
+  body.print-no-header .top-bar{ display:none !important }
+  main{ padding:1rem 1.5rem; max-width:100% }
+  .card{ box-shadow:none; border-radius:0; page-break-inside:avoid; margin-bottom:1rem }
+  #ex-area{ display:block !important }
+  .sol-card{ display:block !important; border-top:2px solid var(--green) }
+  mjx-container[display="true"]{ overflow:visible !important }
+  body.print-no-header header{ display:none !important }
+  body.print-no-header .ctrls{ display:none !important }
+  body.print-no-solution .sol-card,
+  body.print-no-solution .sol-toggle-wrap{ display:none !important }
+  body.print-force-solution .sol-card{ display:block !important }
+}
+</style><!-- KIT:CSS:END -->
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-top">
+    <div class="header-badge" data-k="k-badge">INFORMATION COMPTABLE ET FINANCIÈRE</div>
+    <div class="lang-switch">
+      <button type="button" class="flag-btn active" id="flag-fr" onclick="setLang('fr')" title="Français" aria-label="Français"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="20" height="40" fill="#002654"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ED2939"/></svg></button>
+      <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
+    </div>
+  </div>
+  <h1 data-k="k-h1">Le plan de financement prévisionnel</h1>
+  <p class="subtitle" data-k="k-sub">© Thomas Hossen – Version du 18 septembre 2026</p>
+
+  <div class="ctrls">
+    <div class="ctrl-g">
+      <span class="ctrl-lbl" data-k="k-seed">Seed de reproductibilité</span>
+      <div class="seed-row"><input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="1" max="99999999"><button type="button" class="btn-copy-seed" id="btn-copy-seed" onclick="copySeed(this)" title="Copier la seed active"><span data-kit="btnCopy">&#10697; Copier</span></button></div>
+    </div>
+    <button class="btn-gen" onclick="generateExercise(false)"><span data-k="k-gen">Générer</span></button>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="welcome" style="text-align:center; padding:4rem; color:var(--text-muted); font-style:italic;">
+    <span data-k="k-welcome">Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.</span>
+  </div>
+
+  <div id="ex-area" style="display:none">
+    <div class="top-bar">
+      <div class="seed-badge"><span data-k="k-seedbadge">Seed active :</span> <span id="seed-disp"></span></div>
+      <div class="top-bar-left">
+        <button type="button" class="btn-sm" onclick="generateExercise(true)"><span data-kit="btnNew">&#8634; Nouvel &eacute;nonc&eacute;</span></button>
+        <button type="button" class="btn-sm pdf" onclick="openPdfModal()"><span data-kit="btnPdf">&#11015; Exporter PDF</span></button>
+        <button type="button" class="btn-sm doc" onclick="exportWord()"><span data-kit="btnDoc">&#11015; Exporter Word</span></button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="tag" data-k="k-tag-ex">Énoncé</span><h2 data-k="k-cardtitle">Établissement d'un plan de financement initial et définitif</h2></div>
+      <div class="card-body">
+        <div class="context-block" id="context-text"></div>
+        <div id="enonce-table-container"></div>
+        <div class="context-block" id="additional-info" style="margin-top:1.5rem; background:#fff; border-left:3px solid var(--navy); border-radius:0;"></div>
+
+        <p style="margin-bottom:1rem; font-weight:600; color:var(--red); text-align:left;" data-k="k-work">Travail à faire</p>
+        <ul class="event-list" id="events-list"></ul>
+      </div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag" data-k="k-tag-sol">Corrigé</span><h2 data-k="k-cardtitle2">Établissement d'un plan de financement initial et définitif</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+/* ============================================================
+   PROFILS  /  PROFILES
+   ============================================================ */
+const PROFILES = [
+  { name: "SASU Bertoni", forme: "SASU",
+    fr: { secteur: "une entreprise de mécanique de précision", projet: "l'acquisition de nouvelles machines à commande numérique", equip: "machines" },
+    en: { secteur: "a precision engineering company", projet: "the acquisition of new numerically controlled machines", equip: "machines" } },
+  { name: "SA Valmont Agro", forme: "SA",
+    fr: { secteur: "un groupe de transformation agroalimentaire", projet: "la création d'une nouvelle ligne de conditionnement", equip: "équipements" },
+    en: { secteur: "an agri-food processing group", projet: "the creation of a new packaging line", equip: "equipment" } },
+  { name: "SAS Linéa Mobilier", forme: "SAS",
+    fr: { secteur: "un fabricant de mobilier professionnel", projet: "la modernisation de son atelier d'assemblage", equip: "matériels" },
+    en: { secteur: "a manufacturer of professional furniture", projet: "the modernisation of its assembly workshop", equip: "equipment" } },
+  { name: "SAS Ortec Médical", forme: "SAS",
+    fr: { secteur: "un fabricant de dispositifs médicaux", projet: "la mise en service d'une salle blanche", equip: "installations" },
+    en: { secteur: "a manufacturer of medical devices", projet: "the commissioning of a clean room", equip: "facilities" } },
+  { name: "SA Trans-Aquitaine", forme: "SA",
+    fr: { secteur: "un transporteur routier régional", projet: "le renouvellement de sa flotte de semi-remorques", equip: "véhicules" },
+    en: { secteur: "a regional road haulier", projet: "the renewal of its semi-trailer fleet", equip: "vehicles" } },
+  { name: "SAS Novaplast", forme: "SAS",
+    fr: { secteur: "un transformateur de matières plastiques", projet: "l'installation de presses à injecter de nouvelle génération", equip: "presses" },
+    en: { secteur: "a plastics processor", projet: "the installation of new-generation injection moulding presses", equip: "presses" } }
+];
+
+/* ============================================================
+   DICTIONNAIRE BILINGUE  /  BILINGUAL DICTIONARY
+   ============================================================ */
+const I18N = {
+
+  fr: {
+    "htmlLang": "fr",
+    "title": "Simulateur Analyse Financière - Plan de financement",
+    "locale": "fr-FR",
+    "k-badge": "INFORMATION COMPTABLE ET FINANCIÈRE",
+    "k-h1": "Le plan de financement prévisionnel",
+    "k-sub": "© Thomas Hossen – Version du 18 septembre 2026",
+    "k-seed": "Seed de reproductibilité",
+    "k-gen": "Générer",
+    "k-welcome": "Configurez les paramètres et cliquez sur Générer pour créer un nouvel exercice.",
+    "k-seedbadge": "Seed active :",
+    "k-tag-ex": "Énoncé",
+    "k-cardtitle": "Établissement d'un plan de financement initial et définitif",
+    "k-tag-sol": "Corrigé",
+    "k-cardtitle2": "Établissement d'un plan de financement initial et définitif",
+    "k-work": "Travail à faire",
+    "showSol": "Afficher le corrigé",
+    "hideSol": "Masquer le corrigé",
+    thousands: "\\,",
+    decimal: "{,}",
+
+    years: ["Année N + 1", "Année N + 2", "Année N + 3"],
+    chartTitle: "Trésorerie prévisionnelle de fin d'exercice",
+    chartNote: "En rouge, la trésorerie négative du plan initial : le projet ne peut pas être engagé en l'état.",
+    lblInit: "plan initial",
+    lblDef: "plan définitif",
+
+    context: function(D) {
+      const p = D.prof.fr;
+      return `
+        Dans le cadre d'une stratégie d'expansion, ${D.prof.name}, ${p.secteur}, projette ${p.projet} pour un montant de ${money(D.INV1,'fr')} au début de l'exercice N + 1. Ces ${p.equip} permettraient d'accroître le chiffre d'affaires hors taxes de ${money(D.S[0],'fr')} dès l'exercice N + 1${D.g > 0 ? `, ce supplément d'activité progressant ensuite de ${fmtNb(D.g*100,0)} % par an` : `, ce supplément d'activité se maintenant ensuite au même niveau`}. L'investissement serait partiellement financé par une augmentation de capital de ${money(D.AK,'fr')} libérée au début de l'exercice N + 1. La direction financière vous demande d'établir le plan de financement des trois prochains exercices et d'apprécier si le projet peut être engagé en l'état.
+      `;
+    },
+    table: function(D) {
+      const Y = I18N.fr.years;
+      let h = "";
+      h += `<p style="margin:1.4rem 0 .6rem; font-weight:600; color:var(--navy); text-align:left;">Tableau 1 — Le projet et son financement envisagé</p>`;
+      h += `<div class="exam-table-wrap"><table class="exam-table">
+          <tr><th style="width:62%;">Élément</th><th style="width:38%;">Montant ou modalité</th></tr>
+          <tr><td class="txt-left">Investissement, au début de l'exercice N + 1</td><td class="amt">${money(D.INV1,'fr')}</td></tr>
+          <tr><td class="txt-left">Durée d'amortissement des ${D.prof.fr.equip}</td><td class="amt">${D.dur} ans</td></tr>
+          <tr><td class="txt-left">Augmentation de capital, début N + 1</td><td class="amt">${money(D.AK,'fr')}</td></tr>
+          <tr><td class="txt-left">Cession des anciennes immobilisations en N + 1</td><td class="txt-left" style="font-weight:400;">Prix de cession de ${money(D.PC,'fr')}, dégageant une plus-value de ${money(D.PV,'fr')}</td></tr>
+          <tr><td class="txt-left">Besoin en fonds de roulement d'exploitation normatif</td><td class="txt-left" style="font-weight:400;">${D.jours} jours de chiffre d'affaires hors taxes</td></tr>
+          <tr><td class="txt-left">Trésorerie au 31 décembre N</td><td class="amt">${money(D.T0,'fr')}</td></tr>
+          <tr><td class="txt-left">Taux d'impôt sur les sociétés</td><td class="amt">${fmtNb(D.ISPct,0)} %</td></tr>
+      </table></div>`;
+
+      h += `<p style="margin:1.6rem 0 .6rem; font-weight:600; color:var(--navy); text-align:left;">Tableau 2 — Prévisions d'exploitation et engagements existants</p>`;
+      h += `<div class="exam-table-wrap"><table class="exam-table">
+          <tr><th style="width:40%;">Élément</th>${Y.map(y => `<th>${y}</th>`).join('')}</tr>
+          <tr><td class="txt-left">Chiffre d'affaires HT supplémentaire</td>${D.S.map(v => `<td class="amt">${fmtNb(v,0)}</td>`).join('')}</tr>
+          <tr><td class="txt-left">Excédent brut d'exploitation prévisionnel</td>${D.EBE.map(v => `<td class="amt">${fmtNb(v,0)}</td>`).join('')}</tr>
+          <tr><td class="txt-left">Dotations aux amortissements prévues</td>${D.DAP1a.map(v => `<td class="amt">${fmtNb(v,0)}</td>`).join('')}</tr>
+          <tr><td class="txt-left">Dividendes à distribuer</td>${D.DIV.map(v => `<td class="amt">${fmtNb(v,0)}</td>`).join('')}</tr>
+          <tr><td class="txt-left">Remboursement des emprunts en cours</td>${D.REMB.map(v => `<td class="amt">${fmtNb(v,0)}</td>`).join('')}</tr>
+      </table></div>`;
+
+      h += `<p style="margin:1.6rem 0 .6rem; font-weight:600; color:var(--navy); text-align:left;">Tableau 3 — Le financement complémentaire envisagé (seconde étape)</p>`;
+      h += `<div class="exam-table-wrap"><table class="exam-table">
+          <tr><th style="width:62%;">Élément</th><th style="width:38%;">Montant ou modalité</th></tr>
+          <tr><td class="txt-left">Emprunt sollicité, début N + 1</td><td class="amt">${money(D.E,'fr')}</td></tr>
+          <tr><td class="txt-left">Taux nominal annuel</td><td class="amt">${fmtNb(D.iPct,2)} %</td></tr>
+          <tr><td class="txt-left">Modalités de remboursement</td><td class="txt-left" style="font-weight:400;">Deux annuités constantes après un différé de remboursement d'un an</td></tr>
+          <tr><td class="txt-left">Recours au crédit-bail</td><td class="txt-left" style="font-weight:400;">L'investissement est ramené à ${money(D.INV2,'fr')}, la part restante étant financée en crédit-bail</td></tr>
+          <tr><td class="txt-left">Nouvelles dotations aux amortissements</td><td class="amt">${money(D.DAP2,'fr')} par an</td></tr>
+          <tr><td class="txt-left">Redevances de crédit-bail</td><td class="amt">${money(D.RED,'fr')} HT par an</td></tr>
+      </table></div>`;
+      return h;
+    },
+    info: function(D) {
+      return `
+        <strong>Hypothèses de travail.</strong> Aucune reprise sur amortissements, dépréciations ou provisions, aucune subvention d'investissement, aucun produit ni charge exceptionnels autres que ceux mentionnés, et aucune participation des salariés ne sont prévus. Le résultat courant s'obtient donc en retranchant de l'excédent brut d'exploitation les dotations aux amortissements et les intérêts effectivement décaissés ; la capacité d'autofinancement prévisionnelle se calcule hors cessions d'immobilisations, c'est-à-dire sans tenir compte ni de la valeur comptable des actifs cédés ni du produit de leur cession, lequel figure directement en ressources du plan. Le besoin en fonds de roulement d'exploitation est calculé en jours de chiffre d'affaires hors taxes supplémentaire, sur une base de 360 jours. Les remboursements d'emprunts portés en emplois sont les seuls remboursements du capital, les intérêts étant déjà pris en compte dans la capacité d'autofinancement. Les montants seront arrondis à l'euro le plus proche.
+      `;
+    },
+    enonce: function(D) {
+      let h = "";
+      h += `<li><strong>Capacité d'autofinancement prévisionnelle.</strong> Calculez, pour chacun des trois exercices, le résultat courant, le résultat net et la capacité d'autofinancement prévisionnelle hors cessions d'immobilisations.</li>`;
+      h += `<li><strong>Besoin en fonds de roulement et cession.</strong> Déterminez la variation du besoin en fonds de roulement d'exploitation de chaque exercice, ainsi que le montant net d'impôt de la cession d'immobilisations prévue en N + 1.</li>`;
+      h += `<li><strong>Plan de financement initial.</strong> Présentez le plan de financement initial de fin N + 1 à fin N + 3 et concluez sur l'équilibre financier du projet.</li>`;
+      h += `<li><strong>Tableau d'amortissement de l'emprunt.</strong> L'entreprise sollicite l'emprunt décrit au tableau 3. Établissez son tableau d'amortissement en arrondissant les valeurs à l'euro près.</li>`;
+      h += `<li><strong>Plan de financement définitif.</strong> Recalculez la capacité d'autofinancement en tenant compte du crédit-bail et des intérêts de l'emprunt, puis présentez le plan de financement définitif.</li>`;
+      h += `<li><strong>Commentaire.</strong> Le nouveau montage permet-il d'équilibrer convenablement la trésorerie ? Appréciez la marge de sécurité obtenue et indiquez les limites de l'exercice.</li>`;
+      return h;
+    },
+    sol: function(D) {
+      const M = v => money(v, 'fr');
+      const Y = I18N.fr.years;
+      let s = "";
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">1. La capacité d'autofinancement prévisionnelle</span>
+        Le plan de financement s'appuie sur la capacité d'autofinancement, qui constitue la ressource interne du projet. Il faut donc partir de l'excédent brut d'exploitation prévisionnel et redescendre la cascade des soldes intermédiaires de gestion. En l'absence de reprises, de produits et de charges financiers autres que les intérêts, et de résultat exceptionnel, le résultat courant s'obtient en retranchant de l'EBE les seules dotations aux amortissements :
+        <div class="math-formula">\\[\\text{Résultat courant} = \\text{EBE} - \\text{DAP} \\qquad \\text{puis} \\qquad \\text{Résultat net} = \\text{Résultat courant} \\times (1 - \\text{IS})\\]</div>
+        Pour l'exercice N + 1 : $${texI(D.EBE[0])} - ${texI(D.DAP1)} = ${texI(D.RC1[0])}$ euros de résultat courant, soit un résultat net de $${texI(D.RC1[0])} \\times (1 - ${texD(D.ISPct,0)}\\,\\%) = ${texI(D.RN1[0])}$ euros.<br><br>
+        La capacité d'autofinancement se reconstitue ensuite en ajoutant au résultat net les charges calculées, c'est-à-dire ici les seules dotations. Comme le plan de financement fait figurer le produit de cession en ressources propres, la CAF est calculée <em>hors cessions d'immobilisations</em> : ni la valeur comptable des actifs cédés ni le produit de leur cession n'y sont retenus, faute de quoi la cession serait comptée deux fois.
+        ${cafTable(D, 'fr', false)}
+        ${D.g > 0
+          ? `La capacité d'autofinancement progresse d'un exercice à l'autre, portée par la montée en charge de l'activité supplémentaire : de ${M(D.CAF1[0])} en N + 1 à ${M(D.CAF1[2])} en N + 3.`
+          : `La capacité d'autofinancement est identique sur les trois exercices, à ${M(D.CAF1[0])}, puisque l'activité supplémentaire se maintient au même niveau et que les dotations sont constantes.`}
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">2. La variation du besoin en fonds de roulement et la cession</span>
+        <strong>Le besoin en fonds de roulement.</strong> Un investissement productif ne se limite jamais à son prix d'achat : la production et la vente supplémentaires qu'il permet immobilisent des stocks et du crédit client, et ce besoin doit être financé au même titre que la machine. Le BFRE normatif étant estimé à ${D.jours} jours de chiffre d'affaires hors taxes, le besoin atteint, dès la première année,
+        <div class="math-formula">\\[\\Delta \\text{BFRE}_{N+1} = ${texI(D.S[0])} \\times \\frac{${D.jours}}{360} = ${texI(D.dBFR[0])}\\ \\text{euros}\\]</div>
+        ${D.g > 0
+          ? `Les exercices suivants ne supportent que la variation du besoin, et non son niveau : le chiffre d'affaires supplémentaire passant de ${M(D.S[0])} à ${M(D.S[1])}, le besoin ne s'accroît en N + 2 que de $(${texI(D.S[1])} - ${texI(D.S[0])}) \\times \\frac{${D.jours}}{360} = ${texI(D.dBFR[1])}$ euros, puis de ${M(D.dBFR[2])} en N + 3. C'est l'erreur classique que de reporter chaque année le besoin total : seul son accroissement constitue un emploi nouveau.`
+          : `Les exercices suivants ne supportent aucune variation : le chiffre d'affaires supplémentaire restant stable, le besoin en fonds de roulement est constitué une fois pour toutes en N + 1 et n'appelle plus de financement nouveau. C'est l'erreur classique que de reporter chaque année le besoin total : seul son accroissement constitue un emploi.`}<br><br>
+        <strong>La cession.</strong> Le produit de cession de ${M(D.PC)} n'est pas intégralement disponible : la plus-value de ${M(D.PV)} est imposée au taux de ${fmtNb(D.ISPct,0)} %. La ressource nette à inscrire au plan s'élève donc à
+        <div class="math-formula">\\[${texI(D.PC)} - ${texD(D.ISPct,0)}\\,\\% \\times ${texI(D.PV)} = ${texI(D.cessNette)}\\ \\text{euros}\\]</div>
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">3. Le plan de financement initial</span>
+        Le plan confronte les emplois stables — ce que le projet immobilise durablement — et les ressources durables qui les financent. L'écart annuel, ajouté à la trésorerie de début d'exercice, donne la trésorerie prévisionnelle de fin d'exercice, dont le signe constitue le verdict du plan.
+        ${planTable(D, 'fr', D.planInit)}
+        <strong>Le constat est sans appel.</strong> La trésorerie de fin N + 1 ressort à ${M(D.planInit.treso[0])} : le plan initial n'est <strong>pas équilibré</strong>. L'explication tient à la concentration des emplois sur le premier exercice — ${M(D.INV1)} d'investissement et ${M(D.dBFR[0])} de besoin en fonds de roulement, soit ${M(D.INV1 + D.dBFR[0])} à financer d'un seul coup — quand les ressources durables du même exercice, capacité d'autofinancement et augmentation de capital comprises, ne s'élèvent qu'à ${M(D.planInit.ressTot[0])}.<br><br>
+        ${D.planInit.treso[1] >= 0
+          ? `La trésorerie redevient certes positive dès N + 2, à ${M(D.planInit.treso[1])}, puis s'établit à ${M(D.planInit.treso[2])} en N + 3 : le projet est rentable, et c'est bien un problème de financement, non de rentabilité. Mais une trésorerie négative pendant un exercice entier signifie une cessation de paiements : l'entreprise ne peut pas engager le projet en l'état.`
+          : `La trésorerie reste négative en N + 2 (${M(D.planInit.treso[1])}) et ne redevient positive qu'en N + 3 : le déséquilibre n'est pas un simple décalage de trésorerie de première année, il est durable.`} L'entreprise doit donc soit trouver des ressources complémentaires, soit réduire ses emplois — à défaut, le projet doit être abandonné.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">4. Le tableau d'amortissement de l'emprunt sollicité</span>
+        L'entreprise sollicite ${M(D.E)} au taux de ${fmtNb(D.iPct,2)} %, remboursables en deux annuités constantes après un différé d'un an. Le différé est ici total : aucun versement n'intervient à l'issue de la première année, les intérêts de l'exercice venant s'ajouter au capital dû. Tout se passe donc comme si l'entreprise empruntait
+        <div class="math-formula">\\[${texI(D.E)} \\times (1 + ${texD(D.iPct,2)}\\,\\%) = ${texI(D.E1)}\\ \\text{euros sur deux ans}\\]</div>
+        L'annuité constante correspondante vaut alors
+        <div class="math-formula">\\[a = ${texI(D.E1)} \\times \\frac{${texD(D.i,4)}}{1 - (1 + ${texD(D.i,4)})^{-2}} = ${texI(D.annu)}\\ \\text{euros}\\]</div>
+        ${loanTable(D, 'fr')}
+        La lecture ligne à ligne mérite d'être détaillée. La première année, les intérêts de ${M(D.int[0])} ne sont pas versés mais capitalisés : le capital dû passe de ${M(D.E)} à ${M(D.E1)}. La deuxième année, les intérêts s'élèvent à ${M(D.int[1])} et l'amortissement du capital au solde de l'annuité, soit $${texI(D.annu)} - ${texI(D.int[1])} = ${texI(D.amort[1])}$ euros ; il reste alors ${M(D.crdFin[1])} à rembourser. La troisième année liquide le prêt : les intérêts ressortent à ${M(D.int[2])} et l'amortissement à ${M(D.amort[2])}, la valeur nette devenant nulle.<br><br>
+        <em>Une précision de méthode.</em> Les intérêts capitalisés de la première année ne sont pas décaissés ; conformément à la convention retenue dans cet exercice, ils ne sont pas non plus retenus dans le calcul du résultat de N + 1 — en toute rigueur comptable, ils constitueraient une charge financière à rattacher à l'exercice, ce qui minorerait légèrement la CAF de N + 1 sans modifier la trésorerie.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">5. Le plan de financement définitif</span>
+        Deux modifications doivent être intégrées. D'une part, le recours au crédit-bail ramène l'investissement de ${M(D.INV1)} à ${M(D.INV2)} : l'emploi diminue d'autant, mais les dotations aux amortissements tombent à ${M(D.DAP2)} et des redevances de ${M(D.RED)} viennent grever l'excédent brut d'exploitation, qui s'établit désormais à ${M(D.EBE2[0])} en N + 1. D'autre part, les intérêts effectivement décaissés sur le nouvel emprunt — nuls en N + 1 du fait du différé, puis ${M(D.int[1])} et ${M(D.int[2])} — viennent diminuer le résultat courant des deux derniers exercices.
+        ${cafTable(D, 'fr', true)}
+        On notera que la capacité d'autofinancement ${D.CAF2[0] < D.CAF1[0] ? `est inférieure à celle du plan initial dès la première année (${M(D.CAF2[0])} contre ${M(D.CAF1[0])})` : `reste proche de celle du plan initial`} : le crédit-bail et l'emprunt améliorent la trésorerie, non la rentabilité. C'est bien le propre d'un plan de financement que de distinguer les deux.
+        ${planTable(D, 'fr', D.planDef)}
+        L'équilibre est cette fois atteint : la trésorerie est positive dès la fin de N + 1, à ${M(D.planDef.treso[0])}, puis s'établit à ${M(D.planDef.treso[1])} et ${M(D.planDef.treso[2])}.
+        ${chartSVG(D, 'fr')}
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">6. Commentaire</span>
+        <strong>L'équilibre.</strong> Le plan définitif est équilibré au sens strict, puisque la trésorerie prévisionnelle est positive à la clôture de chacun des trois exercices, et il améliore la position de chaque année par rapport au plan initial. Le montage combine deux leviers de nature différente : l'emprunt apporte une ressource durable de ${M(D.E)}, tandis que le crédit-bail réduit l'emploi de ${M(D.INV1 - D.INV2)} en transformant un investissement en charge étalée. Le second levier est souvent le plus efficace, parce qu'il agit sur le haut du plan sans alourdir l'endettement affiché.<br><br>
+        <strong>La marge de sécurité.</strong> Un plan tout juste équilibré reste fragile, car il repose sur des prévisions. Les banquiers attendent pour cette raison que l'excédent des ressources sur les emplois représente au moins 15 à 20 % de la capacité d'autofinancement de la première année, cet excédent devant croître les années suivantes. Ici :
+        <div class="math-formula">\\[\\frac{${texI(D.planDef.ecart[0])}}{${texI(D.CAF2[0])}} = ${texD(D.ratio1*100,2)}\\,\\%\\]</div>
+        ${D.ratio1 >= 0.15
+          ? `Le seuil est donc franchi, et le risque de déséquilibre à court terme peut être considéré comme maîtrisé : l'emprunt devrait être accordé.`
+          : `Le seuil de 15 % n'est pas atteint : l'équilibre est purement arithmétique et ne laisse aucune marge en cas d'écart entre les prévisions et les réalisations. Il serait prudent de solliciter un emprunt d'un montant supérieur, ou de différer une partie des distributions de dividendes.`} ${D.ratio2 >= D.ratio1
+          ? `Le ratio ${fmtNb(D.ratio2*100,2)} % de la deuxième année confirme la trajectoire : la marge s'élargit à mesure que la capacité d'autofinancement produit ses effets et que les emplois initiaux sont absorbés.`
+          : `Le ratio de la deuxième année, ${fmtNb(D.ratio2*100,2)} %, marque en revanche un repli, sous l'effet du démarrage du remboursement de l'emprunt : c'est le point de vigilance du montage, et il conviendrait de vérifier que l'exercice N + 4, hors champ du plan, ne prolonge pas cette dégradation.`}<br><br>
+        <strong>Les limites de l'exercice.</strong> Trois réserves méritent d'être formulées. La première tient à la nature prévisionnelle des données : l'excédent brut d'exploitation supplémentaire de ${M(D.EBE[0])} repose sur l'hypothèse que les ${D.prof.fr.equip} trouveront immédiatement leur marché, hypothèse qu'il faudrait éprouver par un scénario dégradé. La deuxième tient au besoin en fonds de roulement, calculé ici à partir d'un BFRE normatif moyen sur l'exercice : ce besoin moyen ne correspond pas au besoin à la clôture, et un pic saisonnier peut rendre la trésorerie négative certains mois alors même que le plan annuel est équilibré — seul un budget de trésorerie mensuel permettrait de s'en assurer. La troisième tient à l'horizon : un plan sur trois ans s'arrête précisément au moment où l'emprunt vient d'être remboursé, et ne dit rien du renouvellement des ${D.prof.fr.equip} ni du financement de la croissance au-delà.
+      </div>`;
+
+      s += `<div class="persp-box">
+        <span class="sol-sub">Pour aller plus loin — un document de négociation avant d'être un document comptable</span>
+        Le plan de financement n'est pas un état de synthèse : il ne figure dans aucun référentiel comptable et n'obéit à aucun format normalisé. Il n'en est pas moins, dans certains cas, obligatoire : dans le cadre de la prévention des difficultés des entreprises, les sociétés dépassant trois cents salariés ou dix-huit millions d'euros de chiffre d'affaires hors taxes doivent établir chaque année un plan de financement prévisionnel, aux côtés d'un compte de résultat prévisionnel, d'une situation de l'actif réalisable et disponible et d'un tableau de financement. Le législateur y voit un instrument d'alerte : une entreprise qui construit sérieusement son plan voit venir ses difficultés avant son banquier.
+        <p style="margin-top:.8rem;">Sa fonction première reste toutefois la négociation. Présenter simultanément un plan initial déséquilibré et un plan définitif équilibré n'est pas un artifice de présentation : c'est la démonstration la plus directe de l'utilité du concours sollicité. Le prêteur voit exactement ce que son financement change, et il vérifie du même coup que les remboursements qu'il attend sont couverts par les ressources du plan. C'est aussi pourquoi le plan doit intégrer <em>toutes</em> les conséquences du financement demandé — les intérêts nets d'impôt dans la CAF, le remboursement du capital en emplois, et, le cas échéant, les distributions supplémentaires que la croissance attendue rendra possibles.</p>
+        <p style="margin-top:.8rem;">Deux pièges reviennent systématiquement. Le premier est de faire figurer les intérêts à la fois dans les emplois et dans la capacité d'autofinancement : ils sont déjà déduits du résultat, et seul le remboursement du capital constitue un emploi. Le second est de confondre le niveau et la variation du besoin en fonds de roulement : le plan ne finance que l'accroissement du besoin, un besoin constant d'une année sur l'autre n'appelant aucune ressource nouvelle. Une erreur sur l'un ou l'autre point fausse l'ensemble du document, et c'est précisément sur ces deux points que porte le regard d'un correcteur — comme celui d'un analyste crédit.</p>
+      </div>`;
+
+      return s;
+    }
+  },
+
+  en: {
+    "htmlLang": "en",
+    "title": "Financial Analysis Simulator - Financing plan",
+    "locale": "en-GB",
+    "k-badge": "ACCOUNTING AND FINANCIAL INFORMATION",
+    "k-h1": "The forecast financing plan",
+    "k-sub": "© Thomas Hossen – Version of 18 September 2026",
+    "k-seed": "Reproducibility seed",
+    "k-gen": "Generate",
+    "k-welcome": "Set the parameters and click Generate to create a new exercise.",
+    "k-seedbadge": "Active seed:",
+    "k-tag-ex": "Statement",
+    "k-cardtitle": "Preparing an initial and a final financing plan",
+    "k-tag-sol": "Solution",
+    "k-cardtitle2": "Preparing an initial and a final financing plan",
+    "k-work": "Required work",
+    "showSol": "Show solution",
+    "hideSol": "Hide solution",
+    thousands: ",",
+    decimal: ".",
+
+    years: ["Year N + 1", "Year N + 2", "Year N + 3"],
+    chartTitle: "Forecast year-end cash position",
+    chartNote: "In red, the negative cash position of the initial plan: the project cannot be undertaken as it stands.",
+    lblInit: "initial plan",
+    lblDef: "final plan",
+
+    context: function(D) {
+      const p = D.prof.en;
+      return `
+        As part of an expansion strategy, ${D.prof.name}, ${p.secteur}, plans ${p.projet} for ${money(D.INV1,'en')} at the beginning of year N + 1. That ${p.equip} would raise revenue excluding tax by ${money(D.S[0],'en')} from year N + 1${D.g > 0 ? `, that additional activity then growing by ${fmtNb(D.g*100,0)}% a year` : `, that additional activity then remaining at the same level`}. The investment would be partly funded by a capital increase of ${money(D.AK,'en')} paid up at the beginning of year N + 1. The finance department asks you to prepare the financing plan for the next three years and to assess whether the project can be undertaken as it stands.
+      `;
+    },
+    table: function(D) {
+      const Y = I18N.en.years;
+      let h = "";
+      h += `<p style="margin:1.4rem 0 .6rem; font-weight:600; color:var(--navy); text-align:left;">Table 1 — The project and its intended funding</p>`;
+      h += `<div class="exam-table-wrap"><table class="exam-table">
+          <tr><th style="width:62%;">Item</th><th style="width:38%;">Amount or terms</th></tr>
+          <tr><td class="txt-left">Investment, at the beginning of year N + 1</td><td class="amt">${money(D.INV1,'en')}</td></tr>
+          <tr><td class="txt-left">Depreciation period of the ${D.prof.en.equip}</td><td class="amt">${D.dur} years</td></tr>
+          <tr><td class="txt-left">Capital increase, start of N + 1</td><td class="amt">${money(D.AK,'en')}</td></tr>
+          <tr><td class="txt-left">Disposal of the old fixed assets in N + 1</td><td class="txt-left" style="font-weight:400;">Disposal price of ${money(D.PC,'en')}, generating a gain of ${money(D.PV,'en')}</td></tr>
+          <tr><td class="txt-left">Normative operating working capital requirement</td><td class="txt-left" style="font-weight:400;">${D.jours} days of revenue excluding tax</td></tr>
+          <tr><td class="txt-left">Cash at 31 December N</td><td class="amt">${money(D.T0,'en')}</td></tr>
+          <tr><td class="txt-left">Corporate income tax rate</td><td class="amt">${fmtNb(D.ISPct,0)}%</td></tr>
+      </table></div>`;
+
+      h += `<p style="margin:1.6rem 0 .6rem; font-weight:600; color:var(--navy); text-align:left;">Table 2 — Operating forecasts and existing commitments</p>`;
+      h += `<div class="exam-table-wrap"><table class="exam-table">
+          <tr><th style="width:40%;">Item</th>${Y.map(y => `<th>${y}</th>`).join('')}</tr>
+          <tr><td class="txt-left">Additional revenue excluding tax</td>${D.S.map(v => `<td class="amt">${fmtNb(v,0)}</td>`).join('')}</tr>
+          <tr><td class="txt-left">Forecast EBITDA</td>${D.EBE.map(v => `<td class="amt">${fmtNb(v,0)}</td>`).join('')}</tr>
+          <tr><td class="txt-left">Forecast depreciation charges</td>${D.DAP1a.map(v => `<td class="amt">${fmtNb(v,0)}</td>`).join('')}</tr>
+          <tr><td class="txt-left">Dividends to be distributed</td>${D.DIV.map(v => `<td class="amt">${fmtNb(v,0)}</td>`).join('')}</tr>
+          <tr><td class="txt-left">Repayment of existing borrowings</td>${D.REMB.map(v => `<td class="amt">${fmtNb(v,0)}</td>`).join('')}</tr>
+      </table></div>`;
+
+      h += `<p style="margin:1.6rem 0 .6rem; font-weight:600; color:var(--navy); text-align:left;">Table 3 — The additional funding considered (second stage)</p>`;
+      h += `<div class="exam-table-wrap"><table class="exam-table">
+          <tr><th style="width:62%;">Item</th><th style="width:38%;">Amount or terms</th></tr>
+          <tr><td class="txt-left">Loan applied for, start of N + 1</td><td class="amt">${money(D.E,'en')}</td></tr>
+          <tr><td class="txt-left">Nominal annual rate</td><td class="amt">${fmtNb(D.iPct,2)}%</td></tr>
+          <tr><td class="txt-left">Repayment terms</td><td class="txt-left" style="font-weight:400;">Two constant annual instalments after a one-year grace period</td></tr>
+          <tr><td class="txt-left">Use of a finance lease</td><td class="txt-left" style="font-weight:400;">The investment is reduced to ${money(D.INV2,'en')}, the remainder being funded by a finance lease</td></tr>
+          <tr><td class="txt-left">Revised depreciation charges</td><td class="amt">${money(D.DAP2,'en')} a year</td></tr>
+          <tr><td class="txt-left">Lease payments</td><td class="amt">${money(D.RED,'en')} excluding tax a year</td></tr>
+      </table></div>`;
+      return h;
+    },
+    info: function(D) {
+      return `
+        <strong>Working assumptions.</strong> No reversals of depreciation or provisions, no investment grants, no exceptional income or expenses other than those mentioned, and no employee profit-sharing are expected. Current profit is therefore obtained by deducting depreciation charges and interest actually paid from EBITDA; forecast cash flow capacity is computed excluding disposals of fixed assets, that is, without taking into account either the net book value of the assets sold or the proceeds of their disposal, which appear directly among the plan's resources. Operating working capital requirement is computed in days of additional revenue excluding tax, on a 360-day basis. The loan repayments shown under uses are principal repayments only, interest being already reflected in cash flow capacity. Amounts are rounded to the nearest euro.
+      `;
+    },
+    enonce: function(D) {
+      let h = "";
+      h += `<li><strong>Forecast cash flow capacity.</strong> For each of the three years, compute current profit, net profit and forecast cash flow capacity excluding disposals of fixed assets.</li>`;
+      h += `<li><strong>Working capital and disposal.</strong> Determine the change in operating working capital requirement for each year, together with the after-tax amount of the disposal of fixed assets planned for N + 1.</li>`;
+      h += `<li><strong>Initial financing plan.</strong> Present the initial financing plan from the end of N + 1 to the end of N + 3 and conclude on the financial balance of the project.</li>`;
+      h += `<li><strong>Loan amortisation schedule.</strong> The company applies for the loan described in Table 3. Draw up its amortisation schedule, rounding figures to the nearest euro.</li>`;
+      h += `<li><strong>Final financing plan.</strong> Recompute cash flow capacity taking account of the finance lease and of the loan interest, then present the final financing plan.</li>`;
+      h += `<li><strong>Commentary.</strong> Does the new arrangement properly balance the cash position? Assess the safety margin obtained and set out the limitations of the exercise.</li>`;
+      return h;
+    },
+    sol: function(D) {
+      const M = v => money(v, 'en');
+      let s = "";
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">1. Forecast cash flow capacity</span>
+        The financing plan rests on cash flow capacity, which constitutes the project's internal resource. One must therefore start from forecast EBITDA and work down the cascade of intermediate management balances. In the absence of reversals, of financial income and expenses other than interest, and of exceptional results, current profit is obtained by deducting depreciation charges alone from EBITDA:
+        <div class="math-formula">\\[\\text{Current profit} = \\text{EBITDA} - \\text{Depreciation} \\qquad \\text{then} \\qquad \\text{Net profit} = \\text{Current profit} \\times (1 - \\tau)\\]</div>
+        For year N + 1: $${texI(D.EBE[0])} - ${texI(D.DAP1)} = ${texI(D.RC1[0])}$ euros of current profit, hence a net profit of $${texI(D.RC1[0])} \\times (1 - ${texD(D.ISPct,0)}\\,\\%) = ${texI(D.RN1[0])}$ euros.<br><br>
+        Cash flow capacity is then rebuilt by adding back to net profit the non-cash expenses, here the depreciation charges alone. Since the financing plan shows the disposal proceeds among its own resources, cash flow capacity is computed <em>excluding disposals of fixed assets</em>: neither the net book value of the assets sold nor the proceeds of their disposal are included, otherwise the disposal would be counted twice.
+        ${cafTable(D, 'en', false)}
+        ${D.g > 0
+          ? `Cash flow capacity rises from year to year, carried by the ramp-up of the additional activity: from ${M(D.CAF1[0])} in N + 1 to ${M(D.CAF1[2])} in N + 3.`
+          : `Cash flow capacity is identical across the three years, at ${M(D.CAF1[0])}, since the additional activity stays at the same level and depreciation charges are constant.`}
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">2. The change in working capital requirement and the disposal</span>
+        <strong>Working capital requirement.</strong> A productive investment never comes down to its purchase price alone: the additional production and sales it makes possible tie up inventories and customer credit, and that requirement must be funded just as the machine is. With normative working capital estimated at ${D.jours} days of revenue excluding tax, the requirement reaches, in the very first year,
+        <div class="math-formula">\\[\\Delta \\text{WCR}_{N+1} = ${texI(D.S[0])} \\times \\frac{${D.jours}}{360} = ${texI(D.dBFR[0])}\\ \\text{euros}\\]</div>
+        ${D.g > 0
+          ? `The following years bear only the change in the requirement, not its level: with additional revenue moving from ${M(D.S[0])} to ${M(D.S[1])}, the requirement grows in N + 2 only by $(${texI(D.S[1])} - ${texI(D.S[0])}) \\times \\frac{${D.jours}}{360} = ${texI(D.dBFR[1])}$ euros, then by ${M(D.dBFR[2])} in N + 3. Carrying the total requirement forward each year is the classic mistake: only its increase constitutes a new use of funds.`
+          : `The following years bear no change at all: with additional revenue remaining stable, working capital is built up once and for all in N + 1 and calls for no further funding. Carrying the total requirement forward each year is the classic mistake: only its increase constitutes a use of funds.`}<br><br>
+        <strong>The disposal.</strong> The ${M(D.PC)} of disposal proceeds are not fully available: the gain of ${M(D.PV)} is taxed at ${fmtNb(D.ISPct,0)}%. The net resource to be entered in the plan therefore amounts to
+        <div class="math-formula">\\[${texI(D.PC)} - ${texD(D.ISPct,0)}\\,\\% \\times ${texI(D.PV)} = ${texI(D.cessNette)}\\ \\text{euros}\\]</div>
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">3. The initial financing plan</span>
+        The plan sets stable uses — what the project ties up durably — against the long-term resources that fund them. The annual gap, added to the opening cash position, gives the forecast year-end cash position, whose sign is the plan's verdict.
+        ${planTable(D, 'en', D.planInit)}
+        <strong>The finding is unambiguous.</strong> Cash at the end of N + 1 comes to ${M(D.planInit.treso[0])}: the initial plan is <strong>not balanced</strong>. The explanation lies in the concentration of uses in the first year — ${M(D.INV1)} of investment and ${M(D.dBFR[0])} of working capital, that is ${M(D.INV1 + D.dBFR[0])} to be funded in one go — while the same year's long-term resources, including cash flow capacity and the capital increase, come to only ${M(D.planInit.ressTot[0])}.<br><br>
+        ${D.planInit.treso[1] >= 0
+          ? `Cash does turn positive again in N + 2, at ${M(D.planInit.treso[1])}, then stands at ${M(D.planInit.treso[2])} in N + 3: the project is profitable, and this is indeed a funding problem, not a profitability one. But a negative cash position for a whole year means insolvency: the company cannot undertake the project as it stands.`
+          : `Cash remains negative in N + 2 (${M(D.planInit.treso[1])}) and only turns positive in N + 3: the imbalance is not a mere first-year timing gap, it is lasting.`} The company must therefore either find additional resources or reduce its uses — failing which the project must be abandoned.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">4. The amortisation schedule of the loan applied for</span>
+        The company applies for ${M(D.E)} at ${fmtNb(D.iPct,2)}%, repayable in two constant instalments after a one-year grace period. The grace period is total here: no payment is made at the end of the first year, the year's interest being added to the capital owed. Everything therefore happens as if the company were borrowing
+        <div class="math-formula">\\[${texI(D.E)} \\times (1 + ${texD(D.iPct,2)}\\,\\%) = ${texI(D.E1)}\\ \\text{euros over two years}\\]</div>
+        The corresponding constant instalment is then
+        <div class="math-formula">\\[a = ${texI(D.E1)} \\times \\frac{${texD(D.i,4)}}{1 - (1 + ${texD(D.i,4)})^{-2}} = ${texI(D.annu)}\\ \\text{euros}\\]</div>
+        ${loanTable(D, 'en')}
+        The line-by-line reading is worth setting out. In the first year, interest of ${M(D.int[0])} is not paid but capitalised: the capital owed rises from ${M(D.E)} to ${M(D.E1)}. In the second year, interest amounts to ${M(D.int[1])} and the principal repayment to the balance of the instalment, that is $${texI(D.annu)} - ${texI(D.int[1])} = ${texI(D.amort[1])}$ euros; ${M(D.crdFin[1])} then remains outstanding. The third year clears the loan: interest comes to ${M(D.int[2])} and the principal repayment to ${M(D.amort[2])}, leaving a nil balance.<br><br>
+        <em>A methodological note.</em> The capitalised interest of the first year is not paid out; in line with the convention adopted in this exercise, it is not included in the computation of the N + 1 result either — in strict accounting terms it would be a financial expense to be allocated to that year, which would slightly reduce the N + 1 cash flow capacity without changing the cash position.
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">5. The final financing plan</span>
+        Two changes must be reflected. First, the use of a finance lease brings the investment down from ${M(D.INV1)} to ${M(D.INV2)}: the use of funds falls accordingly, but depreciation charges drop to ${M(D.DAP2)} and lease payments of ${M(D.RED)} weigh on EBITDA, which now stands at ${M(D.EBE2[0])} in N + 1. Second, the interest actually paid on the new loan — nil in N + 1 because of the grace period, then ${M(D.int[1])} and ${M(D.int[2])} — reduces current profit in the last two years.
+        ${cafTable(D, 'en', true)}
+        Note that cash flow capacity ${D.CAF2[0] < D.CAF1[0] ? `is lower than in the initial plan from the very first year (${M(D.CAF2[0])} against ${M(D.CAF1[0])})` : `remains close to that of the initial plan`}: the lease and the loan improve the cash position, not profitability. Distinguishing the two is precisely what a financing plan is for.
+        ${planTable(D, 'en', D.planDef)}
+        Balance is achieved this time: cash is positive from the end of N + 1, at ${M(D.planDef.treso[0])}, then stands at ${M(D.planDef.treso[1])} and ${M(D.planDef.treso[2])}.
+        ${chartSVG(D, 'en')}
+      </div>`;
+
+      s += `<div class="calc-box">
+        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">6. Commentary</span>
+        <strong>Balance.</strong> The final plan is balanced in the strict sense, since forecast cash is positive at the close of each of the three years, and it improves every year's position relative to the initial plan. The arrangement combines two levers of different natures: the loan brings in a long-term resource of ${M(D.E)}, while the finance lease cuts the use of funds by ${M(D.INV1 - D.INV2)} by turning an investment into a spread charge. The second lever is often the more effective, because it acts on the top of the plan without increasing reported debt.<br><br>
+        <strong>The safety margin.</strong> A plan that is only just balanced remains fragile, since it rests on forecasts. Bankers therefore expect the excess of resources over uses to represent at least 15 to 20% of the first year's cash flow capacity, that excess being expected to grow in later years. Here:
+        <div class="math-formula">\\[\\frac{${texI(D.planDef.ecart[0])}}{${texI(D.CAF2[0])}} = ${texD(D.ratio1*100,2)}\\,\\%\\]</div>
+        ${D.ratio1 >= 0.15
+          ? `The threshold is therefore cleared, and the risk of short-term imbalance can be regarded as under control: the loan should be granted.`
+          : `The 15% threshold is not met: the balance is purely arithmetical and leaves no margin should forecasts and outturns diverge. It would be prudent to apply for a larger loan, or to defer part of the dividend distributions.`} ${D.ratio2 >= D.ratio1
+          ? `The second year's ratio of ${fmtNb(D.ratio2*100,2)}% confirms the trajectory: the margin widens as cash flow capacity takes effect and the initial uses are absorbed.`
+          : `The second year's ratio, ${fmtNb(D.ratio2*100,2)}%, by contrast marks a setback, as repayment of the loan begins: this is the weak point of the arrangement, and it would be worth checking that year N + 4, beyond the plan's horizon, does not prolong that deterioration.`}<br><br>
+        <strong>The limitations of the exercise.</strong> Three reservations are worth stating. The first concerns the forecast nature of the data: the additional EBITDA of ${M(D.EBE[0])} rests on the assumption that the ${D.prof.en.equip} will immediately find its market, an assumption that ought to be tested through a downside scenario. The second concerns working capital, computed here from a normative requirement averaged over the year: that average does not match the requirement at the closing date, and a seasonal peak may push cash into deficit in some months even though the annual plan is balanced — only a monthly cash budget can settle the point. The third concerns the horizon: a three-year plan stops precisely when the loan has just been repaid, and says nothing about the renewal of the ${D.prof.en.equip} or about funding growth beyond.
+      </div>`;
+
+      s += `<div class="persp-box">
+        <span class="sol-sub">Going further — a negotiating document before it is an accounting one</span>
+        The financing plan is not a financial statement: it appears in no accounting framework and follows no standardised format. It is nonetheless mandatory in some cases: under the rules on the prevention of business difficulties, companies exceeding three hundred employees or eighteen million euros of revenue excluding tax must draw up a forecast financing plan each year, alongside a forecast income statement, a statement of realisable and available assets, and a statement of sources and applications of funds. The legislator sees it as an early-warning instrument: a company that builds its plan seriously sees its difficulties coming before its banker does.
+        <p style="margin-top:.8rem;">Its primary function, however, remains negotiation. Presenting an unbalanced initial plan and a balanced final plan side by side is no presentational trick: it is the most direct demonstration of the usefulness of the facility applied for. The lender sees exactly what its funding changes, and checks at the same time that the repayments it expects are covered by the plan's resources. This is also why the plan must reflect <em>all</em> the consequences of the funding requested — after-tax interest within cash flow capacity, principal repayment among uses, and, where applicable, the additional distributions that the expected growth will make possible.</p>
+        <p style="margin-top:.8rem;">Two pitfalls recur without fail. The first is to show interest both among uses and within cash flow capacity: it has already been deducted from profit, and only the principal repayment is a use of funds. The second is to confuse the level and the change of working capital requirement: the plan funds only the increase in the requirement, a requirement that is constant from one year to the next calling for no new resource. An error on either point distorts the whole document, and it is precisely on those two points that a marker's eye — like a credit analyst's — will fall.</p>
+      </div>`;
+
+      return s;
+    }
+  }
+};
+
+/* ============================================================
+   GESTION DE LA LANGUE  /  LANGUAGE HANDLING
+   ============================================================ */
+let LANG = 'fr';
+
+function detectLang() {
+    try {
+        const q = new URLSearchParams(window.location.search).get('lang');
+        if (q && I18N[q.toLowerCase()]) return q.toLowerCase();
+    } catch (e) {}
+    const h = (window.location.hash || '').replace('#', '').toLowerCase();
+    if (I18N[h]) return h;
+    return 'fr';
+}
+
+function applyLang() {
+    const D = I18N[LANG];
+    document.documentElement.lang = D.htmlLang;
+    document.title = D.title;
+
+    document.querySelectorAll('[data-k]').forEach(function (el) {
+        const key = el.getAttribute('data-k');
+        if (D[key] !== undefined) el.innerHTML = D[key];
+    });
+
+    const btn = document.getElementById('toggle-btn');
+    if (btn) btn.innerText = document.getElementById('sol-card').classList.contains('visible') ? D.hideSol : D.showSol;
+
+    document.getElementById('flag-fr').classList.toggle('active', LANG === 'fr');
+    document.getElementById('flag-en').classList.toggle('active', LANG === 'en');
+}
+
+function setLang(lang) {
+    if (!I18N[lang] || lang === LANG) return;
+    LANG = lang;
+
+    try {
+        const u = new URL(window.location.href);
+        u.searchParams.set('lang', lang);
+        history.replaceState(null, '', u.toString());
+    } catch (e) {}
+
+    applyLang();
+
+    if (document.getElementById('ex-area').style.display !== 'none') {
+        const solWasVisible = document.getElementById('sol-card').classList.contains('visible');
+        generateExercise(false);
+        if (solWasVisible) toggleSol();
+    }
+}
+
+// --- PRNG (Mulberry32) ---
+let currentSeed = 0;
+function seedPRNG(seed) {
+    return function() {
+      let t = seed += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+let random = Math.random;
+
+function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
+function pick(arr) { return arr[randInt(0, arr.length - 1)]; }
+
+/* --- formatage --- */
+function texD(num, dec) {
+    let sign = num < 0 ? "-" : "";
+    let parts = Math.abs(num).toFixed(dec).split('.');
+    let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, I18N[LANG].thousands);
+    return sign + intPart + (parts.length > 1 ? I18N[LANG].decimal + parts[1] : "");
+}
+function texI(num) { return texD(num, 0); }
+function fmtNb(num, dec) {
+    return num.toLocaleString(I18N[LANG].locale, {minimumFractionDigits: dec, maximumFractionDigits: dec});
+}
+function money(v, lang, dec) {
+    const d = dec === undefined ? 0 : dec;
+    const s = Math.abs(v).toLocaleString(I18N[lang].locale, {minimumFractionDigits: d, maximumFractionDigits: d});
+    const body = (lang === 'fr') ? (s + '\u00a0€') : ('€' + s);
+    return (v < 0 ? '−' + body : body);
+}
+function cell(v, lang) {
+    if (!v) return '0';
+    const s = Math.abs(v).toLocaleString(I18N[lang].locale, {minimumFractionDigits: 0, maximumFractionDigits: 0});
+    return (v < 0 ? '(' + s + ')' : s);
+}
+
+/* ============================================================
+   MODÈLE  /  MODEL
+   ============================================================ */
+function buildPlan(D, def) {
+    const inv = def ? D.INV2 : D.INV1;
+    const caf = def ? D.CAF2 : D.CAF1;
+    const newAmort = def ? [0, D.amort[1], D.amort[2]] : [0, 0, 0];
+    const newDebt = def ? [D.E, 0, 0] : [0, 0, 0];
+
+    const invest = [inv, 0, 0];
+    const remb = D.REMB.map((v, t) => v + newAmort[t]);
+    const emplTot = [], ressTot = [], ecart = [], treso = [], debut = [];
+    let t0 = D.T0;
+    for (let t = 0; t < 3; t++) {
+        emplTot[t] = invest[t] + D.dBFR[t] + remb[t] + D.DIV[t];
+        ressTot[t] = caf[t] + (t === 0 ? D.cessNette : 0) + (t === 0 ? D.AK : 0) + newDebt[t];
+        ecart[t] = ressTot[t] - emplTot[t];
+        debut[t] = t0;
+        treso[t] = t0 + ecart[t];
+        t0 = treso[t];
+    }
+    return { invest, remb, newAmort, newDebt, caf, emplTot, ressTot, ecart, debut, treso };
+}
+
+function computeModel() {
+    let D = null;
+    for (let attempt = 0; attempt < 120; attempt++) {
+        const cand = drawModel();
+        if (cand) { D = cand; break; }
+    }
+    if (!D) D = drawModel(true);
+    return D;
+}
+
+function drawModel(force) {
+    const prof = PROFILES[randInt(0, PROFILES.length - 1)];
+    const ISPct = 25, IS = 0.25;
+
+    // --- activité supplémentaire ---
+    const S1 = randInt(40, 120) * 100000;                  // 4 M€ .. 12 M€
+    const g  = pick([0, 0, 0.03, 0.05, 0.08]);
+    const S2 = Math.round(S1 * (1 + g) / 10000) * 10000;
+    const S3 = Math.round(S2 * (1 + g) / 10000) * 10000;
+    const S = [S1, S2, S3];
+
+    const mEBE = randInt(15, 24) / 100;
+    const EBE = S.map(v => Math.round(v * mEBE / 1000) * 1000);
+
+    // --- investissement et amortissements ---
+    const INV1 = randInt(15, 40) * 100000;                 // 1,5 M€ .. 4 M€
+    const dur  = randInt(8, 15);
+    const DAP1 = Math.round(INV1 / dur / 1000) * 1000;
+
+    // --- financement initial ---
+    const AK = Math.round(INV1 * randInt(30, 60) / 100 / 100000) * 100000;
+    const PC = Math.round(INV1 * randInt(2, 6) / 100 / 5000) * 5000;
+    const PV = Math.round(PC * randInt(20, 50) / 100 / 1000) * 1000;
+    const cessNette = PC - IS * PV;
+
+    const jours = pick([30, 35, 40, 45, 50, 60]);
+    const dBFR = [
+        Math.round(S1 * jours / 360),
+        Math.round((S2 - S1) * jours / 360),
+        Math.round((S3 - S2) * jours / 360)
+    ];
+
+    const d1 = Math.round(EBE[0] * randInt(6, 12) / 100 / 5000) * 5000;
+    const DIV = [d1, Math.round(d1 * randInt(100, 115) / 100 / 5000) * 5000, Math.round(d1 * randInt(110, 130) / 100 / 5000) * 5000];
+    const r1 = Math.round(INV1 * randInt(4, 10) / 100 / 5000) * 5000;
+    const REMB = [r1, r1, r1];
+
+    const T0 = pick([0, 0, Math.round(INV1 * randInt(2, 8) / 100 / 10000) * 10000]);
+
+    // --- CAF du plan initial ---
+    const RC1 = EBE.map(v => v - DAP1);
+    const RN1 = RC1.map(v => Math.round(v * (1 - IS)));
+    const CAF1 = RN1.map(v => v + DAP1);
+
+    // --- crédit-bail et emprunt (plan définitif) ---
+    const CB   = Math.round(INV1 * randInt(10, 25) / 100 / 100000) * 100000;
+    const INV2 = INV1 - CB;
+    const DAP2 = Math.round(INV2 / dur / 1000) * 1000;
+    const RED  = Math.round(CB * randInt(12, 20) / 100 / 1000) * 1000;
+    const iPct = randInt(30, 70) / 10;                     // 3,0 % .. 7,0 %
+    const i = iPct / 100;
+
+    const EBE2 = EBE.map(v => v - RED);
+
+    // montant de l'emprunt : calibré pour atteindre une marge de sécurité cible
+    const cible = randInt(12, 30) / 100;
+    const RC2_1 = EBE2[0] - DAP2;
+    const CAF2_1 = Math.round(RC2_1 * (1 - IS)) + DAP2;
+    const besoin = (INV2 + dBFR[0] + REMB[0] + DIV[0]) - (CAF2_1 + cessNette + AK) - T0;
+    const E = Math.ceil((besoin + cible * CAF2_1) / 50000) * 50000;
+
+    // tableau d'amortissement : différé total d'un an puis deux annuités constantes
+    const E1 = Math.round(E * (1 + i));
+    const annu = Math.round(E1 * i / (1 - Math.pow(1 + i, -2)));
+    const crdDeb = [E, E1, 0], int = [0, 0, 0], amort = [0, 0, 0], annuite = [0, 0, 0], crdFin = [0, 0, 0];
+    int[0] = Math.round(E * i);
+    amort[0] = 0; annuite[0] = 0; crdFin[0] = E1;
+    int[1] = Math.round(E1 * i);
+    amort[1] = annu - int[1];
+    annuite[1] = annu;
+    crdFin[1] = E1 - amort[1];
+    crdDeb[2] = crdFin[1];
+    int[2] = Math.round(crdDeb[2] * i);
+    amort[2] = crdDeb[2];
+    annuite[2] = amort[2] + int[2];
+    crdFin[2] = 0;
+
+    // --- CAF du plan définitif ---
+    const intPayes = [0, int[1], int[2]];
+    const RC2 = EBE2.map((v, t) => v - DAP2 - intPayes[t]);
+    const RN2 = RC2.map(v => Math.round(v * (1 - IS)));
+    const CAF2 = RN2.map(v => v + DAP2);
+
+    const D = {
+        prof, ISPct, IS, S, g, mEBE, EBE, INV1, dur, DAP1, DAP1a: [DAP1, DAP1, DAP1],
+        AK, PC, PV, cessNette, jours, dBFR, DIV, REMB, T0,
+        RC1, RN1, CAF1,
+        CB, INV2, DAP2, RED, EBE2, iPct, i, E, E1, annu,
+        crdDeb, int, amort, annuite, crdFin, intPayes, RC2, RN2, CAF2
+    };
+
+    D.planInit = buildPlan(D, false);
+    D.planDef  = buildPlan(D, true);
+    D.ratio1 = D.planDef.ecart[0] / D.CAF2[0];
+    D.ratio2 = D.planDef.ecart[1] / D.CAF2[1];
+
+    if (!force) {
+        if (RC1.some(v => v <= 0) || RC2.some(v => v <= 0)) return null;
+        if (CAF1.some(v => v <= 0) || CAF2.some(v => v <= 0)) return null;
+        if (D.planInit.treso[0] >= 0) return null;                       // le plan initial doit être déséquilibré
+        if (Math.abs(D.planInit.treso[0]) < 0.05 * CAF1[0]) return null; // un déséquilibre lisible
+        if (D.planDef.treso.some(v => v <= 0)) return null;              // le plan définitif doit être équilibré
+        if (D.ratio1 < 0.08 || D.ratio1 > 0.40) return null;
+        if (E < 200000 || E > 3 * CAF2[0]) return null;
+        if (DAP2 <= 0 || INV2 <= 0 || RED <= 0) return null;
+        if (annu <= int[1]) return null;
+        if (amort[1] <= 0 || amort[2] <= 0) return null;
+        if (DIV.some(v => v <= 0)) return null;
+        if (PV <= 0 || PC <= PV) return null;
+    }
+    return D;
+}
+
+/* ============================================================
+   TABLEAUX  /  TABLES
+   ============================================================ */
+function cafTable(D, lang, def) {
+    const fr = lang === 'fr', Y = I18N[lang].years;
+    const EBEr = def ? D.EBE2 : D.EBE;
+    const DAP = def ? D.DAP2 : D.DAP1;
+    const RC = def ? D.RC2 : D.RC1;
+    const RN = def ? D.RN2 : D.RN1;
+    const CAF = def ? D.CAF2 : D.CAF1;
+    const rows = [
+        { l: fr ? "Excédent brut d'exploitation" : "EBITDA", v: EBEr },
+        { l: fr ? "− Dotations aux amortissements" : "− Depreciation charges", v: [-DAP, -DAP, -DAP] }
+    ];
+    if (def) rows.push({ l: fr ? "− Intérêts décaissés sur le nouvel emprunt" : "− Interest paid on the new loan", v: D.intPayes.map(v => -v) });
+    rows.push({ l: fr ? "= Résultat courant" : "= Current profit", v: RC, strong: true });
+    rows.push({ l: fr ? `− Impôt sur les sociétés (${fmtNb(D.ISPct,0)} %)` : `− Corporate income tax (${fmtNb(D.ISPct,0)}%)`, v: RC.map((v, t) => -(v - RN[t])) });
+    rows.push({ l: fr ? "= Résultat net" : "= Net profit", v: RN, strong: true });
+    rows.push({ l: fr ? "+ Dotations aux amortissements" : "+ Depreciation charges", v: [DAP, DAP, DAP] });
+    rows.push({ l: fr ? "= CAF hors cessions d'immobilisations" : "= Cash flow capacity excl. disposals", v: CAF, strong: true });
+
+    let body = '';
+    rows.forEach(function (r) {
+        body += `<tr${r.strong ? ' style="background:#f4f1ea;"' : ''}>
+            <td class="txt-left" style="font-weight:${r.strong ? 700 : 400};${r.strong ? '' : 'padding-left:1.2rem;'}">${r.l}</td>
+            ${r.v.map(v => `<td class="amt"${r.strong ? ' style="font-weight:700;"' : ''}>${cell(v, lang)}</td>`).join('')}
+        </tr>`;
+    });
+    return `<div class="exam-table-wrap"><table class="exam-table">
+        <tr><th style="width:40%;">${fr ? (def ? "CAF prévisionnelle révisée" : "CAF prévisionnelle") : (def ? "Revised forecast cash flow capacity" : "Forecast cash flow capacity")}</th>${Y.map(y => `<th>${y}</th>`).join('')}</tr>
+        ${body}
+      </table></div>`;
+}
+
+function planTable(D, lang, P) {
+    const fr = lang === 'fr', Y = I18N[lang].years;
+    const rows = [
+        { l: fr ? "Acquisition d'immobilisations" : "Acquisition of fixed assets", v: P.invest },
+        { l: fr ? "Variation du BFRE" : "Change in operating working capital", v: D.dBFR },
+        { l: fr ? "Remboursement des dettes financières" : "Repayment of financial debt", v: P.remb },
+        { l: fr ? "Distribution de dividendes" : "Dividend distribution", v: D.DIV },
+        { l: fr ? "TOTAL DES EMPLOIS" : "TOTAL USES", v: P.emplTot, strong: true },
+        { l: fr ? "CAF (hors cessions d'immobilisations)" : "Cash flow capacity (excl. disposals)", v: P.caf },
+        { l: fr ? "Cessions nettes d'immobilisations" : "Net disposals of fixed assets", v: [D.cessNette, 0, 0] },
+        { l: fr ? "Augmentation de capital et subventions" : "Capital increase and grants", v: [D.AK, 0, 0] },
+        { l: fr ? "Nouvelles dettes financières" : "New financial debt", v: P.newDebt },
+        { l: fr ? "TOTAL DES RESSOURCES" : "TOTAL RESOURCES", v: P.ressTot, strong: true },
+        { l: fr ? "Écart annuel (Ressources − Emplois)" : "Annual gap (resources − uses)", v: P.ecart, strong: true },
+        { l: fr ? "Trésorerie initiale" : "Opening cash", v: P.debut },
+        { l: fr ? "Trésorerie finale" : "Closing cash", v: P.treso, head: true }
+    ];
+    let body = '';
+    rows.forEach(function (r) {
+        const bg = r.head ? 'background:var(--cream-dark);' : (r.strong ? 'background:#f4f1ea;' : '');
+        const w = (r.strong || r.head) ? 700 : 400;
+        body += `<tr style="${bg}">
+            <td class="txt-left" style="font-weight:${w};${(r.strong || r.head) ? '' : 'padding-left:1.2rem;'}">${r.l}</td>
+            ${r.v.map(v => `<td class="amt" style="font-weight:${w};${r.head && v < 0 ? 'color:var(--red);' : ''}">${cell(v, lang)}</td>`).join('')}
+        </tr>`;
+    });
+    return `<div class="exam-table-wrap"><table class="exam-table">
+        <tr><th style="width:40%;">${fr ? (P === D.planDef ? "Plan de financement définitif" : "Plan de financement initial") : (P === D.planDef ? "Final financing plan" : "Initial financing plan")}</th>${Y.map(y => `<th>${y}</th>`).join('')}</tr>
+        ${body}
+      </table></div>
+      <p style="font-size:.82rem;color:var(--text-muted);font-style:italic;margin:.4rem 0 1.2rem;text-align:left;">${fr ? "Les montants entre parenthèses sont négatifs." : "Amounts in brackets are negative."}</p>`;
+}
+
+function loanTable(D, lang) {
+    const fr = lang === 'fr';
+    const head = fr
+        ? ['Année', 'Capital dû', 'Intérêts', 'Amortissement', 'Annuité', 'Valeur nette']
+        : ['Year', 'Capital owed', 'Interest', 'Principal', 'Instalment', 'Closing balance'];
+    let rows = '';
+    for (let t = 0; t < 3; t++) {
+        rows += `<tr>
+            <td class="txt-left">${I18N[lang].years[t]}</td>
+            <td class="amt">${cell(D.crdDeb[t], lang)}</td>
+            <td class="amt">${cell(D.int[t], lang)}</td>
+            <td class="amt">${cell(D.amort[t], lang)}</td>
+            <td class="amt">${cell(D.annuite[t], lang)}</td>
+            <td class="amt">${cell(D.crdFin[t], lang)}</td>
+        </tr>`;
+    }
+    rows += `<tr style="background:var(--cream-dark);">
+        <td class="txt-left" style="font-weight:700;">Total</td><td class="amt"></td>
+        <td class="amt" style="font-weight:700;">${cell(D.int[1] + D.int[2], lang)}</td>
+        <td class="amt" style="font-weight:700;">${cell(D.amort[1] + D.amort[2], lang)}</td>
+        <td class="amt" style="font-weight:700;">${cell(D.annuite[1] + D.annuite[2], lang)}</td>
+        <td class="amt"></td>
+    </tr>`;
+    return `<div class="exam-table-wrap"><table class="exam-table">
+        <tr>${head.map(h => `<th>${h}</th>`).join('')}</tr>${rows}
+    </table></div>
+    <p style="font-size:.82rem;color:var(--text-muted);font-style:italic;margin:.4rem 0 1.2rem;text-align:left;">${fr ? "Les intérêts de la première année ne sont pas versés : ils sont capitalisés et portent le capital dû à " + money(D.E1,'fr') + ". Le total des amortissements est bien égal à ce montant." : "The first year's interest is not paid: it is capitalised and raises the capital owed to " + money(D.E1,'en') + ". Total principal repayments do equal that amount."}</p>`;
+}
+
+/* ============================================================
+   GRAPHIQUE  /  CHART
+   ============================================================ */
+function chartSVG(D, lang) {
+    const L = I18N[lang], Y = L.years;
+    const W = 680, H = 310, mL = 76, mR = 18, mT = 46, mB = 50;
+    const pw = W - mL - mR, ph = H - mT - mB;
+
+    const all = D.planInit.treso.concat(D.planDef.treso).concat([0]);
+    let lo = Math.min.apply(null, all), hi = Math.max.apply(null, all);
+    const span = (hi - lo) || 1;
+    lo -= span * 0.12; hi += span * 0.14;
+    const y = v => mT + ph - (v - lo) / (hi - lo) * ph;
+    const y0 = y(0);
+
+    let g = '';
+    const step = niceStep((hi - lo) / 5);
+    for (let v = Math.ceil(lo / step) * step; v <= hi; v += step) {
+        g += `<line x1="${mL}" y1="${y(v).toFixed(1)}" x2="${W - mR}" y2="${y(v).toFixed(1)}" stroke="#e2ded4" stroke-width="1"/>`;
+        g += `<text x="${mL - 8}" y="${(y(v) + 4).toFixed(1)}" text-anchor="end" font-family="'JetBrains Mono',monospace" font-size="9.5" fill="#5a5a5a">${fmtNb(v / 1000, 0)} k</text>`;
+    }
+
+    const slot = pw / 3, bw = slot * 0.26;
+    for (let t = 0; t < 3; t++) {
+        const cx = mL + slot * t + slot / 2;
+        [[D.planInit.treso[t], cx - bw * 0.62, D.planInit.treso[t] < 0 ? '#b94040' : '#1a2e42'],
+         [D.planDef.treso[t],  cx + bw * 0.62, '#c9952a']].forEach(function (b) {
+            const [v, x, col] = b;
+            const yy = y(v), top = Math.min(yy, y0), h2 = Math.max(Math.abs(yy - y0), 1.5);
+            g += `<rect x="${(x - bw / 2).toFixed(1)}" y="${top.toFixed(1)}" width="${bw.toFixed(1)}" height="${h2.toFixed(1)}" fill="${col}" rx="2"/>`;
+            g += `<text x="${x.toFixed(1)}" y="${(v >= 0 ? top - 6 : top + h2 + 13).toFixed(1)}" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="9.5" font-weight="700" fill="${col}">${fmtNb(v / 1000, 0)}</text>`;
+        });
+        g += `<text x="${cx.toFixed(1)}" y="${(mT + ph + 20).toFixed(1)}" text-anchor="middle" font-family="'Source Serif 4',serif" font-size="11.5" fill="#1e1e1e">${Y[t]}</text>`;
+    }
+
+    return `<div style="margin:1.4rem 0; overflow-x:auto;">
+      <svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" role="img">
+        <text x="${mL}" y="20" font-family="'Playfair Display',serif" font-size="13.5" font-weight="600" fill="#0d1b2a">${L.chartTitle}</text>
+        <rect x="${mL}" y="30" width="11" height="11" fill="#1a2e42" rx="2"/>
+        <text x="${mL + 16}" y="39.5" font-family="'Source Serif 4',serif" font-size="10.5" fill="#5a5a5a">${L.lblInit}</text>
+        <rect x="${mL + 110}" y="30" width="11" height="11" fill="#c9952a" rx="2"/>
+        <text x="${mL + 126}" y="39.5" font-family="'Source Serif 4',serif" font-size="10.5" fill="#5a5a5a">${L.lblDef}</text>
+        ${g}
+        <line x1="${mL}" y1="${y0.toFixed(1)}" x2="${W - mR}" y2="${y0.toFixed(1)}" stroke="#0d1b2a" stroke-width="1.5"/>
+        <line x1="${mL}" y1="${mT}" x2="${mL}" y2="${mT + ph}" stroke="#0d1b2a" stroke-width="1.5"/>
+        <text x="${mL}" y="${H - 6}" font-family="'Source Serif 4',serif" font-size="10" font-style="italic" fill="#5a5a5a">${L.chartNote}</text>
+      </svg>
+    </div>`;
+}
+
+function niceStep(raw) {
+    const p = Math.pow(10, Math.floor(Math.log10(Math.max(raw, 1))));
+    const nn = raw / p;
+    return (nn <= 1 ? 1 : nn <= 2 ? 2 : nn <= 5 ? 5 : 10) * p;
+}
+
+/* ============================================================
+   GÉNÉRATION  /  GENERATION
+   ============================================================ */
+function generateExercise(forceNew = false) {
+    if (forceNew) {
+        document.getElementById('seed-input').value = "";
+    }
+    let seedVal = document.getElementById('seed-input').value;
+    currentSeed = seedVal ? parseInt(seedVal) : Math.floor(Math.random() * 99999999);
+    document.getElementById('seed-disp').innerText = currentSeed;
+    document.getElementById('seed-input').value = currentSeed;
+    random = seedPRNG(currentSeed);
+
+    const DIC = I18N[LANG];
+    const D = computeModel();
+
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('ex-area').style.display = 'block';
+    document.getElementById('sol-card').classList.remove('visible');
+    document.getElementById('toggle-btn').innerText = DIC.showSol;
+    document.getElementById('toggle-btn').classList.remove('shown');
+
+    document.getElementById('context-text').innerHTML = DIC.context(D);
+    document.getElementById('enonce-table-container').innerHTML = DIC.table(D);
+    document.getElementById('additional-info').innerHTML = DIC.info(D);
+    document.getElementById('events-list').innerHTML = DIC.enonce(D);
+    document.getElementById('sol-content').innerHTML = DIC.sol(D);
+
+    if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
+        MathJax.typesetPromise().catch(function (err) { console.error('MathJax :', err); });
+    }
+}
+
+function toggleSol() {
+    let solCard = document.getElementById('sol-card');
+    let btn = document.getElementById('toggle-btn');
+    if (solCard.classList.contains('visible')) {
+        solCard.classList.remove('visible');
+        btn.innerText = I18N[LANG].showSol;
+        btn.classList.remove('shown');
+    } else {
+        solCard.classList.add('visible');
+        btn.innerText = I18N[LANG].hideSol;
+        btn.classList.add('shown');
+        solCard.scrollIntoView({behavior: 'smooth', block: 'start'});
+    }
+}
+
+/* Initialisation */
+LANG = detectLang();
+applyLang();
+</script>
+<!-- KIT:JS:START v1 -->
+<div id="pdf-ov" onclick="closePdfModal()"></div>
+<div id="pdf-modal">
+  <div class="mh">
+    <h3 data-kit="modalTitle">Exporter en PDF</h3>
+    <button type="button" class="mclose" onclick="closePdfModal()">&#10005;</button>
+  </div>
+  <div class="mb2">
+    <div class="seed-note"><span data-kit="seedPre">Seed&nbsp;:</span> <strong id="modal-seed">&mdash;</strong> <span data-kit="seedPost">&mdash; notez cette valeur pour reproduire exactement cet exercice.</span></div>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-header" checked>
+      <span class="opt-txt"><span class="opt-lbl" data-kit="optHeader">Inclure l'en-t&ecirc;te de page</span>
+           <span class="opt-desc" data-kit="optHeaderD">Titre, badge de mati&egrave;re et intitul&eacute; de l'exercice</span></span>
+    </label>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-sol">
+      <span class="opt-txt"><span class="opt-lbl" data-kit="optSol">Inclure le corrig&eacute; complet</span>
+           <span class="opt-desc" data-kit="optSolD">L'ensemble des d&eacute;veloppements et commentaires du corrig&eacute;</span></span>
+    </label>
+    <div class="mactions">
+      <button type="button" class="btn-print" onclick="doPrint()"><span data-kit="print">&#128424;&nbsp;Imprimer / Sauvegarder PDF</span></button>
+      <button type="button" class="btn-cancel" onclick="closePdfModal()"><span data-kit="cancel">Annuler</span></button>
+    </div>
+  </div>
+</div>
+
+<script id="kit-docx">
+/* =============================================================================
+   EXPORT WORD NATIF (.docx)
+   Trois briques, sans aucune dépendance externe :
+     1. mml2omml  — MathML -> OMML, le format d'équation natif de Word
+     2. zip       — écriture d'une archive ZIP (entrées « stored » + CRC32)
+     3. html2wml  — HTML de la page -> WordprocessingML
+   ============================================================================= */
+(function (root) {
+'use strict';
+
+/* --------------------------------------------------------------- utilitaires */
+function esc(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                  .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function kids(n) {
+  var out = [], c = n.firstChild;
+  while (c) { if (c.nodeType === 1) out.push(c); c = c.nextSibling; }
+  return out;
+}
+function txt(n) { return (n.textContent || '').replace(/\u200b/g, '').trim(); }
+
+/* ============================================================================
+   1. MathML -> OMML
+   ========================================================================== */
+var OPEN = '([{\u27e8\u2308\u230a|\u2016';
+var CLOSE = ')]}\u27e9\u2309\u230b|\u2016';
+var BIGOPS = '\u2211\u220f\u222b\u222c\u222d\u222e\u22c3\u22c2\u2210';
+var ACCENTS = {
+  '\u005e': '\u0302', '\u02c6': '\u0302', '^': '\u0302',
+  '\u00af': '\u0304', '\u2015': '\u0304', '\u2212': '\u0304', '_': '\u0304',
+  '~': '\u0303', '\u02dc': '\u0303', '\u02d9': '\u0307',
+  '\u2192': '\u20d7', '\u21c0': '\u20d1', '\u02c7': '\u030c', '\u02d8': '\u0306'
+};
+
+function run(text, style) {
+  if (text === '') return '';
+  var rPr = '<w:rPr><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/></w:rPr>';
+  var mPr = style ? '<m:rPr><m:sty m:val="' + style + '"/></m:rPr>' : '';
+  return '<m:r>' + mPr + rPr + '<m:t xml:space="preserve">' + esc(text) + '</m:t></m:r>';
+}
+
+/* Un grand opérateur (somme, intégrale…) absorbe la suite de la ligne comme
+   opérande : sans cela Word affiche un cadre vide à la place de l'argument. */
+function naryHere(n) {
+  if (!n || n.nodeType !== 1) return null;
+  var t = n.nodeName.toLowerCase().replace(/^.*:/, ''), k = kids(n);
+  if (t === 'munderover' || t === 'msubsup') return { base: k[0], sub: k[1], sup: k[2] };
+  if (t === 'munder' || t === 'msub') return { base: k[0], sub: k[1], sup: null };
+  if (t === 'mover' || t === 'msup') return { base: k[0], sub: null, sup: k[1] };
+  if (t === 'mo') return { base: n, sub: null, sup: null };
+  return null;
+}
+function isBigOp(n) {
+  if (!n || n.nodeType !== 1) return false;
+  var c = txt(n);
+  return n.nodeName.toLowerCase().replace(/^.*:/, '') === 'mo' &&
+         c.length === 1 && BIGOPS.indexOf(c) !== -1;
+}
+
+function seq(nodes) {
+  var s = '';
+  for (var i = 0; i < nodes.length; i++) {
+    var info = naryHere(nodes[i]);
+    if (info && isBigOp(info.base) && i + 1 < nodes.length) {
+      s += naryFull(info, nodes.slice(i + 1));
+      return s;
+    }
+    s += mml(nodes[i]);
+  }
+  return s;
+}
+
+function naryFull(info, rest) {
+  return '<m:nary><m:naryPr><m:chr m:val="' + esc(txt(info.base)) + '"/>' +
+         '<m:limLoc m:val="undOvr"/>' +
+         '<m:subHide m:val="' + (info.sub ? '0' : '1') + '"/>' +
+         '<m:supHide m:val="' + (info.sup ? '0' : '1') + '"/><m:ctrlPr/></m:naryPr>' +
+         '<m:sub>' + (info.sub ? mml(info.sub) : '') + '</m:sub>' +
+         '<m:sup>' + (info.sup ? mml(info.sup) : '') + '</m:sup>' +
+         '<m:e>' + seq(rest) + '</m:e></m:nary>';
+}
+
+/* mrow entouré de délimiteurs -> m:d, pour des parenthèses étirables natives */
+function fenced(ks) {
+  if (ks.length < 2) return null;
+  var a = ks[0], b = ks[ks.length - 1];
+  if (a.nodeName.toLowerCase() !== 'mo' || b.nodeName.toLowerCase() !== 'mo') return null;
+  var o = txt(a), c = txt(b);
+  if (o.length !== 1 || c.length !== 1) return null;
+  if (OPEN.indexOf(o) === -1 || CLOSE.indexOf(c) === -1) return null;
+  var inner = ks.slice(1, -1);
+  /* séparateurs de premier niveau -> plusieurs m:e */
+  var parts = [[]];
+  for (var i = 0; i < inner.length; i++) {
+    if (inner[i].nodeName.toLowerCase() === 'mo' && txt(inner[i]) === ',' && parts.length < 8) {
+      parts.push([]);
+    } else { parts[parts.length - 1].push(inner[i]); }
+  }
+  var sep = parts.length > 1 ? ',' : '';
+  var body = '';
+  for (var j = 0; j < parts.length; j++) body += '<m:e>' + seq(parts[j]) + '</m:e>';
+  return '<m:d><m:dPr><m:begChr m:val="' + esc(o) + '"/><m:sepChr m:val="' + esc(sep) +
+         '"/><m:endChr m:val="' + esc(c) + '"/><m:ctrlPr/></m:dPr>' + body + '</m:d>';
+}
+
+function naryOf(base, sub, sup) {
+  var ch = txt(base);
+  if (ch.length !== 1 || BIGOPS.indexOf(ch) === -1) return null;
+  return '<m:nary><m:naryPr><m:chr m:val="' + esc(ch) + '"/><m:limLoc m:val="undOvr"/>' +
+         '<m:subHide m:val="' + (sub ? '0' : '1') + '"/>' +
+         '<m:supHide m:val="' + (sup ? '0' : '1') + '"/><m:ctrlPr/></m:naryPr>' +
+         '<m:sub>' + (sub ? mml(sub) : '') + '</m:sub>' +
+         '<m:sup>' + (sup ? mml(sup) : '') + '</m:sup>' +
+         '<m:e></m:e></m:nary>';
+}
+
+function mml(n) {
+  if (!n) return '';
+  if (n.nodeType === 3) return run(n.nodeValue);
+  if (n.nodeType !== 1) return '';
+  var t = n.nodeName.toLowerCase().replace(/^.*:/, '');
+  var k = kids(n), s;
+
+  switch (t) {
+    case 'math':
+    case 'semantics':
+    case 'mstyle':
+    case 'mpadded':
+    case 'menclose':
+      return seq(k);
+
+    case 'annotation':
+    case 'annotation-xml':
+    case 'mphantom':
+      return '';
+
+    case 'mrow':
+      s = fenced(k);
+      return s !== null ? s : seq(k);
+
+    case 'mi':      return run(txt(n), txt(n).length === 1 ? 'i' : 'p');
+    case 'mn':      return run(txt(n), 'p');
+    case 'mo':      return run(txt(n), 'p');
+    case 'merror':  return run(txt(n), 'p');
+    case 'ms':      return run(txt(n), 'p');
+
+    case 'mtext':
+      var v = n.textContent || '';
+      return v === '' ? '' :
+        '<m:r><m:rPr><m:nor/></m:rPr><w:rPr><w:rFonts w:ascii="Cambria" w:hAnsi="Cambria"/></w:rPr>' +
+        '<m:t xml:space="preserve">' + esc(v) + '</m:t></m:r>';
+
+    case 'mspace':
+      return run(' ', 'p');
+
+    case 'mfrac':
+      return '<m:f><m:fPr><m:type m:val="' +
+             (n.getAttribute('linethickness') === '0' ? 'noBar' : 'bar') +
+             '"/><m:ctrlPr/></m:fPr><m:num>' + mml(k[0]) + '</m:num><m:den>' +
+             mml(k[1]) + '</m:den></m:f>';
+
+    case 'msup':
+      s = naryOf(k[0], null, k[1]); if (s) return s;
+      return '<m:sSup><m:sSupPr><m:ctrlPr/></m:sSupPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sup>' + mml(k[1]) + '</m:sup></m:sSup>';
+
+    case 'msub':
+      s = naryOf(k[0], k[1], null); if (s) return s;
+      return '<m:sSub><m:sSubPr><m:ctrlPr/></m:sSubPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sub>' + mml(k[1]) + '</m:sub></m:sSub>';
+
+    case 'msubsup':
+      s = naryOf(k[0], k[1], k[2]); if (s) return s;
+      return '<m:sSubSup><m:sSubSupPr><m:ctrlPr/></m:sSubSupPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sub>' + mml(k[1]) + '</m:sub><m:sup>' + mml(k[2]) +
+             '</m:sup></m:sSubSup>';
+
+    case 'msqrt':
+      return '<m:rad><m:radPr><m:degHide m:val="1"/><m:ctrlPr/></m:radPr>' +
+             '<m:deg/><m:e>' + seq(k) + '</m:e></m:rad>';
+
+    case 'mroot':
+      return '<m:rad><m:radPr><m:degHide m:val="0"/><m:ctrlPr/></m:radPr><m:deg>' +
+             mml(k[1]) + '</m:deg><m:e>' + mml(k[0]) + '</m:e></m:rad>';
+
+    case 'mover':
+      var ao = txt(k[1]);
+      if (ACCENTS[ao]) {
+        return '<m:acc><m:accPr><m:chr m:val="' + esc(ACCENTS[ao]) +
+               '"/><m:ctrlPr/></m:accPr><m:e>' + mml(k[0]) + '</m:e></m:acc>';
+      }
+      s = naryOf(k[0], null, k[1]); if (s) return s;
+      return '<m:limUpp><m:limUppPr><m:ctrlPr/></m:limUppPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limUpp>';
+
+    case 'munder':
+      s = naryOf(k[0], k[1], null); if (s) return s;
+      return '<m:limLow><m:limLowPr><m:ctrlPr/></m:limLowPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limLow>';
+
+    case 'munderover':
+      s = naryOf(k[0], k[1], k[2]); if (s) return s;
+      return '<m:limUpp><m:limUppPr><m:ctrlPr/></m:limUppPr><m:e>' +
+             '<m:limLow><m:limLowPr><m:ctrlPr/></m:limLowPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limLow></m:e><m:lim>' +
+             mml(k[2]) + '</m:lim></m:limUpp>';
+
+    case 'mtable':
+      var rows = k.filter(function (r) { return /mtr$/.test(r.nodeName.toLowerCase()); });
+      var ncol = 0;
+      rows.forEach(function (r) { ncol = Math.max(ncol, kids(r).length); });
+      var props = '<m:mPr><m:baseJc m:val="center"/><m:plcHide m:val="1"/><m:mcs><m:mc><m:mcPr>' +
+                  '<m:count m:val="' + (ncol || 1) + '"/><m:mcJc m:val="center"/></m:mcPr></m:mc></m:mcs>' +
+                  '<m:ctrlPr/></m:mPr>';
+      var body = '';
+      rows.forEach(function (r) {
+        body += '<m:mr>';
+        var cells = kids(r);
+        for (var i = 0; i < (ncol || 1); i++) body += '<m:e>' + (cells[i] ? seq(kids(cells[i])) : '') + '</m:e>';
+        body += '</m:mr>';
+      });
+      return '<m:m>' + props + body + '</m:m>';
+
+    case 'mtr':
+    case 'mtd':
+      return seq(k);
+
+    default:
+      return k.length ? seq(k) : run(txt(n), 'p');
+  }
+}
+
+function mathmlToOmml(mathEl) { return mml(mathEl); }
+
+/* ============================================================================
+   2. Écriture ZIP (entrées non compressées + CRC32)
+   ========================================================================== */
+var CRCT = (function () {
+  var t = new Int32Array(256);
+  for (var i = 0; i < 256; i++) {
+    var c = i;
+    for (var j = 0; j < 8; j++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[i] = c;
+  }
+  return t;
+})();
+function crc32(buf) {
+  var c = -1;
+  for (var i = 0; i < buf.length; i++) c = CRCT[(c ^ buf[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ -1) >>> 0;
+}
+function utf8(str) {
+  if (typeof TextEncoder !== 'undefined') return new TextEncoder().encode(str);
+  var b = unescape(encodeURIComponent(str)), a = new Uint8Array(b.length);
+  for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i);
+  return a;
+}
+function zip(files) {
+  var parts = [], central = [], offset = 0;
+  function u16(v) { return [v & 0xFF, (v >>> 8) & 0xFF]; }
+  function u32(v) { return [v & 0xFF, (v >>> 8) & 0xFF, (v >>> 16) & 0xFF, (v >>> 24) & 0xFF]; }
+
+  files.forEach(function (f) {
+    var name = utf8(f.name), data = f.bin ? f.bin : utf8(f.data), c = crc32(data);
+    var local = [].concat(u32(0x04034b50), u16(20), u16(0x0800), u16(0), u16(0), u16(0),
+                          u32(c), u32(data.length), u32(data.length),
+                          u16(name.length), u16(0));
+    parts.push(new Uint8Array(local), name, data);
+    central.push({ name: name, crc: c, size: data.length, off: offset });
+    offset += local.length + name.length + data.length;
+  });
+
+  var cd = [];
+  central.forEach(function (e) {
+    cd = cd.concat(u32(0x02014b50), u16(20), u16(20), u16(0x0800), u16(0), u16(0), u16(0),
+                   u32(e.crc), u32(e.size), u32(e.size),
+                   u16(e.name.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(e.off));
+    cd = cd.concat(Array.prototype.slice.call(e.name));
+  });
+  var cdArr = new Uint8Array(cd);
+  var eocd = new Uint8Array([].concat(u32(0x06054b50), u16(0), u16(0),
+                                      u16(files.length), u16(files.length),
+                                      u32(cdArr.length), u32(offset), u16(0)));
+  parts.push(cdArr, eocd);
+
+  var total = parts.reduce(function (n, p) { return n + p.length; }, 0);
+  var out = new Uint8Array(total), pos = 0;
+  parts.forEach(function (p) { out.set(p, pos); pos += p.length; });
+  return out;
+}
+
+/* ============================================================================
+   3. HTML -> WordprocessingML
+   ========================================================================== */
+var SKIP = { script: 1, style: 1, button: 1, input: 1, noscript: 1 };
+var IMAGES = [];           /* { bin, w, h } collectées pendant le parcours */
+var EMU = 9525;            /* EMU par pixel */
+var MAXW = 5760000;        /* largeur utile de la page, en EMU */
+
+function b64bin(b64) {
+  var raw = atob(b64), a = new Uint8Array(raw.length);
+  for (var i = 0; i < raw.length; i++) a[i] = raw.charCodeAt(i);
+  return a;
+}
+
+function imageXml(dataUrl, wpx, hpx) {
+  var m = /^data:image\/png;base64,(.*)$/.exec(dataUrl || '');
+  if (!m) return '';
+  var cx = Math.round(wpx * EMU), cy = Math.round(hpx * EMU);
+  if (cx > MAXW) { cy = Math.round(cy * MAXW / cx); cx = MAXW; }
+  IMAGES.push({ bin: b64bin(m[1]) });
+  var id = IMAGES.length, rid = 'rIdImg' + id;
+  return '<w:p><w:pPr><w:pStyle w:val="Figure"/><w:jc w:val="center"/></w:pPr><w:r><w:drawing>' +
+    '<wp:inline distT="0" distB="0" distL="0" distR="0">' +
+    '<wp:extent cx="' + cx + '" cy="' + cy + '"/>' +
+    '<wp:effectExtent l="0" t="0" r="0" b="0"/>' +
+    '<wp:docPr id="' + id + '" name="Graphique ' + id + '"/>' +
+    '<wp:cNvGraphicFramePr><a:graphicFrameLocks ' +
+      'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/>' +
+    '</wp:cNvGraphicFramePr>' +
+    '<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">' +
+    '<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+    '<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+    '<pic:nvPicPr><pic:cNvPr id="' + id + '" name="Graphique ' + id + '"/><pic:cNvPicPr/></pic:nvPicPr>' +
+    '<pic:blipFill><a:blip r:embed="' + rid + '"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>' +
+    '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' + cx + '" cy="' + cy + '"/></a:xfrm>' +
+    '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>' +
+    '</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>';
+}
+var BLOCK = { p: 1, div: 1, h1: 1, h2: 1, h3: 1, h4: 1, li: 1, tr: 1, td: 1, th: 1,
+              table: 1, ul: 1, ol: 1, section: 1, article: 1, header: 1, blockquote: 1 };
+
+function W() {
+  this.body = '';
+  this.para = null;      /* { style, runs, numId, ilvl } */
+}
+W.prototype.open = function (style, numId, ilvl) {
+  this.close();
+  this.para = { style: style || 'Corps', runs: '', numId: numId || 0, ilvl: ilvl || 0 };
+};
+W.prototype.close = function () {
+  var p = this.para;
+  this.para = null;
+  if (!p || (p.runs === '' && !p.numId)) return;
+  if (p.runs === '') return;
+  var pPr = '<w:pPr><w:pStyle w:val="' + p.style + '"/>';
+  if (p.numId) pPr += '<w:numPr><w:ilvl w:val="' + p.ilvl + '"/><w:numId w:val="' + p.numId + '"/></w:numPr>';
+  pPr += '</w:pPr>';
+  this.body += '<w:p>' + pPr + p.runs + '</w:p>';
+};
+W.prototype.add = function (xml) {
+  if (!this.para) this.open('Corps');
+  this.para.runs += xml;
+};
+W.prototype.raw = function (xml) { this.close(); this.body += xml; };
+
+function textRun(s, fmt) {
+  if (!s) return '';
+  var rPr = '';
+  if (fmt.b) rPr += '<w:b/>';
+  if (fmt.i) rPr += '<w:i/>';
+  if (fmt.sup) rPr += '<w:vertAlign w:val="superscript"/>';
+  if (fmt.sub) rPr += '<w:vertAlign w:val="subscript"/>';
+  if (fmt.mono) rPr += '<w:rFonts w:ascii="Consolas" w:hAnsi="Consolas"/>';
+  return '<w:r>' + (rPr ? '<w:rPr>' + rPr + '</w:rPr>' : '') +
+         '<w:t xml:space="preserve">' + esc(s) + '</w:t></w:r>';
+}
+
+function walk(node, w, fmt, list) {
+  var i, cs = node.childNodes;
+  for (i = 0; i < cs.length; i++) {
+    var n = cs[i];
+
+    if (n.nodeType === 3) {
+      var s = n.nodeValue.replace(/\s+/g, ' ');
+      if (s.trim() === '' && !/\S/.test(s)) { if (w.para && w.para.runs) w.add(textRun(' ', fmt)); continue; }
+      w.add(textRun(s, fmt));
+      continue;
+    }
+    if (n.nodeType !== 1) continue;
+
+    var tag = n.nodeName.toLowerCase();
+    if (SKIP[tag]) continue;
+    if (n.classList && (n.classList.contains('top-bar') || n.classList.contains('top-actions') ||
+                        n.classList.contains('sol-toggle-wrap'))) continue;
+
+    /* --- équations --- */
+    if (tag === 'mjx-container') {
+      var math = n.querySelector('mjx-assistive-mml math, math');
+      var display = n.getAttribute('display') === 'true';
+      if (math) {
+        var omml = mathmlToOmml(math);
+        if (display) {
+          w.close();
+          w.body += '<w:p><w:pPr><w:pStyle w:val="Formule"/>' +
+                    '<w:jc w:val="center"/></w:pPr>' +
+                    '<m:oMath>' + omml + '</m:oMath></w:p>';
+        } else {
+          w.add('<m:oMath>' + omml + '</m:oMath>');
+        }
+      } else {
+        w.add(textRun(txt(n), fmt));
+      }
+      continue;
+    }
+    if (tag === 'mjx-assistive-mml' || tag === 'math') continue;
+
+    /* --- graphiques --- */
+    if (tag === 'svg' || tag === 'img') {
+      var png = n.getAttribute('data-kit-png');
+      if (png) {
+        w.close();
+        w.body += imageXml(png, +n.getAttribute('data-kit-w') || 600,
+                                +n.getAttribute('data-kit-h') || 380);
+      }
+      continue;
+    }
+
+    /* --- tableaux --- */
+    if (tag === 'table') { w.close(); w.body += table(n); continue; }
+
+    /* --- listes --- */
+    if (tag === 'ul' || tag === 'ol') {
+      w.close();
+      var nid = tag === 'ol' ? 2 : 1;
+      var lvl = list ? Math.min(list.ilvl + 1, 2) : 0;
+      var items = kids(n).filter(function (x) { return x.nodeName.toLowerCase() === 'li'; });
+      items.forEach(function (li) {
+        /* L'item est composé à part : son numéro doit se poser sur le premier
+           paragraphe produit, même si le <li> enveloppe son texte dans un <div>. */
+        var wb = new W();
+        walk(li, wb, fmt, { ilvl: lvl });
+        wb.close();
+        var xml = wb.body;
+        if (!xml) return;
+        var numPr = '<w:pStyle w:val="Liste"/><w:numPr><w:ilvl w:val="' + lvl +
+                    '"/><w:numId w:val="' + nid + '"/></w:numPr>';
+        if (xml.indexOf('<w:pStyle w:val="Corps"/>') !== -1) {
+          xml = xml.replace('<w:pStyle w:val="Corps"/>', numPr);
+        } else {
+          xml = '<w:p><w:pPr>' + numPr + '</w:pPr></w:p>' + xml;
+        }
+        w.body += xml;
+      });
+      continue;
+    }
+
+    /* --- titres --- */
+    if (tag === 'h1' || tag === 'h2') { w.close(); w.open('Titre1'); walk(n, w, fmt, list); w.close(); continue; }
+    if (tag === 'h3' || tag === 'h4') { w.close(); w.open('Titre2'); walk(n, w, fmt, list); w.close(); continue; }
+
+    /* --- titres internes du corrigé --- */
+    if (n.classList && (n.classList.contains('sol-sub') || n.classList.contains('sol-q') ||
+                        n.classList.contains('dossier-title'))) {
+      w.close(); w.open('Titre2'); walk(n, w, { b: true }, list); w.close(); continue;
+    }
+    if (n.classList && n.classList.contains('persp-box')) {
+      w.close();
+      var wb = new W();
+      walk(n, wb, fmt, list);
+      wb.close();
+      w.body += wb.body.replace(/w:val="Corps"/g, 'w:val="Encadre"')
+                       .replace(/w:val="Titre2"/g, 'w:val="EncadreTitre"');
+      continue;
+    }
+
+    /* --- mise en forme inline --- */
+    var f2 = { b: fmt.b, i: fmt.i, sup: fmt.sup, sub: fmt.sub, mono: fmt.mono };
+    if (tag === 'strong' || tag === 'b') f2.b = true;
+    if (tag === 'em' || tag === 'i') f2.i = true;
+    if (tag === 'sup') f2.sup = true;
+    if (tag === 'sub') f2.sub = true;
+    if (tag === 'code' || tag === 'kbd') f2.mono = true;
+
+    /* intertitre écrit en style en ligne (span display:block + gras) */
+    var st = n.getAttribute && n.getAttribute('style');
+    if (st && /display\s*:\s*block/.test(st) && /font-weight\s*:\s*(6|7|8|9|bold)/.test(st)) {
+      w.close(); w.open('Titre3');
+      walk(n, w, { b: true }, list);
+      w.close();
+      continue;
+    }
+
+    if ((tag === 'strong' || tag === 'b') &&
+        (!w.para || w.para.runs === '') &&
+        n.nextElementSibling && n.nextElementSibling.nodeName.toLowerCase() === 'br') {
+      w.close(); w.open('Titre3');
+      walk(n, w, { b: true }, list);
+      w.close();
+      i++;                       /* le <br> qui suit devient inutile */
+      continue;
+    }
+
+    if (tag === 'br') { w.add('<w:r><w:br/></w:r>'); continue; }
+    if (tag === 'hr') { w.close(); continue; }
+
+    if (BLOCK[tag]) { w.close(); w.open('Corps'); walk(n, w, f2, list); w.close(); }
+    else { walk(n, w, f2, list); }
+  }
+}
+
+function cellXml(td, isHead) {
+  var w2 = new W();
+  walk(td, w2, { b: !!isHead }, null);
+  w2.close();
+  var content = w2.body || '<w:p><w:pPr><w:pStyle w:val="Cellule"/></w:pPr></w:p>';
+  content = content.replace(/w:val="Corps"/g, 'w:val="Cellule"');
+  var span = parseInt(td.getAttribute('colspan') || '1', 10);
+  var shd = isHead ? '<w:shd w:val="clear" w:fill="EDE9DF"/>' : '';
+  return '<w:tc><w:tcPr>' + (span > 1 ? '<w:gridSpan w:val="' + span + '"/>' : '') +
+         shd + '<w:vAlign w:val="center"/></w:tcPr>' + content + '</w:tc>';
+}
+
+function table(tbl) {
+  var rows = tbl.querySelectorAll('tr'), out = '', ncol = 0, i, j;
+  for (i = 0; i < rows.length; i++) {
+    var c = rows[i].children, n = 0;
+    for (j = 0; j < c.length; j++) n += parseInt(c[j].getAttribute('colspan') || '1', 10);
+    ncol = Math.max(ncol, n);
+  }
+  if (!ncol) return '';
+  var grid = '<w:tblGrid>';
+  for (i = 0; i < ncol; i++) grid += '<w:gridCol w:w="' + Math.floor(9360 / ncol) + '"/>';
+  grid += '</w:tblGrid>';
+
+  for (i = 0; i < rows.length; i++) {
+    var cells = rows[i].children, xml = '';
+    var head = rows[i].parentNode.nodeName.toLowerCase() === 'thead' ||
+               (cells.length && cells[0].nodeName.toLowerCase() === 'th');
+    for (j = 0; j < cells.length; j++) xml += cellXml(cells[j], head);
+    out += '<w:tr>' + (head ? '<w:trPr><w:tblHeader/></w:trPr>' : '') + xml + '</w:tr>';
+  }
+  return '<w:tbl><w:tblPr><w:tblStyle w:val="Grille"/>' +
+         '<w:tblW w:w="5000" w:type="pct"/><w:tblLayout w:type="fixed"/></w:tblPr>' +
+         grid + out + '</w:tbl><w:p><w:pPr><w:pStyle w:val="Apres"/></w:pPr></w:p>';
+}
+
+/* ============================================================================
+   Assemblage du fichier
+   ========================================================================== */
+var NS =
+  'xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" ' +
+  'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
+  'xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" ' +
+  'xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" ' +
+  'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+  'xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture" ' +
+  'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+  'xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" ' +
+  'mc:Ignorable="w14"';
+
+function style(id, name, opts) {
+  var o = opts || {};
+  return '<w:style w:type="paragraph" w:styleId="' + id + '"><w:name w:val="' + name + '"/>' +
+         '<w:basedOn w:val="Corps"/><w:pPr>' +
+         (o.keep ? '<w:keepNext/>' : '') +
+         '<w:spacing w:before="' + (o.before || 0) + '" w:after="' + (o.after || 120) +
+         '" w:line="' + (o.line || 276) + '" w:lineRule="auto"/>' +
+         (o.jc ? '<w:jc w:val="' + o.jc + '"/>' : '') +
+         (o.ind ? '<w:ind w:left="' + o.ind + '"/>' : '') +
+         (o.border ? '<w:pBdr><w:left w:val="single" w:sz="18" w:space="8" w:color="1A2E42"/></w:pBdr>' : '') +
+         '</w:pPr><w:rPr>' +
+         (o.font ? '<w:rFonts w:ascii="' + o.font + '" w:hAnsi="' + o.font + '"/>' : '') +
+         (o.b ? '<w:b/>' : '') + (o.i ? '<w:i/>' : '') +
+         (o.sz ? '<w:sz w:val="' + o.sz + '"/>' : '') +
+         (o.color ? '<w:color w:val="' + o.color + '"/>' : '') +
+         '</w:rPr></w:style>';
+}
+
+function stylesXml() {
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles ' + NS + '>' +
+    '<w:docDefaults><w:rPrDefault><w:rPr>' +
+      '<w:rFonts w:ascii="Cambria" w:hAnsi="Cambria" w:cs="Cambria"/>' +
+      '<w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="fr-FR"/>' +
+    '</w:rPr></w:rPrDefault><w:pPrDefault><w:pPr>' +
+      '<w:spacing w:after="120" w:line="276" w:lineRule="auto"/><w:jc w:val="both"/>' +
+    '</w:pPr></w:pPrDefault></w:docDefaults>' +
+    '<w:style w:type="paragraph" w:default="1" w:styleId="Corps"><w:name w:val="Normal"/>' +
+      '<w:pPr><w:spacing w:after="120" w:line="276" w:lineRule="auto"/><w:jc w:val="both"/></w:pPr>' +
+      '<w:rPr><w:rFonts w:ascii="Cambria" w:hAnsi="Cambria"/><w:sz w:val="22"/></w:rPr></w:style>' +
+    style('TitreDoc', 'Title', { font: 'Cambria', b: true, sz: 40, color: '0D1B2A', jc: 'left', after: 60, line: 240 }) +
+    style('SousTitre', 'Subtitle', { i: true, sz: 20, color: '5A5A5A', jc: 'left', after: 280, line: 240 }) +
+    style('Titre1', 'heading 1', { b: true, sz: 28, color: '0D1B2A', before: 320, after: 140, jc: 'left', keep: true, line: 240 }) +
+    style('Titre2', 'heading 2', { b: true, sz: 23, color: '1A2E42', before: 240, after: 100, jc: 'left', keep: true, line: 240 }) +
+    style('Formule', 'Formula', { jc: 'center', before: 120, after: 120, line: 240 }) +
+    style('Liste', 'List Paragraph', { after: 100, ind: 360 }) +
+    style('Cellule', 'Table Text', { sz: 20, after: 40, jc: 'left', line: 240 }) +
+    style('Encadre', 'Aside', { ind: 240, border: true, sz: 21, before: 200, after: 200 }) +
+    style('Apres', 'After Table', { after: 200, sz: 12 }) +
+    style('Figure', 'Figure', { jc: 'center', before: 160, after: 200, line: 240 }) +
+    style('Titre3', 'heading 3', { b: true, sz: 22, color: '1A2E42', before: 200,
+                                   after: 60, jc: 'left', keep: true, line: 240 }) +
+    style('EncadreTitre', 'Aside Heading', { ind: 240, border: true, b: true, sz: 22,
+                                             color: '1A2E42', before: 200, after: 60, jc: 'left' }) +
+    '<w:style w:type="table" w:styleId="Grille"><w:name w:val="Table Grid"/><w:tblPr>' +
+      '<w:tblBorders>' +
+      ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(function (b) {
+        return '<w:' + b + ' w:val="single" w:sz="4" w:space="0" w:color="9A9A9A"/>';
+      }).join('') +
+      '</w:tblBorders><w:tblCellMar>' +
+      '<w:top w:w="60" w:type="dxa"/><w:left w:w="90" w:type="dxa"/>' +
+      '<w:bottom w:w="60" w:type="dxa"/><w:right w:w="90" w:type="dxa"/>' +
+      '</w:tblCellMar></w:tblPr></w:style>' +
+    '</w:styles>';
+}
+
+function numberingXml() {
+  function lvl(i, fmt, txtv, ind) {
+    return '<w:lvl w:ilvl="' + i + '"><w:start w:val="1"/><w:numFmt w:val="' + fmt + '"/>' +
+           '<w:lvlText w:val="' + txtv + '"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="' +
+           ind + '" w:hanging="360"/></w:pPr>' +
+           (fmt === 'bullet' ? '<w:rPr><w:rFonts w:ascii="Symbol" w:hAnsi="Symbol"/></w:rPr>' : '') +
+           '</w:lvl>';
+  }
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:numbering ' + NS + '>' +
+    '<w:abstractNum w:abstractNumId="1"><w:multiLevelType w:val="hybridMultilevel"/>' +
+      lvl(0, 'bullet', '\uF0B7', 360) + lvl(1, 'bullet', 'o', 720) + lvl(2, 'bullet', '\uF0A7', 1080) +
+    '</w:abstractNum>' +
+    '<w:abstractNum w:abstractNumId="2"><w:multiLevelType w:val="hybridMultilevel"/>' +
+      lvl(0, 'decimal', '%1.', 360) + lvl(1, 'lowerLetter', '%2.', 720) + lvl(2, 'lowerRoman', '%3.', 1080) +
+    '</w:abstractNum>' +
+    '<w:num w:numId="1"><w:abstractNumId w:val="1"/></w:num>' +
+    '<w:num w:numId="2"><w:abstractNumId w:val="2"/></w:num>' +
+    '</w:numbering>';
+}
+
+function buildDocx(opts) {
+  IMAGES = [];
+  var w = new W();
+
+  if (opts.title) {
+    w.body += '<w:p><w:pPr><w:pStyle w:val="TitreDoc"/></w:pPr>' +
+              textRun(opts.title, {}) + '</w:p>';
+  }
+  if (opts.subtitle) {
+    w.body += '<w:p><w:pPr><w:pStyle w:val="SousTitre"/></w:pPr>' +
+              textRun(opts.subtitle, {}) + '</w:p>';
+  }
+  opts.sections.forEach(function (sec) {
+    if (sec.heading) {
+      w.body += '<w:p><w:pPr><w:pStyle w:val="Titre1"/></w:pPr>' + textRun(sec.heading, {}) + '</w:p>';
+    }
+    walk(sec.node, w, {}, null);
+    w.close();
+  });
+  w.close();
+
+  var doc = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ' + NS + '><w:body>' +
+    w.body +
+    '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/>' +
+    '<w:pgMar w:top="1247" w:right="1247" w:bottom="1247" w:left="1247" ' +
+    'w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>';
+
+  var media = [], rels = '', ctypes = '';
+  IMAGES.forEach(function (im, i) {
+    media.push({ name: 'word/media/image' + (i + 1) + '.png', bin: im.bin });
+    rels += '<Relationship Id="rIdImg' + (i + 1) + '" Type="http://schemas.openxmlformats.org/' +
+            'officeDocument/2006/relationships/image" Target="media/image' + (i + 1) + '.png"/>';
+  });
+  if (IMAGES.length) ctypes = '<Default Extension="png" ContentType="image/png"/>';
+
+  return zip([
+    { name: '[Content_Types].xml',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+        '<Default Extension="xml" ContentType="application/xml"/>' + ctypes +
+        '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+        '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>' +
+        '<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>' +
+        '</Types>' },
+    { name: '_rels/.rels',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+        '</Relationships>' },
+    { name: 'word/_rels/document.xml.rels',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' +
+        '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>' +
+        rels + '</Relationships>' },
+    { name: 'word/document.xml', data: doc },
+    { name: 'word/styles.xml', data: stylesXml() },
+    { name: 'word/numbering.xml', data: numberingXml() }
+  ].concat(media));
+}
+
+root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: W, _walk: walk };
+
+})(window);
+
+</script>
+<script id="kit-js">
+/* ============================================================
+   KIT D'UNIFORMISATION — logique partagée (modale PDF, export Word,
+   libellés de la barre d'actions). Autonome : ne dépend d'aucun
+   dictionnaire I18N propre à la page.
+   ============================================================ */
+(function(){
+  var T = {
+    fr:{ modalTitle:"Exporter en PDF", seedPre:"Seed\u00a0:",
+         seedPost:"\u2014 notez cette valeur pour reproduire exactement cet exercice.",
+         optHeader:"Inclure l'en-t\u00eate de page",
+         optHeaderD:"Titre, badge de mati\u00e8re et intitul\u00e9 de l'exercice",
+         optSol:"Inclure le corrig\u00e9 complet",
+         optSolD:"L'ensemble des d\u00e9veloppements et commentaires du corrig\u00e9",
+         print:"\uD83D\uDDA8\u00a0Imprimer / Sauvegarder PDF", cancel:"Annuler",
+         btnNew:"\u21ba Nouvel \u00e9nonc\u00e9", btnPdf:"\u2b07 Exporter PDF", btnDoc:"\u2b07 Exporter Word",
+         btnCopy:"\u29c9 Copier", copied:"\u2713 Copi\u00e9e", seedLabel:"Seed de reproductibilit\u00e9",
+         docFile:"exercice.doc" },
+    en:{ modalTitle:"Export to PDF", seedPre:"Seed:",
+         seedPost:"\u2014 note this value to reproduce this exact exercise.",
+         optHeader:"Include the page header",
+         optHeaderD:"Title, subject badge and exercise heading",
+         optSol:"Include the full solution",
+         optSolD:"All the workings and comments of the solution",
+         print:"\uD83D\uDDA8\u00a0Print / Save as PDF", cancel:"Cancel",
+         btnNew:"\u21ba New exercise", btnPdf:"\u2b07 Export PDF", btnDoc:"\u2b07 Export Word",
+         btnCopy:"\u29c9 Copy", copied:"\u2713 Copied", seedLabel:"Reproducibility seed",
+         docFile:"exercise.doc" }
+  };
+
+  function lang(){
+    var l = (window.LANG || document.documentElement.lang || 'fr').toLowerCase();
+    return (l.indexOf('en') === 0) ? 'en' : 'fr';
+  }
+  function t(k){ return T[lang()][k]; }
+
+  window.KIT = { T:T, lang:lang, t:t };
+
+  /* --- libellés du kit (modale + barre d'actions) --- */
+  function paint(){
+    var d = T[lang()];
+    document.querySelectorAll('[data-kit]').forEach(function(el){
+      var k = el.getAttribute('data-kit');
+      if (d[k] !== undefined) el.innerHTML = d[k];
+    });
+  }
+  window.KIT.paint = paint;
+
+  /* Se raccroche au changement de langue de la page sans la modifier. */
+  function hookLang(){
+    if (typeof window.setLang === 'function' && !window.setLang.__kit){
+      var orig = window.setLang;
+      var wrapped = function(){ var r = orig.apply(this, arguments); paint(); return r; };
+      wrapped.__kit = true;
+      window.setLang = wrapped;
+    }
+  }
+
+  /* --- Copie de la seed active --- */
+  window.copySeed = function(btn){
+    var el = document.getElementById('seed-disp');
+    if (!el) return;
+    var v = (el.textContent || '').trim();
+    if (!v || v === '\u2014') return;
+    var done = function(){
+      var b = btn || document.getElementById('btn-copy-seed');
+      if (!b) return;
+      var old = b.innerHTML;
+      b.innerHTML = t('copied');
+      setTimeout(function(){ b.innerHTML = old; paint(); }, 1400);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(v).then(done, done);
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = v; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch(e){}
+      document.body.removeChild(ta); done();
+    }
+  };
+
+  /* --- Modale PDF --- */
+  window.openPdfModal = function(){
+    var s = document.getElementById('modal-seed');
+    var src = document.getElementById('seed-disp');
+    if (s && src) s.textContent = (src.textContent || '\u2014').trim();
+    /* la case « corrigé » reflète l'état d'affichage courant */
+    var sol = document.getElementById('sol-card');
+    var box = document.getElementById('opt-sol');
+    if (box) box.checked = !!(window.solVisible ||
+        (sol && (sol.classList.contains('visible') || sol.style.display === 'block')));
+    paint();
+    document.getElementById('pdf-ov').classList.add('open');
+    document.getElementById('pdf-modal').classList.add('open');
+  };
+  window.closePdfModal = function(){
+    document.getElementById('pdf-ov').classList.remove('open');
+    document.getElementById('pdf-modal').classList.remove('open');
+  };
+  var PRINTCLS = ['print-no-header', 'print-force-solution', 'print-no-solution'];
+
+  function clearPrintClasses() {
+    var b = document.body;
+    for (var i = 0; i < PRINTCLS.length; i++) b.classList.remove(PRINTCLS[i]);
+  }
+
+  window.doPrint = function () {
+    var noHdr   = !document.getElementById('opt-header').checked;
+    var inclSol =  document.getElementById('opt-sol').checked;
+    var b = document.body;
+
+    clearPrintClasses();
+    if (noHdr) b.classList.add('print-no-header');
+    b.classList.add(inclSol ? 'print-force-solution' : 'print-no-solution');
+    closePdfModal();
+
+    /* Le nettoyage doit attendre la fin réelle de l'impression. Un simple
+       minuteur ne convient pas : selon le navigateur, window.print() rend la
+       main avant que l'aperçu ne soit composé, et les options seraient alors
+       déjà effacées au moment où le PDF est produit. */
+    var done = false;
+    function finish() {
+      if (done) return;
+      done = true;
+      clearPrintClasses();
+      window.removeEventListener('afterprint', finish);
+      if (mq && mq.removeListener) mq.removeListener(onMq);
+      if (mq && mq.removeEventListener) mq.removeEventListener('change', onMq);
+    }
+    function onMq(e) { if (!e.matches) finish(); }
+
+    var mq = window.matchMedia ? window.matchMedia('print') : null;
+    window.addEventListener('afterprint', finish);
+    if (mq && mq.addEventListener) mq.addEventListener('change', onMq);
+    else if (mq && mq.addListener) mq.addListener(onMq);
+    /* filet de sécurité si le navigateur n'émet aucun de ces signaux */
+    setTimeout(finish, 120000);
+
+    setTimeout(function () { window.print(); }, 120);
+  };
+
+  /* --- Rasterisation des graphiques SVG ---
+     Word ne sait pas lire le SVG. On le convertit en PNG en recopiant d'abord
+     les styles calculés, sinon les couleurs héritées de la feuille disparaissent. */
+  var SVGPROPS = ['fill', 'stroke', 'stroke-width', 'stroke-dasharray', 'stroke-linecap',
+                  'stroke-linejoin', 'opacity', 'fill-opacity', 'stroke-opacity',
+                  'font-family', 'font-size', 'font-weight', 'font-style',
+                  'text-anchor', 'dominant-baseline'];
+
+  function inlineStyles(src, dst) {
+    var a = src.querySelectorAll('*'), b = dst.querySelectorAll('*'), i, j;
+    for (i = 0; i < a.length && i < b.length; i++) {
+      var cs = window.getComputedStyle(a[i]);
+      for (j = 0; j < SVGPROPS.length; j++) {
+        var v = cs.getPropertyValue(SVGPROPS[j]);
+        if (v) b[i].setAttribute(SVGPROPS[j], v);
+      }
+    }
+  }
+
+  function svgSize(svg) {
+    var vb = svg.viewBox && svg.viewBox.baseVal;
+    if (vb && vb.width) return { w: vb.width, h: vb.height };
+    var r = svg.getBoundingClientRect();
+    if (r.width) return { w: r.width, h: r.height };
+    return { w: 600, h: 380 };
+  }
+
+  function svgToPng(svg) {
+    return new Promise(function (resolve) {
+      var done = false;
+      var res = function (v) { if (!done) { done = true; resolve(v); } };
+      /* garde-fou : un graphique qui ne se charge pas ne doit jamais
+         bloquer l'export, on l'omet et le reste du document part quand même */
+      setTimeout(function () { res(null); }, 5000);
+      try {
+        var d = svgSize(svg), SC = 2;
+        var c = svg.cloneNode(true);
+        c.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        c.setAttribute('width', d.w);
+        c.setAttribute('height', d.h);
+        inlineStyles(svg, c);
+        var bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        bg.setAttribute('x', 0); bg.setAttribute('y', 0);
+        bg.setAttribute('width', '100%'); bg.setAttribute('height', '100%');
+        bg.setAttribute('fill', '#ffffff');
+        c.insertBefore(bg, c.firstChild);
+        var xml = new XMLSerializer().serializeToString(c);
+        var img = new Image();
+        img.onload = function () {
+          try {
+            var cv = document.createElement('canvas');
+            cv.width = Math.round(d.w * SC); cv.height = Math.round(d.h * SC);
+            var ctx = cv.getContext('2d');
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, cv.width, cv.height);
+            ctx.drawImage(img, 0, 0, cv.width, cv.height);
+            res({ png: cv.toDataURL('image/png'), w: d.w, h: d.h });
+          } catch (e) { res(null); }
+        };
+        img.onerror = function () { res(null); };
+        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml);
+      } catch (e) { res(null); }
+    });
+  }
+
+  /* --- Export Word natif (.docx) ---
+     Les formules sont converties en OMML, le format d'équation natif de Word :
+     elles restent éditables et se composent avec Cambria Math. */
+  window.exportWord = function () {
+    var area = document.getElementById('ex-area');
+    if (!area || !window.DocxExport) { return; }
+
+    var btn = document.querySelector('.btn-sm.doc');
+    if (btn) { btn.disabled = true; btn.style.opacity = '.5'; }
+
+    var svgs = Array.prototype.slice.call(area.querySelectorAll('svg'));
+    Promise.all(svgs.map(svgToPng)).then(function (pngs) {
+      svgs.forEach(function (sv, i) {
+        if (!pngs[i]) return;
+        sv.setAttribute('data-kit-png', pngs[i].png);
+        sv.setAttribute('data-kit-w', pngs[i].w);
+        sv.setAttribute('data-kit-h', pngs[i].h);
+      });
+      try { writeDocx(area); } finally {
+        svgs.forEach(function (sv) {
+          sv.removeAttribute('data-kit-png');
+          sv.removeAttribute('data-kit-w');
+          sv.removeAttribute('data-kit-h');
+        });
+        if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+      }
+    });
+  };
+
+  function writeDocx(area) {
+
+    var h1 = document.querySelector('header h1');
+    var badge = document.querySelector('.header-badge, #lbl-badge');
+    var seed = document.getElementById('seed-disp');
+    var bits = [];
+    if (badge && badge.textContent.trim()) bits.push(badge.textContent.trim());
+    if (seed && seed.textContent.trim() && seed.textContent.trim() !== '\u2014') {
+      bits.push('seed ' + seed.textContent.trim());
+    }
+    bits.push('Thomas Hossen');
+
+    var sections = [];
+    var cards = area.querySelectorAll('.card');
+    for (var i = 0; i < cards.length; i++) {
+      var body = cards[i].querySelector('.card-body');
+      if (!body) continue;
+      var tag = cards[i].querySelector('.card-header .tag');
+      var h2 = cards[i].querySelector('.card-header h2');
+      var head = [tag ? tag.textContent.trim() : '', h2 ? h2.textContent.trim() : '']
+                   .filter(Boolean).join(' \u2014 ');
+      sections.push({ heading: head, node: body });
+    }
+    if (!sections.length) sections = [{ heading: '', node: area }];
+
+    var bytes = window.DocxExport.build({
+      title: h1 ? h1.textContent.trim() : document.title,
+      subtitle: bits.join(' \u00b7 '),
+      sections: sections
+    });
+
+    var name = (h1 ? h1.textContent : 'exercice').normalize('NFD')
+                 .replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9]+/g, '_')
+                 .replace(/^_|_$/g, '').slice(0, 60) || 'exercice';
+    var blob = new Blob([bytes], {
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = name + '.docx';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){ hookLang(); paint(); });
+  if (document.readyState !== 'loading'){ hookLang(); paint(); }
+})();
+</script>
+<!-- KIT:JS:END -->
+
+</body>
+</html>
