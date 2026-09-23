@@ -462,33 +462,6 @@ const I18N = {
       chartTitle: "Décomposition du P&L quotidien par les grecques",
       chartNote: "Barres : contribution de chaque grecque. Losange : P&L total constaté.",
       phiArg: "$x$ (arrondi à $10^{-4}$)",
-      an: "an", pts: "points", and: "et", whence: "d'où",
-      q1Common: "Quelques grandeurs sont communes à toutes les jambes, puisque l'échéance et la volatilité implicite sont les mêmes :",
-      q1BothLegs: "Call et put de prix d'exercice",
-      q1CallLeg: "Call de prix d'exercice",
-      q1PutLeg: "Put de prix d'exercice",
-      q1ReadPhi: "Le tableau 2 fournit alors",
-      q1Sym: "Pour le put, on utilise la symétrie de la loi normale centrée réduite :",
-      q1Parity: "Les deux options ayant le même prix d'exercice, on peut contrôler le calcul par la parité call-put des options sur <em>future</em>, $c-p=\\ee^{-rT}(F-K)$ :",
-      q2Step0: "Étape préliminaire : un lemme.",
-      q2Lemma: "Toutes les dérivations reposent sur une identité qui fait disparaître les termes parasites. En développant le carré dans la densité de $d_2=d_1-\\sigma\\sqrt{T}$, on obtient :",
-      q2LemmaUse: "On utilisera aussi les dérivées partielles de $d_1$ et $d_2$, qui se lisent directement sur leurs expressions puisque $d_2=d_1-\\sigma\\sqrt{T}$ :",
-      q2StepDelta: "Le delta.",
-      q2DeltaTxt: "On dérive le prix du call par rapport à $F$. La dérivée du produit $F\\,\\Phi(d_1)$ donne deux termes, et celle de $K\\,\\Phi(d_2)$ un seul ; le lemme annule exactement les deux termes en $\\varphi$ :",
-      q2DeltaPut: "Pour le put, le plus rapide est de dériver la parité call-put, dont le membre de droite est linéaire en $F$ :",
-      q2StepGamma: "Le gamma.",
-      q2GammaTxt: "On dérive le delta une seconde fois. Le gamma du put est identique, puisque la parité call-put est linéaire en $F$ et que sa dérivée seconde est nulle :",
-      q2StepVega: "Le véga.",
-      q2VegaTxt: "On dérive par rapport à $\\sigma$, qui n'intervient qu'au travers de $d_1$ et $d_2$ ; le lemme permet de mettre $F\\varphi(d_1)$ en facteur. Le véga du put est identique, la parité call-put ne dépendant pas de $\\sigma$ :",
-      q2StepTheta: "Le thêta.",
-      q2ThetaTxt: "Le thêta mesure la variation de valeur avec l'écoulement du temps calendaire $t$. Comme la maturité résiduelle vaut $T=T_{\\text{éch}}-t$, on a $\\Theta=\\partial V/\\partial t=-\\partial V/\\partial T$. La dérivée par rapport à $T$ fait apparaître deux effets : celui de l'actualisation, qui porte sur le facteur $\\ee^{-rT}$, et celui de la durée, qui porte sur $d_1$ et $d_2$ :",
-      q2ThetaPut: "Pour le put, en dérivant $p=c-\\ee^{-rT}(F-K)$ par rapport à $T$ on trouve la même structure :",
-      q2Units: "Ces grecques sont exprimées en unités « naturelles » : le thêta en points par <em>année</em> et le véga en points par <em>unité</em> de volatilité (c'est-à-dire pour $\\delta\\sigma=1=100\\,\\%$). Pour les ramener aux unités de marché, on divise le thêta par 252 pour l'obtenir par séance, et le véga par 100 pour l'obtenir par point de volatilité. Pour passer d'une option à la position, on multiplie enfin par la quantité signée et par le multiplicateur de ${M} € par point.",
-      q2StepNum: "Application numérique.",
-      q2NumTxt: "On calcule d'abord la densité $\\varphi(d_1)$, directement à la calculatrice, puis chacune des grecques unitaires. Les valeurs de $d_1$, $\\sigma\\sqrt{T}$ et $\\ee^{-rT}$ sont celles de la question 1.",
-      perPt2: "\\text{par point}^2", perUnitVol: "\\text{points par unité de vol.}",
-      ptsPerYear: "\\text{points par an}",
-      q2Agg: "Les grecques unitaires, converties dans les unités de marché, se récapitulent ainsi :",
       perPt2Short: "par pt²", ptsPerDay: "pts/séance", ptsPerVolPt: "pts/pt de vol", qtyM: "Quantité × multiplicateur"
     },
 
@@ -569,7 +542,7 @@ const I18N = {
       const bepMove = Math.sqrt(Math.abs(2 * r0.Theta * D.dt / r0.G));
       s += `<div class="calc-box">
         <span class="sol-sub">2. Grecques de la position à $t=0$</span>
-        ${q2Derivation().replace('${M}', fmtNb(D.M,0))}
+        ${q2Derivation(D)}
         ${q2Numeric(D)}
         ${unitGreekTable(D, 0)}
         <p>En multipliant chaque grecque unitaire par la quantité signée et par le multiplicateur, on obtient les grecques de la position :</p>
@@ -589,12 +562,15 @@ const I18N = {
 
       s += `<div class="calc-box">
         <span class="sol-sub">4. Suivi quotidien de la position couverte</span>
-        On répète à chaque clôture le calcul des questions 1 à 3, avec le nouveau cours du <em>future</em>, la volatilité implicite de clôture du tableau 1 et une échéance raccourcie d'une séance. Les valeurs de $d_1$, $d_2$ et $\\Phi$ du tableau 3 dispensent de toute lecture de table ; seule $\\varphi(d_1)$ reste à calculer pour les grecques. On obtient :
+        On répète à chaque clôture le calcul des questions 1 à 3, avec le nouveau cours du <em>future</em>, la volatilité implicite de clôture du tableau 1 et une échéance raccourcie d'une séance. Les valeurs de $\\Phi$ du tableau 3 dispensent de toute lecture de table ; seule la densité $\\varphi(d_1)$ reste à calculer pour les grecques. Le P&amp;L d'une séance est ensuite la somme de deux termes : la variation de valeur du portefeuille d'options, et le résultat de la couverture, qui vaut $h_{t-1}\\times ${texN(D.M,0)}\\times(F_t-F_{t-1})$ puisque la couverture mise en place la veille reste inchangée pendant toute la séance.
+        ${q4Detail(D)}
+        <p style="margin-top:1rem;">Les deux tableaux suivants récapitulent ce suivi, d'abord la valorisation et la couverture à chaque clôture, puis la formation du P&amp;L séance par séance :</p>
         ${pathTable(D)}
-        Le P&amp;L d'une séance se lit alors comme la somme de la variation de valeur du portefeuille d'options et du résultat de la couverture, cette dernière valant $h_{t-1}\\times ${texN(D.M,0)}\\times(F_t-F_{t-1})$ puisque la couverture mise en place la veille reste en place toute la journée :
         ${pnlTable(D)}
         Sur l'ensemble de la période, le portefeuille couvert dégage un résultat cumulé de <strong>${fmtNb(D.pnlTotal,0)} €</strong>.
       </div>`;
+
+      s += focusQ5(D);
 
       s += `<div class="calc-box">
         <span class="sol-sub">5. Décomposition du P&amp;L par les grecques</span>
@@ -674,33 +650,6 @@ const I18N = {
       chartTitle: "Daily P&L attribution by Greek",
       chartNote: "Bars: contribution of each Greek. Diamond: actual total P&L.",
       phiArg: "$x$ (rounded to $10^{-4}$)",
-      an: "year", pts: "points", and: "and", whence: "hence",
-      q1Common: "Some quantities are common to all legs, since maturity and implied volatility are the same:",
-      q1BothLegs: "Call and put struck at",
-      q1CallLeg: "Call struck at",
-      q1PutLeg: "Put struck at",
-      q1ReadPhi: "Table 2 then gives",
-      q1Sym: "For the put, we use the symmetry of the standard normal distribution:",
-      q1Parity: "Since both options share the same strike, the computation can be checked through put-call parity for options on a <em>future</em>, $c-p=\\ee^{-rT}(F-K)$:",
-      q2Step0: "Preliminary step: a lemma.",
-      q2Lemma: "Every derivation rests on an identity that removes the spurious terms. Expanding the square in the density of $d_2=d_1-\\sigma\\sqrt{T}$ gives:",
-      q2LemmaUse: "We shall also use the partial derivatives of $d_1$ and $d_2$, which can be read directly from their expressions since $d_2=d_1-\\sigma\\sqrt{T}$:",
-      q2StepDelta: "Delta.",
-      q2DeltaTxt: "We differentiate the call price with respect to $F$. The derivative of the product $F\\,\\Phi(d_1)$ yields two terms and that of $K\\,\\Phi(d_2)$ a single one; the lemma cancels the two $\\varphi$ terms exactly:",
-      q2DeltaPut: "For the put, the quickest route is to differentiate put-call parity, whose right-hand side is linear in $F$:",
-      q2StepGamma: "Gamma.",
-      q2GammaTxt: "We differentiate the delta a second time. The gamma of the put is identical, since put-call parity is linear in $F$ and its second derivative is zero:",
-      q2StepVega: "Vega.",
-      q2VegaTxt: "We differentiate with respect to $\\sigma$, which enters only through $d_1$ and $d_2$; the lemma lets $F\\varphi(d_1)$ be factored out. The vega of the put is identical, put-call parity not depending on $\\sigma$:",
-      q2StepTheta: "Theta.",
-      q2ThetaTxt: "Theta measures the change in value as calendar time $t$ passes. Since the remaining maturity is $T=T_{\\text{exp}}-t$, we have $\\Theta=\\partial V/\\partial t=-\\partial V/\\partial T$. Differentiating with respect to $T$ reveals two effects: discounting, which bears on the factor $\\ee^{-rT}$, and duration, which bears on $d_1$ and $d_2$:",
-      q2ThetaPut: "For the put, differentiating $p=c-\\ee^{-rT}(F-K)$ with respect to $T$ gives the same structure:",
-      q2Units: "These Greeks are expressed in \"natural\" units: theta in points per <em>year</em> and vega in points per <em>unit</em> of volatility (that is, for $\\delta\\sigma=1=100\\,\\%$). To convert them to market units, theta is divided by 252 to express it per session, and vega by 100 to express it per volatility point. To move from one option to the position, we finally multiply by the signed quantity and by the multiplier of ${M} € per point.",
-      q2StepNum: "Numerical application.",
-      q2NumTxt: "We first compute the density $\\varphi(d_1)$, directly with a calculator, then each of the unit Greeks. The values of $d_1$, $\\sigma\\sqrt{T}$ and $\\ee^{-rT}$ are those of question 1.",
-      perPt2: "\\text{per point}^2", perUnitVol: "\\text{points per unit of vol.}",
-      ptsPerYear: "\\text{points per year}",
-      q2Agg: "The unit Greeks, converted into market units, are summarised as follows:",
       perPt2Short: "per pt²", ptsPerDay: "pts/session", ptsPerVolPt: "pts/vol pt", qtyM: "Quantity × multiplier"
     },
 
@@ -777,7 +726,7 @@ const I18N = {
       const bepMove = Math.sqrt(Math.abs(2 * r0.Theta * D.dt / r0.G));
       s += `<div class="calc-box">
         <span class="sol-sub">2. Greeks of the position at $t=0$</span>
-        ${q2Derivation().replace('${M}', fmtNb(D.M,0))}
+        ${q2Derivation(D)}
         ${q2Numeric(D)}
         ${unitGreekTable(D, 0)}
         <p>Multiplying each unit Greek by the signed quantity and by the multiplier gives the Greeks of the position:</p>
@@ -797,12 +746,15 @@ const I18N = {
 
       s += `<div class="calc-box">
         <span class="sol-sub">4. Daily monitoring of the hedged position</span>
-        The calculations of questions 1 to 3 are repeated at each close, with the new <em>future</em> price, the closing implied volatility from Table 1 and a maturity shortened by one session. The values of $d_1$, $d_2$ and $\\Phi$ in Table 3 remove any need for a statistical table; only $\\varphi(d_1)$ remains to be computed for the Greeks. This gives:
+        The calculations of questions 1 to 3 are repeated at each close, with the new <em>future</em> price, the closing implied volatility from Table 1 and a maturity shortened by one session. The values of $\\Phi$ in Table 3 remove any need for a statistical table; only the density $\\varphi(d_1)$ remains to be computed for the Greeks. The P&amp;L of a session is then the sum of two terms: the change in value of the option portfolio, and the result of the hedge, which is $h_{t-1}\\times ${texN(D.M,0)}\\times(F_t-F_{t-1})$ since the hedge set up the day before stays unchanged throughout the session.
+        ${q4Detail(D)}
+        <p style="margin-top:1rem;">The two tables below summarise this monitoring, first the valuation and hedge at each close, then how the P&amp;L builds up session by session:</p>
         ${pathTable(D)}
-        The P&amp;L of a session then reads as the sum of the change in value of the option portfolio and the result of the hedge, the latter being $h_{t-1}\\times ${texN(D.M,0)}\\times(F_t-F_{t-1})$ since the hedge set up the day before stays in place all day:
         ${pnlTable(D)}
         Over the whole period, the hedged portfolio generates a cumulative result of <strong>${fmtNb(D.pnlTotal,0)} €</strong>.
       </div>`;
+
+      s += focusQ5(D);
 
       s += `<div class="calc-box">
         <span class="sol-sub">5. P&amp;L attribution by Greek</span>
@@ -1054,106 +1006,6 @@ function phiAnnex(D) {
     return h;
 }
 
-/* ============================================================
-   QUESTION 1 — calcul détaillé, prix d'exercice par prix d'exercice
-   ============================================================ */
-function q1Detail(D) {
-    const L = I18N[LANG].L, r0 = D.rows[0];
-    const T = r0.T, sig = D.sig[0], sq = Math.sqrt(T), vs = sig * sq, df = Math.exp(-D.r * T);
-    const halfVar = 0.5 * sig * sig * T;
-    let s = "";
-
-    s += `<p>${L.q1Common}</p>
-      <div class="math-formula">\\[T=\\frac{${texN(D.nb0, 0)}}{252}=${texN(T, 6)}\\ \\text{${L.an}},\\qquad \\sqrt{T}=${texN(sq, 6)},\\qquad \\sigma\\sqrt{T}=${texN(sig, 3)}\\times${texN(sq, 6)}=${texN(vs, 6)}\\]</div>
-      <div class="math-formula">\\[\\tfrac12\\sigma^2T=\\tfrac12\\times${texN(sig, 3)}^2\\times${texN(T, 6)}=${texN(halfVar, 6)},\\qquad \\ee^{-rT}=\\ee^{-${texN(D.r, 3)}\\times${texN(T, 6)}}=${texN(df, 6)}\\]</div>`;
-
-    strikeGroups(D, 0).forEach(function (grp) {
-        const g = grp.g, K = grp.K, lnFK = Math.log(D.F0 / K);
-        const hasC = grp.legs.some(function (i) { return D.legs[i].type === 'C'; });
-        const hasP = grp.legs.some(function (i) { return D.legs[i].type === 'P'; });
-        const title = hasC && hasP ? L.q1BothLegs : (hasC ? L.q1CallLeg : L.q1PutLeg);
-
-        s += `<p style="margin-top:1rem;"><strong>${title} $K=${texN(K, 0)}$.</strong></p>
-          <div class="math-formula">\\[\\ln\\frac{F}{K}=\\ln\\frac{${texN(D.F0, 0)}}{${texN(K, 0)}}=${texN(lnFK, 6)}\\]</div>
-          <div class="math-formula">\\[d_1=\\frac{\\ln(F/K)+\\tfrac12\\sigma^2T}{\\sigma\\sqrt{T}}=\\frac{${texN(lnFK, 6)}+${texN(halfVar, 6)}}{${texN(vs, 6)}}=${texN(g.d1, 4)},\\qquad d_2=d_1-\\sigma\\sqrt{T}=${texN(g.d1, 4)}-${texN(vs, 4)}=${texN(g.d2, 4)}\\]</div>
-          <p>${L.q1ReadPhi} $\\Phi(d_1)=${texN(g.Nd1, 6)}$ ${L.and} $\\Phi(d_2)=${texN(g.Nd2, 6)}$.</p>`;
-
-        if (hasC) {
-            const a = D.F0 * g.Nd1, b = K * g.Nd2;
-            const price = df * (a - b);
-            s += `<div class="math-formula">\\[c=\\ee^{-rT}\\big[F\\,\\Phi(d_1)-K\\,\\Phi(d_2)\\big]=${texN(df, 6)}\\times\\big[${texN(D.F0, 0)}\\times${texN(g.Nd1, 6)}-${texN(K, 0)}\\times${texN(g.Nd2, 6)}\\big]=${texN(df, 6)}\\times\\big(${texN(a, 2)}-${texN(b, 2)}\\big)=${texN(price, 2)}\\ \\text{${L.pts}}\\]</div>`;
-        }
-        if (hasP) {
-            const m1 = 1 - g.Nd1, m2 = 1 - g.Nd2;
-            const a = K * m2, b = D.F0 * m1;
-            const price = df * (a - b);
-            s += `<p>${L.q1Sym} $\\Phi(-d_1)=1-\\Phi(d_1)=${texN(m1, 6)}$ ${L.and} $\\Phi(-d_2)=1-\\Phi(d_2)=${texN(m2, 6)}$, ${L.whence}</p>
-              <div class="math-formula">\\[p=\\ee^{-rT}\\big[K\\,\\Phi(-d_2)-F\\,\\Phi(-d_1)\\big]=${texN(df, 6)}\\times\\big[${texN(K, 0)}\\times${texN(m2, 6)}-${texN(D.F0, 0)}\\times${texN(m1, 6)}\\big]=${texN(df, 6)}\\times\\big(${texN(a, 2)}-${texN(b, 2)}\\big)=${texN(price, 2)}\\ \\text{${L.pts}}\\]</div>`;
-        }
-        if (hasC && hasP) {
-            const c = D.rows[0].detail[0].price, p = D.rows[0].detail[1].price;
-            s += `<p>${L.q1Parity}</p>
-              <div class="math-formula">\\[c-p=${texN(c, 2)}-${texN(p, 2)}=${texN(c - p, 2)}\\qquad\\text{${L.and}}\\qquad \\ee^{-rT}(F-K)=${texN(df, 6)}\\times(${texN(D.F0, 0)}-${texN(K, 0)})=${texN(df * (D.F0 - K), 2)}\\]</div>`;
-        }
-    });
-    return s;
-}
-
-/* ============================================================
-   QUESTION 2 — dérivation des grecques et application numérique
-   ============================================================ */
-function q2Derivation() {
-    const L = I18N[LANG].L;
-    return `
-      <p><strong>${L.q2Step0}</strong> ${L.q2Lemma}</p>
-      <div class="math-formula">\\[\\varphi(d_2)=\\frac{1}{\\sqrt{2\\pi}}\\,\\ee^{-\\frac{(d_1-\\sigma\\sqrt{T})^2}{2}}=\\varphi(d_1)\\,\\ee^{\\,d_1\\sigma\\sqrt{T}-\\frac12\\sigma^2T}=\\varphi(d_1)\\,\\ee^{\\ln(F/K)}=\\varphi(d_1)\\,\\frac{F}{K}\\quad\\Longrightarrow\\quad F\\,\\varphi(d_1)=K\\,\\varphi(d_2)\\]</div>
-      <p>${L.q2LemmaUse}</p>
-      <div class="math-formula">\\[\\frac{\\partial d_1}{\\partial F}=\\frac{\\partial d_2}{\\partial F}=\\frac{1}{F\\sigma\\sqrt{T}},\\qquad \\frac{\\partial d_1}{\\partial\\sigma}-\\frac{\\partial d_2}{\\partial\\sigma}=\\sqrt{T},\\qquad \\frac{\\partial d_1}{\\partial T}-\\frac{\\partial d_2}{\\partial T}=\\frac{\\sigma}{2\\sqrt{T}}\\]</div>
-
-      <p style="margin-top:1rem;"><strong>${L.q2StepDelta}</strong> ${L.q2DeltaTxt}</p>
-      <div class="math-formula">\\[\\Delta_c=\\frac{\\partial c}{\\partial F}=\\ee^{-rT}\\Big[\\Phi(d_1)+\\underbrace{F\\,\\varphi(d_1)\\frac{\\partial d_1}{\\partial F}-K\\,\\varphi(d_2)\\frac{\\partial d_2}{\\partial F}}_{=\\,\\frac{F\\varphi(d_1)-K\\varphi(d_2)}{F\\sigma\\sqrt{T}}\\,=\\,0}\\Big]=\\ee^{-rT}\\,\\Phi(d_1)\\]</div>
-      <p>${L.q2DeltaPut}</p>
-      <div class="math-formula">\\[c-p=\\ee^{-rT}(F-K)\\quad\\Longrightarrow\\quad \\Delta_p=\\Delta_c-\\ee^{-rT}=-\\ee^{-rT}\\big[1-\\Phi(d_1)\\big]=-\\ee^{-rT}\\,\\Phi(-d_1)\\]</div>
-
-      <p style="margin-top:1rem;"><strong>${L.q2StepGamma}</strong> ${L.q2GammaTxt}</p>
-      <div class="math-formula">\\[\\Gamma=\\frac{\\partial^2 c}{\\partial F^2}=\\frac{\\partial}{\\partial F}\\Big[\\ee^{-rT}\\Phi(d_1)\\Big]=\\ee^{-rT}\\varphi(d_1)\\,\\frac{\\partial d_1}{\\partial F}=\\frac{\\ee^{-rT}\\varphi(d_1)}{F\\sigma\\sqrt{T}}\\]</div>
-
-      <p style="margin-top:1rem;"><strong>${L.q2StepVega}</strong> ${L.q2VegaTxt}</p>
-      <div class="math-formula">\\[\\Vega=\\frac{\\partial c}{\\partial\\sigma}=\\ee^{-rT}\\Big[F\\varphi(d_1)\\frac{\\partial d_1}{\\partial\\sigma}-K\\varphi(d_2)\\frac{\\partial d_2}{\\partial\\sigma}\\Big]=\\ee^{-rT}F\\varphi(d_1)\\Big[\\frac{\\partial d_1}{\\partial\\sigma}-\\frac{\\partial d_2}{\\partial\\sigma}\\Big]=\\ee^{-rT}F\\,\\varphi(d_1)\\sqrt{T}\\]</div>
-
-      <p style="margin-top:1rem;"><strong>${L.q2StepTheta}</strong> ${L.q2ThetaTxt}</p>
-      <div class="math-formula">\\[\\frac{\\partial c}{\\partial T}=-r\\,c+\\ee^{-rT}F\\varphi(d_1)\\Big[\\frac{\\partial d_1}{\\partial T}-\\frac{\\partial d_2}{\\partial T}\\Big]=-r\\,c+\\frac{\\ee^{-rT}F\\,\\varphi(d_1)\\,\\sigma}{2\\sqrt{T}}\\quad\\Longrightarrow\\quad \\Theta_c=r\\,c-\\frac{\\ee^{-rT}F\\,\\varphi(d_1)\\,\\sigma}{2\\sqrt{T}}\\]</div>
-      <p>${L.q2ThetaPut}</p>
-      <div class="math-formula">\\[\\Theta_p=r\\,p-\\frac{\\ee^{-rT}F\\,\\varphi(d_1)\\,\\sigma}{2\\sqrt{T}}\\]</div>
-      <p>${L.q2Units}</p>`;
-}
-
-function q2Numeric(D) {
-    const L = I18N[LANG].L, r0 = D.rows[0];
-    const T = r0.T, sig = D.sig[0], sq = Math.sqrt(T), vs = sig * sq, df = Math.exp(-D.r * T);
-    let s = `<p style="margin-top:1rem;"><strong>${L.q2StepNum}</strong> ${L.q2NumTxt}</p>`;
-
-    strikeGroups(D, 0).forEach(function (grp) {
-        const g = grp.g, K = grp.K;
-        const phi = Math.exp(-g.d1 * g.d1 / 2) / Math.sqrt(2 * Math.PI);
-        const common = df * D.F0 * phi * sig / (2 * sq);
-        s += `<p style="margin-top:.9rem;"><strong>$K=${texN(K, 0)}$.</strong></p>
-          <div class="math-formula">\\[\\varphi(d_1)=\\frac{\\ee^{-d_1^2/2}}{\\sqrt{2\\pi}}=\\frac{\\ee^{-(${texN(g.d1, 4)})^2/2}}{${texN(Math.sqrt(2 * Math.PI), 6)}}=${texN(phi, 6)}\\]</div>
-          <div class="math-formula">\\[\\Gamma=\\frac{${texN(df, 6)}\\times${texN(phi, 6)}}{${texN(D.F0, 0)}\\times${texN(vs, 6)}}=${texN(g.gamma, 8)}\\ ${L.perPt2},\\qquad \\Vega=${texN(df, 6)}\\times${texN(D.F0, 0)}\\times${texN(phi, 6)}\\times${texN(sq, 6)}=${texN(g.vega, 2)}\\ ${L.perUnitVol}\\]</div>
-          <div class="math-formula">\\[\\frac{\\ee^{-rT}F\\,\\varphi(d_1)\\,\\sigma}{2\\sqrt{T}}=\\frac{${texN(df, 6)}\\times${texN(D.F0, 0)}\\times${texN(phi, 6)}\\times${texN(sig, 3)}}{2\\times${texN(sq, 6)}}=${texN(common, 2)}\\ ${L.ptsPerYear}\\]</div>`;
-        grp.legs.forEach(function (i) {
-            const leg = D.legs[i], gi = r0.detail[i];
-            if (leg.type === 'C') {
-                s += `<div class="math-formula">\\[\\Delta_c=${texN(df, 6)}\\times${texN(gi.Nd1, 6)}=${texN(gi.delta, 6)},\\qquad \\Theta_c=${texN(D.r, 3)}\\times${texN(gi.price, 2)}-${texN(common, 2)}=${texN(gi.theta, 2)}\\ ${L.ptsPerYear}\\]</div>`;
-            } else {
-                s += `<div class="math-formula">\\[\\Delta_p=-${texN(df, 6)}\\times${texN(1 - gi.Nd1, 6)}=${texN(gi.delta, 6)},\\qquad \\Theta_p=${texN(D.r, 3)}\\times${texN(gi.price, 2)}-${texN(common, 2)}=${texN(gi.theta, 2)}\\ ${L.ptsPerYear}\\]</div>`;
-            }
-        });
-    });
-    s += `<p style="margin-top:.9rem;">${L.q2Agg}</p>`;
-    return s;
-}
-
 /* grecques unitaires, par option, dans les unités de marché */
 function unitGreekTable(D, t) {
     const L = I18N[LANG].L, row = D.rows[t];
@@ -1173,6 +1025,247 @@ function unitGreekTable(D, t) {
     }
     h += `</tbody></table></div>`;
     return h;
+}
+
+/* ============================================================
+   RÉDACTION DU CORRIGÉ — questions 1, 2, 4 et encadré de la question 5
+   ============================================================ */
+const phiOf = x => Math.exp(-x * x / 2) / Math.sqrt(2 * Math.PI);
+const par = (v, dec) => (v < 0 ? `(${texN(v, dec)})` : texN(v, dec));
+
+/* ---------------- Question 1 ---------------- */
+function q1Detail(D) {
+    const fr = LANG === 'fr', n = texN, r0 = D.rows[0];
+    const T = r0.T, sig = D.sig[0], sq = Math.sqrt(T), vs = sig * sq, df = Math.exp(-D.r * T), hv = 0.5 * sig * sig * T;
+    let s = fr
+      ? `<p>Commençons par les grandeurs communes aux deux jambes, qui partagent la même échéance et la même volatilité implicite. L'échéance résiduelle est de ${fmtNb(D.nb0,0)} jours ouvrés, soit $T=${n(D.nb0,0)}/252=${n(T,6)}$ an ; on en déduit $\\sqrt{T}=${n(sq,6)}$, puis l'écart-type du logarithme du <em>future</em> sur la durée de vie de l'option, $\\sigma\\sqrt{T}=${n(sig,3)}\\times${n(sq,6)}=${n(vs,6)}$. On aura également besoin du terme de convexité $\\tfrac12\\sigma^2T=\\tfrac12\\times${n(sig,3)}^2\\times${n(T,6)}=${n(hv,6)}$ et du facteur d'actualisation $\\ee^{-rT}=\\ee^{-${n(D.r,3)}\\times${n(T,6)}}=${n(df,6)}$.</p>`
+      : `<p>Let us start with the quantities common to both legs, which share the same maturity and the same implied volatility. The remaining maturity is ${fmtNb(D.nb0,0)} business days, that is $T=${n(D.nb0,0)}/252=${n(T,6)}$ year; hence $\\sqrt{T}=${n(sq,6)}$, then the standard deviation of the log of the <em>future</em> over the life of the option, $\\sigma\\sqrt{T}=${n(sig,3)}\\times${n(sq,6)}=${n(vs,6)}$. We shall also need the convexity term $\\tfrac12\\sigma^2T=\\tfrac12\\times${n(sig,3)}^2\\times${n(T,6)}=${n(hv,6)}$ and the discount factor $\\ee^{-rT}=\\ee^{-${n(D.r,3)}\\times${n(T,6)}}=${n(df,6)}$.</p>`;
+
+    strikeGroups(D, 0).forEach(function (grp) {
+        const g = grp.g, K = grp.K, ln = Math.log(D.F0 / K);
+        const hasC = grp.legs.some(i => D.legs[i].type === 'C');
+        const hasP = grp.legs.some(i => D.legs[i].type === 'P');
+        let money;
+        if (hasC && hasP) {
+            money = fr
+              ? (D.F0 > K ? `Le prix d'exercice commun est inférieur au cours du <em>future</em> : le call est légèrement dans la monnaie et le put légèrement en dehors, ce qui rend $\\ln(F/K)$ positif.`
+                          : `Le prix d'exercice commun dépasse le cours du <em>future</em> : le call est légèrement en dehors de la monnaie et le put légèrement dedans, ce qui rend $\\ln(F/K)$ négatif.`)
+              : (D.F0 > K ? `The common strike is below the <em>future</em> price: the call is slightly in the money and the put slightly out of it, which makes $\\ln(F/K)$ positive.`
+                          : `The common strike is above the <em>future</em> price: the call is slightly out of the money and the put slightly in it, which makes $\\ln(F/K)$ negative.`);
+        } else if (hasC) {
+            money = fr ? `Son prix d'exercice dépasse le cours du <em>future</em> : le call est en dehors de la monnaie et $\\ln(F/K)$ est négatif.`
+                       : `Its strike is above the <em>future</em> price: the call is out of the money and $\\ln(F/K)$ is negative.`;
+        } else {
+            money = fr ? `Son prix d'exercice est inférieur au cours du <em>future</em> : le put est en dehors de la monnaie et $\\ln(F/K)$ est positif.`
+                       : `Its strike is below the <em>future</em> price: the put is out of the money and $\\ln(F/K)$ is positive.`;
+        }
+        const title = fr ? (hasC && hasP ? "Call et put de prix d'exercice" : (hasC ? "Call de prix d'exercice" : "Put de prix d'exercice"))
+                         : (hasC && hasP ? "Call and put struck at" : (hasC ? "Call struck at" : "Put struck at"));
+        const interp = fr
+          ? (hasC ? `la seconde s'interprète comme la probabilité, sous la probabilité risque-neutre, que le call termine dans la monnaie`
+                  : `on en déduira $\\Phi(-d_2)=1-\\Phi(d_2)$, qui s'interprète comme la probabilité, sous la probabilité risque-neutre, que le put termine dans la monnaie`)
+          : (hasC ? `the latter is the probability, under the risk-neutral measure, that the call ends in the money`
+                  : `from which $\\Phi(-d_2)=1-\\Phi(d_2)$ follows, the probability under the risk-neutral measure that the put ends in the money`);
+
+        s += fr
+          ? `<p style="margin-top:.9rem;"><strong>${title} ${fmtNb(K,0)}.</strong> ${money} On trouve $\\ln(F/K)=\\ln(${n(D.F0,0)}/${n(K,0)})=${n(ln,6)}$, que l'on corrige du terme de convexité avant de le rapporter à l'écart-type : $d_1=\\frac{${n(ln,6)}+${n(hv,6)}}{${n(vs,6)}}=${n(g.d1,4)}$. On obtient ensuite $d_2$ en retranchant $\\sigma\\sqrt{T}$, soit $d_2=${n(g.d1,4)}-${n(vs,4)}=${n(g.d2,4)}$. Ces deux valeurs figurent au tableau 2, qui donne $\\Phi(d_1)=${n(g.Nd1,6)}$ et $\\Phi(d_2)=${n(g.Nd2,6)}$ ; ${interp}.</p>`
+          : `<p style="margin-top:.9rem;"><strong>${title} ${fmtNb(K,0)}.</strong> ${money} We find $\\ln(F/K)=\\ln(${n(D.F0,0)}/${n(K,0)})=${n(ln,6)}$, which is corrected by the convexity term before being scaled by the standard deviation: $d_1=\\frac{${n(ln,6)}+${n(hv,6)}}{${n(vs,6)}}=${n(g.d1,4)}$. We then obtain $d_2$ by subtracting $\\sigma\\sqrt{T}$, that is $d_2=${n(g.d1,4)}-${n(vs,4)}=${n(g.d2,4)}$. Both values appear in Table 2, which gives $\\Phi(d_1)=${n(g.Nd1,6)}$ and $\\Phi(d_2)=${n(g.Nd2,6)}$; ${interp}.</p>`;
+
+        let c = null, p = null;
+        if (hasC) {
+            const a = D.F0 * g.Nd1, b = K * g.Nd2; c = df * (a - b);
+            s += fr
+              ? `<p>Le prix du call est la valeur actualisée de l'écart entre ce que le porteur reçoit, $F\\,\\Phi(d_1)$, et ce qu'il paie en exerçant, $K\\,\\Phi(d_2)$ :</p>`
+              : `<p>The call price is the discounted value of the gap between what the holder receives, $F\\,\\Phi(d_1)$, and what he pays on exercise, $K\\,\\Phi(d_2)$:</p>`;
+            s += `<div class="math-formula">\\[c=\\ee^{-rT}\\big[F\\,\\Phi(d_1)-K\\,\\Phi(d_2)\\big]=${n(df,6)}\\times\\big(${n(D.F0,0)}\\times${n(g.Nd1,6)}-${n(K,0)}\\times${n(g.Nd2,6)}\\big)=${n(df,6)}\\times\\big(${n(a,2)}-${n(b,2)}\\big)=${n(c,2)}\\ \\text{${fr ? 'points' : 'points'}}\\]</div>`;
+        }
+        if (hasP) {
+            const m1 = 1 - g.Nd1, m2 = 1 - g.Nd2, a = K * m2, b = D.F0 * m1; p = df * (a - b);
+            s += fr
+              ? `<p>Pour le put, on exploite la symétrie de la loi normale centrée réduite, $\\Phi(-x)=1-\\Phi(x)$ : ici $\\Phi(-d_1)=1-${n(g.Nd1,6)}=${n(m1,6)}$ et $\\Phi(-d_2)=1-${n(g.Nd2,6)}=${n(m2,6)}$. Le put vaut alors</p>`
+              : `<p>For the put, we use the symmetry of the standard normal distribution, $\\Phi(-x)=1-\\Phi(x)$: here $\\Phi(-d_1)=1-${n(g.Nd1,6)}=${n(m1,6)}$ and $\\Phi(-d_2)=1-${n(g.Nd2,6)}=${n(m2,6)}$. The put is then worth</p>`;
+            s += `<div class="math-formula">\\[p=\\ee^{-rT}\\big[K\\,\\Phi(-d_2)-F\\,\\Phi(-d_1)\\big]=${n(df,6)}\\times\\big(${n(K,0)}\\times${n(m2,6)}-${n(D.F0,0)}\\times${n(m1,6)}\\big)=${n(df,6)}\\times\\big(${n(a,2)}-${n(b,2)}\\big)=${n(p,2)}\\ \\text{points}\\]</div>`;
+        }
+        if (hasC && hasP) {
+            s += fr
+              ? `<p>La parité call-put des options sur <em>future</em>, $c-p=\\ee^{-rT}(F-K)$, fournit un contrôle immédiat : la différence $c-p=${n(c,2)}-${n(p,2)}=${n(c - p,2)}$ coïncide bien avec $\\ee^{-rT}(F-K)=${n(df,6)}\\times(${n(D.F0,0)}-${n(K,0)})=${n(df * (D.F0 - K),2)}$.</p>`
+              : `<p>Put-call parity for options on a <em>future</em>, $c-p=\\ee^{-rT}(F-K)$, provides an immediate check: the difference $c-p=${n(c,2)}-${n(p,2)}=${n(c - p,2)}$ does coincide with $\\ee^{-rT}(F-K)=${n(df,6)}\\times(${n(D.F0,0)}-${n(K,0)})=${n(df * (D.F0 - K),2)}$.</p>`;
+        }
+    });
+    return s;
+}
+
+/* ---------------- Question 2 : dérivation ---------------- */
+function q2Derivation(D) {
+    const fr = LANG === 'fr';
+    if (fr) return `
+      <p><strong>Un lemme préliminaire.</strong> Toutes les dérivations reposent sur une identité qui fait disparaître les termes parasites. Comme $d_2=d_1-\\sigma\\sqrt{T}$, on peut développer le carré qui figure dans l'exponentielle de la densité : $(d_1-\\sigma\\sqrt{T})^2=d_1^2-2d_1\\sigma\\sqrt{T}+\\sigma^2T$. La densité de $d_2$ s'écrit donc comme celle de $d_1$, multipliée par un facteur correctif :</p>
+      <div class="math-formula">\\[\\varphi(d_2)=\\frac{1}{\\sqrt{2\\pi}}\\,\\ee^{-\\frac{(d_1-\\sigma\\sqrt{T})^2}{2}}=\\varphi(d_1)\\,\\ee^{\\,d_1\\sigma\\sqrt{T}-\\frac12\\sigma^2T}.\\]</div>
+      <p>Or, par définition de $d_1$, on a $d_1\\sigma\\sqrt{T}=\\ln(F/K)+\\tfrac12\\sigma^2T$, si bien que l'exposant du facteur correctif vaut exactement $\\ln(F/K)$. Le facteur est donc égal à $F/K$, et l'on obtient l'identité $F\\,\\varphi(d_1)=K\\,\\varphi(d_2)$, qui servira à chaque étape.</p>
+      <p>On utilisera aussi les dérivées partielles de $d_1$ et $d_2$. Le cours $F$ n'intervient dans $d_1$ qu'au travers de $\\ln F$, dont la dérivée vaut $1/F$ ; et comme $\\sigma\\sqrt{T}$ ne dépend pas de $F$, $d_2$ a la même dérivée : $\\frac{\\partial d_1}{\\partial F}=\\frac{\\partial d_2}{\\partial F}=\\frac{1}{F\\sigma\\sqrt{T}}$. En revanche, l'écart $d_1-d_2=\\sigma\\sqrt{T}$ dépend de $\\sigma$ et de $T$, ce qui donne $\\frac{\\partial d_1}{\\partial\\sigma}-\\frac{\\partial d_2}{\\partial\\sigma}=\\sqrt{T}$ et $\\frac{\\partial d_1}{\\partial T}-\\frac{\\partial d_2}{\\partial T}=\\frac{\\sigma}{2\\sqrt{T}}$.</p>
+
+      <p style="margin-top:.9rem;"><strong>Le delta.</strong> Dérivons le prix du call par rapport à $F$. Le premier terme, $F\\,\\Phi(d_1)$, est un produit : sa dérivée vaut $\\Phi(d_1)+F\\,\\varphi(d_1)\\,\\frac{\\partial d_1}{\\partial F}$. Le second, $K\\,\\Phi(d_2)$, a pour dérivée $K\\,\\varphi(d_2)\\,\\frac{\\partial d_2}{\\partial F}$. En rassemblant, et puisque les deux dérivées partielles sont égales,</p>
+      <div class="math-formula">\\[\\Delta_c=\\frac{\\partial c}{\\partial F}=\\ee^{-rT}\\left[\\Phi(d_1)+\\frac{F\\,\\varphi(d_1)-K\\,\\varphi(d_2)}{F\\sigma\\sqrt{T}}\\right].\\]</div>
+      <p>Le lemme annule exactement la fraction : il ne reste que $\\Delta_c=\\ee^{-rT}\\,\\Phi(d_1)$. Pour le put, le plus simple est de dériver la parité call-put $c-p=\\ee^{-rT}(F-K)$, dont le membre de droite a pour dérivée $\\ee^{-rT}$. On en tire $\\Delta_p=\\Delta_c-\\ee^{-rT}=-\\ee^{-rT}\\big[1-\\Phi(d_1)\\big]$, c'est-à-dire $\\Delta_p=-\\ee^{-rT}\\,\\Phi(-d_1)$ : le delta d'un put est toujours négatif.</p>
+
+      <p style="margin-top:.9rem;"><strong>Le gamma.</strong> Il suffit de dériver le delta une seconde fois par rapport à $F$. Seul $\\Phi(d_1)$ dépend de $F$, et sa dérivée est $\\varphi(d_1)\\,\\frac{\\partial d_1}{\\partial F}$, d'où</p>
+      <div class="math-formula">\\[\\Gamma=\\frac{\\partial^2 c}{\\partial F^2}=\\frac{\\ee^{-rT}\\,\\varphi(d_1)}{F\\sigma\\sqrt{T}}.\\]</div>
+      <p>Le gamma du put est identique : la parité étant linéaire en $F$, sa dérivée seconde est nulle, et le call et le put de même prix d'exercice ont la même convexité.</p>
+
+      <p style="margin-top:.9rem;"><strong>Le véga.</strong> La volatilité n'intervient dans le prix du call qu'au travers de $d_1$ et de $d_2$. En dérivant, on obtient $\\ee^{-rT}\\big[F\\varphi(d_1)\\frac{\\partial d_1}{\\partial\\sigma}-K\\varphi(d_2)\\frac{\\partial d_2}{\\partial\\sigma}\\big]$, et le lemme permet de remplacer $K\\varphi(d_2)$ par $F\\varphi(d_1)$ pour le mettre en facteur. Il reste la différence des deux dérivées partielles, qui vaut $\\sqrt{T}$ :</p>
+      <div class="math-formula">\\[\\Vega=\\frac{\\partial c}{\\partial\\sigma}=\\ee^{-rT}F\\,\\varphi(d_1)\\sqrt{T}.\\]</div>
+      <p>Là encore, le put a le même véga, puisque la parité call-put ne dépend pas de la volatilité.</p>
+
+      <p style="margin-top:.9rem;"><strong>Le thêta.</strong> Le thêta mesure la variation de valeur avec l'écoulement du temps calendaire $t$. La maturité résiduelle valant $T=T_{\\text{éch}}-t$, faire avancer le temps revient à raccourcir la maturité, et l'on a $\\Theta=\\partial V/\\partial t=-\\partial V/\\partial T$. La dérivée du call par rapport à $T$ fait apparaître deux effets. Le facteur d'actualisation produit un terme $-r\\,c$ ; les termes en $d_1$ et $d_2$, regroupés grâce au lemme comme pour le véga, donnent $\\ee^{-rT}F\\varphi(d_1)\\big[\\frac{\\partial d_1}{\\partial T}-\\frac{\\partial d_2}{\\partial T}\\big]=\\frac{\\ee^{-rT}F\\varphi(d_1)\\sigma}{2\\sqrt{T}}$. En changeant de signe, on obtient</p>
+      <div class="math-formula">\\[\\Theta_c=r\\,c-\\frac{\\ee^{-rT}F\\,\\varphi(d_1)\\,\\sigma}{2\\sqrt{T}}.\\]</div>
+      <p>Le raisonnement est identique pour le put, en partant de $p=c-\\ee^{-rT}(F-K)$ : on trouve $\\Theta_p=r\\,p-\\frac{\\ee^{-rT}F\\,\\varphi(d_1)\\,\\sigma}{2\\sqrt{T}}$. Le second terme, commun aux deux options, domine largement le premier : c'est la perte de valeur temps.</p>
+
+      <p style="margin-top:.9rem;"><strong>Les unités.</strong> Ces grecques sont exprimées en unités « naturelles » : le thêta en points par <em>année</em> et le véga en points par <em>unité</em> de volatilité, c'est-à-dire pour une variation de $\\sigma$ de 100 %. Pour les ramener aux unités de marché, on divise le thêta par 252, ce qui le donne par séance, et le véga par 100, ce qui le donne par point de volatilité. On passe enfin d'une option à la position en multipliant par la quantité signée et par le multiplicateur de ${fmtNb(D.M,0)} € par point.</p>`;
+    return `
+      <p><strong>A preliminary lemma.</strong> Every derivation rests on an identity that removes the spurious terms. Since $d_2=d_1-\\sigma\\sqrt{T}$, we can expand the square in the exponent of the density: $(d_1-\\sigma\\sqrt{T})^2=d_1^2-2d_1\\sigma\\sqrt{T}+\\sigma^2T$. The density of $d_2$ is therefore that of $d_1$, multiplied by a correction factor:</p>
+      <div class="math-formula">\\[\\varphi(d_2)=\\frac{1}{\\sqrt{2\\pi}}\\,\\ee^{-\\frac{(d_1-\\sigma\\sqrt{T})^2}{2}}=\\varphi(d_1)\\,\\ee^{\\,d_1\\sigma\\sqrt{T}-\\frac12\\sigma^2T}.\\]</div>
+      <p>Now, by definition of $d_1$, $d_1\\sigma\\sqrt{T}=\\ln(F/K)+\\tfrac12\\sigma^2T$, so that the exponent of the correction factor is exactly $\\ln(F/K)$. The factor therefore equals $F/K$, and we obtain the identity $F\\,\\varphi(d_1)=K\\,\\varphi(d_2)$, which will be used at every step.</p>
+      <p>We shall also use the partial derivatives of $d_1$ and $d_2$. The price $F$ enters $d_1$ only through $\\ln F$, whose derivative is $1/F$; and since $\\sigma\\sqrt{T}$ does not depend on $F$, $d_2$ has the same derivative: $\\frac{\\partial d_1}{\\partial F}=\\frac{\\partial d_2}{\\partial F}=\\frac{1}{F\\sigma\\sqrt{T}}$. By contrast, the gap $d_1-d_2=\\sigma\\sqrt{T}$ depends on $\\sigma$ and $T$, which gives $\\frac{\\partial d_1}{\\partial\\sigma}-\\frac{\\partial d_2}{\\partial\\sigma}=\\sqrt{T}$ and $\\frac{\\partial d_1}{\\partial T}-\\frac{\\partial d_2}{\\partial T}=\\frac{\\sigma}{2\\sqrt{T}}$.</p>
+
+      <p style="margin-top:.9rem;"><strong>Delta.</strong> Let us differentiate the call price with respect to $F$. The first term, $F\\,\\Phi(d_1)$, is a product: its derivative is $\\Phi(d_1)+F\\,\\varphi(d_1)\\,\\frac{\\partial d_1}{\\partial F}$. The second, $K\\,\\Phi(d_2)$, has derivative $K\\,\\varphi(d_2)\\,\\frac{\\partial d_2}{\\partial F}$. Gathering terms, and since both partial derivatives are equal,</p>
+      <div class="math-formula">\\[\\Delta_c=\\frac{\\partial c}{\\partial F}=\\ee^{-rT}\\left[\\Phi(d_1)+\\frac{F\\,\\varphi(d_1)-K\\,\\varphi(d_2)}{F\\sigma\\sqrt{T}}\\right].\\]</div>
+      <p>The lemma cancels the fraction exactly, leaving $\\Delta_c=\\ee^{-rT}\\,\\Phi(d_1)$. For the put, the simplest route is to differentiate put-call parity $c-p=\\ee^{-rT}(F-K)$, whose right-hand side has derivative $\\ee^{-rT}$. This yields $\\Delta_p=\\Delta_c-\\ee^{-rT}=-\\ee^{-rT}\\big[1-\\Phi(d_1)\\big]$, that is $\\Delta_p=-\\ee^{-rT}\\,\\Phi(-d_1)$: the delta of a put is always negative.</p>
+
+      <p style="margin-top:.9rem;"><strong>Gamma.</strong> It suffices to differentiate the delta a second time with respect to $F$. Only $\\Phi(d_1)$ depends on $F$, and its derivative is $\\varphi(d_1)\\,\\frac{\\partial d_1}{\\partial F}$, hence</p>
+      <div class="math-formula">\\[\\Gamma=\\frac{\\partial^2 c}{\\partial F^2}=\\frac{\\ee^{-rT}\\,\\varphi(d_1)}{F\\sigma\\sqrt{T}}.\\]</div>
+      <p>The gamma of the put is identical: parity being linear in $F$, its second derivative is zero, and a call and a put with the same strike have the same convexity.</p>
+
+      <p style="margin-top:.9rem;"><strong>Vega.</strong> Volatility enters the call price only through $d_1$ and $d_2$. Differentiating gives $\\ee^{-rT}\\big[F\\varphi(d_1)\\frac{\\partial d_1}{\\partial\\sigma}-K\\varphi(d_2)\\frac{\\partial d_2}{\\partial\\sigma}\\big]$, and the lemma allows $K\\varphi(d_2)$ to be replaced by $F\\varphi(d_1)$ and factored out. What remains is the difference of the two partial derivatives, which equals $\\sqrt{T}$:</p>
+      <div class="math-formula">\\[\\Vega=\\frac{\\partial c}{\\partial\\sigma}=\\ee^{-rT}F\\,\\varphi(d_1)\\sqrt{T}.\\]</div>
+      <p>Here again the put has the same vega, since put-call parity does not depend on volatility.</p>
+
+      <p style="margin-top:.9rem;"><strong>Theta.</strong> Theta measures the change in value as calendar time $t$ passes. With remaining maturity $T=T_{\\text{exp}}-t$, moving time forward shortens the maturity, and $\\Theta=\\partial V/\\partial t=-\\partial V/\\partial T$. The derivative of the call with respect to $T$ reveals two effects. The discount factor produces a term $-r\\,c$; the terms in $d_1$ and $d_2$, grouped through the lemma as for vega, give $\\ee^{-rT}F\\varphi(d_1)\\big[\\frac{\\partial d_1}{\\partial T}-\\frac{\\partial d_2}{\\partial T}\\big]=\\frac{\\ee^{-rT}F\\varphi(d_1)\\sigma}{2\\sqrt{T}}$. Changing the sign, we obtain</p>
+      <div class="math-formula">\\[\\Theta_c=r\\,c-\\frac{\\ee^{-rT}F\\,\\varphi(d_1)\\,\\sigma}{2\\sqrt{T}}.\\]</div>
+      <p>The reasoning is identical for the put, starting from $p=c-\\ee^{-rT}(F-K)$: we find $\\Theta_p=r\\,p-\\frac{\\ee^{-rT}F\\,\\varphi(d_1)\\,\\sigma}{2\\sqrt{T}}$. The second term, common to both options, far outweighs the first: it is the loss of time value.</p>
+
+      <p style="margin-top:.9rem;"><strong>Units.</strong> These Greeks are expressed in "natural" units: theta in points per <em>year</em> and vega in points per <em>unit</em> of volatility, that is for a 100% change in $\\sigma$. To convert them to market units, theta is divided by 252, which gives it per session, and vega by 100, which gives it per volatility point. We finally move from one option to the position by multiplying by the signed quantity and by the multiplier of ${fmtNb(D.M,0)} € per point.</p>`;
+}
+
+/* ---------------- Question 2 : application numérique ---------------- */
+function q2Numeric(D) {
+    const fr = LANG === 'fr', n = texN, r0 = D.rows[0];
+    const T = r0.T, sig = D.sig[0], sq = Math.sqrt(T), vs = sig * sq, df = Math.exp(-D.r * T);
+    let s = fr
+      ? `<p style="margin-top:.9rem;"><strong>Application numérique.</strong> On reprend les valeurs de $d_1$, de $\\sigma\\sqrt{T}$ et de $\\ee^{-rT}$ obtenues à la question 1. Seule la densité $\\varphi(d_1)$ reste à calculer, directement à la calculatrice.</p>`
+      : `<p style="margin-top:.9rem;"><strong>Numerical application.</strong> We reuse the values of $d_1$, $\\sigma\\sqrt{T}$ and $\\ee^{-rT}$ obtained in question 1. Only the density $\\varphi(d_1)$ remains to be computed, directly with a calculator.</p>`;
+
+    strikeGroups(D, 0).forEach(function (grp) {
+        const g = grp.g, K = grp.K, phi = phiOf(g.d1);
+        const common = df * D.F0 * phi * sig / (2 * sq);
+        const both = grp.legs.length === 2;
+        s += fr
+          ? `<p style="margin-top:.7rem;"><strong>Prix d'exercice ${fmtNb(K,0)}.</strong> Avec $d_1=${n(g.d1,4)}$, la densité vaut $\\varphi(d_1)=\\ee^{-(${n(g.d1,4)})^2/2}/\\sqrt{2\\pi}=\\ee^{-${n(g.d1 * g.d1 / 2,6)}}/${n(Math.sqrt(2 * Math.PI),6)}=${n(phi,6)}$. ${both ? "Elle est commune au call et au put, qui partagent le même prix d'exercice." : ""} Le gamma d'une option s'en déduit en divisant par $F\\sigma\\sqrt{T}$ : $\\Gamma=\\frac{${n(df,6)}\\times${n(phi,6)}}{${n(D.F0,0)}\\times${n(vs,6)}}=${n(g.gamma,8)}$ par point au carré. Le véga vaut $\\Vega=${n(df,6)}\\times${n(D.F0,0)}\\times${n(phi,6)}\\times${n(sq,6)}=${n(g.vega,2)}$ points par unité de volatilité, soit ${fmtNb(g.vega / 100,4)} point par point de volatilité. Pour le thêta, on calcule d'abord le terme de valeur temps commun, $\\frac{\\ee^{-rT}F\\varphi(d_1)\\sigma}{2\\sqrt{T}}=\\frac{${n(df,6)}\\times${n(D.F0,0)}\\times${n(phi,6)}\\times${n(sig,3)}}{2\\times${n(sq,6)}}=${n(common,2)}$ points par an.</p>`
+          : `<p style="margin-top:.7rem;"><strong>Strike ${fmtNb(K,0)}.</strong> With $d_1=${n(g.d1,4)}$, the density is $\\varphi(d_1)=\\ee^{-(${n(g.d1,4)})^2/2}/\\sqrt{2\\pi}=\\ee^{-${n(g.d1 * g.d1 / 2,6)}}/${n(Math.sqrt(2 * Math.PI),6)}=${n(phi,6)}$. ${both ? "It is common to the call and the put, which share the same strike." : ""} The gamma of one option follows by dividing by $F\\sigma\\sqrt{T}$: $\\Gamma=\\frac{${n(df,6)}\\times${n(phi,6)}}{${n(D.F0,0)}\\times${n(vs,6)}}=${n(g.gamma,8)}$ per squared point. Vega is $\\Vega=${n(df,6)}\\times${n(D.F0,0)}\\times${n(phi,6)}\\times${n(sq,6)}=${n(g.vega,2)}$ points per unit of volatility, that is ${fmtNb(g.vega / 100,4)} point per volatility point. For theta, we first compute the common time-value term, $\\frac{\\ee^{-rT}F\\varphi(d_1)\\sigma}{2\\sqrt{T}}=\\frac{${n(df,6)}\\times${n(D.F0,0)}\\times${n(phi,6)}\\times${n(sig,3)}}{2\\times${n(sq,6)}}=${n(common,2)}$ points per year.</p>`;
+
+        grp.legs.forEach(function (i) {
+            const leg = D.legs[i], gi = r0.detail[i];
+            if (leg.type === 'C') {
+                s += fr
+                  ? `<p>Pour le call, le delta vaut $\\Delta_c=\\ee^{-rT}\\Phi(d_1)=${n(df,6)}\\times${n(gi.Nd1,6)}=${n(gi.delta,6)}$ et le thêta $\\Theta_c=r\\,c-${n(common,2)}=${n(D.r,3)}\\times${n(gi.price,2)}-${n(common,2)}=${n(gi.theta,2)}$ points par an, soit ${fmtNb(gi.theta / 252,4)} point par séance.</p>`
+                  : `<p>For the call, delta is $\\Delta_c=\\ee^{-rT}\\Phi(d_1)=${n(df,6)}\\times${n(gi.Nd1,6)}=${n(gi.delta,6)}$ and theta $\\Theta_c=r\\,c-${n(common,2)}=${n(D.r,3)}\\times${n(gi.price,2)}-${n(common,2)}=${n(gi.theta,2)}$ points per year, that is ${fmtNb(gi.theta / 252,4)} point per session.</p>`;
+            } else {
+                s += fr
+                  ? `<p>Pour le put, le delta vaut $\\Delta_p=-\\ee^{-rT}\\Phi(-d_1)=-${n(df,6)}\\times${n(1 - gi.Nd1,6)}=${n(gi.delta,6)}$ et le thêta $\\Theta_p=r\\,p-${n(common,2)}=${n(D.r,3)}\\times${n(gi.price,2)}-${n(common,2)}=${n(gi.theta,2)}$ points par an, soit ${fmtNb(gi.theta / 252,4)} point par séance.</p>`
+                  : `<p>For the put, delta is $\\Delta_p=-\\ee^{-rT}\\Phi(-d_1)=-${n(df,6)}\\times${n(1 - gi.Nd1,6)}=${n(gi.delta,6)}$ and theta $\\Theta_p=r\\,p-${n(common,2)}=${n(D.r,3)}\\times${n(gi.price,2)}-${n(common,2)}=${n(gi.theta,2)}$ points per year, that is ${fmtNb(gi.theta / 252,4)} point per session.</p>`;
+            }
+        });
+    });
+    s += fr
+      ? `<p style="margin-top:.7rem;">Le tableau suivant récapitule les grecques de chaque option, converties dans les unités de marché :</p>`
+      : `<p style="margin-top:.7rem;">The following table summarises the Greeks of each option, converted into market units:</p>`;
+    return s;
+}
+
+/* ---------------- Question 4 : suivi détaillé séance par séance ---------------- */
+function q4Detail(D) {
+    const fr = LANG === 'fr', n = texN, M = D.M;
+    const qty = D.legs[0].qty;                // même quantité signée sur les deux jambes
+    const iC = D.legs.findIndex(l => l.type === 'C'), iP = D.legs.findIndex(l => l.type === 'P');
+    let s = "";
+
+    for (let t = 1; t <= D.nDays; t++) {
+        const row = D.rows[t], prev = D.rows[t - 1], pl = D.pnl[t - 1];
+        const T = row.T, sq = Math.sqrt(T), vs = row.sig * sq, df = Math.exp(-D.r * T);
+        const gc = row.detail[iC], gp = row.detail[iP];
+        const Kc = D.legs[iC].K, Kp = D.legs[iP].K;
+        const phc = phiOf(gc.d1), php = phiOf(gp.d1);
+        const dF = row.F - prev.F, dSig = (row.sig - prev.sig) * 100;
+        const moveF = fr ? (dF > 0 ? `en hausse de ${fmtNb(dF,0)} points` : `en baisse de ${fmtNb(-dF,0)} points`)
+                         : (dF > 0 ? `up ${fmtNb(dF,0)} points` : `down ${fmtNb(-dF,0)} points`);
+        const moveS = Math.abs(dSig) < 1e-9
+          ? (fr ? "inchangée" : "unchanged")
+          : (fr ? (dSig > 0 ? `en hausse de ${fmtNb(dSig,1)} point` : `en baisse de ${fmtNb(-dSig,1)} point`)
+                : (dSig > 0 ? `up ${fmtNb(dSig,1)} point` : `down ${fmtNb(-dSig,1)} point`));
+        const hstar = -row.D / M, dh = row.h - prev.h;
+        const trade = dh === 0
+          ? (fr ? "aucun ajustement n'est nécessaire" : "no adjustment is needed")
+          : (fr ? `le desk doit donc ${dh > 0 ? "acheter" : "vendre"} ${fmtNb(Math.abs(dh),0)} contrat${Math.abs(dh) > 1 ? "s" : ""}`
+                : `the desk must therefore ${dh > 0 ? "buy" : "sell"} ${fmtNb(Math.abs(dh),0)} contract${Math.abs(dh) > 1 ? "s" : ""}`);
+        const sameK = Kc === Kp;
+
+        /* 1. marché et valorisation */
+        s += fr
+          ? `<p style="margin-top:1rem;"><strong>Séance ${t}.</strong> Le <em>future</em> clôture à $F_{${t}}=${n(row.F,0)}$ points, ${moveF}, et la volatilité implicite du tableau 1 s'établit à ${fmtNb(row.sig * 100,1)} %, ${moveS}. Il reste ${fmtNb(row.nb,0)} jours ouvrés, soit $T=${n(row.nb,0)}/252=${n(T,6)}$ an, ce qui donne $\\sigma\\sqrt{T}=${n(row.sig,3)}\\times${n(sq,6)}=${n(vs,6)}$ et $\\ee^{-rT}=${n(df,6)}$. ${sameK
+              ? `Le tableau 3 fournit, pour le prix d'exercice ${fmtNb(Kc,0)}, $\\Phi(d_1)=${n(gc.Nd1,6)}$ et $\\Phi(d_2)=${n(gc.Nd2,6)}$.`
+              : `Le tableau 3 fournit $\\Phi(d_1)=${n(gc.Nd1,6)}$ et $\\Phi(d_2)=${n(gc.Nd2,6)}$ pour le call ${fmtNb(Kc,0)}, et $\\Phi(d_1)=${n(gp.Nd1,6)}$ et $\\Phi(d_2)=${n(gp.Nd2,6)}$ pour le put ${fmtNb(Kp,0)}.`} Le call vaut alors $c=${n(df,6)}\\times(${n(row.F,0)}\\times${n(gc.Nd1,6)}-${n(Kc,0)}\\times${n(gc.Nd2,6)})=${n(gc.price,2)}$ points et, par symétrie, le put vaut $p=${n(df,6)}\\times(${n(Kp,0)}\\times${n(1 - gp.Nd2,6)}-${n(row.F,0)}\\times${n(1 - gp.Nd1,6)})=${n(gp.price,2)}$ points. La position vaut donc $V_{${t}}=${par(qty,0)}\\times${n(M,0)}\\times(${n(gc.price,2)}+${n(gp.price,2)})=${n(row.V,0)}$ €.</p>`
+          : `<p style="margin-top:1rem;"><strong>Session ${t}.</strong> The <em>future</em> closes at $F_{${t}}=${n(row.F,0)}$ points, ${moveF}, and the implied volatility in Table 1 stands at ${fmtNb(row.sig * 100,1)}%, ${moveS}. ${fmtNb(row.nb,0)} business days remain, that is $T=${n(row.nb,0)}/252=${n(T,6)}$ year, which gives $\\sigma\\sqrt{T}=${n(row.sig,3)}\\times${n(sq,6)}=${n(vs,6)}$ and $\\ee^{-rT}=${n(df,6)}$. ${sameK
+              ? `Table 3 gives, for the ${fmtNb(Kc,0)} strike, $\\Phi(d_1)=${n(gc.Nd1,6)}$ and $\\Phi(d_2)=${n(gc.Nd2,6)}$.`
+              : `Table 3 gives $\\Phi(d_1)=${n(gc.Nd1,6)}$ and $\\Phi(d_2)=${n(gc.Nd2,6)}$ for the ${fmtNb(Kc,0)} call, and $\\Phi(d_1)=${n(gp.Nd1,6)}$ and $\\Phi(d_2)=${n(gp.Nd2,6)}$ for the ${fmtNb(Kp,0)} put.`} The call is then worth $c=${n(df,6)}\\times(${n(row.F,0)}\\times${n(gc.Nd1,6)}-${n(Kc,0)}\\times${n(gc.Nd2,6)})=${n(gc.price,2)}$ points and, by symmetry, the put is worth $p=${n(df,6)}\\times(${n(Kp,0)}\\times${n(1 - gp.Nd2,6)}-${n(row.F,0)}\\times${n(1 - gp.Nd1,6)})=${n(gp.price,2)}$ points. The position is therefore worth $V_{${t}}=${par(qty,0)}\\times${n(M,0)}\\times(${n(gc.price,2)}+${n(gp.price,2)})=${n(row.V,0)}$ €.</p>`;
+
+        /* 2. grecques de la position */
+        const phiTxt = sameK
+          ? (fr ? `la densité $\\varphi(d_1)=\\ee^{-(${n(gc.d1,4)})^2/2}/\\sqrt{2\\pi}=${n(phc,6)}$, commune aux deux options`
+                : `the density $\\varphi(d_1)=\\ee^{-(${n(gc.d1,4)})^2/2}/\\sqrt{2\\pi}=${n(phc,6)}$, common to both options`)
+          : (fr ? `les densités $\\varphi(d_1)=${n(phc,6)}$ pour le call (avec $d_1=${n(gc.d1,4)}$) et $\\varphi(d_1)=${n(php,6)}$ pour le put (avec $d_1=${n(gp.d1,4)}$)`
+                : `the densities $\\varphi(d_1)=${n(phc,6)}$ for the call (with $d_1=${n(gc.d1,4)}$) and $\\varphi(d_1)=${n(php,6)}$ for the put (with $d_1=${n(gp.d1,4)}$)`);
+        const sumPhi = phc + php;
+        s += fr
+          ? `<p>Pour les grecques, on calcule ${phiTxt}. Le delta de la position vaut $\\Delta_{${t}}=${par(qty,0)}\\times${n(M,0)}\\times(${n(gc.delta,6)}${gp.delta < 0 ? '' : '+'}${n(gp.delta,6)})=${n(row.D,2)}$ € par point. Le gamma et le véga, qui ne dépendent que de la somme des densités, valent $\\Gamma_{${t}}=${par(qty,0)}\\times${n(M,0)}\\times\\frac{${n(df,6)}\\times${n(sumPhi,6)}}{${n(row.F,0)}\\times${n(vs,6)}}=${n(row.G,4)}$ € par point au carré et $\\Vega_{${t}}=${par(qty,0)}\\times${n(M,0)}\\times${n(df,6)}\\times${n(row.F,0)}\\times${n(sumPhi,6)}\\times${n(sq,6)}/100=${n(row.Vega / 100,0)}$ € par point de volatilité. Le thêta de la position ressort enfin à ${fmtNb(row.Theta / 252,0)} € par séance.</p>`
+          : `<p>For the Greeks, we compute ${phiTxt}. The delta of the position is $\\Delta_{${t}}=${par(qty,0)}\\times${n(M,0)}\\times(${n(gc.delta,6)}${gp.delta < 0 ? '' : '+'}${n(gp.delta,6)})=${n(row.D,2)}$ € per point. Gamma and vega, which depend only on the sum of the densities, are $\\Gamma_{${t}}=${par(qty,0)}\\times${n(M,0)}\\times\\frac{${n(df,6)}\\times${n(sumPhi,6)}}{${n(row.F,0)}\\times${n(vs,6)}}=${n(row.G,4)}$ € per squared point and $\\Vega_{${t}}=${par(qty,0)}\\times${n(M,0)}\\times${n(df,6)}\\times${n(row.F,0)}\\times${n(sumPhi,6)}\\times${n(sq,6)}/100=${n(row.Vega / 100,0)}$ € per volatility point. The theta of the position finally comes to ${fmtNb(row.Theta / 252,0)} € per session.</p>`;
+
+        /* 3. rééquilibrage */
+        s += fr
+          ? `<p>La couverture héritée de la veille compte $h_{${t - 1}}=${n(prev.h,0)}$ contrats. Neutraliser le nouveau delta demanderait $-\\Delta_{${t}}/${n(M,0)}=${n(hstar,3)}$ contrats, que l'on arrondit à $h_{${t}}=${n(row.h,0)}$ : ${trade}. Le delta résiduel après ajustement s'établit à $${n(row.D,2)}+(${n(row.h,0)})\\times${n(M,0)}=${n(row.Dnet,2)}$ € par point.</p>`
+          : `<p>The hedge inherited from the previous day holds $h_{${t - 1}}=${n(prev.h,0)}$ contracts. Neutralising the new delta would require $-\\Delta_{${t}}/${n(M,0)}=${n(hstar,3)}$ contracts, rounded to $h_{${t}}=${n(row.h,0)}$: ${trade}. The residual delta after adjustment stands at $${n(row.D,2)}+(${n(row.h,0)})\\times${n(M,0)}=${n(row.Dnet,2)}$ € per point.</p>`;
+
+        /* 4. P&L de la séance */
+        s += fr
+          ? `<p>Sur la séance, la valeur des options a varié de $V_{${t}}-V_{${t - 1}}=${n(row.V,0)}-${par(prev.V,0)}=${n(pl.pnlOpt,0)}$ €, tandis que les ${fmtNb(Math.abs(prev.h),0)} contrats détenus depuis la veille ont produit un appel de marge de $h_{${t - 1}}\\times${n(M,0)}\\times\\delta F=${par(prev.h,0)}\\times${n(M,0)}\\times${par(dF,0)}=${n(pl.pnlFut,0)}$ €. Le P&amp;L du portefeuille couvert s'élève donc à <strong>${fmtNb(pl.total,0)} €</strong> pour cette séance.</p>`
+          : `<p>Over the session, the value of the options changed by $V_{${t}}-V_{${t - 1}}=${n(row.V,0)}-${par(prev.V,0)}=${n(pl.pnlOpt,0)}$ €, while the ${fmtNb(Math.abs(prev.h),0)} contracts held since the previous day generated a margin call of $h_{${t - 1}}\\times${n(M,0)}\\times\\delta F=${par(prev.h,0)}\\times${n(M,0)}\\times${par(dF,0)}=${n(pl.pnlFut,0)}$ €. The P&amp;L of the hedged portfolio therefore comes to <strong>${fmtNb(pl.total,0)} €</strong> for this session.</p>`;
+    }
+    return s;
+}
+
+/* ---------------- Encadré : d'où vient la décomposition ---------------- */
+function focusQ5(D) {
+    const fr = LANG === 'fr';
+    if (fr) return `<div class="persp-box">
+        <span class="sol-sub">Focus — d'où vient la décomposition du P&amp;L ?</span>
+        <p>La valeur des options est une fonction $V(F,\\sigma,t)$ de trois variables : le cours du <em>future</em>, la volatilité implicite et le temps. Entre deux clôtures, ces variables se déplacent de $\\delta F$, $\\delta\\sigma$ et $\\delta t$, et la variation de valeur qui en résulte peut être approchée par un développement de Taylor autour de la situation de la veille :</p>
+        <div class="math-formula">\\[\\delta V\\simeq\\frac{\\partial V}{\\partial F}\\,\\delta F+\\frac12\\,\\frac{\\partial^2 V}{\\partial F^2}\\,(\\delta F)^2+\\frac{\\partial V}{\\partial t}\\,\\delta t+\\frac{\\partial V}{\\partial\\sigma}\\,\\delta\\sigma+\\cdots\\]</div>
+        <p>Chacune de ces dérivées partielles porte un nom : la première est le delta $\\Delta$, la deuxième le gamma $\\Gamma$, la troisième le thêta $\\Theta$ et la quatrième le véga $\\Vega$. Les grecques ne sont donc rien d'autre que les coefficients du développement de Taylor de la valeur des options, ce qui explique qu'elles suffisent à décrire le P&amp;L d'une séance.</p>
+        <p>Il faut ensuite ajouter la couverture. Un contrat <em>future</em> ne coûte rien à l'initiation mais produit un appel de marge de ${fmtNb(D.M,0)} € par point : les $h$ contrats détenus depuis la veille rapportent donc exactement $h\\,M\\,\\delta F$, sans aucun terme d'ordre supérieur. En additionnant les deux, le terme du premier ordre en $\\delta F$ devient $(\\Delta+hM)\\,\\delta F=\\Delta_{\\text{net}}\\,\\delta F$. Comme la couverture a été ajustée la veille pour annuler le delta, ce terme est presque nul : c'est précisément le rôle de la couverture que de neutraliser l'exposition au premier ordre, pour ne laisser subsister que les effets de gamma, de temps et de volatilité.</p>
+        <p>Pourquoi développer à l'ordre deux en $F$, mais à l'ordre un seulement en $t$ et en $\\sigma$ ? Parce que les termes n'ont pas la même taille. Sur une séance, le <em>future</em> varie typiquement de l'ordre de $\\sigma F\\sqrt{\\delta t}$, si bien que $(\\delta F)^2$ est de l'ordre de $\\sigma^2F^2\\,\\delta t$ : le terme de gamma est du même ordre de grandeur que le terme de thêta, et l'omettre reviendrait à ignorer l'essentiel du P&amp;L d'une position couverte. Les termes suivants — en $(\\delta F)^3$, en $(\\delta t)^2$ ou croisés comme $\\delta F\\,\\delta\\sigma$ — sont d'un ordre supérieur : ce sont eux que recueille le résidu $\\varepsilon$. Enfin, on évalue les grecques à la clôture de la <em>veille</em>, car c'est à ce point que le développement est effectué.</p>
+        <p>Cette décomposition éclaire aussi le résultat de la question 6. Dans le modèle de Black, toute option sur <em>future</em> vérifie l'équation $\\Theta+\\tfrac12\\sigma^2F^2\\Gamma=rV$. En remplaçant $\\Theta$ par $rV-\\tfrac12\\sigma^2F^2\\Gamma$ et en négligeant le petit terme $rV\\,\\delta t$, les contributions de gamma et de thêta se regroupent en</p>
+        <div class="math-formula">\\[\\tfrac12\\,\\Gamma\\,(\\delta F)^2+\\Theta\\,\\delta t\\simeq\\tfrac12\\,\\Gamma F^2\\left[\\left(\\frac{\\delta F}{F}\\right)^2-\\sigma^2\\,\\delta t\\right].\\]</div>
+        <p>Le crochet compare la variance réalisée sur la séance, $(\\delta F/F)^2$, à la variance que le marché anticipait, $\\sigma^2\\delta t$. Le P&amp;L d'une position couverte en delta est donc, au premier ordre, proportionnel à l'écart entre volatilité réalisée et volatilité implicite, avec un signe fixé par celui du gamma : c'est le cœur économique de la gestion d'un livre d'options.</p>
+      </div>`;
+    return `<div class="persp-box">
+        <span class="sol-sub">Focus — where does the P&amp;L attribution come from?</span>
+        <p>The value of the options is a function $V(F,\\sigma,t)$ of three variables: the <em>future</em> price, implied volatility and time. Between two closes, these variables move by $\\delta F$, $\\delta\\sigma$ and $\\delta t$, and the resulting change in value can be approximated by a Taylor expansion around the previous day's position:</p>
+        <div class="math-formula">\\[\\delta V\\simeq\\frac{\\partial V}{\\partial F}\\,\\delta F+\\frac12\\,\\frac{\\partial^2 V}{\\partial F^2}\\,(\\delta F)^2+\\frac{\\partial V}{\\partial t}\\,\\delta t+\\frac{\\partial V}{\\partial\\sigma}\\,\\delta\\sigma+\\cdots\\]</div>
+        <p>Each of these partial derivatives has a name: the first is delta $\\Delta$, the second gamma $\\Gamma$, the third theta $\\Theta$ and the fourth vega $\\Vega$. The Greeks are therefore nothing other than the coefficients of the Taylor expansion of the options' value, which is why they suffice to describe the P&amp;L of a session.</p>
+        <p>The hedge must then be added. A <em>futures</em> contract costs nothing at inception but generates a margin call of ${fmtNb(D.M,0)} € per point: the $h$ contracts held since the previous day therefore earn exactly $h\\,M\\,\\delta F$, with no higher-order term at all. Adding the two, the first-order term in $\\delta F$ becomes $(\\Delta+hM)\\,\\delta F=\\Delta_{\\text{net}}\\,\\delta F$. Since the hedge was adjusted the day before to cancel delta, this term is almost zero: neutralising first-order exposure, so that only gamma, time and volatility effects remain, is precisely what the hedge is for.</p>
+        <p>Why expand to second order in $F$ but only to first order in $t$ and $\\sigma$? Because the terms are not of the same size. Over one session, the <em>future</em> typically moves by something of the order of $\\sigma F\\sqrt{\\delta t}$, so that $(\\delta F)^2$ is of the order of $\\sigma^2F^2\\,\\delta t$: the gamma term is of the same order of magnitude as the theta term, and leaving it out would mean ignoring most of the P&amp;L of a hedged position. The following terms — in $(\\delta F)^3$, in $(\\delta t)^2$, or cross terms such as $\\delta F\\,\\delta\\sigma$ — are of higher order: they are what the residual $\\varepsilon$ collects. Finally, the Greeks are taken at the <em>previous</em> close, since that is the point around which the expansion is carried out.</p>
+        <p>This decomposition also sheds light on the result of question 6. In the Black model, every option on a <em>future</em> satisfies the equation $\\Theta+\\tfrac12\\sigma^2F^2\\Gamma=rV$. Substituting $rV-\\tfrac12\\sigma^2F^2\\Gamma$ for $\\Theta$ and neglecting the small term $rV\\,\\delta t$, the gamma and theta contributions combine into</p>
+        <div class="math-formula">\\[\\tfrac12\\,\\Gamma\\,(\\delta F)^2+\\Theta\\,\\delta t\\simeq\\tfrac12\\,\\Gamma F^2\\left[\\left(\\frac{\\delta F}{F}\\right)^2-\\sigma^2\\,\\delta t\\right].\\]</div>
+        <p>The bracket compares the variance realised over the session, $(\\delta F/F)^2$, with the variance the market was anticipating, $\\sigma^2\\delta t$. The P&amp;L of a delta-hedged position is therefore, to first order, proportional to the gap between realised and implied volatility, with a sign set by that of gamma: this is the economic core of running an options book.</p>
+      </div>`;
 }
 
 /* ============================================================
