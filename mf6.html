@@ -1,0 +1,2221 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mathématiques financières 6 – Processus stochastiques et mouvement brownien</title>
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['\\(','\\)']],
+    displayMath: [['\\[','\\]']],
+    packages: {'[+]': ['ams']},
+    macros: {
+      E: '\\mathbb{E}',
+      PP: '\\mathbb{P}',
+      Var: '\\operatorname{Var}',
+      Cov: '\\operatorname{Cov}',
+      dd: '\\mathrm{d}'
+    }
+  },
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] }
+};
+</script>
+<script>window.MathJax=window.MathJax||{};window.MathJax.options=window.MathJax.options||{};window.MathJax.options.enableAssistiveMml=true;</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 0;border-bottom:3px solid var(--gold)}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+#controls-bar{border-top:1px solid rgba(255,255,255,.08);padding:1.1rem 0 1.3rem}
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.5)}
+.ctrl-inp{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.38rem .65rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.82rem;width:88px;outline:none;transition:border-color .2s}
+.ctrl-inp:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.ctrl-tip{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:rgba(250,247,240,.33);margin-top:2px}
+.seed-row{display:flex;align-items:flex-end;gap:.45rem}
+.btn-copy-seed{background:transparent;border:1px solid rgba(201,149,42,.4);color:rgba(250,247,240,.55);padding:.38rem .55rem;border-radius:3px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:.65rem;transition:all .18s;white-space:nowrap}
+.btn-copy-seed:hover{border-color:var(--gold-light);color:var(--gold-light)}
+.ctrl-vsep{width:1px;background:rgba(255,255,255,.1);align-self:stretch;margin:0 .2rem}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.3rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.9rem;font-weight:600;transition:background .18s;white-space:nowrap;align-self:flex-end}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.welcome-msg{text-align:center;padding:5rem 2rem;color:var(--text-muted);font-style:italic;font-size:1.05rem}
+.welcome-msg .arrow{font-size:2rem;display:block;margin-bottom:1rem;opacity:.4}
+
+/* TOP BAR */
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.top-bar-left{display:flex;gap:.6rem;align-items:center}
+.btn-sm{background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:'JetBrains Mono',monospace;font-size:.67rem;letter-spacing:.08em;text-transform:uppercase;padding:.4rem 1rem;border-radius:3px;cursor:pointer;transition:all .18s;white-space:nowrap}
+.btn-sm:hover{background:var(--gold);color:var(--navy)}
+.btn-sm.pdf{border-color:#7bafd4;color:#7bafd4}
+.btn-sm.pdf:hover{background:#7bafd4;color:var(--navy)}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.67rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:500}
+
+/* CARDS */
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);margin-bottom:1.5rem;border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+
+/* QUESTIONS */
+.questions ol{counter-reset:q;list-style:none}
+.questions ol>li{counter-increment:q;margin-bottom:1.4rem;display:flex;gap:1rem;align-items:flex-start}
+.questions ol>li::before{content:counter(q);min-width:28px;height:28px;background:var(--navy);color:var(--cream);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:500;flex-shrink:0;margin-top:.15rem}
+.questions ol>li .q-text{flex:1;font-size:.93rem;text-align:justify}
+
+/* SOLUTION */
+.sol-toggle-wrap{text-align:center;margin:1rem 0 0}
+.btn-toggle{background:transparent;border:2px solid var(--navy);color:var(--navy);font-family:'Source Serif 4',serif;font-size:.9rem;padding:.6rem 2rem;border-radius:4px;cursor:pointer;transition:all .2s}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--navy);color:var(--cream)}
+.sol-card{border-top:4px solid var(--green);display:none}
+.sol-card.visible{display:block;animation:fi .3s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+.st{font-size:.92rem;line-height:1.75;text-align:justify}
+.st p{margin-bottom:.7rem}
+.st ol{counter-reset:sq;list-style:none}
+.st>ol>li{counter-increment:sq;margin-bottom:1.6rem;display:flex;gap:1rem;align-items:flex-start}
+.st>ol>li::before{content:counter(sq);min-width:24px;height:24px;background:var(--green);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.68rem;flex-shrink:0;margin-top:.15rem}
+.st ul{list-style:disc;padding-left:1.5rem;margin-bottom:.7rem}
+.st ul li{margin-bottom:1rem}
+.st .q-content{flex:1;} /* Assure que le texte prend toute la largeur restante */
+
+/* PDF MODAL */
+#pdf-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;backdrop-filter:blur(2px)}
+#pdf-modal{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:101;background:#fff;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.25);width:390px;max-width:95vw;border-top:4px solid #7bafd4;overflow:hidden}
+.mh{background:var(--navy);color:var(--cream);padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
+.mh h3{font-family:'Playfair Display',serif;font-size:1rem;font-weight:600}
+.mclose{background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:1.2rem;line-height:1;padding:2px 6px;border-radius:3px;transition:color .15s}
+.mclose:hover{color:#fff}
+.mb2{padding:1.5rem}
+.opt-row{display:flex;align-items:flex-start;gap:.75rem;margin-bottom:1rem;cursor:pointer}
+.opt-row input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--navy);flex-shrink:0;margin-top:3px}
+.opt-lbl{font-size:.93rem}
+.opt-desc{font-size:.75rem;color:var(--text-muted);display:block}
+.seed-note{font-family:'JetBrains Mono',monospace;font-size:.7rem;background:var(--cream-dark);border:1px solid var(--border);padding:.55rem .85rem;border-radius:3px;color:var(--text-muted);margin-bottom:1.2rem;line-height:1.5}
+.seed-note strong{color:var(--navy)}
+.mactions{display:flex;gap:.6rem}
+.btn-print{flex:1;background:var(--navy);color:var(--cream);border:none;padding:.7rem;border-radius:4px;font-family:'Source Serif 4',serif;font-size:.9rem;cursor:pointer;transition:background .2s}
+.btn-print:hover{background:var(--navy-mid)}
+.btn-cancel{background:transparent;border:1px solid var(--border);color:var(--text-muted);padding:.7rem 1rem;border-radius:4px;font-family:'Source Serif 4',serif;font-size:.9rem;cursor:pointer;transition:all .2s}
+.btn-cancel:hover{border-color:var(--text);color:var(--text)}
+
+/* PRINT */
+@media print{
+:root{--navy:#0d1b2a;--cream:#fff;--cream-dark:#f8f8f8;--gold:#c9952a;--green:#2d6b4a;--border:#ccc}
+body{background:#fff;font-size:11pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+header{padding:1rem 1.5rem .8rem}
+header .subtitle{display:none}
+#controls-bar,.top-bar,.sol-toggle-wrap,#pdf-ov,#pdf-modal{display:none!important}
+.card{box-shadow:none;border-radius:0;page-break-inside:avoid;margin-bottom:1rem}
+main{padding:1rem 1.5rem;max-width:100%}
+body.print-no-header header{display:none!important}
+body.print-no-solution .sol-card{display:none!important}
+body.print-force-solution .sol-card{display:block!important}
+}
+
+/* --- Selecteur de langue / Language switch --- */
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem}
+.header-top .header-badge{margin-bottom:0}
+.lang-switch{display:flex;gap:.45rem;flex-shrink:0}
+.flag-btn{background:rgba(255,255,255,.06);border:1px solid rgba(201,149,42,.35);border-radius:3px;padding:3px;cursor:pointer;line-height:0;opacity:.5;transition:opacity .2s,border-color .2s,transform .15s}
+.flag-btn:hover{opacity:1;transform:translateY(-1px)}
+.flag-btn.active{opacity:1;border-color:var(--gold-light);box-shadow:0 0 0 1px rgba(232,184,75,.35)}
+.flag-btn svg{display:block;width:30px;height:20px;border-radius:1px}
+@media print{ .lang-switch{display:none !important;} }
+
+/* TABLEAUX DE DONNEES */
+.dtable-wrap{overflow-x:auto;margin:1.1rem 0}
+.dtable{width:100%;border-collapse:collapse;font-size:.82rem;font-family:'Source Serif 4',serif}
+.dtable th,.dtable td{border:1px solid var(--border);padding:.4rem .5rem;text-align:center;vertical-align:middle}
+.dtable th{background:var(--navy);color:var(--cream);font-weight:600;font-size:.78rem}
+.dtable tr:nth-child(even) td{background:#fbf9f4}
+.dtable td.num{font-family:'JetBrains Mono',monospace;font-size:.78rem;white-space:nowrap}
+.dtable tfoot td{font-weight:700;background:var(--cream-dark)}
+.dtable caption{caption-side:bottom;font-size:.76rem;color:var(--text-muted);font-style:italic;padding-top:.5rem;text-align:justify}
+.dtable-narrow{max-width:560px;margin:0 auto}
+.context-block .dtable-wrap{margin:1rem 0 1.1rem}
+.questions ol ol > li{display:block}
+.q-text .dtable-wrap{margin:.9rem 0 .8rem}
+
+/* FIGURES */
+.fig-wrap{margin:1.2rem 0 .3rem;text-align:center;overflow-x:auto}
+.fig-wrap svg{width:100%;max-width:640px;height:auto;background:#fff;border:1px solid var(--border);border-radius:4px}
+.fig-cap{font-size:.78rem;color:var(--text-muted);font-style:italic;text-align:center;margin-bottom:1rem;line-height:1.5}
+
+/* ============================================================
+   FAMILLE « MATHÉMATIQUES FINANCIÈRES » : cours, figures interactives, code
+   ============================================================ */
+.top-bar-left{flex-wrap:wrap}
+/* --- cours --- */
+.cours{font-size:.95rem;line-height:1.75;text-align:justify}
+.cours p{margin-bottom:.8rem}
+.cours .dossier-title{scroll-margin-top:1rem}
+.cours ul.kit-simple{margin:.2rem 0 1rem}
+.cours ul.kit-simple > li{margin-bottom:.55rem}
+.cours .toc{font-size:.86rem;color:var(--text-muted);text-align:left;margin:-.6rem 0 1.6rem;line-height:1.9}
+.cours .toc a{color:var(--navy);text-decoration:none;border-bottom:1px solid var(--gold)}
+.cours .toc a:hover{color:var(--gold)}
+/* listes numérotées du cours (définitions en plusieurs points) */
+.cours ol{padding-left:1.6rem;margin:0 0 .9rem}
+.cours ol > li{margin-bottom:.35rem}
+/* démonstrations : simple filet neutre, pas de cadre coloré */
+.cours .demo{border-left:2px solid var(--border);padding:.1rem 0 .1rem 1.1rem;margin:0 0 1.1rem}
+.cours .demo p:last-child{margin-bottom:0}
+/* un seul style d'encadré, celui des « Pour aller plus loin » */
+.cours .persp-box{background:#f7f9fc;border:1px solid #ccd8e6;border-left:3px solid var(--navy-mid);padding:1.1rem 1.2rem;border-radius:4px;margin:1.4rem 0 1.4rem;font-size:.9rem;line-height:1.7;text-align:justify}
+.cours .persp-box .sol-sub{color:var(--navy);font-weight:600;display:block;margin:0 0 .5rem;font-size:.98rem}
+.cours .persp-box p{margin:0 0 .6rem}
+.cours .persp-box p:last-child, .cours .persp-box ol:last-child, .cours .persp-box ul:last-child{margin-bottom:0}
+.cours .persp-box ol, .cours .persp-box ul{padding-left:1.3rem;margin:0 0 .6rem}
+.cours .persp-box li{margin-bottom:.3rem}
+.sol-card .persp-box p{margin:0 0 .75rem 0}
+/* --- figures interactives --- */
+.ifig{margin:1.2rem 0 .3rem;text-align:center}
+.fig-ctrl{display:flex;flex-wrap:wrap;gap:.5rem 1.4rem;justify-content:center;align-items:center;margin:0 auto .6rem;max-width:680px;font-size:.84rem;color:var(--text)}
+.fig-ctrl label{display:flex;align-items:center;gap:.5rem;white-space:nowrap}
+.fig-ctrl .cv{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--navy);min-width:2.6em;text-align:left}
+.fig-ctrl input[type=range]{width:150px;accent-color:var(--navy);cursor:pointer}
+.fig-ctrl select{font-family:'Source Serif 4',serif;font-size:.84rem;padding:.2rem .4rem;border:1px solid var(--border);border-radius:3px;background:#fff;color:var(--text)}
+.fig-ctrl button{font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;background:transparent;border:1px solid var(--gold);color:var(--gold);padding:.3rem .8rem;border-radius:3px;cursor:pointer}
+.fig-ctrl button:hover{background:var(--gold);color:var(--navy)}
+.fig-svg{overflow-x:auto}
+.fig-svg svg{width:100%;min-width:520px;max-width:680px;height:auto;background:#fff;border:1px solid var(--border);border-radius:4px}
+.fig-read{font-size:.86rem;line-height:1.6;color:var(--text);margin:.5rem auto 0;max-width:680px;text-align:center}
+.fig-read .v{font-family:'JetBrains Mono',monospace;font-size:.8rem;color:var(--navy);font-weight:500}
+.fig-cap{margin-top:.35rem}
+/* --- code Python --- */
+.code-wrap{margin:.4rem 0 1.1rem}
+.code-head{display:flex;justify-content:space-between;align-items:center;background:var(--navy-mid);color:var(--gold-light);font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;padding:.3rem .9rem;border-radius:4px 4px 0 0}
+.code-head button{background:transparent;border:1px solid rgba(232,184,75,.45);color:var(--gold-light);font-family:inherit;font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;padding:.12rem .55rem;border-radius:3px;cursor:pointer}
+.code-head button:hover{background:var(--gold-light);color:var(--navy)}
+.code-block{background:#0d1b2a;color:#e8e4d9;border-radius:0 0 4px 4px;padding:.7rem .9rem;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:.74rem;line-height:1.55;text-align:left}
+.code-block .cl{white-space:pre}
+.code-block code{font-family:inherit;color:inherit;background:none;padding:0;font-size:inherit}
+.code-out{background:var(--cream-dark);border:1px solid var(--border);border-top:none;border-radius:0 0 4px 4px;padding:.55rem .9rem;font-family:'JetBrains Mono',monospace;font-size:.74rem;line-height:1.55;text-align:left;overflow-x:auto}
+.code-out .cl{white-space:pre}
+.code-out code{font-family:inherit;background:none;padding:0}
+.code-wrap .code-block.has-out{border-radius:0}
+.code-out-lbl{font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:.2rem}
+/* --- exercices --- */
+.questions ol ol{margin-top:.6rem}
+.st>ol>li .q-content p:last-child{margin-bottom:0}
+.dtable td.l, .dtable th.l{text-align:left}
+/* petits écrans : un paragraphe qui contient une formule trop large défile au lieu d'être coupé */
+@media (max-width:640px){
+  .cours p, .cours li, .st p, .q-text, .questions li{overflow-x:auto;overflow-y:hidden}
+  .card-body{padding:1.3rem 1.1rem}
+}
+@media print{
+  .fig-ctrl input, .fig-ctrl select, .fig-ctrl button, .code-head button{display:none !important}
+  .fig-svg svg{min-width:0}
+  .ifig, .persp-box, .code-wrap, .dtable-wrap{page-break-inside:avoid}
+  #course-card{page-break-inside:auto}
+}
+</style>
+<!-- KIT:CSS:START v1 --><style id="kit-css">
+/* ============================================================
+   KIT D'UNIFORMISATION — bloc partagé, identique sur toutes les pages.
+   Ne rien modifier ici fichier par fichier : régénérer le kit.
+   ============================================================ */
+
+/* --- 1. Mathématiques : jamais de débordement --- */
+mjx-container[display="true"]{
+  overflow-x:auto; overflow-y:hidden; max-width:100%;
+  padding:.15rem 0; margin:1rem 0 !important;
+}
+mjx-container[display="true"]::-webkit-scrollbar{height:5px}
+mjx-container[display="true"]::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+mjx-container{ max-width:100%; }
+.math-formula{ text-align:center; margin:1.2rem 0; overflow-x:auto; max-width:100%; }
+@media (max-width:640px){
+  mjx-container[display="true"]{ font-size:88% }
+}
+
+/* --- 2. Listes à puces entourées (questions ET données de contexte) --- */
+.kit-list, .st > ol,
+.questions > ol,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list), .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list),
+.question-list, .enum-list, .q-list{
+  counter-reset:kitq; list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem;
+}
+.kit-list > li, .st > ol > li,
+.questions > ol > li,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li, .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li,
+.question-list > li, .enum-list > li, .q-list > li{
+  counter-increment:kitq; position:relative;
+  padding-left:2.6rem; margin-bottom:1.3rem;
+  font-size:.95rem; line-height:1.7; text-align:justify;
+  font-weight:400; color:var(--text);
+  display:block;
+}
+.kit-list > li::before, .st > ol > li::before,
+.questions > ol > li::before,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li::before, .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li::before,
+.question-list > li::before, .enum-list > li::before, .q-list > li::before{
+  content:counter(kitq);
+  position:absolute; left:0; top:.1rem;
+  width:28px; min-width:28px; height:28px;
+  background:var(--navy); color:var(--cream);
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.72rem; font-weight:500;
+  flex-shrink:0;
+}
+.questions ol > li .q-text{ flex:1; font-size:.95rem; text-align:justify }
+/* sous-listes : cercle creux, plus discret */
+.enum-sublist, .kit-sublist, .sub-list, .sub-ol, .alpha-list, .enum-subsublist,
+.st ol.sub-ol, .questions ol ol, .st ol ol, .kit-list ol, .q-list ol, .question-list ol{
+  counter-reset:kitsq; list-style:none !important; padding-left:0 !important;
+  margin:.9rem 0 .9rem 0;
+}
+.enum-sublist > li, .kit-sublist > li, .sub-list > li, .sub-ol > li, .alpha-list > li, .enum-subsublist > li,
+.st ol.sub-ol > li, .questions ol ol > li, .st ol ol > li, .kit-list ol > li, .q-list ol > li, .question-list ol > li{
+  counter-increment:kitsq; position:relative;
+  padding-left:2.1rem; margin-bottom:.7rem; font-size:.92rem; text-align:justify;
+}
+.enum-sublist > li::before, .kit-sublist > li::before, .sub-list > li::before, .sub-ol > li::before, .alpha-list > li::before, .enum-subsublist > li::before,
+.st ol.sub-ol > li::before, .questions ol ol > li::before, .st ol ol > li::before, .kit-list ol > li::before, .q-list ol > li::before, .question-list ol > li::before{
+  content:counter(kitsq,lower-alpha);
+  min-width:22px;
+  position:absolute; left:0; top:.05rem;
+  width:22px; height:22px;
+  background:transparent; color:var(--navy);
+  border:1px solid var(--gold);
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.65rem;
+}
+
+/* variante : puces simples non numérotées (listes de données) */
+.kit-simple{ list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem }
+.kit-simple > li{
+  position:relative; padding-left:1.5rem; margin-bottom:1.1rem;
+  font-size:.95rem; line-height:1.7; text-align:justify;
+}
+.kit-simple > li::before{
+  content:"\2022"; position:absolute; left:0; top:-.15rem;
+  color:var(--gold); font-size:1.5rem; line-height:1; background:none;
+  width:auto; height:auto; border:none; border-radius:0;
+}
+/* variante : liste à un seul élément, sans puce */
+.kit-nobullet{ list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem }
+.kit-nobullet > li{
+  padding-left:0; margin-bottom:1rem; font-size:.95rem; line-height:1.7; text-align:justify;
+}
+.kit-nobullet > li::before{ content:none !important; display:none !important }
+/* variante : titres de section numérotés (contenu intercalé entre les puces) */
+.kit-num-scope{ counter-reset:kitn }
+p.kit-num{
+  counter-increment:kitn; position:relative;
+  padding-left:2.6rem; margin:1.8rem 0 1rem;
+  font-weight:600; color:var(--navy); text-align:left;
+  min-height:28px; display:flex; align-items:center;
+}
+p.kit-num:first-of-type{ margin-top:0 }
+p.kit-num::before{
+  content:counter(kitn); position:absolute; left:0; top:0;
+  width:28px; height:28px; background:var(--navy); color:var(--cream);
+  border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.72rem; font-weight:500;
+}
+
+/* titres de dossier */
+.dossier-title{
+  margin:2rem 0 1rem; font-weight:600; color:var(--navy); font-size:1.02rem;
+  border-bottom:1px solid var(--border); padding-bottom:.4rem; text-align:left;
+}
+.dossier-title:first-of-type{ margin-top:0 }
+.dossier-body{ margin-bottom:.5rem }
+
+/* --- 3. Corrigé sobre : plus de multiplication de fonds verts --- */
+.sol-card .calc-box, .sol-card .concl{
+  background:transparent !important;
+  border:none !important;
+  border-left:none !important;
+  padding:0 !important;
+  border-radius:0 !important;
+  margin:0 0 1.6rem 0 !important;
+  font-size:.95rem;
+  line-height:1.7;
+  text-align:justify;
+}
+.sol-card .sol-sub{
+  color:var(--navy); font-weight:600; display:block;
+  margin:0 0 .5rem 0; font-size:1rem;
+}
+/* seuls encadrés conservés : les perspectives « Pour aller plus loin » */
+.sol-card .persp-box{
+  background:#f7f9fc !important;
+  border:1px solid #ccd8e6 !important;
+  border-left:3px solid var(--navy-mid) !important;
+  padding:1.2rem !important;
+  border-radius:4px !important;
+  margin:2rem 0 1rem 0 !important;
+  font-size:.9rem; line-height:1.7; text-align:justify;
+}
+
+.btn-toggle{
+  background:transparent; border:2px solid var(--green); border-bottom:none;
+  color:var(--green); font-family:'Source Serif 4',serif; font-size:.95rem;
+  font-weight:600; padding:.5rem 1.5rem; border-radius:4px 4px 0 0; cursor:pointer;
+  transition:all .2s; position:relative; z-index:2; top:2px;
+}
+.btn-toggle:hover{ background:var(--green); color:var(--cream) }
+
+/* --- 4. Bouton « Afficher le corrigé » (modèle der) --- */
+.sol-toggle-wrap{ text-align:left; margin:1.5rem 0 0 0; }
+.sol-card{
+  border-top:2px solid var(--green); display:none;
+  border-radius:0 6px 6px 6px; position:relative; z-index:1;
+}
+.sol-card.visible{ display:block; animation:kitfi .35s ease }
+.sol-card .card-header{ background:var(--green) }
+.sol-card .card-header .tag{ border-color:rgba(200,240,200,.4); color:#a8d8b0 }
+@keyframes kitfi{ from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+
+/* --- 5. Barre d'actions unifiée --- */
+.top-bar{ display:flex; flex-wrap:wrap; gap:.8rem; align-items:center; justify-content:space-between; margin-bottom:1.2rem }
+.top-bar-left{ display:flex; flex-wrap:wrap; gap:.55rem; order:1 }
+.top-bar .seed-badge{ order:2 }
+.btn-sm{ background:transparent; border:1px solid var(--gold); color:var(--gold); font-family:'JetBrains Mono',monospace; font-size:.67rem; letter-spacing:.08em; text-transform:uppercase; padding:.4rem 1rem; border-radius:3px; cursor:pointer; transition:all .18s; white-space:nowrap }
+.btn-sm:hover{ background:var(--gold); color:var(--navy) }
+.btn-sm.pdf{ border-color:#7bafd4; color:#7bafd4 }
+.btn-sm.pdf:hover{ background:#7bafd4; color:var(--navy) }
+.btn-sm.doc{ border-color:#8fa8c4; color:#8fa8c4 }
+.seed-row{ display:flex; gap:.4rem; align-items:center }
+.btn-copy-seed{
+  background:transparent; border:1px solid rgba(201,149,42,.4); color:rgba(250,247,240,.55);
+  padding:.38rem .55rem; border-radius:3px; cursor:pointer;
+  font-family:'JetBrains Mono',monospace; font-size:.65rem; transition:all .18s; white-space:nowrap;
+}
+.btn-copy-seed:hover{ border-color:var(--gold-light); color:var(--gold-light) }
+.btn-sm.doc:hover{ background:#8fa8c4; color:var(--navy) }
+
+/* --- 6. Modale d'export PDF --- */
+#pdf-ov{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:100; backdrop-filter:blur(2px) }
+#pdf-modal{ display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:101; background:#fff; border-radius:8px; box-shadow:0 20px 60px rgba(0,0,0,.25); width:390px; max-width:95vw; border-top:4px solid #7bafd4; overflow:hidden }
+#pdf-ov.open,#pdf-modal.open{ display:block }
+.mh{ background:var(--navy); color:var(--cream); padding:1rem 1.5rem; display:flex; align-items:center; justify-content:space-between }
+.mh h3{ font-family:'Playfair Display',serif; font-size:1rem; font-weight:600; margin:0 }
+.mclose{ background:none; border:none; color:rgba(255,255,255,.6); cursor:pointer; font-size:1.2rem; line-height:1; padding:2px 6px; border-radius:3px; transition:color .15s }
+.mclose:hover{ color:#fff }
+.mb2{ padding:1.5rem }
+.opt-row{ display:flex; align-items:flex-start; gap:.75rem; margin-bottom:1rem; cursor:pointer }
+.opt-row input[type=checkbox]{ width:16px; height:16px; cursor:pointer; accent-color:var(--navy); flex-shrink:0; margin-top:3px }
+.opt-txt{ display:block }
+.opt-lbl{ font-size:.93rem; display:block }
+.opt-desc{ font-size:.75rem; color:var(--text-muted); display:block }
+.seed-note{ font-family:'JetBrains Mono',monospace; font-size:.7rem; background:var(--cream-dark); border:1px solid var(--border); padding:.55rem .85rem; border-radius:3px; color:var(--text-muted); margin-bottom:1.2rem; line-height:1.5 }
+.mactions{ display:flex; gap:.6rem }
+.btn-print{ flex:1; background:var(--navy); color:var(--cream); border:none; padding:.7rem; border-radius:4px; font-family:'Source Serif 4',serif; font-size:.9rem; cursor:pointer; transition:background .2s }
+.btn-print:hover{ background:var(--navy-mid) }
+.btn-cancel{ background:transparent; border:1px solid var(--border); color:var(--text-muted); padding:.7rem 1rem; border-radius:4px; font-family:'Source Serif 4',serif; font-size:.9rem; cursor:pointer; transition:all .2s }
+.btn-cancel:hover{ border-color:var(--text); color:var(--text) }
+
+/* --- 7. Impression --- */
+@media print{
+  body{ background:#fff; font-size:11pt; -webkit-print-color-adjust:exact; print-color-adjust:exact }
+  header{ display:block !important; padding:1rem 1.5rem .8rem }
+  header .subtitle{ display:none }
+  .ctrls, #controls-bar, .top-actions, .top-bar-left, .sol-toggle-wrap,
+  .lang-switch, #pdf-ov, #pdf-modal{ display:none !important }
+  .top-bar{ display:block !important; margin-bottom:.8rem }
+  .top-bar .seed-badge{
+    display:inline-block !important; background:none; border:1px solid var(--border);
+    color:var(--text-muted); font-family:'JetBrains Mono',monospace; font-size:8.5pt;
+    padding:2pt 6pt; border-radius:2px;
+  }
+  body.print-no-header .top-bar{ display:none !important }
+  main{ padding:1rem 1.5rem; max-width:100% }
+  .card{ box-shadow:none; border-radius:0; page-break-inside:avoid; margin-bottom:1rem }
+  #ex-area{ display:block !important }
+  .sol-card{ display:block !important; border-top:2px solid var(--green) }
+  mjx-container[display="true"]{ overflow:visible !important }
+  body.print-no-header header{ display:none !important }
+  body.print-no-header .ctrls{ display:none !important }
+  body.print-no-solution .sol-card,
+  body.print-no-solution .sol-toggle-wrap{ display:none !important }
+  body.print-force-solution .sol-card{ display:block !important }
+}
+</style><!-- KIT:CSS:END -->
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-top">
+    <div class="header-badge" data-k="k-badge">MATHÉMATIQUES FINANCIÈRES</div>
+    <div class="lang-switch">
+      <button type="button" class="flag-btn active" id="flag-fr" onclick="setLang('fr')" title="Français" aria-label="Français"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="20" height="40" fill="#002654"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ED2939"/></svg></button>
+      <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
+    </div>
+  </div>
+  <h1 data-k="k-h1">Processus stochastiques et mouvement brownien</h1>
+  <p class="subtitle" data-k="k-sub">© Thomas Hossen – Version du 6 octobre 2026</p>
+
+  <div id="controls-bar">
+    <div class="ctrls">
+      <div class="ctrl-g">
+        <span class="ctrl-lbl" data-k="k-seed">Seed de reproductibilité</span>
+        <div class="seed-row">
+          <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="0" max="99999999">
+          <button type="button" class="btn-copy-seed" id="btn-copy-seed" onclick="copySeed(this)" title="Copier la seed active"><span data-kit="btnCopy">&#10697; Copier</span></button>
+        </div>
+        <span class="ctrl-tip" data-k="k-seedtip">Vide = nouvel exercice aléatoire</span>
+      </div>
+      <div class="ctrl-vsep"></div>
+      <button class="btn-gen" onclick="generateAndGo()"><span data-k="k-gen">Générer</span></button>
+    </div>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="ex-area">
+
+    <div id="course-card" class="card">
+      <div class="card-header"><span class="tag" data-k="k-tag-course">Cours</span><h2 data-k="k-coursetitle">Le hasard qui s'accumule au cours du temps</h2></div>
+      <div class="card-body cours" id="course-content"></div>
+    </div>
+
+    <div class="top-bar" id="ex-anchor">
+      <div class="top-bar-left">
+        <button type="button" class="btn-sm" onclick="regen()"><span data-kit="btnNew">&#8634; Nouvel &eacute;nonc&eacute;</span></button>
+        <button type="button" class="btn-sm pdf" onclick="openPdfModal()"><span data-kit="btnPdf">&#11015; Exporter PDF</span></button>
+        <button type="button" class="btn-sm doc" onclick="exportWord()"><span data-kit="btnDoc">&#11015; Exporter Word</span></button>
+      </div>
+      <div class="seed-badge"><span data-k="k-seedbadge">Seed&nbsp;:</span> <span id="seed-disp">—</span></div>
+    </div>
+
+    <div id="ex-card" class="card">
+      <div class="card-header"><span class="tag" data-k="k-tag-ex">Exercice</span><h2 data-k="k-extitle">Lois, accroissements et simulation d'un mouvement brownien</h2></div>
+      <div class="card-body" id="ex-content"></div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag" data-k="k-tag-sol">Corrigé</span><h2 data-k="k-soltitle">Lois, accroissements et simulation d'un mouvement brownien</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+/* ============================================================
+   SOCLE COMMUN DE LA FAMILLE « MATHÉMATIQUES FINANCIÈRES » (mf1, mf2, …)
+   Identique sur toutes les pages de la famille : langue, tirages,
+   mise en forme des nombres, figures interactives, génération.
+   Chaque page y ajoute son cours, ses figures et son exercice (objet PAGE).
+   ============================================================ */
+let LANG = 'fr';
+let solVisible = false;
+let _activeSeed = 0;
+const I18N = { fr: {}, en: {} };   // libellés et textes, remplis par la page
+const FIGS = {};                   // figures interactives : id -> { state, controls(L), draw(state, lang) }
+const PAGE = {};                   // compute(seed) -> données de l'exercice
+
+/* ---------- tirages reproductibles (Mulberry32) ---------- */
+let _rand = Math.random;
+function initRand(seed) {
+  _activeSeed = seed;
+  let s = seed >>> 0;
+  _rand = function () {
+    let t = s += 0x6D2B79F5;
+    t = Math.imul(t ^ t >>> 15, t | 1);
+    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function rnd() { return _rand(); }
+function rint(a, b) { return a + Math.floor(_rand() * (b - a + 1)); }
+function pick(arr) { return arr[Math.floor(_rand() * arr.length)]; }
+function shuffle(arr) { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(_rand() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+/* générateur local, indépendant des tirages de l'exercice (animations, simulations des figures) */
+function localRand(seed) {
+  let s = seed >>> 0;
+  return function () {
+    let t = s += 0x6D2B79F5;
+    t = Math.imul(t ^ t >>> 15, t | 1);
+    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+/* ---------- nombres ----------
+   Point décimal dans les deux langues (comme le reste du site et comme Python),
+   espace fine pour les milliers. m = true : écriture pour MathJax. */
+function _fixed(x, d) {
+  const a = Math.abs(x), p = Math.pow(10, d);
+  return (Math.round(a * p + 1e-9) / p).toFixed(d);
+}
+function _group(ip, m) {
+  if (ip.length < 5) return ip;
+  const sep = m ? '\\,' : ' ';
+  let out = '';
+  while (ip.length > 3) { out = sep + ip.slice(-3) + out; ip = ip.slice(0, -3); }
+  return ip + out;
+}
+function _num(x, d, m, trim) {
+  let s = _fixed(x, d);
+  if (trim && s.indexOf('.') >= 0) s = s.replace(/0+$/, '').replace(/\.$/, '');
+  const neg = x < 0 && /[1-9]/.test(s);
+  const parts = s.split('.');
+  return (neg ? (m ? '-' : '−') : '') + _group(parts[0], m) + (parts.length > 1 ? '.' + parts[1] : '');
+}
+function fmt(x, d) { return _num(x, d, false, false); }     // texte, d décimales
+function fmtT(x, d) { return _num(x, d, false, true); }     // texte, zéros finaux retirés
+function tex(x, d) { return _num(x, d, true, false); }      // MathJax, d décimales
+function texT(x, d) { return _num(x, d, true, true); }      // MathJax, zéros finaux retirés
+/* quotient de deux entiers positifs arrondi au plus proche (demi vers le haut), sans flottant */
+function rdiv(a, b) { return Math.floor((2 * a + b) / (2 * b)); }
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+/* ---------- loi normale centrée réduite : densité φ, répartition Φ, quantile ---------- */
+function normPdf(x) { return Math.exp(-0.5 * x * x) / 2.5066282746310002; }
+function normCdf(x) {                      // série de Marsaglia, précision de l'ordre de 1e-15
+  if (x < -8) return 0; if (x > 8) return 1;
+  let s = x, t = x;
+  for (let k = 1; k < 400; k++) { t *= x * x / (2 * k + 1); s += t; if (Math.abs(t) < 1e-17 * Math.abs(s)) break; }
+  return 0.5 + s * normPdf(x);
+}
+function normInv(p) {                      // algorithme d'Acklam, puis deux pas de Newton
+  const a = [-39.69683028665376, 220.9460984245205, -275.9285104469687, 138.3577518672690, -30.66479806614716, 2.506628277459239],
+        b = [-54.47609879822406, 161.5858368580409, -155.6989798598866, 66.80131188771972, -13.28068155288572],
+        c = [-0.007784894002430293, -0.3223964580411365, -2.400758277161838, -2.549732539343734, 4.374664141464968, 2.938163982698783],
+        d = [0.007784695709041462, 0.3224671290700398, 2.445134137142996, 3.754408661907416];
+  let x, q, r;
+  if (p < 0.02425) { q = Math.sqrt(-2 * Math.log(p)); x = (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1); }
+  else if (p > 1 - 0.02425) { q = Math.sqrt(-2 * Math.log(1 - p)); x = -(((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1); }
+  else { q = p - 0.5; r = q * q; x = (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q / (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1); }
+  for (let i = 0; i < 2; i++) x -= (normCdf(x) - p) / normPdf(x);
+  return x;
+}
+
+/* tirage de loi N(0,1) à partir d'un générateur uniforme (méthode de Box-Muller) : simulations des figures */
+function gauss(rand) { let u = rand(); if (u < 1e-12) u = 1e-12; return Math.sqrt(-2 * Math.log(u)) * Math.cos(6.283185307179586 * rand()); }
+
+/* ---------- langue ---------- */
+function detectLang() {
+  try {
+    const q = new URLSearchParams(window.location.search).get('lang');
+    if (q && I18N[q.toLowerCase()]) return q.toLowerCase();
+  } catch (e) {}
+  const h = (window.location.hash || '').replace('#', '').toLowerCase();
+  if (I18N[h] && I18N[h].k) return h;
+  return 'fr';
+}
+function applyLang() {
+  const D = I18N[LANG].k;
+  document.documentElement.lang = LANG;
+  document.title = D.title;
+  document.querySelectorAll('[data-k]').forEach(function (el) {
+    const key = el.getAttribute('data-k');
+    if (D[key] !== undefined) el.innerHTML = D[key];
+  });
+  const si = document.getElementById('seed-input');
+  if (si) si.placeholder = D.phSeed;
+  const tb = document.getElementById('toggle-btn');
+  if (tb) tb.textContent = solVisible ? D.hideSol : D.showSol;
+  document.getElementById('flag-fr').classList.toggle('active', LANG === 'fr');
+  document.getElementById('flag-en').classList.toggle('active', LANG === 'en');
+}
+function setLang(lang) {
+  if (!I18N[lang] || !I18N[lang].k || lang === LANG) return;
+  LANG = lang;
+  try {
+    const u = new URL(window.location.href);
+    u.searchParams.set('lang', lang);
+    history.replaceState(null, '', u.toString());
+  } catch (e) {}
+  applyLang();
+  renderCourse();
+  const wasVis = solVisible;
+  renderExercise(_activeSeed);
+  if (wasVis) toggleSol();
+  typeset();
+}
+
+/* ---------- MathJax : un seul rendu à la fois ---------- */
+let _mjChain = Promise.resolve();
+function typeset(el) {
+  if (!(window.MathJax && MathJax.typesetPromise)) return;
+  _mjChain = _mjChain.then(function () { return MathJax.typesetPromise(el ? [el] : undefined); })
+                     .catch(function (err) { console.error('MathJax :', err); });
+}
+
+/* ---------- figures : petit traceur SVG ---------- */
+const COL = { s1: '#2a6fb0', s2: '#b9821a', s3: '#b94040', s4: '#8a4fb0',
+              ink: '#1e1e1e', mute: '#5a5a5a', grid: '#e7e3d9', axis: '#b9b3a6', navy: '#0d1b2a' };
+const FONT_T = "font-family=\"'Source Serif 4',Georgia,serif\"";
+const FONT_M = "font-family=\"'JetBrains Mono',monospace\"";
+let _clipN = 0;
+function Plot(o) {
+  const P = Object.assign({ w: 680, h: 320, ml: 52, mr: 18, mt: 16, mb: 40 }, o);
+  P.el = [];
+  const r1 = v => Math.round(v * 10) / 10;
+  P.X = v => r1(P.ml + (v - P.x0) / (P.x1 - P.x0) * (P.w - P.ml - P.mr));
+  P.Y = v => r1(P.h - P.mb - (v - P.y0) / (P.y1 - P.y0) * (P.h - P.mt - P.mb));
+  P.add = s => { P.el.push(s); return P; };
+  /* axes discrets : quadrillage horizontal en filets, graduations en gris */
+  P.axes = function (a) {
+    a = a || {};
+    const xf = a.xf || (v => fmtT(v, 4)), yf = a.yf || (v => fmtT(v, 4));
+    (a.yt || []).forEach(v => {
+      if (a.grid !== false) P.add(`<line x1="${P.ml}" y1="${P.Y(v)}" x2="${P.w - P.mr}" y2="${P.Y(v)}" stroke="${COL.grid}" stroke-width="1"/>`);
+      P.add(`<text x="${P.ml - 7}" y="${P.Y(v) + 3.5}" text-anchor="end" ${FONT_M} font-size="10" fill="${COL.mute}">${yf(v)}</text>`);
+    });
+    const yb = a.xAxisAt !== undefined ? P.Y(a.xAxisAt) : P.h - P.mb;
+    (a.xt || []).forEach(v => {
+      P.add(`<line x1="${P.X(v)}" y1="${yb}" x2="${P.X(v)}" y2="${yb + 4}" stroke="${COL.axis}" stroke-width="1"/>`);
+      P.add(`<text x="${P.X(v)}" y="${P.h - P.mb + 16}" text-anchor="middle" ${FONT_M} font-size="10" fill="${COL.mute}">${xf(v)}</text>`);
+    });
+    P.add(`<line x1="${P.ml}" y1="${yb}" x2="${P.w - P.mr}" y2="${yb}" stroke="${COL.axis}" stroke-width="1"/>`);
+    if (a.yAxis !== false) P.add(`<line x1="${P.ml}" y1="${P.mt}" x2="${P.ml}" y2="${P.h - P.mb}" stroke="${COL.axis}" stroke-width="1"/>`);
+    if (a.xl) P.add(`<text x="${(P.ml + P.w - P.mr) / 2}" y="${P.h - 6}" text-anchor="middle" ${FONT_T} font-size="12" fill="${COL.mute}">${a.xl}</text>`);
+    if (a.yl) P.add(`<text x="${P.ml}" y="${P.mt - 4}" text-anchor="start" ${FONT_T} font-size="12" fill="${COL.mute}">${a.yl}</text>`);
+    return P;
+  };
+  P.pts = function (pts) { return pts.map((p, i) => (i ? 'L' : 'M') + P.X(p[0]) + ' ' + P.Y(p[1])).join(' '); };
+  P.sample = function (fn, a, b, n) { const out = []; n = n || 160; for (let i = 0; i <= n; i++) { const x = a + (b - a) * i / n, y = fn(x); if (isFinite(y)) out.push([x, Math.max(P.y0 - (P.y1 - P.y0), Math.min(P.y1 + (P.y1 - P.y0), y))]); } return out; };
+  /* zone de tracé : P.clip() la déclare, { clip: true } y découpe une courbe qui sortirait du cadre */
+  P.clip = function () { P._clip = 'clip' + (++_clipN); return P.add(`<defs><clipPath id="${P._clip}"><rect x="${P.ml}" y="${P.mt}" width="${P.w - P.ml - P.mr}" height="${P.h - P.mt - P.mb}"/></clipPath></defs>`); };
+  P.line = function (pts, st) { st = st || {}; return P.add(`<path d="${P.pts(pts)}" fill="none" stroke="${st.c || COL.s1}" stroke-width="${st.w || 2}" stroke-linejoin="round" stroke-linecap="round"${st.dash ? ` stroke-dasharray="${st.dash}"` : ''}${st.clip && P._clip ? ` clip-path="url(#${P._clip})"` : ''}/>`); };
+  P.curve = function (fn, a, b, st, n) { return P.line(P.sample(fn, a, b, n), st); };
+  P.area = function (pts, base, st) { st = st || {}; if (!pts.length) return P; const d = P.pts(pts) + ` L${P.X(pts[pts.length - 1][0])} ${P.Y(base)} L${P.X(pts[0][0])} ${P.Y(base)} Z`; return P.add(`<path d="${d}" fill="${st.c || COL.s1}" fill-opacity="${st.o || 0.16}" stroke="none"/>`); };
+  P.bar = function (xc, wpx, y, st) { st = st || {}; const top = P.Y(y), base = P.Y(st.base || 0), hgt = Math.max(0, base - top), r = Math.min(3, wpx / 2, hgt); const x = P.X(xc) - wpx / 2;
+    const d = `M${r1(x)} ${base} L${r1(x)} ${r1(top + r)} Q${r1(x)} ${top} ${r1(x + r)} ${top} L${r1(x + wpx - r)} ${top} Q${r1(x + wpx)} ${top} ${r1(x + wpx)} ${r1(top + r)} L${r1(x + wpx)} ${base} Z`;
+    return P.add(`<path d="${d}" fill="${st.c || COL.s1}" fill-opacity="${st.o === undefined ? 1 : st.o}">${st.tip ? `<title>${st.tip}</title>` : ''}</path>`); };
+  P.seg = function (xa, ya, xb, yb, st) { st = st || {}; return P.add(`<line x1="${P.X(xa)}" y1="${P.Y(ya)}" x2="${P.X(xb)}" y2="${P.Y(yb)}" stroke="${st.c || COL.mute}" stroke-width="${st.w || 1.2}"${st.dash ? ` stroke-dasharray="${st.dash}"` : ''}/>`); };
+  P.dot = function (x, y, st) { st = st || {}; return P.add(`<circle cx="${P.X(x)}" cy="${P.Y(y)}" r="${st.r || 4.5}" fill="${st.hollow ? '#fff' : (st.c || COL.s1)}" stroke="${st.hollow ? (st.c || COL.s1) : '#fff'}" stroke-width="2">${st.tip ? `<title>${st.tip}</title>` : ''}</circle>`); };
+  P.text = function (x, y, s, st) { st = st || {}; return P.add(`<text x="${P.X(x) + (st.dx || 0)}" y="${P.Y(y) + (st.dy || 0)}" text-anchor="${st.anchor || 'middle'}" ${st.mono ? FONT_M : FONT_T} font-size="${st.size || 11.5}" font-weight="${st.bold ? 700 : 400}"${st.italic ? ' font-style="italic"' : ''} fill="${st.c || COL.ink}">${s}</text>`); };
+  /* légende : un trait ou une pastille de la couleur de la série, texte en encre neutre */
+  P.legend = function (items, x, y) {
+    let cx = x;
+    items.forEach(it => {
+      if (it.box) P.add(`<rect x="${cx}" y="${y - 8}" width="12" height="9" rx="2" fill="${it.c}" fill-opacity="${it.o || 1}"/>`);
+      else P.add(`<line x1="${cx}" y1="${y - 4}" x2="${cx + 18}" y2="${y - 4}" stroke="${it.c}" stroke-width="2.4"${it.dash ? ` stroke-dasharray="${it.dash}"` : ''} stroke-linecap="round"/>`);
+      const tx = cx + (it.box ? 17 : 23);
+      P.add(`<text x="${tx}" y="${y}" ${FONT_T} font-size="11.5" fill="${COL.ink}">${it.t}</text>`);
+      cx = tx + it.t.replace(/<[^>]+>/g, '').length * 6.1 + 18;
+    });
+    return P;
+  };
+  P.svg = function (aria) { return `<svg viewBox="0 0 ${P.w} ${P.h}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${esc(aria || '')}">${P.el.join('')}</svg>`; };
+  return P;
+}
+/* graduations « rondes » entre a et b */
+function ticks(a, b, n) {
+  const span = b - a, raw = span / (n || 5), p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / p;
+  const step = (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10) * p, out = [];
+  for (let v = Math.ceil(a / step - 1e-9) * step; v <= b + 1e-9; v += step) out.push(Math.round(v / step) * step);
+  return out;
+}
+
+/* ---------- figures : montage et commandes ---------- */
+function mountFigs(root) {
+  (root || document).querySelectorAll('[data-fig]').forEach(function (host) {
+    const id = host.getAttribute('data-fig'), F = FIGS[id];
+    if (!F) return;
+    const ctr = F.controls ? F.controls(I18N[LANG]) : [];
+    let h = '';
+    if (ctr.length) {
+      h += '<div class="fig-ctrl">';
+      ctr.forEach(function (c) {
+        if (c.type === 'select') {
+          h += `<label><span>${c.label}</span><select data-key="${c.key}">${c.options.map(o => `<option value="${o.v}"${String(F.state[c.key]) === String(o.v) ? ' selected' : ''}>${o.t}</option>`).join('')}</select></label>`;
+        } else if (c.type === 'button') {
+          h += `<button type="button" data-act="${c.key}">${c.label}</button>`;
+        } else {
+          h += `<label><span>${c.label}</span><input type="range" data-key="${c.key}" min="${c.min}" max="${c.max}" step="${c.step}" value="${F.state[c.key]}"><span class="cv" data-val="${c.key}"></span></label>`;
+        }
+      });
+      h += '</div>';
+    }
+    h += '<div class="fig-svg"></div><div class="fig-read"></div>';
+    host.innerHTML = h;
+    const byKey = {}; ctr.forEach(c => { byKey[c.key] = c; });
+    function redraw() {
+      if (F.clamp) F.clamp(F.state);
+      /* les bornes d'un curseur peuvent dépendre d'un autre (k entre 0 et n, par exemple) */
+      const now = F.controls ? F.controls(I18N[LANG]) : [];
+      now.forEach(function (c) {
+        if (c.type === 'select' || c.type === 'button') return;
+        const inp = host.querySelector(`input[data-key="${c.key}"]`);
+        if (inp) { inp.min = c.min; inp.max = c.max; inp.step = c.step; inp.value = F.state[c.key]; }
+        const sp = host.querySelector(`[data-val="${c.key}"]`);
+        if (sp) sp.textContent = c.fmt ? c.fmt(F.state[c.key]) : fmtT(F.state[c.key], 4);
+      });
+      const out = F.draw(F.state, LANG);
+      host.querySelector('.fig-svg').innerHTML = out.svg;
+      host.querySelector('.fig-read').innerHTML = out.read || '';
+    }
+    host.querySelectorAll('input[data-key]').forEach(function (inp) {
+      inp.addEventListener('input', function () { F.state[inp.getAttribute('data-key')] = parseFloat(inp.value); redraw(); });
+    });
+    host.querySelectorAll('select[data-key]').forEach(function (sel) {
+      sel.addEventListener('change', function () { const c = byKey[sel.getAttribute('data-key')]; F.state[c.key] = c.numeric ? parseFloat(sel.value) : sel.value; redraw(); });
+    });
+    host.querySelectorAll('button[data-act]').forEach(function (b) {
+      b.addEventListener('click', function () { const c = byKey[b.getAttribute('data-act')]; c.act(F.state); redraw(); });
+    });
+    redraw();
+  });
+}
+
+/* ---------- blocs de code : bouton « copier » ---------- */
+function copyCode(btn) {
+  const wrap = btn.closest('.code-wrap');
+  const txt = Array.prototype.map.call(wrap.querySelectorAll('.code-block .cl'), function (l) { return l.textContent.replace(/ /g, ''); }).join('\n');
+  const done = function () { const o = btn.textContent; btn.textContent = I18N[LANG].k.copied; setTimeout(function () { btn.textContent = o; }, 1300); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done, done);
+  else { const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch (e) {} document.body.removeChild(ta); done(); }
+}
+
+/* ---------- rendu ---------- */
+function renderCourse() {
+  const host = document.getElementById('course-content');
+  host.innerHTML = I18N[LANG].course;
+  host.querySelectorAll('.code-head button').forEach(function (b) { b.textContent = I18N[LANG].k.copy; });
+  mountFigs(host);
+}
+function renderExercise(seed) {
+  const D = PAGE.compute(seed);
+  PAGE.last = D;
+  document.getElementById('seed-disp').textContent = _activeSeed;
+  const ms = document.getElementById('modal-seed'); if (ms) ms.textContent = _activeSeed;
+  const nb = h => h.replace(/(\d) %/g, '$1\u00a0%');             // espace insécable devant le signe %
+  document.getElementById('ex-content').innerHTML = nb(I18N[LANG].ex(D));
+  document.getElementById('sol-content').innerHTML = nb(I18N[LANG].sol(D));
+  solVisible = false;
+  const solC = document.getElementById('sol-card'), btn = document.getElementById('toggle-btn');
+  solC.classList.remove('visible'); btn.classList.remove('shown'); btn.textContent = I18N[LANG].k.showSol;
+}
+function generateFromControls() {
+  const v = document.getElementById('seed-input').value;
+  const seed = v ? parseInt(v, 10) : Math.floor(Math.random() * 10000000);
+  renderExercise(seed);
+  typeset(document.getElementById('ex-card')); typeset(document.getElementById('sol-card'));
+}
+function regen() { document.getElementById('seed-input').value = ''; generateFromControls(); }
+function generateAndGo() {
+  generateFromControls();
+  const c = document.getElementById('ex-anchor'); if (c && c.scrollIntoView) c.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function toggleSol() {
+  solVisible = !solVisible;
+  const sol = document.getElementById('sol-card'), btn = document.getElementById('toggle-btn');
+  if (solVisible) { sol.classList.add('visible'); btn.classList.add('shown'); btn.textContent = I18N[LANG].k.hideSol; }
+  else { sol.classList.remove('visible'); btn.classList.remove('shown'); btn.textContent = I18N[LANG].k.showSol; }
+}
+function initPage() {
+  LANG = detectLang();
+  applyLang();
+  renderCourse();
+  renderExercise(Math.floor(Math.random() * 10000000));
+  /* MathJax est chargé en asynchrone : s'il est déjà prêt on compose tout de suite,
+     sinon sa propre passe de démarrage composera la page entière. */
+  typeset();
+}
+
+/* ============================================================
+   PAGE mf6
+   ============================================================ */
+I18N.fr.k = {
+ "k-badge": "MATHÉMATIQUES FINANCIÈRES",
+ "k-seed": "Seed de reproductibilité",
+ "k-seedtip": "Vide = nouvel exercice aléatoire",
+ "k-gen": "Générer",
+ "k-tag-course": "Cours",
+ "k-tag-ex": "Exercice",
+ "k-tag-sol": "Corrigé",
+ "k-seedbadge": "Seed&nbsp;:",
+ "showSol": "Afficher le corrigé",
+ "hideSol": "Masquer le corrigé",
+ "phSeed": "auto",
+ "copy": "Copier",
+ "copied": "Copié",
+ "k-sub": "© Thomas Hossen – Version du 6 octobre 2026",
+ "title": "Mathématiques financières 6 – Processus stochastiques et mouvement brownien",
+ "k-h1": "Processus stochastiques et mouvement brownien",
+ "k-coursetitle": "Le hasard qui s'accumule au cours du temps",
+ "k-extitle": "Lois, accroissements et simulation d'un mouvement brownien",
+ "k-soltitle": "Lois, accroissements et simulation d'un mouvement brownien"
+};
+I18N.fr.course = "<div class=\"context-block\">\n<strong>Objectifs.<\/strong> À la fin de cette page, vous savez ce qu'est un processus stochastique, vous connaissez la définition du mouvement brownien, vous savez calculer des probabilités sur ses valeurs et sur ses accroissements, et vous savez en simuler une trajectoire.<br><br>\n<strong>Pourquoi en finance ?<\/strong> Le graphique d'un indice boursier n'a rien d'une courbe lisse : il est fait de petites secousses imprévisibles qui s'accumulent. Le mouvement brownien est le modèle mathématique de cette accumulation. Tous les modèles de cours de la suite, à commencer par celui de Black-Scholes, sont construits à partir de lui.<br><br>\n<strong>Prérequis.<\/strong> Loi normale et fonction \\(\\Phi\\) (page 2), espérance et variance (page 1), équations différentielles (page 4).\n<\/div>\n<p class=\"toc\">Sommaire : <a href=\"#s1\">1. Processus stochastique<\/a> · <a href=\"#s2\">2. Mouvement brownien<\/a> · <a href=\"#s3\">3. Calculs usuels<\/a> · <a href=\"#s4\">4. Simulation<\/a> · <a href=\"#s5\">5. Une courbe très irrégulière<\/a> · <a href=\"#s6\">6. En Python<\/a> · <a href=\"#s7\">7. À retenir<\/a> · <a href=\"#ex-anchor\">Exercice corrigé<\/a><\/p>\n\n<div class=\"dossier-title\" id=\"s1\">1. Processus stochastique<\/div>\n<p>Les fonctions de la page 4, solutions d'équations différentielles, sont des courbes lisses et entièrement prévisibles : connaître \\(y(0)\\) suffit à connaître toute la suite. Un cours de bourse ne se comporte pas ainsi. Pour le décrire, il faut une quantité qui dépend à la fois du temps et du hasard.<\/p>\n<p><strong>Définition.<\/strong> Un <em>processus stochastique<\/em> \\((X_t)_{0\\le t\\le T}\\) est une famille de variables aléatoires indexée par le temps \\(t\\). On peut le regarder de deux façons.<\/p>\n<ul class=\"kit-simple\">\n<li><em>On fixe la date \\(t\\).<\/em> Alors \\(X_t\\) est une variable aléatoire, avec une loi, une espérance et une variance : c'est par exemple le cours dans un an, vu d'aujourd'hui.<\/li>\n<li><em>On fixe le hasard.<\/em> Une fois le hasard réalisé, \\(t\\mapsto X_t\\) est une fonction ordinaire du temps, appelée <em>trajectoire<\/em> : c'est l'une des histoires possibles du cours.<\/li>\n<\/ul>\n<div class=\"ifig\" data-fig=\"paths\"><\/div>\n<div class=\"fig-cap\">Figure 1 — Plusieurs trajectoires d'un mouvement brownien. Chaque courbe est une histoire possible ; les points sur la droite verticale sont les valeurs prises à la date \\(t\\) par les différentes trajectoires. Les courbes en pointillé sont à un et deux écarts types de zéro. Déplacez \\(t\\), changez le nombre de trajectoires ou relancez le tirage.<\/div>\n\n<div class=\"dossier-title\" id=\"s2\">2. Le mouvement brownien<\/div>\n<p><strong>Définition.<\/strong> Un <em>mouvement brownien<\/em> \\((W_t)_{t\\ge 0}\\) est un processus stochastique qui vérifie :<\/p>\n<ol>\n<li>\\(W_0=0\\) ;<\/li>\n<li>pour \\(s&lt;t\\), l'accroissement \\(W_t-W_s\\) suit la loi normale \\(N(0,\\,t-s)\\) ; en particulier \\(W_t\\) suit la loi \\(N(0,t)\\) ;<\/li>\n<li>les accroissements sur des intervalles de temps qui ne se chevauchent pas sont indépendants : \\(W_{t_2}-W_{t_1}\\) est indépendant de \\(W_{t_4}-W_{t_3}\\) pour \\(0\\le t_1&lt;t_2\\le t_3&lt;t_4\\) ;<\/li>\n<li>les trajectoires sont continues.<\/li>\n<\/ol>\n<p>Le cours énonce \\(W_0=0\\), \\(W_t\\sim N(0,t)\\) et l'indépendance des accroissements. On y ajoute ici la loi des accroissements et la continuité des trajectoires, qui font partie de la définition habituelle et serviront dans toute la suite.<\/p>\n<p><strong>Lecture.<\/strong> Dans \\(N(0,\\,t-s)\\), le second paramètre est la <em>variance<\/em> : elle est égale à la durée écoulée. L'écart type de \\(W_t\\) est donc \\(\\sqrt{t}\\). L'incertitude grandit avec le temps, mais seulement comme sa racine carrée : sur un horizon quatre fois plus long, elle est deux fois plus grande. Par ailleurs, l'accroissement futur \\(W_t-W_s\\) ne dépend pas de ce qui s'est passé avant la date \\(s\\) : le mouvement brownien n'a pas de mémoire.<\/p>\n<p><strong>D'où vient la loi normale ?<\/strong> Découpons l'intervalle \\([0,1]\\) en \\(n\\) pas et tirons à pile ou face à chaque pas : on monte de \\(\\frac{1}{\\sqrt{n}}\\) ou l'on descend de \\(\\frac{1}{\\sqrt{n}}\\), avec la même probabilité. Chaque pas a une espérance nulle et une variance \\(\\frac{1}{n}\\), donc la position finale, somme de \\(n\\) pas indépendants, a une espérance nulle et une variance \\(n\\times\\frac{1}{n}=1\\). Quand \\(n\\) devient grand, cette somme d'un grand nombre de petits chocs indépendants suit à peu près une loi normale : c'est le théorème central limite. Le mouvement brownien est la limite de cette marche aléatoire.<\/p>\n<div class=\"ifig\" data-fig=\"walk\"><\/div>\n<div class=\"fig-cap\">Figure 2 — Trois marches aléatoires à \\(n\\) pas de taille \\(\\frac{1}{\\sqrt{n}}\\). Augmentez \\(n\\) : les pas deviennent plus petits et plus nombreux, et les trajectoires prennent l'allure de celles d'un mouvement brownien.<\/div>\n\n<div class=\"dossier-title\" id=\"s3\">3. Calculs usuels<\/div>\n<p><strong>Valeur à une date.<\/strong> Comme \\(W_t\\sim N(0,t)\\), on a \\(\\E[W_t]=0\\), \\(\\Var(W_t)=t\\) et, en centrant et réduisant comme à la page 2,<\/p>\n\\[\\PP(W_t\\le x)=\\Phi\\!\\left(\\frac{x}{\\sqrt{t}}\\right).\\]\n<p>Par exemple, \\(\\PP(W_4>3)=1-\\Phi\\!\\left(\\frac{3}{\\sqrt{4}}\\right)=1-\\Phi(1.5)\\), soit \\(1-0.9332=0.0668\\).<\/p>\n<p><strong>Accroissement.<\/strong> On raisonne de la même façon avec la durée écoulée : pour \\(s&lt;t\\), \\(\\PP(W_t-W_s\\le x)=\\Phi\\!\\left(\\frac{x}{\\sqrt{t-s}}\\right)\\).<\/p>\n<p><strong>Covariance.<\/strong> Les valeurs \\(W_s\\) et \\(W_t\\) ne sont pas indépendantes, puisque la seconde prolonge la première.<\/p>\n<p><strong>Propriété.<\/strong> Pour \\(s\\le t\\), \\(\\Cov(W_s,W_t)=s\\) : la covariance est la plus petite des deux dates.<\/p>\n<div class=\"demo\">\n<p><strong>Démonstration.<\/strong> L'idée, à retenir, est de découper \\(W_t\\) en deux morceaux indépendants : ce qui est acquis à la date \\(s\\) et ce qui s'y ajoute ensuite.<\/p>\n\\[W_t=W_s+(W_t-W_s).\\]\n<p>Comme les espérances sont nulles, \\(\\Cov(W_s,W_t)=\\E[W_s\\,W_t]\\). En remplaçant \\(W_t\\) et en développant :<\/p>\n\\[\\E[W_s\\,W_t]=\\E\\big[W_s^2\\big]+\\E\\big[W_s\\,(W_t-W_s)\\big]=s+\\E[W_s]\\times\\E[W_t-W_s]=s+0=s .\\]\n<p>On a utilisé \\(\\E[W_s^2]=\\Var(W_s)=s\\), puis le fait que l'espérance d'un produit de variables indépendantes est le produit des espérances.<\/p>\n<\/div>\n<p><strong>Prévision.<\/strong> Si l'on sait qu'à la date \\(s\\) le mouvement brownien vaut \\(w\\), alors \\(W_t=w+(W_t-W_s)\\) suit la loi \\(N(w,\\,t-s)\\). La meilleure prévision de la valeur future est la valeur présente, et l'incertitude ne dépend que de la durée restante.<\/p>\n<p><strong>Mouvement brownien avec tendance.<\/strong> En ajoutant un point de départ \\(x_0\\), une tendance \\(\\mu\\) et une échelle \\(\\sigma>0\\), on obtient le processus \\(X_t=x_0+\\mu\\,t+\\sigma\\,W_t\\). Comme \\(X_t\\) est une fonction affine de \\(W_t\\), il suit la loi \\(N(x_0+\\mu\\,t,\\ \\sigma^2t)\\). Ce processus peut devenir négatif : c'est pourquoi on l'utilise pour le logarithme d'un cours plutôt que pour le cours lui-même (page 8).<\/p>\n<div class=\"persp-box\">\n<span class=\"sol-sub\">Mode d'emploi — calculer avec un mouvement brownien<\/span>\n<ol>\n<li>Repérer la durée en jeu : \\(t\\) pour \\(W_t\\), \\(t-s\\) pour un accroissement \\(W_t-W_s\\). C'est la variance ; l'écart type est sa racine carrée.<\/li>\n<li>Pour une probabilité, diviser le seuil par l'écart type et utiliser \\(\\Phi\\), comme pour toute loi normale.<\/li>\n<li>Dès que plusieurs dates interviennent, écrire \\(W_t=W_s+(W_t-W_s)\\) pour se ramener à des morceaux indépendants.<\/li>\n<\/ol>\n<p><strong>Erreurs fréquentes.<\/strong> Diviser par \\(t\\) au lieu de \\(\\sqrt{t}\\). Additionner les variances de \\(W_s\\) et \\(W_t\\) comme si elles étaient indépendantes. Croire que \\(W_t-W_s\\) a pour variance \\(t+s\\) : c'est \\(t-s\\), la durée écoulée.<\/p>\n<\/div>\n\n<div class=\"dossier-title\" id=\"s4\">4. Simuler une trajectoire<\/div>\n<p>On découpe l'intervalle \\([0,T]\\) en \\(N\\) pas de durée \\(\\Delta t=\\frac{T}{N}\\) et l'on note \\(t_j=j\\,\\Delta t\\). Sur chaque pas, l'accroissement suit la loi \\(N(0,\\Delta t)\\) ; or, si \\(Z\\) suit la loi \\(N(0,1)\\), alors \\(\\sqrt{\\Delta t}\\,Z\\) suit la loi \\(N(0,\\Delta t)\\). On construit donc la trajectoire de proche en proche :<\/p>\n\\[W_{t_0}=0,\\qquad W_{t_j}=W_{t_{j-1}}+\\sqrt{\\Delta t}\\;Z_j\\quad\\text{pour } j=1,2,\\dots,N,\\]\n<p>où \\(Z_1,\\dots,Z_N\\) sont des tirages indépendants de loi \\(N(0,1)\\). Dans le cours, ces tirages sont notés \\(\\dd W_j\\) et le pas est noté tantôt \\(\\Delta t\\), tantôt \\(\\delta t\\) ; il s'agit bien de la même construction.<\/p>\n<p><strong>Exemple.<\/strong> Avec \\(\\Delta t=0.25\\), donc \\(\\sqrt{\\Delta t}=0.5\\), et les tirages \\(0.5\\), \\(-1.2\\), \\(0.3\\) et \\(1.0\\) :<\/p>\n<div class=\"dtable-wrap\"><table class=\"dtable dtable-narrow\">\n<tr><th>\\(j\\)<\/th><th>\\(t_j\\)<\/th><th>tirage \\(Z_j\\)<\/th><th>accroissement \\(0.5\\,Z_j\\)<\/th><th>\\(W_{t_j}\\)<\/th><\/tr>\n<tr><td class=\"num\">0<\/td><td class=\"num\">0<\/td><td>—<\/td><td>—<\/td><td class=\"num\">0<\/td><\/tr>\n<tr><td class=\"num\">1<\/td><td class=\"num\">0.25<\/td><td class=\"num\">0.5<\/td><td class=\"num\">0.25<\/td><td class=\"num\">0.25<\/td><\/tr>\n<tr><td class=\"num\">2<\/td><td class=\"num\">0.5<\/td><td class=\"num\">−1.2<\/td><td class=\"num\">−0.6<\/td><td class=\"num\">−0.35<\/td><\/tr>\n<tr><td class=\"num\">3<\/td><td class=\"num\">0.75<\/td><td class=\"num\">0.3<\/td><td class=\"num\">0.15<\/td><td class=\"num\">−0.2<\/td><\/tr>\n<tr><td class=\"num\">4<\/td><td class=\"num\">1<\/td><td class=\"num\">1.0<\/td><td class=\"num\">0.5<\/td><td class=\"num\">0.3<\/td><\/tr>\n<\/table><\/div>\n<div class=\"persp-box\">\n<span class=\"sol-sub\">Mode d'emploi — simuler un mouvement brownien<\/span>\n<ol>\n<li>Choisir le nombre de pas \\(N\\) et calculer \\(\\Delta t=\\frac{T}{N}\\), puis \\(\\sqrt{\\Delta t}\\).<\/li>\n<li>Tirer \\(N\\) nombres indépendants de loi \\(N(0,1)\\).<\/li>\n<li>Multiplier chaque tirage par \\(\\sqrt{\\Delta t}\\) pour obtenir les accroissements.<\/li>\n<li>Additionner les accroissements de proche en proche, en partant de 0.<\/li>\n<\/ol>\n<p><strong>Erreurs fréquentes.<\/strong> Multiplier les tirages par \\(\\Delta t\\) au lieu de \\(\\sqrt{\\Delta t}\\) : la trajectoire obtenue est beaucoup trop calme. Réutiliser le même tirage à chaque pas. Oublier de cumuler : la suite des accroissements n'est pas la trajectoire.<\/p>\n<\/div>\n\n<div class=\"dossier-title\" id=\"s5\">5. Une courbe très irrégulière<\/div>\n<p><strong>Pas de dérivée.<\/strong> Sur une durée \\(h\\), l'accroissement \\(W_{t+h}-W_t\\) a pour écart type \\(\\sqrt{h}\\). Le taux d'accroissement \\(\\frac{W_{t+h}-W_t}{h}\\) a donc pour écart type \\(\\frac{\\sqrt{h}}{h}=\\frac{1}{\\sqrt{h}}\\), qui vaut 10 pour \\(h=0.01\\) et 100 pour \\(h=0.0001\\) : il grandit sans limite quand \\(h\\) diminue. Une trajectoire brownienne est continue mais n'a de dérivée en aucun point. L'écriture \\(\\frac{\\dd W}{\\dd t}\\) n'a pas de sens, et les règles de calcul de la page 4 ne s'appliquent plus.<\/p>\n<p><strong>Variation quadratique.<\/strong> Additionnons les carrés des accroissements sur les \\(N\\) pas de \\([0,T]\\) : \\(Q_N=\\sum_{j=1}^{N}\\big(W_{t_j}-W_{t_{j-1}}\\big)^2\\).<\/p>\n<p><strong>Propriété.<\/strong> \\(\\E[Q_N]=T\\) et \\(\\Var(Q_N)=\\frac{2\\,T^2}{N}\\). Quand le nombre de pas augmente, \\(Q_N\\) se rapproche donc de \\(T\\), quelle que soit la trajectoire.<\/p>\n<div class=\"demo\">\n<p><strong>Démonstration.<\/strong> Chaque accroissement s'écrit \\(\\sqrt{\\Delta t}\\,Z_j\\), donc son carré vaut \\(\\Delta t\\,Z_j^2\\). Comme \\(\\E[Z_j^2]=\\Var(Z_j)=1\\), chaque carré a pour espérance \\(\\Delta t\\), et la somme de \\(N\\) termes a pour espérance \\(N\\,\\Delta t=T\\).<\/p>\n<p>Pour la variance, on admet que \\(\\E[Z^4]=3\\) pour une loi normale centrée réduite. Alors \\(\\Var(Z^2)=\\E[Z^4]-\\big(\\E[Z^2]\\big)^2=3-1=2\\), et chaque carré a pour variance \\((\\Delta t)^2\\times 2\\). Les \\(N\\) termes étant indépendants, les variances s'ajoutent :<\/p>\n\\[\\Var(Q_N)=N\\times 2\\,(\\Delta t)^2=2N\\left(\\frac{T}{N}\\right)^{2}=\\frac{2\\,T^2}{N}.\\]\n<\/div>\n<p><strong>Pourquoi c'est remarquable.<\/strong> Pour une fonction lisse, la même somme tend vers 0. Avec \\(f(t)=t\\), chaque accroissement vaut \\(\\Delta t\\) et la somme des carrés vaut \\(N\\,(\\Delta t)^2=\\frac{T^2}{N}\\). Pour le mouvement brownien, les accroissements sont de l'ordre de \\(\\sqrt{\\Delta t}\\), bien plus grands que \\(\\Delta t\\), et leurs carrés ne sont plus négligeables : ils s'additionnent pour donner \\(T\\). On résume ce fait par la règle « \\((\\dd W)^2=\\dd t\\) », qui est à l'origine du lemme d'Itô (page 7).<\/p>\n<div class=\"ifig\" data-fig=\"qv\"><\/div>\n<div class=\"fig-cap\">Figure 3 — Somme cumulée des carrés des accroissements d'une trajectoire brownienne (en bleu), comparée à la droite \\(t\\) (en pointillé) et à la même somme pour la fonction lisse \\(f(t)=t\\) (en doré). Augmentez le nombre de pas : la courbe bleue se colle à la droite.<\/div>\n<p>Dans l'exemple de la section 4, la somme des carrés des quatre accroissements vaut \\(0.0625+0.36+0.0225+0.25=0.695\\), pour une espérance \\(T=1\\). Avec seulement quatre pas, l'écart type de cette somme est \\(\\sqrt{\\frac{2}{4}}\\approx 0.71\\) : un tel écart n'a rien de surprenant.<\/p>\n\n<div class=\"dossier-title\" id=\"s6\">6. En Python<\/div>\n<p>On simule 20 000 trajectoires d'un seul coup : chaque ligne du tableau <code>dW<\/code> contient les accroissements d'une trajectoire, et <code>np.cumsum<\/code> les additionne de proche en proche. On retrouve les valeurs théoriques de cette page.<\/p>\n<div class=\"code-wrap\"><div class=\"code-head\"><span>Python<\/span><button type=\"button\" onclick=\"copyCode(this)\">Copier<\/button><\/div><div class=\"code-block has-out\"><div class=\"cl\"><code>import numpy as np<\/code><\/div><div class=\"cl\"><code>&nbsp;<\/code><\/div><div class=\"cl\"><code>rng = np.random.default_rng(0)<\/code><\/div><div class=\"cl\"><code>T, N, M = 1.0, 250, 20_000              # horizon, nombre de pas, nombre de trajectoires<\/code><\/div><div class=\"cl\"><code>dt = T / N<\/code><\/div><div class=\"cl\"><code>&nbsp;<\/code><\/div><div class=\"cl\"><code># accroissements indépendants de loi N(0, dt), puis somme cumulée le long de chaque trajectoire<\/code><\/div><div class=\"cl\"><code>dW = np.sqrt(dt) * rng.standard_normal((M, N))<\/code><\/div><div class=\"cl\"><code>W = np.cumsum(dW, axis=1)               # W[i, j] : trajectoire i à la date (j + 1) dt<\/code><\/div><div class=\"cl\"><code>&nbsp;<\/code><\/div><div class=\"cl\"><code>milieu, fin = W[:, N // 2 - 1], W[:, -1]            # valeurs aux dates 0.5 et 1<\/code><\/div><div class=\"cl\"><code>print(\"moyenne de W(1)       :\", round(fin.mean(), 3))<\/code><\/div><div class=\"cl\"><code>print(\"variance de W(1)      :\", round(fin.var(), 3))<\/code><\/div><div class=\"cl\"><code>print(\"variance de W(0.5)    :\", round(milieu.var(), 3))<\/code><\/div><div class=\"cl\"><code>print(\"Cov(W(0.5), W(1))     :\", round(np.cov(milieu, fin)[0, 1], 3))<\/code><\/div><div class=\"cl\"><code>print(\"P(W(1) &gt; 1) simulée   :\", round((fin &gt; 1).mean(), 4), \"| théorique : 0.1587\")<\/code><\/div><div class=\"cl\"><code>print(\"variation quadratique :\", round((dW**2).sum(axis=1).mean(), 4), \"en moyenne\")<\/code><\/div><\/div><div class=\"code-out\"><span class=\"code-out-lbl\">Résultat affiché<\/span><div class=\"cl\"><code>moyenne de W(1)       : 0.0<\/code><\/div><div class=\"cl\"><code>variance de W(1)      : 0.993<\/code><\/div><div class=\"cl\"><code>variance de W(0.5)    : 0.492<\/code><\/div><div class=\"cl\"><code>Cov(W(0.5), W(1))     : 0.491<\/code><\/div><div class=\"cl\"><code>P(W(1) &gt; 1) simulée   : 0.1578 | théorique : 0.1587<\/code><\/div><div class=\"cl\"><code>variation quadratique : 0.9998 en moyenne<\/code><\/div><\/div><\/div>\n\n<div class=\"dossier-title\" id=\"s7\">7. À retenir<\/div>\n<ul class=\"kit-simple\">\n<li>Un processus stochastique est une variable aléatoire à chaque date, et une trajectoire pour chaque réalisation du hasard.<\/li>\n<li>Mouvement brownien : \\(W_0=0\\), accroissements indépendants, \\(W_t-W_s\\sim N(0,\\,t-s)\\), trajectoires continues.<\/li>\n<li>\\(\\E[W_t]=0\\), \\(\\Var(W_t)=t\\), \\(\\PP(W_t\\le x)=\\Phi\\!\\left(\\frac{x}{\\sqrt{t}}\\right)\\) ; pour \\(s\\le t\\), \\(\\Cov(W_s,W_t)=s\\).<\/li>\n<li>Avec tendance : \\(X_t=x_0+\\mu\\,t+\\sigma\\,W_t\\sim N(x_0+\\mu\\,t,\\ \\sigma^2t)\\).<\/li>\n<li>Simulation : \\(W_{t_j}=W_{t_{j-1}}+\\sqrt{\\Delta t}\\,Z_j\\) avec \\(Z_j\\sim N(0,1)\\).<\/li>\n<li>Les trajectoires n'ont pas de dérivée, et la somme des carrés des accroissements sur \\([0,T]\\) vaut \\(T\\) : « \\((\\dd W)^2=\\dd t\\) ».<\/li>\n<\/ul>\n";
+I18N.en.k = {
+ "k-badge": "MATHEMATICS FOR FINANCE",
+ "k-seed": "Reproducibility seed",
+ "k-seedtip": "Empty = new random exercise",
+ "k-gen": "Generate",
+ "k-tag-course": "Lesson",
+ "k-tag-ex": "Exercise",
+ "k-tag-sol": "Solution",
+ "k-seedbadge": "Seed:",
+ "showSol": "Show solution",
+ "hideSol": "Hide solution",
+ "phSeed": "auto",
+ "copy": "Copy",
+ "copied": "Copied",
+ "k-sub": "© Thomas Hossen – Version of 6 October 2026",
+ "title": "Mathematics for Finance 6 – Stochastic processes and Brownian motion",
+ "k-h1": "Stochastic processes and Brownian motion",
+ "k-coursetitle": "Randomness that accumulates over time",
+ "k-extitle": "Distributions, increments and simulation of a Brownian motion",
+ "k-soltitle": "Distributions, increments and simulation of a Brownian motion"
+};
+I18N.en.course = "<div class=\"context-block\">\n<strong>Objectives.<\/strong> By the end of this page, you know what a stochastic process is, you know the definition of Brownian motion, you can compute probabilities on its values and on its increments, and you can simulate a path.<br><br>\n<strong>Why in finance?<\/strong> The chart of a stock index is nothing like a smooth curve: it is made of small unpredictable jolts that accumulate. Brownian motion is the mathematical model of this accumulation. All the price models that follow, starting with that of Black-Scholes, are built from it.<br><br>\n<strong>Prerequisites.<\/strong> Normal distribution and the function \\(\\Phi\\) (page 2), expected value and variance (page 1), differential equations (page 4).\n<\/div>\n<p class=\"toc\">Contents: <a href=\"#s1\">1. Stochastic process<\/a> · <a href=\"#s2\">2. Brownian motion<\/a> · <a href=\"#s3\">3. Usual calculations<\/a> · <a href=\"#s4\">4. Simulation<\/a> · <a href=\"#s5\">5. A very irregular curve<\/a> · <a href=\"#s6\">6. In Python<\/a> · <a href=\"#s7\">7. Key points<\/a> · <a href=\"#ex-anchor\">Worked exercise<\/a><\/p>\n\n<div class=\"dossier-title\" id=\"s1\">1. Stochastic process<\/div>\n<p>The functions of page 4, solutions of differential equations, are smooth and entirely predictable curves: knowing \\(y(0)\\) is enough to know everything that follows. A share price does not behave like that. To describe it, we need a quantity that depends both on time and on chance.<\/p>\n<p><strong>Definition.<\/strong> A <em>stochastic process<\/em> \\((X_t)_{0\\le t\\le T}\\) is a family of random variables indexed by time \\(t\\). It can be looked at in two ways.<\/p>\n<ul class=\"kit-simple\">\n<li><em>Fix the date \\(t\\).<\/em> Then \\(X_t\\) is a random variable, with a distribution, an expected value and a variance: it is for instance the price in one year, seen from today.<\/li>\n<li><em>Fix the randomness.<\/em> Once chance has been realised, \\(t\\mapsto X_t\\) is an ordinary function of time, called a <em>sample path<\/em>: it is one of the possible histories of the price.<\/li>\n<\/ul>\n<div class=\"ifig\" data-fig=\"paths\"><\/div>\n<div class=\"fig-cap\">Figure 1 — Several sample paths of a Brownian motion. Each curve is one possible history; the points on the vertical line are the values taken at date \\(t\\) by the different paths. The dashed curves are one and two standard deviations away from zero. Move \\(t\\), change the number of paths or draw again.<\/div>\n\n<div class=\"dossier-title\" id=\"s2\">2. Brownian motion<\/div>\n<p><strong>Definition.<\/strong> A <em>Brownian motion<\/em> \\((W_t)_{t\\ge 0}\\) is a stochastic process that satisfies:<\/p>\n<ol>\n<li>\\(W_0=0\\);<\/li>\n<li>for \\(s&lt;t\\), the increment \\(W_t-W_s\\) follows the normal distribution \\(N(0,\\,t-s)\\); in particular \\(W_t\\) follows the distribution \\(N(0,t)\\);<\/li>\n<li>increments over time intervals that do not overlap are independent: \\(W_{t_2}-W_{t_1}\\) is independent of \\(W_{t_4}-W_{t_3}\\) for \\(0\\le t_1&lt;t_2\\le t_3&lt;t_4\\);<\/li>\n<li>the sample paths are continuous.<\/li>\n<\/ol>\n<p>The course states \\(W_0=0\\), \\(W_t\\sim N(0,t)\\) and the independence of increments. We add here the distribution of the increments and the continuity of the paths, which are part of the usual definition and will be used throughout what follows.<\/p>\n<p><strong>Reading.<\/strong> In \\(N(0,\\,t-s)\\), the second parameter is the <em>variance<\/em>: it is equal to the time elapsed. The standard deviation of \\(W_t\\) is therefore \\(\\sqrt{t}\\). Uncertainty grows with time, but only like its square root: over a horizon four times longer, it is twice as large. Moreover, the future increment \\(W_t-W_s\\) does not depend on what happened before date \\(s\\): Brownian motion has no memory.<\/p>\n<p><strong>Where does the normal distribution come from?<\/strong> Cut the interval \\([0,1]\\) into \\(n\\) steps and toss a coin at each step: we go up by \\(\\frac{1}{\\sqrt{n}}\\) or down by \\(\\frac{1}{\\sqrt{n}}\\), with the same probability. Each step has zero expected value and variance \\(\\frac{1}{n}\\), so the final position, the sum of \\(n\\) independent steps, has zero expected value and variance \\(n\\times\\frac{1}{n}=1\\). When \\(n\\) becomes large, this sum of a large number of small independent shocks approximately follows a normal distribution: this is the central limit theorem. Brownian motion is the limit of this random walk.<\/p>\n<div class=\"ifig\" data-fig=\"walk\"><\/div>\n<div class=\"fig-cap\">Figure 2 — Three random walks with \\(n\\) steps of size \\(\\frac{1}{\\sqrt{n}}\\). Increase \\(n\\): the steps become smaller and more numerous, and the paths take on the look of those of a Brownian motion.<\/div>\n\n<div class=\"dossier-title\" id=\"s3\">3. Usual calculations<\/div>\n<p><strong>Value at a date.<\/strong> Since \\(W_t\\sim N(0,t)\\), we have \\(\\E[W_t]=0\\), \\(\\Var(W_t)=t\\) and, standardising as on page 2,<\/p>\n\\[\\PP(W_t\\le x)=\\Phi\\!\\left(\\frac{x}{\\sqrt{t}}\\right).\\]\n<p>For example, \\(\\PP(W_4>3)=1-\\Phi\\!\\left(\\frac{3}{\\sqrt{4}}\\right)=1-\\Phi(1.5)\\), that is \\(1-0.9332=0.0668\\).<\/p>\n<p><strong>Increment.<\/strong> We reason in the same way with the time elapsed: for \\(s&lt;t\\), \\(\\PP(W_t-W_s\\le x)=\\Phi\\!\\left(\\frac{x}{\\sqrt{t-s}}\\right)\\).<\/p>\n<p><strong>Covariance.<\/strong> The values \\(W_s\\) and \\(W_t\\) are not independent, since the second extends the first.<\/p>\n<p><strong>Property.<\/strong> For \\(s\\le t\\), \\(\\Cov(W_s,W_t)=s\\): the covariance is the smaller of the two dates.<\/p>\n<div class=\"demo\">\n<p><strong>Proof.<\/strong> The idea, worth remembering, is to cut \\(W_t\\) into two independent pieces: what has been acquired at date \\(s\\) and what is added afterwards.<\/p>\n\\[W_t=W_s+(W_t-W_s).\\]\n<p>Since the expected values are zero, \\(\\Cov(W_s,W_t)=\\E[W_s\\,W_t]\\). Replacing \\(W_t\\) and expanding:<\/p>\n\\[\\E[W_s\\,W_t]=\\E\\big[W_s^2\\big]+\\E\\big[W_s\\,(W_t-W_s)\\big]=s+\\E[W_s]\\times\\E[W_t-W_s]=s+0=s .\\]\n<p>We used \\(\\E[W_s^2]=\\Var(W_s)=s\\), then the fact that the expected value of a product of independent variables is the product of the expected values.<\/p>\n<\/div>\n<p><strong>Forecast.<\/strong> If we know that at date \\(s\\) the Brownian motion equals \\(w\\), then \\(W_t=w+(W_t-W_s)\\) follows the distribution \\(N(w,\\,t-s)\\). The best forecast of the future value is the present value, and the uncertainty depends only on the time remaining.<\/p>\n<p><strong>Brownian motion with drift.<\/strong> Adding a starting point \\(x_0\\), a drift \\(\\mu\\) and a scale \\(\\sigma>0\\), we obtain the process \\(X_t=x_0+\\mu\\,t+\\sigma\\,W_t\\). Since \\(X_t\\) is a linear function of \\(W_t\\), it follows the distribution \\(N(x_0+\\mu\\,t,\\ \\sigma^2t)\\). This process can become negative: this is why it is used for the logarithm of a price rather than for the price itself (page 8).<\/p>\n<div class=\"persp-box\">\n<span class=\"sol-sub\">How to use it — computing with a Brownian motion<\/span>\n<ol>\n<li>Identify the time span involved: \\(t\\) for \\(W_t\\), \\(t-s\\) for an increment \\(W_t-W_s\\). This is the variance; the standard deviation is its square root.<\/li>\n<li>For a probability, divide the threshold by the standard deviation and use \\(\\Phi\\), as for any normal distribution.<\/li>\n<li>As soon as several dates are involved, write \\(W_t=W_s+(W_t-W_s)\\) to get back to independent pieces.<\/li>\n<\/ol>\n<p><strong>Common mistakes.<\/strong> Dividing by \\(t\\) instead of \\(\\sqrt{t}\\). Adding the variances of \\(W_s\\) and \\(W_t\\) as if they were independent. Believing that \\(W_t-W_s\\) has variance \\(t+s\\): it is \\(t-s\\), the time elapsed.<\/p>\n<\/div>\n\n<div class=\"dossier-title\" id=\"s4\">4. Simulating a path<\/div>\n<p>Cut the interval \\([0,T]\\) into \\(N\\) steps of length \\(\\Delta t=\\frac{T}{N}\\) and write \\(t_j=j\\,\\Delta t\\). Over each step, the increment follows the distribution \\(N(0,\\Delta t)\\); now, if \\(Z\\) follows the distribution \\(N(0,1)\\), then \\(\\sqrt{\\Delta t}\\,Z\\) follows the distribution \\(N(0,\\Delta t)\\). We therefore build the path step by step:<\/p>\n\\[W_{t_0}=0,\\qquad W_{t_j}=W_{t_{j-1}}+\\sqrt{\\Delta t}\\;Z_j\\quad\\text{for } j=1,2,\\dots,N,\\]\n<p>where \\(Z_1,\\dots,Z_N\\) are independent draws from the distribution \\(N(0,1)\\). In the course, these draws are written \\(\\dd W_j\\) and the step is written sometimes \\(\\Delta t\\), sometimes \\(\\delta t\\); it is indeed the same construction.<\/p>\n<p><strong>Example.<\/strong> With \\(\\Delta t=0.25\\), so \\(\\sqrt{\\Delta t}=0.5\\), and the draws \\(0.5\\), \\(-1.2\\), \\(0.3\\) and \\(1.0\\):<\/p>\n<div class=\"dtable-wrap\"><table class=\"dtable dtable-narrow\">\n<tr><th>\\(j\\)<\/th><th>\\(t_j\\)<\/th><th>draw \\(Z_j\\)<\/th><th>increment \\(0.5\\,Z_j\\)<\/th><th>\\(W_{t_j}\\)<\/th><\/tr>\n<tr><td class=\"num\">0<\/td><td class=\"num\">0<\/td><td>—<\/td><td>—<\/td><td class=\"num\">0<\/td><\/tr>\n<tr><td class=\"num\">1<\/td><td class=\"num\">0.25<\/td><td class=\"num\">0.5<\/td><td class=\"num\">0.25<\/td><td class=\"num\">0.25<\/td><\/tr>\n<tr><td class=\"num\">2<\/td><td class=\"num\">0.5<\/td><td class=\"num\">−1.2<\/td><td class=\"num\">−0.6<\/td><td class=\"num\">−0.35<\/td><\/tr>\n<tr><td class=\"num\">3<\/td><td class=\"num\">0.75<\/td><td class=\"num\">0.3<\/td><td class=\"num\">0.15<\/td><td class=\"num\">−0.2<\/td><\/tr>\n<tr><td class=\"num\">4<\/td><td class=\"num\">1<\/td><td class=\"num\">1.0<\/td><td class=\"num\">0.5<\/td><td class=\"num\">0.3<\/td><\/tr>\n<\/table><\/div>\n<div class=\"persp-box\">\n<span class=\"sol-sub\">How to use it — simulating a Brownian motion<\/span>\n<ol>\n<li>Choose the number of steps \\(N\\) and compute \\(\\Delta t=\\frac{T}{N}\\), then \\(\\sqrt{\\Delta t}\\).<\/li>\n<li>Draw \\(N\\) independent numbers from the distribution \\(N(0,1)\\).<\/li>\n<li>Multiply each draw by \\(\\sqrt{\\Delta t}\\) to obtain the increments.<\/li>\n<li>Add up the increments step by step, starting from 0.<\/li>\n<\/ol>\n<p><strong>Common mistakes.<\/strong> Multiplying the draws by \\(\\Delta t\\) instead of \\(\\sqrt{\\Delta t}\\): the path obtained is far too quiet. Reusing the same draw at each step. Forgetting to cumulate: the sequence of increments is not the path.<\/p>\n<\/div>\n\n<div class=\"dossier-title\" id=\"s5\">5. A very irregular curve<\/div>\n<p><strong>No derivative.<\/strong> Over a time span \\(h\\), the increment \\(W_{t+h}-W_t\\) has standard deviation \\(\\sqrt{h}\\). The rate of change \\(\\frac{W_{t+h}-W_t}{h}\\) therefore has standard deviation \\(\\frac{\\sqrt{h}}{h}=\\frac{1}{\\sqrt{h}}\\), which equals 10 for \\(h=0.01\\) and 100 for \\(h=0.0001\\): it grows without limit as \\(h\\) decreases. A Brownian path is continuous but has a derivative at no point. The notation \\(\\frac{\\dd W}{\\dd t}\\) has no meaning, and the rules of calculus of page 4 no longer apply.<\/p>\n<p><strong>Quadratic variation.<\/strong> Add up the squares of the increments over the \\(N\\) steps of \\([0,T]\\): \\(Q_N=\\sum_{j=1}^{N}\\big(W_{t_j}-W_{t_{j-1}}\\big)^2\\).<\/p>\n<p><strong>Property.<\/strong> \\(\\E[Q_N]=T\\) and \\(\\Var(Q_N)=\\frac{2\\,T^2}{N}\\). When the number of steps increases, \\(Q_N\\) therefore gets closer to \\(T\\), whatever the path.<\/p>\n<div class=\"demo\">\n<p><strong>Proof.<\/strong> Each increment is written \\(\\sqrt{\\Delta t}\\,Z_j\\), so its square is \\(\\Delta t\\,Z_j^2\\). Since \\(\\E[Z_j^2]=\\Var(Z_j)=1\\), each square has expected value \\(\\Delta t\\), and the sum of \\(N\\) terms has expected value \\(N\\,\\Delta t=T\\).<\/p>\n<p>For the variance, we accept that \\(\\E[Z^4]=3\\) for a standard normal distribution. Then \\(\\Var(Z^2)=\\E[Z^4]-\\big(\\E[Z^2]\\big)^2=3-1=2\\), and each square has variance \\((\\Delta t)^2\\times 2\\). The \\(N\\) terms being independent, the variances add up:<\/p>\n\\[\\Var(Q_N)=N\\times 2\\,(\\Delta t)^2=2N\\left(\\frac{T}{N}\\right)^{2}=\\frac{2\\,T^2}{N}.\\]\n<\/div>\n<p><strong>Why this is remarkable.<\/strong> For a smooth function, the same sum tends to 0. With \\(f(t)=t\\), each increment equals \\(\\Delta t\\) and the sum of squares equals \\(N\\,(\\Delta t)^2=\\frac{T^2}{N}\\). For Brownian motion, the increments are of the order of \\(\\sqrt{\\Delta t}\\), much larger than \\(\\Delta t\\), and their squares are no longer negligible: they add up to give \\(T\\). This fact is summed up by the rule \"\\((\\dd W)^2=\\dd t\\)\", which is at the origin of Itô's lemma (page 7).<\/p>\n<div class=\"ifig\" data-fig=\"qv\"><\/div>\n<div class=\"fig-cap\">Figure 3 — Cumulative sum of the squared increments of a Brownian path (in blue), compared with the line \\(t\\) (dashed) and with the same sum for the smooth function \\(f(t)=t\\) (in gold). Increase the number of steps: the blue curve sticks to the line.<\/div>\n<p>In the example of section 4, the sum of the squares of the four increments is \\(0.0625+0.36+0.0225+0.25=0.695\\), for an expected value \\(T=1\\). With only four steps, the standard deviation of this sum is \\(\\sqrt{\\frac{2}{4}}\\approx 0.71\\): such a gap is not surprising at all.<\/p>\n\n<div class=\"dossier-title\" id=\"s6\">6. In Python<\/div>\n<p>We simulate 20 000 paths in one go: each row of the array <code>dW<\/code> contains the increments of one path, and <code>np.cumsum<\/code> adds them up step by step. We recover the theoretical values of this page.<\/p>\n<div class=\"code-wrap\"><div class=\"code-head\"><span>Python<\/span><button type=\"button\" onclick=\"copyCode(this)\">Copier<\/button><\/div><div class=\"code-block has-out\"><div class=\"cl\"><code>import numpy as np<\/code><\/div><div class=\"cl\"><code>&nbsp;<\/code><\/div><div class=\"cl\"><code>rng = np.random.default_rng(0)<\/code><\/div><div class=\"cl\"><code>T, N, M = 1.0, 250, 20_000              # horizon, number of steps, number of paths<\/code><\/div><div class=\"cl\"><code>dt = T / N<\/code><\/div><div class=\"cl\"><code>&nbsp;<\/code><\/div><div class=\"cl\"><code># independent increments with distribution N(0, dt), then cumulative sum along each path<\/code><\/div><div class=\"cl\"><code>dW = np.sqrt(dt) * rng.standard_normal((M, N))<\/code><\/div><div class=\"cl\"><code>W = np.cumsum(dW, axis=1)               # W[i, j]: path i at date (j + 1) dt<\/code><\/div><div class=\"cl\"><code>&nbsp;<\/code><\/div><div class=\"cl\"><code>middle, end = W[:, N // 2 - 1], W[:, -1]            # values at dates 0.5 and 1<\/code><\/div><div class=\"cl\"><code>print(\"mean of W(1)          :\", round(end.mean(), 3))<\/code><\/div><div class=\"cl\"><code>print(\"variance of W(1)      :\", round(end.var(), 3))<\/code><\/div><div class=\"cl\"><code>print(\"variance of W(0.5)    :\", round(middle.var(), 3))<\/code><\/div><div class=\"cl\"><code>print(\"Cov(W(0.5), W(1))     :\", round(np.cov(middle, end)[0, 1], 3))<\/code><\/div><div class=\"cl\"><code>print(\"simulated P(W(1) &gt; 1) :\", round((end &gt; 1).mean(), 4), \"| theoretical: 0.1587\")<\/code><\/div><div class=\"cl\"><code>print(\"quadratic variation   :\", round((dW**2).sum(axis=1).mean(), 4), \"on average\")<\/code><\/div><\/div><div class=\"code-out\"><span class=\"code-out-lbl\">Printed output<\/span><div class=\"cl\"><code>mean of W(1)          : 0.0<\/code><\/div><div class=\"cl\"><code>variance of W(1)      : 0.993<\/code><\/div><div class=\"cl\"><code>variance of W(0.5)    : 0.492<\/code><\/div><div class=\"cl\"><code>Cov(W(0.5), W(1))     : 0.491<\/code><\/div><div class=\"cl\"><code>simulated P(W(1) &gt; 1) : 0.1578 | theoretical: 0.1587<\/code><\/div><div class=\"cl\"><code>quadratic variation   : 0.9998 on average<\/code><\/div><\/div><\/div>\n\n<div class=\"dossier-title\" id=\"s7\">7. Key points<\/div>\n<ul class=\"kit-simple\">\n<li>A stochastic process is a random variable at each date, and a sample path for each realisation of chance.<\/li>\n<li>Brownian motion: \\(W_0=0\\), independent increments, \\(W_t-W_s\\sim N(0,\\,t-s)\\), continuous paths.<\/li>\n<li>\\(\\E[W_t]=0\\), \\(\\Var(W_t)=t\\), \\(\\PP(W_t\\le x)=\\Phi\\!\\left(\\frac{x}{\\sqrt{t}}\\right)\\); for \\(s\\le t\\), \\(\\Cov(W_s,W_t)=s\\).<\/li>\n<li>With drift: \\(X_t=x_0+\\mu\\,t+\\sigma\\,W_t\\sim N(x_0+\\mu\\,t,\\ \\sigma^2t)\\).<\/li>\n<li>Simulation: \\(W_{t_j}=W_{t_{j-1}}+\\sqrt{\\Delta t}\\,Z_j\\) with \\(Z_j\\sim N(0,1)\\).<\/li>\n<li>The paths have no derivative, and the sum of the squared increments over \\([0,T]\\) equals \\(T\\): \"\\((\\dd W)^2=\\dd t\\)\".<\/li>\n<\/ul>\n";
+
+/* ---------- libellés des figures ---------- */
+I18N.fr.f = {
+  npaths: 'Trajectoires', date: 'Date <i>t</i>', redraw: 'Nouveau tirage', time: 'temps t', band1: '± √t', band2: '± 2√t', pathsAria: 'Trajectoires d\'un mouvement brownien et valeurs à la date t',
+  pathsRead: (t, sd, n, m, se) => `À la date <i>t</i> = ${t} : loi théorique N(0, ${t}), écart type √<i>t</i> ≈ <span class="v">${sd}</span><br>Sur les ${n} trajectoires tracées : moyenne ≈ <span class="v">${m}</span>, écart type ≈ <span class="v">${se}</span>`,
+  nsteps: 'Nombre de pas', walkAria: 'Marches aléatoires à n pas',
+  walkRead: (n, st, ends) => `Chaque pas vaut ± 1/√${n} = ± <span class="v">${st}</span> &nbsp;·&nbsp; positions finales des trois marches : <span class="v">${ends}</span><br>Position finale : espérance 0, variance ${n} × 1/${n} = 1 ; sa loi se rapproche de N(0, 1) quand <i>n</i> grandit.`,
+  qvB: 'somme des carrés, mouvement brownien', qvT: 'droite t', qvS: 'somme des carrés, fonction f(t) = t', qvAria: 'Somme cumulée des carrés des accroissements',
+  qvRead: (n, q, sd, sm) => `<i>N</i> = ${n} pas : somme des carrés des accroissements ≈ <span class="v">${q}</span> &nbsp;·&nbsp; espérance 1, écart type √(2/<i>N</i>) ≈ <span class="v">${sd}</span><br>Pour la fonction lisse <i>f</i>(<i>t</i>) = <i>t</i>, la même somme vaut 1/<i>N</i> = <span class="v">${sm}</span>`
+};
+I18N.en.f = {
+  npaths: 'Paths', date: 'Date <i>t</i>', redraw: 'New draw', time: 'time t', band1: '± √t', band2: '± 2√t', pathsAria: 'Sample paths of a Brownian motion and values at date t',
+  pathsRead: (t, sd, n, m, se) => `At date <i>t</i> = ${t}: theoretical distribution N(0, ${t}), standard deviation √<i>t</i> ≈ <span class="v">${sd}</span><br>Over the ${n} paths drawn: mean ≈ <span class="v">${m}</span>, standard deviation ≈ <span class="v">${se}</span>`,
+  nsteps: 'Number of steps', walkAria: 'Random walks with n steps',
+  walkRead: (n, st, ends) => `Each step is ± 1/√${n} = ± <span class="v">${st}</span> &nbsp;·&nbsp; final positions of the three walks: <span class="v">${ends}</span><br>Final position: expected value 0, variance ${n} × 1/${n} = 1; its distribution gets closer to N(0, 1) as <i>n</i> grows.`,
+  qvB: 'sum of squares, Brownian motion', qvT: 'line t', qvS: 'sum of squares, function f(t) = t', qvAria: 'Cumulative sum of the squared increments',
+  qvRead: (n, q, sd, sm) => `<i>N</i> = ${n} steps: sum of the squared increments ≈ <span class="v">${q}</span> &nbsp;·&nbsp; expected value 1, standard deviation √(2/<i>N</i>) ≈ <span class="v">${sd}</span><br>For the smooth function <i>f</i>(<i>t</i>) = <i>t</i>, the same sum equals 1/<i>N</i> = <span class="v">${sm}</span>`
+};
+const GREY = '#8a857a';
+
+/* ---------- figure 1 : trajectoires et coupe à la date t ---------- */
+FIGS.paths = {
+  state: { n: 10, t: 0.5, seed: 1 },
+  clamp: s => { s.n = Math.round(s.n); s.t = Math.round(s.t * 20) / 20; },
+  controls: L => [
+    { key: 'n', label: L.f.npaths, min: 2, max: 40, step: 1, fmt: v => String(v) },
+    { key: 't', label: L.f.date, min: 0.05, max: 1, step: 0.05, fmt: v => fmt(v, 2) },
+    { key: 'seed', type: 'button', label: L.f.redraw, act: s => { s.seed++; } }
+  ],
+  draw: function (s, lang) {
+    const L = I18N[lang].f, NS = 120, rand = localRand(1000 + 7919 * s.seed), sq = Math.sqrt(1 / NS), n = s.n, t = s.t, jt = Math.round(t * NS);
+    const P = Plot({ w: 680, h: 340, x0: 0, x1: 1, y0: -3, y1: 3, mt: 16, mb: 42 });
+    P.axes({ xt: [0, 0.25, 0.5, 0.75, 1], yt: [-3, -2, -1, 0, 1, 2, 3], xl: L.time, xf: v => fmtT(v, 2), yf: v => fmtT(v, 0), xAxisAt: 0 });
+    P.clip();
+    [1, -1].forEach(sg => {
+      P.curve(x => sg * Math.sqrt(x), 0, 1, { c: GREY, w: 1.2, dash: '6 4' }, 120);
+      P.curve(x => sg * 2 * Math.sqrt(x), 0, 1, { c: GREY, w: 1, dash: '2 4' }, 120);
+    });
+    P.text(1, 1, L.band1, { anchor: 'end', dx: -4, dy: -5, size: 11, c: COL.mute });
+    P.text(1, 2, L.band2, { anchor: 'end', dx: -4, dy: -5, size: 11, c: COL.mute });
+    const all = [], vals = [];
+    for (let i = 0; i < n; i++) { let w = 0; const pts = [[0, 0]]; for (let j = 1; j <= NS; j++) { w += sq * gauss(rand); pts.push([j / NS, w]); } all.push(pts); vals.push(pts[jt][1]); }
+    for (let i = n - 1; i >= 0; i--) P.line(all[i], { c: i === 0 ? COL.s1 : (i === 1 ? COL.s2 : '#c4bfb3'), w: i < 2 ? 1.8 : 0.9, clip: true });
+    P.seg(t, -3, t, 3, { c: COL.navy, w: 1.2, dash: '5 4' });
+    vals.forEach((v, i) => { if (Math.abs(v) <= 3) P.dot(t, v, { c: i === 0 ? COL.s1 : (i === 1 ? COL.s2 : COL.navy), r: 3 }); });
+    const m = vals.reduce((a, b) => a + b, 0) / n, se = Math.sqrt(vals.reduce((a, b) => a + (b - m) * (b - m), 0) / (n - 1));
+    return { svg: P.svg(L.pathsAria), read: L.pathsRead(fmt(t, 2), fmt(Math.sqrt(t), 3), n, fmt(m, 2), fmt(se, 2)) };
+  }
+};
+
+/* ---------- figure 2 : de la marche aléatoire au mouvement brownien ---------- */
+FIGS.walk = {
+  state: { n: 16, seed: 1 },
+  controls: L => [
+    { key: 'n', type: 'select', numeric: true, label: L.f.nsteps, options: [4, 16, 64, 256, 1024].map(v => ({ v: v, t: 'n = ' + v })) },
+    { key: 'seed', type: 'button', label: L.f.redraw, act: s => { s.seed++; } }
+  ],
+  draw: function (s, lang) {
+    const L = I18N[lang].f, n = s.n, rand = localRand(500 + 4099 * s.seed + n), st = 1 / Math.sqrt(n), cols = [COL.s1, COL.s2, COL.s4], ends = [];
+    const P = Plot({ w: 680, h: 320, x0: 0, x1: 1, y0: -3, y1: 3, mt: 16, mb: 42 });
+    P.axes({ xt: [0, 0.25, 0.5, 0.75, 1], yt: [-3, -2, -1, 0, 1, 2, 3], xl: L.time, xf: v => fmtT(v, 2), yf: v => fmtT(v, 0), xAxisAt: 0 });
+    P.clip();
+    for (let k = 0; k < 3; k++) {
+      let w = 0; const pts = [[0, 0]];
+      for (let j = 1; j <= n; j++) { w += rand() < 0.5 ? st : -st; pts.push([j / n, w]); }
+      P.line(pts, { c: cols[k], w: n > 64 ? 1.4 : 1.9, clip: true });
+      if (n <= 16) pts.forEach(p => P.dot(p[0], p[1], { c: cols[k], r: 3 }));
+      ends.push(fmtT(Math.round(w * 1e5) / 1e5, 5));
+    }
+    return { svg: P.svg(L.walkAria), read: L.walkRead(n, fmtT(st, 5), ends.join(' ; ')) };
+  }
+};
+
+/* ---------- figure 3 : variation quadratique ---------- */
+FIGS.qv = {
+  state: { n: 100, seed: 1 },
+  controls: L => [
+    { key: 'n', type: 'select', numeric: true, label: L.f.nsteps, options: [10, 100, 1000, 10000].map(v => ({ v: v, t: 'N = ' + fmtT(v, 0) })) },
+    { key: 'seed', type: 'button', label: L.f.redraw, act: s => { s.seed++; } }
+  ],
+  draw: function (s, lang) {
+    const L = I18N[lang].f, n = s.n, rand = localRand(56 + 104729 * s.seed + n), dt = 1 / n, keep = Math.ceil(n / 400);
+    const P = Plot({ w: 680, h: 320, x0: 0, x1: 1, y0: 0, y1: 1.6, mt: 44, mb: 42 });
+    P.axes({ xt: [0, 0.25, 0.5, 0.75, 1], yt: [0, 0.4, 0.8, 1.2, 1.6], xl: L.time, xf: v => fmtT(v, 2), yf: v => fmtT(v, 1) });
+    let q = 0; const pts = [[0, 0]];
+    for (let j = 1; j <= n; j++) { const z = gauss(rand); q += dt * z * z; if (j % keep === 0 || j === n) pts.push([j / n, q]); }
+    P.clip();
+    P.line([[0, 0], [1, 1]], { c: COL.navy, w: 1.4, dash: '6 4' });
+    P.line([[0, 0], [1, dt]], { c: COL.s2, w: 2 });
+    P.line(pts, { c: COL.s1, w: 2, clip: true });
+    P.legend([{ c: COL.s1, t: L.qvB }, { c: COL.navy, dash: '6 4', t: L.qvT }], P.ml + 8, 16);
+    P.legend([{ c: COL.s2, t: L.qvS }], P.ml + 8, 32);
+    return { svg: P.svg(L.qvAria), read: L.qvRead(fmtT(n, 0), fmt(q, 4), fmt(Math.sqrt(2 / n), 4), fmtT(dt, 4)) };
+  }
+};
+
+/* ============================================================
+   EXERCICE : tirage et calculs (indépendants de la langue)
+   ============================================================ */
+const PHI_Z = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
+function phi4(z) { return Math.round(normCdf(z) * 1e4); }          // Φ(z) en dix-millièmes, pour des sommes exactes
+const r6 = v => Math.round(v * 1e6) / 1e6;
+PAGE.compute = function (seed) {
+  initRand(seed);
+  const D = { seed: seed };
+  D.F = {}; PHI_Z.forEach(z => { D.F[z] = phi4(z); });
+
+  /* 1. Loi de W_t : la date a une racine carrée simple, les seuils tombent sur la table */
+  D.t1 = pick([0.25, 2.25, 4, 6.25, 9, 16]);
+  D.sq1 = Math.sqrt(D.t1);
+  D.z1 = pick([0.5, 1, 1.5, 2]);
+  do { D.z1b = pick([0.5, 0.75, 1, 1.25, 1.5, 2]); } while (D.z1b === D.z1);
+  D.x1 = r6(D.z1 * D.sq1); D.x1b = r6(D.z1b * D.sq1);
+  D.p1 = 1e4 - D.F[D.z1];
+  D.p1b = 2 * D.F[D.z1b] - 1e4;
+
+  /* 2. Accroissements, covariance, prévision */
+  D.s2 = pick([1, 2, 3, 4, 5]);
+  D.d2 = pick([0.25, 1, 2.25, 4]);
+  D.t2 = D.s2 + D.d2; D.sqd = Math.sqrt(D.d2);
+  D.z2 = pick([0.5, 1, 1.5, 2]);
+  D.y2 = r6(D.z2 * D.sqd);
+  D.p2 = 1e4 - D.F[D.z2];
+  D.vsum = 3 * D.s2 + D.t2;
+  D.z3 = pick([0.5, 1, 1.5]);
+  D.wneg = rnd() < 0.5;
+  D.w2 = r6((D.wneg ? -1 : 1) * D.z3 * D.sqd);
+  D.p3 = D.wneg ? 1e4 - D.F[D.z3] : D.F[D.z3];
+
+  /* 3. Simulation de quatre pas et somme des carrés des accroissements */
+  for (;;) {
+    D.dt = pick([0.01, 0.04, 0.16, 0.25]);
+    D.sq = Math.round(Math.sqrt(D.dt) * 10) / 10;
+    D.Z = [];
+    for (let j = 0; j < 4; j++) { let k; do { k = rint(-19, 19); } while (k === 0); D.Z.push(k / 10); }
+    D.dW = D.Z.map(z => r6(D.sq * z));
+    D.W = []; let w = 0; D.dW.forEach(x => { w = r6(w + x); D.W.push(w); });
+    D.sqs = D.dW.map(x => r6(x * x));
+    D.Q = r6(D.sqs.reduce((a, b) => a + b, 0));
+    D.T3 = r6(4 * D.dt);
+    D.ratio = r6(D.Q / D.T3);                                     // Q / T = moyenne des Z²
+    const pos = D.Z.filter(z => z > 0).length, dv = Math.abs(D.ratio - 1);
+    /* écart relatif ni nul, ni au-delà de deux écarts types (√2), ni trop près d'un écart type (√0.5) */
+    if (pos >= 1 && pos <= 3 && dv <= 1.4 && dv >= 0.05 && Math.abs(dv - Math.SQRT1_2) >= 0.01 && new Set(D.Z.map(Math.abs)).size === 4) break;
+  }
+  D.within1 = Math.abs(D.ratio - 1) <= Math.SQRT1_2;
+
+  /* 4. Mouvement brownien avec tendance : un écart de taux en points de base */
+  D.x0 = pick([80, 100, 120, 150, 200]);
+  D.mu4 = pick([-10, -5, 5, 10, 20]);
+  D.sg4 = pick([20, 30, 40, 50]);
+  D.T4 = pick([0.25, 1, 4]);
+  D.sqT = Math.sqrt(D.T4);
+  D.m4 = r6(D.x0 + D.mu4 * D.T4);
+  D.sd4 = r6(D.sg4 * D.sqT);
+  D.var4 = r6(D.sg4 * D.sg4 * D.T4);
+  D.z4 = pick([0.5, 1, 1.5, 2]);
+  D.L4 = r6(D.m4 + D.z4 * D.sd4);
+  D.p4 = 1e4 - D.F[D.z4];
+  D.q4 = r6(D.m4 + 1.645 * D.sd4);
+  return D;
+};
+
+/* ---------- outils de rédaction ---------- */
+const nx = (v, d) => texT(v, d === undefined ? 4 : d);      // nombre dans une formule, zéros finaux retirés
+const nt = (v, d) => fmtT(v, d === undefined ? 4 : d);      // nombre dans le texte ou dans un tableau
+const P4 = v => texT(v / 1e4, 4);                           // dix-millièmes -> écriture décimale
+const par = v => (v < 0 ? '(' + nx(v) + ')' : nx(v));       // nombre négatif entre parenthèses
+function phiTable(D) {
+  let h = String.raw`<div class="dtable-wrap"><table class="dtable"><tr><th>\(z\)</th>${PHI_Z.map(z => `<th>${fmtT(z, 2)}</th>`).join('')}</tr>`;
+  h += String.raw`<tr><td class="l">\(\Phi(z)\)</td>${PHI_Z.map(z => `<td class="num">${fmtT(D.F[z] / 1e4, 4)}</td>`).join('')}</tr></table></div>`;
+  return h;
+}
+function simTable(D, head) {
+  let h = `<div class="dtable-wrap"><table class="dtable dtable-narrow"><tr>${head.map(x => `<th>${x}</th>`).join('')}</tr>`;
+  h += '<tr><td class="num">0</td><td class="num">0</td><td>—</td><td>—</td><td class="num">0</td></tr>';
+  for (let j = 0; j < 4; j++) h += `<tr><td class="num">${j + 1}</td><td class="num">${nt((j + 1) * D.dt)}</td><td class="num">${fmt(D.Z[j], 1)}</td><td class="num">${nt(D.dW[j])}</td><td class="num">${nt(D.W[j])}</td></tr>`;
+  return h + '</table></div>';
+}
+const zList = D => D.Z.map(z => String.raw`\(${tex(z, 1)}\)`);
+
+/* ============================================================
+   EXERCICE : textes français
+   ============================================================ */
+I18N.fr.ex = function (D) {
+  const hor = D.T4 === 0.25 ? 'dans trois mois' : (D.T4 === 1 ? 'dans un an' : 'dans quatre ans'), z = zList(D);
+  return String.raw`<div class="context-block">Dans tout l'exercice, \((W_t)\) est un mouvement brownien et \(\Phi\) la fonction de répartition de la loi normale centrée réduite. On donne \(\Phi(1.645)=0.95\) et les valeurs suivantes :
+${phiTable(D)}
+Les questions 1, 2 et 4 sont indépendantes ; les sous-questions de la question 3 s'enchaînent.</div>
+<div class="questions"><ol>
+<li><div class="q-text"><strong>Valeur à une date.</strong> On s'intéresse à la valeur du mouvement brownien à la date \(t=${nx(D.t1)}\).
+  <ol><li>Donnez la loi de \(W_{${nx(D.t1)}}\), son espérance, sa variance et son écart type.</li>
+  <li>Calculez \(\PP(W_{${nx(D.t1)}}>${nx(D.x1)})\).</li>
+  <li>Calculez \(\PP(-${nx(D.x1b)}\le W_{${nx(D.t1)}}\le ${nx(D.x1b)})\).</li></ol></div></li>
+<li><div class="q-text"><strong>Accroissements.</strong> On considère les dates \(s=${D.s2}\) et \(t=${nx(D.t2)}\).
+  <ol><li>Donnez la loi de l'accroissement \(W_{${nx(D.t2)}}-W_{${D.s2}}\), puis calculez la probabilité qu'il dépasse \(${nx(D.y2)}\).</li>
+  <li>Calculez \(\Cov(W_{${D.s2}},W_{${nx(D.t2)}})\), puis la variance de \(W_{${D.s2}}+W_{${nx(D.t2)}}\). On pourra écrire \(W_t=W_s+(W_t-W_s)\).</li>
+  <li>À la date ${D.s2}, on observe \(W_{${D.s2}}=${nx(D.w2)}\). Donnez la loi de \(W_{${nx(D.t2)}}\) compte tenu de cette information, sa meilleure prévision, et la probabilité qu'il soit positif.</li></ol></div></li>
+<li><div class="q-text"><strong>Simulation.</strong> On simule un mouvement brownien avec le pas \(\Delta t=${nx(D.dt)}\). Un générateur de nombres de loi \(N(0,1)\) fournit successivement les tirages ${z[0]}, ${z[1]}, ${z[2]} et ${z[3]}.
+  <ol><li>Calculez les quatre accroissements et les valeurs du mouvement brownien aux quatre premières dates. Présentez les calculs dans un tableau.</li>
+  <li>Calculez la somme \(Q\) des carrés des quatre accroissements et comparez-la à son espérance.</li>
+  <li>Avec \(N\) pas sur \([0,T]\), cette somme a pour espérance \(T\) et pour écart type \(T\sqrt{\frac{2}{N}}\). Calculez \(\sqrt{\frac{2}{N}}\) pour \(N=4\), \(N=100\) et \(N=10\,000\). Qu'en concluez-vous ?</li></ol></div></li>
+<li><div class="q-text"><strong>Mouvement brownien avec tendance.</strong> L'écart de taux d'une obligation d'entreprise, exprimé en points de base, est modélisé par \(X_t=${D.x0}${D.mu4 < 0 ? '-' : '+'}${Math.abs(D.mu4)}\,t+${D.sg4}\,W_t\), où \(t\) est en années. On étudie sa valeur ${hor}, c'est-à-dire en \(T=${nx(D.T4)}\).
+  <ol><li>Donnez la loi de \(X_T\), son espérance, sa variance et son écart type.</li>
+  <li>Calculez la probabilité que l'écart de taux dépasse ${nt(D.L4)} points de base à cette date.</li>
+  <li>Déterminez le niveau qui n'est dépassé qu'avec une probabilité de 5 %. Que devient l'écart type si l'horizon est multiplié par 4 ?</li></ol></div></li>
+</ol></div>`;
+};
+I18N.fr.sol = function (D) {
+  const t1 = nx(D.t1), t2 = nx(D.t2), s2 = D.s2, zz = r6(-D.w2 / D.sqd);
+  const q2c = D.wneg
+    ? String.raw`\[\PP(W_{${t2}}>0)=1-\Phi\!\left(\frac{0-${par(D.w2)}}{${nx(D.sqd)}}\right)=1-\Phi(${nx(zz)}).\]
+  <p>Cette probabilité vaut \(1-${P4(D.F[D.z3])}=${P4(D.p3)}\). Parti d'une valeur négative, le mouvement brownien a moins d'une chance sur deux d'être positif à la date ${nt(D.t2)}.`
+    : String.raw`\[\PP(W_{${t2}}>0)=1-\Phi\!\left(\frac{0-${par(D.w2)}}{${nx(D.sqd)}}\right)=1-\Phi(${nx(zz)}).\]
+  <p>Par symétrie, \(1-\Phi(${nx(zz)})=\Phi(${nx(D.z3)})=${P4(D.p3)}\). Parti d'une valeur positive, le mouvement brownien a plus d'une chance sur deux d'être encore positif à la date ${nt(D.t2)}.`;
+  const dev = nt(Math.abs(D.ratio - 1));
+  return String.raw`<div class="st"><ol>
+<li><div class="q-content">
+  <p><strong>a.</strong> \(W_{${t1}}\) suit la loi normale \(N(0,\,${t1})\) : son espérance est 0, sa variance ${nt(D.t1)} et son écart type \(\sqrt{${t1}}=${nx(D.sq1)}\).</p>
+  <p><strong>b.</strong> On divise le seuil par l'écart type : \(\frac{${nx(D.x1)}}{${nx(D.sq1)}}=${nx(D.z1)}\). Donc \(\PP(W_{${t1}}>${nx(D.x1)})=1-\Phi(${nx(D.z1)})\), soit \(1-${P4(D.F[D.z1])}=${P4(D.p1)}\).</p>
+  <p><strong>c.</strong> Les seuils réduits sont \(-${nx(D.z1b)}\) et \(${nx(D.z1b)}\), puisque \(\frac{${nx(D.x1b)}}{${nx(D.sq1)}}=${nx(D.z1b)}\). La probabilité cherchée est \(\Phi(${nx(D.z1b)})-\Phi(-${nx(D.z1b)})\). Par symétrie, \(\Phi(-${nx(D.z1b)})=1-\Phi(${nx(D.z1b)})\), d'où</p>
+  \[\PP(-${nx(D.x1b)}\le W_{${t1}}\le ${nx(D.x1b)})=2\,\Phi(${nx(D.z1b)})-1=2\times ${P4(D.F[D.z1b])}-1=${P4(D.p1b)}.\]
+</div></li>
+<li><div class="q-content">
+  <p><strong>a.</strong> La durée écoulée est \(${t2}-${s2}=${nx(D.d2)}\) : l'accroissement suit la loi \(N(0,\,${nx(D.d2)})\), d'écart type \(\sqrt{${nx(D.d2)}}=${nx(D.sqd)}\). Le seuil réduit est \(\frac{${nx(D.y2)}}{${nx(D.sqd)}}=${nx(D.z2)}\), donc la probabilité cherchée est \(1-\Phi(${nx(D.z2)})=1-${P4(D.F[D.z2])}=${P4(D.p2)}\).</p>
+  <p><strong>b.</strong> La covariance est la plus petite des deux dates : \(\Cov(W_{${s2}},W_{${t2}})=${s2}\). Pour la somme, on fait apparaître deux morceaux indépendants : \(W_{${s2}}+W_{${t2}}=2\,W_{${s2}}+(W_{${t2}}-W_{${s2}})\). Les variances s'ajoutent, et la constante 2 sort au carré :</p>
+  \[\Var(W_{${s2}}+W_{${t2}})=4\times ${s2}+${nx(D.d2)}=${nx(D.vsum)}.\]
+  <p>On retrouve ce résultat avec la covariance :</p>
+  \[\Var(W_{${s2}})+\Var(W_{${t2}})+2\,\Cov(W_{${s2}},W_{${t2}})=${s2}+${t2}+2\times ${s2}=${nx(D.vsum)}.\]
+  <p><strong>c.</strong> On écrit \(W_{${t2}}=${nx(D.w2)}+(W_{${t2}}-W_{${s2}})\), où l'accroissement est indépendant du passé et suit la loi \(N(0,\,${nx(D.d2)})\). Sachant \(W_{${s2}}=${nx(D.w2)}\), \(W_{${t2}}\) suit donc la loi \(N(${nx(D.w2)},\,${nx(D.d2)})\) : sa meilleure prévision est la valeur présente, \(${nx(D.w2)}\). Pour la probabilité, on centre et on réduit :</p>
+  ${q2c}</p>
+</div></li>
+<li><div class="q-content">
+  <p><strong>a.</strong> Chaque accroissement vaut \(\sqrt{\Delta t}\,Z_j\) avec \(\sqrt{${nx(D.dt)}}=${nx(D.sq)}\), et l'on cumule les accroissements en partant de 0.</p>
+  ${simTable(D, [String.raw`\(j\)`, String.raw`\(t_j\)`, String.raw`tirage \(Z_j\)`, String.raw`accroissement \(${nx(D.sq)}\,Z_j\)`, String.raw`\(W_{t_j}\)`])}
+  <p><strong>b.</strong> On élève chaque accroissement au carré et l'on additionne :</p>
+  \[Q=${D.sqs.map(v => nx(v)).join('+')}=${nx(D.Q)}.\]
+  <p>L'espérance de chaque carré est \(\Delta t\), donc celle de \(Q\) est \(4\times ${nx(D.dt)}=${nx(D.T3)}\), qui est aussi la date finale \(T\). La somme observée vaut \(\frac{${nx(D.Q)}}{${nx(D.T3)}}=${nx(D.ratio)}\) fois son espérance.</p>
+  <p><strong>c.</strong> \(\sqrt{\frac{2}{4}}\approx 0.7071\), \(\sqrt{\frac{2}{100}}\approx 0.1414\) et \(\sqrt{\frac{2}{10\,000}}\approx 0.0141\). Avec 4 pas, l'écart type de \(Q\) représente 71 % de son espérance : l'écart relatif observé à la question précédente, ${dev}, est inférieur à ${D.within1 ? 'un écart type' : 'deux écarts types'} et n'a rien d'anormal. Avec 10 000 pas, l'écart type n'est plus que de 1.4 % de l'espérance : la somme des carrés des accroissements est pratiquement égale à \(T\), quelle que soit la trajectoire. C'est le sens de la règle « \((\dd W)^2=\dd t\) ».</p>
+</div></li>
+<li><div class="q-content">
+  <p><strong>a.</strong> \(X_T\) est une fonction affine de \(W_T\), qui suit la loi \(N(0,\,${nx(D.T4)})\) : \(X_T\) suit donc une loi normale. Son espérance est \(${D.x0}${D.mu4 < 0 ? '-' : '+'}${Math.abs(D.mu4)}\times ${nx(D.T4)}=${nx(D.m4)}\), sa variance \(${D.sg4}^2\times ${nx(D.T4)}=${nx(D.var4)}\) et son écart type \(${D.sg4}\times\sqrt{${nx(D.T4)}}=${nx(D.sd4)}\) points de base.</p>
+  <p><strong>b.</strong> Le seuil réduit est \(\frac{${nx(D.L4)}-${par(D.m4)}}{${nx(D.sd4)}}=${nx(D.z4)}\), donc \(\PP(X_T>${nx(D.L4)})=1-\Phi(${nx(D.z4)})\), soit \(1-${P4(D.F[D.z4])}=${P4(D.p4)}\).</p>
+  <p><strong>c.</strong> Comme \(\Phi(1.645)=0.95\), le niveau cherché est à 1.645 écart type au-dessus de l'espérance : \(${nx(D.m4)}+1.645\times ${nx(D.sd4)}=${nx(D.q4)}\) points de base. Si l'horizon est multiplié par 4, la variance est multipliée par 4 et l'écart type par \(\sqrt{4}=2\) : il passe de ${nt(D.sd4)} à ${nt(2 * D.sd4)} points de base. L'incertitude croît comme la racine carrée du temps.</p>
+</div></li>
+</ol></div>`;
+};
+
+/* ============================================================
+   EXERCISE: English texts
+   ============================================================ */
+I18N.en.ex = function (D) {
+  const hor = D.T4 === 0.25 ? 'in three months' : (D.T4 === 1 ? 'in one year' : 'in four years'), z = zList(D);
+  return String.raw`<div class="context-block">Throughout the exercise, \((W_t)\) is a Brownian motion and \(\Phi\) the cumulative distribution function of the standard normal distribution. You are given \(\Phi(1.645)=0.95\) and the following values:
+${phiTable(D)}
+Questions 1, 2 and 4 are independent; the sub-questions of question 3 follow on from one another.</div>
+<div class="questions"><ol>
+<li><div class="q-text"><strong>Value at a date.</strong> We are interested in the value of the Brownian motion at date \(t=${nx(D.t1)}\).
+  <ol><li>Give the distribution of \(W_{${nx(D.t1)}}\), its expected value, its variance and its standard deviation.</li>
+  <li>Compute \(\PP(W_{${nx(D.t1)}}>${nx(D.x1)})\).</li>
+  <li>Compute \(\PP(-${nx(D.x1b)}\le W_{${nx(D.t1)}}\le ${nx(D.x1b)})\).</li></ol></div></li>
+<li><div class="q-text"><strong>Increments.</strong> Consider the dates \(s=${D.s2}\) and \(t=${nx(D.t2)}\).
+  <ol><li>Give the distribution of the increment \(W_{${nx(D.t2)}}-W_{${D.s2}}\), then compute the probability that it exceeds \(${nx(D.y2)}\).</li>
+  <li>Compute \(\Cov(W_{${D.s2}},W_{${nx(D.t2)}})\), then the variance of \(W_{${D.s2}}+W_{${nx(D.t2)}}\). You may write \(W_t=W_s+(W_t-W_s)\).</li>
+  <li>At date ${D.s2}, we observe \(W_{${D.s2}}=${nx(D.w2)}\). Give the distribution of \(W_{${nx(D.t2)}}\) given this information, its best forecast, and the probability that it is positive.</li></ol></div></li>
+<li><div class="q-text"><strong>Simulation.</strong> We simulate a Brownian motion with the step \(\Delta t=${nx(D.dt)}\). A generator of numbers with distribution \(N(0,1)\) successively provides the draws ${z[0]}, ${z[1]}, ${z[2]} and ${z[3]}.
+  <ol><li>Compute the four increments and the values of the Brownian motion at the first four dates. Set out the calculations in a table.</li>
+  <li>Compute the sum \(Q\) of the squares of the four increments and compare it with its expected value.</li>
+  <li>With \(N\) steps on \([0,T]\), this sum has expected value \(T\) and standard deviation \(T\sqrt{\frac{2}{N}}\). Compute \(\sqrt{\frac{2}{N}}\) for \(N=4\), \(N=100\) and \(N=10\,000\). What do you conclude?</li></ol></div></li>
+<li><div class="q-text"><strong>Brownian motion with drift.</strong> The credit spread of a corporate bond, expressed in basis points, is modelled by \(X_t=${D.x0}${D.mu4 < 0 ? '-' : '+'}${Math.abs(D.mu4)}\,t+${D.sg4}\,W_t\), where \(t\) is in years. We study its value ${hor}, that is at \(T=${nx(D.T4)}\).
+  <ol><li>Give the distribution of \(X_T\), its expected value, its variance and its standard deviation.</li>
+  <li>Compute the probability that the spread exceeds ${nt(D.L4)} basis points at that date.</li>
+  <li>Determine the level that is exceeded only with a probability of 5 %. What happens to the standard deviation if the horizon is multiplied by 4?</li></ol></div></li>
+</ol></div>`;
+};
+I18N.en.sol = function (D) {
+  const t1 = nx(D.t1), t2 = nx(D.t2), s2 = D.s2, zz = r6(-D.w2 / D.sqd);
+  const q2c = D.wneg
+    ? String.raw`\[\PP(W_{${t2}}>0)=1-\Phi\!\left(\frac{0-${par(D.w2)}}{${nx(D.sqd)}}\right)=1-\Phi(${nx(zz)}).\]
+  <p>This probability is \(1-${P4(D.F[D.z3])}=${P4(D.p3)}\). Starting from a negative value, the Brownian motion has less than one chance in two of being positive at date ${nt(D.t2)}.`
+    : String.raw`\[\PP(W_{${t2}}>0)=1-\Phi\!\left(\frac{0-${par(D.w2)}}{${nx(D.sqd)}}\right)=1-\Phi(${nx(zz)}).\]
+  <p>By symmetry, \(1-\Phi(${nx(zz)})=\Phi(${nx(D.z3)})=${P4(D.p3)}\). Starting from a positive value, the Brownian motion has more than one chance in two of still being positive at date ${nt(D.t2)}.`;
+  const dev = nt(Math.abs(D.ratio - 1));
+  return String.raw`<div class="st"><ol>
+<li><div class="q-content">
+  <p><strong>a.</strong> \(W_{${t1}}\) follows the normal distribution \(N(0,\,${t1})\): its expected value is 0, its variance ${nt(D.t1)} and its standard deviation \(\sqrt{${t1}}=${nx(D.sq1)}\).</p>
+  <p><strong>b.</strong> Divide the threshold by the standard deviation: \(\frac{${nx(D.x1)}}{${nx(D.sq1)}}=${nx(D.z1)}\). So \(\PP(W_{${t1}}>${nx(D.x1)})=1-\Phi(${nx(D.z1)})\), that is \(1-${P4(D.F[D.z1])}=${P4(D.p1)}\).</p>
+  <p><strong>c.</strong> The standardised thresholds are \(-${nx(D.z1b)}\) and \(${nx(D.z1b)}\), since \(\frac{${nx(D.x1b)}}{${nx(D.sq1)}}=${nx(D.z1b)}\). The required probability is \(\Phi(${nx(D.z1b)})-\Phi(-${nx(D.z1b)})\). By symmetry, \(\Phi(-${nx(D.z1b)})=1-\Phi(${nx(D.z1b)})\), hence</p>
+  \[\PP(-${nx(D.x1b)}\le W_{${t1}}\le ${nx(D.x1b)})=2\,\Phi(${nx(D.z1b)})-1=2\times ${P4(D.F[D.z1b])}-1=${P4(D.p1b)}.\]
+</div></li>
+<li><div class="q-content">
+  <p><strong>a.</strong> The time elapsed is \(${t2}-${s2}=${nx(D.d2)}\): the increment follows the distribution \(N(0,\,${nx(D.d2)})\), with standard deviation \(\sqrt{${nx(D.d2)}}=${nx(D.sqd)}\). The standardised threshold is \(\frac{${nx(D.y2)}}{${nx(D.sqd)}}=${nx(D.z2)}\), so the required probability is \(1-\Phi(${nx(D.z2)})=1-${P4(D.F[D.z2])}=${P4(D.p2)}\).</p>
+  <p><strong>b.</strong> The covariance is the smaller of the two dates: \(\Cov(W_{${s2}},W_{${t2}})=${s2}\). For the sum, we bring out two independent pieces: \(W_{${s2}}+W_{${t2}}=2\,W_{${s2}}+(W_{${t2}}-W_{${s2}})\). The variances add up, and the constant 2 comes out squared:</p>
+  \[\Var(W_{${s2}}+W_{${t2}})=4\times ${s2}+${nx(D.d2)}=${nx(D.vsum)}.\]
+  <p>We recover this result with the covariance:</p>
+  \[\Var(W_{${s2}})+\Var(W_{${t2}})+2\,\Cov(W_{${s2}},W_{${t2}})=${s2}+${t2}+2\times ${s2}=${nx(D.vsum)}.\]
+  <p><strong>c.</strong> Write \(W_{${t2}}=${nx(D.w2)}+(W_{${t2}}-W_{${s2}})\), where the increment is independent of the past and follows the distribution \(N(0,\,${nx(D.d2)})\). Given \(W_{${s2}}=${nx(D.w2)}\), \(W_{${t2}}\) therefore follows the distribution \(N(${nx(D.w2)},\,${nx(D.d2)})\): its best forecast is the present value, \(${nx(D.w2)}\). For the probability, standardise:</p>
+  ${q2c}</p>
+</div></li>
+<li><div class="q-content">
+  <p><strong>a.</strong> Each increment equals \(\sqrt{\Delta t}\,Z_j\) with \(\sqrt{${nx(D.dt)}}=${nx(D.sq)}\), and the increments are cumulated starting from 0.</p>
+  ${simTable(D, [String.raw`\(j\)`, String.raw`\(t_j\)`, String.raw`draw \(Z_j\)`, String.raw`increment \(${nx(D.sq)}\,Z_j\)`, String.raw`\(W_{t_j}\)`])}
+  <p><strong>b.</strong> Square each increment and add up:</p>
+  \[Q=${D.sqs.map(v => nx(v)).join('+')}=${nx(D.Q)}.\]
+  <p>The expected value of each square is \(\Delta t\), so that of \(Q\) is \(4\times ${nx(D.dt)}=${nx(D.T3)}\), which is also the final date \(T\). The observed sum is \(\frac{${nx(D.Q)}}{${nx(D.T3)}}=${nx(D.ratio)}\) times its expected value.</p>
+  <p><strong>c.</strong> \(\sqrt{\frac{2}{4}}\approx 0.7071\), \(\sqrt{\frac{2}{100}}\approx 0.1414\) and \(\sqrt{\frac{2}{10\,000}}\approx 0.0141\). With 4 steps, the standard deviation of \(Q\) is 71 % of its expected value: the relative gap observed in the previous question, ${dev}, is less than ${D.within1 ? 'one standard deviation' : 'two standard deviations'} and is not abnormal at all. With 10 000 steps, the standard deviation is only 1.4 % of the expected value: the sum of the squared increments is practically equal to \(T\), whatever the path. This is the meaning of the rule "\((\dd W)^2=\dd t\)".</p>
+</div></li>
+<li><div class="q-content">
+  <p><strong>a.</strong> \(X_T\) is a linear function of \(W_T\), which follows the distribution \(N(0,\,${nx(D.T4)})\): \(X_T\) therefore follows a normal distribution. Its expected value is \(${D.x0}${D.mu4 < 0 ? '-' : '+'}${Math.abs(D.mu4)}\times ${nx(D.T4)}=${nx(D.m4)}\), its variance \(${D.sg4}^2\times ${nx(D.T4)}=${nx(D.var4)}\) and its standard deviation \(${D.sg4}\times\sqrt{${nx(D.T4)}}=${nx(D.sd4)}\) basis points.</p>
+  <p><strong>b.</strong> The standardised threshold is \(\frac{${nx(D.L4)}-${par(D.m4)}}{${nx(D.sd4)}}=${nx(D.z4)}\), so \(\PP(X_T>${nx(D.L4)})=1-\Phi(${nx(D.z4)})\), that is \(1-${P4(D.F[D.z4])}=${P4(D.p4)}\).</p>
+  <p><strong>c.</strong> Since \(\Phi(1.645)=0.95\), the required level is 1.645 standard deviations above the expected value: \(${nx(D.m4)}+1.645\times ${nx(D.sd4)}=${nx(D.q4)}\) basis points. If the horizon is multiplied by 4, the variance is multiplied by 4 and the standard deviation by \(\sqrt{4}=2\): it goes from ${nt(D.sd4)} to ${nt(2 * D.sd4)} basis points. Uncertainty grows like the square root of time.</p>
+</div></li>
+</ol></div>`;
+};
+
+initPage();
+</script>
+
+
+<!-- KIT:JS:START v1 -->
+<div id="pdf-ov" onclick="closePdfModal()"></div>
+<div id="pdf-modal">
+  <div class="mh">
+    <h3 data-kit="modalTitle">Exporter en PDF</h3>
+    <button type="button" class="mclose" onclick="closePdfModal()">&#10005;</button>
+  </div>
+  <div class="mb2">
+    <div class="seed-note"><span data-kit="seedPre">Seed&nbsp;:</span> <strong id="modal-seed">&mdash;</strong> <span data-kit="seedPost">&mdash; notez cette valeur pour reproduire exactement cet exercice.</span></div>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-header" checked>
+      <span class="opt-txt"><span class="opt-lbl" data-kit="optHeader">Inclure l'en-t&ecirc;te de page</span>
+           <span class="opt-desc" data-kit="optHeaderD">Titre, badge de mati&egrave;re et intitul&eacute; de l'exercice</span></span>
+    </label>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-sol">
+      <span class="opt-txt"><span class="opt-lbl" data-kit="optSol">Inclure le corrig&eacute; complet</span>
+           <span class="opt-desc" data-kit="optSolD">L'ensemble des d&eacute;veloppements et commentaires du corrig&eacute;</span></span>
+    </label>
+    <div class="mactions">
+      <button type="button" class="btn-print" onclick="doPrint()"><span data-kit="print">&#128424;&nbsp;Imprimer / Sauvegarder PDF</span></button>
+      <button type="button" class="btn-cancel" onclick="closePdfModal()"><span data-kit="cancel">Annuler</span></button>
+    </div>
+  </div>
+</div>
+
+<script id="kit-docx">
+/* =============================================================================
+   EXPORT WORD NATIF (.docx)
+   Trois briques, sans aucune dépendance externe :
+     1. mml2omml  — MathML -> OMML, le format d'équation natif de Word
+     2. zip       — écriture d'une archive ZIP (entrées « stored » + CRC32)
+     3. html2wml  — HTML de la page -> WordprocessingML
+   ============================================================================= */
+(function (root) {
+'use strict';
+
+/* --------------------------------------------------------------- utilitaires */
+function esc(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                  .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function kids(n) {
+  var out = [], c = n.firstChild;
+  while (c) { if (c.nodeType === 1) out.push(c); c = c.nextSibling; }
+  return out;
+}
+function txt(n) { return (n.textContent || '').replace(/\u200b/g, '').trim(); }
+
+/* ============================================================================
+   1. MathML -> OMML
+   ========================================================================== */
+var OPEN = '([{\u27e8\u2308\u230a|\u2016';
+var CLOSE = ')]}\u27e9\u2309\u230b|\u2016';
+var BIGOPS = '\u2211\u220f\u222b\u222c\u222d\u222e\u22c3\u22c2\u2210';
+var ACCENTS = {
+  '\u005e': '\u0302', '\u02c6': '\u0302', '^': '\u0302',
+  '\u00af': '\u0304', '\u2015': '\u0304', '\u2212': '\u0304', '_': '\u0304',
+  '~': '\u0303', '\u02dc': '\u0303', '\u02d9': '\u0307',
+  '\u2192': '\u20d7', '\u21c0': '\u20d1', '\u02c7': '\u030c', '\u02d8': '\u0306'
+};
+
+function run(text, style) {
+  if (text === '') return '';
+  var rPr = '<w:rPr><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/></w:rPr>';
+  var mPr = style ? '<m:rPr><m:sty m:val="' + style + '"/></m:rPr>' : '';
+  return '<m:r>' + mPr + rPr + '<m:t xml:space="preserve">' + esc(text) + '</m:t></m:r>';
+}
+
+/* Un grand opérateur (somme, intégrale…) absorbe la suite de la ligne comme
+   opérande : sans cela Word affiche un cadre vide à la place de l'argument. */
+function naryHere(n) {
+  if (!n || n.nodeType !== 1) return null;
+  var t = n.nodeName.toLowerCase().replace(/^.*:/, ''), k = kids(n);
+  if (t === 'munderover' || t === 'msubsup') return { base: k[0], sub: k[1], sup: k[2] };
+  if (t === 'munder' || t === 'msub') return { base: k[0], sub: k[1], sup: null };
+  if (t === 'mover' || t === 'msup') return { base: k[0], sub: null, sup: k[1] };
+  if (t === 'mo') return { base: n, sub: null, sup: null };
+  return null;
+}
+function isBigOp(n) {
+  if (!n || n.nodeType !== 1) return false;
+  var c = txt(n);
+  return n.nodeName.toLowerCase().replace(/^.*:/, '') === 'mo' &&
+         c.length === 1 && BIGOPS.indexOf(c) !== -1;
+}
+
+function seq(nodes) {
+  var s = '';
+  for (var i = 0; i < nodes.length; i++) {
+    var info = naryHere(nodes[i]);
+    if (info && isBigOp(info.base) && i + 1 < nodes.length) {
+      s += naryFull(info, nodes.slice(i + 1));
+      return s;
+    }
+    s += mml(nodes[i]);
+  }
+  return s;
+}
+
+function naryFull(info, rest) {
+  return '<m:nary><m:naryPr><m:chr m:val="' + esc(txt(info.base)) + '"/>' +
+         '<m:limLoc m:val="undOvr"/>' +
+         '<m:subHide m:val="' + (info.sub ? '0' : '1') + '"/>' +
+         '<m:supHide m:val="' + (info.sup ? '0' : '1') + '"/><m:ctrlPr/></m:naryPr>' +
+         '<m:sub>' + (info.sub ? mml(info.sub) : '') + '</m:sub>' +
+         '<m:sup>' + (info.sup ? mml(info.sup) : '') + '</m:sup>' +
+         '<m:e>' + seq(rest) + '</m:e></m:nary>';
+}
+
+/* mrow entouré de délimiteurs -> m:d, pour des parenthèses étirables natives */
+function fenced(ks) {
+  if (ks.length < 2) return null;
+  var a = ks[0], b = ks[ks.length - 1];
+  if (a.nodeName.toLowerCase() !== 'mo' || b.nodeName.toLowerCase() !== 'mo') return null;
+  var o = txt(a), c = txt(b);
+  if (o.length !== 1 || c.length !== 1) return null;
+  if (OPEN.indexOf(o) === -1 || CLOSE.indexOf(c) === -1) return null;
+  var inner = ks.slice(1, -1);
+  /* séparateurs de premier niveau -> plusieurs m:e */
+  var parts = [[]];
+  for (var i = 0; i < inner.length; i++) {
+    if (inner[i].nodeName.toLowerCase() === 'mo' && txt(inner[i]) === ',' && parts.length < 8) {
+      parts.push([]);
+    } else { parts[parts.length - 1].push(inner[i]); }
+  }
+  var sep = parts.length > 1 ? ',' : '';
+  var body = '';
+  for (var j = 0; j < parts.length; j++) body += '<m:e>' + seq(parts[j]) + '</m:e>';
+  return '<m:d><m:dPr><m:begChr m:val="' + esc(o) + '"/><m:sepChr m:val="' + esc(sep) +
+         '"/><m:endChr m:val="' + esc(c) + '"/><m:ctrlPr/></m:dPr>' + body + '</m:d>';
+}
+
+function naryOf(base, sub, sup) {
+  var ch = txt(base);
+  if (ch.length !== 1 || BIGOPS.indexOf(ch) === -1) return null;
+  return '<m:nary><m:naryPr><m:chr m:val="' + esc(ch) + '"/><m:limLoc m:val="undOvr"/>' +
+         '<m:subHide m:val="' + (sub ? '0' : '1') + '"/>' +
+         '<m:supHide m:val="' + (sup ? '0' : '1') + '"/><m:ctrlPr/></m:naryPr>' +
+         '<m:sub>' + (sub ? mml(sub) : '') + '</m:sub>' +
+         '<m:sup>' + (sup ? mml(sup) : '') + '</m:sup>' +
+         '<m:e></m:e></m:nary>';
+}
+
+function mml(n) {
+  if (!n) return '';
+  if (n.nodeType === 3) return run(n.nodeValue);
+  if (n.nodeType !== 1) return '';
+  var t = n.nodeName.toLowerCase().replace(/^.*:/, '');
+  var k = kids(n), s;
+
+  switch (t) {
+    case 'math':
+    case 'semantics':
+    case 'mstyle':
+    case 'mpadded':
+    case 'menclose':
+      return seq(k);
+
+    case 'annotation':
+    case 'annotation-xml':
+    case 'mphantom':
+      return '';
+
+    case 'mrow':
+      s = fenced(k);
+      return s !== null ? s : seq(k);
+
+    case 'mi':      return run(txt(n), txt(n).length === 1 ? 'i' : 'p');
+    case 'mn':      return run(txt(n), 'p');
+    case 'mo':      return run(txt(n), 'p');
+    case 'merror':  return run(txt(n), 'p');
+    case 'ms':      return run(txt(n), 'p');
+
+    case 'mtext':
+      var v = n.textContent || '';
+      return v === '' ? '' :
+        '<m:r><m:rPr><m:nor/></m:rPr><w:rPr><w:rFonts w:ascii="Cambria" w:hAnsi="Cambria"/></w:rPr>' +
+        '<m:t xml:space="preserve">' + esc(v) + '</m:t></m:r>';
+
+    case 'mspace':
+      return run(' ', 'p');
+
+    case 'mfrac':
+      return '<m:f><m:fPr><m:type m:val="' +
+             (n.getAttribute('linethickness') === '0' ? 'noBar' : 'bar') +
+             '"/><m:ctrlPr/></m:fPr><m:num>' + mml(k[0]) + '</m:num><m:den>' +
+             mml(k[1]) + '</m:den></m:f>';
+
+    case 'msup':
+      s = naryOf(k[0], null, k[1]); if (s) return s;
+      return '<m:sSup><m:sSupPr><m:ctrlPr/></m:sSupPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sup>' + mml(k[1]) + '</m:sup></m:sSup>';
+
+    case 'msub':
+      s = naryOf(k[0], k[1], null); if (s) return s;
+      return '<m:sSub><m:sSubPr><m:ctrlPr/></m:sSubPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sub>' + mml(k[1]) + '</m:sub></m:sSub>';
+
+    case 'msubsup':
+      s = naryOf(k[0], k[1], k[2]); if (s) return s;
+      return '<m:sSubSup><m:sSubSupPr><m:ctrlPr/></m:sSubSupPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sub>' + mml(k[1]) + '</m:sub><m:sup>' + mml(k[2]) +
+             '</m:sup></m:sSubSup>';
+
+    case 'msqrt':
+      return '<m:rad><m:radPr><m:degHide m:val="1"/><m:ctrlPr/></m:radPr>' +
+             '<m:deg/><m:e>' + seq(k) + '</m:e></m:rad>';
+
+    case 'mroot':
+      return '<m:rad><m:radPr><m:degHide m:val="0"/><m:ctrlPr/></m:radPr><m:deg>' +
+             mml(k[1]) + '</m:deg><m:e>' + mml(k[0]) + '</m:e></m:rad>';
+
+    case 'mover':
+      var ao = txt(k[1]);
+      if (ACCENTS[ao]) {
+        return '<m:acc><m:accPr><m:chr m:val="' + esc(ACCENTS[ao]) +
+               '"/><m:ctrlPr/></m:accPr><m:e>' + mml(k[0]) + '</m:e></m:acc>';
+      }
+      s = naryOf(k[0], null, k[1]); if (s) return s;
+      return '<m:limUpp><m:limUppPr><m:ctrlPr/></m:limUppPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limUpp>';
+
+    case 'munder':
+      s = naryOf(k[0], k[1], null); if (s) return s;
+      return '<m:limLow><m:limLowPr><m:ctrlPr/></m:limLowPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limLow>';
+
+    case 'munderover':
+      s = naryOf(k[0], k[1], k[2]); if (s) return s;
+      return '<m:limUpp><m:limUppPr><m:ctrlPr/></m:limUppPr><m:e>' +
+             '<m:limLow><m:limLowPr><m:ctrlPr/></m:limLowPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limLow></m:e><m:lim>' +
+             mml(k[2]) + '</m:lim></m:limUpp>';
+
+    case 'mtable':
+      var rows = k.filter(function (r) { return /mtr$/.test(r.nodeName.toLowerCase()); });
+      var ncol = 0;
+      rows.forEach(function (r) { ncol = Math.max(ncol, kids(r).length); });
+      var props = '<m:mPr><m:baseJc m:val="center"/><m:plcHide m:val="1"/><m:mcs><m:mc><m:mcPr>' +
+                  '<m:count m:val="' + (ncol || 1) + '"/><m:mcJc m:val="center"/></m:mcPr></m:mc></m:mcs>' +
+                  '<m:ctrlPr/></m:mPr>';
+      var body = '';
+      rows.forEach(function (r) {
+        body += '<m:mr>';
+        var cells = kids(r);
+        for (var i = 0; i < (ncol || 1); i++) body += '<m:e>' + (cells[i] ? seq(kids(cells[i])) : '') + '</m:e>';
+        body += '</m:mr>';
+      });
+      return '<m:m>' + props + body + '</m:m>';
+
+    case 'mtr':
+    case 'mtd':
+      return seq(k);
+
+    default:
+      return k.length ? seq(k) : run(txt(n), 'p');
+  }
+}
+
+function mathmlToOmml(mathEl) { return mml(mathEl); }
+
+/* ============================================================================
+   2. Écriture ZIP (entrées non compressées + CRC32)
+   ========================================================================== */
+var CRCT = (function () {
+  var t = new Int32Array(256);
+  for (var i = 0; i < 256; i++) {
+    var c = i;
+    for (var j = 0; j < 8; j++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[i] = c;
+  }
+  return t;
+})();
+function crc32(buf) {
+  var c = -1;
+  for (var i = 0; i < buf.length; i++) c = CRCT[(c ^ buf[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ -1) >>> 0;
+}
+function utf8(str) {
+  if (typeof TextEncoder !== 'undefined') return new TextEncoder().encode(str);
+  var b = unescape(encodeURIComponent(str)), a = new Uint8Array(b.length);
+  for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i);
+  return a;
+}
+function zip(files) {
+  var parts = [], central = [], offset = 0;
+  function u16(v) { return [v & 0xFF, (v >>> 8) & 0xFF]; }
+  function u32(v) { return [v & 0xFF, (v >>> 8) & 0xFF, (v >>> 16) & 0xFF, (v >>> 24) & 0xFF]; }
+
+  files.forEach(function (f) {
+    var name = utf8(f.name), data = f.bin ? f.bin : utf8(f.data), c = crc32(data);
+    var local = [].concat(u32(0x04034b50), u16(20), u16(0x0800), u16(0), u16(0), u16(0),
+                          u32(c), u32(data.length), u32(data.length),
+                          u16(name.length), u16(0));
+    parts.push(new Uint8Array(local), name, data);
+    central.push({ name: name, crc: c, size: data.length, off: offset });
+    offset += local.length + name.length + data.length;
+  });
+
+  var cd = [];
+  central.forEach(function (e) {
+    cd = cd.concat(u32(0x02014b50), u16(20), u16(20), u16(0x0800), u16(0), u16(0), u16(0),
+                   u32(e.crc), u32(e.size), u32(e.size),
+                   u16(e.name.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(e.off));
+    cd = cd.concat(Array.prototype.slice.call(e.name));
+  });
+  var cdArr = new Uint8Array(cd);
+  var eocd = new Uint8Array([].concat(u32(0x06054b50), u16(0), u16(0),
+                                      u16(files.length), u16(files.length),
+                                      u32(cdArr.length), u32(offset), u16(0)));
+  parts.push(cdArr, eocd);
+
+  var total = parts.reduce(function (n, p) { return n + p.length; }, 0);
+  var out = new Uint8Array(total), pos = 0;
+  parts.forEach(function (p) { out.set(p, pos); pos += p.length; });
+  return out;
+}
+
+/* ============================================================================
+   3. HTML -> WordprocessingML
+   ========================================================================== */
+var SKIP = { script: 1, style: 1, button: 1, input: 1, noscript: 1 };
+var IMAGES = [];           /* { bin, w, h } collectées pendant le parcours */
+var EMU = 9525;            /* EMU par pixel */
+var MAXW = 5760000;        /* largeur utile de la page, en EMU */
+
+function b64bin(b64) {
+  var raw = atob(b64), a = new Uint8Array(raw.length);
+  for (var i = 0; i < raw.length; i++) a[i] = raw.charCodeAt(i);
+  return a;
+}
+
+function imageXml(dataUrl, wpx, hpx) {
+  var m = /^data:image\/png;base64,(.*)$/.exec(dataUrl || '');
+  if (!m) return '';
+  var cx = Math.round(wpx * EMU), cy = Math.round(hpx * EMU);
+  if (cx > MAXW) { cy = Math.round(cy * MAXW / cx); cx = MAXW; }
+  IMAGES.push({ bin: b64bin(m[1]) });
+  var id = IMAGES.length, rid = 'rIdImg' + id;
+  return '<w:p><w:pPr><w:pStyle w:val="Figure"/><w:jc w:val="center"/></w:pPr><w:r><w:drawing>' +
+    '<wp:inline distT="0" distB="0" distL="0" distR="0">' +
+    '<wp:extent cx="' + cx + '" cy="' + cy + '"/>' +
+    '<wp:effectExtent l="0" t="0" r="0" b="0"/>' +
+    '<wp:docPr id="' + id + '" name="Graphique ' + id + '"/>' +
+    '<wp:cNvGraphicFramePr><a:graphicFrameLocks ' +
+      'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/>' +
+    '</wp:cNvGraphicFramePr>' +
+    '<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">' +
+    '<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+    '<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+    '<pic:nvPicPr><pic:cNvPr id="' + id + '" name="Graphique ' + id + '"/><pic:cNvPicPr/></pic:nvPicPr>' +
+    '<pic:blipFill><a:blip r:embed="' + rid + '"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>' +
+    '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' + cx + '" cy="' + cy + '"/></a:xfrm>' +
+    '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>' +
+    '</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>';
+}
+var BLOCK = { p: 1, div: 1, h1: 1, h2: 1, h3: 1, h4: 1, li: 1, tr: 1, td: 1, th: 1,
+              table: 1, ul: 1, ol: 1, section: 1, article: 1, header: 1, blockquote: 1 };
+
+function W() {
+  this.body = '';
+  this.para = null;      /* { style, runs, numId, ilvl } */
+}
+W.prototype.open = function (style, numId, ilvl) {
+  this.close();
+  this.para = { style: style || 'Corps', runs: '', numId: numId || 0, ilvl: ilvl || 0 };
+};
+W.prototype.close = function () {
+  var p = this.para;
+  this.para = null;
+  if (!p || (p.runs === '' && !p.numId)) return;
+  if (p.runs === '') return;
+  var pPr = '<w:pPr><w:pStyle w:val="' + p.style + '"/>';
+  if (p.numId) pPr += '<w:numPr><w:ilvl w:val="' + p.ilvl + '"/><w:numId w:val="' + p.numId + '"/></w:numPr>';
+  pPr += '</w:pPr>';
+  this.body += '<w:p>' + pPr + p.runs + '</w:p>';
+};
+W.prototype.add = function (xml) {
+  if (!this.para) this.open('Corps');
+  this.para.runs += xml;
+};
+W.prototype.raw = function (xml) { this.close(); this.body += xml; };
+
+function textRun(s, fmt) {
+  if (!s) return '';
+  var rPr = '';
+  if (fmt.b) rPr += '<w:b/>';
+  if (fmt.i) rPr += '<w:i/>';
+  if (fmt.sup) rPr += '<w:vertAlign w:val="superscript"/>';
+  if (fmt.sub) rPr += '<w:vertAlign w:val="subscript"/>';
+  if (fmt.mono) rPr += '<w:rFonts w:ascii="Consolas" w:hAnsi="Consolas"/>';
+  return '<w:r>' + (rPr ? '<w:rPr>' + rPr + '</w:rPr>' : '') +
+         '<w:t xml:space="preserve">' + esc(s) + '</w:t></w:r>';
+}
+
+function walk(node, w, fmt, list) {
+  var i, cs = node.childNodes;
+  for (i = 0; i < cs.length; i++) {
+    var n = cs[i];
+
+    if (n.nodeType === 3) {
+      var s = n.nodeValue.replace(/\s+/g, ' ');
+      if (s.trim() === '' && !/\S/.test(s)) { if (w.para && w.para.runs) w.add(textRun(' ', fmt)); continue; }
+      w.add(textRun(s, fmt));
+      continue;
+    }
+    if (n.nodeType !== 1) continue;
+
+    var tag = n.nodeName.toLowerCase();
+    if (SKIP[tag]) continue;
+    if (n.classList && (n.classList.contains('top-bar') || n.classList.contains('top-actions') ||
+                        n.classList.contains('sol-toggle-wrap'))) continue;
+
+    /* --- équations --- */
+    if (tag === 'mjx-container') {
+      var math = n.querySelector('mjx-assistive-mml math, math');
+      var display = n.getAttribute('display') === 'true';
+      if (math) {
+        var omml = mathmlToOmml(math);
+        if (display) {
+          w.close();
+          w.body += '<w:p><w:pPr><w:pStyle w:val="Formule"/>' +
+                    '<w:jc w:val="center"/></w:pPr>' +
+                    '<m:oMath>' + omml + '</m:oMath></w:p>';
+        } else {
+          w.add('<m:oMath>' + omml + '</m:oMath>');
+        }
+      } else {
+        w.add(textRun(txt(n), fmt));
+      }
+      continue;
+    }
+    if (tag === 'mjx-assistive-mml' || tag === 'math') continue;
+
+    /* --- graphiques --- */
+    if (tag === 'svg' || tag === 'img') {
+      var png = n.getAttribute('data-kit-png');
+      if (png) {
+        w.close();
+        w.body += imageXml(png, +n.getAttribute('data-kit-w') || 600,
+                                +n.getAttribute('data-kit-h') || 380);
+      }
+      continue;
+    }
+
+    /* --- tableaux --- */
+    if (tag === 'table') { w.close(); w.body += table(n); continue; }
+
+    /* --- listes --- */
+    if (tag === 'ul' || tag === 'ol') {
+      w.close();
+      var nid = tag === 'ol' ? 2 : 1;
+      var lvl = list ? Math.min(list.ilvl + 1, 2) : 0;
+      var items = kids(n).filter(function (x) { return x.nodeName.toLowerCase() === 'li'; });
+      items.forEach(function (li) {
+        /* L'item est composé à part : son numéro doit se poser sur le premier
+           paragraphe produit, même si le <li> enveloppe son texte dans un <div>. */
+        var wb = new W();
+        walk(li, wb, fmt, { ilvl: lvl });
+        wb.close();
+        var xml = wb.body;
+        if (!xml) return;
+        var numPr = '<w:pStyle w:val="Liste"/><w:numPr><w:ilvl w:val="' + lvl +
+                    '"/><w:numId w:val="' + nid + '"/></w:numPr>';
+        if (xml.indexOf('<w:pStyle w:val="Corps"/>') !== -1) {
+          xml = xml.replace('<w:pStyle w:val="Corps"/>', numPr);
+        } else {
+          xml = '<w:p><w:pPr>' + numPr + '</w:pPr></w:p>' + xml;
+        }
+        w.body += xml;
+      });
+      continue;
+    }
+
+    /* --- titres --- */
+    if (tag === 'h1' || tag === 'h2') { w.close(); w.open('Titre1'); walk(n, w, fmt, list); w.close(); continue; }
+    if (tag === 'h3' || tag === 'h4') { w.close(); w.open('Titre2'); walk(n, w, fmt, list); w.close(); continue; }
+
+    /* --- titres internes du corrigé --- */
+    if (n.classList && (n.classList.contains('sol-sub') || n.classList.contains('sol-q') ||
+                        n.classList.contains('dossier-title'))) {
+      w.close(); w.open('Titre2'); walk(n, w, { b: true }, list); w.close(); continue;
+    }
+    if (n.classList && n.classList.contains('persp-box')) {
+      w.close();
+      var wb = new W();
+      walk(n, wb, fmt, list);
+      wb.close();
+      w.body += wb.body.replace(/w:val="Corps"/g, 'w:val="Encadre"')
+                       .replace(/w:val="Titre2"/g, 'w:val="EncadreTitre"');
+      continue;
+    }
+
+    /* --- mise en forme inline --- */
+    var f2 = { b: fmt.b, i: fmt.i, sup: fmt.sup, sub: fmt.sub, mono: fmt.mono };
+    if (tag === 'strong' || tag === 'b') f2.b = true;
+    if (tag === 'em' || tag === 'i') f2.i = true;
+    if (tag === 'sup') f2.sup = true;
+    if (tag === 'sub') f2.sub = true;
+    if (tag === 'code' || tag === 'kbd') f2.mono = true;
+
+    /* intertitre écrit en style en ligne (span display:block + gras) */
+    var st = n.getAttribute && n.getAttribute('style');
+    if (st && /display\s*:\s*block/.test(st) && /font-weight\s*:\s*(6|7|8|9|bold)/.test(st)) {
+      w.close(); w.open('Titre3');
+      walk(n, w, { b: true }, list);
+      w.close();
+      continue;
+    }
+
+    if ((tag === 'strong' || tag === 'b') &&
+        (!w.para || w.para.runs === '') &&
+        n.nextElementSibling && n.nextElementSibling.nodeName.toLowerCase() === 'br') {
+      w.close(); w.open('Titre3');
+      walk(n, w, { b: true }, list);
+      w.close();
+      i++;                       /* le <br> qui suit devient inutile */
+      continue;
+    }
+
+    if (tag === 'br') { w.add('<w:r><w:br/></w:r>'); continue; }
+    if (tag === 'hr') { w.close(); continue; }
+
+    if (BLOCK[tag]) { w.close(); w.open('Corps'); walk(n, w, f2, list); w.close(); }
+    else { walk(n, w, f2, list); }
+  }
+}
+
+function cellXml(td, isHead) {
+  var w2 = new W();
+  walk(td, w2, { b: !!isHead }, null);
+  w2.close();
+  var content = w2.body || '<w:p><w:pPr><w:pStyle w:val="Cellule"/></w:pPr></w:p>';
+  content = content.replace(/w:val="Corps"/g, 'w:val="Cellule"');
+  var span = parseInt(td.getAttribute('colspan') || '1', 10);
+  var shd = isHead ? '<w:shd w:val="clear" w:fill="EDE9DF"/>' : '';
+  return '<w:tc><w:tcPr>' + (span > 1 ? '<w:gridSpan w:val="' + span + '"/>' : '') +
+         shd + '<w:vAlign w:val="center"/></w:tcPr>' + content + '</w:tc>';
+}
+
+function table(tbl) {
+  var rows = tbl.querySelectorAll('tr'), out = '', ncol = 0, i, j;
+  for (i = 0; i < rows.length; i++) {
+    var c = rows[i].children, n = 0;
+    for (j = 0; j < c.length; j++) n += parseInt(c[j].getAttribute('colspan') || '1', 10);
+    ncol = Math.max(ncol, n);
+  }
+  if (!ncol) return '';
+  var grid = '<w:tblGrid>';
+  for (i = 0; i < ncol; i++) grid += '<w:gridCol w:w="' + Math.floor(9360 / ncol) + '"/>';
+  grid += '</w:tblGrid>';
+
+  for (i = 0; i < rows.length; i++) {
+    var cells = rows[i].children, xml = '';
+    var head = rows[i].parentNode.nodeName.toLowerCase() === 'thead' ||
+               (cells.length && cells[0].nodeName.toLowerCase() === 'th');
+    for (j = 0; j < cells.length; j++) xml += cellXml(cells[j], head);
+    out += '<w:tr>' + (head ? '<w:trPr><w:tblHeader/></w:trPr>' : '') + xml + '</w:tr>';
+  }
+  return '<w:tbl><w:tblPr><w:tblStyle w:val="Grille"/>' +
+         '<w:tblW w:w="5000" w:type="pct"/><w:tblLayout w:type="fixed"/></w:tblPr>' +
+         grid + out + '</w:tbl><w:p><w:pPr><w:pStyle w:val="Apres"/></w:pPr></w:p>';
+}
+
+/* ============================================================================
+   Assemblage du fichier
+   ========================================================================== */
+var NS =
+  'xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" ' +
+  'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
+  'xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" ' +
+  'xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" ' +
+  'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+  'xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture" ' +
+  'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+  'xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" ' +
+  'mc:Ignorable="w14"';
+
+function style(id, name, opts) {
+  var o = opts || {};
+  return '<w:style w:type="paragraph" w:styleId="' + id + '"><w:name w:val="' + name + '"/>' +
+         '<w:basedOn w:val="Corps"/><w:pPr>' +
+         (o.keep ? '<w:keepNext/>' : '') +
+         '<w:spacing w:before="' + (o.before || 0) + '" w:after="' + (o.after || 120) +
+         '" w:line="' + (o.line || 276) + '" w:lineRule="auto"/>' +
+         (o.jc ? '<w:jc w:val="' + o.jc + '"/>' : '') +
+         (o.ind ? '<w:ind w:left="' + o.ind + '"/>' : '') +
+         (o.border ? '<w:pBdr><w:left w:val="single" w:sz="18" w:space="8" w:color="1A2E42"/></w:pBdr>' : '') +
+         '</w:pPr><w:rPr>' +
+         (o.font ? '<w:rFonts w:ascii="' + o.font + '" w:hAnsi="' + o.font + '"/>' : '') +
+         (o.b ? '<w:b/>' : '') + (o.i ? '<w:i/>' : '') +
+         (o.sz ? '<w:sz w:val="' + o.sz + '"/>' : '') +
+         (o.color ? '<w:color w:val="' + o.color + '"/>' : '') +
+         '</w:rPr></w:style>';
+}
+
+function stylesXml() {
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles ' + NS + '>' +
+    '<w:docDefaults><w:rPrDefault><w:rPr>' +
+      '<w:rFonts w:ascii="Cambria" w:hAnsi="Cambria" w:cs="Cambria"/>' +
+      '<w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="fr-FR"/>' +
+    '</w:rPr></w:rPrDefault><w:pPrDefault><w:pPr>' +
+      '<w:spacing w:after="120" w:line="276" w:lineRule="auto"/><w:jc w:val="both"/>' +
+    '</w:pPr></w:pPrDefault></w:docDefaults>' +
+    '<w:style w:type="paragraph" w:default="1" w:styleId="Corps"><w:name w:val="Normal"/>' +
+      '<w:pPr><w:spacing w:after="120" w:line="276" w:lineRule="auto"/><w:jc w:val="both"/></w:pPr>' +
+      '<w:rPr><w:rFonts w:ascii="Cambria" w:hAnsi="Cambria"/><w:sz w:val="22"/></w:rPr></w:style>' +
+    style('TitreDoc', 'Title', { font: 'Cambria', b: true, sz: 40, color: '0D1B2A', jc: 'left', after: 60, line: 240 }) +
+    style('SousTitre', 'Subtitle', { i: true, sz: 20, color: '5A5A5A', jc: 'left', after: 280, line: 240 }) +
+    style('Titre1', 'heading 1', { b: true, sz: 28, color: '0D1B2A', before: 320, after: 140, jc: 'left', keep: true, line: 240 }) +
+    style('Titre2', 'heading 2', { b: true, sz: 23, color: '1A2E42', before: 240, after: 100, jc: 'left', keep: true, line: 240 }) +
+    style('Formule', 'Formula', { jc: 'center', before: 120, after: 120, line: 240 }) +
+    style('Liste', 'List Paragraph', { after: 100, ind: 360 }) +
+    style('Cellule', 'Table Text', { sz: 20, after: 40, jc: 'left', line: 240 }) +
+    style('Encadre', 'Aside', { ind: 240, border: true, sz: 21, before: 200, after: 200 }) +
+    style('Apres', 'After Table', { after: 200, sz: 12 }) +
+    style('Figure', 'Figure', { jc: 'center', before: 160, after: 200, line: 240 }) +
+    style('Titre3', 'heading 3', { b: true, sz: 22, color: '1A2E42', before: 200,
+                                   after: 60, jc: 'left', keep: true, line: 240 }) +
+    style('EncadreTitre', 'Aside Heading', { ind: 240, border: true, b: true, sz: 22,
+                                             color: '1A2E42', before: 200, after: 60, jc: 'left' }) +
+    '<w:style w:type="table" w:styleId="Grille"><w:name w:val="Table Grid"/><w:tblPr>' +
+      '<w:tblBorders>' +
+      ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(function (b) {
+        return '<w:' + b + ' w:val="single" w:sz="4" w:space="0" w:color="9A9A9A"/>';
+      }).join('') +
+      '</w:tblBorders><w:tblCellMar>' +
+      '<w:top w:w="60" w:type="dxa"/><w:left w:w="90" w:type="dxa"/>' +
+      '<w:bottom w:w="60" w:type="dxa"/><w:right w:w="90" w:type="dxa"/>' +
+      '</w:tblCellMar></w:tblPr></w:style>' +
+    '</w:styles>';
+}
+
+function numberingXml() {
+  function lvl(i, fmt, txtv, ind) {
+    return '<w:lvl w:ilvl="' + i + '"><w:start w:val="1"/><w:numFmt w:val="' + fmt + '"/>' +
+           '<w:lvlText w:val="' + txtv + '"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="' +
+           ind + '" w:hanging="360"/></w:pPr>' +
+           (fmt === 'bullet' ? '<w:rPr><w:rFonts w:ascii="Symbol" w:hAnsi="Symbol"/></w:rPr>' : '') +
+           '</w:lvl>';
+  }
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:numbering ' + NS + '>' +
+    '<w:abstractNum w:abstractNumId="1"><w:multiLevelType w:val="hybridMultilevel"/>' +
+      lvl(0, 'bullet', '\uF0B7', 360) + lvl(1, 'bullet', 'o', 720) + lvl(2, 'bullet', '\uF0A7', 1080) +
+    '</w:abstractNum>' +
+    '<w:abstractNum w:abstractNumId="2"><w:multiLevelType w:val="hybridMultilevel"/>' +
+      lvl(0, 'decimal', '%1.', 360) + lvl(1, 'lowerLetter', '%2.', 720) + lvl(2, 'lowerRoman', '%3.', 1080) +
+    '</w:abstractNum>' +
+    '<w:num w:numId="1"><w:abstractNumId w:val="1"/></w:num>' +
+    '<w:num w:numId="2"><w:abstractNumId w:val="2"/></w:num>' +
+    '</w:numbering>';
+}
+
+function buildDocx(opts) {
+  IMAGES = [];
+  var w = new W();
+
+  if (opts.title) {
+    w.body += '<w:p><w:pPr><w:pStyle w:val="TitreDoc"/></w:pPr>' +
+              textRun(opts.title, {}) + '</w:p>';
+  }
+  if (opts.subtitle) {
+    w.body += '<w:p><w:pPr><w:pStyle w:val="SousTitre"/></w:pPr>' +
+              textRun(opts.subtitle, {}) + '</w:p>';
+  }
+  opts.sections.forEach(function (sec) {
+    if (sec.heading) {
+      w.body += '<w:p><w:pPr><w:pStyle w:val="Titre1"/></w:pPr>' + textRun(sec.heading, {}) + '</w:p>';
+    }
+    walk(sec.node, w, {}, null);
+    w.close();
+  });
+  w.close();
+
+  var doc = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ' + NS + '><w:body>' +
+    w.body +
+    '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/>' +
+    '<w:pgMar w:top="1247" w:right="1247" w:bottom="1247" w:left="1247" ' +
+    'w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>';
+
+  var media = [], rels = '', ctypes = '';
+  IMAGES.forEach(function (im, i) {
+    media.push({ name: 'word/media/image' + (i + 1) + '.png', bin: im.bin });
+    rels += '<Relationship Id="rIdImg' + (i + 1) + '" Type="http://schemas.openxmlformats.org/' +
+            'officeDocument/2006/relationships/image" Target="media/image' + (i + 1) + '.png"/>';
+  });
+  if (IMAGES.length) ctypes = '<Default Extension="png" ContentType="image/png"/>';
+
+  return zip([
+    { name: '[Content_Types].xml',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+        '<Default Extension="xml" ContentType="application/xml"/>' + ctypes +
+        '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+        '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>' +
+        '<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>' +
+        '</Types>' },
+    { name: '_rels/.rels',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+        '</Relationships>' },
+    { name: 'word/_rels/document.xml.rels',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' +
+        '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>' +
+        rels + '</Relationships>' },
+    { name: 'word/document.xml', data: doc },
+    { name: 'word/styles.xml', data: stylesXml() },
+    { name: 'word/numbering.xml', data: numberingXml() }
+  ].concat(media));
+}
+
+root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: W, _walk: walk };
+
+})(window);
+
+</script>
+<script id="kit-js">
+/* ============================================================
+   KIT D'UNIFORMISATION — logique partagée (modale PDF, export Word,
+   libellés de la barre d'actions). Autonome : ne dépend d'aucun
+   dictionnaire I18N propre à la page.
+   ============================================================ */
+(function(){
+  var T = {
+    fr:{ modalTitle:"Exporter en PDF", seedPre:"Seed\u00a0:",
+         seedPost:"\u2014 notez cette valeur pour reproduire exactement cet exercice.",
+         optHeader:"Inclure l'en-t\u00eate de page",
+         optHeaderD:"Titre, badge de mati\u00e8re et intitul\u00e9 de l'exercice",
+         optSol:"Inclure le corrig\u00e9 complet",
+         optSolD:"L'ensemble des d\u00e9veloppements et commentaires du corrig\u00e9",
+         print:"\uD83D\uDDA8\u00a0Imprimer / Sauvegarder PDF", cancel:"Annuler",
+         btnNew:"\u21ba Nouvel \u00e9nonc\u00e9", btnPdf:"\u2b07 Exporter PDF", btnDoc:"\u2b07 Exporter Word",
+         btnCopy:"\u29c9 Copier", copied:"\u2713 Copi\u00e9e", seedLabel:"Seed de reproductibilit\u00e9",
+         docFile:"exercice.doc" },
+    en:{ modalTitle:"Export to PDF", seedPre:"Seed:",
+         seedPost:"\u2014 note this value to reproduce this exact exercise.",
+         optHeader:"Include the page header",
+         optHeaderD:"Title, subject badge and exercise heading",
+         optSol:"Include the full solution",
+         optSolD:"All the workings and comments of the solution",
+         print:"\uD83D\uDDA8\u00a0Print / Save as PDF", cancel:"Cancel",
+         btnNew:"\u21ba New exercise", btnPdf:"\u2b07 Export PDF", btnDoc:"\u2b07 Export Word",
+         btnCopy:"\u29c9 Copy", copied:"\u2713 Copied", seedLabel:"Reproducibility seed",
+         docFile:"exercise.doc" }
+  };
+
+  function lang(){
+    var l = (window.LANG || document.documentElement.lang || 'fr').toLowerCase();
+    return (l.indexOf('en') === 0) ? 'en' : 'fr';
+  }
+  function t(k){ return T[lang()][k]; }
+
+  window.KIT = { T:T, lang:lang, t:t };
+
+  /* --- libellés du kit (modale + barre d'actions) --- */
+  function paint(){
+    var d = T[lang()];
+    document.querySelectorAll('[data-kit]').forEach(function(el){
+      var k = el.getAttribute('data-kit');
+      if (d[k] !== undefined) el.innerHTML = d[k];
+    });
+  }
+  window.KIT.paint = paint;
+
+  /* Se raccroche au changement de langue de la page sans la modifier. */
+  function hookLang(){
+    if (typeof window.setLang === 'function' && !window.setLang.__kit){
+      var orig = window.setLang;
+      var wrapped = function(){ var r = orig.apply(this, arguments); paint(); return r; };
+      wrapped.__kit = true;
+      window.setLang = wrapped;
+    }
+  }
+
+  /* --- Copie de la seed active --- */
+  window.copySeed = function(btn){
+    var el = document.getElementById('seed-disp');
+    if (!el) return;
+    var v = (el.textContent || '').trim();
+    if (!v || v === '\u2014') return;
+    var done = function(){
+      var b = btn || document.getElementById('btn-copy-seed');
+      if (!b) return;
+      var old = b.innerHTML;
+      b.innerHTML = t('copied');
+      setTimeout(function(){ b.innerHTML = old; paint(); }, 1400);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(v).then(done, done);
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = v; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch(e){}
+      document.body.removeChild(ta); done();
+    }
+  };
+
+  /* --- Modale PDF --- */
+  window.openPdfModal = function(){
+    var s = document.getElementById('modal-seed');
+    var src = document.getElementById('seed-disp');
+    if (s && src) s.textContent = (src.textContent || '\u2014').trim();
+    /* la case « corrigé » reflète l'état d'affichage courant */
+    var sol = document.getElementById('sol-card');
+    var box = document.getElementById('opt-sol');
+    if (box) box.checked = !!(window.solVisible ||
+        (sol && (sol.classList.contains('visible') || sol.style.display === 'block')));
+    paint();
+    document.getElementById('pdf-ov').classList.add('open');
+    document.getElementById('pdf-modal').classList.add('open');
+  };
+  window.closePdfModal = function(){
+    document.getElementById('pdf-ov').classList.remove('open');
+    document.getElementById('pdf-modal').classList.remove('open');
+  };
+  var PRINTCLS = ['print-no-header', 'print-force-solution', 'print-no-solution'];
+
+  function clearPrintClasses() {
+    var b = document.body;
+    for (var i = 0; i < PRINTCLS.length; i++) b.classList.remove(PRINTCLS[i]);
+  }
+
+  window.doPrint = function () {
+    var noHdr   = !document.getElementById('opt-header').checked;
+    var inclSol =  document.getElementById('opt-sol').checked;
+    var b = document.body;
+
+    clearPrintClasses();
+    if (noHdr) b.classList.add('print-no-header');
+    b.classList.add(inclSol ? 'print-force-solution' : 'print-no-solution');
+    closePdfModal();
+
+    /* Le nettoyage doit attendre la fin réelle de l'impression. Un simple
+       minuteur ne convient pas : selon le navigateur, window.print() rend la
+       main avant que l'aperçu ne soit composé, et les options seraient alors
+       déjà effacées au moment où le PDF est produit. */
+    var done = false;
+    function finish() {
+      if (done) return;
+      done = true;
+      clearPrintClasses();
+      window.removeEventListener('afterprint', finish);
+      if (mq && mq.removeListener) mq.removeListener(onMq);
+      if (mq && mq.removeEventListener) mq.removeEventListener('change', onMq);
+    }
+    function onMq(e) { if (!e.matches) finish(); }
+
+    var mq = window.matchMedia ? window.matchMedia('print') : null;
+    window.addEventListener('afterprint', finish);
+    if (mq && mq.addEventListener) mq.addEventListener('change', onMq);
+    else if (mq && mq.addListener) mq.addListener(onMq);
+    /* filet de sécurité si le navigateur n'émet aucun de ces signaux */
+    setTimeout(finish, 120000);
+
+    setTimeout(function () { window.print(); }, 120);
+  };
+
+  /* --- Rasterisation des graphiques SVG ---
+     Word ne sait pas lire le SVG. On le convertit en PNG en recopiant d'abord
+     les styles calculés, sinon les couleurs héritées de la feuille disparaissent. */
+  var SVGPROPS = ['fill', 'stroke', 'stroke-width', 'stroke-dasharray', 'stroke-linecap',
+                  'stroke-linejoin', 'opacity', 'fill-opacity', 'stroke-opacity',
+                  'font-family', 'font-size', 'font-weight', 'font-style',
+                  'text-anchor', 'dominant-baseline'];
+
+  function inlineStyles(src, dst) {
+    var a = src.querySelectorAll('*'), b = dst.querySelectorAll('*'), i, j;
+    for (i = 0; i < a.length && i < b.length; i++) {
+      var cs = window.getComputedStyle(a[i]);
+      for (j = 0; j < SVGPROPS.length; j++) {
+        var v = cs.getPropertyValue(SVGPROPS[j]);
+        if (v) b[i].setAttribute(SVGPROPS[j], v);
+      }
+    }
+  }
+
+  function svgSize(svg) {
+    var vb = svg.viewBox && svg.viewBox.baseVal;
+    if (vb && vb.width) return { w: vb.width, h: vb.height };
+    var r = svg.getBoundingClientRect();
+    if (r.width) return { w: r.width, h: r.height };
+    return { w: 600, h: 380 };
+  }
+
+  function svgToPng(svg) {
+    return new Promise(function (resolve) {
+      var done = false;
+      var res = function (v) { if (!done) { done = true; resolve(v); } };
+      /* garde-fou : un graphique qui ne se charge pas ne doit jamais
+         bloquer l'export, on l'omet et le reste du document part quand même */
+      setTimeout(function () { res(null); }, 5000);
+      try {
+        var d = svgSize(svg), SC = 2;
+        var c = svg.cloneNode(true);
+        c.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        c.setAttribute('width', d.w);
+        c.setAttribute('height', d.h);
+        inlineStyles(svg, c);
+        var bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        bg.setAttribute('x', 0); bg.setAttribute('y', 0);
+        bg.setAttribute('width', '100%'); bg.setAttribute('height', '100%');
+        bg.setAttribute('fill', '#ffffff');
+        c.insertBefore(bg, c.firstChild);
+        var xml = new XMLSerializer().serializeToString(c);
+        var img = new Image();
+        img.onload = function () {
+          try {
+            var cv = document.createElement('canvas');
+            cv.width = Math.round(d.w * SC); cv.height = Math.round(d.h * SC);
+            var ctx = cv.getContext('2d');
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, cv.width, cv.height);
+            ctx.drawImage(img, 0, 0, cv.width, cv.height);
+            res({ png: cv.toDataURL('image/png'), w: d.w, h: d.h });
+          } catch (e) { res(null); }
+        };
+        img.onerror = function () { res(null); };
+        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml);
+      } catch (e) { res(null); }
+    });
+  }
+
+  /* --- Export Word natif (.docx) ---
+     Les formules sont converties en OMML, le format d'équation natif de Word :
+     elles restent éditables et se composent avec Cambria Math. */
+  window.exportWord = function () {
+    var area = document.getElementById('ex-area');
+    if (!area || !window.DocxExport) { return; }
+
+    var btn = document.querySelector('.btn-sm.doc');
+    if (btn) { btn.disabled = true; btn.style.opacity = '.5'; }
+
+    var svgs = Array.prototype.slice.call(area.querySelectorAll('svg'));
+    Promise.all(svgs.map(svgToPng)).then(function (pngs) {
+      svgs.forEach(function (sv, i) {
+        if (!pngs[i]) return;
+        sv.setAttribute('data-kit-png', pngs[i].png);
+        sv.setAttribute('data-kit-w', pngs[i].w);
+        sv.setAttribute('data-kit-h', pngs[i].h);
+      });
+      try { writeDocx(area); } finally {
+        svgs.forEach(function (sv) {
+          sv.removeAttribute('data-kit-png');
+          sv.removeAttribute('data-kit-w');
+          sv.removeAttribute('data-kit-h');
+        });
+        if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+      }
+    });
+  };
+
+  function writeDocx(area) {
+
+    var h1 = document.querySelector('header h1');
+    var badge = document.querySelector('.header-badge, #lbl-badge');
+    var seed = document.getElementById('seed-disp');
+    var bits = [];
+    if (badge && badge.textContent.trim()) bits.push(badge.textContent.trim());
+    if (seed && seed.textContent.trim() && seed.textContent.trim() !== '\u2014') {
+      bits.push('seed ' + seed.textContent.trim());
+    }
+    bits.push('Thomas Hossen');
+
+    var sections = [];
+    var cards = area.querySelectorAll('.card');
+    for (var i = 0; i < cards.length; i++) {
+      var body = cards[i].querySelector('.card-body');
+      if (!body) continue;
+      var tag = cards[i].querySelector('.card-header .tag');
+      var h2 = cards[i].querySelector('.card-header h2');
+      var head = [tag ? tag.textContent.trim() : '', h2 ? h2.textContent.trim() : '']
+                   .filter(Boolean).join(' \u2014 ');
+      sections.push({ heading: head, node: body });
+    }
+    if (!sections.length) sections = [{ heading: '', node: area }];
+
+    var bytes = window.DocxExport.build({
+      title: h1 ? h1.textContent.trim() : document.title,
+      subtitle: bits.join(' \u00b7 '),
+      sections: sections
+    });
+
+    var name = (h1 ? h1.textContent : 'exercice').normalize('NFD')
+                 .replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9]+/g, '_')
+                 .replace(/^_|_$/g, '').slice(0, 60) || 'exercice';
+    var blob = new Blob([bytes], {
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = name + '.docx';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){ hookLang(); paint(); });
+  if (document.readyState !== 'loading'){ hookLang(); paint(); }
+})();
+</script>
+<!-- KIT:JS:END -->
+</body>
+</html>
