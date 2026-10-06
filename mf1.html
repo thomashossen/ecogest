@@ -1,0 +1,2303 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mathématiques financières 1 – Probabilités discrètes et loi binomiale</title>
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['\\(','\\)']],
+    displayMath: [['\\[','\\]']],
+    packages: {'[+]': ['ams']},
+    macros: {
+      E: '\\mathbb{E}',
+      PP: '\\mathbb{P}',
+      Var: '\\operatorname{Var}',
+      Cov: '\\operatorname{Cov}',
+      dd: '\\mathrm{d}'
+    }
+  },
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] }
+};
+</script>
+<script>window.MathJax=window.MathJax||{};window.MathJax.options=window.MathJax.options||{};window.MathJax.options.enableAssistiveMml=true;</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 0;border-bottom:3px solid var(--gold)}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+#controls-bar{border-top:1px solid rgba(255,255,255,.08);padding:1.1rem 0 1.3rem}
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.5)}
+.ctrl-inp{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.38rem .65rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.82rem;width:88px;outline:none;transition:border-color .2s}
+.ctrl-inp:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.ctrl-tip{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:rgba(250,247,240,.33);margin-top:2px}
+.seed-row{display:flex;align-items:flex-end;gap:.45rem}
+.btn-copy-seed{background:transparent;border:1px solid rgba(201,149,42,.4);color:rgba(250,247,240,.55);padding:.38rem .55rem;border-radius:3px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:.65rem;transition:all .18s;white-space:nowrap}
+.btn-copy-seed:hover{border-color:var(--gold-light);color:var(--gold-light)}
+.ctrl-vsep{width:1px;background:rgba(255,255,255,.1);align-self:stretch;margin:0 .2rem}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.3rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.9rem;font-weight:600;transition:background .18s;white-space:nowrap;align-self:flex-end}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.welcome-msg{text-align:center;padding:5rem 2rem;color:var(--text-muted);font-style:italic;font-size:1.05rem}
+.welcome-msg .arrow{font-size:2rem;display:block;margin-bottom:1rem;opacity:.4}
+
+/* TOP BAR */
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.top-bar-left{display:flex;gap:.6rem;align-items:center}
+.btn-sm{background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:'JetBrains Mono',monospace;font-size:.67rem;letter-spacing:.08em;text-transform:uppercase;padding:.4rem 1rem;border-radius:3px;cursor:pointer;transition:all .18s;white-space:nowrap}
+.btn-sm:hover{background:var(--gold);color:var(--navy)}
+.btn-sm.pdf{border-color:#7bafd4;color:#7bafd4}
+.btn-sm.pdf:hover{background:#7bafd4;color:var(--navy)}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.67rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:500}
+
+/* CARDS */
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);margin-bottom:1.5rem;border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+
+/* QUESTIONS */
+.questions ol{counter-reset:q;list-style:none}
+.questions ol>li{counter-increment:q;margin-bottom:1.4rem;display:flex;gap:1rem;align-items:flex-start}
+.questions ol>li::before{content:counter(q);min-width:28px;height:28px;background:var(--navy);color:var(--cream);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:500;flex-shrink:0;margin-top:.15rem}
+.questions ol>li .q-text{flex:1;font-size:.93rem;text-align:justify}
+
+/* SOLUTION */
+.sol-toggle-wrap{text-align:center;margin:1rem 0 0}
+.btn-toggle{background:transparent;border:2px solid var(--navy);color:var(--navy);font-family:'Source Serif 4',serif;font-size:.9rem;padding:.6rem 2rem;border-radius:4px;cursor:pointer;transition:all .2s}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--navy);color:var(--cream)}
+.sol-card{border-top:4px solid var(--green);display:none}
+.sol-card.visible{display:block;animation:fi .3s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+.st{font-size:.92rem;line-height:1.75;text-align:justify}
+.st p{margin-bottom:.7rem}
+.st ol{counter-reset:sq;list-style:none}
+.st>ol>li{counter-increment:sq;margin-bottom:1.6rem;display:flex;gap:1rem;align-items:flex-start}
+.st>ol>li::before{content:counter(sq);min-width:24px;height:24px;background:var(--green);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.68rem;flex-shrink:0;margin-top:.15rem}
+.st ul{list-style:disc;padding-left:1.5rem;margin-bottom:.7rem}
+.st ul li{margin-bottom:1rem}
+.st .q-content{flex:1;} /* Assure que le texte prend toute la largeur restante */
+
+/* PDF MODAL */
+#pdf-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;backdrop-filter:blur(2px)}
+#pdf-modal{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:101;background:#fff;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.25);width:390px;max-width:95vw;border-top:4px solid #7bafd4;overflow:hidden}
+.mh{background:var(--navy);color:var(--cream);padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
+.mh h3{font-family:'Playfair Display',serif;font-size:1rem;font-weight:600}
+.mclose{background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:1.2rem;line-height:1;padding:2px 6px;border-radius:3px;transition:color .15s}
+.mclose:hover{color:#fff}
+.mb2{padding:1.5rem}
+.opt-row{display:flex;align-items:flex-start;gap:.75rem;margin-bottom:1rem;cursor:pointer}
+.opt-row input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--navy);flex-shrink:0;margin-top:3px}
+.opt-lbl{font-size:.93rem}
+.opt-desc{font-size:.75rem;color:var(--text-muted);display:block}
+.seed-note{font-family:'JetBrains Mono',monospace;font-size:.7rem;background:var(--cream-dark);border:1px solid var(--border);padding:.55rem .85rem;border-radius:3px;color:var(--text-muted);margin-bottom:1.2rem;line-height:1.5}
+.seed-note strong{color:var(--navy)}
+.mactions{display:flex;gap:.6rem}
+.btn-print{flex:1;background:var(--navy);color:var(--cream);border:none;padding:.7rem;border-radius:4px;font-family:'Source Serif 4',serif;font-size:.9rem;cursor:pointer;transition:background .2s}
+.btn-print:hover{background:var(--navy-mid)}
+.btn-cancel{background:transparent;border:1px solid var(--border);color:var(--text-muted);padding:.7rem 1rem;border-radius:4px;font-family:'Source Serif 4',serif;font-size:.9rem;cursor:pointer;transition:all .2s}
+.btn-cancel:hover{border-color:var(--text);color:var(--text)}
+
+/* PRINT */
+@media print{
+:root{--navy:#0d1b2a;--cream:#fff;--cream-dark:#f8f8f8;--gold:#c9952a;--green:#2d6b4a;--border:#ccc}
+body{background:#fff;font-size:11pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+header{padding:1rem 1.5rem .8rem}
+header .subtitle{display:none}
+#controls-bar,.top-bar,.sol-toggle-wrap,#pdf-ov,#pdf-modal{display:none!important}
+.card{box-shadow:none;border-radius:0;page-break-inside:avoid;margin-bottom:1rem}
+main{padding:1rem 1.5rem;max-width:100%}
+body.print-no-header header{display:none!important}
+body.print-no-solution .sol-card{display:none!important}
+body.print-force-solution .sol-card{display:block!important}
+}
+
+/* --- Selecteur de langue / Language switch --- */
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem}
+.header-top .header-badge{margin-bottom:0}
+.lang-switch{display:flex;gap:.45rem;flex-shrink:0}
+.flag-btn{background:rgba(255,255,255,.06);border:1px solid rgba(201,149,42,.35);border-radius:3px;padding:3px;cursor:pointer;line-height:0;opacity:.5;transition:opacity .2s,border-color .2s,transform .15s}
+.flag-btn:hover{opacity:1;transform:translateY(-1px)}
+.flag-btn.active{opacity:1;border-color:var(--gold-light);box-shadow:0 0 0 1px rgba(232,184,75,.35)}
+.flag-btn svg{display:block;width:30px;height:20px;border-radius:1px}
+@media print{ .lang-switch{display:none !important;} }
+
+/* TABLEAUX DE DONNEES */
+.dtable-wrap{overflow-x:auto;margin:1.1rem 0}
+.dtable{width:100%;border-collapse:collapse;font-size:.82rem;font-family:'Source Serif 4',serif}
+.dtable th,.dtable td{border:1px solid var(--border);padding:.4rem .5rem;text-align:center;vertical-align:middle}
+.dtable th{background:var(--navy);color:var(--cream);font-weight:600;font-size:.78rem}
+.dtable tr:nth-child(even) td{background:#fbf9f4}
+.dtable td.num{font-family:'JetBrains Mono',monospace;font-size:.78rem;white-space:nowrap}
+.dtable tfoot td{font-weight:700;background:var(--cream-dark)}
+.dtable caption{caption-side:bottom;font-size:.76rem;color:var(--text-muted);font-style:italic;padding-top:.5rem;text-align:justify}
+.dtable-narrow{max-width:560px;margin:0 auto}
+.context-block .dtable-wrap{margin:1rem 0 1.1rem}
+.questions ol ol > li{display:block}
+.q-text .dtable-wrap{margin:.9rem 0 .8rem}
+
+/* FIGURES */
+.fig-wrap{margin:1.2rem 0 .3rem;text-align:center;overflow-x:auto}
+.fig-wrap svg{width:100%;max-width:640px;height:auto;background:#fff;border:1px solid var(--border);border-radius:4px}
+.fig-cap{font-size:.78rem;color:var(--text-muted);font-style:italic;text-align:center;margin-bottom:1rem;line-height:1.5}
+
+/* ============================================================
+   FAMILLE « MATHÉMATIQUES FINANCIÈRES » : cours, figures interactives, code
+   ============================================================ */
+.top-bar-left{flex-wrap:wrap}
+/* --- cours --- */
+.cours{font-size:.95rem;line-height:1.75;text-align:justify}
+.cours p{margin-bottom:.8rem}
+.cours .dossier-title{scroll-margin-top:1rem}
+.cours ul.kit-simple{margin:.2rem 0 1rem}
+.cours ul.kit-simple > li{margin-bottom:.55rem}
+.cours .toc{font-size:.86rem;color:var(--text-muted);text-align:left;margin:-.6rem 0 1.6rem;line-height:1.9}
+.cours .toc a{color:var(--navy);text-decoration:none;border-bottom:1px solid var(--gold)}
+.cours .toc a:hover{color:var(--gold)}
+/* démonstrations : simple filet neutre, pas de cadre coloré */
+.cours .demo{border-left:2px solid var(--border);padding:.1rem 0 .1rem 1.1rem;margin:0 0 1.1rem}
+.cours .demo p:last-child{margin-bottom:0}
+/* un seul style d'encadré, celui des « Pour aller plus loin » */
+.cours .persp-box{background:#f7f9fc;border:1px solid #ccd8e6;border-left:3px solid var(--navy-mid);padding:1.1rem 1.2rem;border-radius:4px;margin:1.4rem 0 1.4rem;font-size:.9rem;line-height:1.7;text-align:justify}
+.cours .persp-box .sol-sub{color:var(--navy);font-weight:600;display:block;margin:0 0 .5rem;font-size:.98rem}
+.cours .persp-box p{margin:0 0 .6rem}
+.cours .persp-box p:last-child, .cours .persp-box ol:last-child, .cours .persp-box ul:last-child{margin-bottom:0}
+.cours .persp-box ol, .cours .persp-box ul{padding-left:1.3rem;margin:0 0 .6rem}
+.cours .persp-box li{margin-bottom:.3rem}
+.sol-card .persp-box p{margin:0 0 .75rem 0}
+/* --- figures interactives --- */
+.ifig{margin:1.2rem 0 .3rem;text-align:center}
+.fig-ctrl{display:flex;flex-wrap:wrap;gap:.5rem 1.4rem;justify-content:center;align-items:center;margin:0 auto .6rem;max-width:680px;font-size:.84rem;color:var(--text)}
+.fig-ctrl label{display:flex;align-items:center;gap:.5rem;white-space:nowrap}
+.fig-ctrl .cv{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--navy);min-width:2.6em;text-align:left}
+.fig-ctrl input[type=range]{width:150px;accent-color:var(--navy);cursor:pointer}
+.fig-ctrl select{font-family:'Source Serif 4',serif;font-size:.84rem;padding:.2rem .4rem;border:1px solid var(--border);border-radius:3px;background:#fff;color:var(--text)}
+.fig-ctrl button{font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;background:transparent;border:1px solid var(--gold);color:var(--gold);padding:.3rem .8rem;border-radius:3px;cursor:pointer}
+.fig-ctrl button:hover{background:var(--gold);color:var(--navy)}
+.fig-svg{overflow-x:auto}
+.fig-svg svg{width:100%;min-width:520px;max-width:680px;height:auto;background:#fff;border:1px solid var(--border);border-radius:4px}
+.fig-read{font-size:.86rem;line-height:1.6;color:var(--text);margin:.5rem auto 0;max-width:680px;text-align:center}
+.fig-read .v{font-family:'JetBrains Mono',monospace;font-size:.8rem;color:var(--navy);font-weight:500}
+.fig-cap{margin-top:.35rem}
+/* --- code Python --- */
+.code-wrap{margin:.4rem 0 1.1rem}
+.code-head{display:flex;justify-content:space-between;align-items:center;background:var(--navy-mid);color:var(--gold-light);font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;padding:.3rem .9rem;border-radius:4px 4px 0 0}
+.code-head button{background:transparent;border:1px solid rgba(232,184,75,.45);color:var(--gold-light);font-family:inherit;font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;padding:.12rem .55rem;border-radius:3px;cursor:pointer}
+.code-head button:hover{background:var(--gold-light);color:var(--navy)}
+.code-block{background:#0d1b2a;color:#e8e4d9;border-radius:0 0 4px 4px;padding:.7rem .9rem;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:.74rem;line-height:1.55;text-align:left}
+.code-block .cl{white-space:pre}
+.code-block code{font-family:inherit;color:inherit;background:none;padding:0;font-size:inherit}
+.code-out{background:var(--cream-dark);border:1px solid var(--border);border-top:none;border-radius:0 0 4px 4px;padding:.55rem .9rem;font-family:'JetBrains Mono',monospace;font-size:.74rem;line-height:1.55;text-align:left;overflow-x:auto}
+.code-out .cl{white-space:pre}
+.code-out code{font-family:inherit;background:none;padding:0}
+.code-wrap .code-block.has-out{border-radius:0}
+.code-out-lbl{font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:.2rem}
+/* --- exercices --- */
+.questions ol ol{margin-top:.6rem}
+.st>ol>li .q-content p:last-child{margin-bottom:0}
+.dtable td.l, .dtable th.l{text-align:left}
+/* petits écrans : un paragraphe qui contient une formule trop large défile au lieu d'être coupé */
+@media (max-width:640px){
+  .cours p, .cours li, .st p, .q-text, .questions li{overflow-x:auto;overflow-y:hidden}
+  .card-body{padding:1.3rem 1.1rem}
+}
+@media print{
+  .fig-ctrl input, .fig-ctrl select, .fig-ctrl button, .code-head button{display:none !important}
+  .fig-svg svg{min-width:0}
+  .ifig, .persp-box, .code-wrap, .dtable-wrap{page-break-inside:avoid}
+  #course-card{page-break-inside:auto}
+}
+</style>
+<!-- KIT:CSS:START v1 --><style id="kit-css">
+/* ============================================================
+   KIT D'UNIFORMISATION — bloc partagé, identique sur toutes les pages.
+   Ne rien modifier ici fichier par fichier : régénérer le kit.
+   ============================================================ */
+
+/* --- 1. Mathématiques : jamais de débordement --- */
+mjx-container[display="true"]{
+  overflow-x:auto; overflow-y:hidden; max-width:100%;
+  padding:.15rem 0; margin:1rem 0 !important;
+}
+mjx-container[display="true"]::-webkit-scrollbar{height:5px}
+mjx-container[display="true"]::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+mjx-container{ max-width:100%; }
+.math-formula{ text-align:center; margin:1.2rem 0; overflow-x:auto; max-width:100%; }
+@media (max-width:640px){
+  mjx-container[display="true"]{ font-size:88% }
+}
+
+/* --- 2. Listes à puces entourées (questions ET données de contexte) --- */
+.kit-list, .st > ol,
+.questions > ol,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list), .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list),
+.question-list, .enum-list, .q-list{
+  counter-reset:kitq; list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem;
+}
+.kit-list > li, .st > ol > li,
+.questions > ol > li,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li, .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li,
+.question-list > li, .enum-list > li, .q-list > li{
+  counter-increment:kitq; position:relative;
+  padding-left:2.6rem; margin-bottom:1.3rem;
+  font-size:.95rem; line-height:1.7; text-align:justify;
+  font-weight:400; color:var(--text);
+  display:block;
+}
+.kit-list > li::before, .st > ol > li::before,
+.questions > ol > li::before,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li::before, .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li::before,
+.question-list > li::before, .enum-list > li::before, .q-list > li::before{
+  content:counter(kitq);
+  position:absolute; left:0; top:.1rem;
+  width:28px; min-width:28px; height:28px;
+  background:var(--navy); color:var(--cream);
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.72rem; font-weight:500;
+  flex-shrink:0;
+}
+.questions ol > li .q-text{ flex:1; font-size:.95rem; text-align:justify }
+/* sous-listes : cercle creux, plus discret */
+.enum-sublist, .kit-sublist, .sub-list, .sub-ol, .alpha-list, .enum-subsublist,
+.st ol.sub-ol, .questions ol ol, .st ol ol, .kit-list ol, .q-list ol, .question-list ol{
+  counter-reset:kitsq; list-style:none !important; padding-left:0 !important;
+  margin:.9rem 0 .9rem 0;
+}
+.enum-sublist > li, .kit-sublist > li, .sub-list > li, .sub-ol > li, .alpha-list > li, .enum-subsublist > li,
+.st ol.sub-ol > li, .questions ol ol > li, .st ol ol > li, .kit-list ol > li, .q-list ol > li, .question-list ol > li{
+  counter-increment:kitsq; position:relative;
+  padding-left:2.1rem; margin-bottom:.7rem; font-size:.92rem; text-align:justify;
+}
+.enum-sublist > li::before, .kit-sublist > li::before, .sub-list > li::before, .sub-ol > li::before, .alpha-list > li::before, .enum-subsublist > li::before,
+.st ol.sub-ol > li::before, .questions ol ol > li::before, .st ol ol > li::before, .kit-list ol > li::before, .q-list ol > li::before, .question-list ol > li::before{
+  content:counter(kitsq,lower-alpha);
+  min-width:22px;
+  position:absolute; left:0; top:.05rem;
+  width:22px; height:22px;
+  background:transparent; color:var(--navy);
+  border:1px solid var(--gold);
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.65rem;
+}
+
+/* variante : puces simples non numérotées (listes de données) */
+.kit-simple{ list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem }
+.kit-simple > li{
+  position:relative; padding-left:1.5rem; margin-bottom:1.1rem;
+  font-size:.95rem; line-height:1.7; text-align:justify;
+}
+.kit-simple > li::before{
+  content:"\2022"; position:absolute; left:0; top:-.15rem;
+  color:var(--gold); font-size:1.5rem; line-height:1; background:none;
+  width:auto; height:auto; border:none; border-radius:0;
+}
+/* variante : liste à un seul élément, sans puce */
+.kit-nobullet{ list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem }
+.kit-nobullet > li{
+  padding-left:0; margin-bottom:1rem; font-size:.95rem; line-height:1.7; text-align:justify;
+}
+.kit-nobullet > li::before{ content:none !important; display:none !important }
+/* variante : titres de section numérotés (contenu intercalé entre les puces) */
+.kit-num-scope{ counter-reset:kitn }
+p.kit-num{
+  counter-increment:kitn; position:relative;
+  padding-left:2.6rem; margin:1.8rem 0 1rem;
+  font-weight:600; color:var(--navy); text-align:left;
+  min-height:28px; display:flex; align-items:center;
+}
+p.kit-num:first-of-type{ margin-top:0 }
+p.kit-num::before{
+  content:counter(kitn); position:absolute; left:0; top:0;
+  width:28px; height:28px; background:var(--navy); color:var(--cream);
+  border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.72rem; font-weight:500;
+}
+
+/* titres de dossier */
+.dossier-title{
+  margin:2rem 0 1rem; font-weight:600; color:var(--navy); font-size:1.02rem;
+  border-bottom:1px solid var(--border); padding-bottom:.4rem; text-align:left;
+}
+.dossier-title:first-of-type{ margin-top:0 }
+.dossier-body{ margin-bottom:.5rem }
+
+/* --- 3. Corrigé sobre : plus de multiplication de fonds verts --- */
+.sol-card .calc-box, .sol-card .concl{
+  background:transparent !important;
+  border:none !important;
+  border-left:none !important;
+  padding:0 !important;
+  border-radius:0 !important;
+  margin:0 0 1.6rem 0 !important;
+  font-size:.95rem;
+  line-height:1.7;
+  text-align:justify;
+}
+.sol-card .sol-sub{
+  color:var(--navy); font-weight:600; display:block;
+  margin:0 0 .5rem 0; font-size:1rem;
+}
+/* seuls encadrés conservés : les perspectives « Pour aller plus loin » */
+.sol-card .persp-box{
+  background:#f7f9fc !important;
+  border:1px solid #ccd8e6 !important;
+  border-left:3px solid var(--navy-mid) !important;
+  padding:1.2rem !important;
+  border-radius:4px !important;
+  margin:2rem 0 1rem 0 !important;
+  font-size:.9rem; line-height:1.7; text-align:justify;
+}
+
+.btn-toggle{
+  background:transparent; border:2px solid var(--green); border-bottom:none;
+  color:var(--green); font-family:'Source Serif 4',serif; font-size:.95rem;
+  font-weight:600; padding:.5rem 1.5rem; border-radius:4px 4px 0 0; cursor:pointer;
+  transition:all .2s; position:relative; z-index:2; top:2px;
+}
+.btn-toggle:hover{ background:var(--green); color:var(--cream) }
+
+/* --- 4. Bouton « Afficher le corrigé » (modèle der) --- */
+.sol-toggle-wrap{ text-align:left; margin:1.5rem 0 0 0; }
+.sol-card{
+  border-top:2px solid var(--green); display:none;
+  border-radius:0 6px 6px 6px; position:relative; z-index:1;
+}
+.sol-card.visible{ display:block; animation:kitfi .35s ease }
+.sol-card .card-header{ background:var(--green) }
+.sol-card .card-header .tag{ border-color:rgba(200,240,200,.4); color:#a8d8b0 }
+@keyframes kitfi{ from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+
+/* --- 5. Barre d'actions unifiée --- */
+.top-bar{ display:flex; flex-wrap:wrap; gap:.8rem; align-items:center; justify-content:space-between; margin-bottom:1.2rem }
+.top-bar-left{ display:flex; flex-wrap:wrap; gap:.55rem; order:1 }
+.top-bar .seed-badge{ order:2 }
+.btn-sm{ background:transparent; border:1px solid var(--gold); color:var(--gold); font-family:'JetBrains Mono',monospace; font-size:.67rem; letter-spacing:.08em; text-transform:uppercase; padding:.4rem 1rem; border-radius:3px; cursor:pointer; transition:all .18s; white-space:nowrap }
+.btn-sm:hover{ background:var(--gold); color:var(--navy) }
+.btn-sm.pdf{ border-color:#7bafd4; color:#7bafd4 }
+.btn-sm.pdf:hover{ background:#7bafd4; color:var(--navy) }
+.btn-sm.doc{ border-color:#8fa8c4; color:#8fa8c4 }
+.seed-row{ display:flex; gap:.4rem; align-items:center }
+.btn-copy-seed{
+  background:transparent; border:1px solid rgba(201,149,42,.4); color:rgba(250,247,240,.55);
+  padding:.38rem .55rem; border-radius:3px; cursor:pointer;
+  font-family:'JetBrains Mono',monospace; font-size:.65rem; transition:all .18s; white-space:nowrap;
+}
+.btn-copy-seed:hover{ border-color:var(--gold-light); color:var(--gold-light) }
+.btn-sm.doc:hover{ background:#8fa8c4; color:var(--navy) }
+
+/* --- 6. Modale d'export PDF --- */
+#pdf-ov{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:100; backdrop-filter:blur(2px) }
+#pdf-modal{ display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:101; background:#fff; border-radius:8px; box-shadow:0 20px 60px rgba(0,0,0,.25); width:390px; max-width:95vw; border-top:4px solid #7bafd4; overflow:hidden }
+#pdf-ov.open,#pdf-modal.open{ display:block }
+.mh{ background:var(--navy); color:var(--cream); padding:1rem 1.5rem; display:flex; align-items:center; justify-content:space-between }
+.mh h3{ font-family:'Playfair Display',serif; font-size:1rem; font-weight:600; margin:0 }
+.mclose{ background:none; border:none; color:rgba(255,255,255,.6); cursor:pointer; font-size:1.2rem; line-height:1; padding:2px 6px; border-radius:3px; transition:color .15s }
+.mclose:hover{ color:#fff }
+.mb2{ padding:1.5rem }
+.opt-row{ display:flex; align-items:flex-start; gap:.75rem; margin-bottom:1rem; cursor:pointer }
+.opt-row input[type=checkbox]{ width:16px; height:16px; cursor:pointer; accent-color:var(--navy); flex-shrink:0; margin-top:3px }
+.opt-txt{ display:block }
+.opt-lbl{ font-size:.93rem; display:block }
+.opt-desc{ font-size:.75rem; color:var(--text-muted); display:block }
+.seed-note{ font-family:'JetBrains Mono',monospace; font-size:.7rem; background:var(--cream-dark); border:1px solid var(--border); padding:.55rem .85rem; border-radius:3px; color:var(--text-muted); margin-bottom:1.2rem; line-height:1.5 }
+.mactions{ display:flex; gap:.6rem }
+.btn-print{ flex:1; background:var(--navy); color:var(--cream); border:none; padding:.7rem; border-radius:4px; font-family:'Source Serif 4',serif; font-size:.9rem; cursor:pointer; transition:background .2s }
+.btn-print:hover{ background:var(--navy-mid) }
+.btn-cancel{ background:transparent; border:1px solid var(--border); color:var(--text-muted); padding:.7rem 1rem; border-radius:4px; font-family:'Source Serif 4',serif; font-size:.9rem; cursor:pointer; transition:all .2s }
+.btn-cancel:hover{ border-color:var(--text); color:var(--text) }
+
+/* --- 7. Impression --- */
+@media print{
+  body{ background:#fff; font-size:11pt; -webkit-print-color-adjust:exact; print-color-adjust:exact }
+  header{ display:block !important; padding:1rem 1.5rem .8rem }
+  header .subtitle{ display:none }
+  .ctrls, #controls-bar, .top-actions, .top-bar-left, .sol-toggle-wrap,
+  .lang-switch, #pdf-ov, #pdf-modal{ display:none !important }
+  .top-bar{ display:block !important; margin-bottom:.8rem }
+  .top-bar .seed-badge{
+    display:inline-block !important; background:none; border:1px solid var(--border);
+    color:var(--text-muted); font-family:'JetBrains Mono',monospace; font-size:8.5pt;
+    padding:2pt 6pt; border-radius:2px;
+  }
+  body.print-no-header .top-bar{ display:none !important }
+  main{ padding:1rem 1.5rem; max-width:100% }
+  .card{ box-shadow:none; border-radius:0; page-break-inside:avoid; margin-bottom:1rem }
+  #ex-area{ display:block !important }
+  .sol-card{ display:block !important; border-top:2px solid var(--green) }
+  mjx-container[display="true"]{ overflow:visible !important }
+  body.print-no-header header{ display:none !important }
+  body.print-no-header .ctrls{ display:none !important }
+  body.print-no-solution .sol-card,
+  body.print-no-solution .sol-toggle-wrap{ display:none !important }
+  body.print-force-solution .sol-card{ display:block !important }
+}
+</style><!-- KIT:CSS:END -->
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-top">
+    <div class="header-badge" data-k="k-badge">MATHÉMATIQUES FINANCIÈRES</div>
+    <div class="lang-switch">
+      <button type="button" class="flag-btn active" id="flag-fr" onclick="setLang('fr')" title="Français" aria-label="Français"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="20" height="40" fill="#002654"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ED2939"/></svg></button>
+      <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
+    </div>
+  </div>
+  <h1 data-k="k-h1">Probabilités discrètes et loi binomiale</h1>
+  <p class="subtitle" data-k="k-sub">© Thomas Hossen – Version du 6 octobre 2026</p>
+
+  <div id="controls-bar">
+    <div class="ctrls">
+      <div class="ctrl-g">
+        <span class="ctrl-lbl" data-k="k-seed">Seed de reproductibilité</span>
+        <div class="seed-row">
+          <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="0" max="99999999">
+          <button type="button" class="btn-copy-seed" id="btn-copy-seed" onclick="copySeed(this)" title="Copier la seed active"><span data-kit="btnCopy">&#10697; Copier</span></button>
+        </div>
+        <span class="ctrl-tip" data-k="k-seedtip">Vide = nouvel exercice aléatoire</span>
+      </div>
+      <div class="ctrl-vsep"></div>
+      <button class="btn-gen" onclick="generateAndGo()"><span data-k="k-gen">Générer</span></button>
+    </div>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="ex-area">
+
+    <div id="course-card" class="card">
+      <div class="card-header"><span class="tag" data-k="k-tag-course">Cours</span><h2 data-k="k-coursetitle">Du dénombrement à la loi binomiale</h2></div>
+      <div class="card-body cours" id="course-content"></div>
+    </div>
+
+    <div class="top-bar" id="ex-anchor">
+      <div class="top-bar-left">
+        <button type="button" class="btn-sm" onclick="regen()"><span data-kit="btnNew">&#8634; Nouvel &eacute;nonc&eacute;</span></button>
+        <button type="button" class="btn-sm pdf" onclick="openPdfModal()"><span data-kit="btnPdf">&#11015; Exporter PDF</span></button>
+        <button type="button" class="btn-sm doc" onclick="exportWord()"><span data-kit="btnDoc">&#11015; Exporter Word</span></button>
+      </div>
+      <div class="seed-badge"><span data-k="k-seedbadge">Seed&nbsp;:</span> <span id="seed-disp">—</span></div>
+    </div>
+
+    <div id="ex-card" class="card">
+      <div class="card-header"><span class="tag" data-k="k-tag-ex">Exercice</span><h2 data-k="k-extitle">Scénarios de marché, rendement d'un fonds et séances de hausse</h2></div>
+      <div class="card-body" id="ex-content"></div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag" data-k="k-tag-sol">Corrigé</span><h2 data-k="k-soltitle">Scénarios de marché, rendement d'un fonds et séances de hausse</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+/* ============================================================
+   SOCLE COMMUN DE LA FAMILLE « MATHÉMATIQUES FINANCIÈRES » (mf1, mf2, …)
+   Identique sur toutes les pages de la famille : langue, tirages,
+   mise en forme des nombres, figures interactives, génération.
+   Chaque page y ajoute son cours, ses figures et son exercice (objet PAGE).
+   ============================================================ */
+let LANG = 'fr';
+let solVisible = false;
+let _activeSeed = 0;
+const I18N = { fr: {}, en: {} };   // libellés et textes, remplis par la page
+const FIGS = {};                   // figures interactives : id -> { state, controls(L), draw(state, lang) }
+const PAGE = {};                   // compute(seed) -> données de l'exercice
+
+/* ---------- tirages reproductibles (Mulberry32) ---------- */
+let _rand = Math.random;
+function initRand(seed) {
+  _activeSeed = seed;
+  let s = seed >>> 0;
+  _rand = function () {
+    let t = s += 0x6D2B79F5;
+    t = Math.imul(t ^ t >>> 15, t | 1);
+    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function rnd() { return _rand(); }
+function rint(a, b) { return a + Math.floor(_rand() * (b - a + 1)); }
+function pick(arr) { return arr[Math.floor(_rand() * arr.length)]; }
+function shuffle(arr) { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(_rand() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+/* générateur local, indépendant des tirages de l'exercice (animations, simulations des figures) */
+function localRand(seed) {
+  let s = seed >>> 0;
+  return function () {
+    let t = s += 0x6D2B79F5;
+    t = Math.imul(t ^ t >>> 15, t | 1);
+    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+/* ---------- nombres ----------
+   Point décimal dans les deux langues (comme le reste du site et comme Python),
+   espace fine pour les milliers. m = true : écriture pour MathJax. */
+function _fixed(x, d) {
+  const a = Math.abs(x), p = Math.pow(10, d);
+  return (Math.round(a * p + 1e-9) / p).toFixed(d);
+}
+function _group(ip, m) {
+  if (ip.length < 5) return ip;
+  const sep = m ? '\\,' : ' ';
+  let out = '';
+  while (ip.length > 3) { out = sep + ip.slice(-3) + out; ip = ip.slice(0, -3); }
+  return ip + out;
+}
+function _num(x, d, m, trim) {
+  let s = _fixed(x, d);
+  if (trim && s.indexOf('.') >= 0) s = s.replace(/0+$/, '').replace(/\.$/, '');
+  const neg = x < 0 && /[1-9]/.test(s);
+  const parts = s.split('.');
+  return (neg ? (m ? '-' : '−') : '') + _group(parts[0], m) + (parts.length > 1 ? '.' + parts[1] : '');
+}
+function fmt(x, d) { return _num(x, d, false, false); }     // texte, d décimales
+function fmtT(x, d) { return _num(x, d, false, true); }     // texte, zéros finaux retirés
+function tex(x, d) { return _num(x, d, true, false); }      // MathJax, d décimales
+function texT(x, d) { return _num(x, d, true, true); }      // MathJax, zéros finaux retirés
+/* quotient de deux entiers positifs arrondi au plus proche (demi vers le haut), sans flottant */
+function rdiv(a, b) { return Math.floor((2 * a + b) / (2 * b)); }
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+/* ---------- loi normale centrée réduite : densité φ, répartition Φ, quantile ---------- */
+function normPdf(x) { return Math.exp(-0.5 * x * x) / 2.5066282746310002; }
+function normCdf(x) {                      // série de Marsaglia, précision de l'ordre de 1e-15
+  if (x < -8) return 0; if (x > 8) return 1;
+  let s = x, t = x;
+  for (let k = 1; k < 400; k++) { t *= x * x / (2 * k + 1); s += t; if (Math.abs(t) < 1e-17 * Math.abs(s)) break; }
+  return 0.5 + s * normPdf(x);
+}
+function normInv(p) {                      // algorithme d'Acklam, puis deux pas de Newton
+  const a = [-39.69683028665376, 220.9460984245205, -275.9285104469687, 138.3577518672690, -30.66479806614716, 2.506628277459239],
+        b = [-54.47609879822406, 161.5858368580409, -155.6989798598866, 66.80131188771972, -13.28068155288572],
+        c = [-0.007784894002430293, -0.3223964580411365, -2.400758277161838, -2.549732539343734, 4.374664141464968, 2.938163982698783],
+        d = [0.007784695709041462, 0.3224671290700398, 2.445134137142996, 3.754408661907416];
+  let x, q, r;
+  if (p < 0.02425) { q = Math.sqrt(-2 * Math.log(p)); x = (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1); }
+  else if (p > 1 - 0.02425) { q = Math.sqrt(-2 * Math.log(1 - p)); x = -(((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1); }
+  else { q = p - 0.5; r = q * q; x = (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q / (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1); }
+  for (let i = 0; i < 2; i++) x -= (normCdf(x) - p) / normPdf(x);
+  return x;
+}
+
+/* ---------- langue ---------- */
+function detectLang() {
+  try {
+    const q = new URLSearchParams(window.location.search).get('lang');
+    if (q && I18N[q.toLowerCase()]) return q.toLowerCase();
+  } catch (e) {}
+  const h = (window.location.hash || '').replace('#', '').toLowerCase();
+  if (I18N[h] && I18N[h].k) return h;
+  return 'fr';
+}
+function applyLang() {
+  const D = I18N[LANG].k;
+  document.documentElement.lang = LANG;
+  document.title = D.title;
+  document.querySelectorAll('[data-k]').forEach(function (el) {
+    const key = el.getAttribute('data-k');
+    if (D[key] !== undefined) el.innerHTML = D[key];
+  });
+  const si = document.getElementById('seed-input');
+  if (si) si.placeholder = D.phSeed;
+  const tb = document.getElementById('toggle-btn');
+  if (tb) tb.textContent = solVisible ? D.hideSol : D.showSol;
+  document.getElementById('flag-fr').classList.toggle('active', LANG === 'fr');
+  document.getElementById('flag-en').classList.toggle('active', LANG === 'en');
+}
+function setLang(lang) {
+  if (!I18N[lang] || !I18N[lang].k || lang === LANG) return;
+  LANG = lang;
+  try {
+    const u = new URL(window.location.href);
+    u.searchParams.set('lang', lang);
+    history.replaceState(null, '', u.toString());
+  } catch (e) {}
+  applyLang();
+  renderCourse();
+  const wasVis = solVisible;
+  renderExercise(_activeSeed);
+  if (wasVis) toggleSol();
+  typeset();
+}
+
+/* ---------- MathJax : un seul rendu à la fois ---------- */
+let _mjChain = Promise.resolve();
+function typeset(el) {
+  if (!(window.MathJax && MathJax.typesetPromise)) return;
+  _mjChain = _mjChain.then(function () { return MathJax.typesetPromise(el ? [el] : undefined); })
+                     .catch(function (err) { console.error('MathJax :', err); });
+}
+
+/* ---------- figures : petit traceur SVG ---------- */
+const COL = { s1: '#2a6fb0', s2: '#b9821a', s3: '#b94040', s4: '#8a4fb0',
+              ink: '#1e1e1e', mute: '#5a5a5a', grid: '#e7e3d9', axis: '#b9b3a6', navy: '#0d1b2a' };
+const FONT_T = "font-family=\"'Source Serif 4',Georgia,serif\"";
+const FONT_M = "font-family=\"'JetBrains Mono',monospace\"";
+let _clipN = 0;
+function Plot(o) {
+  const P = Object.assign({ w: 680, h: 320, ml: 52, mr: 18, mt: 16, mb: 40 }, o);
+  P.el = [];
+  const r1 = v => Math.round(v * 10) / 10;
+  P.X = v => r1(P.ml + (v - P.x0) / (P.x1 - P.x0) * (P.w - P.ml - P.mr));
+  P.Y = v => r1(P.h - P.mb - (v - P.y0) / (P.y1 - P.y0) * (P.h - P.mt - P.mb));
+  P.add = s => { P.el.push(s); return P; };
+  /* axes discrets : quadrillage horizontal en filets, graduations en gris */
+  P.axes = function (a) {
+    a = a || {};
+    const xf = a.xf || (v => fmtT(v, 4)), yf = a.yf || (v => fmtT(v, 4));
+    (a.yt || []).forEach(v => {
+      if (a.grid !== false) P.add(`<line x1="${P.ml}" y1="${P.Y(v)}" x2="${P.w - P.mr}" y2="${P.Y(v)}" stroke="${COL.grid}" stroke-width="1"/>`);
+      P.add(`<text x="${P.ml - 7}" y="${P.Y(v) + 3.5}" text-anchor="end" ${FONT_M} font-size="10" fill="${COL.mute}">${yf(v)}</text>`);
+    });
+    const yb = a.xAxisAt !== undefined ? P.Y(a.xAxisAt) : P.h - P.mb;
+    (a.xt || []).forEach(v => {
+      P.add(`<line x1="${P.X(v)}" y1="${yb}" x2="${P.X(v)}" y2="${yb + 4}" stroke="${COL.axis}" stroke-width="1"/>`);
+      P.add(`<text x="${P.X(v)}" y="${P.h - P.mb + 16}" text-anchor="middle" ${FONT_M} font-size="10" fill="${COL.mute}">${xf(v)}</text>`);
+    });
+    P.add(`<line x1="${P.ml}" y1="${yb}" x2="${P.w - P.mr}" y2="${yb}" stroke="${COL.axis}" stroke-width="1"/>`);
+    if (a.yAxis !== false) P.add(`<line x1="${P.ml}" y1="${P.mt}" x2="${P.ml}" y2="${P.h - P.mb}" stroke="${COL.axis}" stroke-width="1"/>`);
+    if (a.xl) P.add(`<text x="${(P.ml + P.w - P.mr) / 2}" y="${P.h - 6}" text-anchor="middle" ${FONT_T} font-size="12" fill="${COL.mute}">${a.xl}</text>`);
+    if (a.yl) P.add(`<text x="${P.ml}" y="${P.mt - 4}" text-anchor="start" ${FONT_T} font-size="12" fill="${COL.mute}">${a.yl}</text>`);
+    return P;
+  };
+  P.pts = function (pts) { return pts.map((p, i) => (i ? 'L' : 'M') + P.X(p[0]) + ' ' + P.Y(p[1])).join(' '); };
+  P.sample = function (fn, a, b, n) { const out = []; n = n || 160; for (let i = 0; i <= n; i++) { const x = a + (b - a) * i / n, y = fn(x); if (isFinite(y)) out.push([x, Math.max(P.y0 - (P.y1 - P.y0), Math.min(P.y1 + (P.y1 - P.y0), y))]); } return out; };
+  /* zone de tracé : P.clip() la déclare, { clip: true } y découpe une courbe qui sortirait du cadre */
+  P.clip = function () { P._clip = 'clip' + (++_clipN); return P.add(`<defs><clipPath id="${P._clip}"><rect x="${P.ml}" y="${P.mt}" width="${P.w - P.ml - P.mr}" height="${P.h - P.mt - P.mb}"/></clipPath></defs>`); };
+  P.line = function (pts, st) { st = st || {}; return P.add(`<path d="${P.pts(pts)}" fill="none" stroke="${st.c || COL.s1}" stroke-width="${st.w || 2}" stroke-linejoin="round" stroke-linecap="round"${st.dash ? ` stroke-dasharray="${st.dash}"` : ''}${st.clip && P._clip ? ` clip-path="url(#${P._clip})"` : ''}/>`); };
+  P.curve = function (fn, a, b, st, n) { return P.line(P.sample(fn, a, b, n), st); };
+  P.area = function (pts, base, st) { st = st || {}; if (!pts.length) return P; const d = P.pts(pts) + ` L${P.X(pts[pts.length - 1][0])} ${P.Y(base)} L${P.X(pts[0][0])} ${P.Y(base)} Z`; return P.add(`<path d="${d}" fill="${st.c || COL.s1}" fill-opacity="${st.o || 0.16}" stroke="none"/>`); };
+  P.bar = function (xc, wpx, y, st) { st = st || {}; const top = P.Y(y), base = P.Y(st.base || 0), hgt = Math.max(0, base - top), r = Math.min(3, wpx / 2, hgt); const x = P.X(xc) - wpx / 2;
+    const d = `M${r1(x)} ${base} L${r1(x)} ${r1(top + r)} Q${r1(x)} ${top} ${r1(x + r)} ${top} L${r1(x + wpx - r)} ${top} Q${r1(x + wpx)} ${top} ${r1(x + wpx)} ${r1(top + r)} L${r1(x + wpx)} ${base} Z`;
+    return P.add(`<path d="${d}" fill="${st.c || COL.s1}" fill-opacity="${st.o === undefined ? 1 : st.o}">${st.tip ? `<title>${st.tip}</title>` : ''}</path>`); };
+  P.seg = function (xa, ya, xb, yb, st) { st = st || {}; return P.add(`<line x1="${P.X(xa)}" y1="${P.Y(ya)}" x2="${P.X(xb)}" y2="${P.Y(yb)}" stroke="${st.c || COL.mute}" stroke-width="${st.w || 1.2}"${st.dash ? ` stroke-dasharray="${st.dash}"` : ''}/>`); };
+  P.dot = function (x, y, st) { st = st || {}; return P.add(`<circle cx="${P.X(x)}" cy="${P.Y(y)}" r="${st.r || 4.5}" fill="${st.hollow ? '#fff' : (st.c || COL.s1)}" stroke="${st.hollow ? (st.c || COL.s1) : '#fff'}" stroke-width="2">${st.tip ? `<title>${st.tip}</title>` : ''}</circle>`); };
+  P.text = function (x, y, s, st) { st = st || {}; return P.add(`<text x="${P.X(x) + (st.dx || 0)}" y="${P.Y(y) + (st.dy || 0)}" text-anchor="${st.anchor || 'middle'}" ${st.mono ? FONT_M : FONT_T} font-size="${st.size || 11.5}" font-weight="${st.bold ? 700 : 400}"${st.italic ? ' font-style="italic"' : ''} fill="${st.c || COL.ink}">${s}</text>`); };
+  /* légende : un trait ou une pastille de la couleur de la série, texte en encre neutre */
+  P.legend = function (items, x, y) {
+    let cx = x;
+    items.forEach(it => {
+      if (it.box) P.add(`<rect x="${cx}" y="${y - 8}" width="12" height="9" rx="2" fill="${it.c}" fill-opacity="${it.o || 1}"/>`);
+      else P.add(`<line x1="${cx}" y1="${y - 4}" x2="${cx + 18}" y2="${y - 4}" stroke="${it.c}" stroke-width="2.4"${it.dash ? ` stroke-dasharray="${it.dash}"` : ''} stroke-linecap="round"/>`);
+      const tx = cx + (it.box ? 17 : 23);
+      P.add(`<text x="${tx}" y="${y}" ${FONT_T} font-size="11.5" fill="${COL.ink}">${it.t}</text>`);
+      cx = tx + it.t.replace(/<[^>]+>/g, '').length * 6.1 + 18;
+    });
+    return P;
+  };
+  P.svg = function (aria) { return `<svg viewBox="0 0 ${P.w} ${P.h}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${esc(aria || '')}">${P.el.join('')}</svg>`; };
+  return P;
+}
+/* graduations « rondes » entre a et b */
+function ticks(a, b, n) {
+  const span = b - a, raw = span / (n || 5), p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / p;
+  const step = (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10) * p, out = [];
+  for (let v = Math.ceil(a / step - 1e-9) * step; v <= b + 1e-9; v += step) out.push(Math.round(v / step) * step);
+  return out;
+}
+
+/* ---------- figures : montage et commandes ---------- */
+function mountFigs(root) {
+  (root || document).querySelectorAll('[data-fig]').forEach(function (host) {
+    const id = host.getAttribute('data-fig'), F = FIGS[id];
+    if (!F) return;
+    const ctr = F.controls ? F.controls(I18N[LANG]) : [];
+    let h = '';
+    if (ctr.length) {
+      h += '<div class="fig-ctrl">';
+      ctr.forEach(function (c) {
+        if (c.type === 'select') {
+          h += `<label><span>${c.label}</span><select data-key="${c.key}">${c.options.map(o => `<option value="${o.v}"${String(F.state[c.key]) === String(o.v) ? ' selected' : ''}>${o.t}</option>`).join('')}</select></label>`;
+        } else if (c.type === 'button') {
+          h += `<button type="button" data-act="${c.key}">${c.label}</button>`;
+        } else {
+          h += `<label><span>${c.label}</span><input type="range" data-key="${c.key}" min="${c.min}" max="${c.max}" step="${c.step}" value="${F.state[c.key]}"><span class="cv" data-val="${c.key}"></span></label>`;
+        }
+      });
+      h += '</div>';
+    }
+    h += '<div class="fig-svg"></div><div class="fig-read"></div>';
+    host.innerHTML = h;
+    const byKey = {}; ctr.forEach(c => { byKey[c.key] = c; });
+    function redraw() {
+      if (F.clamp) F.clamp(F.state);
+      /* les bornes d'un curseur peuvent dépendre d'un autre (k entre 0 et n, par exemple) */
+      const now = F.controls ? F.controls(I18N[LANG]) : [];
+      now.forEach(function (c) {
+        if (c.type === 'select' || c.type === 'button') return;
+        const inp = host.querySelector(`input[data-key="${c.key}"]`);
+        if (inp) { inp.min = c.min; inp.max = c.max; inp.step = c.step; inp.value = F.state[c.key]; }
+        const sp = host.querySelector(`[data-val="${c.key}"]`);
+        if (sp) sp.textContent = c.fmt ? c.fmt(F.state[c.key]) : fmtT(F.state[c.key], 4);
+      });
+      const out = F.draw(F.state, LANG);
+      host.querySelector('.fig-svg').innerHTML = out.svg;
+      host.querySelector('.fig-read').innerHTML = out.read || '';
+    }
+    host.querySelectorAll('input[data-key]').forEach(function (inp) {
+      inp.addEventListener('input', function () { F.state[inp.getAttribute('data-key')] = parseFloat(inp.value); redraw(); });
+    });
+    host.querySelectorAll('select[data-key]').forEach(function (sel) {
+      sel.addEventListener('change', function () { const c = byKey[sel.getAttribute('data-key')]; F.state[c.key] = c.numeric ? parseFloat(sel.value) : sel.value; redraw(); });
+    });
+    host.querySelectorAll('button[data-act]').forEach(function (b) {
+      b.addEventListener('click', function () { const c = byKey[b.getAttribute('data-act')]; c.act(F.state); redraw(); });
+    });
+    redraw();
+  });
+}
+
+/* ---------- blocs de code : bouton « copier » ---------- */
+function copyCode(btn) {
+  const wrap = btn.closest('.code-wrap');
+  const txt = Array.prototype.map.call(wrap.querySelectorAll('.code-block .cl'), function (l) { return l.textContent.replace(/ /g, ''); }).join('\n');
+  const done = function () { const o = btn.textContent; btn.textContent = I18N[LANG].k.copied; setTimeout(function () { btn.textContent = o; }, 1300); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done, done);
+  else { const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch (e) {} document.body.removeChild(ta); done(); }
+}
+
+/* ---------- rendu ---------- */
+function renderCourse() {
+  const host = document.getElementById('course-content');
+  host.innerHTML = I18N[LANG].course;
+  host.querySelectorAll('.code-head button').forEach(function (b) { b.textContent = I18N[LANG].k.copy; });
+  mountFigs(host);
+}
+function renderExercise(seed) {
+  const D = PAGE.compute(seed);
+  PAGE.last = D;
+  document.getElementById('seed-disp').textContent = _activeSeed;
+  const ms = document.getElementById('modal-seed'); if (ms) ms.textContent = _activeSeed;
+  const nb = h => h.replace(/(\d) %/g, '$1\u00a0%');             // espace insécable devant le signe %
+  document.getElementById('ex-content').innerHTML = nb(I18N[LANG].ex(D));
+  document.getElementById('sol-content').innerHTML = nb(I18N[LANG].sol(D));
+  solVisible = false;
+  const solC = document.getElementById('sol-card'), btn = document.getElementById('toggle-btn');
+  solC.classList.remove('visible'); btn.classList.remove('shown'); btn.textContent = I18N[LANG].k.showSol;
+}
+function generateFromControls() {
+  const v = document.getElementById('seed-input').value;
+  const seed = v ? parseInt(v, 10) : Math.floor(Math.random() * 10000000);
+  renderExercise(seed);
+  typeset(document.getElementById('ex-card')); typeset(document.getElementById('sol-card'));
+}
+function regen() { document.getElementById('seed-input').value = ''; generateFromControls(); }
+function generateAndGo() {
+  generateFromControls();
+  const c = document.getElementById('ex-anchor'); if (c && c.scrollIntoView) c.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function toggleSol() {
+  solVisible = !solVisible;
+  const sol = document.getElementById('sol-card'), btn = document.getElementById('toggle-btn');
+  if (solVisible) { sol.classList.add('visible'); btn.classList.add('shown'); btn.textContent = I18N[LANG].k.hideSol; }
+  else { sol.classList.remove('visible'); btn.classList.remove('shown'); btn.textContent = I18N[LANG].k.showSol; }
+}
+function initPage() {
+  LANG = detectLang();
+  applyLang();
+  renderCourse();
+  renderExercise(Math.floor(Math.random() * 10000000));
+  /* MathJax est chargé en asynchrone : s'il est déjà prêt on compose tout de suite,
+     sinon sa propre passe de démarrage composera la page entière. */
+  typeset();
+}
+
+/* ============================================================
+   PAGE mf1
+   ============================================================ */
+I18N.fr.k = {
+ "k-badge": "MATHÉMATIQUES FINANCIÈRES",
+ "k-seed": "Seed de reproductibilité",
+ "k-seedtip": "Vide = nouvel exercice aléatoire",
+ "k-gen": "Générer",
+ "k-tag-course": "Cours",
+ "k-tag-ex": "Exercice",
+ "k-tag-sol": "Corrigé",
+ "k-seedbadge": "Seed&nbsp;:",
+ "showSol": "Afficher le corrigé",
+ "hideSol": "Masquer le corrigé",
+ "phSeed": "auto",
+ "copy": "Copier",
+ "copied": "Copié",
+ "k-sub": "© Thomas Hossen – Version du 6 octobre 2026",
+ "title": "Mathématiques financières 1 – Probabilités discrètes et loi binomiale",
+ "k-h1": "Probabilités discrètes et loi binomiale",
+ "k-coursetitle": "Du dénombrement à la loi binomiale",
+ "k-extitle": "Scénarios de marché, rendement d'un fonds et séances de hausse",
+ "k-soltitle": "Scénarios de marché, rendement d'un fonds et séances de hausse"
+};
+I18N.fr.course = "<div class=\"context-block\">\n<strong>Objectifs.<\/strong> À la fin de cette page, vous savez calculer une probabilité en comptant des issues, décrire une variable aléatoire discrète par sa loi et sa fonction de répartition, calculer une espérance, une variance et un écart type, et utiliser la loi binomiale.<br><br>\n<strong>Pourquoi en finance ?<\/strong> L'espérance d'un rendement mesure ce que l'on gagne en moyenne, son écart type mesure le risque, et l'arbre binomial qui sert à évaluer les options (séance 3) n'est rien d'autre qu'une loi binomiale appliquée à un cours de bourse.<br><br>\n<strong>Prérequis.<\/strong> Fractions, puissances et pourcentages. Aucune autre connaissance n'est supposée.\n<\/div>\n<p class=\"toc\">Sommaire : <a href=\"#s1\">1. Issues et événements<\/a> · <a href=\"#s2\">2. Variable aléatoire discrète<\/a> · <a href=\"#s3\">3. Espérance<\/a> · <a href=\"#s4\">4. Variance et écart type<\/a> · <a href=\"#s5\">5. Loi binomiale<\/a> · <a href=\"#s6\">6. En Python<\/a> · <a href=\"#s7\">7. À retenir<\/a> · <a href=\"#ex-anchor\">Exercice corrigé<\/a><\/p>\n\n<div class=\"dossier-title\" id=\"s1\">1. Expérience aléatoire, issues et événements<\/div>\n<p>Une <em>expérience aléatoire<\/em> est une expérience dont on ne peut pas prévoir le résultat, mais dont on connaît tous les résultats possibles. Chaque résultat possible s'appelle une <em>issue<\/em>, et l'ensemble de toutes les issues s'appelle l'<em>univers<\/em>, noté \\(S\\). Lancer un dé à six faces est une expérience aléatoire d'univers \\(S=\\{1,2,3,4,5,6\\}\\).<\/p>\n<p>Un <em>événement<\/em> est un ensemble d'issues : « obtenir un nombre impair » est l'événement \\(A=\\{1,3,5\\}\\). La <em>probabilité<\/em> d'un événement, notée \\(\\PP(A)\\), est un nombre compris entre 0 (événement impossible) et 1 (événement certain) qui mesure ses chances de se réaliser.<\/p>\n<p><strong>Formule de dénombrement.<\/strong> Quand toutes les issues ont la même chance de se produire (dé équilibré, pièce équilibrée), on dit qu'elles sont <em>équiprobables<\/em>, et la probabilité d'un événement se calcule en comptant :<\/p>\n\\[\\PP(A)=\\frac{\\text{nombre d'issues qui réalisent } A}{\\text{nombre d'issues possibles}}.\\]\n<p>Pour le dé, trois issues sur six sont impaires, donc \\(\\PP(A)=\\frac{3}{6}=0.5\\).<\/p>\n<p><strong>Compter les issues possibles.<\/strong> Quand on répète une expérience, les possibilités se multiplient. Si l'on lance une pièce trois fois, il y a 2 résultats possibles au premier lancer ; pour chacun d'eux, 2 au deuxième ; pour chacun de ces 4 débuts, encore 2 au troisième. Il y a donc \\(2\\times 2\\times 2=2^{3}=8\\) suites possibles. La règle générale est la suivante :<\/p>\n\\[\\text{nombre d'issues possibles}=(\\text{nombre d'états})^{\\,\\text{nombre de répétitions}}.\\]\n<p>Deux lancers d'un dé donnent ainsi \\(6^{2}=36\\) couples équiprobables, dont un seul est le double six : la probabilité d'obtenir deux 6 vaut \\(\\frac{1}{36}\\approx 0.0278\\).<\/p>\n<p><strong>Exemple du cours.<\/strong> Quelle est la probabilité d'obtenir exactement une fois face en trois lancers d'une pièce équilibrée ? Notons F pour face et P pour pile. Les 8 suites possibles sont FFF, FFP, FPF, FPP, PFF, PFP, PPF et PPP. Trois d'entre elles contiennent exactement un F : ce sont FPP, PFP et PPF. La probabilité cherchée vaut donc \\(\\frac{3}{8}=0.375\\).<\/p>\n<div class=\"ifig\" data-fig=\"tree\"><\/div>\n<div class=\"fig-cap\">Figure 1 — Arbre des lancers d'une pièce équilibrée. Choisissez le nombre de lancers et le nombre de faces voulu : les suites qui réalisent l'événement sont mises en évidence, et la probabilité est le rapport des deux comptages.<\/div>\n<p><strong>Plusieurs descriptions pour un même événement.<\/strong> En trois lancers, l'événement \\(\\{\\text{PFF},\\text{FPF},\\text{FFP}\\}\\) se décrit aussi bien par « exactement deux faces » que par « exactement un pile » : ce sont les mêmes suites. En revanche « au plus un pile » contient en plus la suite FFF : c'est un autre événement.<\/p>\n<p><strong>Trois règles à connaître.<\/strong><\/p>\n<ul class=\"kit-simple\">\n<li><em>Événement contraire.<\/em> \\(\\PP(\\text{non }A)=1-\\PP(A)\\). C'est la règle qui sert pour « au moins un » : en trois lancers, le contraire de « au moins une face » est « aucune face », c'est-à-dire la seule suite PPP, de probabilité \\(\\frac{1}{8}\\). Donc \\(\\PP(\\text{au moins une face})=1-\\frac{1}{8}\\), soit \\(\\frac{7}{8}=0.875\\).<\/li>\n<li><em>Événements incompatibles.<\/em> Si \\(A\\) et \\(B\\) n'ont aucune issue en commun, \\(\\PP(A\\text{ ou }B)=\\PP(A)+\\PP(B)\\). En trois lancers, « exactement deux faces » et « exactement deux piles » sont incompatibles, car aucune suite de trois lancers ne contient à la fois deux F et deux P : la probabilité d'obtenir l'un ou l'autre vaut \\(\\frac{3}{8}+\\frac{3}{8}=\\frac{3}{4}\\).<\/li>\n<li><em>Événements indépendants.<\/em> Si la réalisation de \\(A\\) ne change pas les chances de \\(B\\), \\(\\PP(A\\text{ et }B)=\\PP(A)\\times\\PP(B)\\). Deux lancers d'un dé sont indépendants : on retrouve \\(\\PP(\\text{deux 6})=\\frac{1}{6}\\times\\frac{1}{6}=\\frac{1}{36}\\).<\/li>\n<\/ul>\n<div class=\"persp-box\">\n<span class=\"sol-sub\">Mode d'emploi — calculer une probabilité par dénombrement<\/span>\n<ol>\n<li>Décrire précisément une issue (une suite de \\(n\\) résultats, par exemple) et vérifier que toutes les issues sont équiprobables.<\/li>\n<li>Compter les issues possibles : (nombre d'états) à la puissance (nombre de répétitions).<\/li>\n<li>Compter les issues favorables, en les listant si elles sont peu nombreuses.<\/li>\n<li>Diviser le second comptage par le premier.<\/li>\n<\/ol>\n<p><strong>Erreurs fréquentes.<\/strong> Appliquer la formule à des issues qui ne sont pas équiprobables : la somme de deux dés prend 11 valeurs, mais il n'y a qu'une façon d'obtenir 2 et six façons d'obtenir 7. Confondre « exactement », « au moins » et « au plus ». Oublier que « au moins un » se calcule presque toujours par l'événement contraire.<\/p>\n<\/div>\n\n<div class=\"dossier-title\" id=\"s2\">2. Variable aléatoire discrète : loi et fonction de répartition<\/div>\n<p>Une <em>variable aléatoire<\/em> \\(X\\) associe un nombre à chaque issue. Si l'on lance trois fois une pièce et que l'on note \\(X\\) le nombre de faces obtenues, \\(X\\) vaut 2 pour la suite FPF et 0 pour la suite PPP. Une variable aléatoire est <em>discrète<\/em> quand ses valeurs possibles peuvent être énumérées une à une (ici 0, 1, 2 et 3) ; elle est <em>continue<\/em> quand elle peut prendre n'importe quelle valeur d'un intervalle, comme un rendement ou un cours de bourse (page suivante).<\/p>\n<p>Deux fonctions décrivent complètement une variable discrète.<\/p>\n<ul class=\"kit-simple\">\n<li>La <em>loi de probabilité<\/em> (en anglais <em>probability mass function<\/em>, pmf) donne la probabilité de chaque valeur : \\(p(a)=\\PP(X=a)\\). Ces probabilités sont positives et leur somme vaut 1.<\/li>\n<li>La <em>fonction de répartition<\/em> (<em>cumulative distribution function<\/em>, cdf) cumule les probabilités : \\(F(a)=\\PP(X\\le a)\\) est la probabilité que \\(X\\) soit au plus égale à \\(a\\).<\/li>\n<\/ul>\n<p><strong>Exemple du cours.<\/strong> \\(X\\) prend les valeurs 1, 3, 5 et 7 avec les probabilités \\(p(1)=0.5\\), \\(p(3)=0.25\\), \\(p(5)=0.15\\) et \\(p(7)=0.1\\), dont la somme vaut bien 1. On obtient la fonction de répartition en additionnant les probabilités de gauche à droite : \\(F(1)=0.5\\), puis \\(F(3)=0.5+0.25=0.75\\), puis \\(F(5)=0.75+0.15=0.9\\), enfin \\(F(7)=0.9+0.1=1\\).<\/p>\n<div class=\"dtable-wrap\"><table class=\"dtable dtable-narrow\">\n<tr><th>Valeur \\(a\\)<\/th><th>1<\/th><th>3<\/th><th>5<\/th><th>7<\/th><\/tr>\n<tr><td class=\"l\">Loi \\(p(a)=\\PP(X=a)\\)<\/td><td class=\"num\">0.5<\/td><td class=\"num\">0.25<\/td><td class=\"num\">0.15<\/td><td class=\"num\">0.1<\/td><\/tr>\n<tr><td class=\"l\">Répartition \\(F(a)=\\PP(X\\le a)\\)<\/td><td class=\"num\">0.5<\/td><td class=\"num\">0.75<\/td><td class=\"num\">0.9<\/td><td class=\"num\">1<\/td><\/tr>\n<\/table><\/div>\n<p>Entre deux valeurs possibles, rien ne s'ajoute : \\(F(4)=\\PP(X\\le 4)=\\PP(X=1)+\\PP(X=3)=0.75\\), comme \\(F(3)\\). La fonction de répartition est donc une fonction « en escalier », qui part de 0, ne descend jamais et finit à 1.<\/p>\n<div class=\"ifig\" data-fig=\"pmfcdf\"><\/div>\n<div class=\"fig-cap\">Figure 2 — Loi de probabilité (en haut) et fonction de répartition (en bas). Déplacez le seuil \\(a\\) : \\(F(a)\\) est la somme des bâtons situés à gauche du seuil, seuil compris.<\/div>\n<p><strong>À quoi sert la fonction de répartition ?<\/strong> À calculer la probabilité d'un intervalle par une simple soustraction : \\(\\PP(a&lt;X\\le b)=F(b)-F(a)\\). Par exemple \\(\\PP(1&lt;X\\le 5)=F(5)-F(1)\\), soit \\(0.9-0.5=0.4\\), ce qui est bien \\(p(3)+p(5)=0.25+0.15\\). De même \\(\\PP(X>3)=1-F(3)=1-0.75=0.25\\).<\/p>\n\n<div class=\"dossier-title\" id=\"s3\">3. Espérance<\/div>\n<p>L'<em>espérance<\/em> de \\(X\\) est la moyenne de ses valeurs, pondérée par leurs probabilités. Si \\(X\\) prend les valeurs \\(w_1,w_2,\\dots,w_n\\) :<\/p>\n\\[\\E[X]=p(w_1)\\,w_1+p(w_2)\\,w_2+\\dots+p(w_n)\\,w_n=\\sum_{i=1}^{n}p(w_i)\\,w_i .\\]\n<p>Le symbole \\(\\sum\\) (la lettre grecque sigma majuscule) se lit « somme » : il signifie simplement que l'on additionne le terme écrit à sa droite pour \\(i=1\\), puis \\(i=2\\), et ainsi de suite jusqu'à \\(i=n\\).<\/p>\n<p>Dans l'exemple,<\/p>\n\\[\\E[X]=0.5\\times 1+0.25\\times 3+0.15\\times 5+0.1\\times 7=0.5+0.75+0.75+0.7=2.7 .\\]\n<p>L'espérance n'est pas forcément une valeur possible de \\(X\\) : c'est la moyenne que l'on observerait en répétant l'expérience un très grand nombre de fois. En finance, l'espérance d'un rendement est le rendement moyen attendu.<\/p>\n<p><strong>Linéarité.<\/strong> Pour deux nombres \\(a\\) et \\(b\\), \\(\\E[aX+b]=a\\,\\E[X]+b\\).<\/p>\n<div class=\"demo\">\n<p><strong>Démonstration.<\/strong> La variable \\(aX+b\\) prend la valeur \\(a\\,w_i+b\\) avec la probabilité \\(p(w_i)\\). Donc<\/p>\n\\[\\begin{aligned}\n\\E[aX+b]&=\\sum_{i=1}^{n}p(w_i)\\,(a\\,w_i+b) &&\\text{(définition de l'espérance)}\\\\\n&=a\\sum_{i=1}^{n}p(w_i)\\,w_i+b\\sum_{i=1}^{n}p(w_i) &&\\text{(on développe, puis on regroupe)}\\\\\n&=a\\,\\E[X]+b &&\\text{(la somme des probabilités vaut 1).}\n\\end{aligned}\\]\n<\/div>\n<p>On admet de plus que l'espérance d'une somme est toujours la somme des espérances : \\(\\E[X+Y]=\\E[X]+\\E[Y]\\), que \\(X\\) et \\(Y\\) soient indépendantes ou non.<\/p>\n\n<div class=\"dossier-title\" id=\"s4\">4. Variance et écart type<\/div>\n<p>Deux placements peuvent avoir la même espérance et des risques très différents. La <em>variance<\/em> mesure la dispersion des valeurs autour de l'espérance \\(\\mu=\\E[X]\\) : c'est la moyenne des carrés des écarts à \\(\\mu\\),<\/p>\n\\[\\Var(X)=\\E\\big[(X-\\mu)^2\\big]=\\sum_{i=1}^{n}p(w_i)\\,(w_i-\\mu)^2 .\\]\n<p>On élève les écarts au carré pour que les écarts négatifs et les écarts positifs ne se compensent pas. L'<em>écart type<\/em> \\(\\sigma=\\sqrt{\\Var(X)}\\) ramène le résultat dans l'unité de \\(X\\). En finance, l'écart type des rendements s'appelle la <em>volatilité<\/em> : c'est la mesure de risque la plus courante.<\/p>\n<p><strong>Formule pratique.<\/strong> \\(\\Var(X)=\\E[X^2]-(\\E[X])^2\\).<\/p>\n<div class=\"demo\">\n<p><strong>Démonstration.<\/strong> On développe le carré, \\((X-\\mu)^2=X^2-2\\mu X+\\mu^2\\), puis on utilise la linéarité de l'espérance en se souvenant que \\(\\mu\\) est un nombre fixé :<\/p>\n\\[\\begin{aligned}\n\\Var(X)&=\\E\\big[X^2-2\\mu X+\\mu^2\\big]\\\\\n&=\\E[X^2]-2\\mu\\,\\E[X]+\\mu^2 &&\\text{(linéarité)}\\\\\n&=\\E[X^2]-2\\mu^2+\\mu^2 &&\\text{(car }\\E[X]=\\mu\\text{)}\\\\\n&=\\E[X^2]-\\mu^2 .\n\\end{aligned}\\]\n<\/div>\n<p>Dans l'exemple,<\/p>\n\\[\\E[X^2]=0.5\\times 1^2+0.25\\times 3^2+0.15\\times 5^2+0.1\\times 7^2=0.5+2.25+3.75+4.9=11.4 .\\]\n<p>Donc \\(\\Var(X)=11.4-2.7^2=11.4-7.29=4.11\\) et \\(\\sigma=\\sqrt{4.11}\\approx 2.03\\).<\/p>\n<p><strong>Effet d'une transformation affine.<\/strong> \\(\\Var(aX+b)=a^2\\,\\Var(X)\\), donc l'écart type de \\(aX+b\\) vaut \\(|a|\\,\\sigma\\).<\/p>\n<div class=\"demo\">\n<p><strong>Démonstration.<\/strong> L'espérance de \\(aX+b\\) est \\(a\\mu+b\\). L'écart à cette espérance vaut \\((aX+b)-(a\\mu+b)=a\\,(X-\\mu)\\) : la constante \\(b\\) a disparu. Son carré vaut \\(a^2(X-\\mu)^2\\), d'où \\(\\Var(aX+b)=\\E\\big[a^2(X-\\mu)^2\\big]=a^2\\,\\Var(X)\\).<\/p>\n<\/div>\n<p>Ajouter une constante déplace toutes les valeurs sans changer leur dispersion ; multiplier par \\(a\\) multiplie l'écart type par \\(|a|\\). On admet enfin que si \\(X\\) et \\(Y\\) sont <em>indépendantes<\/em>, les variances s'ajoutent : \\(\\Var(X+Y)=\\Var(X)+\\Var(Y)\\).<\/p>\n<div class=\"persp-box\">\n<span class=\"sol-sub\">Mode d'emploi — espérance, variance et écart type<\/span>\n<p>Dresser un tableau à quatre colonnes : les valeurs \\(w_i\\), leurs probabilités \\(p_i\\), les produits \\(p_i\\,w_i\\) et les produits \\(p_i\\,w_i^2\\). Le total de la troisième colonne donne \\(\\E[X]\\), celui de la quatrième donne \\(\\E[X^2]\\). On termine par \\(\\Var(X)=\\E[X^2]-(\\E[X])^2\\), puis \\(\\sigma=\\sqrt{\\Var(X)}\\).<\/p>\n<div class=\"dtable-wrap\"><table class=\"dtable dtable-narrow\">\n<tr><th>\\(w_i\\)<\/th><th>\\(p_i\\)<\/th><th>\\(p_i\\,w_i\\)<\/th><th>\\(p_i\\,w_i^2\\)<\/th><\/tr>\n<tr><td class=\"num\">1<\/td><td class=\"num\">0.5<\/td><td class=\"num\">0.5<\/td><td class=\"num\">0.5<\/td><\/tr>\n<tr><td class=\"num\">3<\/td><td class=\"num\">0.25<\/td><td class=\"num\">0.75<\/td><td class=\"num\">2.25<\/td><\/tr>\n<tr><td class=\"num\">5<\/td><td class=\"num\">0.15<\/td><td class=\"num\">0.75<\/td><td class=\"num\">3.75<\/td><\/tr>\n<tr><td class=\"num\">7<\/td><td class=\"num\">0.1<\/td><td class=\"num\">0.7<\/td><td class=\"num\">4.9<\/td><\/tr>\n<tr><td><strong>Total<\/strong><\/td><td class=\"num\">1<\/td><td class=\"num\">2.7<\/td><td class=\"num\">11.4<\/td><\/tr>\n<\/table><\/div>\n<p><strong>Erreurs fréquentes.<\/strong> Oublier d'élever l'espérance au carré dans la formule pratique. Prendre la variance pour une mesure du risque dans l'unité de \\(X\\) : c'est l'écart type qui est dans la bonne unité. Trouver une variance négative : c'est toujours le signe d'une erreur de calcul.<\/p>\n<\/div>\n\n<div class=\"dossier-title\" id=\"s5\">5. Loi de Bernoulli et loi binomiale<\/div>\n<p>Une <em>épreuve de Bernoulli<\/em> est une expérience à deux issues : le succès, de probabilité \\(p\\), et l'échec, de probabilité \\(1-p\\). La variable \\(X\\) qui vaut 1 en cas de succès et 0 sinon suit la <em>loi de Bernoulli<\/em> de paramètre \\(p\\). Son espérance vaut \\(\\E[X]=p\\times 1+(1-p)\\times 0=p\\). Comme \\(1^2=1\\) et \\(0^2=0\\), on a \\(X^2=X\\), donc \\(\\E[X^2]=p\\) et \\(\\Var(X)=p-p^2=p\\,(1-p)\\).<\/p>\n<p>On répète maintenant \\(n\\) fois la même épreuve de Bernoulli, de façon indépendante, et l'on compte les succès. Le nombre de succès \\(X\\) suit la <em>loi binomiale<\/em> de paramètres \\(n\\) et \\(p\\), ce que l'on note \\(X\\sim B(n,p)\\). Ses valeurs possibles sont \\(0,1,\\dots,n\\), et<\/p>\n\\[\\PP(X=k)=\\binom{n}{k}\\,p^{k}\\,(1-p)^{n-k}\\qquad\\text{avec}\\qquad\\binom{n}{k}=\\frac{n!}{k!\\,(n-k)!}.\\]\n<p>La notation \\(n!\\) se lit « factorielle \\(n\\) » : c'est le produit \\(n\\times(n-1)\\times\\dots\\times 2\\times 1\\), avec la convention \\(0!=1\\). Ainsi \\(4!=4\\times 3\\times 2\\times 1=24\\).<\/p>\n<div class=\"demo\">\n<p><strong>Démonstration, en deux temps.<\/strong> <em>Probabilité d'une suite donnée.<\/em> Fixons une suite précise contenant \\(k\\) succès et \\(n-k\\) échecs, par exemple succès, succès, échec pour \\(n=3\\) et \\(k=2\\). Les épreuves étant indépendantes, les probabilités se multiplient : \\(p\\times p\\times(1-p)\\). De façon générale, toute suite contenant \\(k\\) succès a pour probabilité \\(p^{k}(1-p)^{n-k}\\), quel que soit l'ordre des succès et des échecs.<\/p>\n<p><em>Nombre de suites.<\/em> Il reste à compter les suites qui contiennent exactement \\(k\\) succès, c'est-à-dire les façons de choisir les \\(k\\) positions des succès parmi les \\(n\\) épreuves. Ce nombre se note \\(\\binom{n}{k}\\) et se lit « \\(k\\) parmi \\(n\\) ». La première position peut être choisie de \\(n\\) façons, la deuxième de \\(n-1\\) façons, et ainsi de suite jusqu'à la \\(k\\)-ième : cela fait \\(n(n-1)\\cdots(n-k+1)\\) choix ordonnés. Mais l'ordre dans lequel on choisit les positions n'a pas d'importance, et chaque groupe de \\(k\\) positions a ainsi été compté \\(k!\\) fois. Donc<\/p>\n\\[\\binom{n}{k}=\\frac{n(n-1)\\cdots(n-k+1)}{k!}=\\frac{n!}{k!\\,(n-k)!},\\]\n<p>la seconde écriture s'obtenant en multipliant le numérateur et le dénominateur par \\((n-k)!\\). Les suites étant incompatibles deux à deux, leurs probabilités s'ajoutent, ce qui donne la formule annoncée. On retrouve le comptage de la section 1 : \\(\\binom{3}{1}=\\frac{3!}{1!\\,2!}=\\frac{6}{2}=3\\) suites contiennent exactement une face en trois lancers.<\/p>\n<\/div>\n<p><strong>Espérance et variance.<\/strong> Écrivons \\(X=X_1+X_2+\\dots+X_n\\), où \\(X_i\\) vaut 1 si la \\(i\\)-ième épreuve est un succès et 0 sinon. Chaque \\(X_i\\) suit une loi de Bernoulli. Par linéarité, \\(\\E[X]=\\E[X_1]+\\dots+\\E[X_n]=n\\,p\\). Les \\(X_i\\) étant indépendantes, les variances s'ajoutent aussi : \\(\\Var(X)=n\\,p\\,(1-p)\\) et \\(\\sigma=\\sqrt{n\\,p\\,(1-p)}\\).<\/p>\n<p><strong>Exemple du cours.<\/strong> Pour \\(n=5\\) et \\(p=0.3\\), l'espérance vaut \\(\\E[X]=5\\times 0.3=1.5\\) et<\/p>\n\\[\\PP(X=4)=\\binom{5}{4}\\times 0.3^{4}\\times 0.7^{1}=\\frac{5!}{4!\\,1!}\\times 0.0081\\times 0.7=5\\times 0.0081\\times 0.7=0.02835 .\\]\n<p>Pour « au moins 4 succès », on additionne les deux cas possibles :<\/p>\n\\[\\PP(X\\ge 4)=\\PP(X=4)+\\PP(X=5)=0.02835+0.3^{5}=0.02835+0.00243=0.03078 .\\]\n<div class=\"ifig\" data-fig=\"binom\"><\/div>\n<div class=\"fig-cap\">Figure 3 — Loi binomiale \\(B(n,p)\\). Faites varier \\(n\\), \\(p\\) et \\(k\\) : le bâton de couleur dorée donne \\(\\PP(X=k)\\), les bâtons bleus à sa gauche complètent \\(\\PP(X\\le k)\\). Le trait vertical marque l'espérance \\(np\\), et le segment horizontal couvre un écart type de part et d'autre.<\/div>\n<p><strong>Lien avec l'arbre binomial.<\/strong> Supposons qu'à chaque période un cours soit multiplié par \\(u\\) (hausse, probabilité \\(p\\)) ou par \\(d\\) (baisse, probabilité \\(1-p\\)), indépendamment des périodes précédentes. Après \\(n\\) périodes dont \\(k\\) hausses, le cours vaut \\(S_0\\,u^{k}\\,d^{\\,n-k}\\), et le nombre de hausses suit la loi \\(B(n,p)\\). Avec \\(S_0=100\\), \\(u=1.1\\), \\(d=0.9\\), \\(n=3\\) et \\(p=0.5\\), les cours finaux possibles sont \\(133.1\\), \\(108.9\\), \\(89.1\\) et \\(72.9\\), de probabilités \\(\\frac{1}{8}\\), \\(\\frac{3}{8}\\), \\(\\frac{3}{8}\\) et \\(\\frac{1}{8}\\). C'est exactement le modèle que nous utiliserons pour évaluer les options.<\/p>\n<div class=\"persp-box\">\n<span class=\"sol-sub\">Mode d'emploi — reconnaître et utiliser une loi binomiale<\/span>\n<p>On reconnaît une loi \\(B(n,p)\\) à quatre conditions : un nombre d'épreuves \\(n\\) fixé à l'avance, deux issues possibles à chaque épreuve, la même probabilité de succès \\(p\\) à chaque fois, et des épreuves indépendantes. On calcule ensuite \\(\\PP(X=k)\\) par la formule ; pour « au moins \\(k\\) », on additionne les probabilités de \\(k\\) à \\(n\\), ou l'on passe par le contraire si c'est plus court.<\/p>\n<p><strong>Erreurs fréquentes.<\/strong> Oublier le coefficient \\(\\binom{n}{k}\\), ce qui revient à ne compter qu'une seule suite. Inverser \\(p\\) et \\(1-p\\) : il faut dire précisément ce que l'on appelle « succès ». Appliquer la loi à des tirages qui ne sont pas indépendants, comme des tirages sans remise.<\/p>\n<\/div>\n\n<div class=\"dossier-title\" id=\"s6\">6. En Python<\/div>\n<p>Les premières lignes reproduisent l'exemple du cours. La simulation vérifie ensuite que la fréquence observée se rapproche de la probabilité théorique quand on répète l'expérience un grand nombre de fois.<\/p>\n<div class=\"code-wrap\"><div class=\"code-head\"><span>Python<\/span><button type=\"button\" onclick=\"copyCode(this)\">Copier<\/button><\/div><div class=\"code-block has-out\"><div class=\"cl\"><code>import math<\/code><\/div><div class=\"cl\"><code>import numpy as np<\/code><\/div><div class=\"cl\"><code>&nbsp;<\/code><\/div><div class=\"cl\"><code># 1. Loi binomiale exacte : n = 5 épreuves, p = 0.3<\/code><\/div><div class=\"cl\"><code>n, p = 5, 0.3<\/code><\/div><div class=\"cl\"><code>loi = [math.comb(n, k) * p**k * (1 - p)**(n - k) for k in range(n + 1)]<\/code><\/div><div class=\"cl\"><code>print(\"P(X = 4)  =\", round(loi[4], 5))<\/code><\/div><div class=\"cl\"><code>print(\"P(X &gt;= 4) =\", round(loi[4] + loi[5], 5))<\/code><\/div><div class=\"cl\"><code>print(\"E[X]      =\", round(sum(k * loi[k] for k in range(n + 1)), 4))<\/code><\/div><div class=\"cl\"><code>&nbsp;<\/code><\/div><div class=\"cl\"><code># 2. Vérification par simulation : 100 000 séries de 5 épreuves<\/code><\/div><div class=\"cl\"><code>rng = np.random.default_rng(0)<\/code><\/div><div class=\"cl\"><code>X = rng.binomial(n, p, size=100_000)<\/code><\/div><div class=\"cl\"><code>print(\"fréquence de X = 4 :\", np.mean(X == 4))<\/code><\/div><div class=\"cl\"><code>print(\"moyenne :\", round(X.mean(), 4), \"| écart type :\", round(X.std(), 4))<\/code><\/div><div class=\"cl\"><code>print(\"écart type théorique :\", round(math.sqrt(n * p * (1 - p)), 4))<\/code><\/div><\/div><div class=\"code-out\"><span class=\"code-out-lbl\">Résultat affiché<\/span><div class=\"cl\"><code>P(X = 4)  = 0.02835<\/code><\/div><div class=\"cl\"><code>P(X &gt;= 4) = 0.03078<\/code><\/div><div class=\"cl\"><code>E[X]      = 1.5<\/code><\/div><div class=\"cl\"><code>fréquence de X = 4 : 0.02806<\/code><\/div><div class=\"cl\"><code>moyenne : 1.4948 | écart type : 1.0246<\/code><\/div><div class=\"cl\"><code>écart type théorique : 1.0247<\/code><\/div><\/div><\/div>\n\n<div class=\"dossier-title\" id=\"s7\">7. À retenir<\/div>\n<ul class=\"kit-simple\">\n<li>Issues équiprobables : \\(\\PP(A)=\\frac{\\text{issues favorables}}{\\text{issues possibles}}\\), avec (nombre d'états) à la puissance (nombre de répétitions) issues possibles.<\/li>\n<li>\\(\\PP(\\text{non }A)=1-\\PP(A)\\) ; \\(\\PP(A\\text{ ou }B)=\\PP(A)+\\PP(B)\\) si \\(A\\) et \\(B\\) sont incompatibles ; \\(\\PP(A\\text{ et }B)=\\PP(A)\\,\\PP(B)\\) si \\(A\\) et \\(B\\) sont indépendants.<\/li>\n<li>\\(F(a)=\\PP(X\\le a)\\) et \\(\\PP(a&lt;X\\le b)=F(b)-F(a)\\).<\/li>\n<li>\\(\\E[X]=\\sum p(w_i)\\,w_i\\) et \\(\\E[aX+b]=a\\,\\E[X]+b\\).<\/li>\n<li>\\(\\Var(X)=\\E[X^2]-(\\E[X])^2\\), \\(\\sigma=\\sqrt{\\Var(X)}\\) et \\(\\Var(aX+b)=a^2\\,\\Var(X)\\).<\/li>\n<li>Loi binomiale : \\(\\PP(X=k)=\\binom{n}{k}p^{k}(1-p)^{n-k}\\), \\(\\E[X]=np\\), \\(\\Var(X)=np(1-p)\\).<\/li>\n<\/ul>\n";
+I18N.en.k = {
+ "k-badge": "MATHEMATICS FOR FINANCE",
+ "k-seed": "Reproducibility seed",
+ "k-seedtip": "Empty = new random exercise",
+ "k-gen": "Generate",
+ "k-tag-course": "Lesson",
+ "k-tag-ex": "Exercise",
+ "k-tag-sol": "Solution",
+ "k-seedbadge": "Seed:",
+ "showSol": "Show solution",
+ "hideSol": "Hide solution",
+ "phSeed": "auto",
+ "copy": "Copy",
+ "copied": "Copied",
+ "k-sub": "© Thomas Hossen – Version of 6 October 2026",
+ "title": "Mathematics for Finance 1 – Discrete probability and the binomial distribution",
+ "k-h1": "Discrete probability and the binomial distribution",
+ "k-coursetitle": "From counting to the binomial distribution",
+ "k-extitle": "Market scenarios, fund return and up sessions",
+ "k-soltitle": "Market scenarios, fund return and up sessions"
+};
+I18N.en.course = "<div class=\"context-block\">\n<strong>Objectives.<\/strong> By the end of this page, you can compute a probability by counting outcomes, describe a discrete random variable through its probability mass function and its cumulative distribution function, compute an expected value, a variance and a standard deviation, and use the binomial distribution.<br><br>\n<strong>Why in finance?<\/strong> The expected value of a return measures what you earn on average, its standard deviation measures risk, and the binomial tree used to price options (class 3) is nothing but a binomial distribution applied to a share price.<br><br>\n<strong>Prerequisites.<\/strong> Fractions, powers and percentages. Nothing else is assumed.\n<\/div>\n<p class=\"toc\">Contents: <a href=\"#s1\">1. Outcomes and events<\/a> · <a href=\"#s2\">2. Discrete random variable<\/a> · <a href=\"#s3\">3. Expected value<\/a> · <a href=\"#s4\">4. Variance and standard deviation<\/a> · <a href=\"#s5\">5. Binomial distribution<\/a> · <a href=\"#s6\">6. In Python<\/a> · <a href=\"#s7\">7. Key points<\/a> · <a href=\"#ex-anchor\">Worked exercise<\/a><\/p>\n\n<div class=\"dossier-title\" id=\"s1\">1. Random experiment, outcomes and events<\/div>\n<p>A <em>random experiment<\/em> is an experiment whose result cannot be predicted, but whose possible results are all known. Each possible result is called an <em>outcome<\/em>, and the set of all outcomes is called the <em>sample space<\/em>, denoted \\(S\\). Rolling a six-sided die is a random experiment with sample space \\(S=\\{1,2,3,4,5,6\\}\\).<\/p>\n<p>An <em>event<\/em> is a set of outcomes: \"rolling an odd number\" is the event \\(A=\\{1,3,5\\}\\). The <em>probability<\/em> of an event, written \\(\\PP(A)\\), is a number between 0 (impossible event) and 1 (certain event) which measures how likely it is to occur.<\/p>\n<p><strong>Counting formula.<\/strong> When all outcomes are equally likely (fair die, fair coin), the probability of an event is obtained by counting:<\/p>\n\\[\\PP(A)=\\frac{\\text{number of outcomes that give } A}{\\text{number of possible outcomes}}.\\]\n<p>For the die, three outcomes out of six are odd, so \\(\\PP(A)=\\frac{3}{6}=0.5\\).<\/p>\n<p><strong>Counting the possible outcomes.<\/strong> When an experiment is repeated, the possibilities multiply. If a coin is tossed three times, there are 2 possible results for the first toss; for each of them, 2 for the second; for each of these 4 beginnings, 2 again for the third. There are therefore \\(2\\times 2\\times 2=2^{3}=8\\) possible sequences. The general rule is:<\/p>\n\\[\\text{number of possible outcomes}=(\\text{number of states})^{\\,\\text{number of repetitions}}.\\]\n<p>Two rolls of a die thus give \\(6^{2}=36\\) equally likely pairs, only one of which is the double six: the probability of rolling two 6s is \\(\\frac{1}{36}\\approx 0.0278\\).<\/p>\n<p><strong>Example from the course.<\/strong> What is the probability of getting exactly one head in three tosses of a fair coin? Write H for heads and T for tails. The 8 possible sequences are HHH, HHT, HTH, HTT, THH, THT, TTH and TTT. Three of them contain exactly one H: these are HTT, THT and TTH. The required probability is therefore \\(\\frac{3}{8}=0.375\\).<\/p>\n<div class=\"ifig\" data-fig=\"tree\"><\/div>\n<div class=\"fig-cap\">Figure 1 — Tree of the tosses of a fair coin. Choose the number of tosses and the number of heads wanted: the sequences that give the event are highlighted, and the probability is the ratio of the two counts.<\/div>\n<p><strong>Several descriptions of the same event.<\/strong> In three tosses, the event \\(\\{\\text{THH},\\text{HTH},\\text{HHT}\\}\\) can be described equally well as \"exactly two heads\" or as \"exactly one tail\": these are the same sequences. By contrast, \"at most one tail\" also contains the sequence HHH: it is a different event.<\/p>\n<p><strong>Three rules to know.<\/strong><\/p>\n<ul class=\"kit-simple\">\n<li><em>Complement.<\/em> \\(\\PP(\\text{not }A)=1-\\PP(A)\\). This is the rule to use for \"at least one\": in three tosses, the complement of \"at least one head\" is \"no head\", that is the single sequence TTT, of probability \\(\\frac{1}{8}\\). So \\(\\PP(\\text{at least one head})=1-\\frac{1}{8}\\), that is \\(\\frac{7}{8}=0.875\\).<\/li>\n<li><em>Disjoint events.<\/em> If \\(A\\) and \\(B\\) have no outcome in common, \\(\\PP(A\\text{ or }B)=\\PP(A)+\\PP(B)\\). In three tosses, \"exactly two heads\" and \"exactly two tails\" are disjoint, because no sequence of three tosses contains both two H and two T: the probability of getting one or the other is \\(\\frac{3}{8}+\\frac{3}{8}=\\frac{3}{4}\\).<\/li>\n<li><em>Independent events.<\/em> If the occurrence of \\(A\\) does not change the chances of \\(B\\), \\(\\PP(A\\text{ and }B)=\\PP(A)\\times\\PP(B)\\). Two rolls of a die are independent: we recover \\(\\PP(\\text{two 6s})=\\frac{1}{6}\\times\\frac{1}{6}=\\frac{1}{36}\\).<\/li>\n<\/ul>\n<div class=\"persp-box\">\n<span class=\"sol-sub\">How to use it — computing a probability by counting<\/span>\n<ol>\n<li>Describe an outcome precisely (a sequence of \\(n\\) results, for instance) and check that all outcomes are equally likely.<\/li>\n<li>Count the possible outcomes: (number of states) to the power (number of repetitions).<\/li>\n<li>Count the favourable outcomes, listing them if there are only a few.<\/li>\n<li>Divide the second count by the first.<\/li>\n<\/ol>\n<p><strong>Common mistakes.<\/strong> Applying the formula to outcomes that are not equally likely: the sum of two dice takes 11 values, but there is only one way to get 2 and six ways to get 7. Confusing \"exactly\", \"at least\" and \"at most\". Forgetting that \"at least one\" is almost always computed through the complement.<\/p>\n<\/div>\n\n<div class=\"dossier-title\" id=\"s2\">2. Discrete random variable: mass function and distribution function<\/div>\n<p>A <em>random variable<\/em> \\(X\\) assigns a number to each outcome. If a coin is tossed three times and \\(X\\) denotes the number of heads obtained, \\(X\\) equals 2 for the sequence HTH and 0 for the sequence TTT. A random variable is <em>discrete<\/em> when its possible values can be listed one by one (here 0, 1, 2 and 3); it is <em>continuous<\/em> when it can take any value in an interval, like a return or a share price (next page).<\/p>\n<p>Two functions describe a discrete variable completely.<\/p>\n<ul class=\"kit-simple\">\n<li>The <em>probability mass function<\/em> (pmf) gives the probability of each value: \\(p(a)=\\PP(X=a)\\). These probabilities are positive and add up to 1.<\/li>\n<li>The <em>cumulative distribution function<\/em> (cdf) accumulates the probabilities: \\(F(a)=\\PP(X\\le a)\\) is the probability that \\(X\\) is at most equal to \\(a\\).<\/li>\n<\/ul>\n<p><strong>Example from the course.<\/strong> \\(X\\) takes the values 1, 3, 5 and 7 with probabilities \\(p(1)=0.5\\), \\(p(3)=0.25\\), \\(p(5)=0.15\\) and \\(p(7)=0.1\\), which do add up to 1. The cumulative distribution function is obtained by adding the probabilities from left to right: \\(F(1)=0.5\\), then \\(F(3)=0.5+0.25=0.75\\), then \\(F(5)=0.75+0.15=0.9\\), and finally \\(F(7)=0.9+0.1=1\\).<\/p>\n<div class=\"dtable-wrap\"><table class=\"dtable dtable-narrow\">\n<tr><th>Value \\(a\\)<\/th><th>1<\/th><th>3<\/th><th>5<\/th><th>7<\/th><\/tr>\n<tr><td class=\"l\">pmf \\(p(a)=\\PP(X=a)\\)<\/td><td class=\"num\">0.5<\/td><td class=\"num\">0.25<\/td><td class=\"num\">0.15<\/td><td class=\"num\">0.1<\/td><\/tr>\n<tr><td class=\"l\">cdf \\(F(a)=\\PP(X\\le a)\\)<\/td><td class=\"num\">0.5<\/td><td class=\"num\">0.75<\/td><td class=\"num\">0.9<\/td><td class=\"num\">1<\/td><\/tr>\n<\/table><\/div>\n<p>Between two possible values, nothing is added: \\(F(4)=\\PP(X\\le 4)=\\PP(X=1)+\\PP(X=3)=0.75\\), like \\(F(3)\\). The cumulative distribution function is therefore a step function, which starts at 0, never decreases and ends at 1.<\/p>\n<div class=\"ifig\" data-fig=\"pmfcdf\"><\/div>\n<div class=\"fig-cap\">Figure 2 — Probability mass function (top) and cumulative distribution function (bottom). Move the threshold \\(a\\): \\(F(a)\\) is the sum of the bars located to the left of the threshold, threshold included.<\/div>\n<p><strong>What is the distribution function for?<\/strong> For computing the probability of an interval by a simple subtraction: \\(\\PP(a&lt;X\\le b)=F(b)-F(a)\\). For instance \\(\\PP(1&lt;X\\le 5)=F(5)-F(1)\\), that is \\(0.9-0.5=0.4\\), which is indeed \\(p(3)+p(5)=0.25+0.15\\). Likewise \\(\\PP(X>3)=1-F(3)=1-0.75=0.25\\).<\/p>\n\n<div class=\"dossier-title\" id=\"s3\">3. Expected value<\/div>\n<p>The <em>expected value<\/em> of \\(X\\) is the average of its values, weighted by their probabilities. If \\(X\\) takes the values \\(w_1,w_2,\\dots,w_n\\):<\/p>\n\\[\\E[X]=p(w_1)\\,w_1+p(w_2)\\,w_2+\\dots+p(w_n)\\,w_n=\\sum_{i=1}^{n}p(w_i)\\,w_i .\\]\n<p>The symbol \\(\\sum\\) (the Greek capital letter sigma) reads \"sum\": it simply means that the term written to its right is added for \\(i=1\\), then \\(i=2\\), and so on up to \\(i=n\\).<\/p>\n<p>In the example,<\/p>\n\\[\\E[X]=0.5\\times 1+0.25\\times 3+0.15\\times 5+0.1\\times 7=0.5+0.75+0.75+0.7=2.7 .\\]\n<p>The expected value is not necessarily a possible value of \\(X\\): it is the average that would be observed if the experiment were repeated a very large number of times. In finance, the expected value of a return is the average return to be expected.<\/p>\n<p><strong>Linearity.<\/strong> For two numbers \\(a\\) and \\(b\\), \\(\\E[aX+b]=a\\,\\E[X]+b\\).<\/p>\n<div class=\"demo\">\n<p><strong>Proof.<\/strong> The variable \\(aX+b\\) takes the value \\(a\\,w_i+b\\) with probability \\(p(w_i)\\). Hence<\/p>\n\\[\\begin{aligned}\n\\E[aX+b]&=\\sum_{i=1}^{n}p(w_i)\\,(a\\,w_i+b) &&\\text{(definition of the expected value)}\\\\\n&=a\\sum_{i=1}^{n}p(w_i)\\,w_i+b\\sum_{i=1}^{n}p(w_i) &&\\text{(expand, then regroup)}\\\\\n&=a\\,\\E[X]+b &&\\text{(the probabilities add up to 1).}\n\\end{aligned}\\]\n<\/div>\n<p>We also accept that the expected value of a sum is always the sum of the expected values: \\(\\E[X+Y]=\\E[X]+\\E[Y]\\), whether \\(X\\) and \\(Y\\) are independent or not.<\/p>\n\n<div class=\"dossier-title\" id=\"s4\">4. Variance and standard deviation<\/div>\n<p>Two investments may have the same expected value and very different risks. The <em>variance<\/em> measures how spread out the values are around the expected value \\(\\mu=\\E[X]\\): it is the average of the squared deviations from \\(\\mu\\),<\/p>\n\\[\\Var(X)=\\E\\big[(X-\\mu)^2\\big]=\\sum_{i=1}^{n}p(w_i)\\,(w_i-\\mu)^2 .\\]\n<p>The deviations are squared so that negative and positive deviations do not cancel out. The <em>standard deviation<\/em> \\(\\sigma=\\sqrt{\\Var(X)}\\) brings the result back to the unit of \\(X\\). In finance, the standard deviation of returns is called <em>volatility<\/em>: it is the most common measure of risk.<\/p>\n<p><strong>Practical formula.<\/strong> \\(\\Var(X)=\\E[X^2]-(\\E[X])^2\\).<\/p>\n<div class=\"demo\">\n<p><strong>Proof.<\/strong> Expand the square, \\((X-\\mu)^2=X^2-2\\mu X+\\mu^2\\), then use the linearity of the expected value, remembering that \\(\\mu\\) is a fixed number:<\/p>\n\\[\\begin{aligned}\n\\Var(X)&=\\E\\big[X^2-2\\mu X+\\mu^2\\big]\\\\\n&=\\E[X^2]-2\\mu\\,\\E[X]+\\mu^2 &&\\text{(linearity)}\\\\\n&=\\E[X^2]-2\\mu^2+\\mu^2 &&\\text{(since }\\E[X]=\\mu\\text{)}\\\\\n&=\\E[X^2]-\\mu^2 .\n\\end{aligned}\\]\n<\/div>\n<p>In the example,<\/p>\n\\[\\E[X^2]=0.5\\times 1^2+0.25\\times 3^2+0.15\\times 5^2+0.1\\times 7^2=0.5+2.25+3.75+4.9=11.4 .\\]\n<p>So \\(\\Var(X)=11.4-2.7^2=11.4-7.29=4.11\\) and \\(\\sigma=\\sqrt{4.11}\\approx 2.03\\).<\/p>\n<p><strong>Effect of a linear transformation.<\/strong> \\(\\Var(aX+b)=a^2\\,\\Var(X)\\), so the standard deviation of \\(aX+b\\) is \\(|a|\\,\\sigma\\).<\/p>\n<div class=\"demo\">\n<p><strong>Proof.<\/strong> The expected value of \\(aX+b\\) is \\(a\\mu+b\\). The deviation from this expected value is \\((aX+b)-(a\\mu+b)=a\\,(X-\\mu)\\): the constant \\(b\\) has disappeared. Its square is \\(a^2(X-\\mu)^2\\), hence \\(\\Var(aX+b)=\\E\\big[a^2(X-\\mu)^2\\big]=a^2\\,\\Var(X)\\).<\/p>\n<\/div>\n<p>Adding a constant shifts all the values without changing their spread; multiplying by \\(a\\) multiplies the standard deviation by \\(|a|\\). Finally, we accept that if \\(X\\) and \\(Y\\) are <em>independent<\/em>, variances add up: \\(\\Var(X+Y)=\\Var(X)+\\Var(Y)\\).<\/p>\n<div class=\"persp-box\">\n<span class=\"sol-sub\">How to use it — expected value, variance and standard deviation<\/span>\n<p>Draw up a table with four columns: the values \\(w_i\\), their probabilities \\(p_i\\), the products \\(p_i\\,w_i\\) and the products \\(p_i\\,w_i^2\\). The total of the third column gives \\(\\E[X]\\), that of the fourth gives \\(\\E[X^2]\\). Finish with \\(\\Var(X)=\\E[X^2]-(\\E[X])^2\\), then \\(\\sigma=\\sqrt{\\Var(X)}\\).<\/p>\n<div class=\"dtable-wrap\"><table class=\"dtable dtable-narrow\">\n<tr><th>\\(w_i\\)<\/th><th>\\(p_i\\)<\/th><th>\\(p_i\\,w_i\\)<\/th><th>\\(p_i\\,w_i^2\\)<\/th><\/tr>\n<tr><td class=\"num\">1<\/td><td class=\"num\">0.5<\/td><td class=\"num\">0.5<\/td><td class=\"num\">0.5<\/td><\/tr>\n<tr><td class=\"num\">3<\/td><td class=\"num\">0.25<\/td><td class=\"num\">0.75<\/td><td class=\"num\">2.25<\/td><\/tr>\n<tr><td class=\"num\">5<\/td><td class=\"num\">0.15<\/td><td class=\"num\">0.75<\/td><td class=\"num\">3.75<\/td><\/tr>\n<tr><td class=\"num\">7<\/td><td class=\"num\">0.1<\/td><td class=\"num\">0.7<\/td><td class=\"num\">4.9<\/td><\/tr>\n<tr><td><strong>Total<\/strong><\/td><td class=\"num\">1<\/td><td class=\"num\">2.7<\/td><td class=\"num\">11.4<\/td><\/tr>\n<\/table><\/div>\n<p><strong>Common mistakes.<\/strong> Forgetting to square the expected value in the practical formula. Taking the variance as a measure of risk in the unit of \\(X\\): it is the standard deviation which is in the right unit. Finding a negative variance: this is always the sign of a computational error.<\/p>\n<\/div>\n\n<div class=\"dossier-title\" id=\"s5\">5. Bernoulli distribution and binomial distribution<\/div>\n<p>A <em>Bernoulli trial<\/em> is an experiment with two outcomes: success, with probability \\(p\\), and failure, with probability \\(1-p\\). The variable \\(X\\) which equals 1 in case of success and 0 otherwise follows the <em>Bernoulli distribution<\/em> with parameter \\(p\\). Its expected value is \\(\\E[X]=p\\times 1+(1-p)\\times 0=p\\). Since \\(1^2=1\\) and \\(0^2=0\\), we have \\(X^2=X\\), so \\(\\E[X^2]=p\\) and \\(\\Var(X)=p-p^2=p\\,(1-p)\\).<\/p>\n<p>Now repeat the same Bernoulli trial \\(n\\) times, independently, and count the successes. The number of successes \\(X\\) follows the <em>binomial distribution<\/em> with parameters \\(n\\) and \\(p\\), written \\(X\\sim B(n,p)\\). Its possible values are \\(0,1,\\dots,n\\), and<\/p>\n\\[\\PP(X=k)=\\binom{n}{k}\\,p^{k}\\,(1-p)^{n-k}\\qquad\\text{with}\\qquad\\binom{n}{k}=\\frac{n!}{k!\\,(n-k)!}.\\]\n<p>The notation \\(n!\\) reads \"\\(n\\) factorial\": it is the product \\(n\\times(n-1)\\times\\dots\\times 2\\times 1\\), with the convention \\(0!=1\\). Thus \\(4!=4\\times 3\\times 2\\times 1=24\\).<\/p>\n<div class=\"demo\">\n<p><strong>Proof, in two steps.<\/strong> <em>Probability of a given sequence.<\/em> Fix one particular sequence containing \\(k\\) successes and \\(n-k\\) failures, for instance success, success, failure for \\(n=3\\) and \\(k=2\\). Since the trials are independent, probabilities multiply: \\(p\\times p\\times(1-p)\\). In general, any sequence containing \\(k\\) successes has probability \\(p^{k}(1-p)^{n-k}\\), whatever the order of the successes and failures.<\/p>\n<p><em>Number of sequences.<\/em> It remains to count the sequences containing exactly \\(k\\) successes, that is the ways of choosing the \\(k\\) positions of the successes among the \\(n\\) trials. This number is written \\(\\binom{n}{k}\\) and reads \"\\(n\\) choose \\(k\\)\". The first position can be chosen in \\(n\\) ways, the second in \\(n-1\\) ways, and so on up to the \\(k\\)-th: this makes \\(n(n-1)\\cdots(n-k+1)\\) ordered choices. But the order in which the positions are chosen does not matter, and each group of \\(k\\) positions has thus been counted \\(k!\\) times. Hence<\/p>\n\\[\\binom{n}{k}=\\frac{n(n-1)\\cdots(n-k+1)}{k!}=\\frac{n!}{k!\\,(n-k)!},\\]\n<p>the second form being obtained by multiplying the numerator and the denominator by \\((n-k)!\\). The sequences being pairwise disjoint, their probabilities add up, which gives the stated formula. We recover the count of section 1: \\(\\binom{3}{1}=\\frac{3!}{1!\\,2!}=\\frac{6}{2}=3\\) sequences contain exactly one head in three tosses.<\/p>\n<\/div>\n<p><strong>Expected value and variance.<\/strong> Write \\(X=X_1+X_2+\\dots+X_n\\), where \\(X_i\\) equals 1 if the \\(i\\)-th trial is a success and 0 otherwise. Each \\(X_i\\) follows a Bernoulli distribution. By linearity, \\(\\E[X]=\\E[X_1]+\\dots+\\E[X_n]=n\\,p\\). Since the \\(X_i\\) are independent, variances add up too: \\(\\Var(X)=n\\,p\\,(1-p)\\) and \\(\\sigma=\\sqrt{n\\,p\\,(1-p)}\\).<\/p>\n<p><strong>Example from the course.<\/strong> For \\(n=5\\) and \\(p=0.3\\), the expected value is \\(\\E[X]=5\\times 0.3=1.5\\) and<\/p>\n\\[\\PP(X=4)=\\binom{5}{4}\\times 0.3^{4}\\times 0.7^{1}=\\frac{5!}{4!\\,1!}\\times 0.0081\\times 0.7=5\\times 0.0081\\times 0.7=0.02835 .\\]\n<p>For \"at least 4 successes\", add the two possible cases:<\/p>\n\\[\\PP(X\\ge 4)=\\PP(X=4)+\\PP(X=5)=0.02835+0.3^{5}=0.02835+0.00243=0.03078 .\\]\n<div class=\"ifig\" data-fig=\"binom\"><\/div>\n<div class=\"fig-cap\">Figure 3 — Binomial distribution \\(B(n,p)\\). Vary \\(n\\), \\(p\\) and \\(k\\): the gold bar gives \\(\\PP(X=k)\\), the blue bars to its left complete \\(\\PP(X\\le k)\\). The vertical line marks the expected value \\(np\\), and the horizontal segment covers one standard deviation on either side.<\/div>\n<p><strong>Link with the binomial tree.<\/strong> Suppose that in each period a price is multiplied by \\(u\\) (up move, probability \\(p\\)) or by \\(d\\) (down move, probability \\(1-p\\)), independently of the previous periods. After \\(n\\) periods including \\(k\\) up moves, the price is \\(S_0\\,u^{k}\\,d^{\\,n-k}\\), and the number of up moves follows the distribution \\(B(n,p)\\). With \\(S_0=100\\), \\(u=1.1\\), \\(d=0.9\\), \\(n=3\\) and \\(p=0.5\\), the possible final prices are \\(133.1\\), \\(108.9\\), \\(89.1\\) and \\(72.9\\), with probabilities \\(\\frac{1}{8}\\), \\(\\frac{3}{8}\\), \\(\\frac{3}{8}\\) and \\(\\frac{1}{8}\\). This is exactly the model we shall use to price options.<\/p>\n<div class=\"persp-box\">\n<span class=\"sol-sub\">How to use it — recognising and using a binomial distribution<\/span>\n<p>A \\(B(n,p)\\) distribution is recognised by four conditions: a number of trials \\(n\\) fixed in advance, two possible outcomes at each trial, the same probability of success \\(p\\) each time, and independent trials. Then compute \\(\\PP(X=k)\\) with the formula; for \"at least \\(k\\)\", add the probabilities from \\(k\\) to \\(n\\), or go through the complement if it is shorter.<\/p>\n<p><strong>Common mistakes.<\/strong> Forgetting the coefficient \\(\\binom{n}{k}\\), which amounts to counting a single sequence. Swapping \\(p\\) and \\(1-p\\): state precisely what is called a \"success\". Applying the distribution to draws that are not independent, such as draws without replacement.<\/p>\n<\/div>\n\n<div class=\"dossier-title\" id=\"s6\">6. In Python<\/div>\n<p>The first lines reproduce the example from the course. The simulation then checks that the observed frequency gets close to the theoretical probability when the experiment is repeated a large number of times.<\/p>\n<div class=\"code-wrap\"><div class=\"code-head\"><span>Python<\/span><button type=\"button\" onclick=\"copyCode(this)\">Copier<\/button><\/div><div class=\"code-block has-out\"><div class=\"cl\"><code>import math<\/code><\/div><div class=\"cl\"><code>import numpy as np<\/code><\/div><div class=\"cl\"><code>&nbsp;<\/code><\/div><div class=\"cl\"><code># 1. Exact binomial distribution: n = 5 trials, p = 0.3<\/code><\/div><div class=\"cl\"><code>n, p = 5, 0.3<\/code><\/div><div class=\"cl\"><code>pmf = [math.comb(n, k) * p**k * (1 - p)**(n - k) for k in range(n + 1)]<\/code><\/div><div class=\"cl\"><code>print(\"P(X = 4)  =\", round(pmf[4], 5))<\/code><\/div><div class=\"cl\"><code>print(\"P(X &gt;= 4) =\", round(pmf[4] + pmf[5], 5))<\/code><\/div><div class=\"cl\"><code>print(\"E[X]      =\", round(sum(k * pmf[k] for k in range(n + 1)), 4))<\/code><\/div><div class=\"cl\"><code>&nbsp;<\/code><\/div><div class=\"cl\"><code># 2. Check by simulation: 100,000 series of 5 trials<\/code><\/div><div class=\"cl\"><code>rng = np.random.default_rng(0)<\/code><\/div><div class=\"cl\"><code>X = rng.binomial(n, p, size=100_000)<\/code><\/div><div class=\"cl\"><code>print(\"frequency of X = 4:\", np.mean(X == 4))<\/code><\/div><div class=\"cl\"><code>print(\"mean:\", round(X.mean(), 4), \"| standard deviation:\", round(X.std(), 4))<\/code><\/div><div class=\"cl\"><code>print(\"theoretical standard deviation:\", round(math.sqrt(n * p * (1 - p)), 4))<\/code><\/div><\/div><div class=\"code-out\"><span class=\"code-out-lbl\">Printed output<\/span><div class=\"cl\"><code>P(X = 4)  = 0.02835<\/code><\/div><div class=\"cl\"><code>P(X &gt;= 4) = 0.03078<\/code><\/div><div class=\"cl\"><code>E[X]      = 1.5<\/code><\/div><div class=\"cl\"><code>frequency of X = 4: 0.02806<\/code><\/div><div class=\"cl\"><code>mean: 1.4948 | standard deviation: 1.0246<\/code><\/div><div class=\"cl\"><code>theoretical standard deviation: 1.0247<\/code><\/div><\/div><\/div>\n\n<div class=\"dossier-title\" id=\"s7\">7. Key points<\/div>\n<ul class=\"kit-simple\">\n<li>Equally likely outcomes: \\(\\PP(A)=\\frac{\\text{favourable outcomes}}{\\text{possible outcomes}}\\), with (number of states) to the power (number of repetitions) possible outcomes.<\/li>\n<li>\\(\\PP(\\text{not }A)=1-\\PP(A)\\); \\(\\PP(A\\text{ or }B)=\\PP(A)+\\PP(B)\\) if \\(A\\) and \\(B\\) are disjoint; \\(\\PP(A\\text{ and }B)=\\PP(A)\\,\\PP(B)\\) if \\(A\\) and \\(B\\) are independent.<\/li>\n<li>\\(F(a)=\\PP(X\\le a)\\) and \\(\\PP(a&lt;X\\le b)=F(b)-F(a)\\).<\/li>\n<li>\\(\\E[X]=\\sum p(w_i)\\,w_i\\) and \\(\\E[aX+b]=a\\,\\E[X]+b\\).<\/li>\n<li>\\(\\Var(X)=\\E[X^2]-(\\E[X])^2\\), \\(\\sigma=\\sqrt{\\Var(X)}\\) and \\(\\Var(aX+b)=a^2\\,\\Var(X)\\).<\/li>\n<li>Binomial distribution: \\(\\PP(X=k)=\\binom{n}{k}p^{k}(1-p)^{n-k}\\), \\(\\E[X]=np\\), \\(\\Var(X)=np(1-p)\\).<\/li>\n<\/ul>\n";
+
+/* ---------- libellés des figures ---------- */
+I18N.fr.f = {
+  n: 'Lancers <i>n</i>', k: 'Faces <i>k</i>', H: 'F', T: 'P',
+  treeRead: (n, k, c, tot) => `Nombre de faces <i>k</i> = ${k} : <span class="v">${c}</span> suite${c > 1 ? 's' : ''} favorable${c > 1 ? 's' : ''} sur 2<sup>${n}</sup> = <span class="v">${tot}</span> possibles, donc <i>P</i> = ${c}/${tot} = <span class="v">${fmtT(c / tot, 5)}</span>.`,
+  treeAria: (n, k) => `Arbre de ${n} lancers, suites contenant ${k} faces mises en évidence`,
+  ex: 'Exemple', exCourse: 'cours : valeurs 1, 3, 5, 7', exCoin: 'nombre de faces en 3 lancers', a: 'Seuil <i>a</i>',
+  pmf: 'Loi p(a) = P(X = a)', cdf: 'Répartition F(a) = P(X ≤ a)',
+  cdfNone: a => `<i>F</i>(${fmtT(a, 2)}) = <i>P</i>(<i>X</i> ≤ ${fmtT(a, 2)}) = <span class="v">0</span> : aucune valeur possible n'est inférieure ou égale au seuil.`,
+  cdfAria: 'Loi de probabilité et fonction de répartition',
+  bn: 'Épreuves <i>n</i>', bp: 'Probabilité <i>p</i>', bk: 'Succès <i>k</i>',
+  legEq: 'P(X = k)', legLt: 'P(X < k)', legGt: 'P(X > k)', binAria: (n, p) => `Loi binomiale de paramètres n = ${n} et p = ${p}`,
+  sd: 'écart type'
+};
+I18N.en.f = {
+  n: 'Tosses <i>n</i>', k: 'Heads <i>k</i>', H: 'H', T: 'T',
+  treeRead: (n, k, c, tot) => `Number of heads <i>k</i> = ${k}: <span class="v">${c}</span> favourable sequence${c > 1 ? 's' : ''} out of 2<sup>${n}</sup> = <span class="v">${tot}</span> possible, so <i>P</i> = ${c}/${tot} = <span class="v">${fmtT(c / tot, 5)}</span>.`,
+  treeAria: (n, k) => `Tree of ${n} tosses, sequences containing ${k} heads highlighted`,
+  ex: 'Example', exCourse: 'course: values 1, 3, 5, 7', exCoin: 'number of heads in 3 tosses', a: 'Threshold <i>a</i>',
+  pmf: 'pmf p(a) = P(X = a)', cdf: 'cdf F(a) = P(X ≤ a)',
+  cdfNone: a => `<i>F</i>(${fmtT(a, 2)}) = <i>P</i>(<i>X</i> ≤ ${fmtT(a, 2)}) = <span class="v">0</span>: no possible value is less than or equal to the threshold.`,
+  cdfAria: 'Probability mass function and cumulative distribution function',
+  bn: 'Trials <i>n</i>', bp: 'Probability <i>p</i>', bk: 'Successes <i>k</i>',
+  legEq: 'P(X = k)', legLt: 'P(X < k)', legGt: 'P(X > k)', binAria: (n, p) => `Binomial distribution with n = ${n} and p = ${p}`,
+  sd: 'standard deviation'
+};
+
+function comb(n, k) { let c = 1; for (let i = 1; i <= k; i++) c = c * (n - k + i) / i; return Math.round(c); }
+function fact(n) { let f = 1; for (let i = 2; i <= n; i++) f *= i; return f; }
+
+/* ---------- figure 1 : arbre des lancers ---------- */
+FIGS.tree = {
+  state: { n: 3, k: 1 },
+  clamp: s => { s.k = Math.min(s.k, s.n); },
+  controls: L => [
+    { key: 'n', label: L.f.n, min: 1, max: 5, step: 1 },
+    { key: 'k', label: L.f.k, min: 0, max: FIGS.tree.state.n, step: 1 }
+  ],
+  draw: function (s, lang) {
+    const L = I18N[lang].f, n = s.n, k = s.k, leaves = 1 << n;
+    const rh = n <= 3 ? 30 : n === 4 ? 20 : 13.5, W = 680, H = Math.round(leaves * rh + 24);
+    const xL = 46, xR = W - 96, X = j => xL + j * (xR - xL) / n;
+    /* nœud (niveau j, rang r parmi 2^j) : ordonnée = milieu de ses feuilles */
+    const Y = (j, r) => 12 + ((r + 0.5) * (leaves >> j)) * rh;
+    const pop = v => { let c = 0; while (v) { c += v & 1; v >>= 1; } return c; };
+    let el = '', hi = '';
+    for (let j = 0; j < n; j++) {
+      for (let r = 0; r < (1 << j); r++) {
+        for (let b = 0; b < 2; b++) {
+          const child = 2 * r + b, heads = (j + 1) - pop(child);          // bit 0 = face (branche du haut)
+          const on = heads <= k && k - heads <= n - (j + 1);
+          const seg = `<line x1="${X(j)}" y1="${Y(j, r)}" x2="${X(j + 1)}" y2="${Y(j + 1, child)}" stroke="${on ? COL.s1 : '#cfcabd'}" stroke-width="${on ? 2 : 1}" stroke-linecap="round"/>`;
+          if (on) hi += seg; else el += seg;
+          if ((leaves >> (j + 1)) * rh >= 24) {
+            const mx = (X(j) + X(j + 1)) / 2, my = (Y(j, r) + Y(j + 1, child)) / 2 + (b ? 13 : -5);
+            el += `<text x="${mx}" y="${my}" text-anchor="middle" ${FONT_M} font-size="10.5" fill="${COL.mute}">${b ? L.T : L.H}</text>`;
+          }
+        }
+      }
+    }
+    let nodes = `<circle cx="${X(0)}" cy="${Y(0, 0)}" r="3.5" fill="${COL.navy}"/>`, c = 0;
+    for (let i = 0; i < leaves; i++) {
+      const heads = n - pop(i), on = heads === k;
+      if (on) c++;
+      let seq = '';
+      for (let j = n - 1; j >= 0; j--) seq += (i >> j) & 1 ? L.T : L.H;
+      nodes += `<circle cx="${X(n)}" cy="${Y(n, i)}" r="${on ? 4.5 : 2.5}" fill="${on ? COL.s1 : '#b9b3a6'}" stroke="#fff" stroke-width="${on ? 2 : 0}"/>`;
+      nodes += `<text x="${X(n) + 10}" y="${Y(n, i) + 3.8}" ${FONT_M} font-size="${n === 5 ? 10 : 11.5}" font-weight="${on ? 700 : 400}" fill="${on ? COL.navy : '#8a857a'}">${seq}</text>`;
+    }
+    const svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${esc(L.treeAria(n, k))}">${el}${hi}${nodes}</svg>`;
+    return { svg: svg, read: L.treeRead(n, k, c, leaves) };
+  }
+};
+
+/* ---------- figure 2 : loi et fonction de répartition ---------- */
+const PMF_EX = {
+  course: { x: [1, 3, 5, 7], p: [0.5, 0.25, 0.15, 0.1] },
+  coin: { x: [0, 1, 2, 3], p: [0.125, 0.375, 0.375, 0.125] }
+};
+FIGS.pmfcdf = {
+  state: { ex: 'course', a: 4 },
+  clamp: s => { const e = PMF_EX[s.ex]; s.a = Math.max(e.x[0] - 1, Math.min(e.x[e.x.length - 1] + 1, s.a)); },
+  controls: L => {
+    const e = PMF_EX[FIGS.pmfcdf.state.ex];
+    return [
+      { key: 'ex', type: 'select', label: L.f.ex, options: [{ v: 'course', t: L.f.exCourse }, { v: 'coin', t: L.f.exCoin }] },
+      { key: 'a', label: L.f.a, min: e.x[0] - 1, max: e.x[e.x.length - 1] + 1, step: 0.5, fmt: v => fmtT(v, 1) }
+    ];
+  },
+  draw: function (s, lang) {
+    const L = I18N[lang].f, e = PMF_EX[s.ex], a = s.a, n = e.x.length;
+    const x0 = e.x[0] - 1.5, x1 = e.x[n - 1] + 1.5, pmax = Math.max.apply(null, e.p) <= 0.4 ? 0.4 : 0.6;
+    const xt = []; for (let v = Math.ceil(x0); v <= Math.floor(x1); v++) xt.push(v);
+    const P1 = Plot({ w: 680, h: 390, mt: 30, mb: 222, x0: x0, x1: x1, y0: 0, y1: pmax });
+    const P2 = Plot({ w: 680, h: 390, mt: 214, mb: 36, x0: x0, x1: x1, y0: 0, y1: 1 });
+    P1.axes({ xt: [], yt: pmax === 0.4 ? [0, 0.1, 0.2, 0.3, 0.4] : [0, 0.2, 0.4, 0.6], yl: L.pmf });
+    P2.axes({ xt: xt, yt: [0, 0.25, 0.5, 0.75, 1], yl: L.cdf });
+    xt.forEach(v => P1.add(`<text x="${P1.X(v)}" y="${390 - 222 + 14}" text-anchor="middle" ${FONT_M} font-size="10" fill="${COL.mute}">${v}</text>`));
+    let cum = 0; const used = [];
+    e.x.forEach((x, i) => {
+      const on = x <= a + 1e-9;
+      if (on) { cum += e.p[i]; used.push(e.p[i]); }
+      P1.bar(x, 22, e.p[i], { c: COL.s1, o: on ? 1 : 0.28, tip: `P(X = ${x}) = ${fmtT(e.p[i], 4)}` });
+      P1.text(x, e.p[i], fmtT(e.p[i], 4), { dy: -6, mono: true, size: 10.5, c: on ? COL.ink : COL.mute });
+    });
+    /* escalier : palier fermé à gauche, ouvert à droite */
+    let F = 0; const xs = [x0].concat(e.x, [x1]);
+    for (let i = 0; i < xs.length - 1; i++) {
+      if (i > 0) F += e.p[i - 1];
+      P2.seg(xs[i], F, xs[i + 1], F, { c: COL.s1, w: 2.4 });
+    }
+    F = 0;
+    e.x.forEach((x, i) => { P2.dot(x, F, { hollow: true, c: COL.s1, r: 3.6 }); F += e.p[i]; P2.dot(x, F, { c: COL.s1, r: 4.2 }); });
+    /* seuil */
+    const g = COL.s2;
+    P1.add(`<line x1="${P1.X(a)}" y1="${P1.mt - 6}" x2="${P1.X(a)}" y2="${390 - P2.mb}" stroke="${g}" stroke-width="1.6" stroke-dasharray="5 4"/>`);
+    P1.add(`<text x="${P1.X(a)}" y="${P1.mt - 10}" text-anchor="middle" ${FONT_T} font-size="12" font-style="italic" fill="${COL.ink}">a = ${fmtT(a, 1)}</text>`);
+    const onStep = e.x.some(x => Math.abs(x - a) < 1e-9);
+    if (!onStep) P2.dot(a, cum, { c: g, r: 4.6 });
+    P2.text(a, cum, `F(a) = ${fmtT(cum, 4)}`, { dx: 8, dy: cum > 0.85 ? 16 : -8, anchor: 'start', mono: true, size: 11, bold: true });
+    const svg = `<svg viewBox="0 0 680 390" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${esc(L.cdfAria)}">${P1.el.join('')}${P2.el.join('')}</svg>`;
+    const av = fmtT(a, 2);
+    const read = used.length === 0 ? L.cdfNone(a)
+      : `<i>F</i>(${av}) = <i>P</i>(<i>X</i> ≤ ${av}) = ` + (used.length > 1 ? used.map(v => fmtT(v, 4)).join(' + ') + ' = ' : '') + `<span class="v">${fmtT(cum, 4)}</span>`;
+    return { svg: svg, read: read };
+  }
+};
+
+/* ---------- figure 3 : loi binomiale ---------- */
+function binomPmf(n, p) { const out = []; for (let j = 0; j <= n; j++) out.push(comb(n, j) * Math.pow(p, j) * Math.pow(1 - p, n - j)); return out; }
+FIGS.binom = {
+  state: { n: 10, p: 0.5, k: 5 },
+  clamp: s => { s.k = Math.min(s.k, s.n); },
+  controls: L => [
+    { key: 'n', label: L.f.bn, min: 1, max: 30, step: 1 },
+    { key: 'p', label: L.f.bp, min: 0.05, max: 0.95, step: 0.05, fmt: v => fmt(v, 2) },
+    { key: 'k', label: L.f.bk, min: 0, max: FIGS.binom.state.n, step: 1 }
+  ],
+  draw: function (s, lang) {
+    const L = I18N[lang].f, n = s.n, p = Math.round(s.p * 100) / 100, k = s.k, pm = binomPmf(n, p);
+    const mx = Math.max.apply(null, pm), tk = ticks(0, mx * 1.18, 4), y1 = Math.max(tk[tk.length - 1], mx * 1.18);
+    const P = Plot({ w: 680, h: 330, mt: 34, mb: 36, x0: -0.8, x1: n + 0.8, y0: 0, y1: y1 });
+    const xt = []; for (let j = 0; j <= n; j++) if (n <= 16 || j % 5 === 0) xt.push(j);
+    P.axes({ xt: xt, yt: tk, xf: v => String(v), yf: v => fmtT(v, 3) });
+    const slot = (P.X(1) - P.X(0)), bw = Math.max(3, Math.min(24, slot - 2));
+    let le = 0, ge = 0;
+    pm.forEach((v, j) => {
+      if (j <= k) le += v; if (j >= k) ge += v;
+      P.bar(j, bw, v, { c: j === k ? COL.s2 : COL.s1, o: j === k ? 1 : (j < k ? 0.85 : 0.25), tip: `P(X = ${j}) = ${fmtT(v, 5)}` });
+    });
+    const mu = n * p, sd = Math.sqrt(n * p * (1 - p)), yb = y1 * 0.93;
+    P.seg(mu, 0, mu, y1, { c: COL.navy, w: 1.4, dash: '5 4' });
+    const xa = Math.max(-0.8, mu - sd), xb = Math.min(n + 0.8, mu + sd);
+    P.seg(xa, yb, xb, yb, { c: COL.navy, w: 1.6 });
+    P.seg(xa, yb - y1 * 0.02, xa, yb + y1 * 0.02, { c: COL.navy, w: 1.6 }).seg(xb, yb - y1 * 0.02, xb, yb + y1 * 0.02, { c: COL.navy, w: 1.6 });
+    P.text(mu, y1, `np = ${fmtT(mu, 2)}`, { dy: -6, mono: true, size: 10.5 });
+    P.legend([{ box: 1, c: COL.s2, t: L.legEq }, { box: 1, c: COL.s1, o: 0.85, t: L.legLt }, { box: 1, c: COL.s1, o: 0.25, t: L.legGt }], P.ml + 4, 14);
+    const read = `<i>P</i>(<i>X</i> = ${k}) = <span class="v">${fmt(pm[k], 4)}</span> &nbsp;·&nbsp; <i>P</i>(<i>X</i> ≤ ${k}) = <span class="v">${fmt(le, 4)}</span> &nbsp;·&nbsp; <i>P</i>(<i>X</i> ≥ ${k}) = <span class="v">${fmt(ge, 4)}</span><br><i>E</i>[<i>X</i>] = <i>np</i> = <span class="v">${fmtT(mu, 2)}</span> &nbsp;·&nbsp; ${L.sd} σ = <span class="v">${fmt(sd, 3)}</span>`;
+    return { svg: P.svg(L.binAria(n, p)), read: read };
+  }
+};
+
+/* ============================================================
+   EXERCICE : tirage et calculs (indépendants de la langue)
+   ============================================================ */
+PAGE.compute = function (seed) {
+  initRand(seed);
+  const D = { seed: seed };
+
+  /* 1. Scénarios de marché : n jours, hausse ou baisse équiprobables */
+  D.n1 = rint(3, 5);
+  D.k1 = rint(1, D.n1 - 1);
+  D.c1 = comb(D.n1, D.k1);
+  D.tot1 = 1 << D.n1;
+  D.seqs = [];                                    // 1 = hausse, 0 = baisse
+  for (let i = D.tot1 - 1; i >= 0; i--) { let c = 0, s = []; for (let j = D.n1 - 1; j >= 0; j--) { const b = (i >> j) & 1; s.push(b); c += b; } if (c === D.k1) D.seqs.push(s); }
+
+  /* 2 et 3. Rendement d'un fonds (4 scénarios, probabilités en vingtièmes) et gain G = aR − c.
+     Le tirage est repris tant que l'écart type de G calculé avec la valeur affichée de σ_R
+     (2 ou 3 décimales) ne redonne pas, sans ambiguïté d'arrondi, la valeur exacte. */
+  let ok = false;
+  while (!ok) {
+    D.r = [rint(-15, -6), pick([-4, -3, -2, -1, 1, 2]), rint(4, 8), rint(10, 20)];
+    const p1 = rint(2, 4), p4 = rint(2, 5), p2 = rint(4, 6);
+    D.pv = [p1, p2, 20 - p1 - p2 - p4, p4];        // en vingtièmes
+    D.M = pick([100, 200, 300, 500]);
+    D.a = D.M / 100;
+    D.c = pick([1, 2, 3]);
+    D.sPR = D.r.reduce((s, v, i) => s + v * D.pv[i], 0);            // 20 E[R]
+    D.sPR2 = D.r.reduce((s, v, i) => s + v * v * D.pv[i], 0);       // 20 E[R²]
+    if (!(D.pv[2] >= 4 && D.sPR > 0 && D.r[2] > D.r[1] + 1)) continue;
+    D.varR = (20 * D.sPR2 - D.sPR * D.sPR) / 400;
+    D.sdRx = Math.sqrt(D.varR);
+    D.sdGx = D.a * D.sdRx;
+    const fr = x => Math.abs(x * 100 - Math.floor(x * 100) - 0.5);   // distance au demi-centième
+    if (fr(D.sdGx) < 0.03 || fr(D.sdRx) < 0.03) continue;
+    for (let d = 2; d <= 3 && !ok; d++) {
+      const sh = Number(_fixed(D.sdRx, d));
+      if (fr(D.a * sh) >= 0.02 && _fixed(D.a * sh, 2) === _fixed(D.sdGx, 2)) { ok = true; D.dSd = d; D.sdR = sh; }
+    }
+  }
+  D.sdG = Number(_fixed(D.a * D.sdR, 2));
+  D.p = D.pv.map(v => v / 20);
+  D.F = []; D.pv.reduce((s, v, i) => { D.F[i] = (s + v) / 20; return s + v; }, 0);
+  D.ER = D.sPR / 20;
+  D.ER2 = D.sPR2 / 20;
+  D.pPos = D.pv.reduce((s, v, i) => s + (D.r[i] > 0 ? v : 0), 0) / 20;
+  D.nPos = D.r.filter(v => v > 0).length;
+  D.EG = D.a * D.ER - D.c;
+
+  /* 4. Séances de hausse : loi binomiale, probabilités exactes (p en dixièmes) */
+  D.n4 = rint(4, 6);
+  D.pa = pick([3, 4, 5, 6, 7]);                    // p = pa / 10
+  D.p4 = D.pa / 10;
+  D.mv = pick([10, 20]);                           // variation en % : u = 1 + mv/100, d = 1 − mv/100
+  D.u = 1 + D.mv / 100; D.d = 1 - D.mv / 100;
+  D.num = []; D.den = Math.pow(10, D.n4);
+  for (let k = 0; k <= D.n4; k++) D.num.push(comb(D.n4, k) * Math.pow(D.pa, k) * Math.pow(10 - D.pa, D.n4 - k));
+  D.pk = D.num.map(v => v / D.den);
+  D.price = []; for (let k = 0; k <= D.n4; k++) D.price.push(100 * Math.pow(D.u, k) * Math.pow(D.d, D.n4 - k));
+  D.ks = 0; while (D.price[D.ks] <= 100) D.ks++;   // plus petit nombre de hausses qui laisse le cours au-dessus de 100
+  do { D.kq = rint(1, D.n4 - 1); } while (D.kq === D.ks && D.n4 > 2 && rnd() < 0.7);
+  D.geNum = D.num.slice(D.ks).reduce((s, v) => s + v, 0);
+  D.pGe = D.geNum / D.den;
+  D.EX = D.n4 * D.p4;
+  D.varX = D.n4 * D.p4 * (1 - D.p4);
+  D.sdX = Math.sqrt(D.varX);
+  D.sdXexact = Math.abs(Math.pow(Math.round(D.sdX * 100), 2) - D.varX * 1e4) < 1e-6;
+  return D;
+};
+
+/* ---------- petits outils de rédaction communs aux deux langues ---------- */
+function binomLine(n, k, pa, val) {        // \binom{n}{k} p^k q^{n-k} détaillé
+  const p = pa / 10, q = 1 - p, c = comb(n, k);
+  const pw = (b, e) => e === 0 ? '' : (e === 1 ? String.raw` \times ${texT(b, 1)}` : String.raw` \times ${texT(b, 1)}^{${e}}`);
+  return String.raw`\binom{${n}}{${k}}${pw(p, k)}${pw(q, n - k)} = ${c}${k > 0 ? String.raw` \times ${texT(Math.pow(p, k), 6)}` : ''}${n - k > 0 ? String.raw` \times ${texT(Math.pow(q, n - k), 6)}` : ''} = ${texT(val, 6)}`;
+}
+function combLine(n, k) {
+  return String.raw`\binom{${n}}{${k}}=\frac{${n}!}{${k}!\,${n - k}!}=\frac{${fact(n)}}{${fact(k)}\times ${fact(n - k)}}=${comb(n, k)}`;
+}
+function fundTable(D, T) {
+  let h = `<div class="dtable-wrap"><table class="dtable dtable-narrow"><tr><th>${T.thScen}</th>${T.scen.map(s => `<th>${s}</th>`).join('')}</tr>`;
+  h += `<tr><td class="l">${T.thRet}</td>${D.r.map(v => `<td class="num">${fmtT(v, 0)}</td>`).join('')}</tr>`;
+  h += `<tr><td class="l">${T.thProb}</td>${D.p.map(v => `<td class="num">${fmtT(v, 2)}</td>`).join('')}</tr></table></div>`;
+  return h;
+}
+function calcTable(D, T) {
+  let h = String.raw`<div class="dtable-wrap"><table class="dtable dtable-narrow"><tr><th>\(r_i\)</th><th>\(p_i\)</th><th>\(F(r_i)\)</th><th>\(p_i\,r_i\)</th><th>\(p_i\,r_i^2\)</th></tr>`;
+  D.r.forEach((v, i) => { h += `<tr><td class="num">${fmtT(v, 0)}</td><td class="num">${fmtT(D.p[i], 2)}</td><td class="num">${fmtT(D.F[i], 2)}</td><td class="num">${fmtT(D.p[i] * v, 2)}</td><td class="num">${fmtT(D.p[i] * v * v, 2)}</td></tr>`; });
+  h += `<tr><td><strong>${T.total}</strong></td><td class="num">1</td><td></td><td class="num">${fmtT(D.ER, 2)}</td><td class="num">${fmtT(D.ER2, 2)}</td></tr></table></div>`;
+  return h;
+}
+function priceTable(D, T) {
+  let h = `<div class="dtable-wrap"><table class="dtable"><tr><th>${T.thK}</th>${D.price.map((v, k) => `<th>${k}</th>`).join('')}</tr>`;
+  h += `<tr><td class="l">${T.thPrice}</td>${D.price.map(v => `<td class="num">${fmt(v, 2)}</td>`).join('')}</tr>`;
+  h += `<tr><td class="l">${T.thPk}</td>${D.pk.map(v => `<td class="num">${fmtT(v, 6)}</td>`).join('')}</tr></table></div>`;
+  return h;
+}
+function listAnd(a, w) { return a.length < 2 ? String(a[0]) : a.slice(0, -1).join(', ') + ' ' + w + ' ' + a[a.length - 1]; }
+const signed = v => (v < 0 ? String.raw`(${texT(v, 4)})` : texT(v, 4));
+
+/* ============================================================
+   EXERCICE : textes français
+   ============================================================ */
+I18N.fr.x = { thScen: 'Conjoncture', scen: ['Récession', 'Ralentissement', 'Croissance modérée', 'Forte croissance'], thRet: 'Rendement \\(R\\) (en %)', thProb: 'Probabilité', total: 'Total',
+  thK: 'Nombre de hausses \\(k\\)', thPrice: 'Cours final (euros)', thPk: '\\(\\mathbb{P}(X=k)\\)', U: 'H', Dn: 'B' };
+I18N.fr.ex = function (D) {
+  const T = I18N.fr.x;
+  return String.raw`<div class="context-block">Vous rejoignez l'équipe de gestion d'un fonds d'investissement. Avant d'aborder l'évaluation des options, votre responsable vous demande de vérifier quelques calculs de probabilités sur les titres du portefeuille. Les quatre questions sont indépendantes.</div>
+<div class="questions"><ol>
+<li><div class="q-text"><strong>Scénarios de marché.</strong> Chaque jour de bourse, un titre peut monter (H) ou baisser (B), avec la même probabilité et indépendamment des jours précédents. On observe ce titre pendant ${D.n1} jours.
+  <ol><li>Combien de scénarios différents peut-on observer ?</li>
+  <li>Quelle est la probabilité d'observer exactement ${D.k1} hausse${D.k1 > 1 ? 's' : ''} ?</li>
+  <li>Quelle est la probabilité d'observer au moins une baisse ?</li></ol></div></li>
+<li><div class="q-text"><strong>Rendement d'un fonds.</strong> Le rendement annuel \(R\) d'un fonds, exprimé en pourcentage, dépend de la conjoncture :
+  ${fundTable(D, T)}
+  <ol><li>Déterminez la fonction de répartition \(F\) de \(R\). Calculez ensuite la probabilité que le rendement soit au plus égal à \(${fmtT(D.r[2], 0)}\,\%\), puis \(\PP(${texT(D.r[0], 0)}&lt;R\le ${texT(D.r[2], 0)})\) et la probabilité d'un rendement strictement positif.</li>
+  <li>Calculez l'espérance de \(R\).</li>
+  <li>Calculez la variance et l'écart type de \(R\).</li></ol></div></li>
+<li><div class="q-text"><strong>Gain d'un investisseur.</strong> Un client place ${D.M} milliers d'euros dans ce fonds pendant un an et paie ${D.c} millier${D.c > 1 ? 's' : ''} d'euros de frais fixes. On note \(G\) son gain, en milliers d'euros.
+  <ol><li>Montrez que \(G=${texT(D.a, 0)}\,R-${D.c}\), puis calculez l'espérance de \(G\).</li>
+  <li>Calculez l'écart type de \(G\).</li></ol></div></li>
+<li><div class="q-text"><strong>Séances de hausse.</strong> Un autre titre cote aujourd'hui 100 euros. À chacune des ${D.n4} prochaines séances, il monte avec la probabilité \(${texT(D.p4, 1)}\) ou baisse avec la probabilité \(${texT(1 - D.p4, 1)}\), indépendamment des autres séances. On note \(X\) le nombre de séances de hausse.
+  <ol><li>Quelle loi suit \(X\) ? Justifiez.</li>
+  <li>Calculez \(\PP(X=${D.kq})\).</li>
+  <li>Calculez \(\PP(X\ge ${D.ks})\).</li>
+  <li>Calculez l'espérance et l'écart type de \(X\).</li>
+  <li>Chaque hausse multiplie le cours par \(${texT(D.u, 1)}\) et chaque baisse par \(${texT(D.d, 1)}\). Montrez que le cours final dépasse 100 euros exactement lorsque \(X\ge ${D.ks}\), et déduisez-en la probabilité que le titre termine au-dessus de son cours actuel.</li></ol></div></li>
+</ol></div>`;
+};
+I18N.fr.sol = function (D) {
+  const T = I18N.fr.x;
+  const seqTxt = D.c1 <= 10 ? ` Ce sont les scénarios ${D.seqs.map(s => s.map(b => b ? 'H' : 'B').join('')).join(', ')}.` : '';
+  const pos = D.r.map((v, i) => (v > 0 ? texT(D.p[i], 2) : null)).filter(v => v !== null);
+  const sdExact = Number(_fixed(D.sdRx, 6)) === D.sdR;
+  const geTerms = D.pk.slice(D.ks).map(v => texT(v, 6));
+  const geDetail = String.raw`\[\begin{aligned}` + D.pk.slice(D.ks).map((v, i) => String.raw`\PP(X=${D.ks + i})&=${binomLine(D.n4, D.ks + i, D.pa, v)}`).join(String.raw`\\ `) + String.raw`\end{aligned}\]`;
+  return String.raw`<div class="st"><ol>
+<li><div class="q-content">
+  <p><strong>a.</strong> Chaque jour a 2 états possibles (hausse ou baisse) et l'on observe ${D.n1} jours : il y a \(2^{${D.n1}}=${D.tot1}\) scénarios, tous équiprobables puisque hausse et baisse ont la même probabilité.</p>
+  <p><strong>b.</strong> Un scénario comportant exactement ${D.k1} hausse${D.k1 > 1 ? 's' : ''} est déterminé par la position de ${D.k1 > 1 ? 'ces hausses' : 'cette hausse'} parmi les ${D.n1} jours : il y en a \(${combLine(D.n1, D.k1)}\).${seqTxt} La probabilité cherchée vaut donc \(\frac{${D.c1}}{${D.tot1}}=${texT(D.c1 / D.tot1, 5)}\).</p>
+  <p><strong>c.</strong> Le contraire de « au moins une baisse » est « aucune baisse », c'est-à-dire le seul scénario ${'H'.repeat(D.n1)}, de probabilité \(\frac{1}{${D.tot1}}\). Donc \(\PP(\text{au moins une baisse})=1-\frac{1}{${D.tot1}}\), soit \(\frac{${D.tot1 - 1}}{${D.tot1}}=${texT((D.tot1 - 1) / D.tot1, 5)}\).</p>
+</div></li>
+<li><div class="q-content">
+  <p>Les calculs sont regroupés dans le tableau ci-dessous, sur le modèle de l'encadré du cours.</p>
+  ${calcTable(D, T)}
+  <p><strong>a.</strong> La fonction de répartition s'obtient en cumulant les probabilités de gauche à droite : \(F(${texT(D.r[0], 0)})=${texT(D.F[0], 2)}\), \(F(${texT(D.r[1], 0)})=${texT(D.F[0], 2)}+${texT(D.p[1], 2)}=${texT(D.F[1], 2)}\), \(F(${texT(D.r[2], 0)})=${texT(D.F[1], 2)}+${texT(D.p[2], 2)}=${texT(D.F[2], 2)}\) et \(F(${texT(D.r[3], 0)})=1\). La probabilité que le rendement soit au plus égal à \(${fmtT(D.r[2], 0)}\,\%\) est \(F(${texT(D.r[2], 0)})=${texT(D.F[2], 2)}\). Ensuite \(\PP(${texT(D.r[0], 0)}&lt;R\le ${texT(D.r[2], 0)})=F(${texT(D.r[2], 0)})-F(${texT(D.r[0], 0)})\), soit \(${texT(D.F[2], 2)}-${texT(D.F[0], 2)}=${texT(D.F[2] - D.F[0], 2)}\). Enfin le rendement est strictement positif dans ${D.nPos === 2 ? 'les deux derniers' : 'les trois derniers'} scénarios : \(\PP(R>0)=${pos.join('+')}=${texT(D.pPos, 2)}\).</p>
+  <p><strong>b.</strong> L'espérance est le total de la colonne \(p_i\,r_i\) :</p>
+  \[\E[R]=${D.r.map((v, i) => String.raw`${texT(D.p[i], 2)}\times ${signed(v)}`).join('+')}=${texT(D.ER, 2)} .\]
+  <p> Le fonds rapporte en moyenne \(${fmtT(D.ER, 2)}\,\%\) par an.</p>
+  <p><strong>c.</strong> Le total de la colonne \(p_i\,r_i^2\) donne \(\E[R^2]=${texT(D.ER2, 2)}\). Par la formule pratique, \(\Var(R)=\E[R^2]-(\E[R])^2\), soit \(${texT(D.ER2, 2)}-${signed(D.ER)}^2=${texT(D.ER2, 2)}-${texT(D.ER * D.ER, 4)}=${texT(D.varR, 4)}\). L'écart type vaut \(\sigma_R=\sqrt{${texT(D.varR, 4)}}${sdExact ? '=' : String.raw`\approx`}${tex(D.sdR, D.dSd)}\), soit environ \(${fmt(D.sdR, 2)}\) points de pourcentage : c'est la volatilité annuelle du fonds.</p>
+</div></li>
+<li><div class="q-content">
+  <p><strong>a.</strong> Un rendement de \(R\,\%\) sur ${D.M} milliers d'euros rapporte \(${D.M}\times\frac{R}{100}=${texT(D.a, 0)}\,R\) milliers d'euros, dont il faut retrancher les frais fixes de ${D.c} millier${D.c > 1 ? 's' : ''} d'euros : \(G=${texT(D.a, 0)}\,R-${D.c}\). Par linéarité de l'espérance, \(\E[G]=${texT(D.a, 0)}\,\E[R]-${D.c}\), soit \(${texT(D.a, 0)}\times ${texT(D.ER, 2)}-${D.c}=${texT(D.EG, 2)}\) milliers d'euros.</p>
+  <p><strong>b.</strong> La constante \(-${D.c}\) ne change pas la dispersion et le facteur \(${texT(D.a, 0)}\) multiplie l'écart type : \(\sigma_G=${texT(D.a, 0)}\times\sigma_R${sdExact ? '=' : String.raw`\approx`}${texT(D.a, 0)}\times ${tex(D.sdR, D.dSd)}${sdExact && Number(_fixed(D.a * D.sdR, 6)) === D.sdG ? '=' : String.raw`\approx`}${tex(D.sdG, 2)}\) milliers d'euros. Les frais fixes réduisent le gain moyen, mais pas le risque.</p>
+</div></li>
+<li><div class="q-content">
+  <p><strong>a.</strong> On répète ${D.n4} fois, de façon indépendante, la même épreuve à deux issues (hausse, de probabilité \(${texT(D.p4, 1)}\), ou baisse), et \(X\) compte les hausses : \(X\) suit la loi binomiale \(B(${D.n4},\,${texT(D.p4, 1)})\).</p>
+  <p><strong>b.</strong> On applique la formule de la loi binomiale avec \(k=${D.kq}\) :</p>
+  \[\PP(X=${D.kq})=${binomLine(D.n4, D.kq, D.pa, D.pk[D.kq])} .\]
+  <p><strong>c.</strong> « Au moins ${D.ks} hausses » regroupe les valeurs ${listAnd(Array.from({ length: D.n4 - D.ks + 1 }, (_, i) => D.ks + i), 'et')}, dont on calcule les probabilités de la même façon :</p>
+  ${geDetail}
+  <p>En les additionnant, on obtient \(\PP(X\ge ${D.ks})\) :</p>
+  \[\PP(X\ge ${D.ks})=${geTerms.join('+')}=${texT(D.pGe, 6)} .\]
+  <p><strong>d.</strong> \(\E[X]=np=${D.n4}\times ${texT(D.p4, 1)}=${texT(D.EX, 2)}\) séances de hausse en moyenne. La variance vaut \(np(1-p)=${D.n4}\times ${texT(D.p4, 1)}\times ${texT(1 - D.p4, 1)}=${texT(D.varX, 2)}\), d'où \(\sigma=\sqrt{${texT(D.varX, 2)}}${D.sdXexact ? '=' : String.raw`\approx`} ${D.sdXexact ? texT(D.sdX, 2) : tex(D.sdX, 2)}\).</p>
+  <p><strong>e.</strong> Après \(k\) hausses et \(${D.n4}-k\) baisses, le cours vaut \(100\times ${texT(D.u, 1)}^{k}\times ${texT(D.d, 1)}^{${D.n4}-k}\), quel que soit l'ordre des hausses et des baisses :</p>
+  ${priceTable(D, T)}
+  <p>Le cours final augmente avec \(k\). Pour \(k=${D.ks - 1}\) il vaut \(${fmt(D.price[D.ks - 1], 2)}\) euros, en dessous de 100 ; pour \(k=${D.ks}\) il vaut \(${fmt(D.price[D.ks], 2)}\) euros, au-dessus de 100. Le titre termine donc au-dessus de son cours actuel exactement lorsque \(X\ge ${D.ks}\), événement de probabilité \(${texT(D.pGe, 6)}\) d'après la question c. On remarque qu'il faut plus de hausses que de baisses pour simplement retrouver le cours initial : une hausse de \(${D.mv}\,\%\) suivie d'une baisse de \(${D.mv}\,\%\) laisse \(${texT(D.u, 1)}\times ${texT(D.d, 1)}=${texT(D.u * D.d, 2)}\), soit une perte de \(${texT(100 - 100 * D.u * D.d, 0)}\,\%\).</p>
+</div></li>
+</ol></div>`;
+};
+
+/* ============================================================
+   EXERCISE: English texts
+   ============================================================ */
+I18N.en.x = { thScen: 'Economic conditions', scen: ['Recession', 'Slowdown', 'Moderate growth', 'Strong growth'], thRet: 'Return \\(R\\) (in %)', thProb: 'Probability', total: 'Total',
+  thK: 'Number of up moves \\(k\\)', thPrice: 'Final price (euros)', thPk: '\\(\\mathbb{P}(X=k)\\)', U: 'U', Dn: 'D' };
+I18N.en.ex = function (D) {
+  const T = I18N.en.x;
+  return String.raw`<div class="context-block">You are joining the management team of an investment fund. Before turning to option pricing, your manager asks you to check a few probability calculations on the securities held in the portfolio. The four questions are independent.</div>
+<div class="questions"><ol>
+<li><div class="q-text"><strong>Market scenarios.</strong> On each trading day, a security can go up (U) or down (D), with the same probability and independently of the previous days. This security is observed for ${D.n1} days.
+  <ol><li>How many different scenarios can be observed?</li>
+  <li>What is the probability of observing exactly ${D.k1} up day${D.k1 > 1 ? 's' : ''}?</li>
+  <li>What is the probability of observing at least one down day?</li></ol></div></li>
+<li><div class="q-text"><strong>Return of a fund.</strong> The annual return \(R\) of a fund, expressed as a percentage, depends on economic conditions:
+  ${fundTable(D, T)}
+  <ol><li>Determine the cumulative distribution function \(F\) of \(R\). Then compute the probability that the return is at most equal to \(${fmtT(D.r[2], 0)}\,\%\), then \(\PP(${texT(D.r[0], 0)}&lt;R\le ${texT(D.r[2], 0)})\) and the probability of a strictly positive return.</li>
+  <li>Compute the expected value of \(R\).</li>
+  <li>Compute the variance and the standard deviation of \(R\).</li></ol></div></li>
+<li><div class="q-text"><strong>Gain of an investor.</strong> A client invests ${D.M} thousand euros in this fund for one year and pays ${D.c} thousand euros of fixed fees. Let \(G\) denote the client's gain, in thousands of euros.
+  <ol><li>Show that \(G=${texT(D.a, 0)}\,R-${D.c}\), then compute the expected value of \(G\).</li>
+  <li>Compute the standard deviation of \(G\).</li></ol></div></li>
+<li><div class="q-text"><strong>Up sessions.</strong> Another security is quoted at 100 euros today. In each of the next ${D.n4} sessions, it goes up with probability \(${texT(D.p4, 1)}\) or down with probability \(${texT(1 - D.p4, 1)}\), independently of the other sessions. Let \(X\) denote the number of up sessions.
+  <ol><li>Which distribution does \(X\) follow? Justify.</li>
+  <li>Compute \(\PP(X=${D.kq})\).</li>
+  <li>Compute \(\PP(X\ge ${D.ks})\).</li>
+  <li>Compute the expected value and the standard deviation of \(X\).</li>
+  <li>Each up move multiplies the price by \(${texT(D.u, 1)}\) and each down move by \(${texT(D.d, 1)}\). Show that the final price exceeds 100 euros exactly when \(X\ge ${D.ks}\), and deduce the probability that the security ends above its current price.</li></ol></div></li>
+</ol></div>`;
+};
+I18N.en.sol = function (D) {
+  const T = I18N.en.x;
+  const seqTxt = D.c1 <= 10 ? ` These are the scenarios ${D.seqs.map(s => s.map(b => b ? 'U' : 'D').join('')).join(', ')}.` : '';
+  const pos = D.r.map((v, i) => (v > 0 ? texT(D.p[i], 2) : null)).filter(v => v !== null);
+  const sdExact = Number(_fixed(D.sdRx, 6)) === D.sdR;
+  const geTerms = D.pk.slice(D.ks).map(v => texT(v, 6));
+  const geDetail = String.raw`\[\begin{aligned}` + D.pk.slice(D.ks).map((v, i) => String.raw`\PP(X=${D.ks + i})&=${binomLine(D.n4, D.ks + i, D.pa, v)}`).join(String.raw`\\ `) + String.raw`\end{aligned}\]`;
+  return String.raw`<div class="st"><ol>
+<li><div class="q-content">
+  <p><strong>a.</strong> Each day has 2 possible states (up or down) and ${D.n1} days are observed: there are \(2^{${D.n1}}=${D.tot1}\) scenarios, all equally likely since up and down moves have the same probability.</p>
+  <p><strong>b.</strong> A scenario with exactly ${D.k1} up day${D.k1 > 1 ? 's' : ''} is determined by the position of ${D.k1 > 1 ? 'these up days' : 'this up day'} among the ${D.n1} days: there are \(${combLine(D.n1, D.k1)}\) of them.${seqTxt} The required probability is therefore \(\frac{${D.c1}}{${D.tot1}}=${texT(D.c1 / D.tot1, 5)}\).</p>
+  <p><strong>c.</strong> The complement of "at least one down day" is "no down day", that is the single scenario ${'U'.repeat(D.n1)}, of probability \(\frac{1}{${D.tot1}}\). So \(\PP(\text{at least one down day})=1-\frac{1}{${D.tot1}}\), that is \(\frac{${D.tot1 - 1}}{${D.tot1}}=${texT((D.tot1 - 1) / D.tot1, 5)}\).</p>
+</div></li>
+<li><div class="q-content">
+  <p>The calculations are gathered in the table below, following the model of the box in the lesson.</p>
+  ${calcTable(D, T)}
+  <p><strong>a.</strong> The cumulative distribution function is obtained by accumulating the probabilities from left to right: \(F(${texT(D.r[0], 0)})=${texT(D.F[0], 2)}\), \(F(${texT(D.r[1], 0)})=${texT(D.F[0], 2)}+${texT(D.p[1], 2)}=${texT(D.F[1], 2)}\), \(F(${texT(D.r[2], 0)})=${texT(D.F[1], 2)}+${texT(D.p[2], 2)}=${texT(D.F[2], 2)}\) and \(F(${texT(D.r[3], 0)})=1\). The probability that the return is at most equal to \(${fmtT(D.r[2], 0)}\,\%\) is \(F(${texT(D.r[2], 0)})=${texT(D.F[2], 2)}\). Next, \(\PP(${texT(D.r[0], 0)}&lt;R\le ${texT(D.r[2], 0)})=F(${texT(D.r[2], 0)})-F(${texT(D.r[0], 0)})\), that is \(${texT(D.F[2], 2)}-${texT(D.F[0], 2)}=${texT(D.F[2] - D.F[0], 2)}\). Finally, the return is strictly positive in the last ${D.nPos === 2 ? 'two' : 'three'} scenarios: \(\PP(R>0)=${pos.join('+')}=${texT(D.pPos, 2)}\).</p>
+  <p><strong>b.</strong> The expected value is the total of the column \(p_i\,r_i\):</p>
+  \[\E[R]=${D.r.map((v, i) => String.raw`${texT(D.p[i], 2)}\times ${signed(v)}`).join('+')}=${texT(D.ER, 2)} .\]
+  <p> The fund earns \(${fmtT(D.ER, 2)}\,\%\) per year on average.</p>
+  <p><strong>c.</strong> The total of the column \(p_i\,r_i^2\) gives \(\E[R^2]=${texT(D.ER2, 2)}\). By the practical formula, \(\Var(R)=\E[R^2]-(\E[R])^2\), that is \(${texT(D.ER2, 2)}-${signed(D.ER)}^2=${texT(D.ER2, 2)}-${texT(D.ER * D.ER, 4)}=${texT(D.varR, 4)}\). The standard deviation is \(\sigma_R=\sqrt{${texT(D.varR, 4)}}${sdExact ? '=' : String.raw`\approx`}${tex(D.sdR, D.dSd)}\), that is about \(${fmt(D.sdR, 2)}\) percentage points: this is the annual volatility of the fund.</p>
+</div></li>
+<li><div class="q-content">
+  <p><strong>a.</strong> A return of \(R\,\%\) on ${D.M} thousand euros earns \(${D.M}\times\frac{R}{100}=${texT(D.a, 0)}\,R\) thousand euros, from which the fixed fees of ${D.c} thousand euros must be deducted: \(G=${texT(D.a, 0)}\,R-${D.c}\). By linearity of the expected value, \(\E[G]=${texT(D.a, 0)}\,\E[R]-${D.c}\), that is \(${texT(D.a, 0)}\times ${texT(D.ER, 2)}-${D.c}=${texT(D.EG, 2)}\) thousand euros.</p>
+  <p><strong>b.</strong> The constant \(-${D.c}\) does not change the spread and the factor \(${texT(D.a, 0)}\) multiplies the standard deviation: \(\sigma_G=${texT(D.a, 0)}\times\sigma_R${sdExact ? '=' : String.raw`\approx`}${texT(D.a, 0)}\times ${tex(D.sdR, D.dSd)}${sdExact && Number(_fixed(D.a * D.sdR, 6)) === D.sdG ? '=' : String.raw`\approx`}${tex(D.sdG, 2)}\) thousand euros. Fixed fees reduce the average gain, but not the risk.</p>
+</div></li>
+<li><div class="q-content">
+  <p><strong>a.</strong> The same two-outcome trial (up move, with probability \(${texT(D.p4, 1)}\), or down move) is repeated ${D.n4} times, independently, and \(X\) counts the up moves: \(X\) follows the binomial distribution \(B(${D.n4},\,${texT(D.p4, 1)})\).</p>
+  <p><strong>b.</strong> Apply the binomial formula with \(k=${D.kq}\):</p>
+  \[\PP(X=${D.kq})=${binomLine(D.n4, D.kq, D.pa, D.pk[D.kq])} .\]
+  <p><strong>c.</strong> "At least ${D.ks} up moves" covers the values ${listAnd(Array.from({ length: D.n4 - D.ks + 1 }, (_, i) => D.ks + i), 'and')}, whose probabilities are computed in the same way:</p>
+  ${geDetail}
+  <p>Adding them up gives \(\PP(X\ge ${D.ks})\):</p>
+  \[\PP(X\ge ${D.ks})=${geTerms.join('+')}=${texT(D.pGe, 6)} .\]
+  <p><strong>d.</strong> \(\E[X]=np=${D.n4}\times ${texT(D.p4, 1)}=${texT(D.EX, 2)}\) up sessions on average. The variance is \(np(1-p)=${D.n4}\times ${texT(D.p4, 1)}\times ${texT(1 - D.p4, 1)}=${texT(D.varX, 2)}\), hence \(\sigma=\sqrt{${texT(D.varX, 2)}}${D.sdXexact ? '=' : String.raw`\approx`} ${D.sdXexact ? texT(D.sdX, 2) : tex(D.sdX, 2)}\).</p>
+  <p><strong>e.</strong> After \(k\) up moves and \(${D.n4}-k\) down moves, the price is \(100\times ${texT(D.u, 1)}^{k}\times ${texT(D.d, 1)}^{${D.n4}-k}\), whatever the order of the up and down moves:</p>
+  ${priceTable(D, T)}
+  <p>The final price increases with \(k\). For \(k=${D.ks - 1}\) it is \(${fmt(D.price[D.ks - 1], 2)}\) euros, below 100; for \(k=${D.ks}\) it is \(${fmt(D.price[D.ks], 2)}\) euros, above 100. The security therefore ends above its current price exactly when \(X\ge ${D.ks}\), an event of probability \(${texT(D.pGe, 6)}\) according to question c. Note that more up moves than down moves are needed merely to get back to the initial price: a rise of \(${D.mv}\,\%\) followed by a fall of \(${D.mv}\,\%\) leaves \(${texT(D.u, 1)}\times ${texT(D.d, 1)}=${texT(D.u * D.d, 2)}\), that is a loss of \(${texT(100 - 100 * D.u * D.d, 0)}\,\%\).</p>
+</div></li>
+</ol></div>`;
+};
+
+initPage();
+</script>
+
+
+<!-- KIT:JS:START v1 -->
+<div id="pdf-ov" onclick="closePdfModal()"></div>
+<div id="pdf-modal">
+  <div class="mh">
+    <h3 data-kit="modalTitle">Exporter en PDF</h3>
+    <button type="button" class="mclose" onclick="closePdfModal()">&#10005;</button>
+  </div>
+  <div class="mb2">
+    <div class="seed-note"><span data-kit="seedPre">Seed&nbsp;:</span> <strong id="modal-seed">&mdash;</strong> <span data-kit="seedPost">&mdash; notez cette valeur pour reproduire exactement cet exercice.</span></div>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-header" checked>
+      <span class="opt-txt"><span class="opt-lbl" data-kit="optHeader">Inclure l'en-t&ecirc;te de page</span>
+           <span class="opt-desc" data-kit="optHeaderD">Titre, badge de mati&egrave;re et intitul&eacute; de l'exercice</span></span>
+    </label>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-sol">
+      <span class="opt-txt"><span class="opt-lbl" data-kit="optSol">Inclure le corrig&eacute; complet</span>
+           <span class="opt-desc" data-kit="optSolD">L'ensemble des d&eacute;veloppements et commentaires du corrig&eacute;</span></span>
+    </label>
+    <div class="mactions">
+      <button type="button" class="btn-print" onclick="doPrint()"><span data-kit="print">&#128424;&nbsp;Imprimer / Sauvegarder PDF</span></button>
+      <button type="button" class="btn-cancel" onclick="closePdfModal()"><span data-kit="cancel">Annuler</span></button>
+    </div>
+  </div>
+</div>
+
+<script id="kit-docx">
+/* =============================================================================
+   EXPORT WORD NATIF (.docx)
+   Trois briques, sans aucune dépendance externe :
+     1. mml2omml  — MathML -> OMML, le format d'équation natif de Word
+     2. zip       — écriture d'une archive ZIP (entrées « stored » + CRC32)
+     3. html2wml  — HTML de la page -> WordprocessingML
+   ============================================================================= */
+(function (root) {
+'use strict';
+
+/* --------------------------------------------------------------- utilitaires */
+function esc(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                  .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function kids(n) {
+  var out = [], c = n.firstChild;
+  while (c) { if (c.nodeType === 1) out.push(c); c = c.nextSibling; }
+  return out;
+}
+function txt(n) { return (n.textContent || '').replace(/\u200b/g, '').trim(); }
+
+/* ============================================================================
+   1. MathML -> OMML
+   ========================================================================== */
+var OPEN = '([{\u27e8\u2308\u230a|\u2016';
+var CLOSE = ')]}\u27e9\u2309\u230b|\u2016';
+var BIGOPS = '\u2211\u220f\u222b\u222c\u222d\u222e\u22c3\u22c2\u2210';
+var ACCENTS = {
+  '\u005e': '\u0302', '\u02c6': '\u0302', '^': '\u0302',
+  '\u00af': '\u0304', '\u2015': '\u0304', '\u2212': '\u0304', '_': '\u0304',
+  '~': '\u0303', '\u02dc': '\u0303', '\u02d9': '\u0307',
+  '\u2192': '\u20d7', '\u21c0': '\u20d1', '\u02c7': '\u030c', '\u02d8': '\u0306'
+};
+
+function run(text, style) {
+  if (text === '') return '';
+  var rPr = '<w:rPr><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/></w:rPr>';
+  var mPr = style ? '<m:rPr><m:sty m:val="' + style + '"/></m:rPr>' : '';
+  return '<m:r>' + mPr + rPr + '<m:t xml:space="preserve">' + esc(text) + '</m:t></m:r>';
+}
+
+/* Un grand opérateur (somme, intégrale…) absorbe la suite de la ligne comme
+   opérande : sans cela Word affiche un cadre vide à la place de l'argument. */
+function naryHere(n) {
+  if (!n || n.nodeType !== 1) return null;
+  var t = n.nodeName.toLowerCase().replace(/^.*:/, ''), k = kids(n);
+  if (t === 'munderover' || t === 'msubsup') return { base: k[0], sub: k[1], sup: k[2] };
+  if (t === 'munder' || t === 'msub') return { base: k[0], sub: k[1], sup: null };
+  if (t === 'mover' || t === 'msup') return { base: k[0], sub: null, sup: k[1] };
+  if (t === 'mo') return { base: n, sub: null, sup: null };
+  return null;
+}
+function isBigOp(n) {
+  if (!n || n.nodeType !== 1) return false;
+  var c = txt(n);
+  return n.nodeName.toLowerCase().replace(/^.*:/, '') === 'mo' &&
+         c.length === 1 && BIGOPS.indexOf(c) !== -1;
+}
+
+function seq(nodes) {
+  var s = '';
+  for (var i = 0; i < nodes.length; i++) {
+    var info = naryHere(nodes[i]);
+    if (info && isBigOp(info.base) && i + 1 < nodes.length) {
+      s += naryFull(info, nodes.slice(i + 1));
+      return s;
+    }
+    s += mml(nodes[i]);
+  }
+  return s;
+}
+
+function naryFull(info, rest) {
+  return '<m:nary><m:naryPr><m:chr m:val="' + esc(txt(info.base)) + '"/>' +
+         '<m:limLoc m:val="undOvr"/>' +
+         '<m:subHide m:val="' + (info.sub ? '0' : '1') + '"/>' +
+         '<m:supHide m:val="' + (info.sup ? '0' : '1') + '"/><m:ctrlPr/></m:naryPr>' +
+         '<m:sub>' + (info.sub ? mml(info.sub) : '') + '</m:sub>' +
+         '<m:sup>' + (info.sup ? mml(info.sup) : '') + '</m:sup>' +
+         '<m:e>' + seq(rest) + '</m:e></m:nary>';
+}
+
+/* mrow entouré de délimiteurs -> m:d, pour des parenthèses étirables natives */
+function fenced(ks) {
+  if (ks.length < 2) return null;
+  var a = ks[0], b = ks[ks.length - 1];
+  if (a.nodeName.toLowerCase() !== 'mo' || b.nodeName.toLowerCase() !== 'mo') return null;
+  var o = txt(a), c = txt(b);
+  if (o.length !== 1 || c.length !== 1) return null;
+  if (OPEN.indexOf(o) === -1 || CLOSE.indexOf(c) === -1) return null;
+  var inner = ks.slice(1, -1);
+  /* séparateurs de premier niveau -> plusieurs m:e */
+  var parts = [[]];
+  for (var i = 0; i < inner.length; i++) {
+    if (inner[i].nodeName.toLowerCase() === 'mo' && txt(inner[i]) === ',' && parts.length < 8) {
+      parts.push([]);
+    } else { parts[parts.length - 1].push(inner[i]); }
+  }
+  var sep = parts.length > 1 ? ',' : '';
+  var body = '';
+  for (var j = 0; j < parts.length; j++) body += '<m:e>' + seq(parts[j]) + '</m:e>';
+  return '<m:d><m:dPr><m:begChr m:val="' + esc(o) + '"/><m:sepChr m:val="' + esc(sep) +
+         '"/><m:endChr m:val="' + esc(c) + '"/><m:ctrlPr/></m:dPr>' + body + '</m:d>';
+}
+
+function naryOf(base, sub, sup) {
+  var ch = txt(base);
+  if (ch.length !== 1 || BIGOPS.indexOf(ch) === -1) return null;
+  return '<m:nary><m:naryPr><m:chr m:val="' + esc(ch) + '"/><m:limLoc m:val="undOvr"/>' +
+         '<m:subHide m:val="' + (sub ? '0' : '1') + '"/>' +
+         '<m:supHide m:val="' + (sup ? '0' : '1') + '"/><m:ctrlPr/></m:naryPr>' +
+         '<m:sub>' + (sub ? mml(sub) : '') + '</m:sub>' +
+         '<m:sup>' + (sup ? mml(sup) : '') + '</m:sup>' +
+         '<m:e></m:e></m:nary>';
+}
+
+function mml(n) {
+  if (!n) return '';
+  if (n.nodeType === 3) return run(n.nodeValue);
+  if (n.nodeType !== 1) return '';
+  var t = n.nodeName.toLowerCase().replace(/^.*:/, '');
+  var k = kids(n), s;
+
+  switch (t) {
+    case 'math':
+    case 'semantics':
+    case 'mstyle':
+    case 'mpadded':
+    case 'menclose':
+      return seq(k);
+
+    case 'annotation':
+    case 'annotation-xml':
+    case 'mphantom':
+      return '';
+
+    case 'mrow':
+      s = fenced(k);
+      return s !== null ? s : seq(k);
+
+    case 'mi':      return run(txt(n), txt(n).length === 1 ? 'i' : 'p');
+    case 'mn':      return run(txt(n), 'p');
+    case 'mo':      return run(txt(n), 'p');
+    case 'merror':  return run(txt(n), 'p');
+    case 'ms':      return run(txt(n), 'p');
+
+    case 'mtext':
+      var v = n.textContent || '';
+      return v === '' ? '' :
+        '<m:r><m:rPr><m:nor/></m:rPr><w:rPr><w:rFonts w:ascii="Cambria" w:hAnsi="Cambria"/></w:rPr>' +
+        '<m:t xml:space="preserve">' + esc(v) + '</m:t></m:r>';
+
+    case 'mspace':
+      return run(' ', 'p');
+
+    case 'mfrac':
+      return '<m:f><m:fPr><m:type m:val="' +
+             (n.getAttribute('linethickness') === '0' ? 'noBar' : 'bar') +
+             '"/><m:ctrlPr/></m:fPr><m:num>' + mml(k[0]) + '</m:num><m:den>' +
+             mml(k[1]) + '</m:den></m:f>';
+
+    case 'msup':
+      s = naryOf(k[0], null, k[1]); if (s) return s;
+      return '<m:sSup><m:sSupPr><m:ctrlPr/></m:sSupPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sup>' + mml(k[1]) + '</m:sup></m:sSup>';
+
+    case 'msub':
+      s = naryOf(k[0], k[1], null); if (s) return s;
+      return '<m:sSub><m:sSubPr><m:ctrlPr/></m:sSubPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sub>' + mml(k[1]) + '</m:sub></m:sSub>';
+
+    case 'msubsup':
+      s = naryOf(k[0], k[1], k[2]); if (s) return s;
+      return '<m:sSubSup><m:sSubSupPr><m:ctrlPr/></m:sSubSupPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sub>' + mml(k[1]) + '</m:sub><m:sup>' + mml(k[2]) +
+             '</m:sup></m:sSubSup>';
+
+    case 'msqrt':
+      return '<m:rad><m:radPr><m:degHide m:val="1"/><m:ctrlPr/></m:radPr>' +
+             '<m:deg/><m:e>' + seq(k) + '</m:e></m:rad>';
+
+    case 'mroot':
+      return '<m:rad><m:radPr><m:degHide m:val="0"/><m:ctrlPr/></m:radPr><m:deg>' +
+             mml(k[1]) + '</m:deg><m:e>' + mml(k[0]) + '</m:e></m:rad>';
+
+    case 'mover':
+      var ao = txt(k[1]);
+      if (ACCENTS[ao]) {
+        return '<m:acc><m:accPr><m:chr m:val="' + esc(ACCENTS[ao]) +
+               '"/><m:ctrlPr/></m:accPr><m:e>' + mml(k[0]) + '</m:e></m:acc>';
+      }
+      s = naryOf(k[0], null, k[1]); if (s) return s;
+      return '<m:limUpp><m:limUppPr><m:ctrlPr/></m:limUppPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limUpp>';
+
+    case 'munder':
+      s = naryOf(k[0], k[1], null); if (s) return s;
+      return '<m:limLow><m:limLowPr><m:ctrlPr/></m:limLowPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limLow>';
+
+    case 'munderover':
+      s = naryOf(k[0], k[1], k[2]); if (s) return s;
+      return '<m:limUpp><m:limUppPr><m:ctrlPr/></m:limUppPr><m:e>' +
+             '<m:limLow><m:limLowPr><m:ctrlPr/></m:limLowPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limLow></m:e><m:lim>' +
+             mml(k[2]) + '</m:lim></m:limUpp>';
+
+    case 'mtable':
+      var rows = k.filter(function (r) { return /mtr$/.test(r.nodeName.toLowerCase()); });
+      var ncol = 0;
+      rows.forEach(function (r) { ncol = Math.max(ncol, kids(r).length); });
+      var props = '<m:mPr><m:baseJc m:val="center"/><m:plcHide m:val="1"/><m:mcs><m:mc><m:mcPr>' +
+                  '<m:count m:val="' + (ncol || 1) + '"/><m:mcJc m:val="center"/></m:mcPr></m:mc></m:mcs>' +
+                  '<m:ctrlPr/></m:mPr>';
+      var body = '';
+      rows.forEach(function (r) {
+        body += '<m:mr>';
+        var cells = kids(r);
+        for (var i = 0; i < (ncol || 1); i++) body += '<m:e>' + (cells[i] ? seq(kids(cells[i])) : '') + '</m:e>';
+        body += '</m:mr>';
+      });
+      return '<m:m>' + props + body + '</m:m>';
+
+    case 'mtr':
+    case 'mtd':
+      return seq(k);
+
+    default:
+      return k.length ? seq(k) : run(txt(n), 'p');
+  }
+}
+
+function mathmlToOmml(mathEl) { return mml(mathEl); }
+
+/* ============================================================================
+   2. Écriture ZIP (entrées non compressées + CRC32)
+   ========================================================================== */
+var CRCT = (function () {
+  var t = new Int32Array(256);
+  for (var i = 0; i < 256; i++) {
+    var c = i;
+    for (var j = 0; j < 8; j++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[i] = c;
+  }
+  return t;
+})();
+function crc32(buf) {
+  var c = -1;
+  for (var i = 0; i < buf.length; i++) c = CRCT[(c ^ buf[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ -1) >>> 0;
+}
+function utf8(str) {
+  if (typeof TextEncoder !== 'undefined') return new TextEncoder().encode(str);
+  var b = unescape(encodeURIComponent(str)), a = new Uint8Array(b.length);
+  for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i);
+  return a;
+}
+function zip(files) {
+  var parts = [], central = [], offset = 0;
+  function u16(v) { return [v & 0xFF, (v >>> 8) & 0xFF]; }
+  function u32(v) { return [v & 0xFF, (v >>> 8) & 0xFF, (v >>> 16) & 0xFF, (v >>> 24) & 0xFF]; }
+
+  files.forEach(function (f) {
+    var name = utf8(f.name), data = f.bin ? f.bin : utf8(f.data), c = crc32(data);
+    var local = [].concat(u32(0x04034b50), u16(20), u16(0x0800), u16(0), u16(0), u16(0),
+                          u32(c), u32(data.length), u32(data.length),
+                          u16(name.length), u16(0));
+    parts.push(new Uint8Array(local), name, data);
+    central.push({ name: name, crc: c, size: data.length, off: offset });
+    offset += local.length + name.length + data.length;
+  });
+
+  var cd = [];
+  central.forEach(function (e) {
+    cd = cd.concat(u32(0x02014b50), u16(20), u16(20), u16(0x0800), u16(0), u16(0), u16(0),
+                   u32(e.crc), u32(e.size), u32(e.size),
+                   u16(e.name.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(e.off));
+    cd = cd.concat(Array.prototype.slice.call(e.name));
+  });
+  var cdArr = new Uint8Array(cd);
+  var eocd = new Uint8Array([].concat(u32(0x06054b50), u16(0), u16(0),
+                                      u16(files.length), u16(files.length),
+                                      u32(cdArr.length), u32(offset), u16(0)));
+  parts.push(cdArr, eocd);
+
+  var total = parts.reduce(function (n, p) { return n + p.length; }, 0);
+  var out = new Uint8Array(total), pos = 0;
+  parts.forEach(function (p) { out.set(p, pos); pos += p.length; });
+  return out;
+}
+
+/* ============================================================================
+   3. HTML -> WordprocessingML
+   ========================================================================== */
+var SKIP = { script: 1, style: 1, button: 1, input: 1, noscript: 1 };
+var IMAGES = [];           /* { bin, w, h } collectées pendant le parcours */
+var EMU = 9525;            /* EMU par pixel */
+var MAXW = 5760000;        /* largeur utile de la page, en EMU */
+
+function b64bin(b64) {
+  var raw = atob(b64), a = new Uint8Array(raw.length);
+  for (var i = 0; i < raw.length; i++) a[i] = raw.charCodeAt(i);
+  return a;
+}
+
+function imageXml(dataUrl, wpx, hpx) {
+  var m = /^data:image\/png;base64,(.*)$/.exec(dataUrl || '');
+  if (!m) return '';
+  var cx = Math.round(wpx * EMU), cy = Math.round(hpx * EMU);
+  if (cx > MAXW) { cy = Math.round(cy * MAXW / cx); cx = MAXW; }
+  IMAGES.push({ bin: b64bin(m[1]) });
+  var id = IMAGES.length, rid = 'rIdImg' + id;
+  return '<w:p><w:pPr><w:pStyle w:val="Figure"/><w:jc w:val="center"/></w:pPr><w:r><w:drawing>' +
+    '<wp:inline distT="0" distB="0" distL="0" distR="0">' +
+    '<wp:extent cx="' + cx + '" cy="' + cy + '"/>' +
+    '<wp:effectExtent l="0" t="0" r="0" b="0"/>' +
+    '<wp:docPr id="' + id + '" name="Graphique ' + id + '"/>' +
+    '<wp:cNvGraphicFramePr><a:graphicFrameLocks ' +
+      'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/>' +
+    '</wp:cNvGraphicFramePr>' +
+    '<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">' +
+    '<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+    '<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+    '<pic:nvPicPr><pic:cNvPr id="' + id + '" name="Graphique ' + id + '"/><pic:cNvPicPr/></pic:nvPicPr>' +
+    '<pic:blipFill><a:blip r:embed="' + rid + '"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>' +
+    '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' + cx + '" cy="' + cy + '"/></a:xfrm>' +
+    '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>' +
+    '</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>';
+}
+var BLOCK = { p: 1, div: 1, h1: 1, h2: 1, h3: 1, h4: 1, li: 1, tr: 1, td: 1, th: 1,
+              table: 1, ul: 1, ol: 1, section: 1, article: 1, header: 1, blockquote: 1 };
+
+function W() {
+  this.body = '';
+  this.para = null;      /* { style, runs, numId, ilvl } */
+}
+W.prototype.open = function (style, numId, ilvl) {
+  this.close();
+  this.para = { style: style || 'Corps', runs: '', numId: numId || 0, ilvl: ilvl || 0 };
+};
+W.prototype.close = function () {
+  var p = this.para;
+  this.para = null;
+  if (!p || (p.runs === '' && !p.numId)) return;
+  if (p.runs === '') return;
+  var pPr = '<w:pPr><w:pStyle w:val="' + p.style + '"/>';
+  if (p.numId) pPr += '<w:numPr><w:ilvl w:val="' + p.ilvl + '"/><w:numId w:val="' + p.numId + '"/></w:numPr>';
+  pPr += '</w:pPr>';
+  this.body += '<w:p>' + pPr + p.runs + '</w:p>';
+};
+W.prototype.add = function (xml) {
+  if (!this.para) this.open('Corps');
+  this.para.runs += xml;
+};
+W.prototype.raw = function (xml) { this.close(); this.body += xml; };
+
+function textRun(s, fmt) {
+  if (!s) return '';
+  var rPr = '';
+  if (fmt.b) rPr += '<w:b/>';
+  if (fmt.i) rPr += '<w:i/>';
+  if (fmt.sup) rPr += '<w:vertAlign w:val="superscript"/>';
+  if (fmt.sub) rPr += '<w:vertAlign w:val="subscript"/>';
+  if (fmt.mono) rPr += '<w:rFonts w:ascii="Consolas" w:hAnsi="Consolas"/>';
+  return '<w:r>' + (rPr ? '<w:rPr>' + rPr + '</w:rPr>' : '') +
+         '<w:t xml:space="preserve">' + esc(s) + '</w:t></w:r>';
+}
+
+function walk(node, w, fmt, list) {
+  var i, cs = node.childNodes;
+  for (i = 0; i < cs.length; i++) {
+    var n = cs[i];
+
+    if (n.nodeType === 3) {
+      var s = n.nodeValue.replace(/\s+/g, ' ');
+      if (s.trim() === '' && !/\S/.test(s)) { if (w.para && w.para.runs) w.add(textRun(' ', fmt)); continue; }
+      w.add(textRun(s, fmt));
+      continue;
+    }
+    if (n.nodeType !== 1) continue;
+
+    var tag = n.nodeName.toLowerCase();
+    if (SKIP[tag]) continue;
+    if (n.classList && (n.classList.contains('top-bar') || n.classList.contains('top-actions') ||
+                        n.classList.contains('sol-toggle-wrap'))) continue;
+
+    /* --- équations --- */
+    if (tag === 'mjx-container') {
+      var math = n.querySelector('mjx-assistive-mml math, math');
+      var display = n.getAttribute('display') === 'true';
+      if (math) {
+        var omml = mathmlToOmml(math);
+        if (display) {
+          w.close();
+          w.body += '<w:p><w:pPr><w:pStyle w:val="Formule"/>' +
+                    '<w:jc w:val="center"/></w:pPr>' +
+                    '<m:oMath>' + omml + '</m:oMath></w:p>';
+        } else {
+          w.add('<m:oMath>' + omml + '</m:oMath>');
+        }
+      } else {
+        w.add(textRun(txt(n), fmt));
+      }
+      continue;
+    }
+    if (tag === 'mjx-assistive-mml' || tag === 'math') continue;
+
+    /* --- graphiques --- */
+    if (tag === 'svg' || tag === 'img') {
+      var png = n.getAttribute('data-kit-png');
+      if (png) {
+        w.close();
+        w.body += imageXml(png, +n.getAttribute('data-kit-w') || 600,
+                                +n.getAttribute('data-kit-h') || 380);
+      }
+      continue;
+    }
+
+    /* --- tableaux --- */
+    if (tag === 'table') { w.close(); w.body += table(n); continue; }
+
+    /* --- listes --- */
+    if (tag === 'ul' || tag === 'ol') {
+      w.close();
+      var nid = tag === 'ol' ? 2 : 1;
+      var lvl = list ? Math.min(list.ilvl + 1, 2) : 0;
+      var items = kids(n).filter(function (x) { return x.nodeName.toLowerCase() === 'li'; });
+      items.forEach(function (li) {
+        /* L'item est composé à part : son numéro doit se poser sur le premier
+           paragraphe produit, même si le <li> enveloppe son texte dans un <div>. */
+        var wb = new W();
+        walk(li, wb, fmt, { ilvl: lvl });
+        wb.close();
+        var xml = wb.body;
+        if (!xml) return;
+        var numPr = '<w:pStyle w:val="Liste"/><w:numPr><w:ilvl w:val="' + lvl +
+                    '"/><w:numId w:val="' + nid + '"/></w:numPr>';
+        if (xml.indexOf('<w:pStyle w:val="Corps"/>') !== -1) {
+          xml = xml.replace('<w:pStyle w:val="Corps"/>', numPr);
+        } else {
+          xml = '<w:p><w:pPr>' + numPr + '</w:pPr></w:p>' + xml;
+        }
+        w.body += xml;
+      });
+      continue;
+    }
+
+    /* --- titres --- */
+    if (tag === 'h1' || tag === 'h2') { w.close(); w.open('Titre1'); walk(n, w, fmt, list); w.close(); continue; }
+    if (tag === 'h3' || tag === 'h4') { w.close(); w.open('Titre2'); walk(n, w, fmt, list); w.close(); continue; }
+
+    /* --- titres internes du corrigé --- */
+    if (n.classList && (n.classList.contains('sol-sub') || n.classList.contains('sol-q') ||
+                        n.classList.contains('dossier-title'))) {
+      w.close(); w.open('Titre2'); walk(n, w, { b: true }, list); w.close(); continue;
+    }
+    if (n.classList && n.classList.contains('persp-box')) {
+      w.close();
+      var wb = new W();
+      walk(n, wb, fmt, list);
+      wb.close();
+      w.body += wb.body.replace(/w:val="Corps"/g, 'w:val="Encadre"')
+                       .replace(/w:val="Titre2"/g, 'w:val="EncadreTitre"');
+      continue;
+    }
+
+    /* --- mise en forme inline --- */
+    var f2 = { b: fmt.b, i: fmt.i, sup: fmt.sup, sub: fmt.sub, mono: fmt.mono };
+    if (tag === 'strong' || tag === 'b') f2.b = true;
+    if (tag === 'em' || tag === 'i') f2.i = true;
+    if (tag === 'sup') f2.sup = true;
+    if (tag === 'sub') f2.sub = true;
+    if (tag === 'code' || tag === 'kbd') f2.mono = true;
+
+    /* intertitre écrit en style en ligne (span display:block + gras) */
+    var st = n.getAttribute && n.getAttribute('style');
+    if (st && /display\s*:\s*block/.test(st) && /font-weight\s*:\s*(6|7|8|9|bold)/.test(st)) {
+      w.close(); w.open('Titre3');
+      walk(n, w, { b: true }, list);
+      w.close();
+      continue;
+    }
+
+    if ((tag === 'strong' || tag === 'b') &&
+        (!w.para || w.para.runs === '') &&
+        n.nextElementSibling && n.nextElementSibling.nodeName.toLowerCase() === 'br') {
+      w.close(); w.open('Titre3');
+      walk(n, w, { b: true }, list);
+      w.close();
+      i++;                       /* le <br> qui suit devient inutile */
+      continue;
+    }
+
+    if (tag === 'br') { w.add('<w:r><w:br/></w:r>'); continue; }
+    if (tag === 'hr') { w.close(); continue; }
+
+    if (BLOCK[tag]) { w.close(); w.open('Corps'); walk(n, w, f2, list); w.close(); }
+    else { walk(n, w, f2, list); }
+  }
+}
+
+function cellXml(td, isHead) {
+  var w2 = new W();
+  walk(td, w2, { b: !!isHead }, null);
+  w2.close();
+  var content = w2.body || '<w:p><w:pPr><w:pStyle w:val="Cellule"/></w:pPr></w:p>';
+  content = content.replace(/w:val="Corps"/g, 'w:val="Cellule"');
+  var span = parseInt(td.getAttribute('colspan') || '1', 10);
+  var shd = isHead ? '<w:shd w:val="clear" w:fill="EDE9DF"/>' : '';
+  return '<w:tc><w:tcPr>' + (span > 1 ? '<w:gridSpan w:val="' + span + '"/>' : '') +
+         shd + '<w:vAlign w:val="center"/></w:tcPr>' + content + '</w:tc>';
+}
+
+function table(tbl) {
+  var rows = tbl.querySelectorAll('tr'), out = '', ncol = 0, i, j;
+  for (i = 0; i < rows.length; i++) {
+    var c = rows[i].children, n = 0;
+    for (j = 0; j < c.length; j++) n += parseInt(c[j].getAttribute('colspan') || '1', 10);
+    ncol = Math.max(ncol, n);
+  }
+  if (!ncol) return '';
+  var grid = '<w:tblGrid>';
+  for (i = 0; i < ncol; i++) grid += '<w:gridCol w:w="' + Math.floor(9360 / ncol) + '"/>';
+  grid += '</w:tblGrid>';
+
+  for (i = 0; i < rows.length; i++) {
+    var cells = rows[i].children, xml = '';
+    var head = rows[i].parentNode.nodeName.toLowerCase() === 'thead' ||
+               (cells.length && cells[0].nodeName.toLowerCase() === 'th');
+    for (j = 0; j < cells.length; j++) xml += cellXml(cells[j], head);
+    out += '<w:tr>' + (head ? '<w:trPr><w:tblHeader/></w:trPr>' : '') + xml + '</w:tr>';
+  }
+  return '<w:tbl><w:tblPr><w:tblStyle w:val="Grille"/>' +
+         '<w:tblW w:w="5000" w:type="pct"/><w:tblLayout w:type="fixed"/></w:tblPr>' +
+         grid + out + '</w:tbl><w:p><w:pPr><w:pStyle w:val="Apres"/></w:pPr></w:p>';
+}
+
+/* ============================================================================
+   Assemblage du fichier
+   ========================================================================== */
+var NS =
+  'xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" ' +
+  'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
+  'xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" ' +
+  'xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" ' +
+  'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+  'xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture" ' +
+  'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+  'xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" ' +
+  'mc:Ignorable="w14"';
+
+function style(id, name, opts) {
+  var o = opts || {};
+  return '<w:style w:type="paragraph" w:styleId="' + id + '"><w:name w:val="' + name + '"/>' +
+         '<w:basedOn w:val="Corps"/><w:pPr>' +
+         (o.keep ? '<w:keepNext/>' : '') +
+         '<w:spacing w:before="' + (o.before || 0) + '" w:after="' + (o.after || 120) +
+         '" w:line="' + (o.line || 276) + '" w:lineRule="auto"/>' +
+         (o.jc ? '<w:jc w:val="' + o.jc + '"/>' : '') +
+         (o.ind ? '<w:ind w:left="' + o.ind + '"/>' : '') +
+         (o.border ? '<w:pBdr><w:left w:val="single" w:sz="18" w:space="8" w:color="1A2E42"/></w:pBdr>' : '') +
+         '</w:pPr><w:rPr>' +
+         (o.font ? '<w:rFonts w:ascii="' + o.font + '" w:hAnsi="' + o.font + '"/>' : '') +
+         (o.b ? '<w:b/>' : '') + (o.i ? '<w:i/>' : '') +
+         (o.sz ? '<w:sz w:val="' + o.sz + '"/>' : '') +
+         (o.color ? '<w:color w:val="' + o.color + '"/>' : '') +
+         '</w:rPr></w:style>';
+}
+
+function stylesXml() {
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles ' + NS + '>' +
+    '<w:docDefaults><w:rPrDefault><w:rPr>' +
+      '<w:rFonts w:ascii="Cambria" w:hAnsi="Cambria" w:cs="Cambria"/>' +
+      '<w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="fr-FR"/>' +
+    '</w:rPr></w:rPrDefault><w:pPrDefault><w:pPr>' +
+      '<w:spacing w:after="120" w:line="276" w:lineRule="auto"/><w:jc w:val="both"/>' +
+    '</w:pPr></w:pPrDefault></w:docDefaults>' +
+    '<w:style w:type="paragraph" w:default="1" w:styleId="Corps"><w:name w:val="Normal"/>' +
+      '<w:pPr><w:spacing w:after="120" w:line="276" w:lineRule="auto"/><w:jc w:val="both"/></w:pPr>' +
+      '<w:rPr><w:rFonts w:ascii="Cambria" w:hAnsi="Cambria"/><w:sz w:val="22"/></w:rPr></w:style>' +
+    style('TitreDoc', 'Title', { font: 'Cambria', b: true, sz: 40, color: '0D1B2A', jc: 'left', after: 60, line: 240 }) +
+    style('SousTitre', 'Subtitle', { i: true, sz: 20, color: '5A5A5A', jc: 'left', after: 280, line: 240 }) +
+    style('Titre1', 'heading 1', { b: true, sz: 28, color: '0D1B2A', before: 320, after: 140, jc: 'left', keep: true, line: 240 }) +
+    style('Titre2', 'heading 2', { b: true, sz: 23, color: '1A2E42', before: 240, after: 100, jc: 'left', keep: true, line: 240 }) +
+    style('Formule', 'Formula', { jc: 'center', before: 120, after: 120, line: 240 }) +
+    style('Liste', 'List Paragraph', { after: 100, ind: 360 }) +
+    style('Cellule', 'Table Text', { sz: 20, after: 40, jc: 'left', line: 240 }) +
+    style('Encadre', 'Aside', { ind: 240, border: true, sz: 21, before: 200, after: 200 }) +
+    style('Apres', 'After Table', { after: 200, sz: 12 }) +
+    style('Figure', 'Figure', { jc: 'center', before: 160, after: 200, line: 240 }) +
+    style('Titre3', 'heading 3', { b: true, sz: 22, color: '1A2E42', before: 200,
+                                   after: 60, jc: 'left', keep: true, line: 240 }) +
+    style('EncadreTitre', 'Aside Heading', { ind: 240, border: true, b: true, sz: 22,
+                                             color: '1A2E42', before: 200, after: 60, jc: 'left' }) +
+    '<w:style w:type="table" w:styleId="Grille"><w:name w:val="Table Grid"/><w:tblPr>' +
+      '<w:tblBorders>' +
+      ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(function (b) {
+        return '<w:' + b + ' w:val="single" w:sz="4" w:space="0" w:color="9A9A9A"/>';
+      }).join('') +
+      '</w:tblBorders><w:tblCellMar>' +
+      '<w:top w:w="60" w:type="dxa"/><w:left w:w="90" w:type="dxa"/>' +
+      '<w:bottom w:w="60" w:type="dxa"/><w:right w:w="90" w:type="dxa"/>' +
+      '</w:tblCellMar></w:tblPr></w:style>' +
+    '</w:styles>';
+}
+
+function numberingXml() {
+  function lvl(i, fmt, txtv, ind) {
+    return '<w:lvl w:ilvl="' + i + '"><w:start w:val="1"/><w:numFmt w:val="' + fmt + '"/>' +
+           '<w:lvlText w:val="' + txtv + '"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="' +
+           ind + '" w:hanging="360"/></w:pPr>' +
+           (fmt === 'bullet' ? '<w:rPr><w:rFonts w:ascii="Symbol" w:hAnsi="Symbol"/></w:rPr>' : '') +
+           '</w:lvl>';
+  }
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:numbering ' + NS + '>' +
+    '<w:abstractNum w:abstractNumId="1"><w:multiLevelType w:val="hybridMultilevel"/>' +
+      lvl(0, 'bullet', '\uF0B7', 360) + lvl(1, 'bullet', 'o', 720) + lvl(2, 'bullet', '\uF0A7', 1080) +
+    '</w:abstractNum>' +
+    '<w:abstractNum w:abstractNumId="2"><w:multiLevelType w:val="hybridMultilevel"/>' +
+      lvl(0, 'decimal', '%1.', 360) + lvl(1, 'lowerLetter', '%2.', 720) + lvl(2, 'lowerRoman', '%3.', 1080) +
+    '</w:abstractNum>' +
+    '<w:num w:numId="1"><w:abstractNumId w:val="1"/></w:num>' +
+    '<w:num w:numId="2"><w:abstractNumId w:val="2"/></w:num>' +
+    '</w:numbering>';
+}
+
+function buildDocx(opts) {
+  IMAGES = [];
+  var w = new W();
+
+  if (opts.title) {
+    w.body += '<w:p><w:pPr><w:pStyle w:val="TitreDoc"/></w:pPr>' +
+              textRun(opts.title, {}) + '</w:p>';
+  }
+  if (opts.subtitle) {
+    w.body += '<w:p><w:pPr><w:pStyle w:val="SousTitre"/></w:pPr>' +
+              textRun(opts.subtitle, {}) + '</w:p>';
+  }
+  opts.sections.forEach(function (sec) {
+    if (sec.heading) {
+      w.body += '<w:p><w:pPr><w:pStyle w:val="Titre1"/></w:pPr>' + textRun(sec.heading, {}) + '</w:p>';
+    }
+    walk(sec.node, w, {}, null);
+    w.close();
+  });
+  w.close();
+
+  var doc = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ' + NS + '><w:body>' +
+    w.body +
+    '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/>' +
+    '<w:pgMar w:top="1247" w:right="1247" w:bottom="1247" w:left="1247" ' +
+    'w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>';
+
+  var media = [], rels = '', ctypes = '';
+  IMAGES.forEach(function (im, i) {
+    media.push({ name: 'word/media/image' + (i + 1) + '.png', bin: im.bin });
+    rels += '<Relationship Id="rIdImg' + (i + 1) + '" Type="http://schemas.openxmlformats.org/' +
+            'officeDocument/2006/relationships/image" Target="media/image' + (i + 1) + '.png"/>';
+  });
+  if (IMAGES.length) ctypes = '<Default Extension="png" ContentType="image/png"/>';
+
+  return zip([
+    { name: '[Content_Types].xml',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+        '<Default Extension="xml" ContentType="application/xml"/>' + ctypes +
+        '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+        '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>' +
+        '<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>' +
+        '</Types>' },
+    { name: '_rels/.rels',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+        '</Relationships>' },
+    { name: 'word/_rels/document.xml.rels',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' +
+        '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>' +
+        rels + '</Relationships>' },
+    { name: 'word/document.xml', data: doc },
+    { name: 'word/styles.xml', data: stylesXml() },
+    { name: 'word/numbering.xml', data: numberingXml() }
+  ].concat(media));
+}
+
+root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: W, _walk: walk };
+
+})(window);
+
+</script>
+<script id="kit-js">
+/* ============================================================
+   KIT D'UNIFORMISATION — logique partagée (modale PDF, export Word,
+   libellés de la barre d'actions). Autonome : ne dépend d'aucun
+   dictionnaire I18N propre à la page.
+   ============================================================ */
+(function(){
+  var T = {
+    fr:{ modalTitle:"Exporter en PDF", seedPre:"Seed\u00a0:",
+         seedPost:"\u2014 notez cette valeur pour reproduire exactement cet exercice.",
+         optHeader:"Inclure l'en-t\u00eate de page",
+         optHeaderD:"Titre, badge de mati\u00e8re et intitul\u00e9 de l'exercice",
+         optSol:"Inclure le corrig\u00e9 complet",
+         optSolD:"L'ensemble des d\u00e9veloppements et commentaires du corrig\u00e9",
+         print:"\uD83D\uDDA8\u00a0Imprimer / Sauvegarder PDF", cancel:"Annuler",
+         btnNew:"\u21ba Nouvel \u00e9nonc\u00e9", btnPdf:"\u2b07 Exporter PDF", btnDoc:"\u2b07 Exporter Word",
+         btnCopy:"\u29c9 Copier", copied:"\u2713 Copi\u00e9e", seedLabel:"Seed de reproductibilit\u00e9",
+         docFile:"exercice.doc" },
+    en:{ modalTitle:"Export to PDF", seedPre:"Seed:",
+         seedPost:"\u2014 note this value to reproduce this exact exercise.",
+         optHeader:"Include the page header",
+         optHeaderD:"Title, subject badge and exercise heading",
+         optSol:"Include the full solution",
+         optSolD:"All the workings and comments of the solution",
+         print:"\uD83D\uDDA8\u00a0Print / Save as PDF", cancel:"Cancel",
+         btnNew:"\u21ba New exercise", btnPdf:"\u2b07 Export PDF", btnDoc:"\u2b07 Export Word",
+         btnCopy:"\u29c9 Copy", copied:"\u2713 Copied", seedLabel:"Reproducibility seed",
+         docFile:"exercise.doc" }
+  };
+
+  function lang(){
+    var l = (window.LANG || document.documentElement.lang || 'fr').toLowerCase();
+    return (l.indexOf('en') === 0) ? 'en' : 'fr';
+  }
+  function t(k){ return T[lang()][k]; }
+
+  window.KIT = { T:T, lang:lang, t:t };
+
+  /* --- libellés du kit (modale + barre d'actions) --- */
+  function paint(){
+    var d = T[lang()];
+    document.querySelectorAll('[data-kit]').forEach(function(el){
+      var k = el.getAttribute('data-kit');
+      if (d[k] !== undefined) el.innerHTML = d[k];
+    });
+  }
+  window.KIT.paint = paint;
+
+  /* Se raccroche au changement de langue de la page sans la modifier. */
+  function hookLang(){
+    if (typeof window.setLang === 'function' && !window.setLang.__kit){
+      var orig = window.setLang;
+      var wrapped = function(){ var r = orig.apply(this, arguments); paint(); return r; };
+      wrapped.__kit = true;
+      window.setLang = wrapped;
+    }
+  }
+
+  /* --- Copie de la seed active --- */
+  window.copySeed = function(btn){
+    var el = document.getElementById('seed-disp');
+    if (!el) return;
+    var v = (el.textContent || '').trim();
+    if (!v || v === '\u2014') return;
+    var done = function(){
+      var b = btn || document.getElementById('btn-copy-seed');
+      if (!b) return;
+      var old = b.innerHTML;
+      b.innerHTML = t('copied');
+      setTimeout(function(){ b.innerHTML = old; paint(); }, 1400);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(v).then(done, done);
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = v; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch(e){}
+      document.body.removeChild(ta); done();
+    }
+  };
+
+  /* --- Modale PDF --- */
+  window.openPdfModal = function(){
+    var s = document.getElementById('modal-seed');
+    var src = document.getElementById('seed-disp');
+    if (s && src) s.textContent = (src.textContent || '\u2014').trim();
+    /* la case « corrigé » reflète l'état d'affichage courant */
+    var sol = document.getElementById('sol-card');
+    var box = document.getElementById('opt-sol');
+    if (box) box.checked = !!(window.solVisible ||
+        (sol && (sol.classList.contains('visible') || sol.style.display === 'block')));
+    paint();
+    document.getElementById('pdf-ov').classList.add('open');
+    document.getElementById('pdf-modal').classList.add('open');
+  };
+  window.closePdfModal = function(){
+    document.getElementById('pdf-ov').classList.remove('open');
+    document.getElementById('pdf-modal').classList.remove('open');
+  };
+  var PRINTCLS = ['print-no-header', 'print-force-solution', 'print-no-solution'];
+
+  function clearPrintClasses() {
+    var b = document.body;
+    for (var i = 0; i < PRINTCLS.length; i++) b.classList.remove(PRINTCLS[i]);
+  }
+
+  window.doPrint = function () {
+    var noHdr   = !document.getElementById('opt-header').checked;
+    var inclSol =  document.getElementById('opt-sol').checked;
+    var b = document.body;
+
+    clearPrintClasses();
+    if (noHdr) b.classList.add('print-no-header');
+    b.classList.add(inclSol ? 'print-force-solution' : 'print-no-solution');
+    closePdfModal();
+
+    /* Le nettoyage doit attendre la fin réelle de l'impression. Un simple
+       minuteur ne convient pas : selon le navigateur, window.print() rend la
+       main avant que l'aperçu ne soit composé, et les options seraient alors
+       déjà effacées au moment où le PDF est produit. */
+    var done = false;
+    function finish() {
+      if (done) return;
+      done = true;
+      clearPrintClasses();
+      window.removeEventListener('afterprint', finish);
+      if (mq && mq.removeListener) mq.removeListener(onMq);
+      if (mq && mq.removeEventListener) mq.removeEventListener('change', onMq);
+    }
+    function onMq(e) { if (!e.matches) finish(); }
+
+    var mq = window.matchMedia ? window.matchMedia('print') : null;
+    window.addEventListener('afterprint', finish);
+    if (mq && mq.addEventListener) mq.addEventListener('change', onMq);
+    else if (mq && mq.addListener) mq.addListener(onMq);
+    /* filet de sécurité si le navigateur n'émet aucun de ces signaux */
+    setTimeout(finish, 120000);
+
+    setTimeout(function () { window.print(); }, 120);
+  };
+
+  /* --- Rasterisation des graphiques SVG ---
+     Word ne sait pas lire le SVG. On le convertit en PNG en recopiant d'abord
+     les styles calculés, sinon les couleurs héritées de la feuille disparaissent. */
+  var SVGPROPS = ['fill', 'stroke', 'stroke-width', 'stroke-dasharray', 'stroke-linecap',
+                  'stroke-linejoin', 'opacity', 'fill-opacity', 'stroke-opacity',
+                  'font-family', 'font-size', 'font-weight', 'font-style',
+                  'text-anchor', 'dominant-baseline'];
+
+  function inlineStyles(src, dst) {
+    var a = src.querySelectorAll('*'), b = dst.querySelectorAll('*'), i, j;
+    for (i = 0; i < a.length && i < b.length; i++) {
+      var cs = window.getComputedStyle(a[i]);
+      for (j = 0; j < SVGPROPS.length; j++) {
+        var v = cs.getPropertyValue(SVGPROPS[j]);
+        if (v) b[i].setAttribute(SVGPROPS[j], v);
+      }
+    }
+  }
+
+  function svgSize(svg) {
+    var vb = svg.viewBox && svg.viewBox.baseVal;
+    if (vb && vb.width) return { w: vb.width, h: vb.height };
+    var r = svg.getBoundingClientRect();
+    if (r.width) return { w: r.width, h: r.height };
+    return { w: 600, h: 380 };
+  }
+
+  function svgToPng(svg) {
+    return new Promise(function (resolve) {
+      var done = false;
+      var res = function (v) { if (!done) { done = true; resolve(v); } };
+      /* garde-fou : un graphique qui ne se charge pas ne doit jamais
+         bloquer l'export, on l'omet et le reste du document part quand même */
+      setTimeout(function () { res(null); }, 5000);
+      try {
+        var d = svgSize(svg), SC = 2;
+        var c = svg.cloneNode(true);
+        c.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        c.setAttribute('width', d.w);
+        c.setAttribute('height', d.h);
+        inlineStyles(svg, c);
+        var bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        bg.setAttribute('x', 0); bg.setAttribute('y', 0);
+        bg.setAttribute('width', '100%'); bg.setAttribute('height', '100%');
+        bg.setAttribute('fill', '#ffffff');
+        c.insertBefore(bg, c.firstChild);
+        var xml = new XMLSerializer().serializeToString(c);
+        var img = new Image();
+        img.onload = function () {
+          try {
+            var cv = document.createElement('canvas');
+            cv.width = Math.round(d.w * SC); cv.height = Math.round(d.h * SC);
+            var ctx = cv.getContext('2d');
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, cv.width, cv.height);
+            ctx.drawImage(img, 0, 0, cv.width, cv.height);
+            res({ png: cv.toDataURL('image/png'), w: d.w, h: d.h });
+          } catch (e) { res(null); }
+        };
+        img.onerror = function () { res(null); };
+        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml);
+      } catch (e) { res(null); }
+    });
+  }
+
+  /* --- Export Word natif (.docx) ---
+     Les formules sont converties en OMML, le format d'équation natif de Word :
+     elles restent éditables et se composent avec Cambria Math. */
+  window.exportWord = function () {
+    var area = document.getElementById('ex-area');
+    if (!area || !window.DocxExport) { return; }
+
+    var btn = document.querySelector('.btn-sm.doc');
+    if (btn) { btn.disabled = true; btn.style.opacity = '.5'; }
+
+    var svgs = Array.prototype.slice.call(area.querySelectorAll('svg'));
+    Promise.all(svgs.map(svgToPng)).then(function (pngs) {
+      svgs.forEach(function (sv, i) {
+        if (!pngs[i]) return;
+        sv.setAttribute('data-kit-png', pngs[i].png);
+        sv.setAttribute('data-kit-w', pngs[i].w);
+        sv.setAttribute('data-kit-h', pngs[i].h);
+      });
+      try { writeDocx(area); } finally {
+        svgs.forEach(function (sv) {
+          sv.removeAttribute('data-kit-png');
+          sv.removeAttribute('data-kit-w');
+          sv.removeAttribute('data-kit-h');
+        });
+        if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+      }
+    });
+  };
+
+  function writeDocx(area) {
+
+    var h1 = document.querySelector('header h1');
+    var badge = document.querySelector('.header-badge, #lbl-badge');
+    var seed = document.getElementById('seed-disp');
+    var bits = [];
+    if (badge && badge.textContent.trim()) bits.push(badge.textContent.trim());
+    if (seed && seed.textContent.trim() && seed.textContent.trim() !== '\u2014') {
+      bits.push('seed ' + seed.textContent.trim());
+    }
+    bits.push('Thomas Hossen');
+
+    var sections = [];
+    var cards = area.querySelectorAll('.card');
+    for (var i = 0; i < cards.length; i++) {
+      var body = cards[i].querySelector('.card-body');
+      if (!body) continue;
+      var tag = cards[i].querySelector('.card-header .tag');
+      var h2 = cards[i].querySelector('.card-header h2');
+      var head = [tag ? tag.textContent.trim() : '', h2 ? h2.textContent.trim() : '']
+                   .filter(Boolean).join(' \u2014 ');
+      sections.push({ heading: head, node: body });
+    }
+    if (!sections.length) sections = [{ heading: '', node: area }];
+
+    var bytes = window.DocxExport.build({
+      title: h1 ? h1.textContent.trim() : document.title,
+      subtitle: bits.join(' \u00b7 '),
+      sections: sections
+    });
+
+    var name = (h1 ? h1.textContent : 'exercice').normalize('NFD')
+                 .replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9]+/g, '_')
+                 .replace(/^_|_$/g, '').slice(0, 60) || 'exercice';
+    var blob = new Blob([bytes], {
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = name + '.docx';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){ hookLang(); paint(); });
+  if (document.readyState !== 'loading'){ hookLang(); paint(); }
+})();
+</script>
+<!-- KIT:JS:END -->
+</body>
+</html>
