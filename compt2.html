@@ -80,6 +80,25 @@ table.journal .libelle{color:var(--text-muted);font-style:italic;text-align:cent
 .calc-box{background:#f9fcf9;border:1px solid #c8e6c9;padding:1.2rem;border-radius:4px;margin-bottom:1rem;font-size:.9rem;color:var(--text);line-height:1.6;text-align:justify;}
 .calc-box strong{color:var(--green);font-family:'JetBrains Mono',monospace;}
 
+/* TABLEAUX D'AMORTISSEMENT, RÈGLES DE PRORATA ET FRISES */
+table.amort th{text-align:center;font-size:.78rem;line-height:1.3;padding:.5rem .4rem}
+table.amort td{font-family:'JetBrains Mono',monospace;font-size:.8rem;text-align:right;white-space:nowrap}
+table.amort td.yr{text-align:center;color:var(--navy);font-weight:600}
+table.amort td.ctr{text-align:center}
+table.amort .date-row td{font-family:'Source Serif 4',serif;font-size:.85rem;text-align:center;white-space:normal}
+table.amort tr.last td{background:#fbf6ea}
+table.regle th{font-size:.85rem}
+table.regle td{vertical-align:top;font-size:.87rem;line-height:1.5}
+table.regle td.crit{font-weight:600;color:var(--navy);width:150px}
+table.regle th.on{background:var(--navy-mid);color:var(--gold-light)}
+table.regle td.on{background:#fbf6ea}
+.fig-wrap{margin:1rem 0 1.6rem;text-align:center}
+.fig-scroll{overflow-x:auto}
+.fig-wrap svg{width:100%;min-width:600px;max-width:720px;height:auto}
+.fig-cap{font-size:.82rem;font-style:italic;color:var(--text-muted);margin-top:.2rem}
+.calc-box p + p{margin-top:.75rem}
+@media print{ .journal-wrap, .fig-wrap{page-break-inside:avoid} }
+
 @media print{
   body{background:#fff;}
   header, .ctrls, .sol-toggle-wrap, .top-actions {display:none !important;}
@@ -333,7 +352,7 @@ p.kit-num::before{
 <div class="header-inner">
   <div class="header-badge">INFORMATION COMPTABLE ET FINANCIÈRE</div>
   <h1>Cycle de vie des immobilisations</h1>
-  <p class="subtitle">© Thomas Hossen – Version du 7 mars 2026</p>
+  <p class="subtitle">© Thomas Hossen – Version du 6 octobre 2026</p>
   
   <div class="ctrls">
     <div class="ctrl-g">
@@ -396,8 +415,21 @@ function seedPRNG(seed) {
 let random = Math.random;
 
 function randInt(min, max) { return Math.floor(random() * (max - min + 1)) + min; }
-function formatMoney(num) { return num.toLocaleString('fr-FR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' €'; }
 function padDate(num) { return num < 10 ? '0' + num : num; }
+
+// --- Montants : tout est calculé en centimes entiers, puis affiché ---
+function num(cents) { return (cents / 100).toLocaleString('fr-FR', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+function eur(cents) { return num(cents) + '\u00a0€'; }
+// division entière arrondie au plus proche (demi-unité vers le haut), sans passer par les flottants
+function roundDiv(a, b) { return Math.floor((2 * a + b) / (2 * b)); }
+// « = » si le résultat tombe juste au centime, « ≈ » s'il a fallu arrondir
+function eqs(exact) { return exact ? '=' : '≈'; }
+
+const MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
+const MOIS_ABR = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
+function deMois(m) { return (/^[aoû]/.test(MOIS[m - 1]) ? "d'" : "de ") + MOIS[m - 1]; }
+function annee(i) { return i === 0 ? 'N' : 'N+' + i; }
+function fracPct(r) { return {1:'1/1 = 100 %', 2:'1/2 = 50 %', 3:'1/3 ≈ 33,33 %', 4:'1/4 = 25 %', 5:'1/5 = 20 %', 6:'1/6 ≈ 16,67 %', 7:'1/7 ≈ 14,29 %', 8:'1/8 = 12,5 %'}[r].replace(' %', '\u00a0%'); }
 
 const assetTypes = [
     { name: "une machine-outil à commande numérique", acc: "2154", label: "Matériel industriel" },
@@ -405,260 +437,544 @@ const assetTypes = [
     { name: "un ensemble de serveurs de calcul", acc: "2183", label: "Matériel informatique" }
 ];
 
+// ------------------------------------------------------------------
+// PLANS D'AMORTISSEMENT (centimes entiers)
+// ------------------------------------------------------------------
+// Linéaire : prorata en jours (30/360) à compter de la mise en service ;
+// n + 1 exercices, le dernier recevant le reliquat par différence.
+function planLineaire(B, n, d1) {
+    const A = roundDiv(B, n);
+    const rows = [];
+    let cum = 0;
+    for (let i = 0; i <= n; i++) {
+        let a, days;
+        if (i === 0)      { days = d1;       a = roundDiv(B * d1, n * 360); }
+        else if (i < n)   { days = 360;      a = A; }
+        else              { days = 360 - d1; a = B - cum; }
+        cum += a;
+        rows.push({ i: i, days: days, base: B, a: a, cum: cum, vnc: B - cum });
+    }
+    return { A: A, rows: rows };
+}
+
+// Dégressif : prorata en mois entiers à compter du 1er jour du mois d'acquisition ;
+// n exercices, passage au linéaire dès que 1 / durée restante dépasse le taux dégressif.
+function planDegressif(B, n, months0) {
+    const tNum = n === 5 ? 7 : 9, tDen = n === 5 ? 20 : 32;      // 35 % et 28,125 %
+    const rows = [];
+    let V = B, cum = 0, lin = false, switchAt = null;
+    for (let i = 0; i < n; i++) {
+        const rest = n - i;
+        if (!lin && tDen > tNum * rest) { lin = true; switchAt = i; }
+        const months = i === 0 ? months0 : 12;
+        let a;
+        if (!lin) a = roundDiv(V * tNum * months, tDen * 12);
+        else      a = rest === 1 ? V : roundDiv(V, rest);
+        cum += a;
+        rows.push({ i: i, months: months, vdeb: V, rest: rest, lin: lin, a: a, cum: cum, vnc: V - a });
+        V -= a;
+    }
+    return { tNum: tNum, tDen: tDen, rows: rows, switchAt: switchAt };
+}
+
+// VNC à la date de cession calculée sans aucun arrondi intermédiaire, en euros : elle ne sert
+// qu'à fixer le prix de vente de l'énoncé, pour qu'une seed donne toujours le même énoncé.
+function vncNonArrondie(D) {
+    const base = D.B / 100, n = D.n, k = D.k;
+    let vnc = base, cumul = 0;
+    if (D.methode === 'linéaire') {
+        const annuitePleine = base * (1 / n);
+        for (let year = 0; year <= k; year++) {
+            let dotation;
+            if (year === 0)      dotation = annuitePleine * (D.d1 / 360);
+            else if (year === k) dotation = annuitePleine * (D.dk / 360);
+            else                 dotation = annuitePleine;
+            cumul += dotation;
+        }
+    } else {
+        const tauxDeg = (1 / n) * (n === 5 ? 1.75 : 2.25);
+        let lin = false, rest = n;
+        for (let year = 0; year <= k; year++) {
+            let dotation;
+            const tauxLin = 1 / rest;
+            if (tauxLin > tauxDeg) lin = true;
+            if (!lin) {
+                if (year === 0)      dotation = vnc * tauxDeg * (D.m1 / 12);
+                else if (year === k) dotation = vnc * tauxDeg * (D.mk / 12);
+                else                 dotation = vnc * tauxDeg;
+            } else {
+                dotation = year === k ? vnc * tauxLin * (D.mk / 12) : vnc * tauxLin;
+            }
+            vnc -= dotation;
+            cumul += dotation;
+            rest--;
+        }
+    }
+    return base - cumul;
+}
+
+// ------------------------------------------------------------------
+// TIRAGE ET CALCULS
+// ------------------------------------------------------------------
+function computeExercise(seed) {
+    random = seedPRNG(seed);
+    const D = { seed: seed };
+
+    // Initialisation (ordre des tirages inchangé : les seeds déjà distribuées donnent le même énoncé)
+    D.methode = randInt(0, 1) === 0 ? 'linéaire' : 'dégressif';
+    D.accessoire = randInt(0, 1) === 0 ? 'installation' : 'formation';
+
+    D.asset = assetTypes[randInt(0, assetTypes.length - 1)];
+    D.supplier = ["MecaTech SA", "EquipPro Industries", "Fournitures Globales", "TechSolutions"][randInt(0, 3)];
+    D.client = ["Ateliers Dupon", "Usines Martin", "Manufacture de l'Est"][randInt(0, 2)];
+
+    // Variables Acquisition (euros entiers)
+    const priceHT = randInt(200, 800) * 100;
+    const accessoryHT = randInt(10, 50) * 100;
+    D.remise = randInt(2, 5);
+    D.n = randInt(0, 1) === 0 ? 5 : 8;
+
+    // Dates distinctes : acquisition vs mise en service
+    D.acqMonth = randInt(1, 9);
+    D.acqDay = randInt(2, 28);
+    D.serviceMonth = randInt(D.acqMonth, 10);
+    D.serviceDay = D.serviceMonth === D.acqMonth ? randInt(D.acqDay + 1, 28) : randInt(2, 28);
+    // un 29 février n'existe pas tous les ans : la mise en service est alors reportée au 15 mars
+    if (D.serviceMonth === 2 && D.serviceDay > 28) { D.serviceMonth = 3; D.serviceDay = 15; }
+
+    D.k = randInt(2, D.n - 2);            // rang de l'exercice de cession : N+k
+    D.saleMonth = randInt(2, 11);
+    D.saleDay = randInt(2, 28);
+
+    // Acquisition et base amortissable (centimes)
+    D.price = priceHT * 100;
+    D.mntRemise = priceHT * D.remise;                 // priceHT € × remise % = priceHT × remise centimes
+    D.net = D.price - D.mntRemise;
+    D.acc = accessoryHT * 100;
+    D.B = D.accessoire === 'installation' ? D.net + D.acc : D.net;
+    D.totalHT = D.net + D.acc;
+    D.tvaImmo = D.B / 5;
+    D.tvaAcc = D.acc / 5;
+    D.tvaTot = D.totalHT / 5;
+    D.ttcAcq = D.totalHT + D.tvaTot;
+
+    // Plan d'amortissement et dotation complémentaire de l'exercice de cession
+    const n = D.n, B = D.B, k = D.k;
+    if (D.methode === 'linéaire') {
+        D.d1a = 30 - D.serviceDay + 1;                // jours du mois de mise en service
+        D.d1b = (12 - D.serviceMonth) * 30;           // mois entiers suivants
+        D.d1 = D.d1a + D.d1b;
+        D.plan = planLineaire(B, n, D.d1);
+        D.A = D.plan.A;
+        D.exactA = B % n === 0;
+        D.exact0 = (B * D.d1) % (n * 360) === 0;
+        D.dk = (D.saleMonth - 1) * 30 + D.saleDay;
+        D.dotC = roundDiv(B * D.dk, n * 360);
+        D.exactC = (B * D.dk) % (n * 360) === 0;
+    } else {
+        D.coef = n === 5 ? '1,75' : '2,25';
+        D.tauxDeg = n === 5 ? '35\u00a0%' : '28,125\u00a0%';
+        D.m1 = 12 - D.acqMonth + 1;
+        D.plan = planDegressif(B, n, D.m1);
+        const p = D.plan, rk = p.rows[k];
+        D.exact0 = (B * p.tNum * D.m1) % (p.tDen * 12) === 0;
+        D.mk = D.saleMonth - 1;
+        D.linC = rk.lin;
+        D.restC = rk.rest;
+        D.vdebC = rk.vdeb;
+        if (!rk.lin) {
+            D.dotC = roundDiv(rk.vdeb * p.tNum * D.mk, p.tDen * 12);
+            D.exactC = (rk.vdeb * p.tNum * D.mk) % (p.tDen * 12) === 0;
+        } else {
+            D.dotC = roundDiv(rk.vdeb * D.mk, rk.rest * 12);
+            D.exactC = (rk.vdeb * D.mk) % (rk.rest * 12) === 0;
+        }
+    }
+    D.dotN = D.plan.rows[0].a;
+    D.cumAvant = D.plan.rows[k - 1].cum;              // cumul au 31/12/N+k-1
+    D.cumul = D.cumAvant + D.dotC;                    // cumul à la date de cession
+    D.vncCession = B - D.cumul;
+
+    // Amortissements effectivement pratiqués, de N à la cession
+    D.pratique = D.plan.rows.slice(0, k).map(function (r) {
+        return { i: r.i, duree: D.methode === 'linéaire' ? r.days + ' j' : r.months + ' mois', a: r.a, cum: r.cum, vnc: r.vnc };
+    });
+    D.pratique.push({ i: k, duree: D.methode === 'linéaire' ? D.dk + ' j' : D.mk + ' mois', a: D.dotC, cum: D.cumul, vnc: D.vncCession, cession: true });
+
+    // Cession : le prix de vente reste celui que donnaient les versions précédentes pour la même seed
+    // (il était fixé à partir d'une VNC non arrondie) ; à quelques centimes de la VNC, il lui est égalé.
+    D.pct = randInt(70, 140);
+    D.sale = Math.round(Number(Math.max(1000, vncNonArrondie(D) * (D.pct / 100)).toFixed(2)) * 100);
+    if (Math.abs(D.sale - D.vncCession) <= 10) D.sale = D.vncCession;
+    D.tvaSale = roundDiv(D.sale, 5);
+    D.ttcSale = D.sale + D.tvaSale;
+    D.resultat = D.sale - D.vncCession;
+
+    D.dAcq = padDate(D.acqDay) + '/' + padDate(D.acqMonth);
+    D.dServ = padDate(D.serviceDay) + '/' + padDate(D.serviceMonth);
+    D.dSale = padDate(D.saleDay) + '/' + padDate(D.saleMonth);
+    return D;
+}
+
+// ------------------------------------------------------------------
+// ÉNONCÉ
+// ------------------------------------------------------------------
+function renderEnonce(D) {
+    const textAmortMethod = D.methode === 'linéaire'
+        ? "L'amortissement est calculé selon le mode linéaire, <em>prorata temporis</em> en jours (convention 30/360 : mois de 30 jours, année de 360 jours)."
+        : "L'amortissement est calculé selon le mode dégressif, <em>prorata temporis</em> en mois entiers (pour l'exercice de cession, jusqu'au début du mois de la vente).";
+    const textAccessory = D.accessoire === 'installation'
+        ? "Des frais de transport et d'installation sur site"
+        : "Des frais de formation du personnel à l'utilisation de cet équipement";
+
+    const context = `
+      L'entreprise <strong>Industrie Rhône-Alpes SAS</strong> clôture son exercice comptable au 31 décembre de chaque année. Elle est assujettie à la TVA au taux normal de 20 %. Dans le cadre du développement de son appareil productif, elle procède à un investissement important.
+      <br><br>
+      <em>Règlementation applicable.</em> ${textAmortMethod} Les frais engagés lors de l'acquisition doivent être analysés conformément au PCG : activez-les à l'actif chaque fois que cela est possible.
+    `;
+
+    let events = "";
+    events += `<li><strong>Le ${D.dAcq}/N :</strong> acquisition auprès du fournisseur <strong>${D.supplier}</strong> d'${D.asset.name}. Le prix d'achat catalogue est de <span class="highlight">${eur(D.price)}</span> HT. Le fournisseur accorde une remise commerciale de <span class="highlight">${D.remise} %</span> sur ce matériel. ${textAccessory} sont également facturés par ce même fournisseur pour un montant de <span class="highlight">${eur(D.acc)}</span> HT. La facture est réglée le jour même par virement bancaire. La durée d'utilisation prévue est de ${D.n} ans.</li>`;
+    events += `<li><strong>Le ${D.dServ}/N :</strong> mise en service effective du nouvel équipement au sein de l'usine de production.</li>`;
+    events += `<li><strong>Le 31/12/N :</strong> clôture de l'exercice comptable de l'année N. L'entreprise doit procéder à l'enregistrement de l'annuité d'amortissement de ce matériel.</li>`;
+    events += `<li><strong>Le ${D.dSale}/N+${D.k} :</strong> à la suite d'un changement de stratégie technologique, l'entreprise décide de se séparer de cet équipement et le revend à la société <strong>${D.client}</strong>. La facture de vente s'élève à un montant de <span class="highlight">${eur(D.sale)}</span> HT. Le règlement est perçu immédiatement par chèque bancaire. L'entreprise procède à l'ensemble des écritures liées à cette sortie du patrimoine au cours de la journée.</li>`;
+
+    const question = `Présentez le plan d'amortissement de l'immobilisation. Enregistrez ensuite au journal de l'entreprise les écritures d'acquisition en année N, l'écriture d'inventaire au 31/12/N, ainsi que l'ensemble des écritures relatives à la cession et à la sortie de l'actif lors de l'année N+${D.k}.`;
+
+    return { context: context, events: events, question: question };
+}
+
+// ------------------------------------------------------------------
+// ÉLÉMENTS DU CORRIGÉ
+// ------------------------------------------------------------------
+function titre(t) { return `<span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">${t}</span>`; }
+
+function addJournal(date, entries) {
+    let t = `<div class="journal-wrap"><table class="journal">
+    <tr class="date-row"><td colspan="4">${date}</td></tr>
+    <tr><th>N° Cpte</th><th>Libellé</th><th style="text-align:right">Débit</th><th style="text-align:right">Crédit</th></tr>`;
+    entries.filter(e => e.sens === 'D').forEach(e => {
+        t += `<tr><td class="num">${e.c}</td><td class="debit-col">${e.l}</td><td class="amt">${eur(e.m)}</td><td></td></tr>`;
+    });
+    entries.filter(e => e.sens === 'C').forEach(e => {
+        t += `<tr><td class="num">${e.c}</td><td class="credit-col" style="padding-left:1.5rem">${e.l}</td><td></td><td class="amt">${eur(e.m)}</td></tr>`;
+    });
+    t += `</table></div>`;
+    return t;
+}
+
+// Les deux régimes de prorata, côte à côte ; la colonne du mode de l'énoncé est repérée
+function tableRegles(D) {
+    const lin = D.methode === 'linéaire';
+    const on = c => c ? ' class="on"' : '';
+    const rows = [
+        ["Point de départ", "Date de <b>mise en service</b>, c'est-à-dire le début de la consommation des avantages économiques du bien", "<b>Premier jour du mois d'acquisition</b>, quelle que soit la date de mise en service"],
+        ["Décompte du temps", "En <b>jours</b>, avec des mois de 30 jours et une année de 360 jours", "En <b>mois entiers</b>, rapportés à 12"],
+        ["Base de calcul", "Base amortissable (valeur d'origine), identique chaque année", "Valeur nette comptable au début de l'exercice"],
+        ["Fin du plan", "Un exercice supplémentaire reçoit le reliquat de la première année : n + 1 lignes pour n années", "Aucun exercice supplémentaire : n lignes, avec passage au linéaire sur la durée restante en fin de plan"],
+        ["Exercice de cession", "Du 1<sup>er</sup> janvier à la date de cession, en jours", "Du 1<sup>er</sup> janvier au début du mois de cession, en mois entiers"]
+    ];
+    let t = `<div class="journal-wrap"><table class="journal regle">
+    <tr><th>Règle</th><th${on(lin)}>Mode linéaire${lin ? " (mode de l'énoncé)" : ""}</th><th${on(!lin)}>Mode dégressif${!lin ? " (mode de l'énoncé)" : ""}</th></tr>`;
+    rows.forEach(r => { t += `<tr><td class="crit">${r[0]}</td><td${on(lin)}>${r[1]}</td><td${on(!lin)}>${r[2]}</td></tr>`; });
+    return t + `</table></div>`;
+}
+
+// Frise d'un exercice : douze mois de 30 jours, zone colorée = temps retenu pour le prorata
+function frise(o) {
+    const W = 720, H = 112, x0 = 24, bw = 640, y = 48, bh = 26, CH = 6.7;
+    const px = d => Math.round((x0 + bw * d / 360) * 10) / 10;
+    const mono = `font-family="'JetBrains Mono',monospace"`;
+    let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${o.aria}">`;
+    s += `<rect x="${x0}" y="${y}" width="${bw}" height="${bh}" fill="#ffffff" stroke="#d4cfc4"/>`;
+    s += `<rect x="${px(o.from)}" y="${y}" width="${Math.round((px(o.to) - px(o.from)) * 10) / 10}" height="${bh}" fill="#e8b84b" fill-opacity="0.45" stroke="#c9952a"/>`;
+    for (let m = 0; m < 12; m++) {
+        if (m > 0) s += `<line x1="${px(m * 30)}" y1="${y}" x2="${px(m * 30)}" y2="${y + bh}" stroke="#d4cfc4"/>`;
+        s += `<text x="${px(m * 30 + 15)}" y="${y + bh + 16}" text-anchor="middle" ${mono} font-size="10" fill="#5a5a5a">${MOIS_ABR[m]}</text>`;
+    }
+    // la durée s'écrit au milieu de la plus large portion colorée que ne traverse aucun repère
+    const cuts = [o.from].concat(o.marks.map(mk => mk.d).filter(d => d > o.from && d < o.to).sort((a, b) => a - b), [o.to]);
+    let lx = (o.from + o.to) / 2, best = -1;
+    for (let i = 0; i + 1 < cuts.length; i++) {
+        if (cuts[i + 1] - cuts[i] > best) { best = cuts[i + 1] - cuts[i]; lx = (cuts[i] + cuts[i + 1]) / 2; }
+    }
+    s += `<text x="${px(lx)}" y="${y + bh / 2 + 4}" text-anchor="middle" ${mono} font-size="11" font-weight="700" fill="#0d1b2a">${o.label}</text>`;
+    // repères : celui de la ligne haute s'écrit à gauche de son trait, celui de la ligne basse à droite,
+    // de sorte qu'aucun trait ne traverse un libellé même quand les deux dates sont proches
+    o.marks.forEach(function (mk) {
+        const x = px(mk.d), col = mk.strong ? '#0d1b2a' : '#8a8a8a';
+        const ty = mk.row === 0 ? 14 : 31, w = mk.txt.length * CH;
+        let anchor, tx;
+        if (mk.row === 0 && x - 5 - w >= 4) { anchor = 'end'; tx = x - 5; }
+        else { anchor = 'start'; tx = x + 5; }
+        s += `<line x1="${x}" y1="${ty - 9}" x2="${x}" y2="${y + bh + 3}" stroke="${col}" stroke-width="${mk.strong ? 1.8 : 1.2}"${mk.strong ? '' : ' stroke-dasharray="4 3"'}/>`;
+        s += `<text x="${tx}" y="${ty}" text-anchor="${anchor}" ${mono} font-size="11" font-weight="${mk.strong ? 700 : 400}" fill="${col}">${mk.txt}</text>`;
+    });
+    s += `</svg>`;
+    return `<div class="fig-wrap"><div class="fig-scroll">${s}</div><div class="fig-cap">${o.cap}</div></div>`;
+}
+
+function friseN(D) {
+    if (D.methode === 'linéaire') {
+        const from = (D.serviceMonth - 1) * 30 + D.serviceDay - 1;
+        return frise({
+            from: from, to: 360, label: D.d1 + ' jours',
+            aria: `Exercice N : ${D.d1} jours retenus sur 360`,
+            marks: [
+                { d: (D.acqMonth - 1) * 30 + D.acqDay - 1, txt: 'acquisition ' + D.dAcq, strong: false, row: 0 },
+                { d: from, txt: 'mise en service ' + D.dServ, strong: true, row: 1 }
+            ],
+            cap: `Exercice N, mode linéaire : le temps est compté de la mise en service au 31 décembre (zone colorée), chaque mois valant 30 jours.`
+        });
+    }
+    const from = (D.acqMonth - 1) * 30;
+    return frise({
+        from: from, to: 360, label: D.m1 + ' mois',
+        aria: `Exercice N : ${D.m1} mois retenus sur 12`,
+        marks: [
+            { d: (D.acqMonth - 1) * 30 + D.acqDay - 1, txt: 'acquisition ' + D.dAcq, strong: true, row: 0 },
+            { d: (D.serviceMonth - 1) * 30 + D.serviceDay - 1, txt: 'mise en service ' + D.dServ, strong: false, row: 1 }
+        ],
+        cap: `Exercice N, mode dégressif : le mois d'acquisition est retenu en entier (zone colorée), la date de mise en service est sans effet.`
+    });
+}
+
+function friseCession(D) {
+    if (D.methode === 'linéaire') {
+        return frise({
+            from: 0, to: D.dk, label: D.dk + ' jours',
+            aria: `Exercice N+${D.k} : ${D.dk} jours retenus sur 360`,
+            marks: [{ d: D.dk, txt: 'cession ' + D.dSale, strong: true, row: 1 }],
+            cap: `Exercice N+${D.k}, mode linéaire : le temps est compté du 1<sup>er</sup> janvier à la date de cession (zone colorée).`
+        });
+    }
+    return frise({
+        from: 0, to: D.mk * 30, label: D.mk + ' mois',
+        aria: `Exercice N+${D.k} : ${D.mk} mois retenus sur 12`,
+        marks: [{ d: (D.saleMonth - 1) * 30 + D.saleDay - 1, txt: 'cession ' + D.dSale, strong: true, row: 1 }],
+        cap: `Exercice N+${D.k}, mode dégressif : le temps est compté du 1<sup>er</sup> janvier au début du mois de cession (zone colorée).`
+    });
+}
+
+// Plan d'amortissement complet (tableau des amortissements annuels)
+function tablePlan(D) {
+    let t = `<div class="journal-wrap"><table class="journal amort">`;
+    if (D.methode === 'linéaire') {
+        const taux = D.n === 5 ? '20\u00a0%' : '12,5\u00a0%';
+        t += `<tr class="date-row"><td colspan="7">Plan d'amortissement linéaire sur ${D.n} ans (montants en euros)</td></tr>
+        <tr><th>Exercice</th><th>Durée retenue</th><th>Base amortissable</th><th>Taux</th><th>Annuité</th><th>Amort. cumulés</th><th>VNC en fin d'exercice</th></tr>`;
+        D.plan.rows.forEach(function (r) {
+            t += `<tr><td class="yr">${annee(r.i)}</td><td class="ctr">${r.days} j</td><td>${num(r.base)}</td><td class="ctr">${taux}</td><td>${num(r.a)}</td><td>${num(r.cum)}</td><td>${num(r.vnc)}</td></tr>`;
+        });
+    } else {
+        t += `<tr class="date-row"><td colspan="8">Plan d'amortissement dégressif sur ${D.n} ans (montants en euros)</td></tr>
+        <tr><th>Exercice</th><th>Durée retenue</th><th>VNC en début d'exercice</th><th>Taux dégressif</th><th>Taux linéaire sur la durée restante</th><th>Annuité</th><th>Amort. cumulés</th><th>VNC en fin d'exercice</th></tr>`;
+        D.plan.rows.forEach(function (r) {
+            const tdg = r.lin ? D.tauxDeg : `<b>${D.tauxDeg}</b>`;
+            const tln = r.lin ? `<b>${fracPct(r.rest)}</b>` : fracPct(r.rest);
+            t += `<tr><td class="yr">${annee(r.i)}</td><td class="ctr">${r.months} mois</td><td>${num(r.vdeb)}</td><td class="ctr">${tdg}</td><td class="ctr">${tln}</td><td>${num(r.a)}</td><td>${num(r.cum)}</td><td>${num(r.vnc)}</td></tr>`;
+        });
+    }
+    return t + `</table></div>`;
+}
+
+// Amortissements effectivement pratiqués jusqu'à la cession
+function tablePratique(D) {
+    let t = `<div class="journal-wrap"><table class="journal amort">
+    <tr class="date-row"><td colspan="5">Amortissements pratiqués jusqu'à la cession du ${D.dSale}/N+${D.k} (montants en euros)</td></tr>
+    <tr><th>Exercice</th><th>Durée retenue</th><th>Annuité</th><th>Amortissements cumulés</th><th>VNC</th></tr>`;
+    D.pratique.forEach(function (r) {
+        t += `<tr${r.cession ? ' class="last"' : ''}><td class="yr">${annee(r.i)}${r.cession ? ' (cession)' : ''}</td><td class="ctr">${r.duree}</td><td>${num(r.a)}</td><td>${num(r.cum)}</td><td>${num(r.vnc)}</td></tr>`;
+    });
+    return t + `</table></div>`;
+}
+
+// ------------------------------------------------------------------
+// CORRIGÉ
+// ------------------------------------------------------------------
+function renderCorrige(D) {
+    const B = D.B, n = D.n, k = D.k, lin = D.methode === 'linéaire';
+    const compteAmort = "28" + D.asset.acc.substring(1);
+    let h = "";
+
+    // --- Acquisition ---
+    const txtAccessoryExplanation = D.accessoire === 'installation'
+        ? `Les frais de transport et d'installation sont indispensables à la mise en état de fonctionnement de l'équipement. Conformément au PCG, ils sont activables et intégrés au coût d'acquisition de l'immobilisation.`
+        : `Les frais de formation du personnel ne sont pas directement attribuables à la mise en place de l'actif selon le PCG (l'équipement peut fonctionner sans que le personnel soit formé). Ils sont donc exclus de la base amortissable et comptabilisés en charges (compte 6228).`;
+
+    h += `<div class="calc-box">
+        ${titre(`Acquisition de l'immobilisation (le ${D.dAcq}/N)`)}
+        Le prix d'achat s'élève à ${eur(D.price)}, diminué d'une remise de ${D.remise} % (soit ${eur(D.mntRemise)}), ce qui donne un net commercial de ${eur(D.net)}. ${txtAccessoryExplanation} Le coût d'entrée total amortissable (valeur d'origine) s'établit donc à <strong>${eur(B)}</strong>.
+    </div>`;
+
+    if (D.accessoire === 'installation') {
+        h += addJournal(`${D.dAcq}/N`, [
+            {c: D.asset.acc, l: D.asset.label, m: B, sens: 'D'},
+            {c: "44562", l: "TVA déductible sur immobilisations", m: D.tvaTot, sens: 'D'},
+            {c: "512", l: "Banque", m: D.ttcAcq, sens: 'C'}
+        ]);
+    } else {
+        h += addJournal(`${D.dAcq}/N`, [
+            {c: D.asset.acc, l: D.asset.label, m: B, sens: 'D'},
+            {c: "6228", l: "Divers (frais de formation)", m: D.acc, sens: 'D'},
+            {c: "44562", l: "TVA déductible sur immobilisations", m: D.tvaImmo, sens: 'D'},
+            {c: "44566", l: "TVA déductible sur autres B&S", m: D.tvaAcc, sens: 'D'},
+            {c: "512", l: "Banque", m: D.ttcAcq, sens: 'C'}
+        ]);
+    }
+
+    // --- La règle du prorata temporis ---
+    h += `<div class="calc-box">
+        ${titre(`La règle du prorata temporis`)}
+        <p>Amortir, c'est répartir le coût d'entrée d'un bien sur sa durée d'utilisation. Une annuité « pleine » correspond à douze mois d'utilisation ; or un bien entre et sort rarement du patrimoine un 1<sup>er</sup> janvier. Pour les exercices incomplets, celui de l'entrée et celui de la sortie, la dotation est donc réduite <em>prorata temporis</em>, c'est-à-dire « en proportion du temps » : elle est égale à l'annuité pleine multipliée par le temps couru pendant l'exercice et divisée par la durée de l'exercice.</p>
+        <p>Trois choses doivent être fixées avant tout calcul : la date à partir de laquelle le temps court, l'unité dans laquelle on le compte et la manière dont le plan se termine. Les réponses ne sont pas les mêmes dans les deux modes d'amortissement, comme le résume le tableau suivant.</p>
+    </div>`;
+    h += tableRegles(D);
+    h += `<div class="calc-box">
+        L'énoncé impose le mode ${D.methode} : ce sont les règles de cette colonne qui s'appliquent, une première fois à l'exercice N (année d'entrée), une seconde fois à l'exercice N+${k} (année de cession).
+    </div>`;
+
+    // --- Application à l'exercice N ---
+    if (lin) {
+        const taux = n === 5 ? '20\u00a0%' : '12,5\u00a0%';
+        h += `<div class="calc-box">
+            ${titre(`Application à l'exercice N : décompte du temps et première annuité`)}
+            <p>En mode linéaire, le temps court à compter de la <b>mise en service</b>, le ${D.dServ}/N, et non de l'acquisition du ${D.dAcq}/N : entre ces deux dates, le bien figure déjà à l'actif mais il n'est pas encore utilisé, donc pas encore amorti. Le décompte se fait en jours selon la convention 30/360. Le mois de mise en service compte pour 30 − ${D.serviceDay} + 1 = ${D.d1a} jours (du ${D.serviceDay} au 30 inclus, le jour de mise en service étant compté). S'y ajoutent les ${12 - D.serviceMonth} mois entiers ${deMois(D.serviceMonth + 1)} à décembre, soit ${12 - D.serviceMonth} × 30 = ${D.d1b} jours. Le temps retenu pour l'exercice N est donc de ${D.d1a} + ${D.d1b} = <strong>${D.d1} jours</strong> sur 360.</p>
+            <p>Le taux linéaire est de 1 / ${n} = ${taux}, ce qui correspond à une annuité pleine de ${eur(B)} × ${taux} ${eqs(D.exactA)} ${eur(D.A)}. La première annuité est réduite à ${D.d1} / 360 de ce montant : ${eur(B)} × ${taux} × ${D.d1} / 360 ${eqs(D.exact0)} <strong>${eur(D.dotN)}</strong>.</p>
+        </div>`;
+    } else {
+        const full = D.m1 === 12;
+        h += `<div class="calc-box">
+            ${titre(`Application à l'exercice N : décompte du temps et première annuité`)}
+            <p>En mode dégressif, le temps court à compter du <b>premier jour du mois d'acquisition</b>, soit le 1<sup>er</sup> ${MOIS[D.acqMonth - 1]} N : ni le jour exact de l'acquisition (le ${D.acqDay}), ni la date de mise en service (le ${D.dServ}/N) n'interviennent. Le décompte se fait en mois entiers : ${deMois(D.acqMonth)} à décembre, l'exercice N compte pour <strong>${D.m1} mois</strong> sur 12${full ? " ; l'acquisition ayant lieu en janvier, la première annuité n'est donc pas réduite" : ""}.</p>
+            <p>Le taux dégressif s'obtient en multipliant le taux linéaire par le coefficient fiscal attaché à la durée d'utilisation (1,25 pour 3 ou 4 ans, 1,75 pour 5 ou 6 ans, 2,25 au-delà) : 1 / ${n} × ${D.coef} = ${D.tauxDeg}. La première année, la valeur nette comptable est encore égale à la base amortissable ; la première annuité vaut donc ${eur(B)} × ${D.tauxDeg} × ${D.m1} / 12 ${eqs(D.exact0)} <strong>${eur(D.dotN)}</strong>.</p>
+        </div>`;
+    }
+    h += friseN(D);
+
+    // --- Plan d'amortissement ---
+    if (lin) {
+        const last = D.plan.rows[n], avant = D.plan.rows[n - 1];
+        h += `<div class="calc-box">
+            ${titre(`Plan d'amortissement`)}
+            Le plan répartit la base de ${eur(B)} sur ${n} ans à compter de la mise en service. Comme la première annuité est réduite, il s'étale sur ${n + 1} exercices : les exercices N+1 à N+${n - 1} supportent chacun l'annuité pleine de ${eur(D.A)}, et l'exercice N+${n} reçoit le reliquat, c'est-à-dire les 360 − ${D.d1} = ${360 - D.d1} jours qui n'ont pas été amortis en N. Cette dernière annuité est obtenue par différence, ${eur(B)} − ${eur(avant.cum)} = ${eur(last.a)}, de sorte que la valeur nette comptable (VNC) soit exactement nulle en fin de plan.
+        </div>`;
+    } else {
+        const s = D.plan.switchAt, rs = D.plan.rows[s];
+        h += `<div class="calc-box">
+            ${titre(`Plan d'amortissement`)}
+            Chaque annuité dégressive est égale à la valeur nette comptable (VNC) de début d'exercice multipliée par le taux de ${D.tauxDeg}, la première étant réduite à ${D.m1} / 12. Le plan ne comporte pas d'exercice supplémentaire : il s'achève à la clôture de N+${n - 1}, qui est le ${n}<sup>e</sup> exercice. À chaque clôture, le taux dégressif est comparé au taux linéaire calculé sur le nombre d'années restant à courir. Dès que ce dernier l'emporte, ici en N+${s} où ${fracPct(rs.rest)} dépasse ${D.tauxDeg}, la VNC restante est amortie par parts égales sur les ${rs.rest} exercices restants, ce qui la ramène exactement à zéro en fin de plan. Dans le tableau, le taux retenu pour chaque exercice figure en gras.
+        </div>`;
+    }
+    h += tablePlan(D);
+
+    // --- Inventaire N ---
+    h += `<div class="calc-box">
+        ${titre(`Écriture d'inventaire au 31/12/N`)}
+        L'écriture d'inventaire reprend la première ligne du plan : la dotation de l'exercice N s'élève à <strong>${eur(D.dotN)}</strong>.
+    </div>`;
+    h += addJournal(`31/12/N`, [
+        {c: "6811", l: "Dotations aux amort. sur immo. corporelles", m: D.dotN, sens: 'D'},
+        {c: compteAmort, l: "Amortissement du matériel", m: D.dotN, sens: 'C'}
+    ]);
+
+    // --- Dotation complémentaire ---
+    const prevu = D.plan.rows[k].a;
+    let detail;
+    if (lin) {
+        const taux = n === 5 ? '20\u00a0%' : '12,5\u00a0%';
+        const mEntiers = D.saleMonth - 1;
+        const debut = mEntiers === 1
+            ? `le mois entier de janvier compte pour 30 jours`
+            : `les ${mEntiers} mois entiers de janvier à ${MOIS[D.saleMonth - 2]} comptent pour ${mEntiers} × 30 = ${mEntiers * 30} jours`;
+        detail = `<p>Avant de sortir l'actif du patrimoine, il faut constater l'amortissement couru entre le 1<sup>er</sup> janvier N+${k} et la date de la vente. Le plan prévoyait pour cet exercice une annuité pleine de ${eur(prevu)}, mais le bien n'est utilisé que jusqu'à sa cession : le prorata joue donc une seconde fois, toujours en jours. Du 1<sup>er</sup> janvier au ${D.dSale}, ${debut}, auxquels s'ajoutent les ${D.saleDay} jours ${deMois(D.saleMonth)} (jour de la cession compris), soit <strong>${D.dk} jours</strong> sur 360.</p>
+        <p>La dotation complémentaire s'élève à ${eur(B)} × ${taux} × ${D.dk} / 360 ${eqs(D.exactC)} <strong>${eur(D.dotC)}</strong>.</p>`;
+    } else {
+        const duree = D.mk === 1
+            ? `seul le mois de janvier est retenu, soit <strong>1 mois</strong> sur 12`
+            : `de janvier à ${MOIS[D.saleMonth - 2]}, on retient <strong>${D.mk} mois</strong> sur 12`;
+        const calcul = D.linC
+            ? `En N+${k}, le plan est passé au linéaire sur la durée restante : le taux applicable est ${fracPct(D.restC)}, supérieur au taux dégressif de ${D.tauxDeg}. La dotation complémentaire s'élève à ${eur(D.vdebC)} × 1/${D.restC} × ${D.mk} / 12 ${eqs(D.exactC)} <strong>${eur(D.dotC)}</strong>.`
+            : `Le taux dégressif de ${D.tauxDeg} reste applicable en N+${k}. La dotation complémentaire s'élève à ${eur(D.vdebC)} × ${D.tauxDeg} × ${D.mk} / 12 ${eqs(D.exactC)} <strong>${eur(D.dotC)}</strong>.`;
+        detail = `<p>Avant de sortir l'actif du patrimoine, il faut constater l'amortissement couru entre le 1<sup>er</sup> janvier N+${k} et la vente. Le plan prévoyait pour cet exercice une annuité de ${eur(prevu)}, calculée sur une VNC de début d'exercice de ${eur(D.vdebC)}, mais le bien est cédé en cours d'année : le prorata joue donc une seconde fois. En mode dégressif, le décompte reste en mois entiers et s'arrête au début du mois de cession : ${duree}, le mois ${deMois(D.saleMonth)} n'étant pas compté.</p>
+        <p>${calcul}</p>`;
+    }
+    h += `<div class="calc-box">
+        ${titre(`Étape 1 de la cession : dotation complémentaire (le ${D.dSale}/N+${k})`)}
+        ${detail}
+    </div>`;
+    h += friseCession(D);
+    h += `<div class="calc-box">
+        Le tableau ci-dessous récapitule les amortissements effectivement pratiqués : les annuités de N à N+${k - 1} sont celles du plan, celle de N+${k} est la dotation complémentaire. Au 31/12/N+${k - 1}, le cumul atteignait ${eur(D.cumAvant)} ; à la date de cession, il s'élève à ${eur(D.cumAvant)} + ${eur(D.dotC)} = <strong>${eur(D.cumul)}</strong>.
+    </div>`;
+    h += tablePratique(D);
+    h += addJournal(`${D.dSale}/N+${k}`, [
+        {c: "6811", l: "Dotations aux amort. sur immo. corporelles", m: D.dotC, sens: 'D'},
+        {c: compteAmort, l: "Amortissement du matériel", m: D.dotC, sens: 'C'}
+    ]);
+
+    // --- Vente ---
+    h += `<div class="calc-box">
+        ${titre(`Étape 2 de la cession : facturation de la vente (le ${D.dSale}/N+${k})`)}
+        La cession d'une immobilisation ne constitue pas un chiffre d'affaires classique, mais un produit exceptionnel. Le prix de vente hors taxes s'élève à <strong>${eur(D.sale)}</strong>, générant une TVA collectée de ${eur(D.tvaSale)}. Le montant global encaissé en banque s'élève à <strong>${eur(D.ttcSale)}</strong>.
+    </div>`;
+    h += addJournal(`${D.dSale}/N+${k}`, [
+        {c: "512", l: "Banque", m: D.ttcSale, sens: 'D'},
+        {c: "775", l: "Produits des cessions d'éléments d'actif", m: D.sale, sens: 'C'},
+        {c: "44571", l: "TVA collectée", m: D.tvaSale, sens: 'C'}
+    ]);
+
+    // --- Sortie ---
+    let note;
+    if (D.resultat > 0)      note = `l'opération globale se solde par une <strong>plus-value</strong> de ${eur(D.resultat)} (prix de vente de ${eur(D.sale)} – VNC de ${eur(D.vncCession)}).`;
+    else if (D.resultat < 0) note = `l'opération globale se solde par une <strong>moins-value</strong> de ${eur(-D.resultat)} (prix de vente de ${eur(D.sale)} – VNC de ${eur(D.vncCession)}).`;
+    else                     note = `le prix de vente de ${eur(D.sale)} étant égal à la VNC, l'opération ne dégage <strong>ni plus-value ni moins-value</strong>.`;
+
+    h += `<div class="calc-box">
+        ${titre(`Étape 3 de la cession : sortie de l'actif (le ${D.dSale}/N+${k})`)}
+        L'immobilisation doit être retirée du bilan. Pour ce faire, il faut solder le compte d'immobilisation (au crédit) pour sa valeur d'origine de ${eur(B)}, et solder le compte d'amortissement (au débit) pour le total des amortissements pratiqués de l'achat jusqu'au jour de la vente. Ce cumul, lu sur la dernière ligne du tableau des amortissements pratiqués, s'élève à <strong>${eur(D.cumul)}</strong>. La différence entre la valeur d'origine et le cumul des amortissements correspond à la valeur nette comptable (VNC), enregistrée en compte de charges exceptionnelles pour solder l'écriture, soit ${eur(B)} − ${eur(D.cumul)} = <strong>${eur(D.vncCession)}</strong>.
+        <em>Note analytique : ${note}</em>
+    </div>`;
+    h += addJournal(`${D.dSale}/N+${k}`, [
+        {c: compteAmort, l: "Amortissement du matériel", m: D.cumul, sens: 'D'},
+        {c: "675", l: "Valeurs comptables des éléments d'actif cédés", m: D.vncCession, sens: 'D'},
+        {c: D.asset.acc, l: D.asset.label, m: B, sens: 'C'}
+    ]);
+
+    return h;
+}
+
+// ------------------------------------------------------------------
+// AFFICHAGE
+// ------------------------------------------------------------------
 function generateExercise(forceNew = false) {
-    if(forceNew) {
+    if (forceNew) {
         document.getElementById('seed-input').value = "";
     }
     let seedVal = document.getElementById('seed-input').value;
     currentSeed = seedVal ? parseInt(seedVal) : Math.floor(Math.random() * 99999999);
     document.getElementById('seed-disp').innerText = currentSeed;
     document.getElementById('seed-input').value = currentSeed;
-    random = seedPRNG(currentSeed);
 
-    // Initialisation
-    let amortMethod = randInt(0, 1) === 0 ? 'linéaire' : 'dégressif';
-    let accessoryType = randInt(0, 1) === 0 ? 'installation' : 'formation';
-    
-    let asset = assetTypes[randInt(0, assetTypes.length-1)];
-    let supplier = ["MecaTech SA", "EquipPro Industries", "Fournitures Globales", "TechSolutions"][randInt(0, 3)];
-    let client = ["Ateliers Dupon", "Usines Martin", "Manufacture de l'Est"][randInt(0, 2)];
+    const D = computeExercise(currentSeed);
+    const E = renderEnonce(D);
 
-    // Variables Acquisition
-    let priceHT = randInt(200, 800) * 100;
-    let accessoryHT = randInt(10, 50) * 100;
-    let remise = randInt(2, 5); 
-    let usefulLife = randInt(0, 1) === 0 ? 5 : 8;
-
-    // Dates distinctes : acquisition vs mise en service
-    let acqMonth = randInt(1, 9);
-    let acqDay = randInt(2, 28);
-    let serviceMonth = randInt(acqMonth, 10);
-    let serviceDay = serviceMonth === acqMonth ? randInt(acqDay + 1, 28) : randInt(2, 28);
-    
-    let saleYearOffset = randInt(2, usefulLife - 2); 
-    let saleMonth = randInt(2, 11);
-    let saleDay = randInt(2, 28);
-
-    // Calculs Acquisition & Base Amortissable
-    let mntRemise = priceHT * (remise / 100);
-    let netCommercial = priceHT - mntRemise;
-    let baseAmortissable = accessoryType === 'installation' ? (netCommercial + accessoryHT) : netCommercial;
-    
-    let totalHTFacture = netCommercial + accessoryHT;
-    let tvaTotale = totalHTFacture * 0.20;
-    let ttcAcq = totalHTFacture + tvaTotale;
-
-    // SIMULATION DU PLAN D'AMORTISSEMENT
-    let vnc = baseAmortissable;
-    let cumul = 0;
-    let dotN = 0;
-    let dotCession = 0;
-    let detailAmortN = "";
-    let detailAmortCession = "";
-
-    if (amortMethod === 'linéaire') {
-        let taux = 1 / usefulLife;
-        let annuitePleine = baseAmortissable * taux;
-        
-        for (let year = 0; year <= saleYearOffset; year++) {
-            let dotation = 0;
-            if (year === 0) {
-                // Linéaire : point de départ = mise en service
-                let days = (30 - serviceDay + 1) + (12 - serviceMonth) * 30;
-                dotation = annuitePleine * (days / 360);
-                dotN = dotation;
-                detailAmortN = `En mode linéaire, le point de départ de l'amortissement est obligatoirement la date de mise en service (le ${padDate(serviceDay)}/${padDate(serviceMonth)}/N) et non la date d'acquisition. Le prorata temporis en jours pour l'année N se décompose ainsi : ${(30 - serviceDay + 1)} jours pour le mois de mise en service, plus ${(12 - serviceMonth)} mois complets de 30 jours, soit un total de <strong>${days} jours</strong>. L'annuité pleine théorique est de ${formatMoney(annuitePleine)}. En appliquant le prorata, la dotation s'élève à ${formatMoney(annuitePleine)} × (${days} / 360) = <strong>${formatMoney(dotN)}</strong>.`;
-            } else if (year === saleYearOffset) {
-                let days = (saleMonth - 1) * 30 + saleDay;
-                dotation = annuitePleine * (days / 360);
-                dotCession = dotation;
-                detailAmortCession = `Le temps d'utilisation de l'année de cession correspond à ${(saleMonth - 1)} mois complets et ${saleDay} jours, soit <strong>${days} jours</strong>. La dotation complémentaire s'élève à ${formatMoney(annuitePleine)} × (${days} / 360) = <strong>${formatMoney(dotCession)}</strong>.`;
-            } else {
-                dotation = annuitePleine;
-            }
-            vnc -= dotation;
-            cumul += dotation;
-        }
-    } else { // DEGRESSIF
-        let coef = (usefulLife === 5) ? 1.75 : 2.25;
-        let tauxDeg = (1 / usefulLife) * coef;
-        let modeActuel = 'dégressif';
-        let remainingDuration = usefulLife;
-        
-        for (let year = 0; year <= saleYearOffset; year++) {
-            let dotation = 0;
-            let tauxLinRestant = 1 / remainingDuration;
-            if (tauxLinRestant > tauxDeg) modeActuel = 'linéaire';
-
-            if (modeActuel === 'dégressif') {
-                if (year === 0) {
-                    // Dégressif : point de départ = acquisition en mois
-                    let months = 12 - acqMonth + 1;
-                    dotation = vnc * tauxDeg * (months / 12);
-                    dotN = dotation;
-                    detailAmortN = `Contrairement au mode linéaire, le point de départ du prorata dégressif est toujours le premier jour du mois d'acquisition (le mois ${padDate(acqMonth)}), indépendamment de la date de mise en service. L'équipement compte donc pour <strong>${months} mois</strong> d'utilisation en année N. Le coefficient fiscal pour ${usefulLife} ans est de ${coef.toFixed(2)}, ce qui donne un taux dégressif de ${(tauxDeg*100).toFixed(2)} %. La dotation est calculée sur la VNC : ${formatMoney(vnc)} × ${(tauxDeg*100).toFixed(2)} % × (${months}/12) = <strong>${formatMoney(dotN)}</strong>.`;
-                } else if (year === saleYearOffset) {
-                    let months = saleMonth - 1;
-                    dotation = vnc * tauxDeg * (months / 12);
-                    dotCession = dotation;
-                    detailAmortCession = `La VNC au début de l'année de cession est de ${formatMoney(vnc)}. Le taux dégressif est toujours de ${(tauxDeg*100).toFixed(2)} %. Le prorata exclut le mois de vente, il s'élève donc à <strong>${months} mois</strong>. La dotation complémentaire s'élève à ${formatMoney(vnc)} × ${(tauxDeg*100).toFixed(2)} % × (${months}/12) = <strong>${formatMoney(dotCession)}</strong>.`;
-                } else {
-                    dotation = vnc * tauxDeg;
-                }
-            } else { // Bascule en linéaire
-                let annuitePleineLin = vnc * tauxLinRestant;
-                let vncBase = vnc; 
-                if (year === saleYearOffset) {
-                    let months = saleMonth - 1;
-                    dotation = annuitePleineLin * (months / 12);
-                    dotCession = dotation;
-                    detailAmortCession = `La VNC au début de l'année de cession est de ${formatMoney(vncBase)}. Le taux linéaire sur la durée restante (${remainingDuration} ans) est de ${(tauxLinRestant*100).toFixed(2)} %, ce qui est supérieur au taux dégressif. Le prorata en mois s'élève à <strong>${months} mois</strong>. La dotation complémentaire (basculée en linéaire) est de ${formatMoney(vncBase)} × ${(tauxLinRestant*100).toFixed(2)} % × (${months}/12) = <strong>${formatMoney(dotCession)}</strong>.`;
-                } else {
-                    dotation = annuitePleineLin;
-                }
-            }
-            vnc -= dotation;
-            cumul += dotation;
-            remainingDuration--;
-        }
-    }
-
-    // Calculs Cession
-    let vncCession = baseAmortissable - cumul;
-    let salePriceHT = Math.max(1000, vncCession * (randInt(70, 140) / 100));
-    let tvaSale = salePriceHT * 0.20;
-    let ttcSale = salePriceHT + tvaSale;
-    let resultatCession = salePriceHT - vncCession; 
-
-    // Textes dynamiques pour l'énoncé
-    let textAmortMethod = amortMethod === 'linéaire' ? "L'amortissement est calculé selon le mode linéaire (convention 30/360)." : "L'amortissement est calculé selon le mode dégressif.";
-    let textAccessory = accessoryType === 'installation' ? "Des frais de transport et d'installation sur site" : "Des frais de formation du personnel à l'utilisation de la machine";
-
-    // Affichage Enoncé
     document.getElementById('welcome').style.display = 'none';
     document.getElementById('ex-area').style.display = 'block';
     document.getElementById('sol-card').classList.remove('visible');
     document.getElementById('toggle-btn').innerText = "Afficher le corrigé";
     document.getElementById('toggle-btn').classList.remove('shown');
 
-    document.getElementById('context-text').innerHTML = `
-      L'entreprise <strong>Industrie Rhône-Alpes SAS</strong> clôture son exercice comptable au 31 décembre de chaque année. Elle est assujettie à la TVA au taux normal de 20 %. Dans le cadre du développement de son appareil productif, elle procède à un investissement important.
-      <br><br>
-      <em>Règlementation applicable.</em> ${textAmortMethod} Les frais engagés lors de l'acquisition doivent être analysés conformément au PCG : activez-les à l'actif chaque fois que cela est possible.
-    `;
-
-    let htmlEnonce = "";
-
-    htmlEnonce += `<li><strong>Le ${padDate(acqDay)}/${padDate(acqMonth)}/N :</strong> acquisition auprès du fournisseur <strong>${supplier}</strong> d'${asset.name}. Le prix d'achat catalogue est de <span class="highlight">${formatMoney(priceHT)}</span> HT. Le fournisseur accorde une remise commerciale de <span class="highlight">${remise} %</span> sur ce matériel. ${textAccessory} sont également facturés par ce même fournisseur pour un montant de <span class="highlight">${formatMoney(accessoryHT)}</span> HT. La facture est réglée le jour même par virement bancaire. La durée d'utilisation prévue est de ${usefulLife} ans.</li>`;
-    
-    htmlEnonce += `<li><strong>Le ${padDate(serviceDay)}/${padDate(serviceMonth)}/N :</strong> mise en service effective du nouvel équipement au sein de l'usine de production.</li>`;
-
-    htmlEnonce += `<li><strong>Le 31/12/N :</strong> clôture de l'exercice comptable de l'année N. L'entreprise doit procéder à l'enregistrement de l'annuité d'amortissement de ce matériel.</li>`;
-
-    htmlEnonce += `<li><strong>Le ${padDate(saleDay)}/${padDate(saleMonth)}/N+${saleYearOffset} :</strong> à la suite d'un changement de stratégie technologique, l'entreprise décide de se séparer de cet équipement et le revend à la société <strong>${client}</strong>. La facture de vente s'élève à un montant de <span class="highlight">${formatMoney(salePriceHT)}</span> HT. Le règlement est perçu immédiatement par chèque bancaire. L'entreprise procède à l'ensemble des écritures liées à cette sortie du patrimoine au cours de la journée.</li>`;
-
-    document.getElementById('events-list').innerHTML = htmlEnonce;
-
-    document.getElementById('question-text').innerText = `Enregistrez au journal de l'entreprise les écritures d'acquisition en année N, l'écriture d'inventaire au 31/12/N, ainsi que l'ensemble des écritures relatives à la cession et à la sortie de l'actif lors de l'année N+${saleYearOffset}.`;
-
-    // --- GENERATION CORRIGE ---
-    let htmlSol = "";
-
-    const addJournal = (date, entries) => {
-        let t = `<div class="journal-wrap"><table class="journal">
-        <tr class="date-row"><td colspan="4">${date}</td></tr>
-        <tr><th>N° Cpte</th><th>Libellé</th><th style="text-align:right">Débit</th><th style="text-align:right">Crédit</th></tr>`;
-        
-        entries.filter(e => e.sens === 'D').forEach(e => {
-            t += `<tr><td class="num">${e.c}</td><td class="debit-col">${e.l}</td><td class="amt">${formatMoney(e.m)}</td><td></td></tr>`;
-        });
-        entries.filter(e => e.sens === 'C').forEach(e => {
-            t += `<tr><td class="num">${e.c}</td><td class="credit-col" style="padding-left:1.5rem">${e.l}</td><td></td><td class="amt">${formatMoney(e.m)}</td></tr>`;
-        });
-        t += `</table></div>`;
-        return t;
-    };
-
-    // Corrigé Acquisition
-    let txtAccessoryExplanation = accessoryType === 'installation' ? 
-        `Les frais d'installation sont indispensables à la mise en état de fonctionnement de la machine. Conformément au PCG, ils sont activables et intégrés au coût d'acquisition de l'immobilisation.` : 
-        `Les frais de formation du personnel ne sont pas directement attribuables à la mise en place de l'actif selon le PCG (la machine peut fonctionner sans que le personnel soit formé). Ils sont donc exclus de la base amortissable et comptabilisés en charges (compte 6228).`;
-
-    htmlSol += `<div class="calc-box">
-        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Acquisition de l'immobilisation (le ${padDate(acqDay)}/${padDate(acqMonth)}/N)</span>
-        Le prix d'achat s'élève à ${formatMoney(priceHT)}, diminué d'une remise de ${remise} % (soit ${formatMoney(mntRemise)}), ce qui donne un net commercial de ${formatMoney(netCommercial)}. ${txtAccessoryExplanation} Le coût d'entrée total amortissable (valeur d'origine) s'établit donc à <strong>${formatMoney(baseAmortissable)}</strong>.
-    </div>`;
-
-    if (accessoryType === 'installation') {
-        htmlSol += addJournal(`${padDate(acqDay)}/${padDate(acqMonth)}/N`, [
-            {c:asset.acc, l:asset.label, m: baseAmortissable, sens:'D'},
-            {c:"44562", l:"TVA déductible sur immobilisations", m: tvaTotale, sens:'D'},
-            {c:"512", l:"Banque", m: ttcAcq, sens:'C'}
-        ]);
-    } else {
-        htmlSol += addJournal(`${padDate(acqDay)}/${padDate(acqMonth)}/N`, [
-            {c:asset.acc, l:asset.label, m: baseAmortissable, sens:'D'},
-            {c:"6228", l:"Divers (frais de formation)", m: accessoryHT, sens:'D'},
-            {c:"44562", l:"TVA déductible sur immobilisations", m: baseAmortissable * 0.20, sens:'D'},
-            {c:"44566", l:"TVA déductible sur autres B&S", m: accessoryHT * 0.20, sens:'D'},
-            {c:"512", l:"Banque", m: ttcAcq, sens:'C'}
-        ]);
-    }
-
-    // Corrigé Inventaire N
-    htmlSol += `<div class="calc-box">
-        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Dotation aux amortissements de la première année (le 31/12/N)</span>
-        ${detailAmortN}
-    </div>`;
-
-    htmlSol += addJournal(`31/12/N`, [
-        {c:"6811", l:"Dotations aux amort. sur immo. corporelles", m: dotN, sens:'D'},
-        {c:"28"+asset.acc.substring(1), l:"Amortissement du matériel", m: dotN, sens:'C'}
-    ]);
-
-    // Corrigé Dotation Complémentaire Cession N+K
-    htmlSol += `<div class="calc-box">
-        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Étape 1 de la cession : dotation complémentaire (le ${padDate(saleDay)}/${padDate(saleMonth)}/N+${saleYearOffset})</span>
-        Avant de sortir l'actif du patrimoine, il est obligatoire d'enregistrer la dépréciation subie entre le 1er janvier de l'année de cession et la date de la vente. ${detailAmortCession}
-    </div>`;
-
-    htmlSol += addJournal(`${padDate(saleDay)}/${padDate(saleMonth)}/N+${saleYearOffset}`, [
-        {c:"6811", l:"Dotations aux amort. sur immo. corporelles", m: dotCession, sens:'D'},
-        {c:"28"+asset.acc.substring(1), l:"Amortissement du matériel", m: dotCession, sens:'C'}
-    ]);
-
-    // Corrigé Vente
-    htmlSol += `<div class="calc-box">
-        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Étape 2 de la cession : facturation de la vente (le ${padDate(saleDay)}/${padDate(saleMonth)}/N+${saleYearOffset})</span>
-        La cession d'une immobilisation ne constitue pas un chiffre d'affaires classique, mais un produit exceptionnel. Le prix de vente hors taxes s'élève à <strong>${formatMoney(salePriceHT)}</strong>, générant une TVA collectée de ${formatMoney(tvaSale)}. Le montant global encaissé en banque s'élève à <strong>${formatMoney(ttcSale)}</strong>.
-    </div>`;
-
-    htmlSol += addJournal(`${padDate(saleDay)}/${padDate(saleMonth)}/N+${saleYearOffset}`, [
-        {c:"512", l:"Banque", m: ttcSale, sens:'D'},
-        {c:"775", l:"Produits des cessions d'éléments d'actif", m: salePriceHT, sens:'C'},
-        {c:"44571", l:"TVA collectée", m: tvaSale, sens:'C'}
-    ]);
-
-    // Corrigé Sortie
-    htmlSol += `<div class="calc-box">
-        <span style="color:var(--navy);font-weight:600;display:block;margin-bottom:8px;">Étape 3 de la cession : sortie de l'actif (le ${padDate(saleDay)}/${padDate(saleMonth)}/N+${saleYearOffset})</span>
-        L'immobilisation doit être retirée du bilan. Pour ce faire, il faut solder le compte d'immobilisation (au crédit) pour sa valeur d'origine de ${formatMoney(baseAmortissable)}, et solder le compte d'amortissement (au débit) pour le total des amortissements pratiqués de l'achat jusqu'au jour de la vente. Ce cumul des amortissements s'élève à <strong>${formatMoney(cumul)}</strong>. La différence entre la valeur d'origine et le cumul des amortissements correspond à la valeur nette comptable (VNC), enregistrée en compte de charges exceptionnelles pour solder l'écriture, soit <strong>${formatMoney(vncCession)}</strong>. 
-        <em>Note analytique : l'opération globale se solde par une ${resultatCession > 0 ? '<strong>plus-value</strong>' : '<strong>moins-value</strong>'} de ${formatMoney(Math.abs(resultatCession))} (prix de vente de ${formatMoney(salePriceHT)} – VNC de ${formatMoney(vncCession)}).</em>
-    </div>`;
-
-    htmlSol += addJournal(`${padDate(saleDay)}/${padDate(saleMonth)}/N+${saleYearOffset}`, [
-        {c:"28"+asset.acc.substring(1), l:"Amortissement du matériel", m: cumul, sens:'D'},
-        {c:"675", l:"Valeurs comptables des éléments d'actif cédés", m: vncCession, sens:'D'},
-        {c:asset.acc, l:asset.label, m: baseAmortissable, sens:'C'}
-    ]);
-
-    document.getElementById('sol-content').innerHTML = htmlSol;
+    document.getElementById('context-text').innerHTML = E.context;
+    document.getElementById('events-list').innerHTML = E.events;
+    document.getElementById('question-text').innerText = E.question;
+    document.getElementById('sol-content').innerHTML = renderCorrige(D);
 }
 
 function toggleSol() {
     let solCard = document.getElementById('sol-card');
     let btn = document.getElementById('toggle-btn');
-    if(solCard.classList.contains('visible')) {
+    if (solCard.classList.contains('visible')) {
         solCard.classList.remove('visible');
         btn.innerText = "Afficher le corrigé";
         btn.classList.remove('shown');
@@ -668,9 +984,6 @@ function toggleSol() {
         btn.classList.add('shown');
     }
 }
-
-// --- FONCTION EXPORT DOCX ---
-
 </script>
 <!-- KIT:JS:START v1 -->
 <div id="pdf-ov" onclick="closePdfModal()"></div>
