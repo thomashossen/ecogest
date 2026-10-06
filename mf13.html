@@ -1,0 +1,2301 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mathématiques financières 13 – Réduction de variance et options asiatiques</title>
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['\\(','\\)']],
+    displayMath: [['\\[','\\]']],
+    packages: {'[+]': ['ams']},
+    macros: {
+      E: '\\mathbb{E}',
+      PP: '\\mathbb{P}',
+      Var: '\\operatorname{Var}',
+      Cov: '\\operatorname{Cov}',
+      dd: '\\mathrm{d}'
+    }
+  },
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] }
+};
+</script>
+<script>window.MathJax=window.MathJax||{};window.MathJax.options=window.MathJax.options||{};window.MathJax.options.enableAssistiveMml=true;</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 0;border-bottom:3px solid var(--gold)}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+#controls-bar{border-top:1px solid rgba(255,255,255,.08);padding:1.1rem 0 1.3rem}
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.5)}
+.ctrl-inp{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.38rem .65rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.82rem;width:88px;outline:none;transition:border-color .2s}
+.ctrl-inp:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.ctrl-tip{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:rgba(250,247,240,.33);margin-top:2px}
+.seed-row{display:flex;align-items:flex-end;gap:.45rem}
+.btn-copy-seed{background:transparent;border:1px solid rgba(201,149,42,.4);color:rgba(250,247,240,.55);padding:.38rem .55rem;border-radius:3px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:.65rem;transition:all .18s;white-space:nowrap}
+.btn-copy-seed:hover{border-color:var(--gold-light);color:var(--gold-light)}
+.ctrl-vsep{width:1px;background:rgba(255,255,255,.1);align-self:stretch;margin:0 .2rem}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.3rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.9rem;font-weight:600;transition:background .18s;white-space:nowrap;align-self:flex-end}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.welcome-msg{text-align:center;padding:5rem 2rem;color:var(--text-muted);font-style:italic;font-size:1.05rem}
+.welcome-msg .arrow{font-size:2rem;display:block;margin-bottom:1rem;opacity:.4}
+
+/* TOP BAR */
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.top-bar-left{display:flex;gap:.6rem;align-items:center}
+.btn-sm{background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:'JetBrains Mono',monospace;font-size:.67rem;letter-spacing:.08em;text-transform:uppercase;padding:.4rem 1rem;border-radius:3px;cursor:pointer;transition:all .18s;white-space:nowrap}
+.btn-sm:hover{background:var(--gold);color:var(--navy)}
+.btn-sm.pdf{border-color:#7bafd4;color:#7bafd4}
+.btn-sm.pdf:hover{background:#7bafd4;color:var(--navy)}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.67rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:500}
+
+/* CARDS */
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);margin-bottom:1.5rem;border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+
+/* QUESTIONS */
+.questions ol{counter-reset:q;list-style:none}
+.questions ol>li{counter-increment:q;margin-bottom:1.4rem;display:flex;gap:1rem;align-items:flex-start}
+.questions ol>li::before{content:counter(q);min-width:28px;height:28px;background:var(--navy);color:var(--cream);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:500;flex-shrink:0;margin-top:.15rem}
+.questions ol>li .q-text{flex:1;font-size:.93rem;text-align:justify}
+
+/* SOLUTION */
+.sol-toggle-wrap{text-align:center;margin:1rem 0 0}
+.btn-toggle{background:transparent;border:2px solid var(--navy);color:var(--navy);font-family:'Source Serif 4',serif;font-size:.9rem;padding:.6rem 2rem;border-radius:4px;cursor:pointer;transition:all .2s}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--navy);color:var(--cream)}
+.sol-card{border-top:4px solid var(--green);display:none}
+.sol-card.visible{display:block;animation:fi .3s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+.st{font-size:.92rem;line-height:1.75;text-align:justify}
+.st p{margin-bottom:.7rem}
+.st ol{counter-reset:sq;list-style:none}
+.st>ol>li{counter-increment:sq;margin-bottom:1.6rem;display:flex;gap:1rem;align-items:flex-start}
+.st>ol>li::before{content:counter(sq);min-width:24px;height:24px;background:var(--green);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.68rem;flex-shrink:0;margin-top:.15rem}
+.st ul{list-style:disc;padding-left:1.5rem;margin-bottom:.7rem}
+.st ul li{margin-bottom:1rem}
+.st .q-content{flex:1;} /* Assure que le texte prend toute la largeur restante */
+
+/* PDF MODAL */
+#pdf-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;backdrop-filter:blur(2px)}
+#pdf-modal{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:101;background:#fff;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.25);width:390px;max-width:95vw;border-top:4px solid #7bafd4;overflow:hidden}
+.mh{background:var(--navy);color:var(--cream);padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
+.mh h3{font-family:'Playfair Display',serif;font-size:1rem;font-weight:600}
+.mclose{background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:1.2rem;line-height:1;padding:2px 6px;border-radius:3px;transition:color .15s}
+.mclose:hover{color:#fff}
+.mb2{padding:1.5rem}
+.opt-row{display:flex;align-items:flex-start;gap:.75rem;margin-bottom:1rem;cursor:pointer}
+.opt-row input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--navy);flex-shrink:0;margin-top:3px}
+.opt-lbl{font-size:.93rem}
+.opt-desc{font-size:.75rem;color:var(--text-muted);display:block}
+.seed-note{font-family:'JetBrains Mono',monospace;font-size:.7rem;background:var(--cream-dark);border:1px solid var(--border);padding:.55rem .85rem;border-radius:3px;color:var(--text-muted);margin-bottom:1.2rem;line-height:1.5}
+.seed-note strong{color:var(--navy)}
+.mactions{display:flex;gap:.6rem}
+.btn-print{flex:1;background:var(--navy);color:var(--cream);border:none;padding:.7rem;border-radius:4px;font-family:'Source Serif 4',serif;font-size:.9rem;cursor:pointer;transition:background .2s}
+.btn-print:hover{background:var(--navy-mid)}
+.btn-cancel{background:transparent;border:1px solid var(--border);color:var(--text-muted);padding:.7rem 1rem;border-radius:4px;font-family:'Source Serif 4',serif;font-size:.9rem;cursor:pointer;transition:all .2s}
+.btn-cancel:hover{border-color:var(--text);color:var(--text)}
+
+/* PRINT */
+@media print{
+:root{--navy:#0d1b2a;--cream:#fff;--cream-dark:#f8f8f8;--gold:#c9952a;--green:#2d6b4a;--border:#ccc}
+body{background:#fff;font-size:11pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+header{padding:1rem 1.5rem .8rem}
+header .subtitle{display:none}
+#controls-bar,.top-bar,.sol-toggle-wrap,#pdf-ov,#pdf-modal{display:none!important}
+.card{box-shadow:none;border-radius:0;page-break-inside:avoid;margin-bottom:1rem}
+main{padding:1rem 1.5rem;max-width:100%}
+body.print-no-header header{display:none!important}
+body.print-no-solution .sol-card{display:none!important}
+body.print-force-solution .sol-card{display:block!important}
+}
+
+/* --- Selecteur de langue / Language switch --- */
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem}
+.header-top .header-badge{margin-bottom:0}
+.lang-switch{display:flex;gap:.45rem;flex-shrink:0}
+.flag-btn{background:rgba(255,255,255,.06);border:1px solid rgba(201,149,42,.35);border-radius:3px;padding:3px;cursor:pointer;line-height:0;opacity:.5;transition:opacity .2s,border-color .2s,transform .15s}
+.flag-btn:hover{opacity:1;transform:translateY(-1px)}
+.flag-btn.active{opacity:1;border-color:var(--gold-light);box-shadow:0 0 0 1px rgba(232,184,75,.35)}
+.flag-btn svg{display:block;width:30px;height:20px;border-radius:1px}
+@media print{ .lang-switch{display:none !important;} }
+
+/* TABLEAUX DE DONNEES */
+.dtable-wrap{overflow-x:auto;margin:1.1rem 0}
+.dtable{width:100%;border-collapse:collapse;font-size:.82rem;font-family:'Source Serif 4',serif}
+.dtable th,.dtable td{border:1px solid var(--border);padding:.4rem .5rem;text-align:center;vertical-align:middle}
+.dtable th{background:var(--navy);color:var(--cream);font-weight:600;font-size:.78rem}
+.dtable tr:nth-child(even) td{background:#fbf9f4}
+.dtable td.num{font-family:'JetBrains Mono',monospace;font-size:.78rem;white-space:nowrap}
+.dtable tfoot td{font-weight:700;background:var(--cream-dark)}
+.dtable caption{caption-side:bottom;font-size:.76rem;color:var(--text-muted);font-style:italic;padding-top:.5rem;text-align:justify}
+.dtable-narrow{max-width:560px;margin:0 auto}
+.context-block .dtable-wrap{margin:1rem 0 1.1rem}
+.questions ol ol > li{display:block}
+.q-text .dtable-wrap{margin:.9rem 0 .8rem}
+
+/* FIGURES */
+.fig-wrap{margin:1.2rem 0 .3rem;text-align:center;overflow-x:auto}
+.fig-wrap svg{width:100%;max-width:640px;height:auto;background:#fff;border:1px solid var(--border);border-radius:4px}
+.fig-cap{font-size:.78rem;color:var(--text-muted);font-style:italic;text-align:center;margin-bottom:1rem;line-height:1.5}
+
+/* ============================================================
+   FAMILLE « MATHÉMATIQUES FINANCIÈRES » : cours, figures interactives, code
+   ============================================================ */
+.top-bar-left{flex-wrap:wrap}
+/* --- cours --- */
+.cours{font-size:.95rem;line-height:1.75;text-align:justify}
+.cours p{margin-bottom:.8rem}
+.cours .dossier-title{scroll-margin-top:1rem}
+.cours ul.kit-simple{margin:.2rem 0 1rem}
+.cours ul.kit-simple > li{margin-bottom:.55rem}
+.cours .toc{font-size:.86rem;color:var(--text-muted);text-align:left;margin:-.6rem 0 1.6rem;line-height:1.9}
+.cours .toc a{color:var(--navy);text-decoration:none;border-bottom:1px solid var(--gold)}
+.cours .toc a:hover{color:var(--gold)}
+/* listes numérotées du cours (définitions en plusieurs points) */
+.cours ol{padding-left:1.6rem;margin:0 0 .9rem}
+.cours ol > li{margin-bottom:.35rem}
+/* démonstrations : simple filet neutre, pas de cadre coloré */
+.cours .demo{border-left:2px solid var(--border);padding:.1rem 0 .1rem 1.1rem;margin:0 0 1.1rem}
+.cours .demo p:last-child{margin-bottom:0}
+/* un seul style d'encadré, celui des « Pour aller plus loin » */
+.cours .persp-box{background:#f7f9fc;border:1px solid #ccd8e6;border-left:3px solid var(--navy-mid);padding:1.1rem 1.2rem;border-radius:4px;margin:1.4rem 0 1.4rem;font-size:.9rem;line-height:1.7;text-align:justify}
+.cours .persp-box .sol-sub{color:var(--navy);font-weight:600;display:block;margin:0 0 .5rem;font-size:.98rem}
+.cours .persp-box p{margin:0 0 .6rem}
+.cours .persp-box p:last-child, .cours .persp-box ol:last-child, .cours .persp-box ul:last-child{margin-bottom:0}
+.cours .persp-box ol, .cours .persp-box ul{padding-left:1.3rem;margin:0 0 .6rem}
+.cours .persp-box li{margin-bottom:.3rem}
+.sol-card .persp-box p{margin:0 0 .75rem 0}
+/* --- figures interactives --- */
+.ifig{margin:1.2rem 0 .3rem;text-align:center}
+.fig-ctrl{display:flex;flex-wrap:wrap;gap:.5rem 1.4rem;justify-content:center;align-items:center;margin:0 auto .6rem;max-width:680px;font-size:.84rem;color:var(--text)}
+.fig-ctrl label{display:flex;align-items:center;gap:.5rem;white-space:nowrap}
+.fig-ctrl .cv{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--navy);min-width:2.6em;text-align:left}
+.fig-ctrl input[type=range]{width:150px;accent-color:var(--navy);cursor:pointer}
+.fig-ctrl select{font-family:'Source Serif 4',serif;font-size:.84rem;padding:.2rem .4rem;border:1px solid var(--border);border-radius:3px;background:#fff;color:var(--text)}
+.fig-ctrl button{font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;background:transparent;border:1px solid var(--gold);color:var(--gold);padding:.3rem .8rem;border-radius:3px;cursor:pointer}
+.fig-ctrl button:hover{background:var(--gold);color:var(--navy)}
+.fig-svg{overflow-x:auto}
+.fig-svg svg{width:100%;min-width:520px;max-width:680px;height:auto;background:#fff;border:1px solid var(--border);border-radius:4px}
+.fig-read{font-size:.86rem;line-height:1.6;color:var(--text);margin:.5rem auto 0;max-width:680px;text-align:center}
+.fig-read .v{font-family:'JetBrains Mono',monospace;font-size:.8rem;color:var(--navy);font-weight:500}
+.fig-cap{margin-top:.35rem}
+/* --- code Python --- */
+.code-wrap{margin:.4rem 0 1.1rem}
+.code-head{display:flex;justify-content:space-between;align-items:center;background:var(--navy-mid);color:var(--gold-light);font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;padding:.3rem .9rem;border-radius:4px 4px 0 0}
+.code-head button{background:transparent;border:1px solid rgba(232,184,75,.45);color:var(--gold-light);font-family:inherit;font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;padding:.12rem .55rem;border-radius:3px;cursor:pointer}
+.code-head button:hover{background:var(--gold-light);color:var(--navy)}
+.code-block{background:#0d1b2a;color:#e8e4d9;border-radius:0 0 4px 4px;padding:.7rem .9rem;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:.74rem;line-height:1.55;text-align:left}
+.code-block .cl{white-space:pre}
+.code-block code{font-family:inherit;color:inherit;background:none;padding:0;font-size:inherit}
+.code-out{background:var(--cream-dark);border:1px solid var(--border);border-top:none;border-radius:0 0 4px 4px;padding:.55rem .9rem;font-family:'JetBrains Mono',monospace;font-size:.74rem;line-height:1.55;text-align:left;overflow-x:auto}
+.code-out .cl{white-space:pre}
+.code-out code{font-family:inherit;background:none;padding:0}
+.code-wrap .code-block.has-out{border-radius:0}
+.code-out-lbl{font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:.2rem}
+/* --- exercices --- */
+.questions ol ol{margin-top:.6rem}
+.st>ol>li .q-content p:last-child{margin-bottom:0}
+.dtable td.l, .dtable th.l{text-align:left}
+/* petits écrans : un paragraphe qui contient une formule trop large défile au lieu d'être coupé */
+@media (max-width:640px){
+  .cours p, .cours li, .st p, .q-text, .questions li{overflow-x:auto;overflow-y:hidden}
+  .card-body{padding:1.3rem 1.1rem}
+}
+@media print{
+  .fig-ctrl input, .fig-ctrl select, .fig-ctrl button, .code-head button{display:none !important}
+  .fig-svg svg{min-width:0}
+  .ifig, .persp-box, .code-wrap, .dtable-wrap{page-break-inside:avoid}
+  #course-card{page-break-inside:auto}
+}
+</style>
+<!-- KIT:CSS:START v1 --><style id="kit-css">
+/* ============================================================
+   KIT D'UNIFORMISATION — bloc partagé, identique sur toutes les pages.
+   Ne rien modifier ici fichier par fichier : régénérer le kit.
+   ============================================================ */
+
+/* --- 1. Mathématiques : jamais de débordement --- */
+mjx-container[display="true"]{
+  overflow-x:auto; overflow-y:hidden; max-width:100%;
+  padding:.15rem 0; margin:1rem 0 !important;
+}
+mjx-container[display="true"]::-webkit-scrollbar{height:5px}
+mjx-container[display="true"]::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+mjx-container{ max-width:100%; }
+.math-formula{ text-align:center; margin:1.2rem 0; overflow-x:auto; max-width:100%; }
+@media (max-width:640px){
+  mjx-container[display="true"]{ font-size:88% }
+}
+
+/* --- 2. Listes à puces entourées (questions ET données de contexte) --- */
+.kit-list, .st > ol,
+.questions > ol,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list), .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list),
+.question-list, .enum-list, .q-list{
+  counter-reset:kitq; list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem;
+}
+.kit-list > li, .st > ol > li,
+.questions > ol > li,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li, .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li,
+.question-list > li, .enum-list > li, .q-list > li{
+  counter-increment:kitq; position:relative;
+  padding-left:2.6rem; margin-bottom:1.3rem;
+  font-size:.95rem; line-height:1.7; text-align:justify;
+  font-weight:400; color:var(--text);
+  display:block;
+}
+.kit-list > li::before, .st > ol > li::before,
+.questions > ol > li::before,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li::before, .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li::before,
+.question-list > li::before, .enum-list > li::before, .q-list > li::before{
+  content:counter(kitq);
+  position:absolute; left:0; top:.1rem;
+  width:28px; min-width:28px; height:28px;
+  background:var(--navy); color:var(--cream);
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.72rem; font-weight:500;
+  flex-shrink:0;
+}
+.questions ol > li .q-text{ flex:1; font-size:.95rem; text-align:justify }
+/* sous-listes : cercle creux, plus discret */
+.enum-sublist, .kit-sublist, .sub-list, .sub-ol, .alpha-list, .enum-subsublist,
+.st ol.sub-ol, .questions ol ol, .st ol ol, .kit-list ol, .q-list ol, .question-list ol{
+  counter-reset:kitsq; list-style:none !important; padding-left:0 !important;
+  margin:.9rem 0 .9rem 0;
+}
+.enum-sublist > li, .kit-sublist > li, .sub-list > li, .sub-ol > li, .alpha-list > li, .enum-subsublist > li,
+.st ol.sub-ol > li, .questions ol ol > li, .st ol ol > li, .kit-list ol > li, .q-list ol > li, .question-list ol > li{
+  counter-increment:kitsq; position:relative;
+  padding-left:2.1rem; margin-bottom:.7rem; font-size:.92rem; text-align:justify;
+}
+.enum-sublist > li::before, .kit-sublist > li::before, .sub-list > li::before, .sub-ol > li::before, .alpha-list > li::before, .enum-subsublist > li::before,
+.st ol.sub-ol > li::before, .questions ol ol > li::before, .st ol ol > li::before, .kit-list ol > li::before, .q-list ol > li::before, .question-list ol > li::before{
+  content:counter(kitsq,lower-alpha);
+  min-width:22px;
+  position:absolute; left:0; top:.05rem;
+  width:22px; height:22px;
+  background:transparent; color:var(--navy);
+  border:1px solid var(--gold);
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.65rem;
+}
+
+/* variante : puces simples non numérotées (listes de données) */
+.kit-simple{ list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem }
+.kit-simple > li{
+  position:relative; padding-left:1.5rem; margin-bottom:1.1rem;
+  font-size:.95rem; line-height:1.7; text-align:justify;
+}
+.kit-simple > li::before{
+  content:"\2022"; position:absolute; left:0; top:-.15rem;
+  color:var(--gold); font-size:1.5rem; line-height:1; background:none;
+  width:auto; height:auto; border:none; border-radius:0;
+}
+/* variante : liste à un seul élément, sans puce */
+.kit-nobullet{ list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem }
+.kit-nobullet > li{
+  padding-left:0; margin-bottom:1rem; font-size:.95rem; line-height:1.7; text-align:justify;
+}
+.kit-nobullet > li::before{ content:none !important; display:none !important }
+/* variante : titres de section numérotés (contenu intercalé entre les puces) */
+.kit-num-scope{ counter-reset:kitn }
+p.kit-num{
+  counter-increment:kitn; position:relative;
+  padding-left:2.6rem; margin:1.8rem 0 1rem;
+  font-weight:600; color:var(--navy); text-align:left;
+  min-height:28px; display:flex; align-items:center;
+}
+p.kit-num:first-of-type{ margin-top:0 }
+p.kit-num::before{
+  content:counter(kitn); position:absolute; left:0; top:0;
+  width:28px; height:28px; background:var(--navy); color:var(--cream);
+  border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.72rem; font-weight:500;
+}
+
+/* titres de dossier */
+.dossier-title{
+  margin:2rem 0 1rem; font-weight:600; color:var(--navy); font-size:1.02rem;
+  border-bottom:1px solid var(--border); padding-bottom:.4rem; text-align:left;
+}
+.dossier-title:first-of-type{ margin-top:0 }
+.dossier-body{ margin-bottom:.5rem }
+
+/* --- 3. Corrigé sobre : plus de multiplication de fonds verts --- */
+.sol-card .calc-box, .sol-card .concl{
+  background:transparent !important;
+  border:none !important;
+  border-left:none !important;
+  padding:0 !important;
+  border-radius:0 !important;
+  margin:0 0 1.6rem 0 !important;
+  font-size:.95rem;
+  line-height:1.7;
+  text-align:justify;
+}
+.sol-card .sol-sub{
+  color:var(--navy); font-weight:600; display:block;
+  margin:0 0 .5rem 0; font-size:1rem;
+}
+/* seuls encadrés conservés : les perspectives « Pour aller plus loin » */
+.sol-card .persp-box{
+  background:#f7f9fc !important;
+  border:1px solid #ccd8e6 !important;
+  border-left:3px solid var(--navy-mid) !important;
+  padding:1.2rem !important;
+  border-radius:4px !important;
+  margin:2rem 0 1rem 0 !important;
+  font-size:.9rem; line-height:1.7; text-align:justify;
+}
+
+.btn-toggle{
+  background:transparent; border:2px solid var(--green); border-bottom:none;
+  color:var(--green); font-family:'Source Serif 4',serif; font-size:.95rem;
+  font-weight:600; padding:.5rem 1.5rem; border-radius:4px 4px 0 0; cursor:pointer;
+  transition:all .2s; position:relative; z-index:2; top:2px;
+}
+.btn-toggle:hover{ background:var(--green); color:var(--cream) }
+
+/* --- 4. Bouton « Afficher le corrigé » (modèle der) --- */
+.sol-toggle-wrap{ text-align:left; margin:1.5rem 0 0 0; }
+.sol-card{
+  border-top:2px solid var(--green); display:none;
+  border-radius:0 6px 6px 6px; position:relative; z-index:1;
+}
+.sol-card.visible{ display:block; animation:kitfi .35s ease }
+.sol-card .card-header{ background:var(--green) }
+.sol-card .card-header .tag{ border-color:rgba(200,240,200,.4); color:#a8d8b0 }
+@keyframes kitfi{ from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+
+/* --- 5. Barre d'actions unifiée --- */
+.top-bar{ display:flex; flex-wrap:wrap; gap:.8rem; align-items:center; justify-content:space-between; margin-bottom:1.2rem }
+.top-bar-left{ display:flex; flex-wrap:wrap; gap:.55rem; order:1 }
+.top-bar .seed-badge{ order:2 }
+.btn-sm{ background:transparent; border:1px solid var(--gold); color:var(--gold); font-family:'JetBrains Mono',monospace; font-size:.67rem; letter-spacing:.08em; text-transform:uppercase; padding:.4rem 1rem; border-radius:3px; cursor:pointer; transition:all .18s; white-space:nowrap }
+.btn-sm:hover{ background:var(--gold); color:var(--navy) }
+.btn-sm.pdf{ border-color:#7bafd4; color:#7bafd4 }
+.btn-sm.pdf:hover{ background:#7bafd4; color:var(--navy) }
+.btn-sm.doc{ border-color:#8fa8c4; color:#8fa8c4 }
+.seed-row{ display:flex; gap:.4rem; align-items:center }
+.btn-copy-seed{
+  background:transparent; border:1px solid rgba(201,149,42,.4); color:rgba(250,247,240,.55);
+  padding:.38rem .55rem; border-radius:3px; cursor:pointer;
+  font-family:'JetBrains Mono',monospace; font-size:.65rem; transition:all .18s; white-space:nowrap;
+}
+.btn-copy-seed:hover{ border-color:var(--gold-light); color:var(--gold-light) }
+.btn-sm.doc:hover{ background:#8fa8c4; color:var(--navy) }
+
+/* --- 6. Modale d'export PDF --- */
+#pdf-ov{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:100; backdrop-filter:blur(2px) }
+#pdf-modal{ display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:101; background:#fff; border-radius:8px; box-shadow:0 20px 60px rgba(0,0,0,.25); width:390px; max-width:95vw; border-top:4px solid #7bafd4; overflow:hidden }
+#pdf-ov.open,#pdf-modal.open{ display:block }
+.mh{ background:var(--navy); color:var(--cream); padding:1rem 1.5rem; display:flex; align-items:center; justify-content:space-between }
+.mh h3{ font-family:'Playfair Display',serif; font-size:1rem; font-weight:600; margin:0 }
+.mclose{ background:none; border:none; color:rgba(255,255,255,.6); cursor:pointer; font-size:1.2rem; line-height:1; padding:2px 6px; border-radius:3px; transition:color .15s }
+.mclose:hover{ color:#fff }
+.mb2{ padding:1.5rem }
+.opt-row{ display:flex; align-items:flex-start; gap:.75rem; margin-bottom:1rem; cursor:pointer }
+.opt-row input[type=checkbox]{ width:16px; height:16px; cursor:pointer; accent-color:var(--navy); flex-shrink:0; margin-top:3px }
+.opt-txt{ display:block }
+.opt-lbl{ font-size:.93rem; display:block }
+.opt-desc{ font-size:.75rem; color:var(--text-muted); display:block }
+.seed-note{ font-family:'JetBrains Mono',monospace; font-size:.7rem; background:var(--cream-dark); border:1px solid var(--border); padding:.55rem .85rem; border-radius:3px; color:var(--text-muted); margin-bottom:1.2rem; line-height:1.5 }
+.mactions{ display:flex; gap:.6rem }
+.btn-print{ flex:1; background:var(--navy); color:var(--cream); border:none; padding:.7rem; border-radius:4px; font-family:'Source Serif 4',serif; font-size:.9rem; cursor:pointer; transition:background .2s }
+.btn-print:hover{ background:var(--navy-mid) }
+.btn-cancel{ background:transparent; border:1px solid var(--border); color:var(--text-muted); padding:.7rem 1rem; border-radius:4px; font-family:'Source Serif 4',serif; font-size:.9rem; cursor:pointer; transition:all .2s }
+.btn-cancel:hover{ border-color:var(--text); color:var(--text) }
+
+/* --- 7. Impression --- */
+@media print{
+  body{ background:#fff; font-size:11pt; -webkit-print-color-adjust:exact; print-color-adjust:exact }
+  header{ display:block !important; padding:1rem 1.5rem .8rem }
+  header .subtitle{ display:none }
+  .ctrls, #controls-bar, .top-actions, .top-bar-left, .sol-toggle-wrap,
+  .lang-switch, #pdf-ov, #pdf-modal{ display:none !important }
+  .top-bar{ display:block !important; margin-bottom:.8rem }
+  .top-bar .seed-badge{
+    display:inline-block !important; background:none; border:1px solid var(--border);
+    color:var(--text-muted); font-family:'JetBrains Mono',monospace; font-size:8.5pt;
+    padding:2pt 6pt; border-radius:2px;
+  }
+  body.print-no-header .top-bar{ display:none !important }
+  main{ padding:1rem 1.5rem; max-width:100% }
+  .card{ box-shadow:none; border-radius:0; page-break-inside:avoid; margin-bottom:1rem }
+  #ex-area{ display:block !important }
+  .sol-card{ display:block !important; border-top:2px solid var(--green) }
+  mjx-container[display="true"]{ overflow:visible !important }
+  body.print-no-header header{ display:none !important }
+  body.print-no-header .ctrls{ display:none !important }
+  body.print-no-solution .sol-card,
+  body.print-no-solution .sol-toggle-wrap{ display:none !important }
+  body.print-force-solution .sol-card{ display:block !important }
+}
+</style><!-- KIT:CSS:END -->
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-top">
+    <div class="header-badge" data-k="k-badge">MATHÉMATIQUES FINANCIÈRES</div>
+    <div class="lang-switch">
+      <button type="button" class="flag-btn active" id="flag-fr" onclick="setLang('fr')" title="Français" aria-label="Français"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="20" height="40" fill="#002654"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ED2939"/></svg></button>
+      <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
+    </div>
+  </div>
+  <h1 data-k="k-h1">Réduction de variance et options asiatiques</h1>
+  <p class="subtitle" data-k="k-sub">© Thomas Hossen – Version du 6 octobre 2026</p>
+
+  <div id="controls-bar">
+    <div class="ctrls">
+      <div class="ctrl-g">
+        <span class="ctrl-lbl" data-k="k-seed">Seed de reproductibilité</span>
+        <div class="seed-row">
+          <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="0" max="99999999">
+          <button type="button" class="btn-copy-seed" id="btn-copy-seed" onclick="copySeed(this)" title="Copier la seed active"><span data-kit="btnCopy">&#10697; Copier</span></button>
+        </div>
+        <span class="ctrl-tip" data-k="k-seedtip">Vide = nouvel exercice aléatoire</span>
+      </div>
+      <div class="ctrl-vsep"></div>
+      <button class="btn-gen" onclick="generateAndGo()"><span data-k="k-gen">Générer</span></button>
+    </div>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="ex-area">
+
+    <div id="course-card" class="card">
+      <div class="card-header"><span class="tag" data-k="k-tag-course">Cours</span><h2 data-k="k-coursetitle">Obtenir la même précision avec moins de simulations</h2></div>
+      <div class="card-body cours" id="course-content"></div>
+    </div>
+
+    <div class="top-bar" id="ex-anchor">
+      <div class="top-bar-left">
+        <button type="button" class="btn-sm" onclick="regen()"><span data-kit="btnNew">&#8634; Nouvel &eacute;nonc&eacute;</span></button>
+        <button type="button" class="btn-sm pdf" onclick="openPdfModal()"><span data-kit="btnPdf">&#11015; Exporter PDF</span></button>
+        <button type="button" class="btn-sm doc" onclick="exportWord()"><span data-kit="btnDoc">&#11015; Exporter Word</span></button>
+      </div>
+      <div class="seed-badge"><span data-k="k-seedbadge">Seed&nbsp;:</span> <span id="seed-disp">—</span></div>
+    </div>
+
+    <div id="ex-card" class="card">
+      <div class="card-header"><span class="tag" data-k="k-tag-ex">Exercice</span><h2 data-k="k-extitle">Variables antithétiques, variable de contrôle et option asiatique</h2></div>
+      <div class="card-body" id="ex-content"></div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag" data-k="k-tag-sol">Corrigé</span><h2 data-k="k-soltitle">Variables antithétiques, variable de contrôle et option asiatique</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+/* ============================================================
+   SOCLE COMMUN DE LA FAMILLE « MATHÉMATIQUES FINANCIÈRES » (mf1, mf2, …)
+   Identique sur toutes les pages de la famille : langue, tirages,
+   mise en forme des nombres, figures interactives, génération.
+   Chaque page y ajoute son cours, ses figures et son exercice (objet PAGE).
+   ============================================================ */
+let LANG = 'fr';
+let solVisible = false;
+let _activeSeed = 0;
+const I18N = { fr: {}, en: {} };   // libellés et textes, remplis par la page
+const FIGS = {};                   // figures interactives : id -> { state, controls(L), draw(state, lang) }
+const PAGE = {};                   // compute(seed) -> données de l'exercice
+
+/* ---------- tirages reproductibles (Mulberry32) ---------- */
+let _rand = Math.random;
+function initRand(seed) {
+  _activeSeed = seed;
+  let s = seed >>> 0;
+  _rand = function () {
+    let t = s += 0x6D2B79F5;
+    t = Math.imul(t ^ t >>> 15, t | 1);
+    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function rnd() { return _rand(); }
+function rint(a, b) { return a + Math.floor(_rand() * (b - a + 1)); }
+function pick(arr) { return arr[Math.floor(_rand() * arr.length)]; }
+function shuffle(arr) { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(_rand() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+/* générateur local, indépendant des tirages de l'exercice (animations, simulations des figures) */
+function localRand(seed) {
+  let s = seed >>> 0;
+  return function () {
+    let t = s += 0x6D2B79F5;
+    t = Math.imul(t ^ t >>> 15, t | 1);
+    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+/* ---------- nombres ----------
+   Point décimal dans les deux langues (comme le reste du site et comme Python),
+   espace fine pour les milliers. m = true : écriture pour MathJax. */
+function _fixed(x, d) {
+  const a = Math.abs(x), p = Math.pow(10, d);
+  return (Math.round(a * p + 1e-9) / p).toFixed(d);
+}
+function _group(ip, m) {
+  if (ip.length < 5) return ip;
+  const sep = m ? '\\,' : ' ';
+  let out = '';
+  while (ip.length > 3) { out = sep + ip.slice(-3) + out; ip = ip.slice(0, -3); }
+  return ip + out;
+}
+function _num(x, d, m, trim) {
+  let s = _fixed(x, d);
+  if (trim && s.indexOf('.') >= 0) s = s.replace(/0+$/, '').replace(/\.$/, '');
+  const neg = x < 0 && /[1-9]/.test(s);
+  const parts = s.split('.');
+  return (neg ? (m ? '-' : '−') : '') + _group(parts[0], m) + (parts.length > 1 ? '.' + parts[1] : '');
+}
+function fmt(x, d) { return _num(x, d, false, false); }     // texte, d décimales
+function fmtT(x, d) { return _num(x, d, false, true); }     // texte, zéros finaux retirés
+function tex(x, d) { return _num(x, d, true, false); }      // MathJax, d décimales
+function texT(x, d) { return _num(x, d, true, true); }      // MathJax, zéros finaux retirés
+/* quotient de deux entiers positifs arrondi au plus proche (demi vers le haut), sans flottant */
+function rdiv(a, b) { return Math.floor((2 * a + b) / (2 * b)); }
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+/* ---------- loi normale centrée réduite : densité φ, répartition Φ, quantile ---------- */
+function normPdf(x) { return Math.exp(-0.5 * x * x) / 2.5066282746310002; }
+function normCdf(x) {                      // série de Marsaglia, précision de l'ordre de 1e-15
+  if (x < -8) return 0; if (x > 8) return 1;
+  let s = x, t = x;
+  for (let k = 1; k < 400; k++) { t *= x * x / (2 * k + 1); s += t; if (Math.abs(t) < 1e-17 * Math.abs(s)) break; }
+  return 0.5 + s * normPdf(x);
+}
+function normInv(p) {                      // algorithme d'Acklam, puis deux pas de Newton
+  const a = [-39.69683028665376, 220.9460984245205, -275.9285104469687, 138.3577518672690, -30.66479806614716, 2.506628277459239],
+        b = [-54.47609879822406, 161.5858368580409, -155.6989798598866, 66.80131188771972, -13.28068155288572],
+        c = [-0.007784894002430293, -0.3223964580411365, -2.400758277161838, -2.549732539343734, 4.374664141464968, 2.938163982698783],
+        d = [0.007784695709041462, 0.3224671290700398, 2.445134137142996, 3.754408661907416];
+  let x, q, r;
+  if (p < 0.02425) { q = Math.sqrt(-2 * Math.log(p)); x = (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1); }
+  else if (p > 1 - 0.02425) { q = Math.sqrt(-2 * Math.log(1 - p)); x = -(((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1); }
+  else { q = p - 0.5; r = q * q; x = (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q / (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1); }
+  for (let i = 0; i < 2; i++) x -= (normCdf(x) - p) / normPdf(x);
+  return x;
+}
+
+/* tirage de loi N(0,1) à partir d'un générateur uniforme (méthode de Box-Muller) : simulations des figures */
+function gauss(rand) { let u = rand(); if (u < 1e-12) u = 1e-12; return Math.sqrt(-2 * Math.log(u)) * Math.cos(6.283185307179586 * rand()); }
+
+/* ---------- langue ---------- */
+function detectLang() {
+  try {
+    const q = new URLSearchParams(window.location.search).get('lang');
+    if (q && I18N[q.toLowerCase()]) return q.toLowerCase();
+  } catch (e) {}
+  const h = (window.location.hash || '').replace('#', '').toLowerCase();
+  if (I18N[h] && I18N[h].k) return h;
+  return 'fr';
+}
+function applyLang() {
+  const D = I18N[LANG].k;
+  document.documentElement.lang = LANG;
+  document.title = D.title;
+  document.querySelectorAll('[data-k]').forEach(function (el) {
+    const key = el.getAttribute('data-k');
+    if (D[key] !== undefined) el.innerHTML = D[key];
+  });
+  const si = document.getElementById('seed-input');
+  if (si) si.placeholder = D.phSeed;
+  const tb = document.getElementById('toggle-btn');
+  if (tb) tb.textContent = solVisible ? D.hideSol : D.showSol;
+  document.getElementById('flag-fr').classList.toggle('active', LANG === 'fr');
+  document.getElementById('flag-en').classList.toggle('active', LANG === 'en');
+}
+function setLang(lang) {
+  if (!I18N[lang] || !I18N[lang].k || lang === LANG) return;
+  LANG = lang;
+  try {
+    const u = new URL(window.location.href);
+    u.searchParams.set('lang', lang);
+    history.replaceState(null, '', u.toString());
+  } catch (e) {}
+  applyLang();
+  renderCourse();
+  const wasVis = solVisible;
+  renderExercise(_activeSeed);
+  if (wasVis) toggleSol();
+  typeset();
+}
+
+/* ---------- MathJax : un seul rendu à la fois ---------- */
+let _mjChain = Promise.resolve();
+function typeset(el) {
+  if (!(window.MathJax && MathJax.typesetPromise)) return;
+  _mjChain = _mjChain.then(function () { return MathJax.typesetPromise(el ? [el] : undefined); })
+                     .catch(function (err) { console.error('MathJax :', err); });
+}
+
+/* ---------- figures : petit traceur SVG ---------- */
+const COL = { s1: '#2a6fb0', s2: '#b9821a', s3: '#b94040', s4: '#8a4fb0',
+              ink: '#1e1e1e', mute: '#5a5a5a', grid: '#e7e3d9', axis: '#b9b3a6', navy: '#0d1b2a' };
+const FONT_T = "font-family=\"'Source Serif 4',Georgia,serif\"";
+const FONT_M = "font-family=\"'JetBrains Mono',monospace\"";
+let _clipN = 0;
+function Plot(o) {
+  const P = Object.assign({ w: 680, h: 320, ml: 52, mr: 18, mt: 16, mb: 40 }, o);
+  P.el = [];
+  const r1 = v => Math.round(v * 10) / 10;
+  P.X = v => r1(P.ml + (v - P.x0) / (P.x1 - P.x0) * (P.w - P.ml - P.mr));
+  P.Y = v => r1(P.h - P.mb - (v - P.y0) / (P.y1 - P.y0) * (P.h - P.mt - P.mb));
+  P.add = s => { P.el.push(s); return P; };
+  /* axes discrets : quadrillage horizontal en filets, graduations en gris */
+  P.axes = function (a) {
+    a = a || {};
+    const xf = a.xf || (v => fmtT(v, 4)), yf = a.yf || (v => fmtT(v, 4));
+    (a.yt || []).forEach(v => {
+      if (a.grid !== false) P.add(`<line x1="${P.ml}" y1="${P.Y(v)}" x2="${P.w - P.mr}" y2="${P.Y(v)}" stroke="${COL.grid}" stroke-width="1"/>`);
+      P.add(`<text x="${P.ml - 7}" y="${P.Y(v) + 3.5}" text-anchor="end" ${FONT_M} font-size="10" fill="${COL.mute}">${yf(v)}</text>`);
+    });
+    const yb = a.xAxisAt !== undefined ? P.Y(a.xAxisAt) : P.h - P.mb;
+    (a.xt || []).forEach(v => {
+      P.add(`<line x1="${P.X(v)}" y1="${yb}" x2="${P.X(v)}" y2="${yb + 4}" stroke="${COL.axis}" stroke-width="1"/>`);
+      P.add(`<text x="${P.X(v)}" y="${P.h - P.mb + 16}" text-anchor="middle" ${FONT_M} font-size="10" fill="${COL.mute}">${xf(v)}</text>`);
+    });
+    P.add(`<line x1="${P.ml}" y1="${yb}" x2="${P.w - P.mr}" y2="${yb}" stroke="${COL.axis}" stroke-width="1"/>`);
+    if (a.yAxis !== false) P.add(`<line x1="${P.ml}" y1="${P.mt}" x2="${P.ml}" y2="${P.h - P.mb}" stroke="${COL.axis}" stroke-width="1"/>`);
+    if (a.xl) P.add(`<text x="${(P.ml + P.w - P.mr) / 2}" y="${P.h - 6}" text-anchor="middle" ${FONT_T} font-size="12" fill="${COL.mute}">${a.xl}</text>`);
+    if (a.yl) P.add(`<text x="${P.ml}" y="${P.mt - 4}" text-anchor="start" ${FONT_T} font-size="12" fill="${COL.mute}">${a.yl}</text>`);
+    return P;
+  };
+  P.pts = function (pts) { return pts.map((p, i) => (i ? 'L' : 'M') + P.X(p[0]) + ' ' + P.Y(p[1])).join(' '); };
+  P.sample = function (fn, a, b, n) { const out = []; n = n || 160; for (let i = 0; i <= n; i++) { const x = a + (b - a) * i / n, y = fn(x); if (isFinite(y)) out.push([x, Math.max(P.y0 - (P.y1 - P.y0), Math.min(P.y1 + (P.y1 - P.y0), y))]); } return out; };
+  /* zone de tracé : P.clip() la déclare, { clip: true } y découpe une courbe qui sortirait du cadre */
+  P.clip = function () { P._clip = 'clip' + (++_clipN); return P.add(`<defs><clipPath id="${P._clip}"><rect x="${P.ml}" y="${P.mt}" width="${P.w - P.ml - P.mr}" height="${P.h - P.mt - P.mb}"/></clipPath></defs>`); };
+  P.line = function (pts, st) { st = st || {}; return P.add(`<path d="${P.pts(pts)}" fill="none" stroke="${st.c || COL.s1}" stroke-width="${st.w || 2}" stroke-linejoin="round" stroke-linecap="round"${st.dash ? ` stroke-dasharray="${st.dash}"` : ''}${st.clip && P._clip ? ` clip-path="url(#${P._clip})"` : ''}/>`); };
+  P.curve = function (fn, a, b, st, n) { return P.line(P.sample(fn, a, b, n), st); };
+  P.area = function (pts, base, st) { st = st || {}; if (!pts.length) return P; const d = P.pts(pts) + ` L${P.X(pts[pts.length - 1][0])} ${P.Y(base)} L${P.X(pts[0][0])} ${P.Y(base)} Z`; return P.add(`<path d="${d}" fill="${st.c || COL.s1}" fill-opacity="${st.o || 0.16}" stroke="none"/>`); };
+  P.bar = function (xc, wpx, y, st) { st = st || {}; const top = P.Y(y), base = P.Y(st.base || 0), hgt = Math.max(0, base - top), r = Math.min(3, wpx / 2, hgt); const x = P.X(xc) - wpx / 2;
+    const d = `M${r1(x)} ${base} L${r1(x)} ${r1(top + r)} Q${r1(x)} ${top} ${r1(x + r)} ${top} L${r1(x + wpx - r)} ${top} Q${r1(x + wpx)} ${top} ${r1(x + wpx)} ${r1(top + r)} L${r1(x + wpx)} ${base} Z`;
+    return P.add(`<path d="${d}" fill="${st.c || COL.s1}" fill-opacity="${st.o === undefined ? 1 : st.o}">${st.tip ? `<title>${st.tip}</title>` : ''}</path>`); };
+  P.seg = function (xa, ya, xb, yb, st) { st = st || {}; return P.add(`<line x1="${P.X(xa)}" y1="${P.Y(ya)}" x2="${P.X(xb)}" y2="${P.Y(yb)}" stroke="${st.c || COL.mute}" stroke-width="${st.w || 1.2}"${st.dash ? ` stroke-dasharray="${st.dash}"` : ''}/>`); };
+  P.dot = function (x, y, st) { st = st || {}; return P.add(`<circle cx="${P.X(x)}" cy="${P.Y(y)}" r="${st.r || 4.5}" fill="${st.hollow ? '#fff' : (st.c || COL.s1)}" stroke="${st.hollow ? (st.c || COL.s1) : '#fff'}" stroke-width="2">${st.tip ? `<title>${st.tip}</title>` : ''}</circle>`); };
+  P.text = function (x, y, s, st) { st = st || {}; return P.add(`<text x="${P.X(x) + (st.dx || 0)}" y="${P.Y(y) + (st.dy || 0)}" text-anchor="${st.anchor || 'middle'}" ${st.mono ? FONT_M : FONT_T} font-size="${st.size || 11.5}" font-weight="${st.bold ? 700 : 400}"${st.italic ? ' font-style="italic"' : ''} fill="${st.c || COL.ink}">${s}</text>`); };
+  /* légende : un trait ou une pastille de la couleur de la série, texte en encre neutre */
+  P.legend = function (items, x, y) {
+    let cx = x;
+    items.forEach(it => {
+      if (it.box) P.add(`<rect x="${cx}" y="${y - 8}" width="12" height="9" rx="2" fill="${it.c}" fill-opacity="${it.o || 1}"/>`);
+      else P.add(`<line x1="${cx}" y1="${y - 4}" x2="${cx + 18}" y2="${y - 4}" stroke="${it.c}" stroke-width="2.4"${it.dash ? ` stroke-dasharray="${it.dash}"` : ''} stroke-linecap="round"/>`);
+      const tx = cx + (it.box ? 17 : 23);
+      P.add(`<text x="${tx}" y="${y}" ${FONT_T} font-size="11.5" fill="${COL.ink}">${it.t}</text>`);
+      cx = tx + it.t.replace(/<[^>]+>/g, '').length * 6.1 + 18;
+    });
+    return P;
+  };
+  P.svg = function (aria) { return `<svg viewBox="0 0 ${P.w} ${P.h}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${esc(aria || '')}">${P.el.join('')}</svg>`; };
+  return P;
+}
+/* arbre recombinant : nœud (i, j) = i hausses après j pas. o.node(i, j) renvoie { lines: [texte, …], fill, stroke, bold: [bool, …] } ;
+   o.edge(i, j, up), facultatif, renvoie le texte à écrire sur l'arête qui part du nœud (i, j) vers le haut ou vers le bas. */
+function Lattice(o) {
+  const N = o.N, w = o.w || 680, bw = o.bw || 78, lh = 14, nl = o.lines || 2, bh = nl * lh + 9;
+  const dy = o.dy || Math.max(bh + 10, 46), h = N * dy + bh + 16, pad = 10 + bw / 2, r1 = v => Math.round(v * 10) / 10;
+  const X = j => (N === 0 ? w / 2 : pad + j * (w - 2 * pad) / N), Y = (i, j) => h / 2 - (2 * i - j) * dy / 2;
+  let el = '';
+  for (let j = 0; j < N; j++) for (let i = 0; i <= j; i++) {
+    [[i + 1, true], [i, false]].forEach(function (t) {
+      el += `<line x1="${r1(X(j))}" y1="${r1(Y(i, j))}" x2="${r1(X(j + 1))}" y2="${r1(Y(t[0], j + 1))}" stroke="${COL.axis}" stroke-width="1.3"/>`;
+      const lab = o.edge ? o.edge(i, j, t[1]) : '';
+      if (lab) el += `<text x="${r1((X(j) + X(j + 1)) / 2)}" y="${r1((Y(i, j) + Y(t[0], j + 1)) / 2 + (t[1] ? -7 : 15))}" text-anchor="middle" ${FONT_T} font-size="12" font-style="italic" fill="${COL.navy}">${lab}</text>`;
+    });
+  }
+  for (let j = 0; j <= N; j++) for (let i = 0; i <= j; i++) {
+    const s = o.node(i, j), x = X(j), y = Y(i, j);
+    el += `<rect x="${r1(x - bw / 2)}" y="${r1(y - bh / 2)}" width="${bw}" height="${bh}" rx="4" fill="${s.fill || '#fff'}" stroke="${s.stroke || COL.axis}" stroke-width="${s.stroke ? 1.8 : 1.1}"/>`;
+    s.lines.forEach(function (t, k) {
+      el += `<text x="${r1(x)}" y="${r1(y - bh / 2 + 4 + lh * (k + 1) - 3)}" text-anchor="middle" ${FONT_M} font-size="10.5" font-weight="${s.bold && s.bold[k] ? 700 : 400}" fill="${s.bold && s.bold[k] ? COL.navy : COL.ink}">${t}</text>`;
+    });
+  }
+  return `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${esc(o.aria || '')}">${el}</svg>`;
+}
+
+/* graduations « rondes » entre a et b */
+function ticks(a, b, n) {
+  const span = b - a, raw = span / (n || 5), p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / p;
+  const step = (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10) * p, out = [];
+  for (let v = Math.ceil(a / step - 1e-9) * step; v <= b + 1e-9; v += step) out.push(Math.round(v / step) * step);
+  return out;
+}
+
+/* ---------- figures : montage et commandes ---------- */
+function mountFigs(root) {
+  (root || document).querySelectorAll('[data-fig]').forEach(function (host) {
+    const id = host.getAttribute('data-fig'), F = FIGS[id];
+    if (!F) return;
+    const ctr = F.controls ? F.controls(I18N[LANG]) : [];
+    let h = '';
+    if (ctr.length) {
+      h += '<div class="fig-ctrl">';
+      ctr.forEach(function (c) {
+        if (c.type === 'select') {
+          h += `<label><span>${c.label}</span><select data-key="${c.key}">${c.options.map(o => `<option value="${o.v}"${String(F.state[c.key]) === String(o.v) ? ' selected' : ''}>${o.t}</option>`).join('')}</select></label>`;
+        } else if (c.type === 'button') {
+          h += `<button type="button" data-act="${c.key}">${c.label}</button>`;
+        } else {
+          h += `<label><span>${c.label}</span><input type="range" data-key="${c.key}" min="${c.min}" max="${c.max}" step="${c.step}" value="${F.state[c.key]}"><span class="cv" data-val="${c.key}"></span></label>`;
+        }
+      });
+      h += '</div>';
+    }
+    h += '<div class="fig-svg"></div><div class="fig-read"></div>';
+    host.innerHTML = h;
+    const byKey = {}; ctr.forEach(c => { byKey[c.key] = c; });
+    function redraw() {
+      if (F.clamp) F.clamp(F.state);
+      /* les bornes d'un curseur peuvent dépendre d'un autre (k entre 0 et n, par exemple) */
+      const now = F.controls ? F.controls(I18N[LANG]) : [];
+      now.forEach(function (c) {
+        if (c.type === 'select' || c.type === 'button') return;
+        const inp = host.querySelector(`input[data-key="${c.key}"]`);
+        if (inp) { inp.min = c.min; inp.max = c.max; inp.step = c.step; inp.value = F.state[c.key]; }
+        const sp = host.querySelector(`[data-val="${c.key}"]`);
+        if (sp) sp.textContent = c.fmt ? c.fmt(F.state[c.key]) : fmtT(F.state[c.key], 4);
+      });
+      const out = F.draw(F.state, LANG);
+      host.querySelector('.fig-svg').innerHTML = out.svg;
+      host.querySelector('.fig-read').innerHTML = out.read || '';
+    }
+    host.querySelectorAll('input[data-key]').forEach(function (inp) {
+      inp.addEventListener('input', function () { F.state[inp.getAttribute('data-key')] = parseFloat(inp.value); redraw(); });
+    });
+    host.querySelectorAll('select[data-key]').forEach(function (sel) {
+      sel.addEventListener('change', function () { const c = byKey[sel.getAttribute('data-key')]; F.state[c.key] = c.numeric ? parseFloat(sel.value) : sel.value; redraw(); });
+    });
+    host.querySelectorAll('button[data-act]').forEach(function (b) {
+      b.addEventListener('click', function () { const c = byKey[b.getAttribute('data-act')]; c.act(F.state); redraw(); });
+    });
+    redraw();
+  });
+}
+
+/* ---------- blocs de code : bouton « copier » ---------- */
+function copyCode(btn) {
+  const wrap = btn.closest('.code-wrap');
+  const txt = Array.prototype.map.call(wrap.querySelectorAll('.code-block .cl'), function (l) { return l.textContent.replace(/ /g, ''); }).join('\n');
+  const done = function () { const o = btn.textContent; btn.textContent = I18N[LANG].k.copied; setTimeout(function () { btn.textContent = o; }, 1300); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done, done);
+  else { const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch (e) {} document.body.removeChild(ta); done(); }
+}
+
+/* ---------- rendu ---------- */
+function renderCourse() {
+  const host = document.getElementById('course-content');
+  host.innerHTML = I18N[LANG].course;
+  host.querySelectorAll('.code-head button').forEach(function (b) { b.textContent = I18N[LANG].k.copy; });
+  mountFigs(host);
+}
+function renderExercise(seed) {
+  const D = PAGE.compute(seed);
+  PAGE.last = D;
+  document.getElementById('seed-disp').textContent = _activeSeed;
+  const ms = document.getElementById('modal-seed'); if (ms) ms.textContent = _activeSeed;
+  const nb = h => h.replace(/(\d) %/g, '$1\u00a0%');             // espace insécable devant le signe %
+  document.getElementById('ex-content').innerHTML = nb(I18N[LANG].ex(D));
+  document.getElementById('sol-content').innerHTML = nb(I18N[LANG].sol(D));
+  solVisible = false;
+  const solC = document.getElementById('sol-card'), btn = document.getElementById('toggle-btn');
+  solC.classList.remove('visible'); btn.classList.remove('shown'); btn.textContent = I18N[LANG].k.showSol;
+}
+function generateFromControls() {
+  const v = document.getElementById('seed-input').value;
+  const seed = v ? parseInt(v, 10) : Math.floor(Math.random() * 10000000);
+  renderExercise(seed);
+  typeset(document.getElementById('ex-card')); typeset(document.getElementById('sol-card'));
+}
+function regen() { document.getElementById('seed-input').value = ''; generateFromControls(); }
+function generateAndGo() {
+  generateFromControls();
+  const c = document.getElementById('ex-anchor'); if (c && c.scrollIntoView) c.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function toggleSol() {
+  solVisible = !solVisible;
+  const sol = document.getElementById('sol-card'), btn = document.getElementById('toggle-btn');
+  if (solVisible) { sol.classList.add('visible'); btn.classList.add('shown'); btn.textContent = I18N[LANG].k.hideSol; }
+  else { sol.classList.remove('visible'); btn.classList.remove('shown'); btn.textContent = I18N[LANG].k.showSol; }
+}
+function initPage() {
+  LANG = detectLang();
+  applyLang();
+  renderCourse();
+  renderExercise(Math.floor(Math.random() * 10000000));
+  /* MathJax est chargé en asynchrone : s'il est déjà prêt on compose tout de suite,
+     sinon sa propre passe de démarrage composera la page entière. */
+  typeset();
+}
+
+/* ============================================================
+   PAGE mf13
+   ============================================================ */
+I18N.fr.k = {
+ "k-badge": "MATHÉMATIQUES FINANCIÈRES",
+ "k-seed": "Seed de reproductibilité",
+ "k-seedtip": "Vide = nouvel exercice aléatoire",
+ "k-gen": "Générer",
+ "k-tag-course": "Cours",
+ "k-tag-ex": "Exercice",
+ "k-tag-sol": "Corrigé",
+ "k-seedbadge": "Seed&nbsp;:",
+ "showSol": "Afficher le corrigé",
+ "hideSol": "Masquer le corrigé",
+ "phSeed": "auto",
+ "copy": "Copier",
+ "copied": "Copié",
+ "k-sub": "© Thomas Hossen – Version du 6 octobre 2026",
+ "title": "Mathématiques financières 13 – Réduction de variance et options asiatiques",
+ "k-h1": "Réduction de variance et options asiatiques",
+ "k-coursetitle": "Obtenir la même précision avec moins de simulations",
+ "k-extitle": "Variables antithétiques, variable de contrôle et option asiatique",
+ "k-soltitle": "Variables antithétiques, variable de contrôle et option asiatique"
+};
+I18N.fr.course = "<div class=\"context-block\">\n<strong>Objectifs.<\/strong> À la fin de cette page, vous savez réduire l'erreur d'une estimation de Monte-Carlo sans augmenter le nombre de simulations, avec des variables antithétiques ou une variable de contrôle, et mesurer le gain obtenu. Vous savez aussi ce qu'est une option asiatique et comment l'évaluer par simulation.<br><br>\n<strong>Pourquoi en finance ?<\/strong> La précision d'une simulation ne s'améliore que comme \\(\\frac{1}{\\sqrt{n}}\\) (page 12) : gagner une décimale coûte cent fois plus de calculs. Réduire la variance de ce que l'on simule est souvent bien plus efficace. Les options asiatiques, très utilisées sur les marchés de matières premières et de devises, n'ont pas de formule simple et s'évaluent par Monte-Carlo.<br><br>\n<strong>Prérequis.<\/strong> Variance, covariance et corrélation (page 1), simulation d'une trajectoire (page 8), méthode de Monte-Carlo (page 12).\n<\/div>\n<p class=\"toc\">Sommaire : <a href=\"#s1\">1. Pourquoi réduire la variance<\/a> · <a href=\"#s2\">2. Variables antithétiques<\/a> · <a href=\"#s3\">3. Variable de contrôle<\/a> · <a href=\"#s4\">4. Options asiatiques<\/a> · <a href=\"#s5\">5. En Python<\/a> · <a href=\"#s6\">6. À retenir<\/a> · <a href=\"#ex-anchor\">Exercice corrigé<\/a><\/p>\n\n<div class=\"dossier-title\" id=\"s1\">1. Pourquoi réduire la variance<\/div>\n<p>L'erreur type d'une estimation de Monte-Carlo est \\(\\frac{\\sigma_X}{\\sqrt{n}}\\), où \\(\\sigma_X\\) est l'écart type de la variable simulée \\(X\\) (page 12). Il y a donc deux façons de la diminuer.<\/p>\n<ul class=\"kit-simple\">\n<li><em>Augmenter \\(n\\).<\/em> C'est coûteux : pour diviser l'erreur par 10, il faut 100 fois plus de simulations.<\/li>\n<li><em>Diminuer \\(\\sigma_X\\).<\/em> On remplace \\(X\\) par une autre variable qui a la même espérance, donc qui estime la même quantité, mais une variance plus petite.<\/li>\n<\/ul>\n<p>Si une technique divise la variance par \\(k\\), elle donne la même précision avec \\(k\\) fois moins de simulations. Cette page présente les deux techniques les plus courantes.<\/p>\n\n<div class=\"dossier-title\" id=\"s2\">2. Variables antithétiques<\/div>\n<p><strong>L'idée.<\/strong> Chaque fois que l'on tire un nombre \\(Z\\) de loi \\(N(0,1)\\), on utilise aussi son opposé \\(-Z\\), qui suit la même loi. On obtient deux valeurs \\(X\\) et \\(X'\\) de la variable à simuler, l'une calculée avec \\(Z\\), l'autre avec \\(-Z\\), et l'on retient leur moyenne \\(\\frac{X+X'}{2}\\). Si un tirage est exceptionnellement favorable, son opposé est exceptionnellement défavorable, et les deux erreurs se compensent en partie. Avec des tirages \\(U\\) de loi uniforme sur \\([0,1]\\), comme dans les diapositives de la séance 4, on associe de même \\(U\\) et \\(1-U\\).<\/p>\n<p><strong>Propriété.<\/strong> Si \\(X\\) et \\(X'\\) ont la même variance \\(\\sigma_X^2\\) et une corrélation \\(\\rho\\), alors<\/p>\n\\[\\Var\\Big(\\frac{X+X'}{2}\\Big)=\\frac{\\sigma_X^2}{2}\\,(1+\\rho) .\\]\n<div class=\"demo\">\n<p><strong>Démonstration.<\/strong> On applique \\(\\Var(aY)=a^2\\,\\Var(Y)\\) avec \\(a=\\frac{1}{2}\\), puis la formule de la variance d'une somme (page 1) :<\/p>\n\\[\\Var\\Big(\\frac{X+X'}{2}\\Big)=\\frac{1}{4}\\,\\big(\\Var(X)+\\Var(X')+2\\,\\Cov(X,X')\\big) .\\]\n<p>Par définition de la corrélation, \\(\\Cov(X,X')=\\rho\\,\\sigma_X\\,\\sigma_X=\\rho\\,\\sigma_X^2\\). Donc<\/p>\n\\[\\Var\\Big(\\frac{X+X'}{2}\\Big)=\\frac{1}{4}\\,\\big(\\sigma_X^2+\\sigma_X^2+2\\,\\rho\\,\\sigma_X^2\\big)=\\frac{\\sigma_X^2}{2}\\,(1+\\rho) .\\]\n<\/div>\n<p><strong>Lecture.<\/strong> La moyenne de deux simulations <em>indépendantes<\/em> a pour variance \\(\\frac{\\sigma_X^2}{2}\\) : c'est le cas \\(\\rho=0\\). Pour le même nombre de calculs, la paire antithétique multiplie donc la variance par \\(1+\\rho\\).<\/p>\n<ul class=\"kit-simple\">\n<li>Si \\(\\rho&lt;0\\), on gagne. Avec \\(\\rho=-0.5\\), la variance est divisée par 2 ; avec \\(\\rho=-0.9\\), par 10.<\/li>\n<li>Si \\(\\rho>0\\), on perd : la technique est contre-productive.<\/li>\n<\/ul>\n<p><strong>Quand la corrélation est-elle négative ?<\/strong> Dès que la variable simulée est une fonction croissante (ou décroissante) du tirage \\(Z\\). C'est le cas du gain d'un call, qui augmente avec le cours final, donc avec \\(Z\\). Ce n'est pas le cas d'un gain symétrique, élevé quand le cours monte beaucoup comme quand il baisse beaucoup : \\(Z\\) et \\(-Z\\) donnent alors des gains voisins, et \\(\\rho\\) est positif.<\/p>\n<p><strong>Exemple.<\/strong> On reprend le call de la page 12 (\\(S_0=K=100\\), \\(r=5\\,\\%\\), \\(\\sigma=20\\,\\%\\), \\(T=1\\)), pour lequel \\(S_T=100\\,e^{0.03+0.2\\,Z}\\), et quatre de ses tirages.<\/p>\n<div class=\"dtable-wrap\"><table class=\"dtable dtable-narrow\">\n<tr><th>tirage \\(Z\\)<\/th><th>cours avec \\(Z\\)<\/th><th>gain \\(X\\)<\/th><th>cours avec \\(-Z\\)<\/th><th>gain \\(X'\\)<\/th><th>moyenne de la paire<\/th><\/tr>\n<tr><td class=\"num\">0.5<\/td><td class=\"num\">113.88<\/td><td class=\"num\">13.88<\/td><td class=\"num\">93.24<\/td><td class=\"num\">0<\/td><td class=\"num\">6.94<\/td><\/tr>\n<tr><td class=\"num\">−1.2<\/td><td class=\"num\">81.06<\/td><td class=\"num\">0<\/td><td class=\"num\">131.00<\/td><td class=\"num\">31.00<\/td><td class=\"num\">15.50<\/td><\/tr>\n<tr><td class=\"num\">0.3<\/td><td class=\"num\">109.42<\/td><td class=\"num\">9.42<\/td><td class=\"num\">97.04<\/td><td class=\"num\">0<\/td><td class=\"num\">4.71<\/td><\/tr>\n<tr><td class=\"num\">1.0<\/td><td class=\"num\">125.86<\/td><td class=\"num\">25.86<\/td><td class=\"num\">84.37<\/td><td class=\"num\">0<\/td><td class=\"num\">12.93<\/td><\/tr>\n<\/table><\/div>\n<p>La moyenne des quatre paires est \\(\\frac{6.94+15.50+4.71+12.93}{4}=10.02\\), et l'estimation du prix est \\(0.9512\\times 10.02\\approx 9.53\\) euros. Les moyennes des paires vont de 4.71 à 15.50, alors que les gains isolés vont de 0 à 31 : elles sont bien moins dispersées. Pour ce call, la corrélation entre \\(X\\) et \\(X'\\) est d'environ \\(-0.5\\).<\/p>\n<p><strong>Attention au calcul de l'erreur type.<\/strong> Les deux valeurs d'une paire ne sont pas indépendantes. L'erreur type se calcule sur les moyennes des paires, qui, elles, sont indépendantes entre elles : avec \\(n\\) paires, c'est l'écart type empirique des \\(n\\) moyennes divisé par \\(\\sqrt{n}\\).<\/p>\n<div class=\"ifig\" data-fig=\"anti\"><\/div>\n<div class=\"fig-cap\">Figure 1 — Chaque point est une paire de gains actualisés d'un call (\\(S_0=100\\), \\(r=5\\,\\%\\), \\(\\sigma=20\\,\\%\\), \\(T=1\\)). Avec des paires antithétiques, un gain élevé est associé à un gain faible. Baissez le prix d'exercice : le call est plus souvent exercé et la corrélation se rapproche de \\(-1\\). Choisissez le gain symétrique : la corrélation devient positive.<\/div>\n\n<div class=\"dossier-title\" id=\"s3\">3. Variable de contrôle<\/div>\n<p><strong>L'idée.<\/strong> Avec les mêmes tirages, on calcule en plus de \\(X\\) une seconde variable \\(Y\\), liée à \\(X\\), dont on connaît exactement l'espérance \\(\\mu_Y\\). Si la moyenne simulée de \\(Y\\) est trop haute par rapport à \\(\\mu_Y\\), c'est que les tirages ont été plutôt favorables, et la moyenne de \\(X\\) est sans doute trop haute elle aussi : on la corrige. On estime donc \\(\\theta=\\E[X]\\) avec la variable<\/p>\n\\[X_c=X+c\\,(Y-\\mu_Y),\\]\n<p>où \\(c\\) est un coefficient à choisir.<\/p>\n<p><strong>Propriété 1 : pas de biais.<\/strong> Quel que soit \\(c\\), la variable \\(X_c\\) a la même espérance que \\(X\\), puisque \\(\\E[Y]=\\mu_Y\\) :<\/p>\n\\[\\E[X_c]=\\E[X]+c\\,\\big(\\E[Y]-\\mu_Y\\big)=\\theta+c\\times 0=\\theta .\\]\n<p><strong>Propriété 2 : le meilleur coefficient.<\/strong> La variance de \\(X_c\\) est la plus petite pour<\/p>\n\\[c^*=-\\frac{\\Cov(X,Y)}{\\Var(Y)},\\qquad\\text{et vaut alors}\\qquad\\Var(X)-\\frac{\\Cov(X,Y)^2}{\\Var(Y)}=\\Var(X)\\,\\big(1-\\rho^2\\big),\\]\n<p>où \\(\\rho\\) est la corrélation entre \\(X\\) et \\(Y\\).<\/p>\n<div class=\"demo\">\n<p><strong>Démonstration.<\/strong> Retrancher la constante \\(c\\,\\mu_Y\\) ne change pas la variance. Avec la formule de la variance d'une somme,<\/p>\n\\[\\Var(X_c)=\\Var(X+c\\,Y)=\\Var(X)+c^2\\,\\Var(Y)+2\\,c\\,\\Cov(X,Y) .\\]\n<p>C'est un polynôme du second degré en \\(c\\), dont le coefficient de \\(c^2\\) est positif : sa courbe est une parabole tournée vers le haut. Son minimum est atteint là où la dérivée par rapport à \\(c\\) s'annule :<\/p>\n\\[2\\,c\\,\\Var(Y)+2\\,\\Cov(X,Y)=0,\\qquad\\text{donc}\\qquad c^*=-\\frac{\\Cov(X,Y)}{\\Var(Y)} .\\]\n<p>On reporte \\(c^*\\) dans l'expression de la variance :<\/p>\n\\[\\Var(X)+\\frac{\\Cov(X,Y)^2}{\\Var(Y)^2}\\,\\Var(Y)-2\\,\\frac{\\Cov(X,Y)}{\\Var(Y)}\\,\\Cov(X,Y)=\\Var(X)-\\frac{\\Cov(X,Y)^2}{\\Var(Y)} .\\]\n<p>Enfin, \\(\\rho=\\frac{\\Cov(X,Y)}{\\sigma_X\\,\\sigma_Y}\\) donne \\(\\Cov(X,Y)^2=\\rho^2\\,\\Var(X)\\,\\Var(Y)\\), d'où la forme \\(\\Var(X)\\,(1-\\rho^2)\\).<\/p>\n<\/div>\n<p><strong>Lecture.<\/strong> Le gain ne dépend que de \\(\\rho^2\\) : peu importe que la corrélation soit positive ou négative, le signe de \\(c^*\\) s'adapte. Mais il faut une corrélation forte.<\/p>\n<div class=\"dtable-wrap\"><table class=\"dtable dtable-narrow\">\n<tr><th>Corrélation \\(\\rho\\)<\/th><th>0.5<\/th><th>0.8<\/th><th>0.9<\/th><th>0.99<\/th><\/tr>\n<tr><td class=\"l\">Variance multipliée par \\(1-\\rho^2\\)<\/td><td class=\"num\">0.75<\/td><td class=\"num\">0.36<\/td><td class=\"num\">0.19<\/td><td class=\"num\">0.0199<\/td><\/tr>\n<tr><td class=\"l\">Simulations économisées<\/td><td class=\"num\">25 %<\/td><td class=\"num\">64 %<\/td><td class=\"num\">81 %<\/td><td class=\"num\">98 %<\/td><\/tr>\n<\/table><\/div>\n<p><strong>En pratique.<\/strong> On ne connaît ni \\(\\Cov(X,Y)\\) ni \\(\\Var(Y)\\) : on les estime sur les simulations elles-mêmes. L'estimation finale est \\(\\bar X+c^*\\,(\\bar Y-\\mu_Y)\\). Pour un call, un choix naturel est \\(Y=e^{-rT}S_T\\), le cours final actualisé, dont l'espérance risque-neutre est exactement \\(S_0\\).<\/p>\n<p><strong>Exemple.<\/strong> On a estimé \\(\\Var(X)=225\\), \\(\\Var(Y)=400\\) et \\(\\Cov(X,Y)=240\\), et les moyennes simulées sont \\(\\bar X=10.80\\) et \\(\\bar Y=101.5\\), alors que \\(\\mu_Y=100\\).<\/p>\n<ul class=\"kit-simple\">\n<li>Corrélation : \\(\\rho=\\frac{240}{15\\times 20}=0.8\\). Coefficient : \\(c^*=-\\frac{240}{400}=-0.6\\).<\/li>\n<li>Variance : \\(225-\\frac{240^2}{400}=225-144=81\\), soit \\(225\\times(1-0.8^2)\\). L'écart type passe de 15 à 9.<\/li>\n<li>Estimation corrigée : \\(10.80-0.6\\times(101.5-100)=9.90\\). La moyenne de \\(Y\\) était trop haute de 1.5 : on a abaissé l'estimation de \\(X\\) en conséquence.<\/li>\n<\/ul>\n<div class=\"ifig\" data-fig=\"parab\"><\/div>\n<div class=\"fig-cap\">Figure 2 — Variance de \\(X+c\\,(Y-\\mu_Y)\\) en fonction du coefficient \\(c\\), pour \\(\\sigma_X=15\\) et \\(\\sigma_Y=20\\). Le pointillé est la variance sans variable de contrôle, 225. Déplacez \\(c\\) pour trouver le minimum, puis changez la corrélation : plus elle est forte, plus la parabole descend bas.<\/div>\n<div class=\"persp-box\">\n<span class=\"sol-sub\">Mode d'emploi — utiliser une variable de contrôle<\/span>\n<ol>\n<li>Choisir une variable \\(Y\\) fortement corrélée à \\(X\\), calculable avec les mêmes tirages, et dont l'espérance \\(\\mu_Y\\) est connue exactement.<\/li>\n<li>Simuler les couples \\((X_i,\\,Y_i)\\) et calculer \\(\\bar X\\), \\(\\bar Y\\), la variance empirique de \\(Y\\) et la covariance empirique de \\(X\\) et \\(Y\\).<\/li>\n<li>Calculer \\(c^*=-\\frac{\\Cov(X,Y)}{\\Var(Y)}\\).<\/li>\n<li>Annoncer \\(\\bar X+c^*\\,(\\bar Y-\\mu_Y)\\), avec une variance multipliée par \\(1-\\rho^2\\).<\/li>\n<\/ol>\n<p><strong>Erreurs fréquentes.<\/strong> Se tromper dans le signe de \\(c^*\\) : si \\(X\\) et \\(Y\\) varient dans le même sens, \\(c^*\\) est négatif. Prendre une variable \\(Y\\) dont on ne connaît l'espérance que par simulation. Calculer \\(X\\) et \\(Y\\) avec des tirages différents : ils ne sont alors plus corrélés. Pour les variables antithétiques, traiter les deux valeurs d'une paire comme indépendantes.<\/p>\n<\/div>\n\n<div class=\"dossier-title\" id=\"s4\">4. Options asiatiques<\/div>\n<p><strong>Définition.<\/strong> Le gain d'une option <em>asiatique<\/em> ne dépend pas du cours à l'échéance, mais de la moyenne des cours relevés à \\(N\\) dates \\(t_1,\\dots,t_N\\) pendant la vie de l'option. Pour un call asiatique de prix d'exercice \\(K\\),<\/p>\n\\[\\text{gain}=\\max\\big(A-K,\\,0\\big),\\qquad\\text{avec}\\qquad A=\\frac{1}{N}\\sum_{i=1}^{N}S(t_i) .\\]\n<p><strong>Pourquoi de telles options ?<\/strong><\/p>\n<ul class=\"kit-simple\">\n<li>Une entreprise qui achète du pétrole chaque mois, ou qui encaisse des dollars tout au long de l'année, est exposée à un cours moyen, pas au cours d'un jour précis.<\/li>\n<li>Une moyenne est difficile à manipuler : faire bouger le cours le jour de l'échéance ne change presque rien au gain.<\/li>\n<li>Une moyenne varie moins qu'un cours final, donc l'option asiatique coûte moins cher que l'option européenne correspondante.<\/li>\n<\/ul>\n<p><strong>Intuition.<\/strong> On compare un call européen et un call asiatique de prix d'exercice 100, sur trois trajectoires relevées à quatre dates.<\/p>\n<div class=\"dtable-wrap\"><table class=\"dtable dtable-narrow\">\n<tr><th>Trajectoire<\/th><th>\\(S(t_1)\\)<\/th><th>\\(S(t_2)\\)<\/th><th>\\(S(t_3)\\)<\/th><th>\\(S(t_4)\\)<\/th><th>moyenne \\(A\\)<\/th><th>gain européen<\/th><th>gain asiatique<\/th><\/tr>\n<tr><td class=\"l\">A<\/td><td class=\"num\">104<\/td><td class=\"num\">110<\/td><td class=\"num\">118<\/td><td class=\"num\">126<\/td><td class=\"num\">114.5<\/td><td class=\"num\">26<\/td><td class=\"num\">14.5<\/td><\/tr>\n<tr><td class=\"l\">B<\/td><td class=\"num\">92<\/td><td class=\"num\">90<\/td><td class=\"num\">104<\/td><td class=\"num\">126<\/td><td class=\"num\">103<\/td><td class=\"num\">26<\/td><td class=\"num\">3<\/td><\/tr>\n<tr><td class=\"l\">C<\/td><td class=\"num\">112<\/td><td class=\"num\">118<\/td><td class=\"num\">108<\/td><td class=\"num\">96<\/td><td class=\"num\">108.5<\/td><td class=\"num\">0<\/td><td class=\"num\">8.5<\/td><\/tr>\n<\/table><\/div>\n<p>Les trajectoires A et B finissent au même cours et donnent le même gain européen, mais pas le même gain asiatique : tout le chemin compte. La trajectoire C finit sous 100 : le call européen ne rapporte rien, alors que le call asiatique est exercé, parce que le cours a été élevé pendant l'essentiel de la période.<\/p>\n<p><strong>Évaluation.<\/strong> Une moyenne de cours lognormaux ne suit pas une loi connue : il n'y a pas de formule simple, et l'on utilise la méthode de Monte-Carlo. La seule nouveauté par rapport à la page 12 est qu'il faut simuler toute la trajectoire, avec le schéma exact de la page 8 et la dérive \\(r\\).<\/p>\n<ol>\n<li>Pour chaque simulation, tirer \\(N\\) nombres \\(Z_1,\\dots,Z_N\\) et calculer les cours successifs \\(S(t_i)=S(t_{i-1})\\exp\\!\\big((r-\\frac{\\sigma^2}{2})\\,\\delta t+\\sigma\\sqrt{\\delta t}\\,Z_i\\big)\\).<\/li>\n<li>Calculer leur moyenne \\(A\\), puis le gain actualisé \\(e^{-rT}\\max(A-K,\\,0)\\).<\/li>\n<li>Faire la moyenne des gains actualisés sur toutes les simulations, et donner l'intervalle de confiance.<\/li>\n<\/ol>\n<p><strong>Ordre de grandeur.<\/strong> Pour \\(S_0=K=100\\), \\(r=5\\,\\%\\), \\(\\sigma=20\\,\\%\\) et douze relevés mensuels sur un an, le call asiatique vaut environ 6.16 euros, contre 10.45 pour le call européen. Les deux gains sont fortement corrélés, avec \\(\\rho\\approx 0.86\\) : le call européen, dont le prix est connu, est une bonne variable de contrôle pour le call asiatique.<\/p>\n<div class=\"ifig\" data-fig=\"asian\"><\/div>\n<div class=\"fig-cap\">Figure 3 — Une trajectoire relevée chaque mois pendant un an (en bleu) et la moyenne des cours relevés jusque-là (en doré), pour \\(S_0=K=100\\) et \\(r=5\\,\\%\\). Le gain du call européen se lit sur le dernier point bleu, celui du call asiatique sur le dernier point doré. La moyenne varie beaucoup moins que le cours.<\/div>\n\n<div class=\"dossier-title\" id=\"s5\">5. En Python<\/div>\n<p>On évalue le call asiatique de la section 4 de trois façons, avec le même nombre total de trajectoires : simulation simple, variables antithétiques, puis variable de contrôle (le call européen).<\/p>\n<div class=\"code-wrap\"><div class=\"code-head\"><span>Python<\/span><button type=\"button\" onclick=\"copyCode(this)\">Copier<\/button><\/div><div class=\"code-block has-out\"><div class=\"cl\"><code>import numpy as np<\/code><\/div><div class=\"cl\"><code>from scipy.stats import norm<\/code><\/div><div class=\"cl\"><code>&nbsp;<\/code><\/div><div class=\"cl\"><code>S0, K, r, sigma, T, N = 100, 100, 0.05, 0.20, 1.0, 12        # 12 relevés mensuels<\/code><\/div><div class=\"cl\"><code>dt = T / N<\/code><\/div><div class=\"cl\"><code>rng = np.random.default_rng(0)<\/code><\/div><div class=\"cl\"><code>&nbsp;<\/code><\/div><div class=\"cl\"><code>def gains(Z):<\/code><\/div><div class=\"cl\"><code>    \"\"\"Gains actualisés du call asiatique et du call européen ; Z : une ligne par trajectoire, N colonnes.\"\"\"<\/code><\/div><div class=\"cl\"><code>    S = S0 * np.exp(np.cumsum((r - sigma**2 / 2) * dt + sigma * np.sqrt(dt) * Z, axis=1))<\/code><\/div><div class=\"cl\"><code>    asiatique = np.exp(-r * T) * np.maximum(S.mean(axis=1) - K, 0)<\/code><\/div><div class=\"cl\"><code>    europeen = np.exp(-r * T) * np.maximum(S[:, -1] - K, 0)<\/code><\/div><div class=\"cl\"><code>    return asiatique, europeen<\/code><\/div><div class=\"cl\"><code>&nbsp;<\/code><\/div><div class=\"cl\"><code>def bilan(nom, v):<\/code><\/div><div class=\"cl\"><code>    erreur_type = v.std(ddof=1) / np.sqrt(len(v))<\/code><\/div><div class=\"cl\"><code>    print(nom, \"| estimation :\", round(v.mean(), 4), \"| erreur type :\", round(erreur_type, 4))<\/code><\/div><div class=\"cl\"><code>&nbsp;<\/code><\/div><div class=\"cl\"><code>n = 100_000<\/code><\/div><div class=\"cl\"><code>Z = rng.standard_normal((n, N))<\/code><\/div><div class=\"cl\"><code>X, Y = gains(Z)<\/code><\/div><div class=\"cl\"><code>bilan(\"simulation simple      \", X)<\/code><\/div><div class=\"cl\"><code>&nbsp;<\/code><\/div><div class=\"cl\"><code>m = n // 2                                                   # antithétiques : n/2 paires (Z, -Z)<\/code><\/div><div class=\"cl\"><code>X2, _ = gains(-Z[:m])<\/code><\/div><div class=\"cl\"><code>bilan(\"variables antithétiques\", (X[:m] + X2) / 2)<\/code><\/div><div class=\"cl\"><code>&nbsp;<\/code><\/div><div class=\"cl\"><code>d1 = (np.log(S0 / K) + (r + sigma**2 / 2) * T) / (sigma * np.sqrt(T))<\/code><\/div><div class=\"cl\"><code>mu_Y = S0 * norm.cdf(d1) - K * np.exp(-r * T) * norm.cdf(d1 - sigma * np.sqrt(T))    # call européen<\/code><\/div><div class=\"cl\"><code>c = -np.cov(X, Y)[0, 1] / Y.var(ddof=1)<\/code><\/div><div class=\"cl\"><code>bilan(\"variable de contrôle   \", X + c * (Y - mu_Y))<\/code><\/div><div class=\"cl\"><code>print(\"c* =\", round(c, 4), \"| corrélation de X et Y :\", round(np.corrcoef(X, Y)[0, 1], 4))<\/code><\/div><\/div><div class=\"code-out\"><span class=\"code-out-lbl\">Résultat affiché<\/span><div class=\"cl\"><code>simulation simple       | estimation : 6.1722 | erreur type : 0.0269<\/code><\/div><div class=\"cl\"><code>variables antithétiques | estimation : 6.1545 | erreur type : 0.0186<\/code><\/div><div class=\"cl\"><code>variable de contrôle    | estimation : 6.1631 | erreur type : 0.0138<\/code><\/div><div class=\"cl\"><code>c* = -0.4968 | corrélation de X et Y : 0.8584<\/code><\/div><\/div><\/div>\n\n<div class=\"dossier-title\" id=\"s6\">6. À retenir<\/div>\n<ul class=\"kit-simple\">\n<li>Diviser la variance par \\(k\\) revient à diviser le nombre de simulations nécessaires par \\(k\\).<\/li>\n<li>Variables antithétiques : on associe \\(Z\\) et \\(-Z\\) ; \\(\\Var\\big(\\frac{X+X'}{2}\\big)=\\frac{\\sigma_X^2}{2}\\,(1+\\rho)\\) ; utile si \\(\\rho&lt;0\\).<\/li>\n<li>Variable de contrôle : \\(X_c=X+c\\,(Y-\\mu_Y)\\), sans biais pour tout \\(c\\).<\/li>\n<li>Coefficient optimal : \\(c^*=-\\frac{\\Cov(X,Y)}{\\Var(Y)}\\) ; variance minimale \\(\\Var(X)\\,(1-\\rho^2)\\).<\/li>\n<li>Call asiatique : gain \\(\\max(A-K,\\,0)\\), où \\(A\\) est la moyenne des cours relevés ; il vaut moins que le call européen et s'évalue en simulant toute la trajectoire.<\/li>\n<\/ul>\n";
+I18N.en.k = {
+ "k-badge": "MATHEMATICS FOR FINANCE",
+ "k-seed": "Reproducibility seed",
+ "k-seedtip": "Empty = new random exercise",
+ "k-gen": "Generate",
+ "k-tag-course": "Lesson",
+ "k-tag-ex": "Exercise",
+ "k-tag-sol": "Solution",
+ "k-seedbadge": "Seed:",
+ "showSol": "Show solution",
+ "hideSol": "Hide solution",
+ "phSeed": "auto",
+ "copy": "Copy",
+ "copied": "Copied",
+ "k-sub": "© Thomas Hossen – Version of 6 October 2026",
+ "title": "Mathematics for Finance 13 – Variance reduction and Asian options",
+ "k-h1": "Variance reduction and Asian options",
+ "k-coursetitle": "Getting the same precision with fewer simulations",
+ "k-extitle": "Antithetic variates, control variate and Asian option",
+ "k-soltitle": "Antithetic variates, control variate and Asian option"
+};
+I18N.en.course = "<div class=\"context-block\">\n<strong>Objectives.<\/strong> By the end of this page, you can reduce the error of a Monte Carlo estimate without increasing the number of simulations, with antithetic variates or a control variate, and measure the gain obtained. You also know what an Asian option is and how to price it by simulation.<br><br>\n<strong>Why in finance?<\/strong> The precision of a simulation improves only like \\(\\frac{1}{\\sqrt{n}}\\) (page 12): gaining one decimal place costs a hundred times more computation. Reducing the variance of what is simulated is often far more effective. Asian options, widely used in commodity and currency markets, have no simple formula and are priced by Monte Carlo.<br><br>\n<strong>Prerequisites.<\/strong> Variance, covariance and correlation (page 1), simulation of a path (page 8), Monte Carlo method (page 12).\n<\/div>\n<p class=\"toc\">Contents: <a href=\"#s1\">1. Why reduce the variance<\/a> · <a href=\"#s2\">2. Antithetic variates<\/a> · <a href=\"#s3\">3. Control variate<\/a> · <a href=\"#s4\">4. Asian options<\/a> · <a href=\"#s5\">5. In Python<\/a> · <a href=\"#s6\">6. Key points<\/a> · <a href=\"#ex-anchor\">Worked exercise<\/a><\/p>\n\n<div class=\"dossier-title\" id=\"s1\">1. Why reduce the variance<\/div>\n<p>The standard error of a Monte Carlo estimate is \\(\\frac{\\sigma_X}{\\sqrt{n}}\\), where \\(\\sigma_X\\) is the standard deviation of the simulated variable \\(X\\) (page 12). So there are two ways of reducing it.<\/p>\n<ul class=\"kit-simple\">\n<li><em>Increase \\(n\\).<\/em> This is expensive: to divide the error by 10, 100 times as many simulations are needed.<\/li>\n<li><em>Decrease \\(\\sigma_X\\).<\/em> Replace \\(X\\) by another variable that has the same expected value, hence estimates the same quantity, but a smaller variance.<\/li>\n<\/ul>\n<p>If a technique divides the variance by \\(k\\), it gives the same precision with \\(k\\) times fewer simulations. This page presents the two most common techniques.<\/p>\n\n<div class=\"dossier-title\" id=\"s2\">2. Antithetic variates<\/div>\n<p><strong>The idea.<\/strong> Each time a number \\(Z\\) is drawn from the distribution \\(N(0,1)\\), we also use its opposite \\(-Z\\), which follows the same distribution. We obtain two values \\(X\\) and \\(X'\\) of the variable to simulate, one computed with \\(Z\\), the other with \\(-Z\\), and keep their mean \\(\\frac{X+X'}{2}\\). If a draw is exceptionally favourable, its opposite is exceptionally unfavourable, and the two errors partly offset each other. With draws \\(U\\) from the uniform distribution on \\([0,1]\\), as in the slides of class 4, one pairs \\(U\\) and \\(1-U\\) in the same way.<\/p>\n<p><strong>Property.<\/strong> If \\(X\\) and \\(X'\\) have the same variance \\(\\sigma_X^2\\) and a correlation \\(\\rho\\), then<\/p>\n\\[\\Var\\Big(\\frac{X+X'}{2}\\Big)=\\frac{\\sigma_X^2}{2}\\,(1+\\rho) .\\]\n<div class=\"demo\">\n<p><strong>Proof.<\/strong> Apply \\(\\Var(aY)=a^2\\,\\Var(Y)\\) with \\(a=\\frac{1}{2}\\), then the formula for the variance of a sum (page 1):<\/p>\n\\[\\Var\\Big(\\frac{X+X'}{2}\\Big)=\\frac{1}{4}\\,\\big(\\Var(X)+\\Var(X')+2\\,\\Cov(X,X')\\big) .\\]\n<p>By definition of the correlation, \\(\\Cov(X,X')=\\rho\\,\\sigma_X\\,\\sigma_X=\\rho\\,\\sigma_X^2\\). So<\/p>\n\\[\\Var\\Big(\\frac{X+X'}{2}\\Big)=\\frac{1}{4}\\,\\big(\\sigma_X^2+\\sigma_X^2+2\\,\\rho\\,\\sigma_X^2\\big)=\\frac{\\sigma_X^2}{2}\\,(1+\\rho) .\\]\n<\/div>\n<p><strong>Reading.<\/strong> The mean of two <em>independent<\/em> simulations has variance \\(\\frac{\\sigma_X^2}{2}\\): this is the case \\(\\rho=0\\). For the same amount of computation, the antithetic pair therefore multiplies the variance by \\(1+\\rho\\).<\/p>\n<ul class=\"kit-simple\">\n<li>If \\(\\rho&lt;0\\), we gain. With \\(\\rho=-0.5\\), the variance is divided by 2; with \\(\\rho=-0.9\\), by 10.<\/li>\n<li>If \\(\\rho>0\\), we lose: the technique is counterproductive.<\/li>\n<\/ul>\n<p><strong>When is the correlation negative?<\/strong> As soon as the simulated variable is an increasing (or decreasing) function of the draw \\(Z\\). This is the case for the payoff of a call, which increases with the final price, hence with \\(Z\\). It is not the case for a symmetric payoff, high when the price rises a lot as well as when it falls a lot: \\(Z\\) and \\(-Z\\) then give similar payoffs, and \\(\\rho\\) is positive.<\/p>\n<p><strong>Example.<\/strong> Take again the call of page 12 (\\(S_0=K=100\\), \\(r=5\\,\\%\\), \\(\\sigma=20\\,\\%\\), \\(T=1\\)), for which \\(S_T=100\\,e^{0.03+0.2\\,Z}\\), and four of its draws.<\/p>\n<div class=\"dtable-wrap\"><table class=\"dtable dtable-narrow\">\n<tr><th>draw \\(Z\\)<\/th><th>price with \\(Z\\)<\/th><th>payoff \\(X\\)<\/th><th>price with \\(-Z\\)<\/th><th>payoff \\(X'\\)<\/th><th>mean of the pair<\/th><\/tr>\n<tr><td class=\"num\">0.5<\/td><td class=\"num\">113.88<\/td><td class=\"num\">13.88<\/td><td class=\"num\">93.24<\/td><td class=\"num\">0<\/td><td class=\"num\">6.94<\/td><\/tr>\n<tr><td class=\"num\">−1.2<\/td><td class=\"num\">81.06<\/td><td class=\"num\">0<\/td><td class=\"num\">131.00<\/td><td class=\"num\">31.00<\/td><td class=\"num\">15.50<\/td><\/tr>\n<tr><td class=\"num\">0.3<\/td><td class=\"num\">109.42<\/td><td class=\"num\">9.42<\/td><td class=\"num\">97.04<\/td><td class=\"num\">0<\/td><td class=\"num\">4.71<\/td><\/tr>\n<tr><td class=\"num\">1.0<\/td><td class=\"num\">125.86<\/td><td class=\"num\">25.86<\/td><td class=\"num\">84.37<\/td><td class=\"num\">0<\/td><td class=\"num\">12.93<\/td><\/tr>\n<\/table><\/div>\n<p>The mean of the four pairs is \\(\\frac{6.94+15.50+4.71+12.93}{4}=10.02\\), and the estimate of the price is \\(0.9512\\times 10.02\\approx 9.53\\) euros. The pair means range from 4.71 to 15.50, whereas the individual payoffs range from 0 to 31: they are far less dispersed. For this call, the correlation between \\(X\\) and \\(X'\\) is about \\(-0.5\\).<\/p>\n<p><strong>Beware when computing the standard error.<\/strong> The two values of a pair are not independent. The standard error is computed on the pair means, which are independent of one another: with \\(n\\) pairs, it is the sample standard deviation of the \\(n\\) means divided by \\(\\sqrt{n}\\).<\/p>\n<div class=\"ifig\" data-fig=\"anti\"><\/div>\n<div class=\"fig-cap\">Figure 1 — Each point is a pair of discounted payoffs of a call (\\(S_0=100\\), \\(r=5\\,\\%\\), \\(\\sigma=20\\,\\%\\), \\(T=1\\)). With antithetic pairs, a high payoff goes with a low payoff. Lower the strike price: the call is exercised more often and the correlation gets closer to \\(-1\\). Choose the symmetric payoff: the correlation becomes positive.<\/div>\n\n<div class=\"dossier-title\" id=\"s3\">3. Control variate<\/div>\n<p><strong>The idea.<\/strong> With the same draws, we compute in addition to \\(X\\) a second variable \\(Y\\), related to \\(X\\), whose expected value \\(\\mu_Y\\) is known exactly. If the simulated mean of \\(Y\\) is too high compared with \\(\\mu_Y\\), the draws have been rather favourable, and the mean of \\(X\\) is probably too high as well: we correct it. So we estimate \\(\\theta=\\E[X]\\) with the variable<\/p>\n\\[X_c=X+c\\,(Y-\\mu_Y),\\]\n<p>where \\(c\\) is a coefficient to be chosen.<\/p>\n<p><strong>Property 1: no bias.<\/strong> Whatever \\(c\\), the variable \\(X_c\\) has the same expected value as \\(X\\), since \\(\\E[Y]=\\mu_Y\\):<\/p>\n\\[\\E[X_c]=\\E[X]+c\\,\\big(\\E[Y]-\\mu_Y\\big)=\\theta+c\\times 0=\\theta .\\]\n<p><strong>Property 2: the best coefficient.<\/strong> The variance of \\(X_c\\) is smallest for<\/p>\n\\[c^*=-\\frac{\\Cov(X,Y)}{\\Var(Y)},\\qquad\\text{and is then equal to}\\qquad\\Var(X)-\\frac{\\Cov(X,Y)^2}{\\Var(Y)}=\\Var(X)\\,\\big(1-\\rho^2\\big),\\]\n<p>where \\(\\rho\\) is the correlation between \\(X\\) and \\(Y\\).<\/p>\n<div class=\"demo\">\n<p><strong>Proof.<\/strong> Subtracting the constant \\(c\\,\\mu_Y\\) does not change the variance. With the formula for the variance of a sum,<\/p>\n\\[\\Var(X_c)=\\Var(X+c\\,Y)=\\Var(X)+c^2\\,\\Var(Y)+2\\,c\\,\\Cov(X,Y) .\\]\n<p>This is a quadratic polynomial in \\(c\\), whose coefficient of \\(c^2\\) is positive: its curve is an upward-opening parabola. Its minimum is reached where the derivative with respect to \\(c\\) vanishes:<\/p>\n\\[2\\,c\\,\\Var(Y)+2\\,\\Cov(X,Y)=0,\\qquad\\text{so}\\qquad c^*=-\\frac{\\Cov(X,Y)}{\\Var(Y)} .\\]\n<p>Substitute \\(c^*\\) into the expression of the variance:<\/p>\n\\[\\Var(X)+\\frac{\\Cov(X,Y)^2}{\\Var(Y)^2}\\,\\Var(Y)-2\\,\\frac{\\Cov(X,Y)}{\\Var(Y)}\\,\\Cov(X,Y)=\\Var(X)-\\frac{\\Cov(X,Y)^2}{\\Var(Y)} .\\]\n<p>Finally, \\(\\rho=\\frac{\\Cov(X,Y)}{\\sigma_X\\,\\sigma_Y}\\) gives \\(\\Cov(X,Y)^2=\\rho^2\\,\\Var(X)\\,\\Var(Y)\\), hence the form \\(\\Var(X)\\,(1-\\rho^2)\\).<\/p>\n<\/div>\n<p><strong>Reading.<\/strong> The gain depends on \\(\\rho^2\\) only: it does not matter whether the correlation is positive or negative, the sign of \\(c^*\\) adapts. But a strong correlation is needed.<\/p>\n<div class=\"dtable-wrap\"><table class=\"dtable dtable-narrow\">\n<tr><th>Correlation \\(\\rho\\)<\/th><th>0.5<\/th><th>0.8<\/th><th>0.9<\/th><th>0.99<\/th><\/tr>\n<tr><td class=\"l\">Variance multiplied by \\(1-\\rho^2\\)<\/td><td class=\"num\">0.75<\/td><td class=\"num\">0.36<\/td><td class=\"num\">0.19<\/td><td class=\"num\">0.0199<\/td><\/tr>\n<tr><td class=\"l\">Simulations saved<\/td><td class=\"num\">25 %<\/td><td class=\"num\">64 %<\/td><td class=\"num\">81 %<\/td><td class=\"num\">98 %<\/td><\/tr>\n<\/table><\/div>\n<p><strong>In practice.<\/strong> Neither \\(\\Cov(X,Y)\\) nor \\(\\Var(Y)\\) is known: they are estimated on the simulations themselves. The final estimate is \\(\\bar X+c^*\\,(\\bar Y-\\mu_Y)\\). For a call, a natural choice is \\(Y=e^{-rT}S_T\\), the discounted final price, whose risk-neutral expected value is exactly \\(S_0\\).<\/p>\n<p><strong>Example.<\/strong> We estimated \\(\\Var(X)=225\\), \\(\\Var(Y)=400\\) and \\(\\Cov(X,Y)=240\\), and the simulated means are \\(\\bar X=10.80\\) and \\(\\bar Y=101.5\\), whereas \\(\\mu_Y=100\\).<\/p>\n<ul class=\"kit-simple\">\n<li>Correlation: \\(\\rho=\\frac{240}{15\\times 20}=0.8\\). Coefficient: \\(c^*=-\\frac{240}{400}=-0.6\\).<\/li>\n<li>Variance: \\(225-\\frac{240^2}{400}=225-144=81\\), that is \\(225\\times(1-0.8^2)\\). The standard deviation goes from 15 to 9.<\/li>\n<li>Corrected estimate: \\(10.80-0.6\\times(101.5-100)=9.90\\). The mean of \\(Y\\) was too high by 1.5: the estimate of \\(X\\) was lowered accordingly.<\/li>\n<\/ul>\n<div class=\"ifig\" data-fig=\"parab\"><\/div>\n<div class=\"fig-cap\">Figure 2 — Variance of \\(X+c\\,(Y-\\mu_Y)\\) as a function of the coefficient \\(c\\), for \\(\\sigma_X=15\\) and \\(\\sigma_Y=20\\). The dashed line is the variance without control variate, 225. Move \\(c\\) to find the minimum, then change the correlation: the stronger it is, the lower the parabola goes.<\/div>\n<div class=\"persp-box\">\n<span class=\"sol-sub\">How to use it — using a control variate<\/span>\n<ol>\n<li>Choose a variable \\(Y\\) strongly correlated with \\(X\\), computable with the same draws, and whose expected value \\(\\mu_Y\\) is known exactly.<\/li>\n<li>Simulate the pairs \\((X_i,\\,Y_i)\\) and compute \\(\\bar X\\), \\(\\bar Y\\), the sample variance of \\(Y\\) and the sample covariance of \\(X\\) and \\(Y\\).<\/li>\n<li>Compute \\(c^*=-\\frac{\\Cov(X,Y)}{\\Var(Y)}\\).<\/li>\n<li>Report \\(\\bar X+c^*\\,(\\bar Y-\\mu_Y)\\), with a variance multiplied by \\(1-\\rho^2\\).<\/li>\n<\/ol>\n<p><strong>Common mistakes.<\/strong> Getting the sign of \\(c^*\\) wrong: if \\(X\\) and \\(Y\\) move in the same direction, \\(c^*\\) is negative. Taking a variable \\(Y\\) whose expected value is known only by simulation. Computing \\(X\\) and \\(Y\\) with different draws: they are then no longer correlated. For antithetic variates, treating the two values of a pair as independent.<\/p>\n<\/div>\n\n<div class=\"dossier-title\" id=\"s4\">4. Asian options<\/div>\n<p><strong>Definition.<\/strong> The payoff of an <em>Asian<\/em> option does not depend on the price at maturity, but on the average of the prices recorded at \\(N\\) dates \\(t_1,\\dots,t_N\\) during the life of the option. For an Asian call with strike price \\(K\\),<\/p>\n\\[\\text{payoff}=\\max\\big(A-K,\\,0\\big),\\qquad\\text{with}\\qquad A=\\frac{1}{N}\\sum_{i=1}^{N}S(t_i) .\\]\n<p><strong>Why such options?<\/strong><\/p>\n<ul class=\"kit-simple\">\n<li>A company that buys oil every month, or that receives dollars throughout the year, is exposed to an average price, not to the price on one particular day.<\/li>\n<li>An average is hard to manipulate: moving the price on the maturity date changes almost nothing in the payoff.<\/li>\n<li>An average varies less than a final price, so the Asian option is cheaper than the corresponding European option.<\/li>\n<\/ul>\n<p><strong>Intuition.<\/strong> We compare a European call and an Asian call with strike price 100, on three paths recorded at four dates.<\/p>\n<div class=\"dtable-wrap\"><table class=\"dtable dtable-narrow\">\n<tr><th>Path<\/th><th>\\(S(t_1)\\)<\/th><th>\\(S(t_2)\\)<\/th><th>\\(S(t_3)\\)<\/th><th>\\(S(t_4)\\)<\/th><th>average \\(A\\)<\/th><th>European payoff<\/th><th>Asian payoff<\/th><\/tr>\n<tr><td class=\"l\">A<\/td><td class=\"num\">104<\/td><td class=\"num\">110<\/td><td class=\"num\">118<\/td><td class=\"num\">126<\/td><td class=\"num\">114.5<\/td><td class=\"num\">26<\/td><td class=\"num\">14.5<\/td><\/tr>\n<tr><td class=\"l\">B<\/td><td class=\"num\">92<\/td><td class=\"num\">90<\/td><td class=\"num\">104<\/td><td class=\"num\">126<\/td><td class=\"num\">103<\/td><td class=\"num\">26<\/td><td class=\"num\">3<\/td><\/tr>\n<tr><td class=\"l\">C<\/td><td class=\"num\">112<\/td><td class=\"num\">118<\/td><td class=\"num\">108<\/td><td class=\"num\">96<\/td><td class=\"num\">108.5<\/td><td class=\"num\">0<\/td><td class=\"num\">8.5<\/td><\/tr>\n<\/table><\/div>\n<p>Paths A and B end at the same price and give the same European payoff, but not the same Asian payoff: the whole path matters. Path C ends below 100: the European call pays nothing, whereas the Asian call is exercised, because the price was high for most of the period.<\/p>\n<p><strong>Pricing.<\/strong> An average of lognormal prices does not follow a known distribution: there is no simple formula, and the Monte Carlo method is used. The only novelty compared with page 12 is that the whole path must be simulated, with the exact scheme of page 8 and the drift \\(r\\).<\/p>\n<ol>\n<li>For each simulation, draw \\(N\\) numbers \\(Z_1,\\dots,Z_N\\) and compute the successive prices \\(S(t_i)=S(t_{i-1})\\exp\\!\\big((r-\\frac{\\sigma^2}{2})\\,\\delta t+\\sigma\\sqrt{\\delta t}\\,Z_i\\big)\\).<\/li>\n<li>Compute their average \\(A\\), then the discounted payoff \\(e^{-rT}\\max(A-K,\\,0)\\).<\/li>\n<li>Average the discounted payoffs over all the simulations, and give the confidence interval.<\/li>\n<\/ol>\n<p><strong>Order of magnitude.<\/strong> For \\(S_0=K=100\\), \\(r=5\\,\\%\\), \\(\\sigma=20\\,\\%\\) and twelve monthly observations over one year, the Asian call is worth about 6.16 euros, against 10.45 for the European call. The two payoffs are strongly correlated, with \\(\\rho\\approx 0.86\\): the European call, whose price is known, is a good control variate for the Asian call.<\/p>\n<div class=\"ifig\" data-fig=\"asian\"><\/div>\n<div class=\"fig-cap\">Figure 3 — A path recorded every month for one year (in blue) and the average of the prices recorded so far (in gold), for \\(S_0=K=100\\) and \\(r=5\\,\\%\\). The payoff of the European call is read on the last blue point, that of the Asian call on the last gold point. The average varies much less than the price.<\/div>\n\n<div class=\"dossier-title\" id=\"s5\">5. In Python<\/div>\n<p>We price the Asian call of section 4 in three ways, with the same total number of paths: plain simulation, antithetic variates, then control variate (the European call).<\/p>\n<div class=\"code-wrap\"><div class=\"code-head\"><span>Python<\/span><button type=\"button\" onclick=\"copyCode(this)\">Copier<\/button><\/div><div class=\"code-block has-out\"><div class=\"cl\"><code>import numpy as np<\/code><\/div><div class=\"cl\"><code>from scipy.stats import norm<\/code><\/div><div class=\"cl\"><code>&nbsp;<\/code><\/div><div class=\"cl\"><code>S0, K, r, sigma, T, N = 100, 100, 0.05, 0.20, 1.0, 12        # 12 monthly observations<\/code><\/div><div class=\"cl\"><code>dt = T / N<\/code><\/div><div class=\"cl\"><code>rng = np.random.default_rng(0)<\/code><\/div><div class=\"cl\"><code>&nbsp;<\/code><\/div><div class=\"cl\"><code>def payoffs(Z):<\/code><\/div><div class=\"cl\"><code>    \"\"\"Discounted payoffs of the Asian call and of the European call; Z: one row per path, N columns.\"\"\"<\/code><\/div><div class=\"cl\"><code>    S = S0 * np.exp(np.cumsum((r - sigma**2 / 2) * dt + sigma * np.sqrt(dt) * Z, axis=1))<\/code><\/div><div class=\"cl\"><code>    asian = np.exp(-r * T) * np.maximum(S.mean(axis=1) - K, 0)<\/code><\/div><div class=\"cl\"><code>    european = np.exp(-r * T) * np.maximum(S[:, -1] - K, 0)<\/code><\/div><div class=\"cl\"><code>    return asian, european<\/code><\/div><div class=\"cl\"><code>&nbsp;<\/code><\/div><div class=\"cl\"><code>def report(name, v):<\/code><\/div><div class=\"cl\"><code>    std_error = v.std(ddof=1) / np.sqrt(len(v))<\/code><\/div><div class=\"cl\"><code>    print(name, \"| estimate:\", round(v.mean(), 4), \"| standard error:\", round(std_error, 4))<\/code><\/div><div class=\"cl\"><code>&nbsp;<\/code><\/div><div class=\"cl\"><code>n = 100_000<\/code><\/div><div class=\"cl\"><code>Z = rng.standard_normal((n, N))<\/code><\/div><div class=\"cl\"><code>X, Y = payoffs(Z)<\/code><\/div><div class=\"cl\"><code>report(\"plain simulation   \", X)<\/code><\/div><div class=\"cl\"><code>&nbsp;<\/code><\/div><div class=\"cl\"><code>m = n // 2                                                   # antithetic: n/2 pairs (Z, -Z)<\/code><\/div><div class=\"cl\"><code>X2, _ = payoffs(-Z[:m])<\/code><\/div><div class=\"cl\"><code>report(\"antithetic variates\", (X[:m] + X2) / 2)<\/code><\/div><div class=\"cl\"><code>&nbsp;<\/code><\/div><div class=\"cl\"><code>d1 = (np.log(S0 / K) + (r + sigma**2 / 2) * T) / (sigma * np.sqrt(T))<\/code><\/div><div class=\"cl\"><code>mu_Y = S0 * norm.cdf(d1) - K * np.exp(-r * T) * norm.cdf(d1 - sigma * np.sqrt(T))    # European call<\/code><\/div><div class=\"cl\"><code>c = -np.cov(X, Y)[0, 1] / Y.var(ddof=1)<\/code><\/div><div class=\"cl\"><code>report(\"control variate    \", X + c * (Y - mu_Y))<\/code><\/div><div class=\"cl\"><code>print(\"c* =\", round(c, 4), \"| correlation of X and Y:\", round(np.corrcoef(X, Y)[0, 1], 4))<\/code><\/div><\/div><div class=\"code-out\"><span class=\"code-out-lbl\">Printed output<\/span><div class=\"cl\"><code>plain simulation    | estimate: 6.1722 | standard error: 0.0269<\/code><\/div><div class=\"cl\"><code>antithetic variates | estimate: 6.1545 | standard error: 0.0186<\/code><\/div><div class=\"cl\"><code>control variate     | estimate: 6.1631 | standard error: 0.0138<\/code><\/div><div class=\"cl\"><code>c* = -0.4968 | correlation of X and Y: 0.8584<\/code><\/div><\/div><\/div>\n\n<div class=\"dossier-title\" id=\"s6\">6. Key points<\/div>\n<ul class=\"kit-simple\">\n<li>Dividing the variance by \\(k\\) amounts to dividing the number of simulations needed by \\(k\\).<\/li>\n<li>Antithetic variates: pair \\(Z\\) and \\(-Z\\); \\(\\Var\\big(\\frac{X+X'}{2}\\big)=\\frac{\\sigma_X^2}{2}\\,(1+\\rho)\\); useful if \\(\\rho&lt;0\\).<\/li>\n<li>Control variate: \\(X_c=X+c\\,(Y-\\mu_Y)\\), unbiased for any \\(c\\).<\/li>\n<li>Optimal coefficient: \\(c^*=-\\frac{\\Cov(X,Y)}{\\Var(Y)}\\); minimum variance \\(\\Var(X)\\,(1-\\rho^2)\\).<\/li>\n<li>Asian call: payoff \\(\\max(A-K,\\,0)\\), where \\(A\\) is the average of the recorded prices; it is worth less than the European call and is priced by simulating the whole path.<\/li>\n<\/ul>\n";
+
+/* ---------- libellés des figures ---------- */
+I18N.fr.f = {
+  mode: 'Paires', anti: 'antithétiques (Z et −Z)', indep: 'indépendantes', pay: 'Gain', call: 'call', sym: 'symétrique |S − K|', K: 'Prix d\'exercice <i>K</i>', redraw: 'Nouveau tirage',
+  x1: 'premier gain de la paire', x2: 'second gain', antiAria: 'Nuage des paires de gains actualisés',
+  antiRead: (rho, f, msg) => `Corrélation entre les deux gains d'une paire ≈ <span class="v">${rho}</span> &nbsp;·&nbsp; variance de la moyenne d'une paire ≈ (<i>σ<sub>X</sub></i>² / 2) × <span class="v">${f}</span><br>${msg}`,
+  antiGain: p => `Pour la même précision, il faut environ <span class="v">${p} %</span> de simulations en moins qu'avec des tirages indépendants.`,
+  antiLoss: p => `Il faut environ <span class="v">${p} %</span> de simulations en plus : ici, la technique est contre-productive.`,
+  antiNone: 'Les deux gains ne sont pas corrélés : c\'est la situation de référence.',
+  rho: 'Corrélation <i>ρ</i>', c: 'Coefficient <i>c</i>', cx: 'coefficient c', noc: 'sans variable de contrôle', parAria: 'Variance de la variable corrigée en fonction du coefficient c',
+  parRead: (c, v, sd, cs, vm, k) => `Avec <i>c</i> = ${c} : variance = <span class="v">${v}</span>, écart type ≈ <span class="v">${sd}</span> &nbsp;·&nbsp; sans variable de contrôle : variance 225, écart type 15<br>Minimum en <i>c</i>* = −<i>ρ</i> <i>σ<sub>X</sub></i> / <i>σ<sub>Y</sub></i> = <span class="v">${cs}</span> : variance 225 × (1 − <i>ρ</i>²) = <span class="v">${vm}</span>${k ? `, soit <span class="v">${k}</span> fois moins` : ''}`,
+  sigma: 'Volatilité <i>σ</i>', newPath: 'Nouvelle trajectoire', months: 'mois', price: 'cours relevé', avg: 'moyenne des cours relevés', asAria: 'Trajectoire mensuelle du cours et moyenne courante',
+  asRead: (st, pe, a, pa, me, ma) => `Cours final ≈ <span class="v">${st}</span> : gain du call européen ≈ <span class="v">${pe}</span><br>Moyenne des douze cours ≈ <span class="v">${a}</span> : gain du call asiatique ≈ <span class="v">${pa}</span><br>Prix estimés sur 20 000 trajectoires : call européen ≈ <span class="v">${me}</span> &nbsp;·&nbsp; call asiatique ≈ <span class="v">${ma}</span>`
+};
+I18N.en.f = {
+  mode: 'Pairs', anti: 'antithetic (Z and −Z)', indep: 'independent', pay: 'Payoff', call: 'call', sym: 'symmetric |S − K|', K: 'Strike price <i>K</i>', redraw: 'New draw',
+  x1: 'first payoff of the pair', x2: 'second payoff', antiAria: 'Scatter plot of the pairs of discounted payoffs',
+  antiRead: (rho, f, msg) => `Correlation between the two payoffs of a pair ≈ <span class="v">${rho}</span> &nbsp;·&nbsp; variance of the mean of a pair ≈ (<i>σ<sub>X</sub></i>² / 2) × <span class="v">${f}</span><br>${msg}`,
+  antiGain: p => `For the same precision, about <span class="v">${p} %</span> fewer simulations are needed than with independent draws.`,
+  antiLoss: p => `About <span class="v">${p} %</span> more simulations are needed: here, the technique is counterproductive.`,
+  antiNone: 'The two payoffs are uncorrelated: this is the reference situation.',
+  rho: 'Correlation <i>ρ</i>', c: 'Coefficient <i>c</i>', cx: 'coefficient c', noc: 'without control variate', parAria: 'Variance of the corrected variable as a function of the coefficient c',
+  parRead: (c, v, sd, cs, vm, k) => `With <i>c</i> = ${c}: variance = <span class="v">${v}</span>, standard deviation ≈ <span class="v">${sd}</span> &nbsp;·&nbsp; without control variate: variance 225, standard deviation 15<br>Minimum at <i>c</i>* = −<i>ρ</i> <i>σ<sub>X</sub></i> / <i>σ<sub>Y</sub></i> = <span class="v">${cs}</span>: variance 225 × (1 − <i>ρ</i>²) = <span class="v">${vm}</span>${k ? `, that is <span class="v">${k}</span> times less` : ''}`,
+  sigma: 'Volatility <i>σ</i>', newPath: 'New path', months: 'months', price: 'recorded price', avg: 'average of the recorded prices', asAria: 'Monthly path of the price and running average',
+  asRead: (st, pe, a, pa, me, ma) => `Final price ≈ <span class="v">${st}</span>: payoff of the European call ≈ <span class="v">${pe}</span><br>Average of the twelve prices ≈ <span class="v">${a}</span>: payoff of the Asian call ≈ <span class="v">${pa}</span><br>Prices estimated on 20 000 paths: European call ≈ <span class="v">${me}</span> &nbsp;·&nbsp; Asian call ≈ <span class="v">${ma}</span>`
+};
+const DF1 = Math.exp(-0.05);
+
+/* ---------- figure 1 : paires antithétiques et paires indépendantes ---------- */
+FIGS.anti = {
+  state: { mode: 'anti', pay: 'call', K: 100, seed: 1 },
+  clamp: s => { s.K = Math.round(s.K / 5) * 5; },
+  controls: L => [
+    { key: 'mode', type: 'select', label: L.f.mode, options: [{ v: 'anti', t: L.f.anti }, { v: 'indep', t: L.f.indep }] },
+    { key: 'pay', type: 'select', label: L.f.pay, options: [{ v: 'call', t: L.f.call }, { v: 'sym', t: L.f.sym }] },
+    { key: 'K', label: L.f.K, min: 80, max: 120, step: 5, fmt: v => String(v) },
+    { key: 'seed', type: 'button', label: L.f.redraw, act: s => { s.seed++; } }
+  ],
+  draw: function (s, lang) {
+    const L = I18N[lang].f, f = z => { const d = 100 * Math.exp(0.03 + 0.2 * z) - s.K; return DF1 * (s.pay === 'call' ? Math.max(d, 0) : Math.abs(d)); };
+    const pair = rand => { const z = gauss(rand); return [f(z), f(s.mode === 'anti' ? -z : gauss(rand))]; };
+    /* corrélation estimée une fois pour toutes sur 20 000 paires */
+    const r0 = localRand(1234); let sx = 0, sy = 0, sxx = 0, syy = 0, sxy = 0; const M = 20000;
+    for (let i = 0; i < M; i++) { const p = pair(r0); sx += p[0]; sy += p[1]; sxx += p[0] * p[0]; syy += p[1] * p[1]; sxy += p[0] * p[1]; }
+    const rho = (sxy / M - sx * sy / M / M) / Math.sqrt((sxx / M - sx * sx / M / M) * (syy / M - sy * sy / M / M));
+    const P = Plot({ w: 680, h: 340, x0: -2.5, x1: 60, y0: -2.5, y1: 60, mt: 18, mb: 42 });
+    P.axes({ xt: [0, 10, 20, 30, 40, 50, 60], yt: [0, 10, 20, 30, 40, 50, 60], xl: L.x1, yl: L.x2, xf: v => String(v), yf: v => String(v) });
+    P.clip();
+    const rand = localRand(31 + 1877 * s.seed); let g = '';
+    for (let i = 0; i < 250; i++) { const p = pair(rand); g += `<circle cx="${P.X(p[0])}" cy="${P.Y(p[1])}" r="2.8" fill="${COL.s1}" fill-opacity="0.5"/>`; }
+    P.add(`<g clip-path="url(#${P._clip})">${g}</g>`);
+    const r2 = Math.round(rho * 100) / 100, msg = r2 <= -0.02 ? L.antiGain(fmtT(-r2 * 100, 0)) : (r2 >= 0.02 ? L.antiLoss(fmtT(r2 * 100, 0)) : L.antiNone);
+    return { svg: P.svg(L.antiAria), read: L.antiRead(fmt(r2, 2), fmt(1 + r2, 2), msg) };
+  }
+};
+
+/* ---------- figure 2 : la parabole de la variable de contrôle ---------- */
+FIGS.parab = {
+  state: { rho: 0.8, c: 0 },
+  clamp: s => { s.rho = Math.round(s.rho * 20) / 20; s.c = Math.round(s.c * 20) / 20; },
+  controls: L => [
+    { key: 'rho', label: L.f.rho, min: -0.95, max: 0.95, step: 0.05, fmt: v => fmt(v, 2) },
+    { key: 'c', label: L.f.c, min: -1.2, max: 1.2, step: 0.05, fmt: v => fmt(v, 2) }
+  ],
+  draw: function (s, lang) {
+    const L = I18N[lang].f, V = c => 225 + 400 * c * c + 600 * s.rho * c, cs = -0.75 * s.rho, vm = 225 * (1 - s.rho * s.rho), v = V(s.c);
+    const P = Plot({ w: 680, h: 330, x0: -1.2, x1: 1.2, y0: 0, y1: 900, mt: 22, mb: 42 });
+    P.axes({ xt: [-1.2, -0.8, -0.4, 0, 0.4, 0.8, 1.2], yt: [0, 150, 300, 450, 600, 750, 900], xl: L.cx, xf: v => fmtT(v, 1), yf: v => String(v) });
+    P.clip();
+    P.seg(-1.2, 225, 1.2, 225, { c: COL.navy, dash: '6 4', w: 1.4 }); P.text(1.2, 225, L.noc, { dx: -6, dy: -6, anchor: 'end', c: COL.navy });
+    P.curve(V, -1.2, 1.2, { c: COL.s1, w: 2.2, clip: true }, 120);
+    P.seg(cs, 0, cs, vm, { c: COL.navy, dash: '3 4' });
+    P.dot(cs, vm, { c: COL.navy, r: 5 });
+    if (v <= 900) P.dot(s.c, v, { c: COL.s2, r: 5.5 });
+    return { svg: P.svg(L.parAria), read: L.parRead(fmtT(s.c, 2), fmtT(v, 2), fmt(Math.sqrt(Math.max(v, 0)), 2), fmtT(cs, 4), fmtT(vm, 4), Math.abs(s.rho) > 1e-9 ? fmt(225 / vm, 2) : '') };
+  }
+};
+
+/* ---------- figure 3 : trajectoire mensuelle et moyenne courante ---------- */
+FIGS.asian = {
+  state: { sigma: 20, seed: 1 },
+  clamp: s => { s.sigma = Math.round(s.sigma / 5) * 5; },
+  controls: L => [
+    { key: 'sigma', label: L.f.sigma, min: 10, max: 50, step: 5, fmt: v => v + ' %' },
+    { key: 'seed', type: 'button', label: L.f.newPath, act: s => { s.seed++; } }
+  ],
+  draw: function (s, lang) {
+    const L = I18N[lang].f, sg = s.sigma / 100, N = 12, a = (0.05 - sg * sg / 2) / N, b = sg / Math.sqrt(N);
+    const path = function (rand) { const p = []; let x = 100, sum = 0; for (let i = 1; i <= N; i++) { x *= Math.exp(a + b * gauss(rand)); sum += x; p.push([i, x, sum / i]); } return p; };
+    const p = path(localRand(16 + 733 * s.seed)), st = p[N - 1][1], av = p[N - 1][2];
+    let mn = 100, mx = 100; p.forEach(q => { mn = Math.min(mn, q[1]); mx = Math.max(mx, q[1]); });
+    const tk = ticks(mn - 2, mx + 2, 5), step = tk[1] - tk[0];
+    if (tk[0] > mn) tk.unshift(tk[0] - step); if (tk[tk.length - 1] < mx) tk.push(tk[tk.length - 1] + step);
+    const P = Plot({ w: 680, h: 330, x0: 0, x1: 12.4, y0: tk[0], y1: tk[tk.length - 1], mt: 30, mb: 42 });
+    P.axes({ xt: [0, 2, 4, 6, 8, 10, 12], yt: tk, xl: L.months, xf: v => String(v), yf: v => fmtT(v, 0) });
+    P.seg(0, 100, 12.4, 100, { c: COL.navy, dash: '3 4' }); P.text(12.4, 100, 'K', { dx: -4, dy: -5, anchor: 'end', italic: true, size: 12.5, c: COL.navy });
+    P.line([[0, 100]].concat(p.map(q => [q[0], q[1]])), { c: COL.s1, w: 1.8 });
+    P.line(p.map(q => [q[0], q[2]]), { c: COL.s2, w: 2.2 });
+    p.forEach(q => { P.dot(q[0], q[1], { c: COL.s1, r: 3.6 }); P.dot(q[0], q[2], { c: COL.s2, r: 3.6 }); });
+    P.legend([{ c: COL.s1, t: L.price }, { c: COL.s2, t: L.avg }], P.ml + 8, 16);
+    /* prix estimés sur 20 000 trajectoires, toujours les mêmes tirages */
+    const r0 = localRand(4242); let se = 0, sa = 0; const M = 20000;
+    for (let k = 0; k < M; k++) { let x = 100, sum = 0; for (let i = 0; i < N; i++) { x *= Math.exp(a + b * gauss(r0)); sum += x; } se += Math.max(x - 100, 0); sa += Math.max(sum / N - 100, 0); }
+    return { svg: P.svg(L.asAria), read: L.asRead(fmt(st, 2), fmt(Math.max(st - 100, 0), 2), fmt(av, 2), fmt(Math.max(av - 100, 0), 2), fmt(DF1 * se / M, 2), fmt(DF1 * sa / M, 2)) };
+  }
+};
+
+/* ============================================================
+   EXERCICE : tirage et calculs (indépendants de la langue)
+   ============================================================ */
+function amb(x, d) { const v = Math.abs(x) * Math.pow(10, d === undefined ? 2 : d); return Math.abs(v - Math.floor(v) - 0.5) < 1e-6; }
+const r6 = v => Math.round(v * 1e6) / 1e6;
+const decs = (v, d) => Math.abs(v * Math.pow(10, d) - Math.round(v * Math.pow(10, d))) < 1e-6;
+/* [Var(X), Var(Y), |Cov(X,Y)|] : corrélations 0.5, 0.6, 0.8 ou 0.9 */
+const CVSETS = [[225, 400, 240], [400, 400, 320], [100, 400, 160], [400, 400, 240], [225, 625, 300], [225, 100, 120], [400, 100, 120], [100, 400, 120], [625, 400, 400],
+                [100, 100, 90], [400, 100, 180], [225, 400, 270], [400, 100, 100]];
+PAGE.compute = function (seed) {
+  initRand(seed);
+  const D = { seed: seed };
+  /* 1. trois paires antithétiques pour un call */
+  for (;;) {
+    D.S0 = pick([50, 100]); D.K = r6(D.S0 * pick([0.9, 1, 1.1]));
+    D.r = pick([0.02, 0.04, 0.06]); D.sg = pick([0.2, 0.3, 0.4]); D.T = pick([0.25, 1]);
+    D.a = r6((D.r - D.sg * D.sg / 2) * D.T); D.b = r6(D.sg * Math.sqrt(D.T)); D.rT = r6(D.r * D.T);
+    const df = Math.exp(-D.rT); D.df4 = Math.round(df * 1e4);
+    D.Z = []; while (D.Z.length < 3) { const k = rint(2, 15) / 10; if (!D.Z.some(z => Math.abs(z) === k)) D.Z.push(rnd() < 0.5 ? k : -k); }
+    const Kc = Math.round(D.K * 100), st = [];
+    D.STc = []; D.payc = []; D.pm = [];
+    D.Z.forEach(function (z) {
+      const s1 = D.S0 * Math.exp(D.a + D.b * z), s2 = D.S0 * Math.exp(D.a - D.b * z); st.push(s1, s2);
+      const c1 = Math.round(s1 * 100), c2 = Math.round(s2 * 100), p1 = Math.max(c1 - Kc, 0), p2 = Math.max(c2 - Kc, 0);
+      D.STc.push([c1, c2]); D.payc.push([p1, p2]); D.pm.push(r6((p1 + p2) / 200));
+    });
+    const all = D.payc.reduce((x, p) => x.concat(p), []), pos = all.filter(c => c > 0).length, m = all.reduce((x, y) => x + y, 0) / 600;
+    D.m4 = Math.round(m * 1e4); D.mEx = decs(m, 4);
+    const exact = df * st.reduce((x, v) => x + Math.max(v - D.K, 0), 0) / 6, disp = D.df4 / 1e4 * D.m4 / 1e4;
+    D.C1c = Math.round(exact * 100);
+    D.mnP = Math.min.apply(null, all); D.mxP = Math.max.apply(null, all); D.mnM = Math.min.apply(null, D.pm); D.mxM = Math.max.apply(null, D.pm);
+    if (pos < 3 || pos > 5 || st.some(v => amb(v) || Math.abs(v - D.K) < 0.5) || amb(df, 4) || amb(m, 4) || amb(exact) || amb(disp) || Math.round(disp * 100) !== D.C1c) continue;
+    if (D.pm.every(v => v > 0) && all.filter(c => c > 0).every(c => c >= 50) && D.mxM - D.mnM < (D.mxP - D.mnP) / 100 * 0.75) break;
+  }
+  /* 2. gain d'une paire antithétique selon la corrélation */
+  for (;;) {
+    D.sX = pick([10, 12, 15, 18, 20]); D.rho = pick([-0.19, -0.36, -0.51, -0.64, -0.75, -0.84]);
+    D.f2 = r6(1 + D.rho); D.rt2 = r6(Math.sqrt(D.f2));
+    D.N2 = pick([10000, 40000, 90000, 160000, 250000]); D.np = D.N2 / 2; D.rtN = Math.round(Math.sqrt(D.N2));
+    D.vInd = r6(D.sX * D.sX / 2); D.vAnti = r6(D.vInd * D.f2);
+    D.seInd = D.sX / D.rtN; D.seAnti = D.sX * D.rt2 / D.rtN;
+    if (decs(D.seInd, 5) && decs(D.seAnti, 5)) { D.seInd = r6(D.seInd); D.seAnti = r6(D.seAnti); break; }
+  }
+  D.eq = D.N2 / D.f2; D.eqE = Math.abs(D.eq - Math.round(D.eq)) < 1e-6; D.eqN = D.eqE ? Math.round(D.eq) : Math.ceil(D.eq); D.eq1 = Math.round(D.eq * 10) / 10;
+  D.rhoP = pick([0.21, 0.44, 0.69]); D.fP = r6(1 + D.rhoP); D.rtP = r6(Math.sqrt(D.fP));
+  /* 3. variable de contrôle */
+  for (;;) {
+    const st = pick(CVSETS); D.vX = st[0]; D.vY = st[1]; D.sgn = rnd() < 0.75 ? 1 : -1; D.cov = D.sgn * st[2];
+    D.sdX = Math.round(Math.sqrt(D.vX)); D.sdY = Math.round(Math.sqrt(D.vY));
+    D.rho3 = r6(D.cov / (D.sdX * D.sdY)); D.cs = r6(-D.cov / D.vY);
+    D.sub = r6(D.cov * D.cov / D.vY); D.vMin = r6(D.vX - D.sub); D.om = r6(1 - D.rho3 * D.rho3);
+    const sd = Math.sqrt(D.vMin); D.sdMin2 = Math.round(sd * 100); D.sdE = decs(sd, 2);
+    D.k2 = Math.round(D.vX / D.vMin * 100); D.kE = decs(D.vX / D.vMin, 2);
+    D.n3 = 10000; D.nEq3 = Math.round(D.n3 * D.om);
+    D.muY = pick([20, 50, 100]); D.dY = pick([0.5, 0.8, 1, 1.2, 1.5, 2]) * (rnd() < 0.5 ? 1 : -1); D.yb = r6(D.muY + D.dY);
+    D.xb = rint(600, 1800) / 100; D.corr = r6(D.cs * D.dY); D.est = r6(D.xb + D.corr);
+    if (decs(D.corr, 2) && Math.abs(D.corr) >= 0.2 && !amb(sd) && !amb(D.vX / D.vMin) && D.xb * 100 % 10 !== 0 && decs(D.sub, 2)) break;
+  }
+  /* 4. quatre trajectoires relevées à quatre dates */
+  for (;;) {
+    D.P = [];
+    for (let k = 0; k < 4; k++) { const p = []; let x = 100; for (let i = 0; i < 4; i++) { x += rint(4, 14) * (rnd() < 0.5 ? 1 : -1); p.push(x); } D.P.push(p); }
+    D.A = D.P.map(p => (p[0] + p[1] + p[2] + p[3]) / 4);
+    D.pE = D.P.map(p => Math.max(p[3] - 100, 0)); D.pA = D.A.map(a => Math.max(a - 100, 0));
+    D.mE = r6(D.pE.reduce((x, y) => x + y, 0) / 4); D.mA = r6(D.pA.reduce((x, y) => x + y, 0) / 4);
+    D.r4 = pick([0.02, 0.04, 0.05]); const df = Math.exp(-D.r4); D.df44 = Math.round(df * 1e4);
+    D.cE = Math.round(df * D.mE * 100); D.cA = Math.round(df * D.mA * 100);
+    D.iC = D.P.findIndex((p, k) => D.pE[k] === 0 && D.pA[k] > 0);       // finit sous K, mais moyenne au-dessus
+    D.iD = D.P.findIndex((p, k) => D.pE[k] > 0 && D.pA[k] === 0);       // finit au-dessus de K, mais moyenne en dessous
+    const okR = !amb(df, 4) && !amb(df * D.mE) && !amb(df * D.mA) && Math.round(D.df44 / 1e4 * D.mE * 100) === D.cE && Math.round(D.df44 / 1e4 * D.mA * 100) === D.cA;
+    const fin = D.P.map(p => p[3]);
+    if (okR && D.iC >= 0 && D.pE.filter(v => v > 0).length >= 2 && D.mA < D.mE - 1 && D.mA > 1 && new Set(fin).size === 4 && D.P.every(p => p.every(v => v !== 100)) && D.A.every(v => v !== 100)) break;
+  }
+  return D;
+};
+
+/* ---------- outils de rédaction ---------- */
+const nx = (v, d) => texT(v, d === undefined ? 4 : d);      // nombre dans une formule, zéros finaux retirés
+const nt = (v, d) => fmtT(v, d === undefined ? 4 : d);      // nombre dans le texte ou dans un tableau
+const EU = c => tex(c / 100, 2);                            // centimes -> euros, dans une formule
+const eu = c => fmt(c / 100, 2);
+const X4 = v => tex(v / 1e4, 4);
+const pct = v => nt(v * 100, 2);
+const mny = v => (Number.isInteger(r6(v)) ? fmtT(v, 0) : fmt(v, 2));
+const mnx = v => (Number.isInteger(r6(v)) ? texT(v, 0) : tex(v, 2));
+const apx = e => (e ? '=' : String.raw`\approx`);
+const sg1 = v => (v < 0 ? '−' : '') + fmt(Math.abs(v), 1);
+const pc = c => (c ? fmt(c / 100, 2) : '0');
+const horFr = T => (T === 0.25 ? 'trois mois' : 'un an');
+const horEn = T => (T === 0.25 ? 'three months' : 'one year');
+function pairTable(D, h) {
+  let t = `<div class="dtable-wrap"><table class="dtable dtable-narrow"><tr>${h.map(x => `<th>${x}</th>`).join('')}</tr>`;
+  D.Z.forEach(function (z, i) {
+    t += `<tr><td class="num">${sg1(z)}</td><td class="num">${fmt(D.STc[i][0] / 100, 2)}</td><td class="num">${pc(D.payc[i][0])}</td><td class="num">${fmt(D.STc[i][1] / 100, 2)}</td><td class="num">${pc(D.payc[i][1])}</td><td class="num">${nt(D.pm[i], 3)}</td></tr>`;
+  });
+  return t + '</table></div>';
+}
+function pathTable(D, h, withPay) {
+  let t = `<div class="dtable-wrap"><table class="dtable dtable-narrow"><tr>${h.map(x => `<th>${x}</th>`).join('')}</tr>`;
+  D.P.forEach(function (p, k) {
+    t += `<tr><td>${k + 1}</td>${p.map(v => `<td class="num">${v}</td>`).join('')}`;
+    if (withPay) t += `<td class="num">${nt(D.A[k])}</td><td class="num">${nt(D.pE[k])}</td><td class="num">${nt(D.pA[k])}</td>`;
+    t += '</tr>';
+  });
+  return t + '</table></div>';
+}
+const S4H = [String.raw`\(S(t_1)\)`, String.raw`\(S(t_2)\)`, String.raw`\(S(t_3)\)`, String.raw`\(S(t_4)\)`];
+
+/* ============================================================
+   EXERCICE : textes français
+   ============================================================ */
+I18N.fr.ex = function (D) {
+  const z = D.Z.map(v => String.raw`\(${tex(v, 1)}\)`);
+  return String.raw`<div class="context-block">Les quatre questions sont indépendantes. Les taux sont des taux continus annuels et les montants sont en euros.</div>
+<div class="questions"><ol>
+<li><div class="q-text"><strong>Variables antithétiques.</strong> Une action cote ${D.S0} euros ; sa volatilité est \(\sigma=${pct(D.sg)}\,\%\) et le taux sans risque est \(r=${pct(D.r)}\,\%\). On estime le prix d'un call de prix d'exercice ${mny(D.K)} euros et d'échéance ${horFr(D.T)} (\(T=${nx(D.T)}\)) avec trois tirages de loi \(N(0,1)\), ${z[0]}, ${z[1]} et ${z[2]}, et leurs opposés.
+  <ol><li>Pour chaque tirage \(Z\), calculez le cours final et le gain du call obtenus avec \(Z\), puis avec \(-Z\).</li>
+  <li>Calculez la moyenne de chaque paire, puis l'estimation du prix du call.</li>
+  <li>Comparez la dispersion des gains isolés et celle des moyennes des paires. Pourquoi les deux gains d'une paire sont-ils corrélés négativement ?</li></ol></div></li>
+<li><div class="q-text"><strong>Gain d'une paire antithétique.</strong> Pour une autre option, l'écart type d'un gain actualisé est \(\sigma_X=${D.sX}\), et la corrélation entre les deux gains d'une paire antithétique est \(\rho=${nx(D.rho)}\).
+  <ol><li>Calculez la variance de la moyenne d'une paire antithétique, et comparez-la à celle de la moyenne de deux simulations indépendantes.</li>
+  <li>On simule ${nt(D.np, 0)} paires antithétiques. Calculez l'erreur type de l'estimation, et comparez-la à celle de ${nt(D.N2, 0)} simulations indépendantes.</li>
+  <li>Combien de simulations indépendantes faudrait-il pour obtenir la précision des ${nt(D.np, 0)} paires ? Que se passerait-il si la corrélation valait \(+${nx(D.rhoP)}\) ?</li></ol></div></li>
+<li><div class="q-text"><strong>Variable de contrôle.</strong> On veut estimer \(\theta=\E[X]\). On dispose d'une variable \(Y\), simulée avec les mêmes tirages, dont l'espérance exacte est \(\mu_Y=${D.muY}\). Sur ${nt(D.n3, 0)} simulations, on a obtenu \(\bar X=${tex(D.xb, 2)}\), \(\bar Y=${nx(D.yb)}\), \(\Var(X)=${D.vX}\), \(\Var(Y)=${D.vY}\) et \(\Cov(X,Y)=${nx(D.cov)}\).
+  <ol><li>Calculez la corrélation de \(X\) et \(Y\), puis le coefficient optimal \(c^*\).</li>
+  <li>Calculez la variance de \(X+c^*\,(Y-\mu_Y)\). Par combien la variance est-elle divisée ? Combien de simulations suffiraient, avec la variable de contrôle, pour obtenir la précision de ${nt(D.n3, 0)} simulations simples ?</li>
+  <li>Calculez l'estimation corrigée de \(\theta\) et son erreur type. Dans quel sens la correction joue-t-elle, et pourquoi ?</li></ol></div></li>
+<li><div class="q-text"><strong>Option asiatique.</strong> Une action cote 100 euros. On a simulé quatre trajectoires de son cours, relevé à quatre dates jusqu'à l'échéance, dans un an. Le taux sans risque est \(r=${pct(D.r4)}\,\%\).
+  ${pathTable(D, ['Trajectoire'].concat(S4H), false)}
+  <ol><li>Pour chaque trajectoire, calculez la moyenne des quatre cours, le gain d'un call européen de prix d'exercice 100 et celui d'un call asiatique de même prix d'exercice.</li>
+  <li>Donnez les estimations de Monte-Carlo des prix des deux calls.</li>
+  <li>Commentez : quelles trajectoires traitent différemment les deux options ? Pourquoi le call asiatique vaut-il moins cher en général ?</li></ol></div></li>
+</ol></div>`;
+};
+I18N.fr.sol = function (D) {
+  const K = mnx(D.K), pmList = D.pm.map(v => nx(v, 3)).join('+'), neg = D.sgn < 0, up = D.dY > 0;
+  const ic = D.iC + 1, id = D.iD + 1;
+  return String.raw`<div class="st"><ol>
+<li><div class="q-content">
+  <p><strong>a.</strong> On simule avec la dérive \(r\) : \(S_T=S_0\exp\!\big((r-\frac{\sigma^2}{2})T+\sigma\sqrt{T}\,Z\big)\), avec</p>
+  \[\Big(r-\frac{\sigma^2}{2}\Big)T=\Big(${nx(D.r)}-\frac{${nx(D.sg)}^2}{2}\Big)\times ${nx(D.T)}=${nx(D.a, 5)},\qquad\sigma\sqrt{T}=${nx(D.sg)}\times ${nx(Math.sqrt(D.T))}=${nx(D.b)}.\]
+  <p>Le cours obtenu avec \(Z\) est \(${D.S0}\,e^{${D.a === 0 ? '' : nx(D.a, 5) + '+'}${nx(D.b)}\,Z}\) ; celui obtenu avec \(-Z\) est \(${D.S0}\,e^{${D.a === 0 ? '' : nx(D.a, 5)}-${nx(D.b)}\,Z}\). Le gain est \(\max(S_T-${K},\,0)\).</p>
+  ${pairTable(D, [String.raw`tirage \(Z\)`, String.raw`cours avec \(Z\)`, 'gain', String.raw`cours avec \(-Z\)`, 'gain', 'moyenne de la paire'])}
+  <p><strong>b.</strong> La moyenne des trois paires est \(\frac{${pmList}}{3}${apx(D.mEx)}${D.mEx ? nx(D.m4 / 1e4) : X4(D.m4)}\). On actualise avec \(e^{-rT}=e^{-${nx(D.rT)}}\approx ${X4(D.df4)}\) :</p>
+  \[\widehat{C}_0\approx ${X4(D.df4)}\times ${D.mEx ? nx(D.m4 / 1e4) : X4(D.m4)}\approx ${EU(D.C1c)}\text{ euros.}\]
+  <p><strong>c.</strong> Les six gains isolés vont de ${pc(D.mnP)} à ${pc(D.mxP)}, alors que les moyennes des trois paires ne vont que de ${nt(D.mnM, 3)} à ${nt(D.mxM, 3)} : elles sont nettement moins dispersées, donc leur moyenne est une estimation plus précise.</p>
+  <p>Le gain d'un call augmente avec le cours final, qui augmente lui-même avec \(Z\). Quand \(Z\) est grand, le gain calculé avec \(Z\) est élevé et celui calculé avec \(-Z\) est faible, et inversement : les deux gains varient en sens contraire, leur corrélation est négative et leurs écarts à la moyenne se compensent en partie.</p>
+</div></li>
+<li><div class="q-content">
+  <p><strong>a.</strong> D'après le cours, la variance de la moyenne d'une paire antithétique est</p>
+  \[\frac{\sigma_X^2}{2}\,(1+\rho)=\frac{${D.sX}^2}{2}\times(1${nx(D.rho)})=${nx(D.vInd)}\times ${nx(D.f2)}=${nx(D.vAnti)}.\]
+  <p>Pour deux simulations indépendantes, \(\rho=0\) et la variance est \(\frac{${D.sX}^2}{2}=${nx(D.vInd)}\). La paire antithétique multiplie la variance par ${nt(D.f2)}.</p>
+  <p><strong>b.</strong> Les ${nt(D.np, 0)} moyennes de paires sont indépendantes entre elles. L'erreur type est la racine carrée de leur variance divisée par leur nombre :</p>
+  \[\sqrt{\frac{\sigma_X^2\,(1+\rho)}{2\times ${nx(D.np, 0)}}}=\frac{\sigma_X\sqrt{1+\rho}}{\sqrt{${nx(D.N2, 0)}}}=\frac{${D.sX}\times\sqrt{${nx(D.f2)}}}{${D.rtN}}=\frac{${D.sX}\times ${nx(D.rt2)}}{${D.rtN}}=${nx(D.seAnti, 5)}.\]
+  <p>Avec ${nt(D.N2, 0)} simulations indépendantes, soit le même nombre de calculs, elle vaudrait \(\frac{${D.sX}}{\sqrt{${nx(D.N2, 0)}}}=\frac{${D.sX}}{${D.rtN}}=${nx(D.seInd, 5)}\). L'erreur type est multipliée par \(\sqrt{${nx(D.f2)}}=${nx(D.rt2)}\).</p>
+  <p><strong>c.</strong> Avec \(m\) simulations indépendantes, la variance de l'estimation est \(\frac{\sigma_X^2}{m}\) ; avec les paires, elle est \(\frac{\sigma_X^2\,(1+\rho)}{${nx(D.N2, 0)}}\). Les deux sont égales pour</p>
+  \[m=\frac{${nx(D.N2, 0)}}{1+\rho}=\frac{${nx(D.N2, 0)}}{${nx(D.f2)}}${D.eqE ? '=' + nx(D.eqN, 0) : String.raw`\approx ` + tex(D.eq1, 1)},\]
+  <p>${D.eqE ? `soit ${nt(D.eqN, 0)} simulations` : `soit au moins ${nt(D.eqN, 0)} simulations`}, au lieu de ${nt(D.N2, 0)} calculs.</p>
+  <p>Avec \(\rho=+${nx(D.rhoP)}\), la variance serait multipliée par \(1+\rho=${nx(D.fP)}\) et l'erreur type par \(\sqrt{${nx(D.fP)}}=${nx(D.rtP)}\) : les paires antithétiques feraient moins bien que des tirages indépendants. C'est ce qui arrive quand le gain n'est pas une fonction croissante ou décroissante du tirage.</p>
+</div></li>
+<li><div class="q-content">
+  <p><strong>a.</strong> Les écarts types sont \(\sigma_X=\sqrt{${D.vX}}=${D.sdX}\) et \(\sigma_Y=\sqrt{${D.vY}}=${D.sdY}\). Donc</p>
+  \[\rho=\frac{\Cov(X,Y)}{\sigma_X\,\sigma_Y}=\frac{${nx(D.cov)}}{${D.sdX}\times ${D.sdY}}=${nx(D.rho3)},\qquad c^*=-\frac{\Cov(X,Y)}{\Var(Y)}=-\frac{${nx(D.cov)}}{${D.vY}}=${nx(D.cs)}.\]
+  <p>${neg ? String.raw`\(X\) et \(Y\) varient en sens contraire : \(c^*\) est positif.` : String.raw`\(X\) et \(Y\) varient dans le même sens : \(c^*\) est négatif.`}</p>
+  <p><strong>b.</strong> La variance minimale est</p>
+  \[\Var(X)-\frac{\Cov(X,Y)^2}{\Var(Y)}=${D.vX}-\frac{${neg ? '(' + nx(D.cov) + ')' : nx(D.cov)}^2}{${D.vY}}=${D.vX}-${nx(D.sub)}=${nx(D.vMin)}.\]
+  <p>On retrouve bien la forme du cours :</p>
+  \[\Var(X)\,(1-\rho^2)=${D.vX}\times(1-${nx(Math.abs(D.rho3))}^2)=${D.vX}\times ${nx(D.om)}=${nx(D.vMin)}.\]
+  <p>La variance est divisée par \(\frac{${D.vX}}{${nx(D.vMin)}}${apx(D.kE)}${tex(D.k2 / 100, 2)}\), et l'écart type passe de ${D.sdX} à \(\sqrt{${nx(D.vMin)}}${apx(D.sdE)}${D.sdE ? nx(D.sdMin2 / 100) : tex(D.sdMin2 / 100, 2)}\).</p>
+  <p>Pour une même précision, le nombre de simulations est proportionnel à la variance : il suffit de \(${nx(D.n3, 0)}\times ${nx(D.om)}=${nx(D.nEq3, 0)}\) simulations au lieu de ${nt(D.n3, 0)}.</p>
+  <p><strong>c.</strong> L'estimation corrigée est</p>
+  \[\bar X+c^*\,(\bar Y-\mu_Y)=${tex(D.xb, 2)}${D.cs < 0 ? '' : '+'}${nx(D.cs)}\times(${nx(D.yb)}-${D.muY})=${tex(D.xb, 2)}${D.corr < 0 ? '' : '+'}${tex(D.corr, 2)}=${tex(D.est, 2)}.\]
+  <p>Son erreur type est \(\frac{\sqrt{${nx(D.vMin)}}}{\sqrt{${nx(D.n3, 0)}}}${apx(D.sdE)}\frac{${D.sdE ? nx(D.sdMin2 / 100) : tex(D.sdMin2 / 100, 2)}}{100}=${nx(D.sdMin2 / 1e4)}\), contre \(\frac{${D.sdX}}{100}=${nx(D.sdX / 100)}\) sans variable de contrôle.</p>
+  <p>La moyenne simulée de \(Y\) est ${up ? 'supérieure' : 'inférieure'} à sa vraie valeur : les tirages ont donné des valeurs de \(Y\) trop ${up ? 'élevées' : 'faibles'}. Comme \(X\) et \(Y\) varient ${neg ? 'en sens contraire' : 'dans le même sens'}, la moyenne de \(X\) est sans doute trop ${up !== neg ? 'élevée' : 'faible'} elle aussi : on la corrige vers le ${D.corr < 0 ? 'bas' : 'haut'}.</p>
+</div></li>
+<li><div class="q-content">
+  <p><strong>a.</strong> La moyenne est \(A=\frac{S(t_1)+S(t_2)+S(t_3)+S(t_4)}{4}\). Le gain du call européen est \(\max(S(t_4)-100,\,0)\), celui du call asiatique \(\max(A-100,\,0)\).</p>
+  ${pathTable(D, ['Trajectoire'].concat(S4H, [String.raw`moyenne \(A\)`, 'gain européen', 'gain asiatique']), true)}
+  <p><strong>b.</strong> La moyenne des gains est \(\frac{${D.pE.map(v => nx(v)).join('+')}}{4}=${nx(D.mE)}\) pour le call européen et \(\frac{${D.pA.map(v => nx(v)).join('+')}}{4}=${nx(D.mA)}\) pour le call asiatique. Avec \(e^{-rT}=e^{-${nx(D.r4)}}\approx ${X4(D.df44)}\), les estimations sont</p>
+  \[${X4(D.df44)}\times ${nx(D.mE)}\approx ${EU(D.cE)}\text{ euros (européen)},\qquad ${X4(D.df44)}\times ${nx(D.mA)}\approx ${EU(D.cA)}\text{ euros (asiatique).}\]
+  <p><strong>c.</strong> La trajectoire ${ic} finit sous 100 : le call européen ne rapporte rien, alors que le call asiatique rapporte ${nt(D.pA[D.iC])}, parce que le cours a été élevé avant de redescendre.${D.iD >= 0 ? ` À l'inverse, la trajectoire ${id} finit au-dessus de 100 mais sa moyenne est inférieure à 100 : seul le call européen rapporte.` : ''} Le gain asiatique dépend de tout le chemin, le gain européen seulement du dernier cours.</p>
+  <p>Une moyenne de cours varie moins que le cours final : les hausses et les baisses successives se compensent en partie, et les premiers relevés sont encore proches du cours de départ. Le call asiatique se comporte comme un call sur un actif moins volatil, et un call vaut d'autant moins que la volatilité est faible. Ici, l'estimation est ${eu(D.cA)} euros contre ${eu(D.cE)} ; quatre trajectoires ne suffisent évidemment pas à donner un prix fiable.</p>
+</div></li>
+</ol></div>`;
+};
+
+/* ============================================================
+   EXERCISE: English texts
+   ============================================================ */
+I18N.en.ex = function (D) {
+  const z = D.Z.map(v => String.raw`\(${tex(v, 1)}\)`);
+  return String.raw`<div class="context-block">The four questions are independent. Rates are continuous annual rates and amounts are in euros.</div>
+<div class="questions"><ol>
+<li><div class="q-text"><strong>Antithetic variates.</strong> A share is quoted at ${D.S0} euros; its volatility is \(\sigma=${pct(D.sg)}\,\%\) and the risk-free rate is \(r=${pct(D.r)}\,\%\). We estimate the price of a call with strike price ${mny(D.K)} euros and maturity ${horEn(D.T)} (\(T=${nx(D.T)}\)) with three draws from the distribution \(N(0,1)\), ${z[0]}, ${z[1]} and ${z[2]}, and their opposites.
+  <ol><li>For each draw \(Z\), compute the final price and the payoff of the call obtained with \(Z\), then with \(-Z\).</li>
+  <li>Compute the mean of each pair, then the estimate of the price of the call.</li>
+  <li>Compare the dispersion of the individual payoffs with that of the pair means. Why are the two payoffs of a pair negatively correlated?</li></ol></div></li>
+<li><div class="q-text"><strong>Gain from an antithetic pair.</strong> For another option, the standard deviation of a discounted payoff is \(\sigma_X=${D.sX}\), and the correlation between the two payoffs of an antithetic pair is \(\rho=${nx(D.rho)}\).
+  <ol><li>Compute the variance of the mean of an antithetic pair, and compare it with that of the mean of two independent simulations.</li>
+  <li>We simulate ${nt(D.np, 0)} antithetic pairs. Compute the standard error of the estimate, and compare it with that of ${nt(D.N2, 0)} independent simulations.</li>
+  <li>How many independent simulations would be needed to obtain the precision of the ${nt(D.np, 0)} pairs? What would happen if the correlation were \(+${nx(D.rhoP)}\)?</li></ol></div></li>
+<li><div class="q-text"><strong>Control variate.</strong> We want to estimate \(\theta=\E[X]\). We have a variable \(Y\), simulated with the same draws, whose exact expected value is \(\mu_Y=${D.muY}\). On ${nt(D.n3, 0)} simulations, we obtained \(\bar X=${tex(D.xb, 2)}\), \(\bar Y=${nx(D.yb)}\), \(\Var(X)=${D.vX}\), \(\Var(Y)=${D.vY}\) and \(\Cov(X,Y)=${nx(D.cov)}\).
+  <ol><li>Compute the correlation of \(X\) and \(Y\), then the optimal coefficient \(c^*\).</li>
+  <li>Compute the variance of \(X+c^*\,(Y-\mu_Y)\). By how much is the variance divided? How many simulations would be enough, with the control variate, to obtain the precision of ${nt(D.n3, 0)} plain simulations?</li>
+  <li>Compute the corrected estimate of \(\theta\) and its standard error. In which direction does the correction act, and why?</li></ol></div></li>
+<li><div class="q-text"><strong>Asian option.</strong> A share is quoted at 100 euros. Four paths of its price have been simulated, recorded at four dates up to maturity, in one year. The risk-free rate is \(r=${pct(D.r4)}\,\%\).
+  ${pathTable(D, ['Path'].concat(S4H), false)}
+  <ol><li>For each path, compute the average of the four prices, the payoff of a European call with strike price 100 and that of an Asian call with the same strike price.</li>
+  <li>Give the Monte Carlo estimates of the prices of the two calls.</li>
+  <li>Comment: which paths treat the two options differently? Why is the Asian call cheaper in general?</li></ol></div></li>
+</ol></div>`;
+};
+I18N.en.sol = function (D) {
+  const K = mnx(D.K), pmList = D.pm.map(v => nx(v, 3)).join('+'), neg = D.sgn < 0, up = D.dY > 0;
+  const ic = D.iC + 1, id = D.iD + 1;
+  return String.raw`<div class="st"><ol>
+<li><div class="q-content">
+  <p><strong>a.</strong> We simulate with drift \(r\): \(S_T=S_0\exp\!\big((r-\frac{\sigma^2}{2})T+\sigma\sqrt{T}\,Z\big)\), with</p>
+  \[\Big(r-\frac{\sigma^2}{2}\Big)T=\Big(${nx(D.r)}-\frac{${nx(D.sg)}^2}{2}\Big)\times ${nx(D.T)}=${nx(D.a, 5)},\qquad\sigma\sqrt{T}=${nx(D.sg)}\times ${nx(Math.sqrt(D.T))}=${nx(D.b)}.\]
+  <p>The price obtained with \(Z\) is \(${D.S0}\,e^{${D.a === 0 ? '' : nx(D.a, 5) + '+'}${nx(D.b)}\,Z}\); the one obtained with \(-Z\) is \(${D.S0}\,e^{${D.a === 0 ? '' : nx(D.a, 5)}-${nx(D.b)}\,Z}\). The payoff is \(\max(S_T-${K},\,0)\).</p>
+  ${pairTable(D, [String.raw`draw \(Z\)`, String.raw`price with \(Z\)`, 'payoff', String.raw`price with \(-Z\)`, 'payoff', 'mean of the pair'])}
+  <p><strong>b.</strong> The mean of the three pairs is \(\frac{${pmList}}{3}${apx(D.mEx)}${D.mEx ? nx(D.m4 / 1e4) : X4(D.m4)}\). Discount with \(e^{-rT}=e^{-${nx(D.rT)}}\approx ${X4(D.df4)}\):</p>
+  \[\widehat{C}_0\approx ${X4(D.df4)}\times ${D.mEx ? nx(D.m4 / 1e4) : X4(D.m4)}\approx ${EU(D.C1c)}\text{ euros.}\]
+  <p><strong>c.</strong> The six individual payoffs range from ${pc(D.mnP)} to ${pc(D.mxP)}, whereas the means of the three pairs only range from ${nt(D.mnM, 3)} to ${nt(D.mxM, 3)}: they are clearly less dispersed, so their mean is a more precise estimate.</p>
+  <p>The payoff of a call increases with the final price, which itself increases with \(Z\). When \(Z\) is large, the payoff computed with \(Z\) is high and the one computed with \(-Z\) is low, and conversely: the two payoffs move in opposite directions, their correlation is negative and their deviations from the mean partly offset each other.</p>
+</div></li>
+<li><div class="q-content">
+  <p><strong>a.</strong> According to the lesson, the variance of the mean of an antithetic pair is</p>
+  \[\frac{\sigma_X^2}{2}\,(1+\rho)=\frac{${D.sX}^2}{2}\times(1${nx(D.rho)})=${nx(D.vInd)}\times ${nx(D.f2)}=${nx(D.vAnti)}.\]
+  <p>For two independent simulations, \(\rho=0\) and the variance is \(\frac{${D.sX}^2}{2}=${nx(D.vInd)}\). The antithetic pair multiplies the variance by ${nt(D.f2)}.</p>
+  <p><strong>b.</strong> The ${nt(D.np, 0)} pair means are independent of one another. The standard error is the square root of their variance divided by their number:</p>
+  \[\sqrt{\frac{\sigma_X^2\,(1+\rho)}{2\times ${nx(D.np, 0)}}}=\frac{\sigma_X\sqrt{1+\rho}}{\sqrt{${nx(D.N2, 0)}}}=\frac{${D.sX}\times\sqrt{${nx(D.f2)}}}{${D.rtN}}=\frac{${D.sX}\times ${nx(D.rt2)}}{${D.rtN}}=${nx(D.seAnti, 5)}.\]
+  <p>With ${nt(D.N2, 0)} independent simulations, that is the same amount of computation, it would be \(\frac{${D.sX}}{\sqrt{${nx(D.N2, 0)}}}=\frac{${D.sX}}{${D.rtN}}=${nx(D.seInd, 5)}\). The standard error is multiplied by \(\sqrt{${nx(D.f2)}}=${nx(D.rt2)}\).</p>
+  <p><strong>c.</strong> With \(m\) independent simulations, the variance of the estimate is \(\frac{\sigma_X^2}{m}\); with the pairs, it is \(\frac{\sigma_X^2\,(1+\rho)}{${nx(D.N2, 0)}}\). The two are equal for</p>
+  \[m=\frac{${nx(D.N2, 0)}}{1+\rho}=\frac{${nx(D.N2, 0)}}{${nx(D.f2)}}${D.eqE ? '=' + nx(D.eqN, 0) : String.raw`\approx ` + tex(D.eq1, 1)},\]
+  <p>${D.eqE ? `that is ${nt(D.eqN, 0)} simulations` : `that is at least ${nt(D.eqN, 0)} simulations`}, instead of ${nt(D.N2, 0)} computations.</p>
+  <p>With \(\rho=+${nx(D.rhoP)}\), the variance would be multiplied by \(1+\rho=${nx(D.fP)}\) and the standard error by \(\sqrt{${nx(D.fP)}}=${nx(D.rtP)}\): antithetic pairs would do worse than independent draws. This is what happens when the payoff is not an increasing or decreasing function of the draw.</p>
+</div></li>
+<li><div class="q-content">
+  <p><strong>a.</strong> The standard deviations are \(\sigma_X=\sqrt{${D.vX}}=${D.sdX}\) and \(\sigma_Y=\sqrt{${D.vY}}=${D.sdY}\). So</p>
+  \[\rho=\frac{\Cov(X,Y)}{\sigma_X\,\sigma_Y}=\frac{${nx(D.cov)}}{${D.sdX}\times ${D.sdY}}=${nx(D.rho3)},\qquad c^*=-\frac{\Cov(X,Y)}{\Var(Y)}=-\frac{${nx(D.cov)}}{${D.vY}}=${nx(D.cs)}.\]
+  <p>${neg ? String.raw`\(X\) and \(Y\) move in opposite directions: \(c^*\) is positive.` : String.raw`\(X\) and \(Y\) move in the same direction: \(c^*\) is negative.`}</p>
+  <p><strong>b.</strong> The minimum variance is</p>
+  \[\Var(X)-\frac{\Cov(X,Y)^2}{\Var(Y)}=${D.vX}-\frac{${neg ? '(' + nx(D.cov) + ')' : nx(D.cov)}^2}{${D.vY}}=${D.vX}-${nx(D.sub)}=${nx(D.vMin)}.\]
+  <p>We do recover the form of the lesson:</p>
+  \[\Var(X)\,(1-\rho^2)=${D.vX}\times(1-${nx(Math.abs(D.rho3))}^2)=${D.vX}\times ${nx(D.om)}=${nx(D.vMin)}.\]
+  <p>The variance is divided by \(\frac{${D.vX}}{${nx(D.vMin)}}${apx(D.kE)}${tex(D.k2 / 100, 2)}\), and the standard deviation goes from ${D.sdX} to \(\sqrt{${nx(D.vMin)}}${apx(D.sdE)}${D.sdE ? nx(D.sdMin2 / 100) : tex(D.sdMin2 / 100, 2)}\).</p>
+  <p>For the same precision, the number of simulations is proportional to the variance: \(${nx(D.n3, 0)}\times ${nx(D.om)}=${nx(D.nEq3, 0)}\) simulations are enough instead of ${nt(D.n3, 0)}.</p>
+  <p><strong>c.</strong> The corrected estimate is</p>
+  \[\bar X+c^*\,(\bar Y-\mu_Y)=${tex(D.xb, 2)}${D.cs < 0 ? '' : '+'}${nx(D.cs)}\times(${nx(D.yb)}-${D.muY})=${tex(D.xb, 2)}${D.corr < 0 ? '' : '+'}${tex(D.corr, 2)}=${tex(D.est, 2)}.\]
+  <p>Its standard error is \(\frac{\sqrt{${nx(D.vMin)}}}{\sqrt{${nx(D.n3, 0)}}}${apx(D.sdE)}\frac{${D.sdE ? nx(D.sdMin2 / 100) : tex(D.sdMin2 / 100, 2)}}{100}=${nx(D.sdMin2 / 1e4)}\), against \(\frac{${D.sdX}}{100}=${nx(D.sdX / 100)}\) without control variate.</p>
+  <p>The simulated mean of \(Y\) is ${up ? 'above' : 'below'} its true value: the draws gave values of \(Y\) that are too ${up ? 'high' : 'low'}. Since \(X\) and \(Y\) move ${neg ? 'in opposite directions' : 'in the same direction'}, the mean of \(X\) is probably too ${up !== neg ? 'high' : 'low'} as well: we correct it ${D.corr < 0 ? 'downwards' : 'upwards'}.</p>
+</div></li>
+<li><div class="q-content">
+  <p><strong>a.</strong> The average is \(A=\frac{S(t_1)+S(t_2)+S(t_3)+S(t_4)}{4}\). The payoff of the European call is \(\max(S(t_4)-100,\,0)\), that of the Asian call \(\max(A-100,\,0)\).</p>
+  ${pathTable(D, ['Path'].concat(S4H, [String.raw`average \(A\)`, 'European payoff', 'Asian payoff']), true)}
+  <p><strong>b.</strong> The mean of the payoffs is \(\frac{${D.pE.map(v => nx(v)).join('+')}}{4}=${nx(D.mE)}\) for the European call and \(\frac{${D.pA.map(v => nx(v)).join('+')}}{4}=${nx(D.mA)}\) for the Asian call. With \(e^{-rT}=e^{-${nx(D.r4)}}\approx ${X4(D.df44)}\), the estimates are</p>
+  \[${X4(D.df44)}\times ${nx(D.mE)}\approx ${EU(D.cE)}\text{ euros (European)},\qquad ${X4(D.df44)}\times ${nx(D.mA)}\approx ${EU(D.cA)}\text{ euros (Asian).}\]
+  <p><strong>c.</strong> Path ${ic} ends below 100: the European call pays nothing, whereas the Asian call pays ${nt(D.pA[D.iC])}, because the price was high before coming back down.${D.iD >= 0 ? ` Conversely, path ${id} ends above 100 but its average is below 100: only the European call pays.` : ''} The Asian payoff depends on the whole path, the European payoff only on the last price.</p>
+  <p>An average of prices varies less than the final price: successive rises and falls partly offset each other, and the first observations are still close to the starting price. The Asian call behaves like a call on a less volatile asset, and a call is worth less when the volatility is lower. Here, the estimate is ${eu(D.cA)} euros against ${eu(D.cE)}; four paths are obviously not enough to give a reliable price.</p>
+</div></li>
+</ol></div>`;
+};
+
+initPage();
+</script>
+
+
+<!-- KIT:JS:START v1 -->
+<div id="pdf-ov" onclick="closePdfModal()"></div>
+<div id="pdf-modal">
+  <div class="mh">
+    <h3 data-kit="modalTitle">Exporter en PDF</h3>
+    <button type="button" class="mclose" onclick="closePdfModal()">&#10005;</button>
+  </div>
+  <div class="mb2">
+    <div class="seed-note"><span data-kit="seedPre">Seed&nbsp;:</span> <strong id="modal-seed">&mdash;</strong> <span data-kit="seedPost">&mdash; notez cette valeur pour reproduire exactement cet exercice.</span></div>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-header" checked>
+      <span class="opt-txt"><span class="opt-lbl" data-kit="optHeader">Inclure l'en-t&ecirc;te de page</span>
+           <span class="opt-desc" data-kit="optHeaderD">Titre, badge de mati&egrave;re et intitul&eacute; de l'exercice</span></span>
+    </label>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-sol">
+      <span class="opt-txt"><span class="opt-lbl" data-kit="optSol">Inclure le corrig&eacute; complet</span>
+           <span class="opt-desc" data-kit="optSolD">L'ensemble des d&eacute;veloppements et commentaires du corrig&eacute;</span></span>
+    </label>
+    <div class="mactions">
+      <button type="button" class="btn-print" onclick="doPrint()"><span data-kit="print">&#128424;&nbsp;Imprimer / Sauvegarder PDF</span></button>
+      <button type="button" class="btn-cancel" onclick="closePdfModal()"><span data-kit="cancel">Annuler</span></button>
+    </div>
+  </div>
+</div>
+
+<script id="kit-docx">
+/* =============================================================================
+   EXPORT WORD NATIF (.docx)
+   Trois briques, sans aucune dépendance externe :
+     1. mml2omml  — MathML -> OMML, le format d'équation natif de Word
+     2. zip       — écriture d'une archive ZIP (entrées « stored » + CRC32)
+     3. html2wml  — HTML de la page -> WordprocessingML
+   ============================================================================= */
+(function (root) {
+'use strict';
+
+/* --------------------------------------------------------------- utilitaires */
+function esc(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                  .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function kids(n) {
+  var out = [], c = n.firstChild;
+  while (c) { if (c.nodeType === 1) out.push(c); c = c.nextSibling; }
+  return out;
+}
+function txt(n) { return (n.textContent || '').replace(/\u200b/g, '').trim(); }
+
+/* ============================================================================
+   1. MathML -> OMML
+   ========================================================================== */
+var OPEN = '([{\u27e8\u2308\u230a|\u2016';
+var CLOSE = ')]}\u27e9\u2309\u230b|\u2016';
+var BIGOPS = '\u2211\u220f\u222b\u222c\u222d\u222e\u22c3\u22c2\u2210';
+var ACCENTS = {
+  '\u005e': '\u0302', '\u02c6': '\u0302', '^': '\u0302',
+  '\u00af': '\u0304', '\u2015': '\u0304', '\u2212': '\u0304', '_': '\u0304',
+  '~': '\u0303', '\u02dc': '\u0303', '\u02d9': '\u0307',
+  '\u2192': '\u20d7', '\u21c0': '\u20d1', '\u02c7': '\u030c', '\u02d8': '\u0306'
+};
+
+function run(text, style) {
+  if (text === '') return '';
+  var rPr = '<w:rPr><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/></w:rPr>';
+  var mPr = style ? '<m:rPr><m:sty m:val="' + style + '"/></m:rPr>' : '';
+  return '<m:r>' + mPr + rPr + '<m:t xml:space="preserve">' + esc(text) + '</m:t></m:r>';
+}
+
+/* Un grand opérateur (somme, intégrale…) absorbe la suite de la ligne comme
+   opérande : sans cela Word affiche un cadre vide à la place de l'argument. */
+function naryHere(n) {
+  if (!n || n.nodeType !== 1) return null;
+  var t = n.nodeName.toLowerCase().replace(/^.*:/, ''), k = kids(n);
+  if (t === 'munderover' || t === 'msubsup') return { base: k[0], sub: k[1], sup: k[2] };
+  if (t === 'munder' || t === 'msub') return { base: k[0], sub: k[1], sup: null };
+  if (t === 'mover' || t === 'msup') return { base: k[0], sub: null, sup: k[1] };
+  if (t === 'mo') return { base: n, sub: null, sup: null };
+  return null;
+}
+function isBigOp(n) {
+  if (!n || n.nodeType !== 1) return false;
+  var c = txt(n);
+  return n.nodeName.toLowerCase().replace(/^.*:/, '') === 'mo' &&
+         c.length === 1 && BIGOPS.indexOf(c) !== -1;
+}
+
+function seq(nodes) {
+  var s = '';
+  for (var i = 0; i < nodes.length; i++) {
+    var info = naryHere(nodes[i]);
+    if (info && isBigOp(info.base) && i + 1 < nodes.length) {
+      s += naryFull(info, nodes.slice(i + 1));
+      return s;
+    }
+    s += mml(nodes[i]);
+  }
+  return s;
+}
+
+function naryFull(info, rest) {
+  return '<m:nary><m:naryPr><m:chr m:val="' + esc(txt(info.base)) + '"/>' +
+         '<m:limLoc m:val="undOvr"/>' +
+         '<m:subHide m:val="' + (info.sub ? '0' : '1') + '"/>' +
+         '<m:supHide m:val="' + (info.sup ? '0' : '1') + '"/><m:ctrlPr/></m:naryPr>' +
+         '<m:sub>' + (info.sub ? mml(info.sub) : '') + '</m:sub>' +
+         '<m:sup>' + (info.sup ? mml(info.sup) : '') + '</m:sup>' +
+         '<m:e>' + seq(rest) + '</m:e></m:nary>';
+}
+
+/* mrow entouré de délimiteurs -> m:d, pour des parenthèses étirables natives */
+function fenced(ks) {
+  if (ks.length < 2) return null;
+  var a = ks[0], b = ks[ks.length - 1];
+  if (a.nodeName.toLowerCase() !== 'mo' || b.nodeName.toLowerCase() !== 'mo') return null;
+  var o = txt(a), c = txt(b);
+  if (o.length !== 1 || c.length !== 1) return null;
+  if (OPEN.indexOf(o) === -1 || CLOSE.indexOf(c) === -1) return null;
+  var inner = ks.slice(1, -1);
+  /* séparateurs de premier niveau -> plusieurs m:e */
+  var parts = [[]];
+  for (var i = 0; i < inner.length; i++) {
+    if (inner[i].nodeName.toLowerCase() === 'mo' && txt(inner[i]) === ',' && parts.length < 8) {
+      parts.push([]);
+    } else { parts[parts.length - 1].push(inner[i]); }
+  }
+  var sep = parts.length > 1 ? ',' : '';
+  var body = '';
+  for (var j = 0; j < parts.length; j++) body += '<m:e>' + seq(parts[j]) + '</m:e>';
+  return '<m:d><m:dPr><m:begChr m:val="' + esc(o) + '"/><m:sepChr m:val="' + esc(sep) +
+         '"/><m:endChr m:val="' + esc(c) + '"/><m:ctrlPr/></m:dPr>' + body + '</m:d>';
+}
+
+function naryOf(base, sub, sup) {
+  var ch = txt(base);
+  if (ch.length !== 1 || BIGOPS.indexOf(ch) === -1) return null;
+  return '<m:nary><m:naryPr><m:chr m:val="' + esc(ch) + '"/><m:limLoc m:val="undOvr"/>' +
+         '<m:subHide m:val="' + (sub ? '0' : '1') + '"/>' +
+         '<m:supHide m:val="' + (sup ? '0' : '1') + '"/><m:ctrlPr/></m:naryPr>' +
+         '<m:sub>' + (sub ? mml(sub) : '') + '</m:sub>' +
+         '<m:sup>' + (sup ? mml(sup) : '') + '</m:sup>' +
+         '<m:e></m:e></m:nary>';
+}
+
+function mml(n) {
+  if (!n) return '';
+  if (n.nodeType === 3) return run(n.nodeValue);
+  if (n.nodeType !== 1) return '';
+  var t = n.nodeName.toLowerCase().replace(/^.*:/, '');
+  var k = kids(n), s;
+
+  switch (t) {
+    case 'math':
+    case 'semantics':
+    case 'mstyle':
+    case 'mpadded':
+    case 'menclose':
+      return seq(k);
+
+    case 'annotation':
+    case 'annotation-xml':
+    case 'mphantom':
+      return '';
+
+    case 'mrow':
+      s = fenced(k);
+      return s !== null ? s : seq(k);
+
+    case 'mi':      return run(txt(n), txt(n).length === 1 ? 'i' : 'p');
+    case 'mn':      return run(txt(n), 'p');
+    case 'mo':      return run(txt(n), 'p');
+    case 'merror':  return run(txt(n), 'p');
+    case 'ms':      return run(txt(n), 'p');
+
+    case 'mtext':
+      var v = n.textContent || '';
+      return v === '' ? '' :
+        '<m:r><m:rPr><m:nor/></m:rPr><w:rPr><w:rFonts w:ascii="Cambria" w:hAnsi="Cambria"/></w:rPr>' +
+        '<m:t xml:space="preserve">' + esc(v) + '</m:t></m:r>';
+
+    case 'mspace':
+      return run(' ', 'p');
+
+    case 'mfrac':
+      return '<m:f><m:fPr><m:type m:val="' +
+             (n.getAttribute('linethickness') === '0' ? 'noBar' : 'bar') +
+             '"/><m:ctrlPr/></m:fPr><m:num>' + mml(k[0]) + '</m:num><m:den>' +
+             mml(k[1]) + '</m:den></m:f>';
+
+    case 'msup':
+      s = naryOf(k[0], null, k[1]); if (s) return s;
+      return '<m:sSup><m:sSupPr><m:ctrlPr/></m:sSupPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sup>' + mml(k[1]) + '</m:sup></m:sSup>';
+
+    case 'msub':
+      s = naryOf(k[0], k[1], null); if (s) return s;
+      return '<m:sSub><m:sSubPr><m:ctrlPr/></m:sSubPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sub>' + mml(k[1]) + '</m:sub></m:sSub>';
+
+    case 'msubsup':
+      s = naryOf(k[0], k[1], k[2]); if (s) return s;
+      return '<m:sSubSup><m:sSubSupPr><m:ctrlPr/></m:sSubSupPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sub>' + mml(k[1]) + '</m:sub><m:sup>' + mml(k[2]) +
+             '</m:sup></m:sSubSup>';
+
+    case 'msqrt':
+      return '<m:rad><m:radPr><m:degHide m:val="1"/><m:ctrlPr/></m:radPr>' +
+             '<m:deg/><m:e>' + seq(k) + '</m:e></m:rad>';
+
+    case 'mroot':
+      return '<m:rad><m:radPr><m:degHide m:val="0"/><m:ctrlPr/></m:radPr><m:deg>' +
+             mml(k[1]) + '</m:deg><m:e>' + mml(k[0]) + '</m:e></m:rad>';
+
+    case 'mover':
+      var ao = txt(k[1]);
+      if (ACCENTS[ao]) {
+        return '<m:acc><m:accPr><m:chr m:val="' + esc(ACCENTS[ao]) +
+               '"/><m:ctrlPr/></m:accPr><m:e>' + mml(k[0]) + '</m:e></m:acc>';
+      }
+      s = naryOf(k[0], null, k[1]); if (s) return s;
+      return '<m:limUpp><m:limUppPr><m:ctrlPr/></m:limUppPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limUpp>';
+
+    case 'munder':
+      s = naryOf(k[0], k[1], null); if (s) return s;
+      return '<m:limLow><m:limLowPr><m:ctrlPr/></m:limLowPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limLow>';
+
+    case 'munderover':
+      s = naryOf(k[0], k[1], k[2]); if (s) return s;
+      return '<m:limUpp><m:limUppPr><m:ctrlPr/></m:limUppPr><m:e>' +
+             '<m:limLow><m:limLowPr><m:ctrlPr/></m:limLowPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limLow></m:e><m:lim>' +
+             mml(k[2]) + '</m:lim></m:limUpp>';
+
+    case 'mtable':
+      var rows = k.filter(function (r) { return /mtr$/.test(r.nodeName.toLowerCase()); });
+      var ncol = 0;
+      rows.forEach(function (r) { ncol = Math.max(ncol, kids(r).length); });
+      var props = '<m:mPr><m:baseJc m:val="center"/><m:plcHide m:val="1"/><m:mcs><m:mc><m:mcPr>' +
+                  '<m:count m:val="' + (ncol || 1) + '"/><m:mcJc m:val="center"/></m:mcPr></m:mc></m:mcs>' +
+                  '<m:ctrlPr/></m:mPr>';
+      var body = '';
+      rows.forEach(function (r) {
+        body += '<m:mr>';
+        var cells = kids(r);
+        for (var i = 0; i < (ncol || 1); i++) body += '<m:e>' + (cells[i] ? seq(kids(cells[i])) : '') + '</m:e>';
+        body += '</m:mr>';
+      });
+      return '<m:m>' + props + body + '</m:m>';
+
+    case 'mtr':
+    case 'mtd':
+      return seq(k);
+
+    default:
+      return k.length ? seq(k) : run(txt(n), 'p');
+  }
+}
+
+function mathmlToOmml(mathEl) { return mml(mathEl); }
+
+/* ============================================================================
+   2. Écriture ZIP (entrées non compressées + CRC32)
+   ========================================================================== */
+var CRCT = (function () {
+  var t = new Int32Array(256);
+  for (var i = 0; i < 256; i++) {
+    var c = i;
+    for (var j = 0; j < 8; j++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[i] = c;
+  }
+  return t;
+})();
+function crc32(buf) {
+  var c = -1;
+  for (var i = 0; i < buf.length; i++) c = CRCT[(c ^ buf[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ -1) >>> 0;
+}
+function utf8(str) {
+  if (typeof TextEncoder !== 'undefined') return new TextEncoder().encode(str);
+  var b = unescape(encodeURIComponent(str)), a = new Uint8Array(b.length);
+  for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i);
+  return a;
+}
+function zip(files) {
+  var parts = [], central = [], offset = 0;
+  function u16(v) { return [v & 0xFF, (v >>> 8) & 0xFF]; }
+  function u32(v) { return [v & 0xFF, (v >>> 8) & 0xFF, (v >>> 16) & 0xFF, (v >>> 24) & 0xFF]; }
+
+  files.forEach(function (f) {
+    var name = utf8(f.name), data = f.bin ? f.bin : utf8(f.data), c = crc32(data);
+    var local = [].concat(u32(0x04034b50), u16(20), u16(0x0800), u16(0), u16(0), u16(0),
+                          u32(c), u32(data.length), u32(data.length),
+                          u16(name.length), u16(0));
+    parts.push(new Uint8Array(local), name, data);
+    central.push({ name: name, crc: c, size: data.length, off: offset });
+    offset += local.length + name.length + data.length;
+  });
+
+  var cd = [];
+  central.forEach(function (e) {
+    cd = cd.concat(u32(0x02014b50), u16(20), u16(20), u16(0x0800), u16(0), u16(0), u16(0),
+                   u32(e.crc), u32(e.size), u32(e.size),
+                   u16(e.name.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(e.off));
+    cd = cd.concat(Array.prototype.slice.call(e.name));
+  });
+  var cdArr = new Uint8Array(cd);
+  var eocd = new Uint8Array([].concat(u32(0x06054b50), u16(0), u16(0),
+                                      u16(files.length), u16(files.length),
+                                      u32(cdArr.length), u32(offset), u16(0)));
+  parts.push(cdArr, eocd);
+
+  var total = parts.reduce(function (n, p) { return n + p.length; }, 0);
+  var out = new Uint8Array(total), pos = 0;
+  parts.forEach(function (p) { out.set(p, pos); pos += p.length; });
+  return out;
+}
+
+/* ============================================================================
+   3. HTML -> WordprocessingML
+   ========================================================================== */
+var SKIP = { script: 1, style: 1, button: 1, input: 1, noscript: 1 };
+var IMAGES = [];           /* { bin, w, h } collectées pendant le parcours */
+var EMU = 9525;            /* EMU par pixel */
+var MAXW = 5760000;        /* largeur utile de la page, en EMU */
+
+function b64bin(b64) {
+  var raw = atob(b64), a = new Uint8Array(raw.length);
+  for (var i = 0; i < raw.length; i++) a[i] = raw.charCodeAt(i);
+  return a;
+}
+
+function imageXml(dataUrl, wpx, hpx) {
+  var m = /^data:image\/png;base64,(.*)$/.exec(dataUrl || '');
+  if (!m) return '';
+  var cx = Math.round(wpx * EMU), cy = Math.round(hpx * EMU);
+  if (cx > MAXW) { cy = Math.round(cy * MAXW / cx); cx = MAXW; }
+  IMAGES.push({ bin: b64bin(m[1]) });
+  var id = IMAGES.length, rid = 'rIdImg' + id;
+  return '<w:p><w:pPr><w:pStyle w:val="Figure"/><w:jc w:val="center"/></w:pPr><w:r><w:drawing>' +
+    '<wp:inline distT="0" distB="0" distL="0" distR="0">' +
+    '<wp:extent cx="' + cx + '" cy="' + cy + '"/>' +
+    '<wp:effectExtent l="0" t="0" r="0" b="0"/>' +
+    '<wp:docPr id="' + id + '" name="Graphique ' + id + '"/>' +
+    '<wp:cNvGraphicFramePr><a:graphicFrameLocks ' +
+      'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/>' +
+    '</wp:cNvGraphicFramePr>' +
+    '<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">' +
+    '<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+    '<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+    '<pic:nvPicPr><pic:cNvPr id="' + id + '" name="Graphique ' + id + '"/><pic:cNvPicPr/></pic:nvPicPr>' +
+    '<pic:blipFill><a:blip r:embed="' + rid + '"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>' +
+    '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' + cx + '" cy="' + cy + '"/></a:xfrm>' +
+    '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>' +
+    '</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>';
+}
+var BLOCK = { p: 1, div: 1, h1: 1, h2: 1, h3: 1, h4: 1, li: 1, tr: 1, td: 1, th: 1,
+              table: 1, ul: 1, ol: 1, section: 1, article: 1, header: 1, blockquote: 1 };
+
+function W() {
+  this.body = '';
+  this.para = null;      /* { style, runs, numId, ilvl } */
+}
+W.prototype.open = function (style, numId, ilvl) {
+  this.close();
+  this.para = { style: style || 'Corps', runs: '', numId: numId || 0, ilvl: ilvl || 0 };
+};
+W.prototype.close = function () {
+  var p = this.para;
+  this.para = null;
+  if (!p || (p.runs === '' && !p.numId)) return;
+  if (p.runs === '') return;
+  var pPr = '<w:pPr><w:pStyle w:val="' + p.style + '"/>';
+  if (p.numId) pPr += '<w:numPr><w:ilvl w:val="' + p.ilvl + '"/><w:numId w:val="' + p.numId + '"/></w:numPr>';
+  pPr += '</w:pPr>';
+  this.body += '<w:p>' + pPr + p.runs + '</w:p>';
+};
+W.prototype.add = function (xml) {
+  if (!this.para) this.open('Corps');
+  this.para.runs += xml;
+};
+W.prototype.raw = function (xml) { this.close(); this.body += xml; };
+
+function textRun(s, fmt) {
+  if (!s) return '';
+  var rPr = '';
+  if (fmt.b) rPr += '<w:b/>';
+  if (fmt.i) rPr += '<w:i/>';
+  if (fmt.sup) rPr += '<w:vertAlign w:val="superscript"/>';
+  if (fmt.sub) rPr += '<w:vertAlign w:val="subscript"/>';
+  if (fmt.mono) rPr += '<w:rFonts w:ascii="Consolas" w:hAnsi="Consolas"/>';
+  return '<w:r>' + (rPr ? '<w:rPr>' + rPr + '</w:rPr>' : '') +
+         '<w:t xml:space="preserve">' + esc(s) + '</w:t></w:r>';
+}
+
+function walk(node, w, fmt, list) {
+  var i, cs = node.childNodes;
+  for (i = 0; i < cs.length; i++) {
+    var n = cs[i];
+
+    if (n.nodeType === 3) {
+      var s = n.nodeValue.replace(/\s+/g, ' ');
+      if (s.trim() === '' && !/\S/.test(s)) { if (w.para && w.para.runs) w.add(textRun(' ', fmt)); continue; }
+      w.add(textRun(s, fmt));
+      continue;
+    }
+    if (n.nodeType !== 1) continue;
+
+    var tag = n.nodeName.toLowerCase();
+    if (SKIP[tag]) continue;
+    if (n.classList && (n.classList.contains('top-bar') || n.classList.contains('top-actions') ||
+                        n.classList.contains('sol-toggle-wrap'))) continue;
+
+    /* --- équations --- */
+    if (tag === 'mjx-container') {
+      var math = n.querySelector('mjx-assistive-mml math, math');
+      var display = n.getAttribute('display') === 'true';
+      if (math) {
+        var omml = mathmlToOmml(math);
+        if (display) {
+          w.close();
+          w.body += '<w:p><w:pPr><w:pStyle w:val="Formule"/>' +
+                    '<w:jc w:val="center"/></w:pPr>' +
+                    '<m:oMath>' + omml + '</m:oMath></w:p>';
+        } else {
+          w.add('<m:oMath>' + omml + '</m:oMath>');
+        }
+      } else {
+        w.add(textRun(txt(n), fmt));
+      }
+      continue;
+    }
+    if (tag === 'mjx-assistive-mml' || tag === 'math') continue;
+
+    /* --- graphiques --- */
+    if (tag === 'svg' || tag === 'img') {
+      var png = n.getAttribute('data-kit-png');
+      if (png) {
+        w.close();
+        w.body += imageXml(png, +n.getAttribute('data-kit-w') || 600,
+                                +n.getAttribute('data-kit-h') || 380);
+      }
+      continue;
+    }
+
+    /* --- tableaux --- */
+    if (tag === 'table') { w.close(); w.body += table(n); continue; }
+
+    /* --- listes --- */
+    if (tag === 'ul' || tag === 'ol') {
+      w.close();
+      var nid = tag === 'ol' ? 2 : 1;
+      var lvl = list ? Math.min(list.ilvl + 1, 2) : 0;
+      var items = kids(n).filter(function (x) { return x.nodeName.toLowerCase() === 'li'; });
+      items.forEach(function (li) {
+        /* L'item est composé à part : son numéro doit se poser sur le premier
+           paragraphe produit, même si le <li> enveloppe son texte dans un <div>. */
+        var wb = new W();
+        walk(li, wb, fmt, { ilvl: lvl });
+        wb.close();
+        var xml = wb.body;
+        if (!xml) return;
+        var numPr = '<w:pStyle w:val="Liste"/><w:numPr><w:ilvl w:val="' + lvl +
+                    '"/><w:numId w:val="' + nid + '"/></w:numPr>';
+        if (xml.indexOf('<w:pStyle w:val="Corps"/>') !== -1) {
+          xml = xml.replace('<w:pStyle w:val="Corps"/>', numPr);
+        } else {
+          xml = '<w:p><w:pPr>' + numPr + '</w:pPr></w:p>' + xml;
+        }
+        w.body += xml;
+      });
+      continue;
+    }
+
+    /* --- titres --- */
+    if (tag === 'h1' || tag === 'h2') { w.close(); w.open('Titre1'); walk(n, w, fmt, list); w.close(); continue; }
+    if (tag === 'h3' || tag === 'h4') { w.close(); w.open('Titre2'); walk(n, w, fmt, list); w.close(); continue; }
+
+    /* --- titres internes du corrigé --- */
+    if (n.classList && (n.classList.contains('sol-sub') || n.classList.contains('sol-q') ||
+                        n.classList.contains('dossier-title'))) {
+      w.close(); w.open('Titre2'); walk(n, w, { b: true }, list); w.close(); continue;
+    }
+    if (n.classList && n.classList.contains('persp-box')) {
+      w.close();
+      var wb = new W();
+      walk(n, wb, fmt, list);
+      wb.close();
+      w.body += wb.body.replace(/w:val="Corps"/g, 'w:val="Encadre"')
+                       .replace(/w:val="Titre2"/g, 'w:val="EncadreTitre"');
+      continue;
+    }
+
+    /* --- mise en forme inline --- */
+    var f2 = { b: fmt.b, i: fmt.i, sup: fmt.sup, sub: fmt.sub, mono: fmt.mono };
+    if (tag === 'strong' || tag === 'b') f2.b = true;
+    if (tag === 'em' || tag === 'i') f2.i = true;
+    if (tag === 'sup') f2.sup = true;
+    if (tag === 'sub') f2.sub = true;
+    if (tag === 'code' || tag === 'kbd') f2.mono = true;
+
+    /* intertitre écrit en style en ligne (span display:block + gras) */
+    var st = n.getAttribute && n.getAttribute('style');
+    if (st && /display\s*:\s*block/.test(st) && /font-weight\s*:\s*(6|7|8|9|bold)/.test(st)) {
+      w.close(); w.open('Titre3');
+      walk(n, w, { b: true }, list);
+      w.close();
+      continue;
+    }
+
+    if ((tag === 'strong' || tag === 'b') &&
+        (!w.para || w.para.runs === '') &&
+        n.nextElementSibling && n.nextElementSibling.nodeName.toLowerCase() === 'br') {
+      w.close(); w.open('Titre3');
+      walk(n, w, { b: true }, list);
+      w.close();
+      i++;                       /* le <br> qui suit devient inutile */
+      continue;
+    }
+
+    if (tag === 'br') { w.add('<w:r><w:br/></w:r>'); continue; }
+    if (tag === 'hr') { w.close(); continue; }
+
+    if (BLOCK[tag]) { w.close(); w.open('Corps'); walk(n, w, f2, list); w.close(); }
+    else { walk(n, w, f2, list); }
+  }
+}
+
+function cellXml(td, isHead) {
+  var w2 = new W();
+  walk(td, w2, { b: !!isHead }, null);
+  w2.close();
+  var content = w2.body || '<w:p><w:pPr><w:pStyle w:val="Cellule"/></w:pPr></w:p>';
+  content = content.replace(/w:val="Corps"/g, 'w:val="Cellule"');
+  var span = parseInt(td.getAttribute('colspan') || '1', 10);
+  var shd = isHead ? '<w:shd w:val="clear" w:fill="EDE9DF"/>' : '';
+  return '<w:tc><w:tcPr>' + (span > 1 ? '<w:gridSpan w:val="' + span + '"/>' : '') +
+         shd + '<w:vAlign w:val="center"/></w:tcPr>' + content + '</w:tc>';
+}
+
+function table(tbl) {
+  var rows = tbl.querySelectorAll('tr'), out = '', ncol = 0, i, j;
+  for (i = 0; i < rows.length; i++) {
+    var c = rows[i].children, n = 0;
+    for (j = 0; j < c.length; j++) n += parseInt(c[j].getAttribute('colspan') || '1', 10);
+    ncol = Math.max(ncol, n);
+  }
+  if (!ncol) return '';
+  var grid = '<w:tblGrid>';
+  for (i = 0; i < ncol; i++) grid += '<w:gridCol w:w="' + Math.floor(9360 / ncol) + '"/>';
+  grid += '</w:tblGrid>';
+
+  for (i = 0; i < rows.length; i++) {
+    var cells = rows[i].children, xml = '';
+    var head = rows[i].parentNode.nodeName.toLowerCase() === 'thead' ||
+               (cells.length && cells[0].nodeName.toLowerCase() === 'th');
+    for (j = 0; j < cells.length; j++) xml += cellXml(cells[j], head);
+    out += '<w:tr>' + (head ? '<w:trPr><w:tblHeader/></w:trPr>' : '') + xml + '</w:tr>';
+  }
+  return '<w:tbl><w:tblPr><w:tblStyle w:val="Grille"/>' +
+         '<w:tblW w:w="5000" w:type="pct"/><w:tblLayout w:type="fixed"/></w:tblPr>' +
+         grid + out + '</w:tbl><w:p><w:pPr><w:pStyle w:val="Apres"/></w:pPr></w:p>';
+}
+
+/* ============================================================================
+   Assemblage du fichier
+   ========================================================================== */
+var NS =
+  'xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" ' +
+  'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
+  'xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" ' +
+  'xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" ' +
+  'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+  'xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture" ' +
+  'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+  'xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" ' +
+  'mc:Ignorable="w14"';
+
+function style(id, name, opts) {
+  var o = opts || {};
+  return '<w:style w:type="paragraph" w:styleId="' + id + '"><w:name w:val="' + name + '"/>' +
+         '<w:basedOn w:val="Corps"/><w:pPr>' +
+         (o.keep ? '<w:keepNext/>' : '') +
+         '<w:spacing w:before="' + (o.before || 0) + '" w:after="' + (o.after || 120) +
+         '" w:line="' + (o.line || 276) + '" w:lineRule="auto"/>' +
+         (o.jc ? '<w:jc w:val="' + o.jc + '"/>' : '') +
+         (o.ind ? '<w:ind w:left="' + o.ind + '"/>' : '') +
+         (o.border ? '<w:pBdr><w:left w:val="single" w:sz="18" w:space="8" w:color="1A2E42"/></w:pBdr>' : '') +
+         '</w:pPr><w:rPr>' +
+         (o.font ? '<w:rFonts w:ascii="' + o.font + '" w:hAnsi="' + o.font + '"/>' : '') +
+         (o.b ? '<w:b/>' : '') + (o.i ? '<w:i/>' : '') +
+         (o.sz ? '<w:sz w:val="' + o.sz + '"/>' : '') +
+         (o.color ? '<w:color w:val="' + o.color + '"/>' : '') +
+         '</w:rPr></w:style>';
+}
+
+function stylesXml() {
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles ' + NS + '>' +
+    '<w:docDefaults><w:rPrDefault><w:rPr>' +
+      '<w:rFonts w:ascii="Cambria" w:hAnsi="Cambria" w:cs="Cambria"/>' +
+      '<w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="fr-FR"/>' +
+    '</w:rPr></w:rPrDefault><w:pPrDefault><w:pPr>' +
+      '<w:spacing w:after="120" w:line="276" w:lineRule="auto"/><w:jc w:val="both"/>' +
+    '</w:pPr></w:pPrDefault></w:docDefaults>' +
+    '<w:style w:type="paragraph" w:default="1" w:styleId="Corps"><w:name w:val="Normal"/>' +
+      '<w:pPr><w:spacing w:after="120" w:line="276" w:lineRule="auto"/><w:jc w:val="both"/></w:pPr>' +
+      '<w:rPr><w:rFonts w:ascii="Cambria" w:hAnsi="Cambria"/><w:sz w:val="22"/></w:rPr></w:style>' +
+    style('TitreDoc', 'Title', { font: 'Cambria', b: true, sz: 40, color: '0D1B2A', jc: 'left', after: 60, line: 240 }) +
+    style('SousTitre', 'Subtitle', { i: true, sz: 20, color: '5A5A5A', jc: 'left', after: 280, line: 240 }) +
+    style('Titre1', 'heading 1', { b: true, sz: 28, color: '0D1B2A', before: 320, after: 140, jc: 'left', keep: true, line: 240 }) +
+    style('Titre2', 'heading 2', { b: true, sz: 23, color: '1A2E42', before: 240, after: 100, jc: 'left', keep: true, line: 240 }) +
+    style('Formule', 'Formula', { jc: 'center', before: 120, after: 120, line: 240 }) +
+    style('Liste', 'List Paragraph', { after: 100, ind: 360 }) +
+    style('Cellule', 'Table Text', { sz: 20, after: 40, jc: 'left', line: 240 }) +
+    style('Encadre', 'Aside', { ind: 240, border: true, sz: 21, before: 200, after: 200 }) +
+    style('Apres', 'After Table', { after: 200, sz: 12 }) +
+    style('Figure', 'Figure', { jc: 'center', before: 160, after: 200, line: 240 }) +
+    style('Titre3', 'heading 3', { b: true, sz: 22, color: '1A2E42', before: 200,
+                                   after: 60, jc: 'left', keep: true, line: 240 }) +
+    style('EncadreTitre', 'Aside Heading', { ind: 240, border: true, b: true, sz: 22,
+                                             color: '1A2E42', before: 200, after: 60, jc: 'left' }) +
+    '<w:style w:type="table" w:styleId="Grille"><w:name w:val="Table Grid"/><w:tblPr>' +
+      '<w:tblBorders>' +
+      ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(function (b) {
+        return '<w:' + b + ' w:val="single" w:sz="4" w:space="0" w:color="9A9A9A"/>';
+      }).join('') +
+      '</w:tblBorders><w:tblCellMar>' +
+      '<w:top w:w="60" w:type="dxa"/><w:left w:w="90" w:type="dxa"/>' +
+      '<w:bottom w:w="60" w:type="dxa"/><w:right w:w="90" w:type="dxa"/>' +
+      '</w:tblCellMar></w:tblPr></w:style>' +
+    '</w:styles>';
+}
+
+function numberingXml() {
+  function lvl(i, fmt, txtv, ind) {
+    return '<w:lvl w:ilvl="' + i + '"><w:start w:val="1"/><w:numFmt w:val="' + fmt + '"/>' +
+           '<w:lvlText w:val="' + txtv + '"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="' +
+           ind + '" w:hanging="360"/></w:pPr>' +
+           (fmt === 'bullet' ? '<w:rPr><w:rFonts w:ascii="Symbol" w:hAnsi="Symbol"/></w:rPr>' : '') +
+           '</w:lvl>';
+  }
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:numbering ' + NS + '>' +
+    '<w:abstractNum w:abstractNumId="1"><w:multiLevelType w:val="hybridMultilevel"/>' +
+      lvl(0, 'bullet', '\uF0B7', 360) + lvl(1, 'bullet', 'o', 720) + lvl(2, 'bullet', '\uF0A7', 1080) +
+    '</w:abstractNum>' +
+    '<w:abstractNum w:abstractNumId="2"><w:multiLevelType w:val="hybridMultilevel"/>' +
+      lvl(0, 'decimal', '%1.', 360) + lvl(1, 'lowerLetter', '%2.', 720) + lvl(2, 'lowerRoman', '%3.', 1080) +
+    '</w:abstractNum>' +
+    '<w:num w:numId="1"><w:abstractNumId w:val="1"/></w:num>' +
+    '<w:num w:numId="2"><w:abstractNumId w:val="2"/></w:num>' +
+    '</w:numbering>';
+}
+
+function buildDocx(opts) {
+  IMAGES = [];
+  var w = new W();
+
+  if (opts.title) {
+    w.body += '<w:p><w:pPr><w:pStyle w:val="TitreDoc"/></w:pPr>' +
+              textRun(opts.title, {}) + '</w:p>';
+  }
+  if (opts.subtitle) {
+    w.body += '<w:p><w:pPr><w:pStyle w:val="SousTitre"/></w:pPr>' +
+              textRun(opts.subtitle, {}) + '</w:p>';
+  }
+  opts.sections.forEach(function (sec) {
+    if (sec.heading) {
+      w.body += '<w:p><w:pPr><w:pStyle w:val="Titre1"/></w:pPr>' + textRun(sec.heading, {}) + '</w:p>';
+    }
+    walk(sec.node, w, {}, null);
+    w.close();
+  });
+  w.close();
+
+  var doc = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ' + NS + '><w:body>' +
+    w.body +
+    '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/>' +
+    '<w:pgMar w:top="1247" w:right="1247" w:bottom="1247" w:left="1247" ' +
+    'w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>';
+
+  var media = [], rels = '', ctypes = '';
+  IMAGES.forEach(function (im, i) {
+    media.push({ name: 'word/media/image' + (i + 1) + '.png', bin: im.bin });
+    rels += '<Relationship Id="rIdImg' + (i + 1) + '" Type="http://schemas.openxmlformats.org/' +
+            'officeDocument/2006/relationships/image" Target="media/image' + (i + 1) + '.png"/>';
+  });
+  if (IMAGES.length) ctypes = '<Default Extension="png" ContentType="image/png"/>';
+
+  return zip([
+    { name: '[Content_Types].xml',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+        '<Default Extension="xml" ContentType="application/xml"/>' + ctypes +
+        '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+        '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>' +
+        '<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>' +
+        '</Types>' },
+    { name: '_rels/.rels',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+        '</Relationships>' },
+    { name: 'word/_rels/document.xml.rels',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' +
+        '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>' +
+        rels + '</Relationships>' },
+    { name: 'word/document.xml', data: doc },
+    { name: 'word/styles.xml', data: stylesXml() },
+    { name: 'word/numbering.xml', data: numberingXml() }
+  ].concat(media));
+}
+
+root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: W, _walk: walk };
+
+})(window);
+
+</script>
+<script id="kit-js">
+/* ============================================================
+   KIT D'UNIFORMISATION — logique partagée (modale PDF, export Word,
+   libellés de la barre d'actions). Autonome : ne dépend d'aucun
+   dictionnaire I18N propre à la page.
+   ============================================================ */
+(function(){
+  var T = {
+    fr:{ modalTitle:"Exporter en PDF", seedPre:"Seed\u00a0:",
+         seedPost:"\u2014 notez cette valeur pour reproduire exactement cet exercice.",
+         optHeader:"Inclure l'en-t\u00eate de page",
+         optHeaderD:"Titre, badge de mati\u00e8re et intitul\u00e9 de l'exercice",
+         optSol:"Inclure le corrig\u00e9 complet",
+         optSolD:"L'ensemble des d\u00e9veloppements et commentaires du corrig\u00e9",
+         print:"\uD83D\uDDA8\u00a0Imprimer / Sauvegarder PDF", cancel:"Annuler",
+         btnNew:"\u21ba Nouvel \u00e9nonc\u00e9", btnPdf:"\u2b07 Exporter PDF", btnDoc:"\u2b07 Exporter Word",
+         btnCopy:"\u29c9 Copier", copied:"\u2713 Copi\u00e9e", seedLabel:"Seed de reproductibilit\u00e9",
+         docFile:"exercice.doc" },
+    en:{ modalTitle:"Export to PDF", seedPre:"Seed:",
+         seedPost:"\u2014 note this value to reproduce this exact exercise.",
+         optHeader:"Include the page header",
+         optHeaderD:"Title, subject badge and exercise heading",
+         optSol:"Include the full solution",
+         optSolD:"All the workings and comments of the solution",
+         print:"\uD83D\uDDA8\u00a0Print / Save as PDF", cancel:"Cancel",
+         btnNew:"\u21ba New exercise", btnPdf:"\u2b07 Export PDF", btnDoc:"\u2b07 Export Word",
+         btnCopy:"\u29c9 Copy", copied:"\u2713 Copied", seedLabel:"Reproducibility seed",
+         docFile:"exercise.doc" }
+  };
+
+  function lang(){
+    var l = (window.LANG || document.documentElement.lang || 'fr').toLowerCase();
+    return (l.indexOf('en') === 0) ? 'en' : 'fr';
+  }
+  function t(k){ return T[lang()][k]; }
+
+  window.KIT = { T:T, lang:lang, t:t };
+
+  /* --- libellés du kit (modale + barre d'actions) --- */
+  function paint(){
+    var d = T[lang()];
+    document.querySelectorAll('[data-kit]').forEach(function(el){
+      var k = el.getAttribute('data-kit');
+      if (d[k] !== undefined) el.innerHTML = d[k];
+    });
+  }
+  window.KIT.paint = paint;
+
+  /* Se raccroche au changement de langue de la page sans la modifier. */
+  function hookLang(){
+    if (typeof window.setLang === 'function' && !window.setLang.__kit){
+      var orig = window.setLang;
+      var wrapped = function(){ var r = orig.apply(this, arguments); paint(); return r; };
+      wrapped.__kit = true;
+      window.setLang = wrapped;
+    }
+  }
+
+  /* --- Copie de la seed active --- */
+  window.copySeed = function(btn){
+    var el = document.getElementById('seed-disp');
+    if (!el) return;
+    var v = (el.textContent || '').trim();
+    if (!v || v === '\u2014') return;
+    var done = function(){
+      var b = btn || document.getElementById('btn-copy-seed');
+      if (!b) return;
+      var old = b.innerHTML;
+      b.innerHTML = t('copied');
+      setTimeout(function(){ b.innerHTML = old; paint(); }, 1400);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(v).then(done, done);
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = v; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch(e){}
+      document.body.removeChild(ta); done();
+    }
+  };
+
+  /* --- Modale PDF --- */
+  window.openPdfModal = function(){
+    var s = document.getElementById('modal-seed');
+    var src = document.getElementById('seed-disp');
+    if (s && src) s.textContent = (src.textContent || '\u2014').trim();
+    /* la case « corrigé » reflète l'état d'affichage courant */
+    var sol = document.getElementById('sol-card');
+    var box = document.getElementById('opt-sol');
+    if (box) box.checked = !!(window.solVisible ||
+        (sol && (sol.classList.contains('visible') || sol.style.display === 'block')));
+    paint();
+    document.getElementById('pdf-ov').classList.add('open');
+    document.getElementById('pdf-modal').classList.add('open');
+  };
+  window.closePdfModal = function(){
+    document.getElementById('pdf-ov').classList.remove('open');
+    document.getElementById('pdf-modal').classList.remove('open');
+  };
+  var PRINTCLS = ['print-no-header', 'print-force-solution', 'print-no-solution'];
+
+  function clearPrintClasses() {
+    var b = document.body;
+    for (var i = 0; i < PRINTCLS.length; i++) b.classList.remove(PRINTCLS[i]);
+  }
+
+  window.doPrint = function () {
+    var noHdr   = !document.getElementById('opt-header').checked;
+    var inclSol =  document.getElementById('opt-sol').checked;
+    var b = document.body;
+
+    clearPrintClasses();
+    if (noHdr) b.classList.add('print-no-header');
+    b.classList.add(inclSol ? 'print-force-solution' : 'print-no-solution');
+    closePdfModal();
+
+    /* Le nettoyage doit attendre la fin réelle de l'impression. Un simple
+       minuteur ne convient pas : selon le navigateur, window.print() rend la
+       main avant que l'aperçu ne soit composé, et les options seraient alors
+       déjà effacées au moment où le PDF est produit. */
+    var done = false;
+    function finish() {
+      if (done) return;
+      done = true;
+      clearPrintClasses();
+      window.removeEventListener('afterprint', finish);
+      if (mq && mq.removeListener) mq.removeListener(onMq);
+      if (mq && mq.removeEventListener) mq.removeEventListener('change', onMq);
+    }
+    function onMq(e) { if (!e.matches) finish(); }
+
+    var mq = window.matchMedia ? window.matchMedia('print') : null;
+    window.addEventListener('afterprint', finish);
+    if (mq && mq.addEventListener) mq.addEventListener('change', onMq);
+    else if (mq && mq.addListener) mq.addListener(onMq);
+    /* filet de sécurité si le navigateur n'émet aucun de ces signaux */
+    setTimeout(finish, 120000);
+
+    setTimeout(function () { window.print(); }, 120);
+  };
+
+  /* --- Rasterisation des graphiques SVG ---
+     Word ne sait pas lire le SVG. On le convertit en PNG en recopiant d'abord
+     les styles calculés, sinon les couleurs héritées de la feuille disparaissent. */
+  var SVGPROPS = ['fill', 'stroke', 'stroke-width', 'stroke-dasharray', 'stroke-linecap',
+                  'stroke-linejoin', 'opacity', 'fill-opacity', 'stroke-opacity',
+                  'font-family', 'font-size', 'font-weight', 'font-style',
+                  'text-anchor', 'dominant-baseline'];
+
+  function inlineStyles(src, dst) {
+    var a = src.querySelectorAll('*'), b = dst.querySelectorAll('*'), i, j;
+    for (i = 0; i < a.length && i < b.length; i++) {
+      var cs = window.getComputedStyle(a[i]);
+      for (j = 0; j < SVGPROPS.length; j++) {
+        var v = cs.getPropertyValue(SVGPROPS[j]);
+        if (v) b[i].setAttribute(SVGPROPS[j], v);
+      }
+    }
+  }
+
+  function svgSize(svg) {
+    var vb = svg.viewBox && svg.viewBox.baseVal;
+    if (vb && vb.width) return { w: vb.width, h: vb.height };
+    var r = svg.getBoundingClientRect();
+    if (r.width) return { w: r.width, h: r.height };
+    return { w: 600, h: 380 };
+  }
+
+  function svgToPng(svg) {
+    return new Promise(function (resolve) {
+      var done = false;
+      var res = function (v) { if (!done) { done = true; resolve(v); } };
+      /* garde-fou : un graphique qui ne se charge pas ne doit jamais
+         bloquer l'export, on l'omet et le reste du document part quand même */
+      setTimeout(function () { res(null); }, 5000);
+      try {
+        var d = svgSize(svg), SC = 2;
+        var c = svg.cloneNode(true);
+        c.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        c.setAttribute('width', d.w);
+        c.setAttribute('height', d.h);
+        inlineStyles(svg, c);
+        var bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        bg.setAttribute('x', 0); bg.setAttribute('y', 0);
+        bg.setAttribute('width', '100%'); bg.setAttribute('height', '100%');
+        bg.setAttribute('fill', '#ffffff');
+        c.insertBefore(bg, c.firstChild);
+        var xml = new XMLSerializer().serializeToString(c);
+        var img = new Image();
+        img.onload = function () {
+          try {
+            var cv = document.createElement('canvas');
+            cv.width = Math.round(d.w * SC); cv.height = Math.round(d.h * SC);
+            var ctx = cv.getContext('2d');
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, cv.width, cv.height);
+            ctx.drawImage(img, 0, 0, cv.width, cv.height);
+            res({ png: cv.toDataURL('image/png'), w: d.w, h: d.h });
+          } catch (e) { res(null); }
+        };
+        img.onerror = function () { res(null); };
+        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml);
+      } catch (e) { res(null); }
+    });
+  }
+
+  /* --- Export Word natif (.docx) ---
+     Les formules sont converties en OMML, le format d'équation natif de Word :
+     elles restent éditables et se composent avec Cambria Math. */
+  window.exportWord = function () {
+    var area = document.getElementById('ex-area');
+    if (!area || !window.DocxExport) { return; }
+
+    var btn = document.querySelector('.btn-sm.doc');
+    if (btn) { btn.disabled = true; btn.style.opacity = '.5'; }
+
+    var svgs = Array.prototype.slice.call(area.querySelectorAll('svg'));
+    Promise.all(svgs.map(svgToPng)).then(function (pngs) {
+      svgs.forEach(function (sv, i) {
+        if (!pngs[i]) return;
+        sv.setAttribute('data-kit-png', pngs[i].png);
+        sv.setAttribute('data-kit-w', pngs[i].w);
+        sv.setAttribute('data-kit-h', pngs[i].h);
+      });
+      try { writeDocx(area); } finally {
+        svgs.forEach(function (sv) {
+          sv.removeAttribute('data-kit-png');
+          sv.removeAttribute('data-kit-w');
+          sv.removeAttribute('data-kit-h');
+        });
+        if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+      }
+    });
+  };
+
+  function writeDocx(area) {
+
+    var h1 = document.querySelector('header h1');
+    var badge = document.querySelector('.header-badge, #lbl-badge');
+    var seed = document.getElementById('seed-disp');
+    var bits = [];
+    if (badge && badge.textContent.trim()) bits.push(badge.textContent.trim());
+    if (seed && seed.textContent.trim() && seed.textContent.trim() !== '\u2014') {
+      bits.push('seed ' + seed.textContent.trim());
+    }
+    bits.push('Thomas Hossen');
+
+    var sections = [];
+    var cards = area.querySelectorAll('.card');
+    for (var i = 0; i < cards.length; i++) {
+      var body = cards[i].querySelector('.card-body');
+      if (!body) continue;
+      var tag = cards[i].querySelector('.card-header .tag');
+      var h2 = cards[i].querySelector('.card-header h2');
+      var head = [tag ? tag.textContent.trim() : '', h2 ? h2.textContent.trim() : '']
+                   .filter(Boolean).join(' \u2014 ');
+      sections.push({ heading: head, node: body });
+    }
+    if (!sections.length) sections = [{ heading: '', node: area }];
+
+    var bytes = window.DocxExport.build({
+      title: h1 ? h1.textContent.trim() : document.title,
+      subtitle: bits.join(' \u00b7 '),
+      sections: sections
+    });
+
+    var name = (h1 ? h1.textContent : 'exercice').normalize('NFD')
+                 .replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9]+/g, '_')
+                 .replace(/^_|_$/g, '').slice(0, 60) || 'exercice';
+    var blob = new Blob([bytes], {
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = name + '.docx';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){ hookLang(); paint(); });
+  if (document.readyState !== 'loading'){ hookLang(); paint(); }
+})();
+</script>
+<!-- KIT:JS:END -->
+</body>
+</html>
