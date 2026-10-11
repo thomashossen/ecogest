@@ -3,8 +3,8 @@ import sys
 sys.path.insert(0, '/home/claude/mf')
 from add_figs import inject
 F = dict(fid='qline', anchor_fr='<div class="dossier-title" id="s4">', anchor_en='<div class="dossier-title" id="s4">',
-cap_fr="La probabilité risque-neutre comme une position. Sur l'axe des facteurs de croissance, \\(q=\\frac{R-d}{u-d}\\) est la fraction du chemin de \\(d\\) à \\(u\\) parcourue par \\(R\\). Déplacez \\(R\\) : \\(q\\) reste entre 0 et 1 tant que \\(d<R<u\\) ; aux bornes, l'une des deux branches domine l'actif sans risque et il y a arbitrage.",
-cap_en="The risk-neutral probability as a position. On the axis of growth factors, \\(q=\\frac{R-d}{u-d}\\) is the fraction of the way from \\(d\\) to \\(u\\) travelled by \\(R\\). Move \\(R\\): \\(q\\) stays between 0 and 1 as long as \\(d<R<u\\); at the bounds, one branch dominates the riskless asset and there is an arbitrage.",
+cap_fr="La probabilité risque-neutre comme une position. Sur l'axe des facteurs de croissance, \\(q=\\frac{R-d}{u-d}\\) est la fraction du chemin de \\(d\\) à \\(u\\) parcourue par \\(R\\). Déplacez \\(R\\) : \\(q\\) reste entre 0 et 1 tant que \\(d&lt;R&lt;u\\) ; aux bornes, l'une des deux branches domine l'actif sans risque et il y a arbitrage.",
+cap_en="The risk-neutral probability as a position. On the axis of growth factors, \\(q=\\frac{R-d}{u-d}\\) is the fraction of the way from \\(d\\) to \\(u\\) travelled by \\(R\\). Move \\(R\\): \\(q\\) stays between 0 and 1 as long as \\(d&lt;R&lt;u\\); at the bounds, one branch dominates the riskless asset and there is an arbitrage.",
 code=r"""
 Object.assign(I18N.fr.f, { qlR: 'Facteur sans risque <i>R</i>', qlAria: 'La probabilité risque-neutre sur l\u2019axe des facteurs',
   qlRead: (u, d, R, q) => `<i>q</i> = (${fmtT(R, 3)} − ${fmtT(d, 2)}) / (${fmtT(u, 2)} − ${fmtT(d, 2)}) = <span class="v">${fmtT(q, 4)}</span> ; vérification : <i>qu</i> + (1 − <i>q</i>)<i>d</i> = <span class="v">${fmtT(q * u + (1 - q) * d, 3)}</span> = <i>R</i>.${q <= 0 || q >= 1 ? ' Hors de ]0, 1[ : arbitrage.' : ''}` });
