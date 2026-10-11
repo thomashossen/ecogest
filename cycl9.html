@@ -2388,7 +2388,16 @@ root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: 
   }
 
   /* ---------- 1. typographie ---------- */
+  /* séparateur décimal : virgule en français, point en anglais */
+  function decimalsText(s, L) {
+    return L === 'fr' ? s.replace(/(\d)\.(\d)/g, '$1,$2') : s.replace(/(\d),(\d{1,2})(?!\d)/g, '$1.$2');
+  }
+  function decimalsTex(t, L) {
+    if (L === 'fr') return t.replace(/(\d)\{\.\}(\d)/g, '$1{,}$2').replace(/(\d)\.(\d)/g, '$1{,}$2');
+    return t.replace(/(\d)\{[,.]\}(\d)/g, '$1.$2');
+  }
   function typo(s, L) {
+    s = decimalsText(s, L);
     if (L === 'fr') {
       s = s.replace(/([A-Za-z\u00C0-\u017F\)\]\u00bb%\u20ac])[ \u00a0\u202f]*:(?!\/\/)/g, '$1' + NBSP + ':');
       s = s.replace(/(\d)[ \u00a0\u202f]+:/g, '$1' + NBSP + ':');
@@ -2524,8 +2533,11 @@ root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: 
     var segs = segments(v), changed = false, i;
     for (i = 0; i < segs.length; i++) {
       var sg = segs[i], ns;
-      if (sg.tex === 2) {
-        ns = cleanDisplay(sg.s);
+      if (sg.tex === 1) {
+        ns = decimalsTex(sg.s, L);
+        if (ns !== sg.s) { sg.s = ns; changed = true; }
+      } else if (sg.tex === 2) {
+        ns = decimalsTex(cleanDisplay(sg.s), L);
         if (ns !== sg.s) { sg.s = ns; changed = true; }
         /* ponctuation juste après la ligne : supprimée */
         var nx = segs[i + 1];
@@ -2604,6 +2616,15 @@ root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: 
     var nodes = [], n;
     while ((n = it.nextNode())) nodes.push(n);
     for (var i = 0; i < nodes.length; i++) processText(nodes[i], root, L);
+    /* étiquettes des graphiques : seul le séparateur décimal est harmonisé */
+    var labels = root.querySelectorAll ? root.querySelectorAll('svg text, svg tspan') : [];
+    for (var k = 0; k < labels.length; k++) {
+      var cs = labels[k].childNodes;
+      for (var m = 0; m < cs.length; m++) if (cs[m].nodeType === 3) {
+        var nv = decimalsText(cs[m].nodeValue, L);
+        if (nv !== cs[m].nodeValue) cs[m].nodeValue = nv;
+      }
+    }
   }
 
   var busy = false, obs = null;

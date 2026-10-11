@@ -680,6 +680,34 @@ function normCDF(x) {
     return sign === 1 ? cdf : 1.0 - cdf;
 }
 
+
+/* ---------- Schéma : lecture de N(d1) et N(d2) sur la loi normale centrée réduite ---------- */
+const BSFIG = {
+  fr: { aria: "Lecture de N(d1) et N(d2) sur la densité normale",
+        cap: (P) => `Lecture graphique des deux probabilités du call. La courbe est la densité de la loi normale centrée réduite ; l'aire colorée à gauche de \\(d_2=${P.d2_C_rnd}\\) vaut \\(N(d_2)=${P.Nd2_C}\\), probabilité risque-neutre d'exercice ; l'aire à gauche de \\(d_1=${P.d1_C_rnd}\\), plus large de \\(\\sigma\\sqrt{T}=${(P.sigma_C*Math.sqrt(P.T_C)).toFixed(3)}\\), vaut \\(N(d_1)=${P.Nd1_C}\\), le delta du call. Pour le put, on lit les aires complémentaires à droite : \\(N(-d_1)=${P.N_minus_d1_P}\\) et \\(N(-d_2)=${P.N_minus_d2_P}\\).` },
+  en: { aria: "Reading N(d1) and N(d2) on the normal density",
+        cap: (P) => `Graphical reading of the two probabilities of the call. The curve is the standard normal density; the shaded area to the left of \\(d_2=${P.d2_C_rnd}\\) is \\(N(d_2)=${P.Nd2_C}\\), the risk-neutral probability of exercise; the area to the left of \\(d_1=${P.d1_C_rnd}\\), wider by \\(\\sigma\\sqrt{T}=${(P.sigma_C*Math.sqrt(P.T_C)).toFixed(3)}\\), is \\(N(d_1)=${P.Nd1_C}\\), the delta of the call. For the put, the complementary areas on the right are read: \\(N(-d_1)=${P.N_minus_d1_P}\\) and \\(N(-d_2)=${P.N_minus_d2_P}\\).` }
+};
+function bsFigure(P) {
+  const L = BSFIG[LANG], W = 680, H = 250, ml = 30, mr = 30, mt = 24, mb = 36, x0 = -3.5, x1 = 3.5;
+  const X = z => ml + (z - x0) / (x1 - x0) * (W - ml - mr), Y = v => H - mb - v / 0.45 * (H - mt - mb);
+  const pdf = z => Math.exp(-z * z / 2) / Math.sqrt(2 * Math.PI);
+  const pts = (a, b) => { let s = ''; for (let i = 0; i <= 120; i++) { const z = a + (b - a) * i / 120; s += (i ? ' L' : 'M') + X(z).toFixed(1) + ' ' + Y(pdf(z)).toFixed(1); } return s; };
+  const d1 = Math.max(x0, Math.min(x1, P.d1_C_rnd)), d2 = Math.max(x0, Math.min(x1, P.d2_C_rnd));
+  let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${L.aria}" style="width:100%;max-width:${W}px;height:auto;display:block;margin:0 auto">`;
+  s += `<path d="${pts(x0, d1)} L${X(d1).toFixed(1)} ${Y(0)} L${X(x0).toFixed(1)} ${Y(0)} Z" fill="#c9952a" fill-opacity="0.22"/>`;
+  s += `<path d="${pts(x0, d2)} L${X(d2).toFixed(1)} ${Y(0)} L${X(x0).toFixed(1)} ${Y(0)} Z" fill="#1f5fa6" fill-opacity="0.30"/>`;
+  s += `<path d="${pts(x0, x1)}" fill="none" stroke="#1f5fa6" stroke-width="2"/>`;
+  s += `<line x1="${ml}" y1="${Y(0)}" x2="${W - mr}" y2="${Y(0)}" stroke="#8a8a8a"/>`;
+  for (let z = -3; z <= 3; z++) s += `<text x="${X(z)}" y="${Y(0) + 16}" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="10.5" fill="#5a5a5a">${z}</text>`;
+  const lab = (z, txt, col, up) => `<line x1="${X(z)}" y1="${Y(0)}" x2="${X(z)}" y2="${mt + (up ? 0 : 22)}" stroke="${col}" stroke-width="1.5" stroke-dasharray="4 3"/><text x="${X(z)}" y="${mt + (up ? -6 : 16)}" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="11" font-weight="700" fill="${col}">${txt}</text>`;
+  s += lab(d2, `d₂ = ${P.d2_C_rnd}`, '#1f5fa6', true) + lab(d1, `d₁ = ${P.d1_C_rnd}`, '#b07d1e', false);
+  s += `<text x="${X(Math.min(d2, 0) - 1.6)}" y="${Y(0) - 14}" text-anchor="middle" font-family="Georgia,serif" font-size="11.5" fill="#0d1b2a">N(d₂) = ${P.Nd2_C}</text>`;
+  s += `<text x="${W - mr - 6}" y="${Y(0) - 60}" text-anchor="end" font-family="Georgia,serif" font-size="11.5" fill="#0d1b2a">N(d₁) = ${P.Nd1_C}</text>`;
+  s += `</svg>`;
+  return `<div class="fig-wrap" style="margin:1.4rem 0 .6rem;padding:1rem .8rem .4rem;border:1px solid var(--border);border-radius:6px;background:#fff">${s}</div><p style="text-align:center;font-size:.86rem;color:var(--text-muted);font-style:italic;margin:0 0 1.2rem">${L.cap(P)}</p>`;
+}
+
 function generateExercise(forceNew = false) {
     if(forceNew) {
         document.getElementById('seed-input').value = "";
@@ -773,7 +801,7 @@ function generateExercise(forceNew = false) {
     }
 
     htmlSol += `</ol>`;
-
+    htmlSol += bsFigure(P);
     document.getElementById('sol-content').innerHTML = htmlSol;
     
     if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
@@ -1851,7 +1879,16 @@ root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: 
   }
 
   /* ---------- 1. typographie ---------- */
+  /* séparateur décimal : virgule en français, point en anglais */
+  function decimalsText(s, L) {
+    return L === 'fr' ? s.replace(/(\d)\.(\d)/g, '$1,$2') : s.replace(/(\d),(\d{1,2})(?!\d)/g, '$1.$2');
+  }
+  function decimalsTex(t, L) {
+    if (L === 'fr') return t.replace(/(\d)\{\.\}(\d)/g, '$1{,}$2').replace(/(\d)\.(\d)/g, '$1{,}$2');
+    return t.replace(/(\d)\{[,.]\}(\d)/g, '$1.$2');
+  }
   function typo(s, L) {
+    s = decimalsText(s, L);
     if (L === 'fr') {
       s = s.replace(/([A-Za-z\u00C0-\u017F\)\]\u00bb%\u20ac])[ \u00a0\u202f]*:(?!\/\/)/g, '$1' + NBSP + ':');
       s = s.replace(/(\d)[ \u00a0\u202f]+:/g, '$1' + NBSP + ':');
@@ -1987,8 +2024,11 @@ root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: 
     var segs = segments(v), changed = false, i;
     for (i = 0; i < segs.length; i++) {
       var sg = segs[i], ns;
-      if (sg.tex === 2) {
-        ns = cleanDisplay(sg.s);
+      if (sg.tex === 1) {
+        ns = decimalsTex(sg.s, L);
+        if (ns !== sg.s) { sg.s = ns; changed = true; }
+      } else if (sg.tex === 2) {
+        ns = decimalsTex(cleanDisplay(sg.s), L);
         if (ns !== sg.s) { sg.s = ns; changed = true; }
         /* ponctuation juste après la ligne : supprimée */
         var nx = segs[i + 1];
@@ -2067,6 +2107,15 @@ root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: 
     var nodes = [], n;
     while ((n = it.nextNode())) nodes.push(n);
     for (var i = 0; i < nodes.length; i++) processText(nodes[i], root, L);
+    /* étiquettes des graphiques : seul le séparateur décimal est harmonisé */
+    var labels = root.querySelectorAll ? root.querySelectorAll('svg text, svg tspan') : [];
+    for (var k = 0; k < labels.length; k++) {
+      var cs = labels[k].childNodes;
+      for (var m = 0; m < cs.length; m++) if (cs[m].nodeType === 3) {
+        var nv = decimalsText(cs[m].nodeValue, L);
+        if (nv !== cs[m].nodeValue) cs[m].nodeValue = nv;
+      }
+    }
   }
 
   var busy = false, obs = null;

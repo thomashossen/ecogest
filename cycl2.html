@@ -573,7 +573,7 @@ const I18N = {
       function(P) { return `<li><ol class="sub-ol">
         <li>Si l'on a $C = (1-s)Y$, alors on a $\\frac{C}{L} = (1-s)\\frac{Y}{L}$, c'est-à-dire $c = (1-s)y$, soit ici $c = ${nt(1-P.s,4,0)}y$ : la consommation par tête représente donc ${nfp((1-P.s)*100,0)} % du PIB par tête, ce qui nous permet de compléter le tableau :
         ${P.table2}</li>
-        <li>L'épargne, c'est par définition ce qui n'est pas consommé : on a donc $S = sY$ et $C = (1-s)Y$. Par ailleurs, on est dans une économie fermée : l'épargne nationale est donc égale à $S = Y - C - G$. Or le modèle IS/LM en économie fermée stipule qu'on vérifie la relation $Y = C + I + G$. On a donc $S = I$ : l'investissement est égal à l'épargne en économie fermée. Il vient alors $I = sY$, d'où $\\frac{I}{L} = s\\frac{Y}{L}$. On a donc $i = sy$, soit ici $i = ${nt(P.s,4,0)}y$ : ${nfp(P.s*100,0)} % du PIB par tête sont donc consacrés à l'investissement, ce qui permet de compléter le tableau :
+        <li>L'épargne, c'est par définition ce qui n'est pas consommé : on a donc $S = sY$ et $C = (1-s)Y$. Par ailleurs, on est dans une économie fermée : il n'y a ni État ni échanges extérieurs dans ce modèle, de sorte que l'épargne est $S = Y - C$. Or l'identité emplois-ressources en économie fermée sans État s'écrit $Y = C + I$ (la production est soit consommée, soit investie). On a donc $S = I$ : l'investissement est égal à l'épargne en économie fermée. Il vient alors $I = sY$, d'où $\\frac{I}{L} = s\\frac{Y}{L}$. On a donc $i = sy$, soit ici $i = ${nt(P.s,4,0)}y$ : ${nfp(P.s*100,0)} % du PIB par tête sont donc consacrés à l'investissement, ce qui permet de compléter le tableau :
         ${P.table3}
         Par suite, on peut ajouter à notre représentation graphique précédente l'investissement par tête $sf(k) = ${P.sfTex}$ et on obtient :
         ${P.chart2}</li>
@@ -695,7 +695,7 @@ const I18N = {
       function(P) { return `<li><ol class="sub-ol">
         <li>If $C = (1-s)Y$, then $\\frac{C}{L} = (1-s)\\frac{Y}{L}$, that is $c = (1-s)y$, here $c = ${nt(1-P.s,4,0)}y$: consumption per worker therefore represents ${nfp((1-P.s)*100,0)}% of GDP per worker, which allows us to complete the table:
         ${P.table2}</li>
-        <li>Saving is by definition what is not consumed: we therefore have $S = sY$ and $C = (1-s)Y$. Moreover, we are in a closed economy: national saving is thus equal to $S = Y - C - G$. Now the IS/LM model in a closed economy states that $Y = C + I + G$ holds. We therefore have $S = I$: investment equals saving in a closed economy. It then follows that $I = sY$, hence $\\frac{I}{L} = s\\frac{Y}{L}$. We therefore have $i = sy$, here $i = ${nt(P.s,4,0)}y$: ${nfp(P.s*100,0)}% of GDP per worker is thus devoted to investment, which allows us to complete the table:
+        <li>Saving is by definition what is not consumed: we therefore have $S = sY$ and $C = (1-s)Y$. Moreover, we are in a closed economy: there is neither a government nor foreign trade in this model, so saving is $S = Y - C$. Now the resource identity of a closed economy without government reads $Y = C + I$ (output is either consumed or invested). We therefore have $S = I$: investment equals saving in a closed economy. It then follows that $I = sY$, hence $\\frac{I}{L} = s\\frac{Y}{L}$. We therefore have $i = sy$, here $i = ${nt(P.s,4,0)}y$: ${nfp(P.s*100,0)}% of GDP per worker is thus devoted to investment, which allows us to complete the table:
         ${P.table3}
         Consequently, we can add investment per worker $sf(k) = ${P.sfTex}$ to our previous graph and we obtain:
         ${P.chart2}</li>
@@ -2143,7 +2143,16 @@ root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: 
   }
 
   /* ---------- 1. typographie ---------- */
+  /* séparateur décimal : virgule en français, point en anglais */
+  function decimalsText(s, L) {
+    return L === 'fr' ? s.replace(/(\d)\.(\d)/g, '$1,$2') : s.replace(/(\d),(\d{1,2})(?!\d)/g, '$1.$2');
+  }
+  function decimalsTex(t, L) {
+    if (L === 'fr') return t.replace(/(\d)\{\.\}(\d)/g, '$1{,}$2').replace(/(\d)\.(\d)/g, '$1{,}$2');
+    return t.replace(/(\d)\{[,.]\}(\d)/g, '$1.$2');
+  }
   function typo(s, L) {
+    s = decimalsText(s, L);
     if (L === 'fr') {
       s = s.replace(/([A-Za-z\u00C0-\u017F\)\]\u00bb%\u20ac])[ \u00a0\u202f]*:(?!\/\/)/g, '$1' + NBSP + ':');
       s = s.replace(/(\d)[ \u00a0\u202f]+:/g, '$1' + NBSP + ':');
@@ -2279,8 +2288,11 @@ root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: 
     var segs = segments(v), changed = false, i;
     for (i = 0; i < segs.length; i++) {
       var sg = segs[i], ns;
-      if (sg.tex === 2) {
-        ns = cleanDisplay(sg.s);
+      if (sg.tex === 1) {
+        ns = decimalsTex(sg.s, L);
+        if (ns !== sg.s) { sg.s = ns; changed = true; }
+      } else if (sg.tex === 2) {
+        ns = decimalsTex(cleanDisplay(sg.s), L);
         if (ns !== sg.s) { sg.s = ns; changed = true; }
         /* ponctuation juste après la ligne : supprimée */
         var nx = segs[i + 1];
@@ -2359,6 +2371,15 @@ root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: 
     var nodes = [], n;
     while ((n = it.nextNode())) nodes.push(n);
     for (var i = 0; i < nodes.length; i++) processText(nodes[i], root, L);
+    /* étiquettes des graphiques : seul le séparateur décimal est harmonisé */
+    var labels = root.querySelectorAll ? root.querySelectorAll('svg text, svg tspan') : [];
+    for (var k = 0; k < labels.length; k++) {
+      var cs = labels[k].childNodes;
+      for (var m = 0; m < cs.length; m++) if (cs[m].nodeType === 3) {
+        var nv = decimalsText(cs[m].nodeValue, L);
+        if (nv !== cs[m].nodeValue) cs[m].nodeValue = nv;
+      }
+    }
   }
 
   var busy = false, obs = null;

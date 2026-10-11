@@ -878,6 +878,28 @@ function formatMoney(num) {
     return num.toLocaleString(I18N[LANG].locale);
 }
 
+
+/* ---------- Schéma : résultat du forward à l'échéance en fonction du cours ---------- */
+const FWDFIG = {
+  fr: { aria: "Résultat du contrat forward à l'échéance", cap: (P) => `Résultat à l'échéance de la position ${P.isLong1 ? 'acheteuse' : 'vendeuse'} sur ${P.Q1} ${P.asset1.name}, en fonction du cours au comptant \\(S_T\\) : une droite de pente ${P.isLong1 ? '' : '−'}${P.Q1} qui s'annule au prix convenu \\(F_0\\). Les deux points marqués sont les scénarios de l'énoncé ; le gain de l'un est la perte de la contrepartie, et aucune des deux pertes n'est bornée.` },
+  en: { aria: "Payoff of the forward contract at maturity", cap: (P) => `Payoff at maturity of the ${P.isLong1 ? 'long' : 'short'} position on ${P.Q1} ${P.asset1.name}, as a function of the spot price \\(S_T\\): a line of slope ${P.isLong1 ? '' : '−'}${P.Q1} that crosses zero at the agreed price \\(F_0\\). The two marked points are the scenarios of the problem; one party's gain is the counterparty's loss, and neither loss is bounded.` }
+};
+function fwdFigure(P) {
+  const L = FWDFIG[LANG], F = P.F0_1, Q = P.Q1, sg = P.isLong1 ? 1 : -1, S = [P.S_T1, P.S_T2];
+  const spread = Math.max(Math.abs(S[0] - F), Math.abs(S[1] - F), 0.04 * F) * 1.6, lo = F - spread, hi = F + spread, ym0 = Q * spread, p10 = Math.pow(10, Math.floor(Math.log10(ym0))), ymax = Math.ceil(ym0 / (p10 / 2)) * (p10 / 2);
+  const W = 680, H = 300, ml = 70, mr = 24, mt = 20, mb = 40;
+  const X = s => ml + (s - lo) / (hi - lo) * (W - ml - mr), Y = v => mt + (ymax - v) / (2 * ymax) * (H - mt - mb);
+  const fmt = v => Number(v).toLocaleString(LANG === 'fr' ? 'fr-FR' : 'en-GB', { maximumFractionDigits: P.asset1.dec });
+  let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${L.aria}" style="width:100%;max-width:${W}px;height:auto;display:block;margin:0 auto">`;
+  s += `<line x1="${ml}" y1="${Y(0)}" x2="${W - mr}" y2="${Y(0)}" stroke="#8a8a8a"/><line x1="${ml}" y1="${mt}" x2="${ml}" y2="${H - mb}" stroke="#8a8a8a"/>`;
+  [-ymax, -ymax / 2, 0, ymax / 2, ymax].forEach(v => s += `<text x="${ml - 8}" y="${Y(v) + 4}" text-anchor="end" font-family="'JetBrains Mono',monospace" font-size="10" fill="#5a5a5a">${fmt(Math.round(v))}</text><line x1="${ml}" y1="${Y(v)}" x2="${W - mr}" y2="${Y(v)}" stroke="#eee"/>`);
+  s += `<line x1="${X(lo)}" y1="${Y(sg * Q * (lo - F))}" x2="${X(hi)}" y2="${Y(sg * Q * (hi - F))}" stroke="#1f5fa6" stroke-width="2.4"/>`;
+  s += `<line x1="${X(F)}" y1="${mt}" x2="${X(F)}" y2="${H - mb}" stroke="#c9952a" stroke-width="1.4" stroke-dasharray="5 4"/><text x="${X(F)}" y="${H - mb + 16}" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="10.5" font-weight="700" fill="#b07d1e">F₀ = ${fmt(F)}</text>`;
+  S.forEach((st, i) => { const v = sg * Q * (st - F), above = (sg > 0) === (st > F); s += `<circle cx="${X(st)}" cy="${Y(v)}" r="5" fill="${v >= 0 ? '#2e7d32' : '#b3261e'}" stroke="#fff" stroke-width="1.5"/><text x="${X(st) + (st > F ? -10 : 10)}" y="${Y(v) + (above ? -12 : 20)}" text-anchor="${st > F ? 'end' : 'start'}" font-family="'JetBrains Mono',monospace" font-size="10.5" fill="#1e1e1e">S = ${fmt(st)} → ${fmt(Math.round(v * 100) / 100)}</text>`; });
+  s += `<text x="${W - mr}" y="${H - mb + 30}" text-anchor="end" font-family="Georgia,serif" font-size="11" fill="#5a5a5a">S(T)</text><text x="${ml + 6}" y="${mt + 12}" font-family="Georgia,serif" font-size="11" fill="#5a5a5a">${LANG === 'fr' ? 'résultat (' : 'payoff ('}${P.asset1.curr})</text></svg>`;
+  return `<div class="fig-wrap" style="margin:1.2rem 0 .6rem;padding:1rem .8rem .8rem;border:1px solid var(--border);border-radius:6px;background:#fff">${s}</div><p style="text-align:center;font-size:.86rem;color:var(--text-muted);font-style:italic;margin:0 0 1.4rem">${L.cap(P)}</p>`;
+}
+
 function generateExercise(forceNew = false) {
     if(forceNew) {
         document.getElementById('seed-input').value = "";
@@ -975,7 +997,7 @@ function generateExercise(forceNew = false) {
     document.getElementById('context-ex3').innerHTML = DIC.ex3(P3);
 
     // Assemblage du corrigé
-    document.getElementById('sol-content').innerHTML = DIC.sol1(P1) + DIC.sol2(P2) + DIC.sol3(P3);
+    document.getElementById('sol-content').innerHTML = DIC.sol1(P1) + fwdFigure(P1) + DIC.sol2(P2) + DIC.sol3(P3);
     
     // Affichage
     document.getElementById('welcome').style.display = 'none';
@@ -2059,7 +2081,16 @@ root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: 
   }
 
   /* ---------- 1. typographie ---------- */
+  /* séparateur décimal : virgule en français, point en anglais */
+  function decimalsText(s, L) {
+    return L === 'fr' ? s.replace(/(\d)\.(\d)/g, '$1,$2') : s.replace(/(\d),(\d{1,2})(?!\d)/g, '$1.$2');
+  }
+  function decimalsTex(t, L) {
+    if (L === 'fr') return t.replace(/(\d)\{\.\}(\d)/g, '$1{,}$2').replace(/(\d)\.(\d)/g, '$1{,}$2');
+    return t.replace(/(\d)\{[,.]\}(\d)/g, '$1.$2');
+  }
   function typo(s, L) {
+    s = decimalsText(s, L);
     if (L === 'fr') {
       s = s.replace(/([A-Za-z\u00C0-\u017F\)\]\u00bb%\u20ac])[ \u00a0\u202f]*:(?!\/\/)/g, '$1' + NBSP + ':');
       s = s.replace(/(\d)[ \u00a0\u202f]+:/g, '$1' + NBSP + ':');
@@ -2195,8 +2226,11 @@ root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: 
     var segs = segments(v), changed = false, i;
     for (i = 0; i < segs.length; i++) {
       var sg = segs[i], ns;
-      if (sg.tex === 2) {
-        ns = cleanDisplay(sg.s);
+      if (sg.tex === 1) {
+        ns = decimalsTex(sg.s, L);
+        if (ns !== sg.s) { sg.s = ns; changed = true; }
+      } else if (sg.tex === 2) {
+        ns = decimalsTex(cleanDisplay(sg.s), L);
         if (ns !== sg.s) { sg.s = ns; changed = true; }
         /* ponctuation juste après la ligne : supprimée */
         var nx = segs[i + 1];
@@ -2275,6 +2309,15 @@ root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: 
     var nodes = [], n;
     while ((n = it.nextNode())) nodes.push(n);
     for (var i = 0; i < nodes.length; i++) processText(nodes[i], root, L);
+    /* étiquettes des graphiques : seul le séparateur décimal est harmonisé */
+    var labels = root.querySelectorAll ? root.querySelectorAll('svg text, svg tspan') : [];
+    for (var k = 0; k < labels.length; k++) {
+      var cs = labels[k].childNodes;
+      for (var m = 0; m < cs.length; m++) if (cs[m].nodeType === 3) {
+        var nv = decimalsText(cs[m].nodeValue, L);
+        if (nv !== cs[m].nodeValue) cs[m].nodeValue = nv;
+      }
+    }
   }
 
   var busy = false, obs = null;

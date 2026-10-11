@@ -800,6 +800,39 @@ function normCDF(x) {
 }
 function r4(x) { return Math.round(x * 10000) / 10000; }
 
+
+/* ---------- Schéma : lecture de N(d1) et N(d2) sur la loi normale centrée réduite (modèle de Black) ---------- */
+const NFIG = {
+  fr: { aria: "Lecture de N(d1) et N(d2) sur la densité normale",
+        cap: (P) => P.isPayer
+          ? `Lecture graphique de la swaption payeuse. L'aire colorée à gauche de \\(d_2=${P.d2.toFixed(3)}\\) vaut \\(\\Phi(d_2)=${P.Nd2.toFixed(3)}\\), probabilité (sous la mesure forward-annuité) que le taux de swap dépasse \\(K\\) à l'échéance ; l'aire à gauche de \\(d_1=${P.d1.toFixed(3)}\\), plus large de \\(\\sigma\\sqrt{T}=${P.sigSqrtT.toFixed(3)}\\), vaut \\(\\Phi(d_1)=${P.Nd1.toFixed(3)}\\). La prime de Black est l'annuité multipliée par \\(S_0\\,\\Phi(d_1)-K\\,\\Phi(d_2)\\).`
+          : `Lecture graphique de la swaption receveuse. On lit les aires complémentaires, à droite des seuils : \\(\\Phi(-d_2)=${P.Nmd2.toFixed(3)}\\) à droite de \\(d_2=${P.d2.toFixed(3)}\\), probabilité (sous la mesure forward-annuité) que le taux de swap soit inférieur à \\(K\\) à l'échéance, et \\(\\Phi(-d_1)=${P.Nmd1.toFixed(3)}\\) à droite de \\(d_1=${P.d1.toFixed(3)}\\). La prime de Black est l'annuité multipliée par \\(K\\,\\Phi(-d_2)-S_0\\,\\Phi(-d_1)\\).` },
+  en: { aria: "Reading N(d1) and N(d2) on the normal density",
+        cap: (P) => P.isPayer
+          ? `Graphical reading of the payer swaption. The shaded area to the left of \\(d_2=${P.d2.toFixed(3)}\\) is \\(\\Phi(d_2)=${P.Nd2.toFixed(3)}\\), the probability (under the annuity measure) that the swap rate exceeds \\(K\\) at expiry; the area to the left of \\(d_1=${P.d1.toFixed(3)}\\), wider by \\(\\sigma\\sqrt{T}=${P.sigSqrtT.toFixed(3)}\\), is \\(\\Phi(d_1)=${P.Nd1.toFixed(3)}\\). Black's premium is the annuity times \\(S_0\\,\\Phi(d_1)-K\\,\\Phi(d_2)\\).`
+          : `Graphical reading of the receiver swaption. The complementary areas, to the right of the thresholds, are read: \\(\\Phi(-d_2)=${P.Nmd2.toFixed(3)}\\) to the right of \\(d_2=${P.d2.toFixed(3)}\\), the probability (under the annuity measure) that the swap rate is below \\(K\\) at expiry, and \\(\\Phi(-d_1)=${P.Nmd1.toFixed(3)}\\) to the right of \\(d_1=${P.d1.toFixed(3)}\\). Black's premium is the annuity times \\(K\\,\\Phi(-d_2)-S_0\\,\\Phi(-d_1)\\).` }
+};
+function normFigure(P) {
+  const L = NFIG[LANG], W = 680, H = 250, ml = 30, mr = 30, mt = 24, mb = 36, x0 = -3.5, x1 = 3.5, right = !P.isPayer;
+  const X = z => ml + (z - x0) / (x1 - x0) * (W - ml - mr), Y = v => H - mb - v / 0.45 * (H - mt - mb);
+  const pdf = z => Math.exp(-z * z / 2) / Math.sqrt(2 * Math.PI);
+  const pts = (a, b) => { let s = ''; for (let i = 0; i <= 120; i++) { const z = a + (b - a) * i / 120; s += (i ? ' L' : 'M') + X(z).toFixed(1) + ' ' + Y(pdf(z)).toFixed(1); } return s; };
+  const d1 = Math.max(x0, Math.min(x1, P.d1)), d2 = Math.max(x0, Math.min(x1, P.d2));
+  const area = (a, b, col, op) => `<path d="${pts(a, b)} L${X(b).toFixed(1)} ${Y(0)} L${X(a).toFixed(1)} ${Y(0)} Z" fill="${col}" fill-opacity="${op}"/>`;
+  let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${L.aria}" style="width:100%;max-width:${W}px;height:auto;display:block;margin:0 auto">`;
+  s += right ? area(d1, x1, '#c9952a', 0.22) + area(d2, x1, '#1f5fa6', 0.30) : area(x0, d1, '#c9952a', 0.22) + area(x0, d2, '#1f5fa6', 0.30);
+  s += `<path d="${pts(x0, x1)}" fill="none" stroke="#1f5fa6" stroke-width="2"/><line x1="${ml}" y1="${Y(0)}" x2="${W - mr}" y2="${Y(0)}" stroke="#8a8a8a"/>`;
+  for (let z = -3; z <= 3; z++) s += `<text x="${X(z)}" y="${Y(0) + 16}" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="10.5" fill="#5a5a5a">${z}</text>`;
+  const lab = (z, txt, col, up) => `<line x1="${X(z)}" y1="${Y(0)}" x2="${X(z)}" y2="${mt + (up ? 0 : 22)}" stroke="${col}" stroke-width="1.5" stroke-dasharray="4 3"/><text x="${X(z)}" y="${mt + (up ? -6 : 16)}" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="11" font-weight="700" fill="${col}">${txt}</text>`;
+  s += lab(d2, `d₂ = ${P.d2.toFixed(3)}`, '#1f5fa6', true) + lab(d1, `d₁ = ${P.d1.toFixed(3)}`, '#b07d1e', false);
+  const t2 = right ? `Φ(−d₂) = ${P.Nmd2.toFixed(3)}` : `Φ(d₂) = ${P.Nd2.toFixed(3)}`, t1 = right ? `Φ(−d₁) = ${P.Nmd1.toFixed(3)}` : `Φ(d₁) = ${P.Nd1.toFixed(3)}`;
+  const ax = right ? W - mr - 6 : ml + 6, an = right ? 'end' : 'start';
+  s += `<text x="${ax}" y="${Y(0) - 14}" text-anchor="${an}" font-family="Georgia,serif" font-size="11.5" fill="#0d1b2a">${t2}</text>`;
+  s += `<text x="${ax}" y="${Y(0) - 60}" text-anchor="${an}" font-family="Georgia,serif" font-size="11.5" fill="#0d1b2a">${t1}</text>`;
+  s += `</svg>`;
+  return `<div class="fig-wrap" style="margin:1.4rem 0 .6rem;padding:1rem .8rem .4rem;border:1px solid var(--border);border-radius:6px;background:#fff">${s}</div><p style="text-align:center;font-size:.86rem;color:var(--text-muted);font-style:italic;margin:0 0 1.2rem">${L.cap(P)}</p>`;
+}
+
 function generateExercise(forceNew = false) {
     if(forceNew) {
         document.getElementById('seed-input').value = "";
@@ -882,7 +915,7 @@ function generateExercise(forceNew = false) {
     }
     document.getElementById('events-list').innerHTML = htmlEnonce;
 
-    document.getElementById('sol-content').innerHTML = DIC.sol(P);
+    document.getElementById('sol-content').innerHTML = DIC.sol(P) + normFigure(P);
 
     if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
         MathJax.typesetPromise().catch(function (err) {
@@ -1959,7 +1992,16 @@ root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: 
   }
 
   /* ---------- 1. typographie ---------- */
+  /* séparateur décimal : virgule en français, point en anglais */
+  function decimalsText(s, L) {
+    return L === 'fr' ? s.replace(/(\d)\.(\d)/g, '$1,$2') : s.replace(/(\d),(\d{1,2})(?!\d)/g, '$1.$2');
+  }
+  function decimalsTex(t, L) {
+    if (L === 'fr') return t.replace(/(\d)\{\.\}(\d)/g, '$1{,}$2').replace(/(\d)\.(\d)/g, '$1{,}$2');
+    return t.replace(/(\d)\{[,.]\}(\d)/g, '$1.$2');
+  }
   function typo(s, L) {
+    s = decimalsText(s, L);
     if (L === 'fr') {
       s = s.replace(/([A-Za-z\u00C0-\u017F\)\]\u00bb%\u20ac])[ \u00a0\u202f]*:(?!\/\/)/g, '$1' + NBSP + ':');
       s = s.replace(/(\d)[ \u00a0\u202f]+:/g, '$1' + NBSP + ':');
@@ -2095,8 +2137,11 @@ root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: 
     var segs = segments(v), changed = false, i;
     for (i = 0; i < segs.length; i++) {
       var sg = segs[i], ns;
-      if (sg.tex === 2) {
-        ns = cleanDisplay(sg.s);
+      if (sg.tex === 1) {
+        ns = decimalsTex(sg.s, L);
+        if (ns !== sg.s) { sg.s = ns; changed = true; }
+      } else if (sg.tex === 2) {
+        ns = decimalsTex(cleanDisplay(sg.s), L);
         if (ns !== sg.s) { sg.s = ns; changed = true; }
         /* ponctuation juste après la ligne : supprimée */
         var nx = segs[i + 1];
@@ -2175,6 +2220,15 @@ root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: 
     var nodes = [], n;
     while ((n = it.nextNode())) nodes.push(n);
     for (var i = 0; i < nodes.length; i++) processText(nodes[i], root, L);
+    /* étiquettes des graphiques : seul le séparateur décimal est harmonisé */
+    var labels = root.querySelectorAll ? root.querySelectorAll('svg text, svg tspan') : [];
+    for (var k = 0; k < labels.length; k++) {
+      var cs = labels[k].childNodes;
+      for (var m = 0; m < cs.length; m++) if (cs[m].nodeType === 3) {
+        var nv = decimalsText(cs[m].nodeValue, L);
+        if (nv !== cs[m].nodeValue) cs[m].nodeValue = nv;
+      }
+    }
   }
 
   var busy = false, obs = null;
