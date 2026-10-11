@@ -602,7 +602,7 @@ const I18N = {
       return `
       <strong>${D.prenom}</strong> souhaite se lancer dans une activité ${D.activite} et hésite entre deux structures juridiques : la <strong>société par actions simplifiée unipersonnelle</strong> (SASU), soumise aux règles comptables du PCG, et le régime de la <strong>micro-entreprise</strong>.
       <br><br>
-      La SASU est soumise à l'impôt sur les sociétés (IS) sur son résultat courant. Une fois cet impôt payé, l'actionnaire unique doit encore s'acquitter de la <em>flat tax</em> sur les dividendes qu'il se verse : il y a donc une double imposition. Le micro-entrepreneur, à l'inverse, dégage des « revenus mixtes » — il est à la fois personne morale (en tant qu'entreprise) et personne physique — de sorte qu'il n'y a pas de double imposition. Mais il ne peut ni déduire ses charges, ni récupérer la TVA supportée sur celles-ci tant qu'il reste sous le seuil de la franchise en base.
+      La SASU est soumise à l'impôt sur les sociétés (IS) sur son résultat courant. Une fois cet impôt payé, l'actionnaire unique doit encore s'acquitter de la <em>flat tax</em> sur les dividendes qu'il se verse : il y a donc une double imposition. Le micro-entrepreneur, à l'inverse, dégage des « revenus mixtes » : il exerce en nom propre, sans personne morale distincte, de sorte que le résultat de l'entreprise est directement son revenu personnel et qu'il n'y a pas de double imposition. Mais il ne peut ni déduire ses charges, ni récupérer la TVA supportée sur celles-ci tant qu'il reste sous le seuil de la franchise en base.
       `;
     },
 
@@ -775,7 +775,7 @@ const I18N = {
       return `
       <strong>${D.prenom}</strong> plans to start a ${D.activite} business and is hesitating between two legal structures: a <strong>single-shareholder simplified joint-stock company</strong> (SASU), subject to the accounting rules of the French General Chart of Accounts, and the <strong>micro-enterprise</strong> regime.
       <br><br>
-      The SASU is liable to corporate income tax on its operating profit. Once that tax has been paid, the sole shareholder must still pay the <em>flat tax</em> on the dividends they draw: there is therefore double taxation. The micro-entrepreneur, by contrast, earns "mixed income" — being at once a legal entity (as a business) and a natural person — so that no double taxation arises. However, they may neither deduct their expenses nor reclaim the VAT borne on them, as long as they remain below the basic exemption threshold.
+      The SASU is liable to corporate income tax on its operating profit. Once that tax has been paid, the sole shareholder must still pay the <em>flat tax</em> on the dividends they draw: there is therefore double taxation. The micro-entrepreneur, by contrast, earns "mixed income": they trade in their own name, with no separate legal entity, so that the business result is directly their personal income and no double taxation arises. However, they may neither deduct their expenses nor reclaim the VAT borne on them, as long as they remain below the basic exemption threshold.
       `;
     },
 
@@ -2132,7 +2132,16 @@ root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: 
   }
 
   /* ---------- 1. typographie ---------- */
+  /* séparateur décimal : virgule en français, point en anglais */
+  function decimalsText(s, L) {
+    return L === 'fr' ? s.replace(/(\d)\.(\d)/g, '$1,$2') : s.replace(/(\d),(\d{1,2})(?!\d)/g, '$1.$2');
+  }
+  function decimalsTex(t, L) {
+    if (L === 'fr') return t.replace(/(\d)\{\.\}(\d)/g, '$1{,}$2').replace(/(\d)\.(\d)/g, '$1{,}$2');
+    return t.replace(/(\d)\{[,.]\}(\d)/g, '$1.$2');
+  }
   function typo(s, L) {
+    s = decimalsText(s, L);
     if (L === 'fr') {
       s = s.replace(/([A-Za-z\u00C0-\u017F\)\]\u00bb%\u20ac])[ \u00a0\u202f]*:(?!\/\/)/g, '$1' + NBSP + ':');
       s = s.replace(/(\d)[ \u00a0\u202f]+:/g, '$1' + NBSP + ':');
@@ -2268,8 +2277,11 @@ root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: 
     var segs = segments(v), changed = false, i;
     for (i = 0; i < segs.length; i++) {
       var sg = segs[i], ns;
-      if (sg.tex === 2) {
-        ns = cleanDisplay(sg.s);
+      if (sg.tex === 1) {
+        ns = decimalsTex(sg.s, L);
+        if (ns !== sg.s) { sg.s = ns; changed = true; }
+      } else if (sg.tex === 2) {
+        ns = decimalsTex(cleanDisplay(sg.s), L);
         if (ns !== sg.s) { sg.s = ns; changed = true; }
         /* ponctuation juste après la ligne : supprimée */
         var nx = segs[i + 1];
@@ -2348,6 +2360,15 @@ root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: 
     var nodes = [], n;
     while ((n = it.nextNode())) nodes.push(n);
     for (var i = 0; i < nodes.length; i++) processText(nodes[i], root, L);
+    /* étiquettes des graphiques : seul le séparateur décimal est harmonisé */
+    var labels = root.querySelectorAll ? root.querySelectorAll('svg text, svg tspan') : [];
+    for (var k = 0; k < labels.length; k++) {
+      var cs = labels[k].childNodes;
+      for (var m = 0; m < cs.length; m++) if (cs[m].nodeType === 3) {
+        var nv = decimalsText(cs[m].nodeValue, L);
+        if (nv !== cs[m].nodeValue) cs[m].nodeValue = nv;
+      }
+    }
   }
 
   var busy = false, obs = null;

@@ -803,7 +803,7 @@ const I18N = {
         The corresponding constant instalment is then
         <div class="math-formula">\\[a = ${texI(D.E1)} \\times \\frac{${texD(D.i,4)}}{1 - (1 + ${texD(D.i,4)})^{-2}} = ${texI(D.annu)}\\ \\text{euros}\\]</div>
         ${loanTable(D, 'en')}
-        The line-by-line reading is worth setting out. In the first year, interest of ${M(D.int[0])} is not paid but capitalised: the capital owed rises from ${M(D.E)} to ${M(D.E1)}. In the second year, interest amounts to ${M(D.int[1])} and the principal repayment to the balance of the instalment, that is $${texI(D.annu)} - ${texI(D.int[1])} = ${texI(D.amort[1])}$ euros; ${M(D.crdFin[1])} then remains outstanding. The third year clears the loan: interest comes to ${M(D.int[2])} and the principal repayment to ${M(D.amort[2])}, leaving a nil balance.<br><br>
+        The interest total, ${M(D.int[0] + D.int[1] + D.int[2])}, includes the ${M(D.int[0])} capitalised in the first year: it is the true cost of the loan, equal to the sum of the instalments less the amount borrowed. The line-by-line reading is worth setting out. In the first year, interest of ${M(D.int[0])} is not paid but capitalised: the capital owed rises from ${M(D.E)} to ${M(D.E1)}. In the second year, interest amounts to ${M(D.int[1])} and the principal repayment to the balance of the instalment, that is $${texI(D.annu)} - ${texI(D.int[1])} = ${texI(D.amort[1])}$ euros; ${M(D.crdFin[1])} then remains outstanding. The third year clears the loan: interest comes to ${M(D.int[2])} and the principal repayment to ${M(D.amort[2])}, leaving a nil balance.<br><br>
         <em>A methodological note.</em> The capitalised interest of the first year is not paid out; in line with the convention adopted in this exercise, it is not included in the computation of the N + 1 result either — in strict accounting terms it would be a financial expense to be allocated to that year, which would slightly reduce the N + 1 cash flow capacity without changing the cash position.
       </div>`;
 
@@ -1163,7 +1163,7 @@ function loanTable(D, lang) {
     }
     rows += `<tr style="background:var(--cream-dark);">
         <td class="txt-left" style="font-weight:700;">Total</td><td class="amt"></td>
-        <td class="amt" style="font-weight:700;">${cell(D.int[1] + D.int[2], lang)}</td>
+        <td class="amt" style="font-weight:700;">${cell(D.int[0] + D.int[1] + D.int[2], lang)}</td>
         <td class="amt" style="font-weight:700;">${cell(D.amort[1] + D.amort[2], lang)}</td>
         <td class="amt" style="font-weight:700;">${cell(D.annuite[1] + D.annuite[2], lang)}</td>
         <td class="amt"></td>
@@ -1171,7 +1171,7 @@ function loanTable(D, lang) {
     return `<div class="exam-table-wrap"><table class="exam-table">
         <tr>${head.map(h => `<th>${h}</th>`).join('')}</tr>${rows}
     </table></div>
-    <p style="font-size:.82rem;color:var(--text-muted);font-style:italic;margin:.4rem 0 1.2rem;text-align:left;">${fr ? "Les intérêts de la première année ne sont pas versés : ils sont capitalisés et portent le capital dû à " + money(D.E1,'fr') + ". Le total des amortissements est bien égal à ce montant." : "The first year's interest is not paid: it is capitalised and raises the capital owed to " + money(D.E1,'en') + ". Total principal repayments do equal that amount."}</p>`;
+    <p style="font-size:.82rem;color:var(--text-muted);font-style:italic;margin:.4rem 0 1.2rem;text-align:left;">${fr ? "Les intérêts de la première année ne sont pas versés : ils sont capitalisés et portent le capital dû à " + money(D.E1,'fr') + ". Le total des amortissements est bien égal à ce montant. Le total des intérêts, ${cell(D.int[0] + D.int[1] + D.int[2], 'fr')} €, comprend les ${cell(D.int[0], 'fr')} € capitalisés la première année : c'est le coût réel du crédit, égal à la somme des annuités diminuée du capital emprunté." : "The first year's interest is not paid: it is capitalised and raises the capital owed to " + money(D.E1,'en') + ". Total principal repayments do equal that amount."}</p>`;
 }
 
 /* ============================================================
@@ -2332,7 +2332,16 @@ root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: 
   }
 
   /* ---------- 1. typographie ---------- */
+  /* séparateur décimal : virgule en français, point en anglais */
+  function decimalsText(s, L) {
+    return L === 'fr' ? s.replace(/(\d)\.(\d)/g, '$1,$2') : s.replace(/(\d),(\d{1,2})(?!\d)/g, '$1.$2');
+  }
+  function decimalsTex(t, L) {
+    if (L === 'fr') return t.replace(/(\d)\{\.\}(\d)/g, '$1{,}$2').replace(/(\d)\.(\d)/g, '$1{,}$2');
+    return t.replace(/(\d)\{[,.]\}(\d)/g, '$1.$2');
+  }
   function typo(s, L) {
+    s = decimalsText(s, L);
     if (L === 'fr') {
       s = s.replace(/([A-Za-z\u00C0-\u017F\)\]\u00bb%\u20ac])[ \u00a0\u202f]*:(?!\/\/)/g, '$1' + NBSP + ':');
       s = s.replace(/(\d)[ \u00a0\u202f]+:/g, '$1' + NBSP + ':');
@@ -2468,8 +2477,11 @@ root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: 
     var segs = segments(v), changed = false, i;
     for (i = 0; i < segs.length; i++) {
       var sg = segs[i], ns;
-      if (sg.tex === 2) {
-        ns = cleanDisplay(sg.s);
+      if (sg.tex === 1) {
+        ns = decimalsTex(sg.s, L);
+        if (ns !== sg.s) { sg.s = ns; changed = true; }
+      } else if (sg.tex === 2) {
+        ns = decimalsTex(cleanDisplay(sg.s), L);
         if (ns !== sg.s) { sg.s = ns; changed = true; }
         /* ponctuation juste après la ligne : supprimée */
         var nx = segs[i + 1];
@@ -2548,6 +2560,15 @@ root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: 
     var nodes = [], n;
     while ((n = it.nextNode())) nodes.push(n);
     for (var i = 0; i < nodes.length; i++) processText(nodes[i], root, L);
+    /* étiquettes des graphiques : seul le séparateur décimal est harmonisé */
+    var labels = root.querySelectorAll ? root.querySelectorAll('svg text, svg tspan') : [];
+    for (var k = 0; k < labels.length; k++) {
+      var cs = labels[k].childNodes;
+      for (var m = 0; m < cs.length; m++) if (cs[m].nodeType === 3) {
+        var nv = decimalsText(cs[m].nodeValue, L);
+        if (nv !== cs[m].nodeValue) cs[m].nodeValue = nv;
+      }
+    }
   }
 
   var busy = false, obs = null;
