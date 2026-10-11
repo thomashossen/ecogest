@@ -403,7 +403,6 @@ mjx-container[display="true"]{
 mjx-container[display="true"] > mjx-math{ display:inline-block; }
 mjx-container[display="true"]::-webkit-scrollbar{ height:5px }
 mjx-container[display="true"]::-webkit-scrollbar-thumb{ background:var(--border); border-radius:3px }
-mjx-container:not([display="true"]){ max-width:100%; overflow-x:auto; overflow-y:hidden; vertical-align:middle; }
 .math-formula{ text-align:center; margin:1rem 0; overflow-x:auto; max-width:100%; }
 p + mjx-container[display="true"], li > mjx-container[display="true"]:first-child{ margin-top:.5rem !important }
 
@@ -2428,7 +2427,7 @@ root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: 
   }
 
   /* ---------- 2. ponctuation finale d'une ligne mathématique ---------- */
-  var SPACING = /(?:\s|~|\\[,;:!>]|\\quad|\\qquad|\\\s|\{\})+$/;
+  var SPACING = /(?:\s|~|\\[,;:!>]|\\quad|\\qquad|\{\})+$/;
   function stripEnd(t) {
     for (var guard = 0; guard < 12; guard++) {
       t = t.replace(SPACING, '');
@@ -2470,6 +2469,20 @@ root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: 
     if (/[A-Za-z0-9\u00C0-\u017F\)\]\u00bb%\u20ac$]$/.test(t)) return t + colon;
     return null;
   }
+  /* `child` est-il le seul contenu visible de `el` (enveloppe d'une ligne mathématique) ? */
+  function onlyChild(el, child) {
+    if (/^(LI|TD|TH|TABLE|UL|OL|BODY|MAIN|SECTION|ARTICLE)$/.test(el.nodeName.toUpperCase())) return false;
+    var cs = el.childNodes;
+    for (var i = 0; i < cs.length; i++) {
+      var c = cs[i];
+      if (c === child) continue;
+      if (c.nodeType === 3 && !/\S/.test(c.nodeValue)) continue;
+      if (c.nodeType === 8) continue;
+      if (c.nodeType === 1 && c.nodeName.toUpperCase() === 'BR') continue;
+      return false;
+    }
+    return true;
+  }
   /* dernier nœud texte non vide qui précède `node`, sans sortir d'un bloc, sans traverser un tableau */
   function prevTextNode(node, root) {
     var n = node;
@@ -2478,7 +2491,7 @@ root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: 
       while (!p) {
         var par = n.parentNode;
         if (!par || par === root || par.nodeType !== 1) return null;
-        if (!INLINE[par.nodeName.toUpperCase()] && par.nodeName !== 'P') return null;
+        if (!INLINE[par.nodeName.toUpperCase()] && par.nodeName !== 'P' && !onlyChild(par, n)) return null;
         n = par; p = n.previousSibling;
       }
       n = p;
@@ -2543,6 +2556,12 @@ root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: 
   function processText(tn, root, L) {
     var v = tn.nodeValue;
     if (!v || !/\S/.test(v)) return;
+    /* délimiteurs sur-échappés (\\[ … \\] ou \\( … \\) ) : MathJax ne les reconnaît pas, on les normalise */
+    if (/\\{2,}[\[\]()]/.test(v)) {
+      var segs0 = segments(v);
+      v = segs0.map(function (sg) { return sg.tex ? sg.s : sg.s.replace(/\\{2,}(?=[\[\]()])/g, '\\'); }).join('');
+      if (v !== tn.nodeValue) tn.nodeValue = v;
+    }
     var segs = segments(v), changed = false, i;
     for (i = 0; i < segs.length; i++) {
       var sg = segs[i], ns;
@@ -2658,10 +2677,51 @@ root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: 
 
   /* MathJax compose de façon synchrone dans typeset()/typesetPromise() : la finition
      doit donc s'exécuter DANS sa chaîne de rendu, juste avant la recherche des formules. */
+  var mjBusy = false;
+  /* MathJax peut suspendre un rendu (chargement d'une extension) après avoir repéré les formules :
+     toute modification du texte pendant cette pause décalerait ses positions. On suit donc son état. */
+  function wrapTypeset() {
+    var MJ = window.MathJax;
+    if (!MJ || !MJ.typesetPromise || MJ.typesetPromise.__kit) return;
+    var orig = MJ.typesetPromise;
+    var wrapped = function () {
+      mjBusy = true;
+      var p;
+      try { p = orig.apply(this, arguments); }
+      catch (e) { mjBusy = false; throw e; }
+      var done = function () { mjBusy = false; polish(); };
+      if (p && p.then) p.then(done, done); else { mjBusy = false; }
+      return p;
+    };
+    wrapped.__kit = true;
+    MJ.typesetPromise = wrapped;
+    if (MJ.typeset && !MJ.typeset.__kit) {
+      var origT = MJ.typeset;
+      var wt = function () { mjBusy = true; try { return origT.apply(this, arguments); } finally { mjBusy = false; polish(); } };
+      wt.__kit = true; MJ.typeset = wt;
+    }
+  }
   function hookMathJax() {
     var MJ = window.MathJax;
     if (!MJ) return;
-    var fn = function () { polish(); };
+    mjBusy = true;                       /* jusqu'à la fin du premier rendu */
+    var ready = function () { mjBusy = false; wrapTypeset(); polish(); };
+    if (MJ.startup && MJ.startup.promise && MJ.startup.promise.then) MJ.startup.promise.then(ready, ready);
+    else {
+      MJ.startup = MJ.startup || {};
+      var prev = MJ.startup.pageReady;
+      MJ.startup.pageReady = function () {
+        var S = window.MathJax.startup;
+        var r = prev ? prev.call(S) : S.defaultPageReady();
+        if (r && r.then) r.then(ready, ready); else ready();
+        return r;
+      };
+    }
+    var fn = function (doc) {
+      /* reprise d'un rendu suspendu : les formules sont déjà repérées, on ne touche plus au texte */
+      try { if (doc && doc.processed && doc.processed.isSet && doc.processed.isSet('findMath')) return; } catch (e) {}
+      polish();
+    };
     function addTo(doc) {
       if (doc && doc.addRenderAction && !(doc.renderActions && doc.renderActions.findID && doc.renderActions.findID('kitPolish'))) {
         doc.addRenderAction('kitPolish', 5, fn, '', false);
@@ -2683,7 +2743,7 @@ root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: 
     polish(main);
     if (!window.MutationObserver) return;
     obs = new MutationObserver(function (recs) {
-      if (busy) return;
+      if (busy || mjBusy) return;
       var touched = false;
       for (var i = 0; i < recs.length; i++) {
         var r = recs[i];
