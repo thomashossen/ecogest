@@ -40,3 +40,9 @@ Le kit applique, à chaque rendu et dans les deux langues :
 ## Schémas de corrigé hors famille mf
 
 Les pages sans cadre de figures (dérivés, analyse financière…) dessinent leurs schémas en SVG directement dans le corrigé, par une fonction `xxxFigure(P)` placée avant `generateExercise` et appelée à l'assemblage de `sol-content` : `bsFigure` (der3), `fwdFigure` (der5), `normFigure` (der6), `drciFigure` (mcaf1), `loanFigure` (mcaf2). Légendes FR/EN dans un objet voisin (`BSFIG`, `FWDFIG`, `NFIG`, `DRFIG`, `LOANFIG`).
+
+## Schémas de tests (économétrie)
+
+`kit/testfig.js` fournit `testFig({law, df1, df2, stat, side, levels, lab, crit, asym})` : densité de la loi sous H₀ (Student, normale, Fisher, χ²), zone(s) de rejet, valeur(s) critique(s), statistique observée et verdict, en français ou en anglais selon la langue de la page. Une ou deux zones (par exemple 5 % et 1 %), tests unilatéraux ou bilatéraux, y compris le test bilatéral de Fisher.
+`kit/testfig_inject.py page.html …` insère ou met à jour la bibliothèque dans une page (idempotent) ; `kit/testfig_place.py` aide à placer les appels dans les fonctions de corrigé.
+Pages équipées : econ2, econ3, econ6, econ7, econ8, econ10, econ11, econ12, econ14, econ15.

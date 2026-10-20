@@ -336,6 +336,17 @@ p.kit-num::before{
   body.print-force-solution .sol-card{ display:block !important }
 }
 </style><!-- KIT:CSS:END -->
+<!-- GEST-SERIF:START -->
+<style id="gest-serif">/* Gestion : aucune police à chasse fixe dans le contenu (chiffres en tabulaires de la police du texte) */
+.exam-table .amt, .exam-table .pct, .calc-box strong, .journal .num, .journal .amt, .formula,
+.verdict-box .v-title, .card-body td, .card-body th, .card-body code, .card-body .mono{
+  font-family:'Source Serif 4', Georgia, serif !important;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+.calc-box strong{ font-weight:700 }
+.card-body svg text, .card-body svg tspan{ font-family:'Source Serif 4', Georgia, serif !important; font-variant-numeric: tabular-nums lining-nums }
+</style>
+<!-- GEST-SERIF:END -->
 <!-- KIT2:CSS:START -->
 <style id="kit2-css">
 /* ============================================================
@@ -410,6 +421,11 @@ p.check{
 p.check mjx-container[display="true"]{ margin:.4rem 0 .4rem !important }
 p.check::before{ content:"\2713"; position:absolute; left:.75rem; top:.5rem; color:var(--green); font-weight:700 }
 p.check .chk-lbl{ font-weight:600; color:var(--green); margin-right:.3rem }
+
+/* --- 16. Listes à tirets (remplacent les puces en étoile) --- */
+.kit-dash{ list-style:none; padding-left:1.5rem; margin:.8rem 0 }
+.kit-dash > li{ position:relative; margin:.4rem 0 }
+.kit-dash > li::before{ content:"—"; position:absolute; left:-1.5rem; color:var(--gold) }
 </style>
 <!-- KIT2:CSS:END -->
 </head>
@@ -645,7 +661,7 @@ const I18N = {
         <span class="sol-sub">6. Les solutions envisageables</span>
         <strong>Le découvert bancaire.</strong> C'est la solution la plus immédiate : l'entreprise fait financer ses soldes débiteurs par sa banque, au taux de ${fmtNb(D.tDecPct,1)} % l'an. En retenant chaque solde débiteur de fin de mois comme encours moyen du mois, les agios s'établissent comme suit :
         <div class="math-formula">\\[\\text{Agios} = \\sum_{\\text{mois débiteurs}} |\\text{solde}| \\times ${texD(D.tDecPct,1)}\\,\\% \\times \\frac{30}{360} = ${texM(D.agios)}\\ \\text{euros}\\]</div>
-        ${B.negMonths.map(j => `${m[j].toLowerCase()} : ${fmtNb(Math.abs(B.fin[j]),0)} × ${fmtNb(D.tDecPct,1)} % × 30/360 = ${fmtNb(Math.abs(B.fin[j]) * D.tDec / 12, 2)} €`).join(' ; ')}. Le coût reste modeste au regard des montants en jeu, mais il suppose que la banque accepte une autorisation d'au moins ${M(Math.abs(B.minVal))}, ce qui n'a rien d'acquis : un découvert de cette ampleur, non confirmé, peut être réduit à tout moment.<br><br>
+        ${(() => { const de = mo => (/^[aeiouyéèêàâîôû]/i.test(mo) ? "d'" : 'de ') + mo; const parts = B.negMonths.map((j, i) => { const mo = m[j].toLowerCase(), v = `${fmtNb(Math.abs(B.fin[j]),0)} € × ${fmtNb(D.tDecPct,1)} % × 30/360 = ${fmtNb(Math.abs(B.fin[j]) * D.tDec / 12, 2)} €`; return i === 0 ? `Dans le détail, les agios du mois ${de(mo)} s'établissent à ${v}` : `ceux ${de(mo)} à ${v}`; }); return parts.map((s, i) => (i === 0 ? '' : (i === parts.length - 1 ? ' et ' : ', ')) + s).join(''); })()}. Le coût reste modeste au regard des montants en jeu, mais il suppose que la banque accepte une autorisation d'au moins ${M(Math.abs(B.minVal))}, ce qui n'a rien d'acquis : un découvert de cette ampleur, non confirmé, peut être réduit à tout moment.<br><br>
         <strong>Le report de l'investissement.</strong> Décaler de deux mois l'acquisition, de ${m[D.mInv].toLowerCase()} à ${m[D.mInv + 2].toLowerCase()}, revient à déplacer un décaissement de ${M(D.INVttc)}${D.EMP > 0 ? ` et l'encaissement de l'emprunt de ${M(D.EMP)}` : ''} vers un mois où la trésorerie est ${D.report.fin[D.mInv] > B.fin[D.mInv] ? "mieux garnie" : "moins tendue"}. Le budget devient alors :
         ${miniTresoTable(D, 'fr')}
         Le point bas passe de ${M(B.minVal)} à ${M(D.report.minVal)}, soit ${D.report.minVal > B.minVal ? `une amélioration de ${M(D.report.minVal - B.minVal)}` : `une dégradation de ${M(Math.abs(D.report.minVal - B.minVal))}`}. ${D.report.minVal >= 0
@@ -799,7 +815,7 @@ const I18N = {
         <span class="sol-sub">6. Possible solutions</span>
         <strong>The bank overdraft.</strong> This is the most immediate solution: the company has its debit balances funded by its bank at ${fmtNb(D.tDecPct,1)}% a year. Taking each month-end debit balance as the month's average outstanding, the interest charges are as follows:
         <div class="math-formula">\\[\\text{Interest} = \\sum_{\\text{debit months}} |\\text{balance}| \\times ${texD(D.tDecPct,1)}\\,\\% \\times \\frac{30}{360} = ${texM(D.agios)}\\ \\text{euros}\\]</div>
-        ${B.negMonths.map(j => `${m[j]}: ${fmtNb(Math.abs(B.fin[j]),0)} × ${fmtNb(D.tDecPct,1)}% × 30/360 = €${fmtNb(Math.abs(B.fin[j]) * D.tDec / 12, 2)}`).join('; ')}. The cost remains modest relative to the amounts involved, but it assumes the bank agrees to a facility of at least ${M(Math.abs(B.minVal))}, which is by no means guaranteed: an overdraft of that size, if not formally confirmed, can be cut back at any time.<br><br>
+        ${(() => { const parts = B.negMonths.map((j, i) => { const v = `€${fmtNb(Math.abs(B.fin[j]),0)} × ${fmtNb(D.tDecPct,1)}% × 30/360 = €${fmtNb(Math.abs(B.fin[j]) * D.tDec / 12, 2)}`; return i === 0 ? `In detail, the interest charged for ${m[j]} comes to ${v}` : `that for ${m[j]} to ${v}`; }); return parts.map((s, i) => (i === 0 ? '' : (i === parts.length - 1 ? ', and ' : ', ')) + s).join(''); })()}. The cost remains modest relative to the amounts involved, but it assumes the bank agrees to a facility of at least ${M(Math.abs(B.minVal))}, which is by no means guaranteed: an overdraft of that size, if not formally confirmed, can be cut back at any time.<br><br>
         <strong>Deferring the investment.</strong> Postponing the acquisition by two months, from ${m[D.mInv]} to ${m[D.mInv + 2]}, shifts a payment of ${M(D.INVttc)}${D.EMP > 0 ? ` and the receipt of the ${M(D.EMP)} loan` : ''} into a month where cash is ${D.report.fin[D.mInv] > B.fin[D.mInv] ? "better supplied" : "less strained"}. The budget then becomes:
         ${miniTresoTable(D, 'en')}
         The low point moves from ${M(B.minVal)} to ${M(D.report.minVal)}, that is ${D.report.minVal > B.minVal ? `an improvement of ${M(D.report.minVal - B.minVal)}` : `a deterioration of ${M(Math.abs(D.report.minVal - B.minVal))}`}. ${D.report.minVal >= 0
@@ -2347,14 +2363,22 @@ root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: 
   }
 
   /* ---------- découpage d'un texte en segments texte / TeX ---------- */
-  var TEX_RE = /(\\\[[\s\S]*?\\\]|\$\$[\s\S]*?\$\$|\\\([\s\S]*?\\\))/g;
+  /* délimiteurs reconnus : \[ … \], $$ … $$, \( … \) et, si la page l'active dans MathJax, $ … $ */
+  function dollarInline() {
+    try {
+      var M = window.MathJax || {}, cfg = (M.config && M.config.tex) || M.tex || {};
+      return JSON.stringify(cfg.inlineMath || []).indexOf('"$"') >= 0;
+    } catch (e) { return false; }
+  }
+  var TEX_RE_STD = /(\\\[[\s\S]*?\\\]|\$\$[\s\S]*?\$\$|\\\([\s\S]*?\\\))/g;
+  var TEX_RE_DOL = /(\\\[[\s\S]*?\\\]|\$\$[\s\S]*?\$\$|\\\([\s\S]*?\\\)|(?<![\\$])\$(?!\$)[^$]+?(?<![\\])\$(?!\$))/g;
   function segments(s) {
-    var out = [], last = 0, m;
-    TEX_RE.lastIndex = 0;
-    while ((m = TEX_RE.exec(s))) {
+    var out = [], last = 0, m, RE = dollarInline() ? TEX_RE_DOL : TEX_RE_STD;
+    RE.lastIndex = 0;
+    while ((m = RE.exec(s))) {
       if (m.index > last) out.push({ tex: 0, s: s.slice(last, m.index) });
       var d = m[0].slice(0, 2);
-      out.push({ tex: (d === '\\(') ? 1 : 2, s: m[0] });   /* 1 = en ligne, 2 = hors texte */
+      out.push({ tex: (d === '\\[' || d === '$$') ? 2 : 1, s: m[0] });   /* 1 = en ligne, 2 = hors texte */
       last = m.index + m[0].length;
     }
     if (last < s.length) out.push({ tex: 0, s: s.slice(last) });
@@ -2368,9 +2392,16 @@ root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: 
   }
   function decimalsTex(t, L) {
     if (L === 'fr') return t.replace(/(\d)\{\.\}(\d)/g, '$1{,}$2').replace(/(\d)\.(\d)/g, '$1{,}$2');
-    return t.replace(/(\d)\{[,.]\}(\d)/g, '$1.$2');
+    return t.replace(/(\d)\{[,.]\}(\d)/g, '$1.$2').replace(/(?<=\d),(?=\d{3}(?!\d))/g, '{,}');
+  }
+  /* nombres formatés pour TeX mais placés hors formule : 82\,500, 0{,}8, 10{.}0 */
+  function texLeak(s, L) {
+    s = s.replace(/(\d)\\[,;:!](?=\d)/g, L === 'fr' ? '$1\u202f' : '$1,');
+    s = s.replace(/(\d)\{[,.]\}(?=\d)/g, L === 'fr' ? '$1,' : '$1.');
+    return s;
   }
   function typo(s, L) {
+    s = texLeak(s, L);
     s = decimalsText(s, L);
     if (L === 'fr') {
       s = s.replace(/([A-Za-z\u00C0-\u017F\)\]\u00bb%\u20ac])[ \u00a0\u202f]*:(?!\/\/)/g, '$1' + NBSP + ':');
