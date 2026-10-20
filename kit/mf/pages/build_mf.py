@@ -16,6 +16,8 @@ def build(n, js_path, titles_fr, out):
         'Modélisation, résolution graphique et analyse de sensibilité': titles_fr['ex'],
         'Version du 6 octobre 2026': 'Version du 20 octobre 2026',
     }
+    if titles_fr.get('badge'):
+        rep['>MATHÉMATIQUES FINANCIÈRES<'] = '>' + titles_fr['badge'] + '<'
     for k, v in rep.items(): head = head.replace(k, v)
     js = open(js_path, encoding='utf-8').read()
     open(out, 'w', encoding='utf-8').write(head + js + tail)
