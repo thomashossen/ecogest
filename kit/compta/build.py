@@ -85,7 +85,10 @@ EXTRA_CSS = '''<style id="compta-css">
 table.data{width:100%;border-collapse:collapse;font-size:.88rem;margin:.6rem 0 1.2rem}
 table.data th{background:var(--navy);color:var(--cream);padding:.5rem .6rem;text-align:left;font-weight:600}
 table.data td{padding:.45rem .6rem;border:1px solid var(--border)}
-table.data td.r, table.data th.r{text-align:right;font-family:'JetBrains Mono',monospace;white-space:nowrap}
+table.data td.r{text-align:right;font-family:'JetBrains Mono',monospace;white-space:nowrap}
+table.data th.r{text-align:right;font-family:inherit;white-space:normal;line-height:1.3}
+table.data th{line-height:1.3;vertical-align:bottom}
+table.data td:last-child{min-width:12rem}
 .sol-card table.data td{font-size:.86rem}
 @media (max-width:640px){
   table.journal{font-size:.78rem} table.journal .num{width:52px} table.journal .amt{width:auto;font-size:.74rem}

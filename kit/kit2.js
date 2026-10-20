@@ -27,14 +27,22 @@
   }
 
   /* ---------- découpage d'un texte en segments texte / TeX ---------- */
-  var TEX_RE = /(\\\[[\s\S]*?\\\]|\$\$[\s\S]*?\$\$|\\\([\s\S]*?\\\))/g;
+  /* délimiteurs reconnus : \[ … \], $$ … $$, \( … \) et, si la page l'active dans MathJax, $ … $ */
+  function dollarInline() {
+    try {
+      var M = window.MathJax || {}, cfg = (M.config && M.config.tex) || M.tex || {};
+      return JSON.stringify(cfg.inlineMath || []).indexOf('"$"') >= 0;
+    } catch (e) { return false; }
+  }
+  var TEX_RE_STD = /(\\\[[\s\S]*?\\\]|\$\$[\s\S]*?\$\$|\\\([\s\S]*?\\\))/g;
+  var TEX_RE_DOL = /(\\\[[\s\S]*?\\\]|\$\$[\s\S]*?\$\$|\\\([\s\S]*?\\\)|(?<![\\$])\$(?!\$)[^$]+?(?<![\\])\$(?!\$))/g;
   function segments(s) {
-    var out = [], last = 0, m;
-    TEX_RE.lastIndex = 0;
-    while ((m = TEX_RE.exec(s))) {
+    var out = [], last = 0, m, RE = dollarInline() ? TEX_RE_DOL : TEX_RE_STD;
+    RE.lastIndex = 0;
+    while ((m = RE.exec(s))) {
       if (m.index > last) out.push({ tex: 0, s: s.slice(last, m.index) });
       var d = m[0].slice(0, 2);
-      out.push({ tex: (d === '\\(') ? 1 : 2, s: m[0] });   /* 1 = en ligne, 2 = hors texte */
+      out.push({ tex: (d === '\\[' || d === '$$') ? 2 : 1, s: m[0] });   /* 1 = en ligne, 2 = hors texte */
       last = m.index + m[0].length;
     }
     if (last < s.length) out.push({ tex: 0, s: s.slice(last) });
@@ -48,9 +56,16 @@
   }
   function decimalsTex(t, L) {
     if (L === 'fr') return t.replace(/(\d)\{\.\}(\d)/g, '$1{,}$2').replace(/(\d)\.(\d)/g, '$1{,}$2');
-    return t.replace(/(\d)\{[,.]\}(\d)/g, '$1.$2');
+    return t.replace(/(\d)\{[,.]\}(\d)/g, '$1.$2').replace(/(?<=\d),(?=\d{3}(?!\d))/g, '{,}');
+  }
+  /* nombres formatés pour TeX mais placés hors formule : 82\,500, 0{,}8, 10{.}0 */
+  function texLeak(s, L) {
+    s = s.replace(/(\d)\\[,;:!](?=\d)/g, L === 'fr' ? '$1\u202f' : '$1,');
+    s = s.replace(/(\d)\{[,.]\}(?=\d)/g, L === 'fr' ? '$1,' : '$1.');
+    return s;
   }
   function typo(s, L) {
+    s = texLeak(s, L);
     s = decimalsText(s, L);
     if (L === 'fr') {
       s = s.replace(/([A-Za-z\u00C0-\u017F\)\]\u00bb%\u20ac])[ \u00a0\u202f]*:(?!\/\/)/g, '$1' + NBSP + ':');
