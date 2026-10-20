@@ -1941,6 +1941,8 @@ root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: 
       t = t.replace(SPACING, '');
       if (/\.\.\.$/.test(t)) return t;
       var n = t.length, ch = t.charAt(n - 1);
+      /* délimiteur invisible « . » de \right. (ou \bigr., \middle.) : ce n'est pas une ponctuation */
+      if (ch === '.' && /\\(?:right|left|middle|[bB]igg?[lrm]?)\s*\.$/.test(t)) return t;
       if ('.,;:!'.indexOf(ch) >= 0 && ch !== '' && t.charAt(n - 2) !== '\\') { t = t.slice(0, -1); continue; }
       var m = /\\end\{([a-zA-Z*]+)\}$/.exec(t);
       if (m) { return stripEnd(t.slice(0, m.index)) + m[0]; }
@@ -1957,7 +1959,7 @@ root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: 
   function cleanDisplay(tex) {
     var open = tex.slice(0, 2), close = tex.slice(-2), inner = tex.slice(2, -2);
     /* fin de ligne dans un alignement : pas de virgule ni de point avant \\ */
-    inner = inner.replace(/([^\\])([.,;])((?:\s|~|\\[,;:!])*)\\\\/g, '$1$3\\\\');
+    inner = inner.replace(/([^\\])(?<!\\(?:right|left|middle|[bB]igg?[lrm]?))([.,;])((?:\s|~|\\[,;:!])*)\\\\/g, '$1$3\\\\');
     inner = stripEnd(inner);
     return open + inner + close;
   }
