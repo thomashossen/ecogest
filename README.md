@@ -46,3 +46,9 @@ Les pages sans cadre de figures (dérivés, analyse financière…) dessinent le
 `kit/testfig.js` fournit `testFig({law, df1, df2, stat, side, levels, lab, crit, asym})` : densité de la loi sous H₀ (Student, normale, Fisher, χ²), zone(s) de rejet, valeur(s) critique(s), statistique observée et verdict, en français ou en anglais selon la langue de la page. Une ou deux zones (par exemple 5 % et 1 %), tests unilatéraux ou bilatéraux, y compris le test bilatéral de Fisher.
 `kit/testfig_inject.py page.html …` insère ou met à jour la bibliothèque dans une page (idempotent) ; `kit/testfig_place.py` aide à placer les appels dans les fonctions de corrigé.
 Pages équipées : econ2, econ3, econ6, econ7, econ8, econ10, econ11, econ12, econ14, econ15.
+
+## Pages mf16 à mf18 (optimisation et gestion des risques)
+
+Les pages mf16 à mf22 (dédication, VaR et CVaR, optimisation robuste, immunisation, Markowitz, contraintes en probabilité, variables entières) sont construites à partir du gabarit mf15.html : `kit/mf/pages/build_mf.py` remplace la partie propre à la page par le fichier `kit/mf/pages/mfNN.js` (cours, figures, générateur, énoncé et corrigé, en français et en anglais). Pour modifier une de ces pages, éditer le .js puis relancer le script, par exemple :
+`python3 kit/mf/pages/build_mf.py 17 kit/mf/pages/mf17.js '{"title": "...", "h1": "...", "course": "...", "ex": "..."}' mf17.html`
+Le script `kit/mf/pages/rebuild_all.sh` (à lancer depuis le dossier parent de `site/`, ou en adaptant les chemins) les reconstruit toutes. L'index les range dans une nouvelle rubrique « Optimisation et gestion des risques », avec mf15.

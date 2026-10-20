@@ -1,0 +1,2765 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mathématiques financières 18 – Optimisation robuste et regret</title>
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['\\(','\\)']],
+    displayMath: [['\\[','\\]']],
+    packages: {'[+]': ['ams']},
+    macros: {
+      E: '\\mathbb{E}',
+      PP: '\\mathbb{P}',
+      Var: '\\operatorname{Var}',
+      Cov: '\\operatorname{Cov}',
+      dd: '\\mathrm{d}'
+    }
+  },
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] }
+};
+</script>
+<script>window.MathJax=window.MathJax||{};window.MathJax.options=window.MathJax.options||{};window.MathJax.options.enableAssistiveMml=true;</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2e42; --cream:#faf7f0; --cream-dark:#f0ebe0;
+  --gold:#c9952a; --gold-light:#e8b84b; --red:#b94040; --green:#2d6b4a;
+  --text:#1e1e1e; --text-muted:#5a5a5a; --border:#d4cfc4;
+  --shadow:0 4px 24px rgba(13,27,42,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Serif 4',serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:16px;line-height:1.7}
+
+/* HEADER */
+header{background:var(--navy);color:var(--cream);padding:2rem 3rem 0;border-bottom:3px solid var(--gold)}
+.header-inner{max-width:960px;margin:0 auto}
+.header-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-light);border:1px solid var(--gold);padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+header h1{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:#fff;margin-bottom:.15rem}
+header .subtitle{font-size:.85rem;color:rgba(250,247,240,.55);font-style:italic;margin-bottom:1.5rem}
+
+/* CONTROLS */
+#controls-bar{border-top:1px solid rgba(255,255,255,.08);padding:1.1rem 0 1.3rem}
+.ctrls{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-end}
+.ctrl-g{display:flex;flex-direction:column;gap:4px}
+.ctrl-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,240,.5)}
+.ctrl-inp{background:rgba(255,255,255,.07);border:1px solid rgba(201,149,42,.35);color:var(--cream);padding:.38rem .65rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.82rem;width:88px;outline:none;transition:border-color .2s}
+.ctrl-inp:focus{border-color:var(--gold-light)}
+.ctrl-inp.w120{width:120px}
+.ctrl-tip{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:rgba(250,247,240,.33);margin-top:2px}
+.seed-row{display:flex;align-items:flex-end;gap:.45rem}
+.btn-copy-seed{background:transparent;border:1px solid rgba(201,149,42,.4);color:rgba(250,247,240,.55);padding:.38rem .55rem;border-radius:3px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:.65rem;transition:all .18s;white-space:nowrap}
+.btn-copy-seed:hover{border-color:var(--gold-light);color:var(--gold-light)}
+.ctrl-vsep{width:1px;background:rgba(255,255,255,.1);align-self:stretch;margin:0 .2rem}
+.btn-gen{background:var(--gold);border:none;color:var(--navy);padding:.5rem 1.3rem;border-radius:4px;cursor:pointer;font-family:'Source Serif 4',serif;font-size:.9rem;font-weight:600;transition:background .18s;white-space:nowrap;align-self:flex-end}
+.btn-gen:hover{background:var(--gold-light)}
+
+/* MAIN */
+main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.welcome-msg{text-align:center;padding:5rem 2rem;color:var(--text-muted);font-style:italic;font-size:1.05rem}
+.welcome-msg .arrow{font-size:2rem;display:block;margin-bottom:1rem;opacity:.4}
+
+/* TOP BAR */
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.top-bar-left{display:flex;gap:.6rem;align-items:center}
+.btn-sm{background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:'JetBrains Mono',monospace;font-size:.67rem;letter-spacing:.08em;text-transform:uppercase;padding:.4rem 1rem;border-radius:3px;cursor:pointer;transition:all .18s;white-space:nowrap}
+.btn-sm:hover{background:var(--gold);color:var(--navy)}
+.btn-sm.pdf{border-color:#7bafd4;color:#7bafd4}
+.btn-sm.pdf:hover{background:#7bafd4;color:var(--navy)}
+.seed-badge{font-family:'JetBrains Mono',monospace;font-size:.67rem;color:var(--text-muted);background:var(--cream-dark);border:1px solid var(--border);padding:.35rem .7rem;border-radius:3px}
+.seed-badge span{color:var(--navy);font-weight:500}
+
+/* CARDS */
+.card{background:#fff;border-radius:6px;box-shadow:var(--shadow);margin-bottom:1.5rem;border-top:4px solid var(--navy);overflow:hidden}
+.card-header{background:var(--navy-mid);color:var(--cream);padding:.9rem 1.8rem;display:flex;align-items:center;gap:.8rem}
+.card-header .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);border:1px solid rgba(201,149,42,.4);padding:2px 8px;border-radius:2px}
+.card-header h2{font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:600;color:#fff}
+.card-body{padding:1.8rem 2rem}
+.context-block{background:var(--cream-dark);border-left:3px solid var(--gold);padding:1.1rem 1.4rem;border-radius:0 4px 4px 0;margin-bottom:1.8rem;font-size:.93rem;line-height:1.75;text-align:justify}
+
+/* QUESTIONS */
+.questions ol{counter-reset:q;list-style:none}
+.questions ol>li{counter-increment:q;margin-bottom:1.4rem;display:flex;gap:1rem;align-items:flex-start}
+.questions ol>li::before{content:counter(q);min-width:28px;height:28px;background:var(--navy);color:var(--cream);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:500;flex-shrink:0;margin-top:.15rem}
+.questions ol>li .q-text{flex:1;font-size:.93rem;text-align:justify}
+
+/* SOLUTION */
+.sol-toggle-wrap{text-align:center;margin:1rem 0 0}
+.btn-toggle{background:transparent;border:2px solid var(--navy);color:var(--navy);font-family:'Source Serif 4',serif;font-size:.9rem;padding:.6rem 2rem;border-radius:4px;cursor:pointer;transition:all .2s}
+.btn-toggle:hover,.btn-toggle.shown{background:var(--navy);color:var(--cream)}
+.sol-card{border-top:4px solid var(--green);display:none}
+.sol-card.visible{display:block;animation:fi .3s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.sol-card .card-header{background:var(--green)}
+.sol-card .card-header .tag{border-color:rgba(200,240,200,.4);color:#a8d8b0}
+.st{font-size:.92rem;line-height:1.75;text-align:justify}
+.st p{margin-bottom:.7rem}
+.st ol{counter-reset:sq;list-style:none}
+.st>ol>li{counter-increment:sq;margin-bottom:1.6rem;display:flex;gap:1rem;align-items:flex-start}
+.st>ol>li::before{content:counter(sq);min-width:24px;height:24px;background:var(--green);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.68rem;flex-shrink:0;margin-top:.15rem}
+.st ul{list-style:disc;padding-left:1.5rem;margin-bottom:.7rem}
+.st ul li{margin-bottom:1rem}
+.st .q-content{flex:1;} /* Assure que le texte prend toute la largeur restante */
+
+/* PDF MODAL */
+#pdf-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;backdrop-filter:blur(2px)}
+#pdf-modal{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:101;background:#fff;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.25);width:390px;max-width:95vw;border-top:4px solid #7bafd4;overflow:hidden}
+.mh{background:var(--navy);color:var(--cream);padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
+.mh h3{font-family:'Playfair Display',serif;font-size:1rem;font-weight:600}
+.mclose{background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:1.2rem;line-height:1;padding:2px 6px;border-radius:3px;transition:color .15s}
+.mclose:hover{color:#fff}
+.mb2{padding:1.5rem}
+.opt-row{display:flex;align-items:flex-start;gap:.75rem;margin-bottom:1rem;cursor:pointer}
+.opt-row input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--navy);flex-shrink:0;margin-top:3px}
+.opt-lbl{font-size:.93rem}
+.opt-desc{font-size:.75rem;color:var(--text-muted);display:block}
+.seed-note{font-family:'JetBrains Mono',monospace;font-size:.7rem;background:var(--cream-dark);border:1px solid var(--border);padding:.55rem .85rem;border-radius:3px;color:var(--text-muted);margin-bottom:1.2rem;line-height:1.5}
+.seed-note strong{color:var(--navy)}
+.mactions{display:flex;gap:.6rem}
+.btn-print{flex:1;background:var(--navy);color:var(--cream);border:none;padding:.7rem;border-radius:4px;font-family:'Source Serif 4',serif;font-size:.9rem;cursor:pointer;transition:background .2s}
+.btn-print:hover{background:var(--navy-mid)}
+.btn-cancel{background:transparent;border:1px solid var(--border);color:var(--text-muted);padding:.7rem 1rem;border-radius:4px;font-family:'Source Serif 4',serif;font-size:.9rem;cursor:pointer;transition:all .2s}
+.btn-cancel:hover{border-color:var(--text);color:var(--text)}
+
+/* PRINT */
+@media print{
+:root{--navy:#0d1b2a;--cream:#fff;--cream-dark:#f8f8f8;--gold:#c9952a;--green:#2d6b4a;--border:#ccc}
+body{background:#fff;font-size:11pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+header{padding:1rem 1.5rem .8rem}
+header .subtitle{display:none}
+#controls-bar,.top-bar,.sol-toggle-wrap,#pdf-ov,#pdf-modal{display:none!important}
+.card{box-shadow:none;border-radius:0;page-break-inside:avoid;margin-bottom:1rem}
+main{padding:1rem 1.5rem;max-width:100%}
+body.print-no-header header{display:none!important}
+body.print-no-solution .sol-card{display:none!important}
+body.print-force-solution .sol-card{display:block!important}
+}
+
+/* --- Selecteur de langue / Language switch --- */
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem}
+.header-top .header-badge{margin-bottom:0}
+.lang-switch{display:flex;gap:.45rem;flex-shrink:0}
+.flag-btn{background:rgba(255,255,255,.06);border:1px solid rgba(201,149,42,.35);border-radius:3px;padding:3px;cursor:pointer;line-height:0;opacity:.5;transition:opacity .2s,border-color .2s,transform .15s}
+.flag-btn:hover{opacity:1;transform:translateY(-1px)}
+.flag-btn.active{opacity:1;border-color:var(--gold-light);box-shadow:0 0 0 1px rgba(232,184,75,.35)}
+.flag-btn svg{display:block;width:30px;height:20px;border-radius:1px}
+@media print{ .lang-switch{display:none !important;} }
+
+/* TABLEAUX DE DONNEES */
+.dtable-wrap{overflow-x:auto;margin:1.1rem 0}
+.dtable{width:100%;border-collapse:collapse;font-size:.82rem;font-family:'Source Serif 4',serif}
+.dtable th,.dtable td{border:1px solid var(--border);padding:.4rem .5rem;text-align:center;vertical-align:middle}
+.dtable th{background:var(--navy);color:var(--cream);font-weight:600;font-size:.78rem}
+.dtable tr:nth-child(even) td{background:#fbf9f4}
+.dtable td.num{font-family:'JetBrains Mono',monospace;font-size:.78rem;white-space:nowrap}
+.dtable tfoot td{font-weight:700;background:var(--cream-dark)}
+.dtable caption{caption-side:bottom;font-size:.76rem;color:var(--text-muted);font-style:italic;padding-top:.5rem;text-align:justify}
+.dtable-narrow{max-width:560px;margin:0 auto}
+.context-block .dtable-wrap{margin:1rem 0 1.1rem}
+.questions ol ol > li{display:block}
+.q-text .dtable-wrap{margin:.9rem 0 .8rem}
+
+/* FIGURES */
+.fig-wrap{margin:1.2rem 0 .3rem;text-align:center;overflow-x:auto}
+.fig-wrap svg{width:100%;max-width:640px;height:auto;background:#fff;border:1px solid var(--border);border-radius:4px}
+.fig-cap{font-size:.78rem;color:var(--text-muted);font-style:italic;text-align:center;margin-bottom:1rem;line-height:1.5}
+
+/* ============================================================
+   FAMILLE « MATHÉMATIQUES FINANCIÈRES » : cours, figures interactives, code
+   ============================================================ */
+.top-bar-left{flex-wrap:wrap}
+/* --- cours --- */
+.cours{font-size:.95rem;line-height:1.75;text-align:justify}
+.cours p{margin-bottom:.8rem}
+.cours .dossier-title{scroll-margin-top:1rem}
+.cours ul.kit-simple{margin:.2rem 0 1rem}
+.cours ul.kit-simple > li{margin-bottom:.55rem}
+.cours .toc{font-size:.86rem;color:var(--text-muted);text-align:left;margin:-.6rem 0 1.6rem;line-height:1.9}
+.cours .toc a{color:var(--navy);text-decoration:none;border-bottom:1px solid var(--gold)}
+.cours .toc a:hover{color:var(--gold)}
+/* listes numérotées du cours (définitions en plusieurs points) */
+.cours ol{padding-left:1.6rem;margin:0 0 .9rem}
+.cours ol > li{margin-bottom:.35rem}
+/* démonstrations : simple filet neutre, pas de cadre coloré */
+.cours .demo{border-left:2px solid var(--border);padding:.1rem 0 .1rem 1.1rem;margin:0 0 1.1rem}
+.cours .demo p:last-child{margin-bottom:0}
+/* un seul style d'encadré, celui des « Pour aller plus loin » */
+.cours .persp-box{background:#f7f9fc;border:1px solid #ccd8e6;border-left:3px solid var(--navy-mid);padding:1.1rem 1.2rem;border-radius:4px;margin:1.4rem 0 1.4rem;font-size:.9rem;line-height:1.7;text-align:justify}
+.cours .persp-box .sol-sub{color:var(--navy);font-weight:600;display:block;margin:0 0 .5rem;font-size:.98rem}
+.cours .persp-box p{margin:0 0 .6rem}
+.cours .persp-box p:last-child, .cours .persp-box ol:last-child, .cours .persp-box ul:last-child{margin-bottom:0}
+.cours .persp-box ol, .cours .persp-box ul{padding-left:1.3rem;margin:0 0 .6rem}
+.cours .persp-box li{margin-bottom:.3rem}
+.sol-card .persp-box p{margin:0 0 .75rem 0}
+/* --- figures interactives --- */
+.ifig{margin:1.2rem 0 .3rem;text-align:center}
+.fig-ctrl{display:flex;flex-wrap:wrap;gap:.5rem 1.4rem;justify-content:center;align-items:center;margin:0 auto .6rem;max-width:680px;font-size:.84rem;color:var(--text)}
+.fig-ctrl label{display:flex;align-items:center;gap:.5rem;white-space:nowrap}
+.fig-ctrl .cv{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--navy);min-width:2.6em;text-align:left}
+.fig-ctrl input[type=range]{width:150px;accent-color:var(--navy);cursor:pointer}
+.fig-ctrl select{font-family:'Source Serif 4',serif;font-size:.84rem;padding:.2rem .4rem;border:1px solid var(--border);border-radius:3px;background:#fff;color:var(--text)}
+.fig-ctrl button{font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;background:transparent;border:1px solid var(--gold);color:var(--gold);padding:.3rem .8rem;border-radius:3px;cursor:pointer}
+.fig-ctrl button:hover{background:var(--gold);color:var(--navy)}
+.fig-svg{overflow-x:auto}
+.fig-svg svg{width:100%;min-width:520px;max-width:680px;height:auto;background:#fff;border:1px solid var(--border);border-radius:4px}
+.fig-read{font-size:.86rem;line-height:1.6;color:var(--text);margin:.5rem auto 0;max-width:680px;text-align:center}
+.fig-read .v{font-family:'JetBrains Mono',monospace;font-size:.8rem;color:var(--navy);font-weight:500}
+.fig-cap{margin-top:.35rem}
+/* --- code Python --- */
+.code-wrap{margin:.4rem 0 1.1rem}
+.code-head{display:flex;justify-content:space-between;align-items:center;background:var(--navy-mid);color:var(--gold-light);font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;padding:.3rem .9rem;border-radius:4px 4px 0 0}
+.code-head button{background:transparent;border:1px solid rgba(232,184,75,.45);color:var(--gold-light);font-family:inherit;font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;padding:.12rem .55rem;border-radius:3px;cursor:pointer}
+.code-head button:hover{background:var(--gold-light);color:var(--navy)}
+.code-block{background:#0d1b2a;color:#e8e4d9;border-radius:0 0 4px 4px;padding:.7rem .9rem;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:.74rem;line-height:1.55;text-align:left}
+.code-block .cl{white-space:pre}
+.code-block code{font-family:inherit;color:inherit;background:none;padding:0;font-size:inherit}
+.code-out{background:var(--cream-dark);border:1px solid var(--border);border-top:none;border-radius:0 0 4px 4px;padding:.55rem .9rem;font-family:'JetBrains Mono',monospace;font-size:.74rem;line-height:1.55;text-align:left;overflow-x:auto}
+.code-out .cl{white-space:pre}
+.code-out code{font-family:inherit;background:none;padding:0}
+.code-wrap .code-block.has-out{border-radius:0}
+.code-out-lbl{font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:.2rem}
+/* --- exercices --- */
+.questions ol ol{margin-top:.6rem}
+.st>ol>li .q-content p:last-child{margin-bottom:0}
+.dtable td.l, .dtable th.l{text-align:left}
+/* petits écrans : un paragraphe qui contient une formule trop large défile au lieu d'être coupé */
+@media (max-width:640px){
+  .cours p, .cours li, .st p, .q-text, .questions li{overflow-x:auto;overflow-y:hidden}
+  .card-body{padding:1.3rem 1.1rem}
+}
+@media print{
+  .fig-ctrl input, .fig-ctrl select, .fig-ctrl button, .code-head button{display:none !important}
+  .fig-svg svg{min-width:0}
+  .ifig, .persp-box, .code-wrap, .dtable-wrap{page-break-inside:avoid}
+  #course-card{page-break-inside:auto}
+}
+</style>
+<!-- KIT:CSS:START v1 --><style id="kit-css">
+/* ============================================================
+   KIT D'UNIFORMISATION — bloc partagé, identique sur toutes les pages.
+   Ne rien modifier ici fichier par fichier : régénérer le kit.
+   ============================================================ */
+
+/* --- 1. Mathématiques : jamais de débordement --- */
+mjx-container[display="true"]{
+  overflow-x:auto; overflow-y:hidden; max-width:100%;
+  padding:.15rem 0; margin:1rem 0 !important;
+}
+mjx-container[display="true"]::-webkit-scrollbar{height:5px}
+mjx-container[display="true"]::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+mjx-container{ max-width:100%; }
+.math-formula{ text-align:center; margin:1.2rem 0; overflow-x:auto; max-width:100%; }
+@media (max-width:640px){
+  mjx-container[display="true"]{ font-size:88% }
+}
+
+/* --- 2. Listes à puces entourées (questions ET données de contexte) --- */
+.kit-list, .st > ol,
+.questions > ol,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list), .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list),
+.question-list, .enum-list, .q-list{
+  counter-reset:kitq; list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem;
+}
+.kit-list > li, .st > ol > li,
+.questions > ol > li,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li, .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li,
+.question-list > li, .enum-list > li, .q-list > li{
+  counter-increment:kitq; position:relative;
+  padding-left:2.6rem; margin-bottom:1.3rem;
+  font-size:.95rem; line-height:1.7; text-align:justify;
+  font-weight:400; color:var(--text);
+  display:block;
+}
+.kit-list > li::before, .st > ol > li::before,
+.questions > ol > li::before,
+#events-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li::before, .event-list:not(.kit-simple):not(.kit-nobullet):not(.sub-ol):not(.sub-list):not(.alpha-list) > li::before,
+.question-list > li::before, .enum-list > li::before, .q-list > li::before{
+  content:counter(kitq);
+  position:absolute; left:0; top:.1rem;
+  width:28px; min-width:28px; height:28px;
+  background:var(--navy); color:var(--cream);
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.72rem; font-weight:500;
+  flex-shrink:0;
+}
+.questions ol > li .q-text{ flex:1; font-size:.95rem; text-align:justify }
+/* sous-listes : cercle creux, plus discret */
+.enum-sublist, .kit-sublist, .sub-list, .sub-ol, .alpha-list, .enum-subsublist,
+.st ol.sub-ol, .questions ol ol, .st ol ol, .kit-list ol, .q-list ol, .question-list ol{
+  counter-reset:kitsq; list-style:none !important; padding-left:0 !important;
+  margin:.9rem 0 .9rem 0;
+}
+.enum-sublist > li, .kit-sublist > li, .sub-list > li, .sub-ol > li, .alpha-list > li, .enum-subsublist > li,
+.st ol.sub-ol > li, .questions ol ol > li, .st ol ol > li, .kit-list ol > li, .q-list ol > li, .question-list ol > li{
+  counter-increment:kitsq; position:relative;
+  padding-left:2.1rem; margin-bottom:.7rem; font-size:.92rem; text-align:justify;
+}
+.enum-sublist > li::before, .kit-sublist > li::before, .sub-list > li::before, .sub-ol > li::before, .alpha-list > li::before, .enum-subsublist > li::before,
+.st ol.sub-ol > li::before, .questions ol ol > li::before, .st ol ol > li::before, .kit-list ol > li::before, .q-list ol > li::before, .question-list ol > li::before{
+  content:counter(kitsq,lower-alpha);
+  min-width:22px;
+  position:absolute; left:0; top:.05rem;
+  width:22px; height:22px;
+  background:transparent; color:var(--navy);
+  border:1px solid var(--gold);
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.65rem;
+}
+
+/* variante : puces simples non numérotées (listes de données) */
+.kit-simple{ list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem }
+.kit-simple > li{
+  position:relative; padding-left:1.5rem; margin-bottom:1.1rem;
+  font-size:.95rem; line-height:1.7; text-align:justify;
+}
+.kit-simple > li::before{
+  content:"\2022"; position:absolute; left:0; top:-.15rem;
+  color:var(--gold); font-size:1.5rem; line-height:1; background:none;
+  width:auto; height:auto; border:none; border-radius:0;
+}
+/* variante : liste à un seul élément, sans puce */
+.kit-nobullet{ list-style:none !important; padding-left:0 !important; margin-bottom:1.5rem }
+.kit-nobullet > li{
+  padding-left:0; margin-bottom:1rem; font-size:.95rem; line-height:1.7; text-align:justify;
+}
+.kit-nobullet > li::before{ content:none !important; display:none !important }
+/* variante : titres de section numérotés (contenu intercalé entre les puces) */
+.kit-num-scope{ counter-reset:kitn }
+p.kit-num{
+  counter-increment:kitn; position:relative;
+  padding-left:2.6rem; margin:1.8rem 0 1rem;
+  font-weight:600; color:var(--navy); text-align:left;
+  min-height:28px; display:flex; align-items:center;
+}
+p.kit-num:first-of-type{ margin-top:0 }
+p.kit-num::before{
+  content:counter(kitn); position:absolute; left:0; top:0;
+  width:28px; height:28px; background:var(--navy); color:var(--cream);
+  border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:.72rem; font-weight:500;
+}
+
+/* titres de dossier */
+.dossier-title{
+  margin:2rem 0 1rem; font-weight:600; color:var(--navy); font-size:1.02rem;
+  border-bottom:1px solid var(--border); padding-bottom:.4rem; text-align:left;
+}
+.dossier-title:first-of-type{ margin-top:0 }
+.dossier-body{ margin-bottom:.5rem }
+
+/* --- 3. Corrigé sobre : plus de multiplication de fonds verts --- */
+.sol-card .calc-box, .sol-card .concl{
+  background:transparent !important;
+  border:none !important;
+  border-left:none !important;
+  padding:0 !important;
+  border-radius:0 !important;
+  margin:0 0 1.6rem 0 !important;
+  font-size:.95rem;
+  line-height:1.7;
+  text-align:justify;
+}
+.sol-card .sol-sub{
+  color:var(--navy); font-weight:600; display:block;
+  margin:0 0 .5rem 0; font-size:1rem;
+}
+/* seuls encadrés conservés : les perspectives « Pour aller plus loin » */
+.sol-card .persp-box{
+  background:#f7f9fc !important;
+  border:1px solid #ccd8e6 !important;
+  border-left:3px solid var(--navy-mid) !important;
+  padding:1.2rem !important;
+  border-radius:4px !important;
+  margin:2rem 0 1rem 0 !important;
+  font-size:.9rem; line-height:1.7; text-align:justify;
+}
+
+.btn-toggle{
+  background:transparent; border:2px solid var(--green); border-bottom:none;
+  color:var(--green); font-family:'Source Serif 4',serif; font-size:.95rem;
+  font-weight:600; padding:.5rem 1.5rem; border-radius:4px 4px 0 0; cursor:pointer;
+  transition:all .2s; position:relative; z-index:2; top:2px;
+}
+.btn-toggle:hover{ background:var(--green); color:var(--cream) }
+
+/* --- 4. Bouton « Afficher le corrigé » (modèle der) --- */
+.sol-toggle-wrap{ text-align:left; margin:1.5rem 0 0 0; }
+.sol-card{
+  border-top:2px solid var(--green); display:none;
+  border-radius:0 6px 6px 6px; position:relative; z-index:1;
+}
+.sol-card.visible{ display:block; animation:kitfi .35s ease }
+.sol-card .card-header{ background:var(--green) }
+.sol-card .card-header .tag{ border-color:rgba(200,240,200,.4); color:#a8d8b0 }
+@keyframes kitfi{ from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+
+/* --- 5. Barre d'actions unifiée --- */
+.top-bar{ display:flex; flex-wrap:wrap; gap:.8rem; align-items:center; justify-content:space-between; margin-bottom:1.2rem }
+.top-bar-left{ display:flex; flex-wrap:wrap; gap:.55rem; order:1 }
+.top-bar .seed-badge{ order:2 }
+.btn-sm{ background:transparent; border:1px solid var(--gold); color:var(--gold); font-family:'JetBrains Mono',monospace; font-size:.67rem; letter-spacing:.08em; text-transform:uppercase; padding:.4rem 1rem; border-radius:3px; cursor:pointer; transition:all .18s; white-space:nowrap }
+.btn-sm:hover{ background:var(--gold); color:var(--navy) }
+.btn-sm.pdf{ border-color:#7bafd4; color:#7bafd4 }
+.btn-sm.pdf:hover{ background:#7bafd4; color:var(--navy) }
+.btn-sm.doc{ border-color:#8fa8c4; color:#8fa8c4 }
+.seed-row{ display:flex; gap:.4rem; align-items:center }
+.btn-copy-seed{
+  background:transparent; border:1px solid rgba(201,149,42,.4); color:rgba(250,247,240,.55);
+  padding:.38rem .55rem; border-radius:3px; cursor:pointer;
+  font-family:'JetBrains Mono',monospace; font-size:.65rem; transition:all .18s; white-space:nowrap;
+}
+.btn-copy-seed:hover{ border-color:var(--gold-light); color:var(--gold-light) }
+.btn-sm.doc:hover{ background:#8fa8c4; color:var(--navy) }
+
+/* --- 6. Modale d'export PDF --- */
+#pdf-ov{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:100; backdrop-filter:blur(2px) }
+#pdf-modal{ display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:101; background:#fff; border-radius:8px; box-shadow:0 20px 60px rgba(0,0,0,.25); width:390px; max-width:95vw; border-top:4px solid #7bafd4; overflow:hidden }
+#pdf-ov.open,#pdf-modal.open{ display:block }
+.mh{ background:var(--navy); color:var(--cream); padding:1rem 1.5rem; display:flex; align-items:center; justify-content:space-between }
+.mh h3{ font-family:'Playfair Display',serif; font-size:1rem; font-weight:600; margin:0 }
+.mclose{ background:none; border:none; color:rgba(255,255,255,.6); cursor:pointer; font-size:1.2rem; line-height:1; padding:2px 6px; border-radius:3px; transition:color .15s }
+.mclose:hover{ color:#fff }
+.mb2{ padding:1.5rem }
+.opt-row{ display:flex; align-items:flex-start; gap:.75rem; margin-bottom:1rem; cursor:pointer }
+.opt-row input[type=checkbox]{ width:16px; height:16px; cursor:pointer; accent-color:var(--navy); flex-shrink:0; margin-top:3px }
+.opt-txt{ display:block }
+.opt-lbl{ font-size:.93rem; display:block }
+.opt-desc{ font-size:.75rem; color:var(--text-muted); display:block }
+.seed-note{ font-family:'JetBrains Mono',monospace; font-size:.7rem; background:var(--cream-dark); border:1px solid var(--border); padding:.55rem .85rem; border-radius:3px; color:var(--text-muted); margin-bottom:1.2rem; line-height:1.5 }
+.mactions{ display:flex; gap:.6rem }
+.btn-print{ flex:1; background:var(--navy); color:var(--cream); border:none; padding:.7rem; border-radius:4px; font-family:'Source Serif 4',serif; font-size:.9rem; cursor:pointer; transition:background .2s }
+.btn-print:hover{ background:var(--navy-mid) }
+.btn-cancel{ background:transparent; border:1px solid var(--border); color:var(--text-muted); padding:.7rem 1rem; border-radius:4px; font-family:'Source Serif 4',serif; font-size:.9rem; cursor:pointer; transition:all .2s }
+.btn-cancel:hover{ border-color:var(--text); color:var(--text) }
+
+/* --- 7. Impression --- */
+@media print{
+  body{ background:#fff; font-size:11pt; -webkit-print-color-adjust:exact; print-color-adjust:exact }
+  header{ display:block !important; padding:1rem 1.5rem .8rem }
+  header .subtitle{ display:none }
+  .ctrls, #controls-bar, .top-actions, .top-bar-left, .sol-toggle-wrap,
+  .lang-switch, #pdf-ov, #pdf-modal{ display:none !important }
+  .top-bar{ display:block !important; margin-bottom:.8rem }
+  .top-bar .seed-badge{
+    display:inline-block !important; background:none; border:1px solid var(--border);
+    color:var(--text-muted); font-family:'JetBrains Mono',monospace; font-size:8.5pt;
+    padding:2pt 6pt; border-radius:2px;
+  }
+  body.print-no-header .top-bar{ display:none !important }
+  main{ padding:1rem 1.5rem; max-width:100% }
+  .card{ box-shadow:none; border-radius:0; page-break-inside:avoid; margin-bottom:1rem }
+  #ex-area{ display:block !important }
+  .sol-card{ display:block !important; border-top:2px solid var(--green) }
+  mjx-container[display="true"]{ overflow:visible !important }
+  body.print-no-header header{ display:none !important }
+  body.print-no-header .ctrls{ display:none !important }
+  body.print-no-solution .sol-card,
+  body.print-no-solution .sol-toggle-wrap{ display:none !important }
+  body.print-force-solution .sol-card{ display:block !important }
+}
+</style><!-- KIT:CSS:END -->
+<!-- KIT2:CSS:START -->
+<style id="kit2-css">
+/* ============================================================
+   KIT v2 — compléments d'uniformisation (identiques sur toutes les pages)
+   ============================================================ */
+
+/* --- 8. Lignes mathématiques : défilement horizontal, jamais de coupure --- */
+mjx-container[display="true"]{
+  display:block; overflow-x:auto; overflow-y:hidden; max-width:100%;
+  padding:.35rem 0 .45rem; margin:.9rem 0 1rem !important;
+  scrollbar-width:thin; -webkit-overflow-scrolling:touch;
+  text-align:center;
+}
+mjx-container[display="true"] > mjx-math{ display:inline-block; }
+mjx-container[display="true"]::-webkit-scrollbar{ height:5px }
+mjx-container[display="true"]::-webkit-scrollbar-thumb{ background:var(--border); border-radius:3px }
+.math-formula{ text-align:center; margin:1rem 0; overflow-x:auto; max-width:100%; }
+p + mjx-container[display="true"], li > mjx-container[display="true"]:first-child{ margin-top:.5rem !important }
+
+/* --- 9. Tableaux : toujours défilables --- */
+.kit-tw{ overflow-x:auto; max-width:100%; margin:1rem 0; -webkit-overflow-scrolling:touch; scrollbar-width:thin }
+.kit-tw > table{ margin:0; min-width:min(100%, 360px) }
+
+/* --- 10. Sous-questions a, b, c entourées dans les corrigés --- */
+.sq{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:22px; height:22px; min-width:22px; margin-right:.5rem;
+  border:1px solid var(--gold); border-radius:50%; background:transparent;
+  color:var(--navy); font-family:'JetBrains Mono',monospace; font-size:.65rem; font-weight:500;
+  vertical-align:middle; position:relative; top:-1px; line-height:1;
+}
+.sol-card p > .sq:first-child, .sol-card li > .sq:first-child, .sol-card div > .sq:first-child{ margin-left:0 }
+
+/* --- 11. Chiffres randomisés : plus de mise en exergue --- */
+.highlight{
+  background:none !important; padding:0 !important; border-radius:0 !important;
+  font-family:inherit !important; font-size:inherit !important; font-weight:inherit !important;
+  color:inherit !important;
+}
+
+/* --- 12. Rédaction : interlignes homogènes --- */
+.card-body p{ margin:0 0 .85rem 0 }
+.card-body p:last-child{ margin-bottom:0 }
+.card-body br + br{ display:block; content:""; margin-top:.5rem }
+.context-block p:last-child{ margin-bottom:0 }
+
+/* --- 13. Mobile --- */
+@media (max-width:640px){
+  header{ padding:1.4rem 1.1rem 1.2rem }
+  header h1{ font-size:1.45rem }
+  main{ padding:1.4rem .75rem 3rem }
+  .card-body{ padding:1.25rem .95rem }
+  .context-block{ padding:.9rem 1rem }
+  mjx-container[display="true"]{ font-size:96%; }
+  /* la justification creuse des trous autour des formules en ligne : alignement à gauche */
+  .card-body, .card-body p, .card-body li, .context-block, .calc-box, .q-text, .q-content, .cours p{ text-align:left !important }
+  .kit-list > li, .st > ol > li, .questions > ol > li, .event-list > li{ padding-left:2.2rem }
+  .top-bar{ gap:.5rem }
+  .btn-sm{ padding:.38rem .7rem; font-size:.62rem }
+}
+
+/* --- 14. Blocs de code : défilables, jamais coupés --- */
+pre, .code-block, .code, .pycode{ overflow-x:auto; max-width:100%; -webkit-overflow-scrolling:touch; scrollbar-width:thin }
+pre code{ white-space:pre }
+
+/* --- 15. Vérifications en fin de question (corrigés) --- */
+p.check{
+  margin:.6rem 0 1rem; padding:.55rem .9rem .55rem 2.2rem; position:relative;
+  background:#f6f9f6; border:1px solid #cfe3d3; border-left:3px solid var(--green); border-radius:0 4px 4px 0;
+  font-size:.9rem; line-height:1.65; color:var(--text); text-align:left;
+}
+p.check mjx-container[display="true"]{ margin:.4rem 0 .4rem !important }
+p.check::before{ content:"\2713"; position:absolute; left:.75rem; top:.5rem; color:var(--green); font-weight:700 }
+p.check .chk-lbl{ font-weight:600; color:var(--green); margin-right:.3rem }
+
+/* --- 16. Listes à tirets (remplacent les puces en étoile) --- */
+.kit-dash{ list-style:none; padding-left:1.5rem; margin:.8rem 0 }
+.kit-dash > li{ position:relative; margin:.4rem 0 }
+.kit-dash > li::before{ content:"—"; position:absolute; left:-1.5rem; color:var(--gold) }
+</style>
+<!-- KIT2:CSS:END -->
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+  <div class="header-top">
+    <div class="header-badge" data-k="k-badge">MATHÉMATIQUES FINANCIÈRES</div>
+    <div class="lang-switch">
+      <button type="button" class="flag-btn active" id="flag-fr" onclick="setLang('fr')" title="Français" aria-label="Français"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="20" height="40" fill="#002654"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ED2939"/></svg></button>
+      <button type="button" class="flag-btn" id="flag-en" onclick="setLang('en')" title="English" aria-label="English"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#ffffff" stroke-width="8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0 V40 M0 20 H60" stroke="#ffffff" stroke-width="12"/><path d="M30 0 V40 M0 20 H60" stroke="#C8102E" stroke-width="7"/></svg></button>
+    </div>
+  </div>
+  <h1 data-k="k-h1">Optimisation robuste et regret</h1>
+  <p class="subtitle" data-k="k-sub">© Thomas Hossen – Version du 20 octobre 2026</p>
+
+  <div id="controls-bar">
+    <div class="ctrls">
+      <div class="ctrl-g">
+        <span class="ctrl-lbl" data-k="k-seed">Seed de reproductibilité</span>
+        <div class="seed-row">
+          <input class="ctrl-inp w120" type="number" id="seed-input" placeholder="auto" min="0" max="99999999">
+          <button type="button" class="btn-copy-seed" id="btn-copy-seed" onclick="copySeed(this)" title="Copier la seed active"><span data-kit="btnCopy">&#10697; Copier</span></button>
+        </div>
+        <span class="ctrl-tip" data-k="k-seedtip">Vide = nouvel exercice aléatoire</span>
+      </div>
+      <div class="ctrl-vsep"></div>
+      <button class="btn-gen" onclick="generateAndGo()"><span data-k="k-gen">Générer</span></button>
+    </div>
+  </div>
+</div>
+</header>
+
+<main>
+  <div id="ex-area">
+
+    <div id="course-card" class="card">
+      <div class="card-header"><span class="tag" data-k="k-tag-course">Cours</span><h2 data-k="k-coursetitle">Décider quand les paramètres sont incertains : ensembles d&#39;incertitude, pire cas et regret</h2></div>
+      <div class="card-body cours" id="course-content"></div>
+    </div>
+
+    <div class="top-bar" id="ex-anchor">
+      <div class="top-bar-left">
+        <button type="button" class="btn-sm" onclick="regen()"><span data-kit="btnNew">&#8634; Nouvel &eacute;nonc&eacute;</span></button>
+        <button type="button" class="btn-sm pdf" onclick="openPdfModal()"><span data-kit="btnPdf">&#11015; Exporter PDF</span></button>
+        <button type="button" class="btn-sm doc" onclick="exportWord()"><span data-kit="btnDoc">&#11015; Exporter Word</span></button>
+      </div>
+      <div class="seed-badge"><span data-k="k-seedbadge">Seed&nbsp;:</span> <span id="seed-disp">—</span></div>
+    </div>
+
+    <div id="ex-card" class="card">
+      <div class="card-header"><span class="tag" data-k="k-tag-ex">Exercice</span><h2 data-k="k-extitle">Critères de décision, Markowitz robuste et regret sous erreur de suivi</h2></div>
+      <div class="card-body" id="ex-content"></div>
+    </div>
+
+    <div class="sol-toggle-wrap">
+      <button class="btn-toggle" id="toggle-btn" onclick="toggleSol()">Afficher le corrigé</button>
+    </div>
+
+    <div id="sol-card" class="card sol-card">
+      <div class="card-header"><span class="tag" data-k="k-tag-sol">Corrigé</span><h2 data-k="k-soltitle">Critères de décision, Markowitz robuste et regret sous erreur de suivi</h2></div>
+      <div class="card-body" id="sol-content"></div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+/* ============================================================
+   SOCLE COMMUN DE LA FAMILLE « MATHÉMATIQUES FINANCIÈRES » (mf1, mf2, …)
+   Identique sur toutes les pages de la famille : langue, tirages,
+   mise en forme des nombres, figures interactives, génération.
+   Chaque page y ajoute son cours, ses figures et son exercice (objet PAGE).
+   ============================================================ */
+let LANG = 'fr';
+let solVisible = false;
+let _activeSeed = 0;
+const I18N = { fr: {}, en: {} };   // libellés et textes, remplis par la page
+const FIGS = {};                   // figures interactives : id -> { state, controls(L), draw(state, lang) }
+const PAGE = {};                   // compute(seed) -> données de l'exercice
+
+/* ---------- tirages reproductibles (Mulberry32) ---------- */
+let _rand = Math.random;
+function initRand(seed) {
+  _activeSeed = seed;
+  let s = seed >>> 0;
+  _rand = function () {
+    let t = s += 0x6D2B79F5;
+    t = Math.imul(t ^ t >>> 15, t | 1);
+    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function rnd() { return _rand(); }
+function rint(a, b) { return a + Math.floor(_rand() * (b - a + 1)); }
+function pick(arr) { return arr[Math.floor(_rand() * arr.length)]; }
+function shuffle(arr) { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(_rand() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+/* générateur local, indépendant des tirages de l'exercice (animations, simulations des figures) */
+function localRand(seed) {
+  let s = seed >>> 0;
+  return function () {
+    let t = s += 0x6D2B79F5;
+    t = Math.imul(t ^ t >>> 15, t | 1);
+    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+/* ---------- nombres ----------
+   Point décimal dans les deux langues (comme le reste du site et comme Python),
+   espace fine pour les milliers. m = true : écriture pour MathJax. */
+function _fixed(x, d) {
+  const a = Math.abs(x), p = Math.pow(10, d);
+  return (Math.round(a * p + 1e-9) / p).toFixed(d);
+}
+function _group(ip, m) {
+  if (ip.length < 5) return ip;
+  const sep = m ? '\\,' : ' ';
+  let out = '';
+  while (ip.length > 3) { out = sep + ip.slice(-3) + out; ip = ip.slice(0, -3); }
+  return ip + out;
+}
+function _num(x, d, m, trim) {
+  let s = _fixed(x, d);
+  if (trim && s.indexOf('.') >= 0) s = s.replace(/0+$/, '').replace(/\.$/, '');
+  const neg = x < 0 && /[1-9]/.test(s);
+  const parts = s.split('.');
+  return (neg ? (m ? '-' : '−') : '') + _group(parts[0], m) + (parts.length > 1 ? '.' + parts[1] : '');
+}
+function fmt(x, d) { return _num(x, d, false, false); }     // texte, d décimales
+function fmtT(x, d) { return _num(x, d, false, true); }     // texte, zéros finaux retirés
+function tex(x, d) { return _num(x, d, true, false); }      // MathJax, d décimales
+function texT(x, d) { return _num(x, d, true, true); }      // MathJax, zéros finaux retirés
+/* quotient de deux entiers positifs arrondi au plus proche (demi vers le haut), sans flottant */
+function rdiv(a, b) { return Math.floor((2 * a + b) / (2 * b)); }
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+/* ---------- loi normale centrée réduite : densité φ, répartition Φ, quantile ---------- */
+function normPdf(x) { return Math.exp(-0.5 * x * x) / 2.5066282746310002; }
+function normCdf(x) {                      // série de Marsaglia, précision de l'ordre de 1e-15
+  if (x < -8) return 0; if (x > 8) return 1;
+  let s = x, t = x;
+  for (let k = 1; k < 400; k++) { t *= x * x / (2 * k + 1); s += t; if (Math.abs(t) < 1e-17 * Math.abs(s)) break; }
+  return 0.5 + s * normPdf(x);
+}
+function normInv(p) {                      // algorithme d'Acklam, puis deux pas de Newton
+  const a = [-39.69683028665376, 220.9460984245205, -275.9285104469687, 138.3577518672690, -30.66479806614716, 2.506628277459239],
+        b = [-54.47609879822406, 161.5858368580409, -155.6989798598866, 66.80131188771972, -13.28068155288572],
+        c = [-0.007784894002430293, -0.3223964580411365, -2.400758277161838, -2.549732539343734, 4.374664141464968, 2.938163982698783],
+        d = [0.007784695709041462, 0.3224671290700398, 2.445134137142996, 3.754408661907416];
+  let x, q, r;
+  if (p < 0.02425) { q = Math.sqrt(-2 * Math.log(p)); x = (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1); }
+  else if (p > 1 - 0.02425) { q = Math.sqrt(-2 * Math.log(1 - p)); x = -(((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1); }
+  else { q = p - 0.5; r = q * q; x = (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q / (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1); }
+  for (let i = 0; i < 2; i++) x -= (normCdf(x) - p) / normPdf(x);
+  return x;
+}
+
+/* tirage de loi N(0,1) à partir d'un générateur uniforme (méthode de Box-Muller) : simulations des figures */
+function gauss(rand) { let u = rand(); if (u < 1e-12) u = 1e-12; return Math.sqrt(-2 * Math.log(u)) * Math.cos(6.283185307179586 * rand()); }
+
+/* ---------- langue ---------- */
+function detectLang() {
+  try {
+    const q = new URLSearchParams(window.location.search).get('lang');
+    if (q && I18N[q.toLowerCase()]) return q.toLowerCase();
+  } catch (e) {}
+  const h = (window.location.hash || '').replace('#', '').toLowerCase();
+  if (I18N[h] && I18N[h].k) return h;
+  return 'fr';
+}
+function applyLang() {
+  const D = I18N[LANG].k;
+  document.documentElement.lang = LANG;
+  document.title = D.title;
+  document.querySelectorAll('[data-k]').forEach(function (el) {
+    const key = el.getAttribute('data-k');
+    if (D[key] !== undefined) el.innerHTML = D[key];
+  });
+  const si = document.getElementById('seed-input');
+  if (si) si.placeholder = D.phSeed;
+  const tb = document.getElementById('toggle-btn');
+  if (tb) tb.textContent = solVisible ? D.hideSol : D.showSol;
+  document.getElementById('flag-fr').classList.toggle('active', LANG === 'fr');
+  document.getElementById('flag-en').classList.toggle('active', LANG === 'en');
+}
+function setLang(lang) {
+  if (!I18N[lang] || !I18N[lang].k || lang === LANG) return;
+  LANG = lang;
+  try {
+    const u = new URL(window.location.href);
+    u.searchParams.set('lang', lang);
+    history.replaceState(null, '', u.toString());
+  } catch (e) {}
+  applyLang();
+  renderCourse();
+  const wasVis = solVisible;
+  renderExercise(_activeSeed);
+  if (wasVis) toggleSol();
+  typeset();
+}
+
+/* ---------- MathJax : un seul rendu à la fois ---------- */
+let _mjChain = Promise.resolve();
+function typeset(el) {
+  if (!(window.MathJax && MathJax.typesetPromise)) return;
+  _mjChain = _mjChain.then(function () { return MathJax.typesetPromise(el ? [el] : undefined); })
+                     .catch(function (err) { console.error('MathJax :', err); });
+}
+
+/* ---------- figures : petit traceur SVG ---------- */
+const COL = { s1: '#2a6fb0', s2: '#b9821a', s3: '#b94040', s4: '#8a4fb0',
+              ink: '#1e1e1e', mute: '#5a5a5a', grid: '#e7e3d9', axis: '#b9b3a6', navy: '#0d1b2a' };
+const FONT_T = "font-family=\"'Source Serif 4',Georgia,serif\"";
+const FONT_M = "font-family=\"'JetBrains Mono',monospace\"";
+let _clipN = 0;
+function Plot(o) {
+  const P = Object.assign({ w: 680, h: 320, ml: 52, mr: 18, mt: 16, mb: 40 }, o);
+  P.el = [];
+  const r1 = v => Math.round(v * 10) / 10;
+  P.X = v => r1(P.ml + (v - P.x0) / (P.x1 - P.x0) * (P.w - P.ml - P.mr));
+  P.Y = v => r1(P.h - P.mb - (v - P.y0) / (P.y1 - P.y0) * (P.h - P.mt - P.mb));
+  P.add = s => { P.el.push(s); return P; };
+  /* axes discrets : quadrillage horizontal en filets, graduations en gris */
+  P.axes = function (a) {
+    a = a || {};
+    const xf = a.xf || (v => fmtT(v, 4)), yf = a.yf || (v => fmtT(v, 4));
+    (a.yt || []).forEach(v => {
+      if (a.grid !== false) P.add(`<line x1="${P.ml}" y1="${P.Y(v)}" x2="${P.w - P.mr}" y2="${P.Y(v)}" stroke="${COL.grid}" stroke-width="1"/>`);
+      P.add(`<text x="${P.ml - 7}" y="${P.Y(v) + 3.5}" text-anchor="end" ${FONT_M} font-size="10" fill="${COL.mute}">${yf(v)}</text>`);
+    });
+    const yb = a.xAxisAt !== undefined ? P.Y(a.xAxisAt) : P.h - P.mb;
+    (a.xt || []).forEach(v => {
+      P.add(`<line x1="${P.X(v)}" y1="${yb}" x2="${P.X(v)}" y2="${yb + 4}" stroke="${COL.axis}" stroke-width="1"/>`);
+      P.add(`<text x="${P.X(v)}" y="${P.h - P.mb + 16}" text-anchor="middle" ${FONT_M} font-size="10" fill="${COL.mute}">${xf(v)}</text>`);
+    });
+    P.add(`<line x1="${P.ml}" y1="${yb}" x2="${P.w - P.mr}" y2="${yb}" stroke="${COL.axis}" stroke-width="1"/>`);
+    if (a.yAxis !== false) P.add(`<line x1="${P.ml}" y1="${P.mt}" x2="${P.ml}" y2="${P.h - P.mb}" stroke="${COL.axis}" stroke-width="1"/>`);
+    if (a.xl) P.add(`<text x="${(P.ml + P.w - P.mr) / 2}" y="${P.h - 6}" text-anchor="middle" ${FONT_T} font-size="12" fill="${COL.mute}">${a.xl}</text>`);
+    if (a.yl) P.add(`<text x="${P.ml}" y="${P.mt - 4}" text-anchor="start" ${FONT_T} font-size="12" fill="${COL.mute}">${a.yl}</text>`);
+    return P;
+  };
+  P.pts = function (pts) { return pts.map((p, i) => (i ? 'L' : 'M') + P.X(p[0]) + ' ' + P.Y(p[1])).join(' '); };
+  P.sample = function (fn, a, b, n) { const out = []; n = n || 160; for (let i = 0; i <= n; i++) { const x = a + (b - a) * i / n, y = fn(x); if (isFinite(y)) out.push([x, Math.max(P.y0 - (P.y1 - P.y0), Math.min(P.y1 + (P.y1 - P.y0), y))]); } return out; };
+  /* zone de tracé : P.clip() la déclare, { clip: true } y découpe une courbe qui sortirait du cadre */
+  P.clip = function () { P._clip = 'clip' + (++_clipN); return P.add(`<defs><clipPath id="${P._clip}"><rect x="${P.ml}" y="${P.mt}" width="${P.w - P.ml - P.mr}" height="${P.h - P.mt - P.mb}"/></clipPath></defs>`); };
+  P.line = function (pts, st) { st = st || {}; return P.add(`<path d="${P.pts(pts)}" fill="none" stroke="${st.c || COL.s1}" stroke-width="${st.w || 2}" stroke-linejoin="round" stroke-linecap="round"${st.dash ? ` stroke-dasharray="${st.dash}"` : ''}${st.clip && P._clip ? ` clip-path="url(#${P._clip})"` : ''}/>`); };
+  P.curve = function (fn, a, b, st, n) { return P.line(P.sample(fn, a, b, n), st); };
+  P.area = function (pts, base, st) { st = st || {}; if (!pts.length) return P; const d = P.pts(pts) + ` L${P.X(pts[pts.length - 1][0])} ${P.Y(base)} L${P.X(pts[0][0])} ${P.Y(base)} Z`; return P.add(`<path d="${d}" fill="${st.c || COL.s1}" fill-opacity="${st.o || 0.16}" stroke="none"/>`); };
+  P.bar = function (xc, wpx, y, st) { st = st || {}; const top = P.Y(y), base = P.Y(st.base || 0), hgt = Math.max(0, base - top), r = Math.min(3, wpx / 2, hgt); const x = P.X(xc) - wpx / 2;
+    const d = `M${r1(x)} ${base} L${r1(x)} ${r1(top + r)} Q${r1(x)} ${top} ${r1(x + r)} ${top} L${r1(x + wpx - r)} ${top} Q${r1(x + wpx)} ${top} ${r1(x + wpx)} ${r1(top + r)} L${r1(x + wpx)} ${base} Z`;
+    return P.add(`<path d="${d}" fill="${st.c || COL.s1}" fill-opacity="${st.o === undefined ? 1 : st.o}">${st.tip ? `<title>${st.tip}</title>` : ''}</path>`); };
+  P.seg = function (xa, ya, xb, yb, st) { st = st || {}; return P.add(`<line x1="${P.X(xa)}" y1="${P.Y(ya)}" x2="${P.X(xb)}" y2="${P.Y(yb)}" stroke="${st.c || COL.mute}" stroke-width="${st.w || 1.2}"${st.dash ? ` stroke-dasharray="${st.dash}"` : ''}/>`); };
+  P.dot = function (x, y, st) { st = st || {}; return P.add(`<circle cx="${P.X(x)}" cy="${P.Y(y)}" r="${st.r || 4.5}" fill="${st.hollow ? '#fff' : (st.c || COL.s1)}" stroke="${st.hollow ? (st.c || COL.s1) : '#fff'}" stroke-width="2">${st.tip ? `<title>${st.tip}</title>` : ''}</circle>`); };
+  P.text = function (x, y, s, st) { st = st || {}; return P.add(`<text x="${P.X(x) + (st.dx || 0)}" y="${P.Y(y) + (st.dy || 0)}" text-anchor="${st.anchor || 'middle'}" ${st.mono ? FONT_M : FONT_T} font-size="${st.size || 11.5}" font-weight="${st.bold ? 700 : 400}"${st.italic ? ' font-style="italic"' : ''} fill="${st.c || COL.ink}">${s}</text>`); };
+  /* légende : un trait ou une pastille de la couleur de la série, texte en encre neutre */
+  P.legend = function (items, x, y) {
+    let cx = x;
+    items.forEach(it => {
+      if (it.box) P.add(`<rect x="${cx}" y="${y - 8}" width="12" height="9" rx="2" fill="${it.c}" fill-opacity="${it.o || 1}"/>`);
+      else P.add(`<line x1="${cx}" y1="${y - 4}" x2="${cx + 18}" y2="${y - 4}" stroke="${it.c}" stroke-width="2.4"${it.dash ? ` stroke-dasharray="${it.dash}"` : ''} stroke-linecap="round"/>`);
+      const tx = cx + (it.box ? 17 : 23);
+      P.add(`<text x="${tx}" y="${y}" ${FONT_T} font-size="11.5" fill="${COL.ink}">${it.t}</text>`);
+      cx = tx + it.t.replace(/<[^>]+>/g, '').length * 6.1 + 18;
+    });
+    return P;
+  };
+  P.svg = function (aria) { return `<svg viewBox="0 0 ${P.w} ${P.h}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${esc(aria || '')}">${P.el.join('')}</svg>`; };
+  return P;
+}
+/* arbre recombinant : nœud (i, j) = i hausses après j pas. o.node(i, j) renvoie { lines: [texte, …], fill, stroke, bold: [bool, …] } ;
+   o.edge(i, j, up), facultatif, renvoie le texte à écrire sur l'arête qui part du nœud (i, j) vers le haut ou vers le bas. */
+function Lattice(o) {
+  const N = o.N, w = o.w || 680, bw = o.bw || 78, lh = 14, nl = o.lines || 2, bh = nl * lh + 9;
+  const dy = o.dy || Math.max(bh + 10, 46), h = N * dy + bh + 16, pad = 10 + bw / 2, r1 = v => Math.round(v * 10) / 10;
+  const X = j => (N === 0 ? w / 2 : pad + j * (w - 2 * pad) / N), Y = (i, j) => h / 2 - (2 * i - j) * dy / 2;
+  let el = '';
+  for (let j = 0; j < N; j++) for (let i = 0; i <= j; i++) {
+    [[i + 1, true], [i, false]].forEach(function (t) {
+      el += `<line x1="${r1(X(j))}" y1="${r1(Y(i, j))}" x2="${r1(X(j + 1))}" y2="${r1(Y(t[0], j + 1))}" stroke="${COL.axis}" stroke-width="1.3"/>`;
+      const lab = o.edge ? o.edge(i, j, t[1]) : '';
+      if (lab) el += `<text x="${r1((X(j) + X(j + 1)) / 2)}" y="${r1((Y(i, j) + Y(t[0], j + 1)) / 2 + (t[1] ? -7 : 15))}" text-anchor="middle" ${FONT_T} font-size="12" font-style="italic" fill="${COL.navy}">${lab}</text>`;
+    });
+  }
+  for (let j = 0; j <= N; j++) for (let i = 0; i <= j; i++) {
+    const s = o.node(i, j), x = X(j), y = Y(i, j);
+    el += `<rect x="${r1(x - bw / 2)}" y="${r1(y - bh / 2)}" width="${bw}" height="${bh}" rx="4" fill="${s.fill || '#fff'}" stroke="${s.stroke || COL.axis}" stroke-width="${s.stroke ? 1.8 : 1.1}"/>`;
+    s.lines.forEach(function (t, k) {
+      el += `<text x="${r1(x)}" y="${r1(y - bh / 2 + 4 + lh * (k + 1) - 3)}" text-anchor="middle" ${FONT_M} font-size="10.5" font-weight="${s.bold && s.bold[k] ? 700 : 400}" fill="${s.bold && s.bold[k] ? COL.navy : COL.ink}">${t}</text>`;
+    });
+  }
+  return `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${esc(o.aria || '')}">${el}</svg>`;
+}
+
+/* graduations « rondes » entre a et b */
+function ticks(a, b, n) {
+  const span = b - a, raw = span / (n || 5), p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / p;
+  const step = (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10) * p, out = [];
+  for (let v = Math.ceil(a / step - 1e-9) * step; v <= b + 1e-9; v += step) out.push(Math.round(v / step) * step);
+  return out;
+}
+
+/* ---------- figures : montage et commandes ---------- */
+function mountFigs(root) {
+  (root || document).querySelectorAll('[data-fig]').forEach(function (host) {
+    const id = host.getAttribute('data-fig'), F = FIGS[id];
+    if (!F) return;
+    const ctr = F.controls ? F.controls(I18N[LANG]) : [];
+    let h = '';
+    if (ctr.length) {
+      h += '<div class="fig-ctrl">';
+      ctr.forEach(function (c) {
+        if (c.type === 'select') {
+          h += `<label><span>${c.label}</span><select data-key="${c.key}">${c.options.map(o => `<option value="${o.v}"${String(F.state[c.key]) === String(o.v) ? ' selected' : ''}>${o.t}</option>`).join('')}</select></label>`;
+        } else if (c.type === 'button') {
+          h += `<button type="button" data-act="${c.key}">${c.label}</button>`;
+        } else {
+          h += `<label><span>${c.label}</span><input type="range" data-key="${c.key}" min="${c.min}" max="${c.max}" step="${c.step}" value="${F.state[c.key]}"><span class="cv" data-val="${c.key}"></span></label>`;
+        }
+      });
+      h += '</div>';
+    }
+    h += '<div class="fig-svg"></div><div class="fig-read"></div>';
+    host.innerHTML = h;
+    const byKey = {}; ctr.forEach(c => { byKey[c.key] = c; });
+    function redraw() {
+      if (F.clamp) F.clamp(F.state);
+      /* les bornes d'un curseur peuvent dépendre d'un autre (k entre 0 et n, par exemple) */
+      const now = F.controls ? F.controls(I18N[LANG]) : [];
+      now.forEach(function (c) {
+        if (c.type === 'select' || c.type === 'button') return;
+        const inp = host.querySelector(`input[data-key="${c.key}"]`);
+        if (inp) { inp.min = c.min; inp.max = c.max; inp.step = c.step; inp.value = F.state[c.key]; }
+        const sp = host.querySelector(`[data-val="${c.key}"]`);
+        if (sp) sp.textContent = c.fmt ? c.fmt(F.state[c.key]) : fmtT(F.state[c.key], 4);
+      });
+      const out = F.draw(F.state, LANG);
+      host.querySelector('.fig-svg').innerHTML = out.svg;
+      host.querySelector('.fig-read').innerHTML = out.read || '';
+    }
+    host.querySelectorAll('input[data-key]').forEach(function (inp) {
+      inp.addEventListener('input', function () { F.state[inp.getAttribute('data-key')] = parseFloat(inp.value); redraw(); });
+    });
+    host.querySelectorAll('select[data-key]').forEach(function (sel) {
+      sel.addEventListener('change', function () { const c = byKey[sel.getAttribute('data-key')]; F.state[c.key] = c.numeric ? parseFloat(sel.value) : sel.value; redraw(); });
+    });
+    host.querySelectorAll('button[data-act]').forEach(function (b) {
+      b.addEventListener('click', function () { const c = byKey[b.getAttribute('data-act')]; c.act(F.state); redraw(); });
+    });
+    redraw();
+  });
+}
+
+/* ---------- blocs de code : bouton « copier » ---------- */
+function copyCode(btn) {
+  const wrap = btn.closest('.code-wrap');
+  const txt = Array.prototype.map.call(wrap.querySelectorAll('.code-block .cl'), function (l) { return l.textContent.replace(/ /g, ''); }).join('\n');
+  const done = function () { const o = btn.textContent; btn.textContent = I18N[LANG].k.copied; setTimeout(function () { btn.textContent = o; }, 1300); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done, done);
+  else { const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch (e) {} document.body.removeChild(ta); done(); }
+}
+
+/* ---------- rendu ---------- */
+function renderCourse() {
+  const host = document.getElementById('course-content');
+  host.innerHTML = I18N[LANG].course;
+  host.querySelectorAll('.code-head button').forEach(function (b) { b.textContent = I18N[LANG].k.copy; });
+  mountFigs(host);
+}
+function renderExercise(seed) {
+  const D = PAGE.compute(seed);
+  PAGE.last = D;
+  document.getElementById('seed-disp').textContent = _activeSeed;
+  const ms = document.getElementById('modal-seed'); if (ms) ms.textContent = _activeSeed;
+  const nb = h => h.replace(/(\d) %/g, '$1\u00a0%');             // espace insécable devant le signe %
+  document.getElementById('ex-content').innerHTML = nb(I18N[LANG].ex(D));
+  document.getElementById('sol-content').innerHTML = nb(I18N[LANG].sol(D));
+  solVisible = false;
+  const solC = document.getElementById('sol-card'), btn = document.getElementById('toggle-btn');
+  solC.classList.remove('visible'); btn.classList.remove('shown'); btn.textContent = I18N[LANG].k.showSol;
+}
+function generateFromControls() {
+  const v = document.getElementById('seed-input').value;
+  const seed = v ? parseInt(v, 10) : Math.floor(Math.random() * 10000000);
+  renderExercise(seed);
+  typeset(document.getElementById('ex-card')); typeset(document.getElementById('sol-card'));
+}
+function regen() { document.getElementById('seed-input').value = ''; generateFromControls(); }
+function generateAndGo() {
+  generateFromControls();
+  const c = document.getElementById('ex-anchor'); if (c && c.scrollIntoView) c.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function toggleSol() {
+  solVisible = !solVisible;
+  const sol = document.getElementById('sol-card'), btn = document.getElementById('toggle-btn');
+  if (solVisible) { sol.classList.add('visible'); btn.classList.add('shown'); btn.textContent = I18N[LANG].k.hideSol; }
+  else { sol.classList.remove('visible'); btn.classList.remove('shown'); btn.textContent = I18N[LANG].k.showSol; }
+}
+function initPage() {
+  LANG = detectLang();
+  applyLang();
+  renderCourse();
+  renderExercise(Math.floor(Math.random() * 10000000));
+  /* MathJax est chargé en asynchrone : s'il est déjà prêt on compose tout de suite,
+     sinon sa propre passe de démarrage composera la page entière. */
+  typeset();
+}
+
+/* ============================================================
+   PAGE mf18 — Optimisation robuste et regret
+   ============================================================ */
+I18N.fr.k = {
+  'k-badge': 'MATHÉMATIQUES FINANCIÈRES', 'k-seed': 'Seed de reproductibilité', 'k-seedtip': 'Vide = nouvel exercice aléatoire', 'k-gen': 'Générer',
+  'k-tag-course': 'Cours', 'k-tag-ex': 'Exercice', 'k-tag-sol': 'Corrigé', 'k-seedbadge': 'Seed&nbsp;:', showSol: 'Afficher le corrigé', hideSol: 'Masquer le corrigé',
+  phSeed: 'auto', copy: 'Copier', copied: 'Copié',
+  'k-sub': '© Thomas Hossen – Version du 20 octobre 2026', title: 'Mathématiques financières 18 – Optimisation robuste et regret', 'k-h1': 'Optimisation robuste et regret',
+  'k-coursetitle': 'Décider quand les paramètres sont incertains : ensembles d\'incertitude, pire cas et regret', 'k-extitle': 'Critères de décision, Markowitz robuste et regret sous erreur de suivi', 'k-soltitle': 'Critères de décision, Markowitz robuste et regret sous erreur de suivi'
+};
+I18N.en.k = {
+  'k-badge': 'MATHEMATICS FOR FINANCE', 'k-seed': 'Reproducibility seed', 'k-seedtip': 'Empty = new random exercise', 'k-gen': 'Generate',
+  'k-tag-course': 'Lesson', 'k-tag-ex': 'Exercise', 'k-tag-sol': 'Solution', 'k-seedbadge': 'Seed:', showSol: 'Show solution', hideSol: 'Hide solution',
+  phSeed: 'auto', copy: 'Copy', copied: 'Copied',
+  'k-sub': '© Thomas Hossen – Version of 20 October 2026', title: 'Mathematics for Finance 18 – Robust optimisation and regret', 'k-h1': 'Robust optimisation and regret',
+  'k-coursetitle': 'Deciding when parameters are uncertain: uncertainty sets, worst case and regret', 'k-extitle': 'Decision criteria, robust Markowitz and regret under a tracking-error limit', 'k-soltitle': 'Decision criteria, robust Markowitz and regret under a tracking-error limit'
+};
+
+const GREY = '#8a857a';
+/* ---------- outils ---------- */
+/* minimax du regret pour deux actifs sous contrainte d'erreur de suivi, benchmark 50/50 */
+function d18te(s1, s2, rho, tau, mus) {
+  const sd = Math.sqrt(s1 * s1 + s2 * s2 - 2 * rho * s1 * s2), h = tau / sd;
+  const lo = Math.max(0, 0.5 - h), hi = Math.min(1, 0.5 + h);
+  const val = (m, w) => m[0] * w + m[1] * (1 - w);
+  const zs = mus.map(m => Math.max(val(m, lo), val(m, hi)));
+  const wopt = mus.map(m => val(m, lo) >= val(m, hi) ? lo : hi);
+  const reg = (k, w) => zs[k] - val(mus[k], w), maxr = w => Math.max(...mus.map((m, k) => reg(k, w)));
+  const cand = [lo, hi];
+  for (let a = 0; a < mus.length; a++) for (let b = a + 1; b < mus.length; b++) {
+    const sa = mus[a][0] - mus[a][1], sb = mus[b][0] - mus[b][1];
+    if (Math.abs(sa - sb) < 1e-12) continue;
+    /* zs[a] - mus[a][1] - sa w = zs[b] - mus[b][1] - sb w */
+    const w = ((zs[a] - mus[a][1]) - (zs[b] - mus[b][1])) / (sa - sb);
+    if (w > lo - 1e-12 && w < hi + 1e-12) cand.push(w);
+  }
+  let best = cand[0]; cand.forEach(w => { if (maxr(w) < maxr(best) - 1e-12) best = w; });
+  return { sd: sd, lo: lo, hi: hi, zs: zs, wopt: wopt, w: best, r: maxr(best), reg: reg, maxr: maxr, val: val };
+}
+const D18_MU = [[6, 4], [5.5, 5], [4.5, 5.5]];
+/* Markowitz à deux actifs : maximise mu1 w + mu2 (1-w) - lam * variance, w dans [0, 1] */
+function d18mk(m1, m2, s1, s2, rho, lam) {
+  const den = 2 * (s1 * s1 + s2 * s2 - 2 * rho * s1 * s2);
+  const w = ((m1 - m2) / lam + 2 * s2 * s2 - 2 * rho * s1 * s2) / den;
+  return Math.max(0, Math.min(1, w));
+}
+function d18f(w, m1, m2, s1, s2, rho, lam) { return m1 * w + m2 * (1 - w) - lam * (w * w * s1 * s1 + (1 - w) * (1 - w) * s2 * s2 + 2 * w * (1 - w) * rho * s1 * s2); }
+
+/* ---------- cours ---------- */
+I18N.fr.course = String.raw`<div class="context-block">
+<strong>Objectifs.</strong> À la fin de cette page, vous savez décrire l'incertitude sur les paramètres d'un problème d'optimisation par un ensemble, écrire la contrepartie robuste d'une contrainte linéaire, choisir une décision par le critère du pire cas ou par celui du regret, et appliquer ces idées à la sélection de portefeuille.<br><br>
+<strong>Pourquoi en finance ?</strong> Rendements espérés et covariances sont estimés, souvent avec beaucoup d'erreur. Un optimiseur exploite ces erreurs : il concentre le portefeuille sur les actifs dont le rendement a été surestimé. L'optimisation robuste cherche des décisions qui restent bonnes pour toutes les valeurs plausibles des paramètres.<br><br>
+<strong>Prérequis.</strong> Programmation linéaire (page 15), modèle de Markowitz, variance d'une combinaison linéaire.
+</div>
+<p class="toc">Sommaire : <a href="#s1">1. Pourquoi</a> · <a href="#s2">2. Ensembles d'incertitude</a> · <a href="#s3">3. Contraintes robustes</a> · <a href="#s4">4. Pire cas et regret</a> · <a href="#s5">5. Markowitz robuste</a> · <a href="#s6">6. Regret et erreur de suivi</a> · <a href="#s7">7. À retenir</a> · <a href="#ex-anchor">Exercice corrigé</a></p>
+
+<div class="dossier-title" id="s1">1. Pourquoi l'optimisation robuste ?</div>
+<p>Un problème d'optimisation dépend de paramètres \(p\) : rendements, coûts, covariances. La solution <em>nominale</em> résout \(\max_{x\in X}f(x,\hat p)\), où \(\hat p\) est une estimation. Si la vraie valeur diffère de \(\hat p\), la solution nominale peut être mauvaise, voire irréalisable. On suppose seulement que \(p\) appartient à un <em>ensemble d'incertitude</em> \(\mathcal{U}\), et l'on cherche une décision qui se comporte bien pour tout \(p\in\mathcal{U}\). Chaque façon de décrire \(\mathcal{U}\) et chaque notion de « bien se comporter » donne une formulation robuste différente.</p>
+
+<div class="dossier-title" id="s2">2. Décrire l'incertitude</div>
+<ul class="kit-simple">
+<li><em>Scénarios</em> : \(\mathcal{U}=\{p^1,\ldots,p^K\}\), quelques situations jugées plausibles.</li>
+<li><em>Boîte</em> : \(\underline{p}\le p\le\overline{p}\), un intervalle pour chaque paramètre. Elle autorise toutes les combinaisons d'extrêmes, y compris les plus improbables.</li>
+<li><em>Ellipsoïde</em> : \(p=p^0+M\,u\) avec \(\|u\|\le 1\). Chaque paramètre peut s'écarter beaucoup de \(p^0\), mais pas tous en même temps dans le sens le plus défavorable.</li>
+</ul>
+<p>Le choix de \(\mathcal{U}\) fait partie du modèle : sa forme traduit la structure de l'incertitude, sa taille le degré de protection souhaité. Une boîte trop grande rend la décision très prudente ; un ensemble trop petit ne protège de rien.</p>
+
+<div class="dossier-title" id="s3">3. Contraintes robustes</div>
+<p>Une contrainte est <em>robuste</em> si elle est satisfaite pour toute valeur du paramètre dans \(\mathcal{U}\). Pour une contrainte linéaire \(a^Tx\le b\) dont le vecteur \(a\) est incertain, il suffit de considérer le pire \(a\) :
+\[a^Tx\le b\quad\text{pour tout } a\in\mathcal{U}\qquad\iff\qquad\max_{a\in\mathcal{U}}a^Tx\le b\]
+Si \(a\) appartient à la boîte \(\bar a-\delta\le a\le\bar a+\delta\) et que \(x\ge 0\), le pire cas est \(a=\bar a+\delta\), et la contrainte robuste reste linéaire : \((\bar a+\delta)^Tx\le b\). Si \(a=\bar a+\delta\,u\) avec \(\|u\|\le 1\), l'inégalité de Cauchy-Schwarz donne \(\max_{\|u\|\le1}u^Tx=\|x\|\), et la contrainte robuste devient :
+\[\bar a^Tx+\delta\,\|x\|\le b\]
+C'est une contrainte conique, qu'un solveur traite efficacement. Dans les deux cas, l'ensemble réalisable robuste est l'intersection des ensembles réalisables de tous les scénarios.</p>
+<div class="ifig" data-fig="set"></div>
+<div class="fig-cap">Figure 1 — Ensemble réalisable de la contrainte \(a_1x_1+a_2x_2\le 1\), \(x\ge 0\), pour \(\bar a=(1,\,0.8)\). Les droites grises correspondent à quelques valeurs de \(a\) dans l'ensemble d'incertitude ; la zone colorée est l'ensemble robuste, la droite pointillée la contrainte nominale. Avec une boîte, le pire cas pousse les deux coefficients au maximum en même temps : l'ensemble robuste est plus petit qu'avec un disque de même rayon.</div>
+
+<div class="dossier-title" id="s4">4. Pire cas et regret</div>
+<p>Quand c'est l'objectif qui est incertain, la robustesse <em>absolue</em> choisit la décision dont la pire performance est la meilleure. Pour un coût à minimiser, \(\min_{x\in X}\max_{p\in\mathcal{U}}f(x,p)\) ; pour un gain à maximiser, \(\max_{x}\min_{p}f(x,p)\). La robustesse <em>relative</em> protège contre le fait de faire beaucoup moins bien que ce qu'on aurait pu faire en connaissant \(p\). On définit le <em>regret</em> d'une décision \(x\) dans le scénario \(p\), pour un gain à maximiser :
+\[r(x,p)=z^*(p)-f(x,p)\qquad\text{où}\qquad z^*(p)=\max_{y\in X}f(y,p)\]
+puis l'on minimise le regret maximal, \(\min_{x}\max_{p}r(x,p)\). Exemple des diapositives : deux décisions, cinq scénarios, regrets
+\(x_1\) : 0, 1, 0, 1, 10 et \(x_2\) : 4, 5, 5, 4, 5. Le critère du regret maximal choisit \(x_2\) (5 contre 10), alors que \(x_1\) a un regret moyen bien plus faible (2.4 contre 4.6). Les critères robustes protègent contre le scénario défavorable, au prix d'une moins bonne performance moyenne.</p>
+
+<div class="dossier-title" id="s5">5. Markowitz robuste</div>
+<p>Le modèle de Markowitz maximise \(\mu^Tx-\lambda\,x^T\Sigma x\) sous \(e^Tx=1\), \(x\ge 0\). Si l'on sait seulement que \(\mu^L\le\mu\le\mu^U\) et \(\Sigma^L\le\Sigma\le\Sigma^U\) composante par composante, la formulation robuste absolue maximise le pire objectif :
+\[\max_{x\ge 0,\ e^Tx=1}\ \min_{\mu,\,\Sigma}\ \mu^Tx-\lambda\,x^T\Sigma x\]
+Comme \(x\ge 0\), \(\mu^Tx\) est le plus petit pour \(\mu=\mu^L\), et \(x^T\Sigma x=\sum_{i,j}\sigma_{ij}x_ix_j\) est le plus grand pour \(\Sigma=\Sigma^U\), chaque produit \(x_ix_j\) étant positif. Le problème robuste est donc un problème de Markowitz ordinaire, avec les rendements les plus bas et les covariances les plus hautes :
+\[\max_{x\ge 0,\ e^Tx=1}\ (\mu^L)^Tx-\lambda\,x^T\Sigma^Ux\]
+Il faut seulement vérifier que \(\Sigma^U\) est bien une matrice de covariance, c'est-à-dire semi-définie positive.</p>
+
+<div class="dossier-title" id="s6">6. Regret et erreur de suivi</div>
+<p>Un gérant suit un indice de référence qui investit 50 % dans chacun de deux actifs. Il peut s'en écarter, mais l'<em>erreur de suivi</em>, écart-type de la différence de rendement avec la référence, doit rester sous \(\tau\) :
+\[\text{TE}(x)=\sqrt{(x-x^B)^T\,\Sigma\,(x-x^B)}\le\tau\]
+Avec deux actifs, \(x=(w,1-w)\) et \(x^B=(0.5,0.5)\), donc \(x-x^B=(w-0.5)\,(1,-1)\) et \(\text{TE}(w)=|w-0.5|\,\sigma_d\), où \(\sigma_d^2=\sigma_1^2+\sigma_2^2-2\rho\sigma_1\sigma_2\) est la variance de la différence des deux rendements. La contrainte délimite un intervalle de poids admissibles. Les diapositives retiennent \(\sigma_1=0.42\), \(\sigma_2=0.33\), \(\rho=0.7\) et \(\tau=10\) %, d'où \(\sigma_d\approx 0.302\) et \(w\in[0.169\,;\,0.831]\), et trois scénarios de rendements espérés : (6, 4), (5.5, 5) et (4.5, 5.5), en %. Les meilleurs rendements possibles sont \(z_1^*\approx 5.662\), \(z_2^*\approx 5.416\) et \(z_3^*\approx 5.331\). Le regret maximal se minimise en introduisant une variable \(t\) qui majore les trois regrets :
+\[\min_{w,\,t}\ t\qquad\text{sous}\qquad z_k^*-\big(\mu_{k,1}w+\mu_{k,2}(1-w)\big)\le t,\quad k=1,2,3,\qquad \text{TE}(w)\le\tau\]
+Le regret du scénario 1 décroît avec \(w\), celui du scénario 3 croît : l'optimum est à leur intersection, \(w\approx 0.610\), pour un regret maximal d'environ 0.441 point de rendement.</p>
+<div class="ifig" data-fig="regret"></div>
+<div class="fig-cap">Figure 2 — Les regrets des trois scénarios en fonction du poids \(w\) du premier actif, sur l'intervalle autorisé par l'erreur de suivi (zone claire). Le regret maximal est l'enveloppe supérieure (trait épais) ; son minimum est la décision robuste. Augmentez \(\tau\) : l'intervalle s'élargit, les meilleurs rendements \(z_k^*\) augmentent et les regrets aussi, car on se compare à de meilleures décisions possibles.</div>
+
+<div class="dossier-title" id="s7">7. À retenir</div>
+<ul class="kit-simple">
+<li>On décrit l'incertitude par un ensemble \(\mathcal{U}\) : scénarios, boîte ou ellipsoïde ; sa forme et sa taille font partie du modèle.</li>
+<li>Une contrainte linéaire robuste se ramène à son pire cas : \((\bar a+\delta)^Tx\le b\) pour une boîte et \(x\ge 0\), \(\bar a^Tx+\delta\|x\|\le b\) pour une boule.</li>
+<li>Pire cas : la meilleure performance garantie ; regret : le plus petit écart garanti à la meilleure décision a posteriori. Les deux se ramènent à un problème classique en introduisant une variable \(t\).</li>
+<li>Markowitz robuste avec boîte et \(x\ge0\) : on remplace \(\mu\) par \(\mu^L\) et \(\Sigma\) par \(\Sigma^U\).</li>
+</ul>`;
+
+I18N.en.course = String.raw`<div class="context-block">
+<strong>Objectives.</strong> By the end of this page, you can describe the uncertainty on the parameters of an optimisation problem by a set, write the robust counterpart of a linear constraint, choose a decision by the worst-case criterion or by the regret criterion, and apply these ideas to portfolio selection.<br><br>
+<strong>Why in finance?</strong> Expected returns and covariances are estimated, often with large errors. An optimiser exploits these errors: it concentrates the portfolio on the assets whose return has been overestimated. Robust optimisation looks for decisions that remain good for all plausible values of the parameters.<br><br>
+<strong>Prerequisites.</strong> Linear programming (page 15), the Markowitz model, variance of a linear combination.
+</div>
+<p class="toc">Contents: <a href="#s1">1. Why</a> · <a href="#s2">2. Uncertainty sets</a> · <a href="#s3">3. Robust constraints</a> · <a href="#s4">4. Worst case and regret</a> · <a href="#s5">5. Robust Markowitz</a> · <a href="#s6">6. Regret and tracking error</a> · <a href="#s7">7. Key points</a> · <a href="#ex-anchor">Worked exercise</a></p>
+
+<div class="dossier-title" id="s1">1. Why robust optimisation?</div>
+<p>An optimisation problem depends on parameters \(p\): returns, costs, covariances. The <em>nominal</em> solution solves \(\max_{x\in X}f(x,\hat p)\), where \(\hat p\) is an estimate. If the true value differs from \(\hat p\), the nominal solution may be poor, or even infeasible. We only assume that \(p\) belongs to an <em>uncertainty set</em> \(\mathcal{U}\), and look for a decision that behaves well for every \(p\in\mathcal{U}\). Each way of describing \(\mathcal{U}\) and each notion of "behaving well" gives a different robust formulation.</p>
+
+<div class="dossier-title" id="s2">2. Describing uncertainty</div>
+<ul class="kit-simple">
+<li><em>Scenarios</em>: \(\mathcal{U}=\{p^1,\ldots,p^K\}\), a few situations deemed plausible.</li>
+<li><em>Box</em>: \(\underline{p}\le p\le\overline{p}\), an interval for each parameter. It allows every combination of extremes, including the most unlikely ones.</li>
+<li><em>Ellipsoid</em>: \(p=p^0+M\,u\) with \(\|u\|\le 1\). Each parameter may move far from \(p^0\), but not all of them at once in the most unfavourable direction.</li>
+</ul>
+<p>Choosing \(\mathcal{U}\) is part of the model: its shape reflects the structure of the uncertainty, its size the desired degree of protection. A box that is too large makes the decision very cautious; a set that is too small protects against nothing.</p>
+
+<div class="dossier-title" id="s3">3. Robust constraints</div>
+<p>A constraint is <em>robust</em> if it holds for every value of the parameter in \(\mathcal{U}\). For a linear constraint \(a^Tx\le b\) whose vector \(a\) is uncertain, it suffices to consider the worst \(a\):
+\[a^Tx\le b\quad\text{for every } a\in\mathcal{U}\qquad\iff\qquad\max_{a\in\mathcal{U}}a^Tx\le b\]
+If \(a\) belongs to the box \(\bar a-\delta\le a\le\bar a+\delta\) and \(x\ge 0\), the worst case is \(a=\bar a+\delta\), and the robust constraint remains linear: \((\bar a+\delta)^Tx\le b\). If \(a=\bar a+\delta\,u\) with \(\|u\|\le 1\), the Cauchy-Schwarz inequality gives \(\max_{\|u\|\le1}u^Tx=\|x\|\), and the robust constraint becomes:
+\[\bar a^Tx+\delta\,\|x\|\le b\]
+This is a conic constraint, which solvers handle efficiently. In both cases, the robust feasible set is the intersection of the feasible sets of all scenarios.</p>
+<div class="ifig" data-fig="set"></div>
+<div class="fig-cap">Figure 1 — Feasible set of the constraint \(a_1x_1+a_2x_2\le 1\), \(x\ge 0\), for \(\bar a=(1,\,0.8)\). The grey lines correspond to a few values of \(a\) in the uncertainty set; the shaded area is the robust set, the dashed line the nominal constraint. With a box, the worst case pushes both coefficients to their maximum at once: the robust set is smaller than with a disc of the same radius.</div>
+
+<div class="dossier-title" id="s4">4. Worst case and regret</div>
+<p>When the objective is uncertain, <em>absolute</em> robustness chooses the decision whose worst performance is best. For a cost to minimise, \(\min_{x\in X}\max_{p\in\mathcal{U}}f(x,p)\); for a gain to maximise, \(\max_{x}\min_{p}f(x,p)\). <em>Relative</em> robustness protects against doing much worse than what could have been done knowing \(p\). The <em>regret</em> of a decision \(x\) in scenario \(p\), for a gain to maximise, is:
+\[r(x,p)=z^*(p)-f(x,p)\qquad\text{where}\qquad z^*(p)=\max_{y\in X}f(y,p)\]
+and we minimise the maximum regret, \(\min_{x}\max_{p}r(x,p)\). Example from the slides: two decisions, five scenarios, regrets
+\(x_1\): 0, 1, 0, 1, 10 and \(x_2\): 4, 5, 5, 4, 5. The maximum-regret criterion chooses \(x_2\) (5 against 10), whereas \(x_1\) has a much lower average regret (2.4 against 4.6). Robust criteria protect against the unfavourable scenario, at the price of a weaker average performance.</p>
+
+<div class="dossier-title" id="s5">5. Robust Markowitz</div>
+<p>The Markowitz model maximises \(\mu^Tx-\lambda\,x^T\Sigma x\) subject to \(e^Tx=1\), \(x\ge 0\). If we only know that \(\mu^L\le\mu\le\mu^U\) and \(\Sigma^L\le\Sigma\le\Sigma^U\) entrywise, the absolute robust formulation maximises the worst objective:
+\[\max_{x\ge 0,\ e^Tx=1}\ \min_{\mu,\,\Sigma}\ \mu^Tx-\lambda\,x^T\Sigma x\]
+Since \(x\ge 0\), \(\mu^Tx\) is smallest for \(\mu=\mu^L\), and \(x^T\Sigma x=\sum_{i,j}\sigma_{ij}x_ix_j\) is largest for \(\Sigma=\Sigma^U\), each product \(x_ix_j\) being non-negative. The robust problem is therefore an ordinary Markowitz problem, with the lowest returns and the highest covariances:
+\[\max_{x\ge 0,\ e^Tx=1}\ (\mu^L)^Tx-\lambda\,x^T\Sigma^Ux\]
+One only needs to check that \(\Sigma^U\) is indeed a covariance matrix, that is, positive semi-definite.</p>
+
+<div class="dossier-title" id="s6">6. Regret and tracking error</div>
+<p>A manager follows a benchmark that invests 50% in each of two assets. He may deviate from it, but the <em>tracking error</em>, the standard deviation of the return difference with the benchmark, must stay below \(\tau\):
+\[\text{TE}(x)=\sqrt{(x-x^B)^T\,\Sigma\,(x-x^B)}\le\tau\]
+With two assets, \(x=(w,1-w)\) and \(x^B=(0.5,0.5)\), so \(x-x^B=(w-0.5)\,(1,-1)\) and \(\text{TE}(w)=|w-0.5|\,\sigma_d\), where \(\sigma_d^2=\sigma_1^2+\sigma_2^2-2\rho\sigma_1\sigma_2\) is the variance of the difference of the two returns. The constraint defines an interval of admissible weights. The slides use \(\sigma_1=0.42\), \(\sigma_2=0.33\), \(\rho=0.7\) and \(\tau=10\)%, hence \(\sigma_d\approx 0.302\) and \(w\in[0.169,\,0.831]\), and three scenarios of expected returns: (6, 4), (5.5, 5) and (4.5, 5.5), in %. The best achievable returns are \(z_1^*\approx 5.662\), \(z_2^*\approx 5.416\) and \(z_3^*\approx 5.331\). The maximum regret is minimised by introducing a variable \(t\) that bounds the three regrets:
+\[\min_{w,\,t}\ t\qquad\text{s.t.}\qquad z_k^*-\big(\mu_{k,1}w+\mu_{k,2}(1-w)\big)\le t,\quad k=1,2,3,\qquad \text{TE}(w)\le\tau\]
+The regret of scenario 1 decreases with \(w\), that of scenario 3 increases: the optimum is at their intersection, \(w\approx 0.610\), for a maximum regret of about 0.441 percentage point.</p>
+<div class="ifig" data-fig="regret"></div>
+<div class="fig-cap">Figure 2 — The regrets of the three scenarios as a function of the weight \(w\) of the first asset, over the interval allowed by the tracking error (light area). The maximum regret is the upper envelope (thick line); its minimum is the robust decision. Increase \(\tau\): the interval widens, the best returns \(z_k^*\) rise and so do the regrets, since we compare ourselves with better possible decisions.</div>
+
+<div class="dossier-title" id="s7">7. Key points</div>
+<ul class="kit-simple">
+<li>Uncertainty is described by a set \(\mathcal{U}\): scenarios, box or ellipsoid; its shape and size are part of the model.</li>
+<li>A robust linear constraint reduces to its worst case: \((\bar a+\delta)^Tx\le b\) for a box and \(x\ge 0\), \(\bar a^Tx+\delta\|x\|\le b\) for a ball.</li>
+<li>Worst case: the best guaranteed performance; regret: the smallest guaranteed gap to the best decision in hindsight. Both reduce to a standard problem by introducing a variable \(t\).</li>
+<li>Robust Markowitz with a box and \(x\ge0\): replace \(\mu\) by \(\mu^L\) and \(\Sigma\) by \(\Sigma^U\).</li>
+</ul>`;
+
+/* ---------- figures ---------- */
+I18N.fr.f = {
+  shape: 'Ensemble d\'incertitude', box: 'boîte', ball: 'disque', d: 'Taille δ', setAria: 'Ensemble réalisable nominal et robuste d\'une contrainte linéaire incertaine', rob: 'ensemble robuste', nom: 'contrainte nominale',
+  setRead: (r) => `Aire de l'ensemble robuste : <span class="v">${fmt(100 * r, 1)} %</span> de l'aire de l'ensemble nominal.`,
+  tau: 'Limite d\'erreur de suivi τ', rho: 'Corrélation ρ', w: 'poids w du premier actif', reg: 'regret', env: 'regret maximal', regAria: 'Regrets des trois scénarios et regret maximal en fonction du poids',
+  regRead: (R) => `Poids admissibles : [<span class="v">${fmt(R.lo, 3)}</span> ; <span class="v">${fmt(R.hi, 3)}</span>] &nbsp;·&nbsp; z* = ${R.zs.map(z => `<span class="v">${fmt(z, 3)}</span>`).join(' ; ')}<br>Décision robuste : <i>w</i> = <span class="v">${fmt(R.w, 3)}</span>, regret maximal <span class="v">${fmt(R.r, 3)}</span>`
+};
+I18N.en.f = {
+  shape: 'Uncertainty set', box: 'box', ball: 'disc', d: 'Size δ', setAria: 'Nominal and robust feasible sets of an uncertain linear constraint', rob: 'robust set', nom: 'nominal constraint',
+  setRead: (r) => `Area of the robust set: <span class="v">${fmt(100 * r, 1)}%</span> of the area of the nominal set.`,
+  tau: 'Tracking-error limit τ', rho: 'Correlation ρ', w: 'weight w of the first asset', reg: 'regret', env: 'maximum regret', regAria: 'Regrets of the three scenarios and maximum regret as a function of the weight',
+  regRead: (R) => `Admissible weights: [<span class="v">${fmt(R.lo, 3)}</span>, <span class="v">${fmt(R.hi, 3)}</span>] &nbsp;·&nbsp; z* = ${R.zs.map(z => `<span class="v">${fmt(z, 3)}</span>`).join(', ')}<br>Robust decision: <i>w</i> = <span class="v">${fmt(R.w, 3)}</span>, maximum regret <span class="v">${fmt(R.r, 3)}</span>`
+};
+FIGS.set = {
+  state: { shape: 'box', d: 0.2 },
+  controls: L => [
+    { key: 'shape', type: 'select', label: L.f.shape, options: [{ v: 'box', t: L.f.box }, { v: 'ball', t: L.f.ball }] },
+    { key: 'd', label: L.f.d, min: 0, max: 0.5, step: 0.05, fmt: v => fmtT(v, 2) }
+  ],
+  draw: function (s, lang) {
+    const L = I18N[lang].f, a = [1, 0.8], d = s.d;
+    const G = Plot({ w: 520, h: 420, x0: 0, x1: 1.5, y0: 0, y1: 1.5, mt: 26, mb: 42, ml: 46 });
+    G.axes({ xt: [0, 0.5, 1, 1.5], yt: [0, 0.5, 1, 1.5], xl: 'x₁', yl: 'x₂', xf: v => fmtT(v, 1), yf: v => fmtT(v, 1) });
+    G.clip();
+    /* frontière robuste : pour chaque direction u, t* = 1 / max_a a.u */
+    const pts = [[0, 0]], n = 90;
+    for (let k = 0; k <= n; k++) {
+      const th = Math.PI / 2 * k / n, u = [Math.cos(th), Math.sin(th)];
+      const m = s.shape === 'box' ? (a[0] + d) * u[0] + (a[1] + d) * u[1] : a[0] * u[0] + a[1] * u[1] + d;
+      pts.push([u[0] / m, u[1] / m]);
+    }
+    G.add(`<path d="${G.pts(pts)} Z" fill="${COL.s1}" fill-opacity="0.2" stroke="${COL.s1}" stroke-width="2"/>`);
+    /* quelques contraintes de l'ensemble d'incertitude */
+    const samp = [];
+    if (s.shape === 'box') { [[-1, -1], [-1, 1], [1, -1], [1, 1], [0, 1], [1, 0], [-1, 0], [0, -1]].forEach(e => samp.push([a[0] + e[0] * d, a[1] + e[1] * d])); }
+    else { for (let k = 0; k < 10; k++) { const t = 2 * Math.PI * k / 10; samp.push([a[0] + d * Math.cos(t), a[1] + d * Math.sin(t)]); } }
+    samp.forEach(c => { if (c[0] > 0 && c[1] > 0) G.line([[0, 1 / c[1]], [1 / c[0], 0]], { c: GREY, w: 1, clip: true }); });
+    G.line([[0, 1 / a[1]], [1 / a[0], 0]], { c: COL.s2, w: 2, dash: '7 4', clip: true });
+    G.legend([{ c: COL.s1, box: true, o: 0.35, t: L.rob }, { c: COL.s2, dash: '7 4', t: L.nom }], G.ml + 8, 16);
+    let area = 0; for (let k = 1; k < pts.length - 1; k++) area += (pts[k][0] * pts[k + 1][1] - pts[k + 1][0] * pts[k][1]) / 2;
+    return { svg: G.svg(L.setAria), read: L.setRead(area / (0.5 / (a[0] * a[1]))) };
+  }
+};
+FIGS.regret = {
+  state: { tau: 10, rho: 0.7 },
+  controls: L => [
+    { key: 'tau', label: L.f.tau, min: 4, max: 20, step: 1, fmt: v => fmtT(v, 0) + ' %' },
+    { key: 'rho', label: L.f.rho, min: 0, max: 0.9, step: 0.05, fmt: v => fmtT(v, 2) }
+  ],
+  draw: function (s, lang) {
+    const L = I18N[lang].f, R = d18te(0.42, 0.33, s.rho, s.tau / 100, D18_MU);
+    const ymax = Math.max(1.2, Math.ceil(10 * Math.max(...[0, 1, 2].map(k => Math.max(R.reg(k, 0), R.reg(k, 1))))) / 10);
+    const G = Plot({ w: 680, h: 320, x0: 0, x1: 1, y0: -0.2, y1: Math.min(ymax, 2.4), mt: 26, mb: 42 });
+    G.axes({ xt: [0, 0.25, 0.5, 0.75, 1], yt: ticks(-0.2, Math.min(ymax, 2.4), 5), xl: L.w, xf: v => fmtT(v, 2), yf: v => fmtT(v, 1), xAxisAt: 0 });
+    G.clip();
+    G.add(`<rect x="${G.X(R.lo)}" y="${G.mt}" width="${G.X(R.hi) - G.X(R.lo)}" height="${G.h - G.mt - G.mb}" fill="${COL.s1}" fill-opacity="0.07"/>`);
+    const cols = [COL.s1, COL.s2, COL.s4];
+    [0, 1, 2].forEach(k => G.line([[0, R.reg(k, 0)], [1, R.reg(k, 1)]], { c: cols[k], w: 1.6, dash: '5 4', clip: true }));
+    G.line(G.sample(w => R.maxr(w), R.lo, R.hi, 200), { c: COL.ink, w: 3, clip: true });
+    G.dot(R.w, R.r, { c: COL.s3, r: 6 });
+    G.seg(R.lo, -0.2, R.lo, Math.min(ymax, 2.4), { c: GREY, w: 1, dash: '3 3' }); G.seg(R.hi, -0.2, R.hi, Math.min(ymax, 2.4), { c: GREY, w: 1, dash: '3 3' });
+    G.legend([{ c: cols[0], dash: '5 4', t: L.reg + ' 1' }, { c: cols[1], dash: '5 4', t: L.reg + ' 2' }, { c: cols[2], dash: '5 4', t: L.reg + ' 3' }, { c: COL.ink, t: L.env }], G.ml + 8, 16);
+    return { svg: G.svg(L.regAria), read: L.regRead(R) };
+  }
+};
+
+/* ---------- exercice ---------- */
+PAGE.compute = function (seed) {
+  initRand(seed);
+  const D = { seed: seed };
+  /* 1. tableau de gains */
+  for (;;) {
+    D.G = [0, 1, 2].map(() => [0, 1, 2, 3].map(() => rint(2, 20)));
+    const mins = D.G.map(r => Math.min(...r)), best = [0, 1, 2, 3].map(j => Math.max(...D.G.map(r => r[j])));
+    D.R = D.G.map(r => r.map((g, j) => best[j] - g)); const maxR = D.R.map(r => Math.max(...r));
+    const avg = D.G.map(r => r.reduce((a, b) => a + b, 0) / 4);
+    const uniq = arr => { const m = Math.max(...arr); return arr.filter(v => Math.abs(v - m) < 1e-9).length === 1; };
+    if (!uniq(mins) || !uniq(maxR.map(v => -v)) || !uniq(avg)) continue;
+    D.iMaximin = mins.indexOf(Math.max(...mins)); D.iRegret = maxR.indexOf(Math.min(...maxR)); D.iMean = avg.indexOf(Math.max(...avg));
+    if (new Set([D.iMaximin, D.iRegret, D.iMean]).size < 2) continue;
+    if (D.G.some(r => D.G.some(q => q !== r && q.every((v, j) => v >= r[j])))) continue;   /* pas de décision dominée */
+    D.mins = mins; D.best = best; D.maxR = maxR; D.avg = avg; break;
+  }
+  /* 2. Markowitz robuste */
+  for (;;) {
+    D.m1 = rint(8, 13) / 100; D.m2 = rint(4, 8) / 100; D.e1 = rint(2, 4) / 100; D.e2 = rint(1, 2) / 100;
+    D.s1 = rint(20, 30) / 100; D.s2 = rint(12, 20) / 100; D.d1 = rint(3, 6) / 100; D.d2 = rint(2, 4) / 100;
+    D.rho = pick([0.2, 0.3, 0.4]); D.lam = pick([1, 1.5, 2]);
+    D.wN = d18mk(D.m1, D.m2, D.s1, D.s2, D.rho, D.lam);
+    D.wR = d18mk(D.m1 - D.e1, D.m2 - D.e2, D.s1 + D.d1, D.s2 + D.d2, D.rho, D.lam);
+    if (D.wN <= 0.05 || D.wN >= 0.95 || D.wR <= 0.05 || D.wR >= 0.95 || D.wN - D.wR < 0.08) continue;
+    D.fWN = d18f(D.wN, D.m1 - D.e1, D.m2 - D.e2, D.s1 + D.d1, D.s2 + D.d2, D.rho, D.lam);
+    D.fWR = d18f(D.wR, D.m1 - D.e1, D.m2 - D.e2, D.s1 + D.d1, D.s2 + D.d2, D.rho, D.lam);
+    D.fNN = d18f(D.wN, D.m1, D.m2, D.s1, D.s2, D.rho, D.lam); D.fNR = d18f(D.wR, D.m1, D.m2, D.s1, D.s2, D.rho, D.lam);
+    break;
+  }
+  /* 3. regret sous erreur de suivi */
+  for (;;) {
+    D.ts1 = rint(30, 45) / 100; D.ts2 = rint(20, 32) / 100; D.trho = pick([0.5, 0.6, 0.7, 0.8]); D.tau = pick([0.08, 0.1, 0.12]);
+    const b1 = rint(45, 60) / 10, b2 = rint(40, 55) / 10;
+    D.mu = [[b1 + rint(5, 12) / 10, b2 - rint(2, 6) / 10], [b1 + rint(0, 3) / 10, b2 + rint(0, 3) / 10], [b1 - rint(5, 10) / 10, b2 + rint(4, 9) / 10]];
+    D.mu = D.mu.map(m => [Math.round(m[0] * 10) / 10, Math.round(m[1] * 10) / 10]);
+    const R = d18te(D.ts1, D.ts2, D.trho, D.tau, D.mu);
+    if (R.lo <= 0 || R.hi >= 1) continue;
+    if (!(D.mu[0][0] > D.mu[0][1] && D.mu[2][0] < D.mu[2][1])) continue;
+    if (R.w <= R.lo + 0.03 || R.w >= R.hi - 0.03) continue;
+    if (R.reg(1, R.w) > R.r - 0.02) continue;     /* le scénario 2 n'est pas actif à l'optimum */
+    D.T = R; D.wInt = ((R.zs[0] - D.mu[0][1]) - (R.zs[2] - D.mu[2][1])) / ((D.mu[0][0] - D.mu[0][1]) - (D.mu[2][0] - D.mu[2][1]));
+    break;
+  }
+  return D;
+};
+function d18tab(D, lang) {
+  const fr = lang === 'fr';
+  return `<div class="dtable-wrap"><table class="dtable"><thead><tr><th></th>${[1, 2, 3, 4].map(j => `<th>${fr ? 'Scénario' : 'Scenario'} ${j}</th>`).join('')}</tr></thead><tbody>${D.G.map((r, i) => `<tr><td>${fr ? 'Décision' : 'Decision'} ${String.fromCharCode(65 + i)}</td>${r.map(v => `<td class="num">${v}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+}
+const p18 = (x, d) => fmtT(100 * x, d === undefined ? 0 : d);
+I18N.fr.ex = function (D) {
+  return String.raw`<div class="context-block">Les trois questions sont indépendantes.</div>
+<div class="questions"><ol>
+<li><div class="q-text"><strong>Critères de décision.</strong> Un investisseur doit choisir entre trois stratégies A, B et C. Leur gain, en millions d'euros, dépend du scénario économique qui se réalisera :
+  ${d18tab(D, 'fr')}
+  <ol><li>Quelle stratégie choisit-on par le critère du pire cas (maximiser le gain minimal) ?</li>
+  <li>Construisez le tableau des regrets. Quelle stratégie minimise le regret maximal ?</li>
+  <li>Quelle stratégie maximise le gain moyen si les scénarios sont équiprobables ? Comparez les trois choix.</li></ol></div></li>
+<li><div class="q-text"><strong>Markowitz robuste.</strong> On investit une part \(w\in[0,1]\) dans l'actif 1 et \(1-w\) dans l'actif 2, et l'on maximise \(\mu_1w+\mu_2(1-w)-\lambda\,\sigma_p^2(w)\) avec \(\lambda=${D.lam}\). Les estimations sont \(\mu_1=${p18(D.m1)}\) %, \(\mu_2=${p18(D.m2)}\) %, \(\sigma_1=${p18(D.s1)}\) %, \(\sigma_2=${p18(D.s2)}\) %, avec une corrélation \(\rho=${fmtT(D.rho, 1)}\) connue. Les rendements espérés sont connus à \(\pm${p18(D.e1)}\) et \(\pm${p18(D.e2)}\) points près, les volatilités à \(\pm${p18(D.d1)}\) et \(\pm${p18(D.d2)}\) points près.
+  <ol><li>Montrez que la fonction à maximiser atteint son maximum en \(w^*=\dfrac{(\mu_1-\mu_2)/\lambda+2\sigma_2^2-2\rho\sigma_1\sigma_2}{2(\sigma_1^2+\sigma_2^2-2\rho\sigma_1\sigma_2)}\) lorsque ce nombre est dans \([0,1]\), et calculez le portefeuille nominal.</li>
+  <li>Justifiez que le pire cas de l'ensemble d'incertitude est obtenu avec les rendements les plus bas et les volatilités les plus hautes, puis calculez le portefeuille robuste.</li>
+  <li>Comparez les deux portefeuilles, sous les paramètres estimés et dans le pire cas.</li></ol></div></li>
+<li><div class="q-text"><strong>Regret sous erreur de suivi.</strong> Un gérant investit \(w\) dans l'actif 1 et \(1-w\) dans l'actif 2 ; son indice de référence est à 50 % dans chacun. Les volatilités sont \(\sigma_1=${fmtT(D.ts1, 2)}\) et \(\sigma_2=${fmtT(D.ts2, 2)}\), la corrélation \(\rho=${fmtT(D.trho, 1)}\), et l'erreur de suivi ne doit pas dépasser \(\tau=${p18(D.tau)}\) %. Trois scénarios de rendements espérés (en %) sont envisagés : \((${fmtT(D.mu[0][0], 1)}\,;\,${fmtT(D.mu[0][1], 1)})\), \((${fmtT(D.mu[1][0], 1)}\,;\,${fmtT(D.mu[1][1], 1)})\) et \((${fmtT(D.mu[2][0], 1)}\,;\,${fmtT(D.mu[2][1], 1)})\).
+  <ol><li>Montrez que l'erreur de suivi vaut \(|w-0.5|\,\sigma_d\) avec \(\sigma_d^2=\sigma_1^2+\sigma_2^2-2\rho\sigma_1\sigma_2\), et déduisez-en l'intervalle des poids admissibles.</li>
+  <li>Calculez, pour chaque scénario, le meilleur rendement possible \(z_k^*\).</li>
+  <li>Écrivez les regrets \(r_k(w)\) et le programme linéaire qui minimise le regret maximal, puis résolvez-le.</li>
+  <li>Calculez le regret maximal du portefeuille de référence \(w=0.5\) et commentez.</li></ol></div></li>
+</ol></div>`;
+};
+I18N.en.ex = function (D) {
+  return String.raw`<div class="context-block">The three questions are independent.</div>
+<div class="questions"><ol>
+<li><div class="q-text"><strong>Decision criteria.</strong> An investor must choose between three strategies A, B and C. Their gain, in millions of euros, depends on which economic scenario occurs:
+  ${d18tab(D, 'en')}
+  <ol><li>Which strategy is chosen by the worst-case criterion (maximising the minimum gain)?</li>
+  <li>Build the regret table. Which strategy minimises the maximum regret?</li>
+  <li>Which strategy maximises the average gain if the scenarios are equally likely? Compare the three choices.</li></ol></div></li>
+<li><div class="q-text"><strong>Robust Markowitz.</strong> A share \(w\in[0,1]\) is invested in asset 1 and \(1-w\) in asset 2, and we maximise \(\mu_1w+\mu_2(1-w)-\lambda\,\sigma_p^2(w)\) with \(\lambda=${D.lam}\). The estimates are \(\mu_1=${p18(D.m1)}\)%, \(\mu_2=${p18(D.m2)}\)%, \(\sigma_1=${p18(D.s1)}\)%, \(\sigma_2=${p18(D.s2)}\)%, with a known correlation \(\rho=${fmtT(D.rho, 1)}\). Expected returns are known within \(\pm${p18(D.e1)}\) and \(\pm${p18(D.e2)}\) points, volatilities within \(\pm${p18(D.d1)}\) and \(\pm${p18(D.d2)}\) points.
+  <ol><li>Show that the function to maximise reaches its maximum at \(w^*=\dfrac{(\mu_1-\mu_2)/\lambda+2\sigma_2^2-2\rho\sigma_1\sigma_2}{2(\sigma_1^2+\sigma_2^2-2\rho\sigma_1\sigma_2)}\) when this number lies in \([0,1]\), and compute the nominal portfolio.</li>
+  <li>Explain why the worst case of the uncertainty set is obtained with the lowest returns and the highest volatilities, then compute the robust portfolio.</li>
+  <li>Compare the two portfolios, under the estimated parameters and in the worst case.</li></ol></div></li>
+<li><div class="q-text"><strong>Regret under a tracking-error limit.</strong> A manager invests \(w\) in asset 1 and \(1-w\) in asset 2; the benchmark holds 50% of each. Volatilities are \(\sigma_1=${fmtT(D.ts1, 2)}\) and \(\sigma_2=${fmtT(D.ts2, 2)}\), the correlation is \(\rho=${fmtT(D.trho, 1)}\), and the tracking error must not exceed \(\tau=${p18(D.tau)}\)%. Three scenarios of expected returns (in %) are considered: \((${fmtT(D.mu[0][0], 1)},\,${fmtT(D.mu[0][1], 1)})\), \((${fmtT(D.mu[1][0], 1)},\,${fmtT(D.mu[1][1], 1)})\) and \((${fmtT(D.mu[2][0], 1)},\,${fmtT(D.mu[2][1], 1)})\).
+  <ol><li>Show that the tracking error equals \(|w-0.5|\,\sigma_d\) with \(\sigma_d^2=\sigma_1^2+\sigma_2^2-2\rho\sigma_1\sigma_2\), and deduce the interval of admissible weights.</li>
+  <li>Compute, for each scenario, the best achievable return \(z_k^*\).</li>
+  <li>Write the regrets \(r_k(w)\) and the linear programme that minimises the maximum regret, then solve it.</li>
+  <li>Compute the maximum regret of the benchmark portfolio \(w=0.5\) and comment.</li></ol></div></li>
+</ol></div>`;
+};
+
+function d18sol(D, lang) {
+  const fr = lang === 'fr', T_ = s => fr ? s[0] : s[1], Lt = i => String.fromCharCode(65 + i);
+  const regTab = `<div class="dtable-wrap"><table class="dtable"><thead><tr><th></th>${[1, 2, 3, 4].map(j => `<th>${fr ? 'Scénario' : 'Scenario'} ${j}</th>`).join('')}<th>${fr ? 'Regret maximal' : 'Maximum regret'}</th></tr></thead><tbody>${D.R.map((r, i) => `<tr><td>${Lt(i)}</td>${r.map(v => `<td class="num">${v}</td>`).join('')}<td class="num"><strong>${D.maxR[i]}</strong></td></tr>`).join('')}</tbody></table></div>`;
+  const den = (s1, s2) => 2 * (s1 * s1 + s2 * s2 - 2 * D.rho * s1 * s2);
+  const num = (m1, m2, s1, s2) => (m1 - m2) / D.lam + 2 * s2 * s2 - 2 * D.rho * s1 * s2;
+  const s1u = D.s1 + D.d1, s2u = D.s2 + D.d2, m1l = D.m1 - D.e1, m2l = D.m2 - D.e2;
+  const R = D.T, mu = D.mu, t2 = x => tex(x, 3);
+  const slope = k => mu[k][0] - mu[k][1];
+  const regExpr = k => String.raw`r_${k + 1}(w)&amp;=z_${k + 1}^*-\big(${tex(mu[k][0], 1)}\,w+${tex(mu[k][1], 1)}\,(1-w)\big)=${t2(R.zs[k] - mu[k][1])}${slope(k) >= 0 ? '-' : '+'}${tex(Math.abs(slope(k)), 1)}\,w`;
+  return String.raw`<div class="st"><ol>
+<li><div class="q-content">
+  <p><strong>a.</strong> ${T_(['Les gains minimaux des trois stratégies sont', 'The minimum gains of the three strategies are'])} ${D.mins.map((m, i) => Lt(i) + ' : ' + m).join(', ')}. ${T_(['Le critère du pire cas retient', 'The worst-case criterion picks'])} <strong>${Lt(D.iMaximin)}</strong>, ${T_(['qui garantit au moins', 'which guarantees at least'])} ${D.mins[D.iMaximin]} ${T_(['quel que soit le scénario.', 'whatever the scenario.'])}</p>
+  <p><strong>b.</strong> ${T_(['Le meilleur gain de chaque scénario est', 'The best gain in each scenario is'])} ${D.best.join(', ')}. ${T_(['Le regret d\'une stratégie dans un scénario est l\'écart entre ce meilleur gain et le sien :', 'The regret of a strategy in a scenario is the gap between this best gain and its own:'])}</p>
+  ${regTab}
+  <p>${T_(['Le critère du regret retient', 'The regret criterion picks'])} <strong>${Lt(D.iRegret)}</strong>, ${T_(['dont le regret maximal', 'whose maximum regret'])}, ${D.maxR[D.iRegret]}, ${T_(['est le plus petit : quel que soit le scénario, on ne perdra jamais plus de', 'is the smallest: whatever the scenario, we will never lose more than'])} ${D.maxR[D.iRegret]} ${T_(['par rapport au meilleur choix a posteriori.', 'compared with the best choice in hindsight.'])}</p>
+  <p><strong>c.</strong> ${T_(['Les gains moyens sont', 'The average gains are'])} ${D.avg.map((m, i) => Lt(i) + ' : ' + fmtT(m, 2)).join(T_([' ; ', ', ']))} : ${T_(['le critère de l\'espérance retient', 'the expectation criterion picks'])} <strong>${Lt(D.iMean)}</strong>. ${T_(['Les trois critères ne répondent pas à la même question. Le pire cas protège contre le scénario le plus défavorable, sans regarder ce qu\'on aurait pu gagner ; le regret protège contre le fait de mal se comparer au meilleur choix ; l\'espérance est neutre au risque et suppose des probabilités connues. Quand les probabilités sont mal connues, les critères robustes sont plus défendables.', 'The three criteria do not answer the same question. The worst case protects against the most unfavourable scenario, without looking at what could have been gained; regret protects against comparing badly with the best choice; expectation is risk-neutral and assumes known probabilities. When probabilities are poorly known, robust criteria are easier to defend.'])}</p>
+</div></li>
+<li><div class="q-content">
+  <p><strong>a.</strong> ${T_(['La variance du portefeuille est', 'The portfolio variance is'])} \(\sigma_p^2(w)=w^2\sigma_1^2+(1-w)^2\sigma_2^2+2w(1-w)\rho\sigma_1\sigma_2\). ${T_(['La fonction', 'The function'])} \(f(w)=\mu_1w+\mu_2(1-w)-\lambda\sigma_p^2(w)\) ${T_(['est un polynôme du second degré, de coefficient dominant', 'is a quadratic polynomial, with leading coefficient'])} \(-\lambda(\sigma_1^2+\sigma_2^2-2\rho\sigma_1\sigma_2)&lt;0\) : ${T_(['elle est concave et son maximum annule la dérivée :', 'it is concave and its maximum sets the derivative to zero:'])}
+  \[\begin{aligned}f'(w)&amp;=\mu_1-\mu_2-\lambda\big(2w\sigma_1^2-2(1-w)\sigma_2^2+2(1-2w)\rho\sigma_1\sigma_2\big)\\&amp;=\mu_1-\mu_2-\lambda\big(2(\sigma_1^2+\sigma_2^2-2\rho\sigma_1\sigma_2)\,w-2\sigma_2^2+2\rho\sigma_1\sigma_2\big)&amp;&amp;\text{${T_(['en regroupant les termes en', 'grouping the terms in'])} }w\end{aligned}\]
+  ${T_(['qui s\'annule en la valeur', 'which vanishes at the value'])} \(w^*\) ${T_(['de l\'énoncé. Avec les estimations :', 'of the problem. With the estimates:'])}
+  \[w_N=\frac{(${tex(D.m1, 2)}-${tex(D.m2, 2)})/${D.lam}+2\times ${tex(D.s2, 2)}^2-2\times ${tex(D.rho, 1)}\times ${tex(D.s1, 2)}\times ${tex(D.s2, 2)}}{${tex(den(D.s1, D.s2), 4)}}=\frac{${tex(num(D.m1, D.m2, D.s1, D.s2), 4)}}{${tex(den(D.s1, D.s2), 4)}}\approx ${tex(D.wN, 3)}\]</p>
+  <p><strong>b.</strong> ${T_(['Comme', 'Since'])} \(w\ge 0\) ${T_(['et', 'and'])} \(1-w\ge 0\), ${T_(['le terme de rendement', 'the return term'])} \(\mu_1w+\mu_2(1-w)\) ${T_(['est le plus petit avec', 'is smallest with'])} \(\mu_1=${p18(m1l)}\) % ${T_(['et', 'and'])} \(\mu_2=${p18(m2l)}\) %. ${T_(['La variance est une somme de termes', 'The variance is a sum of terms'])} \(w^2\sigma_1^2\), \((1-w)^2\sigma_2^2\) ${T_(['et', 'and'])} \(2w(1-w)\rho\sigma_1\sigma_2\), ${T_(['tous croissants en', 'all increasing in'])} \(\sigma_1\) ${T_(['et', 'and'])} \(\sigma_2\) ${T_(['puisque', 'since'])} \(\rho&gt;0\) : ${T_(['elle est la plus grande avec', 'it is largest with'])} \(\sigma_1=${p18(s1u)}\) % ${T_(['et', 'and'])} \(\sigma_2=${p18(s2u)}\) %. ${T_(['Le pire cas ne dépend donc pas de', 'The worst case therefore does not depend on'])} \(w\), ${T_(['et le problème robuste est un problème de Markowitz avec ces paramètres :', 'and the robust problem is a Markowitz problem with these parameters:'])}
+  \[w_R=\frac{(${tex(m1l, 2)}-${tex(m2l, 2)})/${D.lam}+2\times ${tex(s2u, 2)}^2-2\times ${tex(D.rho, 1)}\times ${tex(s1u, 2)}\times ${tex(s2u, 2)}}{${tex(den(s1u, s2u), 4)}}=\frac{${tex(num(m1l, m2l, s1u, s2u), 4)}}{${tex(den(s1u, s2u), 4)}}\approx ${tex(D.wR, 3)}\]</p>
+  <p><strong>c.</strong> ${T_(['Le portefeuille robuste investit moins dans l\'actif 1, le plus rentable mais le plus risqué, dont l\'avantage de rendement est le plus incertain. Les valeurs de l\'objectif (en points de rendement ajusté du risque) sont :', 'The robust portfolio invests less in asset 1, the most profitable but riskiest, whose return advantage is the most uncertain. The objective values (in risk-adjusted return points) are:'])}</p>
+  <div class="dtable-wrap"><table class="dtable"><thead><tr><th></th><th>${T_(['Paramètres estimés', 'Estimated parameters'])}</th><th>${T_(['Pire cas', 'Worst case'])}</th></tr></thead><tbody>
+  <tr><td>${T_(['Nominal', 'Nominal'])} \(w_N=${tex(D.wN, 3)}\)</td><td class="num">${fmt(100 * D.fNN, 3)}</td><td class="num">${fmt(100 * D.fWN, 3)}</td></tr>
+  <tr><td>${T_(['Robuste', 'Robust'])} \(w_R=${tex(D.wR, 3)}\)</td><td class="num">${fmt(100 * D.fNR, 3)}</td><td class="num">${fmt(100 * D.fWR, 3)}</td></tr></tbody></table></div>
+  <p>${T_(['Chaque portefeuille est le meilleur dans le cadre pour lequel il a été conçu : le nominal sous les estimations, le robuste dans le pire cas. Le robuste sacrifie un peu de performance si les estimations sont justes, en échange d\'une meilleure garantie si elles sont trop optimistes.', 'Each portfolio is the best in the setting it was designed for: the nominal one under the estimates, the robust one in the worst case. The robust portfolio gives up a little performance if the estimates are right, in exchange for a better guarantee if they are too optimistic.'])}</p>
+  <p class="check">${T_(['Vérification', 'Check'])} : ${fmt(100 * D.fNN, 3)} \(\ge\) ${fmt(100 * D.fNR, 3)} ${T_(['et', 'and'])} ${fmt(100 * D.fWR, 3)} \(\ge\) ${fmt(100 * D.fWN, 3)}.</p>
+</div></li>
+<li><div class="q-content">
+  <p><strong>a.</strong> ${T_(['L\'écart de portefeuille est', 'The portfolio deviation is'])} \(x-x^B=(w-0.5,\ 0.5-w)=(w-0.5)\,(1,-1)\). ${T_(['L\'erreur de suivi est l\'écart-type de', 'The tracking error is the standard deviation of'])} \((x-x^B)^TR=(w-0.5)(R_1-R_2)\) :
+  ${T_(['Comme', 'Since'])} \(\text{Var}(aU)=a^2\,\text{Var}(U)\) ${T_(['et', 'and'])} \(\text{Var}(R_1-R_2)=\sigma_1^2+\sigma_2^2-2\rho\sigma_1\sigma_2\) :
+  \[\begin{aligned}\text{TE}(w)&amp;=|w-0.5|\,\sqrt{\sigma_1^2+\sigma_2^2-2\rho\sigma_1\sigma_2}\\&amp;=|w-0.5|\times\sqrt{${tex(D.ts1, 2)}^2+${tex(D.ts2, 2)}^2-2\times ${tex(D.trho, 1)}\times ${tex(D.ts1, 2)}\times ${tex(D.ts2, 2)}}\approx|w-0.5|\times ${tex(R.sd, 4)}\end{aligned}\]
+  ${T_(['La contrainte', 'The constraint'])} \(\text{TE}(w)\le ${tex(D.tau, 2)}\) ${T_(['donne', 'gives'])} \(|w-0.5|\le ${tex(D.tau, 2)}/${tex(R.sd, 4)}\approx ${tex(D.tau / R.sd, 3)}\), ${T_(['soit', 'that is'])} \(w\in[${t2(R.lo)}\,;\,${t2(R.hi)}]\).</p>
+  <p><strong>b.</strong> ${T_(['Le rendement espéré est linéaire en', 'The expected return is linear in'])} \(w\) : ${T_(['son maximum sur l\'intervalle est atteint à une extrémité, celle du côté de l\'actif le plus rentable dans le scénario :', 'its maximum over the interval is attained at an end point, on the side of the more profitable asset in the scenario:'])}
+  \[\begin{aligned}${[0, 1, 2].map(k => String.raw`z_${k + 1}^*&amp;=${tex(mu[k][0], 1)}\times ${t2(R.wopt[k])}+${tex(mu[k][1], 1)}\times ${t2(1 - R.wopt[k])}\approx ${t2(R.zs[k])}`).join('\\\\')}\end{aligned}\]</p>
+  <p><strong>c.</strong> ${T_(['Les regrets sont affines en', 'The regrets are affine in'])} \(w\) :
+  \[\begin{aligned}${[0, 1, 2].map(regExpr).join('\\\\')}\end{aligned}\]
+  ${T_(['On minimise leur maximum en introduisant une variable', 'Their maximum is minimised by introducing a variable'])} \(t\) ${T_(['qui les majore tous :', 'that bounds them all:'])}
+  \[\min_{w,\,t}\ t\qquad\text{${T_(['sous', 's.t.'])}}\qquad r_k(w)\le t,\quad k=1,2,3,\qquad ${t2(R.lo)}\le w\le ${t2(R.hi)}\]
+  ${T_(['Le regret 1 décroît avec', 'Regret 1 decreases with'])} \(w\), ${T_(['le regret 3 croît : le maximum est le plus petit là où ils sont égaux,', 'regret 3 increases: the maximum is smallest where they are equal,'])}
+  \[${t2(R.zs[0] - mu[0][1])}-${tex(slope(0), 1)}\,w=${t2(R.zs[2] - mu[2][1])}${slope(2) >= 0 ? '-' : '+'}${tex(Math.abs(slope(2)), 1)}\,w\qquad\iff\qquad w^*=\frac{${t2(R.zs[0] - mu[0][1])}-${R.zs[2] - mu[2][1] < 0 ? '(' + t2(R.zs[2] - mu[2][1]) + ')' : t2(R.zs[2] - mu[2][1])}}{${tex(slope(0), 1)}-${slope(2) < 0 ? '(' + tex(slope(2), 1) + ')' : tex(slope(2), 1)}}\approx ${t2(R.w)}\]
+  ${T_(['pour un regret maximal', 'for a maximum regret'])} \(t^*\approx ${t2(R.r)}\). ${T_(['On vérifie que le regret 2 y est plus faible', 'We check that regret 2 is lower there'])} : \(r_2(w^*)\approx ${t2(R.reg(1, R.w))}\le ${t2(R.r)}\).</p>
+  <p><strong>d.</strong> ${T_(['Pour', 'For'])} \(w=0.5\), ${T_(['les regrets valent', 'the regrets are'])} ${[0, 1, 2].map(k => '\\(' + t2(R.reg(k, 0.5)) + '\\)').join(T_([' ; ', ', ']))}, ${T_(['soit un regret maximal de', 'that is, a maximum regret of'])} \(${t2(R.maxr(0.5))}\), ${T_(['supérieur à', 'above'])} \(${t2(R.r)}\). ${T_(['S\'écarter de la référence vers', 'Moving away from the benchmark towards'])} \(w^*\approx ${t2(R.w)}\) ${T_(['réduit le pire écart au meilleur choix a posteriori, sans parier sur un scénario. Les portefeuilles optimaux de chaque scénario, eux, sont aux extrémités de l\'intervalle et ont un regret maximal plus élevé :', 'reduces the worst gap to the best choice in hindsight, without betting on a scenario. The optimal portfolios of each scenario lie at the end points of the interval and have a higher maximum regret:'])} \(${t2(R.maxr(R.lo))}\) ${T_(['en', 'at'])} \(w=${t2(R.lo)}\) ${T_(['et', 'and'])} \(${t2(R.maxr(R.hi))}\) ${T_(['en', 'at'])} \(w=${t2(R.hi)}\).</p>
+</div></li>
+</ol></div>`;
+}
+I18N.fr.sol = D => d18sol(D, 'fr');
+I18N.en.sol = D => d18sol(D, 'en');
+
+initPage();
+</script>
+
+
+<!-- KIT:JS:START v1 -->
+<div id="pdf-ov" onclick="closePdfModal()"></div>
+<div id="pdf-modal">
+  <div class="mh">
+    <h3 data-kit="modalTitle">Exporter en PDF</h3>
+    <button type="button" class="mclose" onclick="closePdfModal()">&#10005;</button>
+  </div>
+  <div class="mb2">
+    <div class="seed-note"><span data-kit="seedPre">Seed&nbsp;:</span> <strong id="modal-seed">&mdash;</strong> <span data-kit="seedPost">&mdash; notez cette valeur pour reproduire exactement cet exercice.</span></div>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-header" checked>
+      <span class="opt-txt"><span class="opt-lbl" data-kit="optHeader">Inclure l'en-t&ecirc;te de page</span>
+           <span class="opt-desc" data-kit="optHeaderD">Titre, badge de mati&egrave;re et intitul&eacute; de l'exercice</span></span>
+    </label>
+    <label class="opt-row">
+      <input type="checkbox" id="opt-sol">
+      <span class="opt-txt"><span class="opt-lbl" data-kit="optSol">Inclure le corrig&eacute; complet</span>
+           <span class="opt-desc" data-kit="optSolD">L'ensemble des d&eacute;veloppements et commentaires du corrig&eacute;</span></span>
+    </label>
+    <div class="mactions">
+      <button type="button" class="btn-print" onclick="doPrint()"><span data-kit="print">&#128424;&nbsp;Imprimer / Sauvegarder PDF</span></button>
+      <button type="button" class="btn-cancel" onclick="closePdfModal()"><span data-kit="cancel">Annuler</span></button>
+    </div>
+  </div>
+</div>
+
+<script id="kit-docx">
+/* =============================================================================
+   EXPORT WORD NATIF (.docx)
+   Trois briques, sans aucune dépendance externe :
+     1. mml2omml  — MathML -> OMML, le format d'équation natif de Word
+     2. zip       — écriture d'une archive ZIP (entrées « stored » + CRC32)
+     3. html2wml  — HTML de la page -> WordprocessingML
+   ============================================================================= */
+(function (root) {
+'use strict';
+
+/* --------------------------------------------------------------- utilitaires */
+function esc(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                  .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function kids(n) {
+  var out = [], c = n.firstChild;
+  while (c) { if (c.nodeType === 1) out.push(c); c = c.nextSibling; }
+  return out;
+}
+function txt(n) { return (n.textContent || '').replace(/\u200b/g, '').trim(); }
+
+/* ============================================================================
+   1. MathML -> OMML
+   ========================================================================== */
+var OPEN = '([{\u27e8\u2308\u230a|\u2016';
+var CLOSE = ')]}\u27e9\u2309\u230b|\u2016';
+var BIGOPS = '\u2211\u220f\u222b\u222c\u222d\u222e\u22c3\u22c2\u2210';
+var ACCENTS = {
+  '\u005e': '\u0302', '\u02c6': '\u0302', '^': '\u0302',
+  '\u00af': '\u0304', '\u2015': '\u0304', '\u2212': '\u0304', '_': '\u0304',
+  '~': '\u0303', '\u02dc': '\u0303', '\u02d9': '\u0307',
+  '\u2192': '\u20d7', '\u21c0': '\u20d1', '\u02c7': '\u030c', '\u02d8': '\u0306'
+};
+
+function run(text, style) {
+  if (text === '') return '';
+  var rPr = '<w:rPr><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/></w:rPr>';
+  var mPr = style ? '<m:rPr><m:sty m:val="' + style + '"/></m:rPr>' : '';
+  return '<m:r>' + mPr + rPr + '<m:t xml:space="preserve">' + esc(text) + '</m:t></m:r>';
+}
+
+/* Un grand opérateur (somme, intégrale…) absorbe la suite de la ligne comme
+   opérande : sans cela Word affiche un cadre vide à la place de l'argument. */
+function naryHere(n) {
+  if (!n || n.nodeType !== 1) return null;
+  var t = n.nodeName.toLowerCase().replace(/^.*:/, ''), k = kids(n);
+  if (t === 'munderover' || t === 'msubsup') return { base: k[0], sub: k[1], sup: k[2] };
+  if (t === 'munder' || t === 'msub') return { base: k[0], sub: k[1], sup: null };
+  if (t === 'mover' || t === 'msup') return { base: k[0], sub: null, sup: k[1] };
+  if (t === 'mo') return { base: n, sub: null, sup: null };
+  return null;
+}
+function isBigOp(n) {
+  if (!n || n.nodeType !== 1) return false;
+  var c = txt(n);
+  return n.nodeName.toLowerCase().replace(/^.*:/, '') === 'mo' &&
+         c.length === 1 && BIGOPS.indexOf(c) !== -1;
+}
+
+function seq(nodes) {
+  var s = '';
+  for (var i = 0; i < nodes.length; i++) {
+    var info = naryHere(nodes[i]);
+    if (info && isBigOp(info.base) && i + 1 < nodes.length) {
+      s += naryFull(info, nodes.slice(i + 1));
+      return s;
+    }
+    s += mml(nodes[i]);
+  }
+  return s;
+}
+
+function naryFull(info, rest) {
+  return '<m:nary><m:naryPr><m:chr m:val="' + esc(txt(info.base)) + '"/>' +
+         '<m:limLoc m:val="undOvr"/>' +
+         '<m:subHide m:val="' + (info.sub ? '0' : '1') + '"/>' +
+         '<m:supHide m:val="' + (info.sup ? '0' : '1') + '"/><m:ctrlPr/></m:naryPr>' +
+         '<m:sub>' + (info.sub ? mml(info.sub) : '') + '</m:sub>' +
+         '<m:sup>' + (info.sup ? mml(info.sup) : '') + '</m:sup>' +
+         '<m:e>' + seq(rest) + '</m:e></m:nary>';
+}
+
+/* mrow entouré de délimiteurs -> m:d, pour des parenthèses étirables natives */
+function fenced(ks) {
+  if (ks.length < 2) return null;
+  var a = ks[0], b = ks[ks.length - 1];
+  if (a.nodeName.toLowerCase() !== 'mo' || b.nodeName.toLowerCase() !== 'mo') return null;
+  var o = txt(a), c = txt(b);
+  if (o.length !== 1 || c.length !== 1) return null;
+  if (OPEN.indexOf(o) === -1 || CLOSE.indexOf(c) === -1) return null;
+  var inner = ks.slice(1, -1);
+  /* séparateurs de premier niveau -> plusieurs m:e */
+  var parts = [[]];
+  for (var i = 0; i < inner.length; i++) {
+    if (inner[i].nodeName.toLowerCase() === 'mo' && txt(inner[i]) === ',' && parts.length < 8) {
+      parts.push([]);
+    } else { parts[parts.length - 1].push(inner[i]); }
+  }
+  var sep = parts.length > 1 ? ',' : '';
+  var body = '';
+  for (var j = 0; j < parts.length; j++) body += '<m:e>' + seq(parts[j]) + '</m:e>';
+  return '<m:d><m:dPr><m:begChr m:val="' + esc(o) + '"/><m:sepChr m:val="' + esc(sep) +
+         '"/><m:endChr m:val="' + esc(c) + '"/><m:ctrlPr/></m:dPr>' + body + '</m:d>';
+}
+
+function naryOf(base, sub, sup) {
+  var ch = txt(base);
+  if (ch.length !== 1 || BIGOPS.indexOf(ch) === -1) return null;
+  return '<m:nary><m:naryPr><m:chr m:val="' + esc(ch) + '"/><m:limLoc m:val="undOvr"/>' +
+         '<m:subHide m:val="' + (sub ? '0' : '1') + '"/>' +
+         '<m:supHide m:val="' + (sup ? '0' : '1') + '"/><m:ctrlPr/></m:naryPr>' +
+         '<m:sub>' + (sub ? mml(sub) : '') + '</m:sub>' +
+         '<m:sup>' + (sup ? mml(sup) : '') + '</m:sup>' +
+         '<m:e></m:e></m:nary>';
+}
+
+function mml(n) {
+  if (!n) return '';
+  if (n.nodeType === 3) return run(n.nodeValue);
+  if (n.nodeType !== 1) return '';
+  var t = n.nodeName.toLowerCase().replace(/^.*:/, '');
+  var k = kids(n), s;
+
+  switch (t) {
+    case 'math':
+    case 'semantics':
+    case 'mstyle':
+    case 'mpadded':
+    case 'menclose':
+      return seq(k);
+
+    case 'annotation':
+    case 'annotation-xml':
+    case 'mphantom':
+      return '';
+
+    case 'mrow':
+      s = fenced(k);
+      return s !== null ? s : seq(k);
+
+    case 'mi':      return run(txt(n), txt(n).length === 1 ? 'i' : 'p');
+    case 'mn':      return run(txt(n), 'p');
+    case 'mo':      return run(txt(n), 'p');
+    case 'merror':  return run(txt(n), 'p');
+    case 'ms':      return run(txt(n), 'p');
+
+    case 'mtext':
+      var v = n.textContent || '';
+      return v === '' ? '' :
+        '<m:r><m:rPr><m:nor/></m:rPr><w:rPr><w:rFonts w:ascii="Cambria" w:hAnsi="Cambria"/></w:rPr>' +
+        '<m:t xml:space="preserve">' + esc(v) + '</m:t></m:r>';
+
+    case 'mspace':
+      return run(' ', 'p');
+
+    case 'mfrac':
+      return '<m:f><m:fPr><m:type m:val="' +
+             (n.getAttribute('linethickness') === '0' ? 'noBar' : 'bar') +
+             '"/><m:ctrlPr/></m:fPr><m:num>' + mml(k[0]) + '</m:num><m:den>' +
+             mml(k[1]) + '</m:den></m:f>';
+
+    case 'msup':
+      s = naryOf(k[0], null, k[1]); if (s) return s;
+      return '<m:sSup><m:sSupPr><m:ctrlPr/></m:sSupPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sup>' + mml(k[1]) + '</m:sup></m:sSup>';
+
+    case 'msub':
+      s = naryOf(k[0], k[1], null); if (s) return s;
+      return '<m:sSub><m:sSubPr><m:ctrlPr/></m:sSubPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sub>' + mml(k[1]) + '</m:sub></m:sSub>';
+
+    case 'msubsup':
+      s = naryOf(k[0], k[1], k[2]); if (s) return s;
+      return '<m:sSubSup><m:sSubSupPr><m:ctrlPr/></m:sSubSupPr><m:e>' + mml(k[0]) +
+             '</m:e><m:sub>' + mml(k[1]) + '</m:sub><m:sup>' + mml(k[2]) +
+             '</m:sup></m:sSubSup>';
+
+    case 'msqrt':
+      return '<m:rad><m:radPr><m:degHide m:val="1"/><m:ctrlPr/></m:radPr>' +
+             '<m:deg/><m:e>' + seq(k) + '</m:e></m:rad>';
+
+    case 'mroot':
+      return '<m:rad><m:radPr><m:degHide m:val="0"/><m:ctrlPr/></m:radPr><m:deg>' +
+             mml(k[1]) + '</m:deg><m:e>' + mml(k[0]) + '</m:e></m:rad>';
+
+    case 'mover':
+      var ao = txt(k[1]);
+      if (ACCENTS[ao]) {
+        return '<m:acc><m:accPr><m:chr m:val="' + esc(ACCENTS[ao]) +
+               '"/><m:ctrlPr/></m:accPr><m:e>' + mml(k[0]) + '</m:e></m:acc>';
+      }
+      s = naryOf(k[0], null, k[1]); if (s) return s;
+      return '<m:limUpp><m:limUppPr><m:ctrlPr/></m:limUppPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limUpp>';
+
+    case 'munder':
+      s = naryOf(k[0], k[1], null); if (s) return s;
+      return '<m:limLow><m:limLowPr><m:ctrlPr/></m:limLowPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limLow>';
+
+    case 'munderover':
+      s = naryOf(k[0], k[1], k[2]); if (s) return s;
+      return '<m:limUpp><m:limUppPr><m:ctrlPr/></m:limUppPr><m:e>' +
+             '<m:limLow><m:limLowPr><m:ctrlPr/></m:limLowPr><m:e>' + mml(k[0]) +
+             '</m:e><m:lim>' + mml(k[1]) + '</m:lim></m:limLow></m:e><m:lim>' +
+             mml(k[2]) + '</m:lim></m:limUpp>';
+
+    case 'mtable':
+      var rows = k.filter(function (r) { return /mtr$/.test(r.nodeName.toLowerCase()); });
+      var ncol = 0;
+      rows.forEach(function (r) { ncol = Math.max(ncol, kids(r).length); });
+      var props = '<m:mPr><m:baseJc m:val="center"/><m:plcHide m:val="1"/><m:mcs><m:mc><m:mcPr>' +
+                  '<m:count m:val="' + (ncol || 1) + '"/><m:mcJc m:val="center"/></m:mcPr></m:mc></m:mcs>' +
+                  '<m:ctrlPr/></m:mPr>';
+      var body = '';
+      rows.forEach(function (r) {
+        body += '<m:mr>';
+        var cells = kids(r);
+        for (var i = 0; i < (ncol || 1); i++) body += '<m:e>' + (cells[i] ? seq(kids(cells[i])) : '') + '</m:e>';
+        body += '</m:mr>';
+      });
+      return '<m:m>' + props + body + '</m:m>';
+
+    case 'mtr':
+    case 'mtd':
+      return seq(k);
+
+    default:
+      return k.length ? seq(k) : run(txt(n), 'p');
+  }
+}
+
+function mathmlToOmml(mathEl) { return mml(mathEl); }
+
+/* ============================================================================
+   2. Écriture ZIP (entrées non compressées + CRC32)
+   ========================================================================== */
+var CRCT = (function () {
+  var t = new Int32Array(256);
+  for (var i = 0; i < 256; i++) {
+    var c = i;
+    for (var j = 0; j < 8; j++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[i] = c;
+  }
+  return t;
+})();
+function crc32(buf) {
+  var c = -1;
+  for (var i = 0; i < buf.length; i++) c = CRCT[(c ^ buf[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ -1) >>> 0;
+}
+function utf8(str) {
+  if (typeof TextEncoder !== 'undefined') return new TextEncoder().encode(str);
+  var b = unescape(encodeURIComponent(str)), a = new Uint8Array(b.length);
+  for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i);
+  return a;
+}
+function zip(files) {
+  var parts = [], central = [], offset = 0;
+  function u16(v) { return [v & 0xFF, (v >>> 8) & 0xFF]; }
+  function u32(v) { return [v & 0xFF, (v >>> 8) & 0xFF, (v >>> 16) & 0xFF, (v >>> 24) & 0xFF]; }
+
+  files.forEach(function (f) {
+    var name = utf8(f.name), data = f.bin ? f.bin : utf8(f.data), c = crc32(data);
+    var local = [].concat(u32(0x04034b50), u16(20), u16(0x0800), u16(0), u16(0), u16(0),
+                          u32(c), u32(data.length), u32(data.length),
+                          u16(name.length), u16(0));
+    parts.push(new Uint8Array(local), name, data);
+    central.push({ name: name, crc: c, size: data.length, off: offset });
+    offset += local.length + name.length + data.length;
+  });
+
+  var cd = [];
+  central.forEach(function (e) {
+    cd = cd.concat(u32(0x02014b50), u16(20), u16(20), u16(0x0800), u16(0), u16(0), u16(0),
+                   u32(e.crc), u32(e.size), u32(e.size),
+                   u16(e.name.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(e.off));
+    cd = cd.concat(Array.prototype.slice.call(e.name));
+  });
+  var cdArr = new Uint8Array(cd);
+  var eocd = new Uint8Array([].concat(u32(0x06054b50), u16(0), u16(0),
+                                      u16(files.length), u16(files.length),
+                                      u32(cdArr.length), u32(offset), u16(0)));
+  parts.push(cdArr, eocd);
+
+  var total = parts.reduce(function (n, p) { return n + p.length; }, 0);
+  var out = new Uint8Array(total), pos = 0;
+  parts.forEach(function (p) { out.set(p, pos); pos += p.length; });
+  return out;
+}
+
+/* ============================================================================
+   3. HTML -> WordprocessingML
+   ========================================================================== */
+var SKIP = { script: 1, style: 1, button: 1, input: 1, noscript: 1 };
+var IMAGES = [];           /* { bin, w, h } collectées pendant le parcours */
+var EMU = 9525;            /* EMU par pixel */
+var MAXW = 5760000;        /* largeur utile de la page, en EMU */
+
+function b64bin(b64) {
+  var raw = atob(b64), a = new Uint8Array(raw.length);
+  for (var i = 0; i < raw.length; i++) a[i] = raw.charCodeAt(i);
+  return a;
+}
+
+function imageXml(dataUrl, wpx, hpx) {
+  var m = /^data:image\/png;base64,(.*)$/.exec(dataUrl || '');
+  if (!m) return '';
+  var cx = Math.round(wpx * EMU), cy = Math.round(hpx * EMU);
+  if (cx > MAXW) { cy = Math.round(cy * MAXW / cx); cx = MAXW; }
+  IMAGES.push({ bin: b64bin(m[1]) });
+  var id = IMAGES.length, rid = 'rIdImg' + id;
+  return '<w:p><w:pPr><w:pStyle w:val="Figure"/><w:jc w:val="center"/></w:pPr><w:r><w:drawing>' +
+    '<wp:inline distT="0" distB="0" distL="0" distR="0">' +
+    '<wp:extent cx="' + cx + '" cy="' + cy + '"/>' +
+    '<wp:effectExtent l="0" t="0" r="0" b="0"/>' +
+    '<wp:docPr id="' + id + '" name="Graphique ' + id + '"/>' +
+    '<wp:cNvGraphicFramePr><a:graphicFrameLocks ' +
+      'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/>' +
+    '</wp:cNvGraphicFramePr>' +
+    '<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">' +
+    '<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+    '<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+    '<pic:nvPicPr><pic:cNvPr id="' + id + '" name="Graphique ' + id + '"/><pic:cNvPicPr/></pic:nvPicPr>' +
+    '<pic:blipFill><a:blip r:embed="' + rid + '"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>' +
+    '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' + cx + '" cy="' + cy + '"/></a:xfrm>' +
+    '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>' +
+    '</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>';
+}
+var BLOCK = { p: 1, div: 1, h1: 1, h2: 1, h3: 1, h4: 1, li: 1, tr: 1, td: 1, th: 1,
+              table: 1, ul: 1, ol: 1, section: 1, article: 1, header: 1, blockquote: 1 };
+
+function W() {
+  this.body = '';
+  this.para = null;      /* { style, runs, numId, ilvl } */
+}
+W.prototype.open = function (style, numId, ilvl) {
+  this.close();
+  this.para = { style: style || 'Corps', runs: '', numId: numId || 0, ilvl: ilvl || 0 };
+};
+W.prototype.close = function () {
+  var p = this.para;
+  this.para = null;
+  if (!p || (p.runs === '' && !p.numId)) return;
+  if (p.runs === '') return;
+  var pPr = '<w:pPr><w:pStyle w:val="' + p.style + '"/>';
+  if (p.numId) pPr += '<w:numPr><w:ilvl w:val="' + p.ilvl + '"/><w:numId w:val="' + p.numId + '"/></w:numPr>';
+  pPr += '</w:pPr>';
+  this.body += '<w:p>' + pPr + p.runs + '</w:p>';
+};
+W.prototype.add = function (xml) {
+  if (!this.para) this.open('Corps');
+  this.para.runs += xml;
+};
+W.prototype.raw = function (xml) { this.close(); this.body += xml; };
+
+function textRun(s, fmt) {
+  if (!s) return '';
+  var rPr = '';
+  if (fmt.b) rPr += '<w:b/>';
+  if (fmt.i) rPr += '<w:i/>';
+  if (fmt.sup) rPr += '<w:vertAlign w:val="superscript"/>';
+  if (fmt.sub) rPr += '<w:vertAlign w:val="subscript"/>';
+  if (fmt.mono) rPr += '<w:rFonts w:ascii="Consolas" w:hAnsi="Consolas"/>';
+  return '<w:r>' + (rPr ? '<w:rPr>' + rPr + '</w:rPr>' : '') +
+         '<w:t xml:space="preserve">' + esc(s) + '</w:t></w:r>';
+}
+
+function walk(node, w, fmt, list) {
+  var i, cs = node.childNodes;
+  for (i = 0; i < cs.length; i++) {
+    var n = cs[i];
+
+    if (n.nodeType === 3) {
+      var s = n.nodeValue.replace(/\s+/g, ' ');
+      if (s.trim() === '' && !/\S/.test(s)) { if (w.para && w.para.runs) w.add(textRun(' ', fmt)); continue; }
+      w.add(textRun(s, fmt));
+      continue;
+    }
+    if (n.nodeType !== 1) continue;
+
+    var tag = n.nodeName.toLowerCase();
+    if (SKIP[tag]) continue;
+    if (n.classList && (n.classList.contains('top-bar') || n.classList.contains('top-actions') ||
+                        n.classList.contains('sol-toggle-wrap'))) continue;
+
+    /* --- équations --- */
+    if (tag === 'mjx-container') {
+      var math = n.querySelector('mjx-assistive-mml math, math');
+      var display = n.getAttribute('display') === 'true';
+      if (math) {
+        var omml = mathmlToOmml(math);
+        if (display) {
+          w.close();
+          w.body += '<w:p><w:pPr><w:pStyle w:val="Formule"/>' +
+                    '<w:jc w:val="center"/></w:pPr>' +
+                    '<m:oMath>' + omml + '</m:oMath></w:p>';
+        } else {
+          w.add('<m:oMath>' + omml + '</m:oMath>');
+        }
+      } else {
+        w.add(textRun(txt(n), fmt));
+      }
+      continue;
+    }
+    if (tag === 'mjx-assistive-mml' || tag === 'math') continue;
+
+    /* --- graphiques --- */
+    if (tag === 'svg' || tag === 'img') {
+      var png = n.getAttribute('data-kit-png');
+      if (png) {
+        w.close();
+        w.body += imageXml(png, +n.getAttribute('data-kit-w') || 600,
+                                +n.getAttribute('data-kit-h') || 380);
+      }
+      continue;
+    }
+
+    /* --- tableaux --- */
+    if (tag === 'table') { w.close(); w.body += table(n); continue; }
+
+    /* --- listes --- */
+    if (tag === 'ul' || tag === 'ol') {
+      w.close();
+      var nid = tag === 'ol' ? 2 : 1;
+      var lvl = list ? Math.min(list.ilvl + 1, 2) : 0;
+      var items = kids(n).filter(function (x) { return x.nodeName.toLowerCase() === 'li'; });
+      items.forEach(function (li) {
+        /* L'item est composé à part : son numéro doit se poser sur le premier
+           paragraphe produit, même si le <li> enveloppe son texte dans un <div>. */
+        var wb = new W();
+        walk(li, wb, fmt, { ilvl: lvl });
+        wb.close();
+        var xml = wb.body;
+        if (!xml) return;
+        var numPr = '<w:pStyle w:val="Liste"/><w:numPr><w:ilvl w:val="' + lvl +
+                    '"/><w:numId w:val="' + nid + '"/></w:numPr>';
+        if (xml.indexOf('<w:pStyle w:val="Corps"/>') !== -1) {
+          xml = xml.replace('<w:pStyle w:val="Corps"/>', numPr);
+        } else {
+          xml = '<w:p><w:pPr>' + numPr + '</w:pPr></w:p>' + xml;
+        }
+        w.body += xml;
+      });
+      continue;
+    }
+
+    /* --- titres --- */
+    if (tag === 'h1' || tag === 'h2') { w.close(); w.open('Titre1'); walk(n, w, fmt, list); w.close(); continue; }
+    if (tag === 'h3' || tag === 'h4') { w.close(); w.open('Titre2'); walk(n, w, fmt, list); w.close(); continue; }
+
+    /* --- titres internes du corrigé --- */
+    if (n.classList && (n.classList.contains('sol-sub') || n.classList.contains('sol-q') ||
+                        n.classList.contains('dossier-title'))) {
+      w.close(); w.open('Titre2'); walk(n, w, { b: true }, list); w.close(); continue;
+    }
+    if (n.classList && n.classList.contains('persp-box')) {
+      w.close();
+      var wb = new W();
+      walk(n, wb, fmt, list);
+      wb.close();
+      w.body += wb.body.replace(/w:val="Corps"/g, 'w:val="Encadre"')
+                       .replace(/w:val="Titre2"/g, 'w:val="EncadreTitre"');
+      continue;
+    }
+
+    /* --- mise en forme inline --- */
+    var f2 = { b: fmt.b, i: fmt.i, sup: fmt.sup, sub: fmt.sub, mono: fmt.mono };
+    if (tag === 'strong' || tag === 'b') f2.b = true;
+    if (tag === 'em' || tag === 'i') f2.i = true;
+    if (tag === 'sup') f2.sup = true;
+    if (tag === 'sub') f2.sub = true;
+    if (tag === 'code' || tag === 'kbd') f2.mono = true;
+
+    /* intertitre écrit en style en ligne (span display:block + gras) */
+    var st = n.getAttribute && n.getAttribute('style');
+    if (st && /display\s*:\s*block/.test(st) && /font-weight\s*:\s*(6|7|8|9|bold)/.test(st)) {
+      w.close(); w.open('Titre3');
+      walk(n, w, { b: true }, list);
+      w.close();
+      continue;
+    }
+
+    if ((tag === 'strong' || tag === 'b') &&
+        (!w.para || w.para.runs === '') &&
+        n.nextElementSibling && n.nextElementSibling.nodeName.toLowerCase() === 'br') {
+      w.close(); w.open('Titre3');
+      walk(n, w, { b: true }, list);
+      w.close();
+      i++;                       /* le <br> qui suit devient inutile */
+      continue;
+    }
+
+    if (tag === 'br') { w.add('<w:r><w:br/></w:r>'); continue; }
+    if (tag === 'hr') { w.close(); continue; }
+
+    if (BLOCK[tag]) { w.close(); w.open('Corps'); walk(n, w, f2, list); w.close(); }
+    else { walk(n, w, f2, list); }
+  }
+}
+
+function cellXml(td, isHead) {
+  var w2 = new W();
+  walk(td, w2, { b: !!isHead }, null);
+  w2.close();
+  var content = w2.body || '<w:p><w:pPr><w:pStyle w:val="Cellule"/></w:pPr></w:p>';
+  content = content.replace(/w:val="Corps"/g, 'w:val="Cellule"');
+  var span = parseInt(td.getAttribute('colspan') || '1', 10);
+  var shd = isHead ? '<w:shd w:val="clear" w:fill="EDE9DF"/>' : '';
+  return '<w:tc><w:tcPr>' + (span > 1 ? '<w:gridSpan w:val="' + span + '"/>' : '') +
+         shd + '<w:vAlign w:val="center"/></w:tcPr>' + content + '</w:tc>';
+}
+
+function table(tbl) {
+  var rows = tbl.querySelectorAll('tr'), out = '', ncol = 0, i, j;
+  for (i = 0; i < rows.length; i++) {
+    var c = rows[i].children, n = 0;
+    for (j = 0; j < c.length; j++) n += parseInt(c[j].getAttribute('colspan') || '1', 10);
+    ncol = Math.max(ncol, n);
+  }
+  if (!ncol) return '';
+  var grid = '<w:tblGrid>';
+  for (i = 0; i < ncol; i++) grid += '<w:gridCol w:w="' + Math.floor(9360 / ncol) + '"/>';
+  grid += '</w:tblGrid>';
+
+  for (i = 0; i < rows.length; i++) {
+    var cells = rows[i].children, xml = '';
+    var head = rows[i].parentNode.nodeName.toLowerCase() === 'thead' ||
+               (cells.length && cells[0].nodeName.toLowerCase() === 'th');
+    for (j = 0; j < cells.length; j++) xml += cellXml(cells[j], head);
+    out += '<w:tr>' + (head ? '<w:trPr><w:tblHeader/></w:trPr>' : '') + xml + '</w:tr>';
+  }
+  return '<w:tbl><w:tblPr><w:tblStyle w:val="Grille"/>' +
+         '<w:tblW w:w="5000" w:type="pct"/><w:tblLayout w:type="fixed"/></w:tblPr>' +
+         grid + out + '</w:tbl><w:p><w:pPr><w:pStyle w:val="Apres"/></w:pPr></w:p>';
+}
+
+/* ============================================================================
+   Assemblage du fichier
+   ========================================================================== */
+var NS =
+  'xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" ' +
+  'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
+  'xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" ' +
+  'xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" ' +
+  'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+  'xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture" ' +
+  'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+  'xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" ' +
+  'mc:Ignorable="w14"';
+
+function style(id, name, opts) {
+  var o = opts || {};
+  return '<w:style w:type="paragraph" w:styleId="' + id + '"><w:name w:val="' + name + '"/>' +
+         '<w:basedOn w:val="Corps"/><w:pPr>' +
+         (o.keep ? '<w:keepNext/>' : '') +
+         '<w:spacing w:before="' + (o.before || 0) + '" w:after="' + (o.after || 120) +
+         '" w:line="' + (o.line || 276) + '" w:lineRule="auto"/>' +
+         (o.jc ? '<w:jc w:val="' + o.jc + '"/>' : '') +
+         (o.ind ? '<w:ind w:left="' + o.ind + '"/>' : '') +
+         (o.border ? '<w:pBdr><w:left w:val="single" w:sz="18" w:space="8" w:color="1A2E42"/></w:pBdr>' : '') +
+         '</w:pPr><w:rPr>' +
+         (o.font ? '<w:rFonts w:ascii="' + o.font + '" w:hAnsi="' + o.font + '"/>' : '') +
+         (o.b ? '<w:b/>' : '') + (o.i ? '<w:i/>' : '') +
+         (o.sz ? '<w:sz w:val="' + o.sz + '"/>' : '') +
+         (o.color ? '<w:color w:val="' + o.color + '"/>' : '') +
+         '</w:rPr></w:style>';
+}
+
+function stylesXml() {
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles ' + NS + '>' +
+    '<w:docDefaults><w:rPrDefault><w:rPr>' +
+      '<w:rFonts w:ascii="Cambria" w:hAnsi="Cambria" w:cs="Cambria"/>' +
+      '<w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="fr-FR"/>' +
+    '</w:rPr></w:rPrDefault><w:pPrDefault><w:pPr>' +
+      '<w:spacing w:after="120" w:line="276" w:lineRule="auto"/><w:jc w:val="both"/>' +
+    '</w:pPr></w:pPrDefault></w:docDefaults>' +
+    '<w:style w:type="paragraph" w:default="1" w:styleId="Corps"><w:name w:val="Normal"/>' +
+      '<w:pPr><w:spacing w:after="120" w:line="276" w:lineRule="auto"/><w:jc w:val="both"/></w:pPr>' +
+      '<w:rPr><w:rFonts w:ascii="Cambria" w:hAnsi="Cambria"/><w:sz w:val="22"/></w:rPr></w:style>' +
+    style('TitreDoc', 'Title', { font: 'Cambria', b: true, sz: 40, color: '0D1B2A', jc: 'left', after: 60, line: 240 }) +
+    style('SousTitre', 'Subtitle', { i: true, sz: 20, color: '5A5A5A', jc: 'left', after: 280, line: 240 }) +
+    style('Titre1', 'heading 1', { b: true, sz: 28, color: '0D1B2A', before: 320, after: 140, jc: 'left', keep: true, line: 240 }) +
+    style('Titre2', 'heading 2', { b: true, sz: 23, color: '1A2E42', before: 240, after: 100, jc: 'left', keep: true, line: 240 }) +
+    style('Formule', 'Formula', { jc: 'center', before: 120, after: 120, line: 240 }) +
+    style('Liste', 'List Paragraph', { after: 100, ind: 360 }) +
+    style('Cellule', 'Table Text', { sz: 20, after: 40, jc: 'left', line: 240 }) +
+    style('Encadre', 'Aside', { ind: 240, border: true, sz: 21, before: 200, after: 200 }) +
+    style('Apres', 'After Table', { after: 200, sz: 12 }) +
+    style('Figure', 'Figure', { jc: 'center', before: 160, after: 200, line: 240 }) +
+    style('Titre3', 'heading 3', { b: true, sz: 22, color: '1A2E42', before: 200,
+                                   after: 60, jc: 'left', keep: true, line: 240 }) +
+    style('EncadreTitre', 'Aside Heading', { ind: 240, border: true, b: true, sz: 22,
+                                             color: '1A2E42', before: 200, after: 60, jc: 'left' }) +
+    '<w:style w:type="table" w:styleId="Grille"><w:name w:val="Table Grid"/><w:tblPr>' +
+      '<w:tblBorders>' +
+      ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(function (b) {
+        return '<w:' + b + ' w:val="single" w:sz="4" w:space="0" w:color="9A9A9A"/>';
+      }).join('') +
+      '</w:tblBorders><w:tblCellMar>' +
+      '<w:top w:w="60" w:type="dxa"/><w:left w:w="90" w:type="dxa"/>' +
+      '<w:bottom w:w="60" w:type="dxa"/><w:right w:w="90" w:type="dxa"/>' +
+      '</w:tblCellMar></w:tblPr></w:style>' +
+    '</w:styles>';
+}
+
+function numberingXml() {
+  function lvl(i, fmt, txtv, ind) {
+    return '<w:lvl w:ilvl="' + i + '"><w:start w:val="1"/><w:numFmt w:val="' + fmt + '"/>' +
+           '<w:lvlText w:val="' + txtv + '"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="' +
+           ind + '" w:hanging="360"/></w:pPr>' +
+           (fmt === 'bullet' ? '<w:rPr><w:rFonts w:ascii="Symbol" w:hAnsi="Symbol"/></w:rPr>' : '') +
+           '</w:lvl>';
+  }
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:numbering ' + NS + '>' +
+    '<w:abstractNum w:abstractNumId="1"><w:multiLevelType w:val="hybridMultilevel"/>' +
+      lvl(0, 'bullet', '\uF0B7', 360) + lvl(1, 'bullet', 'o', 720) + lvl(2, 'bullet', '\uF0A7', 1080) +
+    '</w:abstractNum>' +
+    '<w:abstractNum w:abstractNumId="2"><w:multiLevelType w:val="hybridMultilevel"/>' +
+      lvl(0, 'decimal', '%1.', 360) + lvl(1, 'lowerLetter', '%2.', 720) + lvl(2, 'lowerRoman', '%3.', 1080) +
+    '</w:abstractNum>' +
+    '<w:num w:numId="1"><w:abstractNumId w:val="1"/></w:num>' +
+    '<w:num w:numId="2"><w:abstractNumId w:val="2"/></w:num>' +
+    '</w:numbering>';
+}
+
+function buildDocx(opts) {
+  IMAGES = [];
+  var w = new W();
+
+  if (opts.title) {
+    w.body += '<w:p><w:pPr><w:pStyle w:val="TitreDoc"/></w:pPr>' +
+              textRun(opts.title, {}) + '</w:p>';
+  }
+  if (opts.subtitle) {
+    w.body += '<w:p><w:pPr><w:pStyle w:val="SousTitre"/></w:pPr>' +
+              textRun(opts.subtitle, {}) + '</w:p>';
+  }
+  opts.sections.forEach(function (sec) {
+    if (sec.heading) {
+      w.body += '<w:p><w:pPr><w:pStyle w:val="Titre1"/></w:pPr>' + textRun(sec.heading, {}) + '</w:p>';
+    }
+    walk(sec.node, w, {}, null);
+    w.close();
+  });
+  w.close();
+
+  var doc = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ' + NS + '><w:body>' +
+    w.body +
+    '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/>' +
+    '<w:pgMar w:top="1247" w:right="1247" w:bottom="1247" w:left="1247" ' +
+    'w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>';
+
+  var media = [], rels = '', ctypes = '';
+  IMAGES.forEach(function (im, i) {
+    media.push({ name: 'word/media/image' + (i + 1) + '.png', bin: im.bin });
+    rels += '<Relationship Id="rIdImg' + (i + 1) + '" Type="http://schemas.openxmlformats.org/' +
+            'officeDocument/2006/relationships/image" Target="media/image' + (i + 1) + '.png"/>';
+  });
+  if (IMAGES.length) ctypes = '<Default Extension="png" ContentType="image/png"/>';
+
+  return zip([
+    { name: '[Content_Types].xml',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+        '<Default Extension="xml" ContentType="application/xml"/>' + ctypes +
+        '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+        '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>' +
+        '<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>' +
+        '</Types>' },
+    { name: '_rels/.rels',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+        '</Relationships>' },
+    { name: 'word/_rels/document.xml.rels',
+      data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' +
+        '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>' +
+        rels + '</Relationships>' },
+    { name: 'word/document.xml', data: doc },
+    { name: 'word/styles.xml', data: stylesXml() },
+    { name: 'word/numbering.xml', data: numberingXml() }
+  ].concat(media));
+}
+
+root.DocxExport = { build: buildDocx, mathmlToOmml: mathmlToOmml, zip: zip, _W: W, _walk: walk };
+
+})(window);
+
+</script>
+<script id="kit-js">
+/* ============================================================
+   KIT D'UNIFORMISATION — logique partagée (modale PDF, export Word,
+   libellés de la barre d'actions). Autonome : ne dépend d'aucun
+   dictionnaire I18N propre à la page.
+   ============================================================ */
+(function(){
+  var T = {
+    fr:{ modalTitle:"Exporter en PDF", seedPre:"Seed\u00a0:",
+         seedPost:"\u2014 notez cette valeur pour reproduire exactement cet exercice.",
+         optHeader:"Inclure l'en-t\u00eate de page",
+         optHeaderD:"Titre, badge de mati\u00e8re et intitul\u00e9 de l'exercice",
+         optSol:"Inclure le corrig\u00e9 complet",
+         optSolD:"L'ensemble des d\u00e9veloppements et commentaires du corrig\u00e9",
+         print:"\uD83D\uDDA8\u00a0Imprimer / Sauvegarder PDF", cancel:"Annuler",
+         btnNew:"\u21ba Nouvel \u00e9nonc\u00e9", btnPdf:"\u2b07 Exporter PDF", btnDoc:"\u2b07 Exporter Word",
+         btnCopy:"\u29c9 Copier", copied:"\u2713 Copi\u00e9e", seedLabel:"Seed de reproductibilit\u00e9",
+         docFile:"exercice.doc" },
+    en:{ modalTitle:"Export to PDF", seedPre:"Seed:",
+         seedPost:"\u2014 note this value to reproduce this exact exercise.",
+         optHeader:"Include the page header",
+         optHeaderD:"Title, subject badge and exercise heading",
+         optSol:"Include the full solution",
+         optSolD:"All the workings and comments of the solution",
+         print:"\uD83D\uDDA8\u00a0Print / Save as PDF", cancel:"Cancel",
+         btnNew:"\u21ba New exercise", btnPdf:"\u2b07 Export PDF", btnDoc:"\u2b07 Export Word",
+         btnCopy:"\u29c9 Copy", copied:"\u2713 Copied", seedLabel:"Reproducibility seed",
+         docFile:"exercise.doc" }
+  };
+
+  function lang(){
+    var l = (window.LANG || document.documentElement.lang || 'fr').toLowerCase();
+    return (l.indexOf('en') === 0) ? 'en' : 'fr';
+  }
+  function t(k){ return T[lang()][k]; }
+
+  window.KIT = { T:T, lang:lang, t:t };
+
+  /* --- libellés du kit (modale + barre d'actions) --- */
+  function paint(){
+    var d = T[lang()];
+    document.querySelectorAll('[data-kit]').forEach(function(el){
+      var k = el.getAttribute('data-kit');
+      if (d[k] !== undefined) el.innerHTML = d[k];
+    });
+  }
+  window.KIT.paint = paint;
+
+  /* Se raccroche au changement de langue de la page sans la modifier. */
+  function hookLang(){
+    if (typeof window.setLang === 'function' && !window.setLang.__kit){
+      var orig = window.setLang;
+      var wrapped = function(){ var r = orig.apply(this, arguments); paint(); return r; };
+      wrapped.__kit = true;
+      window.setLang = wrapped;
+    }
+  }
+
+  /* --- Copie de la seed active --- */
+  window.copySeed = function(btn){
+    var el = document.getElementById('seed-disp');
+    if (!el) return;
+    var v = (el.textContent || '').trim();
+    if (!v || v === '\u2014') return;
+    var done = function(){
+      var b = btn || document.getElementById('btn-copy-seed');
+      if (!b) return;
+      var old = b.innerHTML;
+      b.innerHTML = t('copied');
+      setTimeout(function(){ b.innerHTML = old; paint(); }, 1400);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(v).then(done, done);
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = v; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch(e){}
+      document.body.removeChild(ta); done();
+    }
+  };
+
+  /* --- Modale PDF --- */
+  window.openPdfModal = function(){
+    var s = document.getElementById('modal-seed');
+    var src = document.getElementById('seed-disp');
+    if (s && src) s.textContent = (src.textContent || '\u2014').trim();
+    /* la case « corrigé » reflète l'état d'affichage courant */
+    var sol = document.getElementById('sol-card');
+    var box = document.getElementById('opt-sol');
+    if (box) box.checked = !!(window.solVisible ||
+        (sol && (sol.classList.contains('visible') || sol.style.display === 'block')));
+    paint();
+    document.getElementById('pdf-ov').classList.add('open');
+    document.getElementById('pdf-modal').classList.add('open');
+  };
+  window.closePdfModal = function(){
+    document.getElementById('pdf-ov').classList.remove('open');
+    document.getElementById('pdf-modal').classList.remove('open');
+  };
+  var PRINTCLS = ['print-no-header', 'print-force-solution', 'print-no-solution'];
+
+  function clearPrintClasses() {
+    var b = document.body;
+    for (var i = 0; i < PRINTCLS.length; i++) b.classList.remove(PRINTCLS[i]);
+  }
+
+  window.doPrint = function () {
+    var noHdr   = !document.getElementById('opt-header').checked;
+    var inclSol =  document.getElementById('opt-sol').checked;
+    var b = document.body;
+
+    clearPrintClasses();
+    if (noHdr) b.classList.add('print-no-header');
+    b.classList.add(inclSol ? 'print-force-solution' : 'print-no-solution');
+    closePdfModal();
+
+    /* Le nettoyage doit attendre la fin réelle de l'impression. Un simple
+       minuteur ne convient pas : selon le navigateur, window.print() rend la
+       main avant que l'aperçu ne soit composé, et les options seraient alors
+       déjà effacées au moment où le PDF est produit. */
+    var done = false;
+    function finish() {
+      if (done) return;
+      done = true;
+      clearPrintClasses();
+      window.removeEventListener('afterprint', finish);
+      if (mq && mq.removeListener) mq.removeListener(onMq);
+      if (mq && mq.removeEventListener) mq.removeEventListener('change', onMq);
+    }
+    function onMq(e) { if (!e.matches) finish(); }
+
+    var mq = window.matchMedia ? window.matchMedia('print') : null;
+    window.addEventListener('afterprint', finish);
+    if (mq && mq.addEventListener) mq.addEventListener('change', onMq);
+    else if (mq && mq.addListener) mq.addListener(onMq);
+    /* filet de sécurité si le navigateur n'émet aucun de ces signaux */
+    setTimeout(finish, 120000);
+
+    setTimeout(function () { window.print(); }, 120);
+  };
+
+  /* --- Rasterisation des graphiques SVG ---
+     Word ne sait pas lire le SVG. On le convertit en PNG en recopiant d'abord
+     les styles calculés, sinon les couleurs héritées de la feuille disparaissent. */
+  var SVGPROPS = ['fill', 'stroke', 'stroke-width', 'stroke-dasharray', 'stroke-linecap',
+                  'stroke-linejoin', 'opacity', 'fill-opacity', 'stroke-opacity',
+                  'font-family', 'font-size', 'font-weight', 'font-style',
+                  'text-anchor', 'dominant-baseline'];
+
+  function inlineStyles(src, dst) {
+    var a = src.querySelectorAll('*'), b = dst.querySelectorAll('*'), i, j;
+    for (i = 0; i < a.length && i < b.length; i++) {
+      var cs = window.getComputedStyle(a[i]);
+      for (j = 0; j < SVGPROPS.length; j++) {
+        var v = cs.getPropertyValue(SVGPROPS[j]);
+        if (v) b[i].setAttribute(SVGPROPS[j], v);
+      }
+    }
+  }
+
+  function svgSize(svg) {
+    var vb = svg.viewBox && svg.viewBox.baseVal;
+    if (vb && vb.width) return { w: vb.width, h: vb.height };
+    var r = svg.getBoundingClientRect();
+    if (r.width) return { w: r.width, h: r.height };
+    return { w: 600, h: 380 };
+  }
+
+  function svgToPng(svg) {
+    return new Promise(function (resolve) {
+      var done = false;
+      var res = function (v) { if (!done) { done = true; resolve(v); } };
+      /* garde-fou : un graphique qui ne se charge pas ne doit jamais
+         bloquer l'export, on l'omet et le reste du document part quand même */
+      setTimeout(function () { res(null); }, 5000);
+      try {
+        var d = svgSize(svg), SC = 2;
+        var c = svg.cloneNode(true);
+        c.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        c.setAttribute('width', d.w);
+        c.setAttribute('height', d.h);
+        inlineStyles(svg, c);
+        var bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        bg.setAttribute('x', 0); bg.setAttribute('y', 0);
+        bg.setAttribute('width', '100%'); bg.setAttribute('height', '100%');
+        bg.setAttribute('fill', '#ffffff');
+        c.insertBefore(bg, c.firstChild);
+        var xml = new XMLSerializer().serializeToString(c);
+        var img = new Image();
+        img.onload = function () {
+          try {
+            var cv = document.createElement('canvas');
+            cv.width = Math.round(d.w * SC); cv.height = Math.round(d.h * SC);
+            var ctx = cv.getContext('2d');
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, cv.width, cv.height);
+            ctx.drawImage(img, 0, 0, cv.width, cv.height);
+            res({ png: cv.toDataURL('image/png'), w: d.w, h: d.h });
+          } catch (e) { res(null); }
+        };
+        img.onerror = function () { res(null); };
+        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml);
+      } catch (e) { res(null); }
+    });
+  }
+
+  /* --- Export Word natif (.docx) ---
+     Les formules sont converties en OMML, le format d'équation natif de Word :
+     elles restent éditables et se composent avec Cambria Math. */
+  window.exportWord = function () {
+    var area = document.getElementById('ex-area');
+    if (!area || !window.DocxExport) { return; }
+
+    var btn = document.querySelector('.btn-sm.doc');
+    if (btn) { btn.disabled = true; btn.style.opacity = '.5'; }
+
+    var svgs = Array.prototype.slice.call(area.querySelectorAll('svg'));
+    Promise.all(svgs.map(svgToPng)).then(function (pngs) {
+      svgs.forEach(function (sv, i) {
+        if (!pngs[i]) return;
+        sv.setAttribute('data-kit-png', pngs[i].png);
+        sv.setAttribute('data-kit-w', pngs[i].w);
+        sv.setAttribute('data-kit-h', pngs[i].h);
+      });
+      try { writeDocx(area); } finally {
+        svgs.forEach(function (sv) {
+          sv.removeAttribute('data-kit-png');
+          sv.removeAttribute('data-kit-w');
+          sv.removeAttribute('data-kit-h');
+        });
+        if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+      }
+    });
+  };
+
+  function writeDocx(area) {
+
+    var h1 = document.querySelector('header h1');
+    var badge = document.querySelector('.header-badge, #lbl-badge');
+    var seed = document.getElementById('seed-disp');
+    var bits = [];
+    if (badge && badge.textContent.trim()) bits.push(badge.textContent.trim());
+    if (seed && seed.textContent.trim() && seed.textContent.trim() !== '\u2014') {
+      bits.push('seed ' + seed.textContent.trim());
+    }
+    bits.push('Thomas Hossen');
+
+    var sections = [];
+    var cards = area.querySelectorAll('.card');
+    for (var i = 0; i < cards.length; i++) {
+      var body = cards[i].querySelector('.card-body');
+      if (!body) continue;
+      var tag = cards[i].querySelector('.card-header .tag');
+      var h2 = cards[i].querySelector('.card-header h2');
+      var head = [tag ? tag.textContent.trim() : '', h2 ? h2.textContent.trim() : '']
+                   .filter(Boolean).join(' \u2014 ');
+      sections.push({ heading: head, node: body });
+    }
+    if (!sections.length) sections = [{ heading: '', node: area }];
+
+    var bytes = window.DocxExport.build({
+      title: h1 ? h1.textContent.trim() : document.title,
+      subtitle: bits.join(' \u00b7 '),
+      sections: sections
+    });
+
+    var name = (h1 ? h1.textContent : 'exercice').normalize('NFD')
+                 .replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9]+/g, '_')
+                 .replace(/^_|_$/g, '').slice(0, 60) || 'exercice';
+    var blob = new Blob([bytes], {
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = name + '.docx';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){ hookLang(); paint(); });
+  if (document.readyState !== 'loading'){ hookLang(); paint(); }
+})();
+</script>
+<!-- KIT:JS:END -->
+<!-- KIT2:JS:START -->
+<script id="kit-polish">
+/* ============================================================
+   KIT v2 — FINITION AUTOMATIQUE DU CONTENU (identique sur toutes les pages)
+   À chaque rendu de l'énoncé, du cours ou du corrigé :
+     1. typographie française (espaces insécables devant : ; ? ! % €, guillemets) ;
+        en anglais, pas d'espace devant % ;
+     2. une ligne mathématique (\[ … \] ou $$ … $$) ne porte aucune ponctuation
+        finale, et la phrase qui la précède se termine par deux-points ;
+     3. les sous-questions a, b, c du corrigé sont entourées ;
+     4. tout tableau est défilable horizontalement.
+   Le texte TeX n'est jamais altéré, hormis la ponctuation finale.
+   ============================================================ */
+(function () {
+  'use strict';
+  var NBSP = '\u00a0', NNBSP = '\u202f';
+  var SKIP = { SCRIPT: 1, STYLE: 1, PRE: 1, CODE: 1, TEXTAREA: 1, INPUT: 1, BUTTON: 1, SELECT: 1,
+               KBD: 1, SVG: 1, 'MJX-CONTAINER': 1, 'MJX-ASSISTIVE-MML': 1, MATH: 1 };
+  var INLINE = { SPAN: 1, STRONG: 1, EM: 1, B: 1, I: 1, A: 1, SUB: 1, SUP: 1, U: 1, SMALL: 1, ABBR: 1 };
+
+  function lang() {
+    var l = (window.LANG || (window.KIT && KIT.lang && KIT.lang()) || document.documentElement.lang || 'fr');
+    return String(l).toLowerCase().indexOf('en') === 0 ? 'en' : 'fr';
+  }
+  function skipEl(el) {
+    return !!(el && el.nodeType === 1 && (SKIP[el.nodeName.toUpperCase()] ||
+             (el.classList && (el.classList.contains('kit-raw') || el.classList.contains('sq')))));
+  }
+
+  /* ---------- découpage d'un texte en segments texte / TeX ---------- */
+  /* délimiteurs reconnus : \[ … \], $$ … $$, \( … \) et, si la page l'active dans MathJax, $ … $ */
+  function dollarInline() {
+    try {
+      var M = window.MathJax || {}, cfg = (M.config && M.config.tex) || M.tex || {};
+      return JSON.stringify(cfg.inlineMath || []).indexOf('"$"') >= 0;
+    } catch (e) { return false; }
+  }
+  var TEX_RE_STD = /(\\\[[\s\S]*?\\\]|\$\$[\s\S]*?\$\$|\\\([\s\S]*?\\\))/g;
+  var TEX_RE_DOL = /(\\\[[\s\S]*?\\\]|\$\$[\s\S]*?\$\$|\\\([\s\S]*?\\\)|(?<![\\$])\$(?!\$)[^$]+?(?<![\\])\$(?!\$))/g;
+  function segments(s) {
+    var out = [], last = 0, m, RE = dollarInline() ? TEX_RE_DOL : TEX_RE_STD;
+    RE.lastIndex = 0;
+    while ((m = RE.exec(s))) {
+      if (m.index > last) out.push({ tex: 0, s: s.slice(last, m.index) });
+      var d = m[0].slice(0, 2);
+      out.push({ tex: (d === '\\[' || d === '$$') ? 2 : 1, s: m[0] });   /* 1 = en ligne, 2 = hors texte */
+      last = m.index + m[0].length;
+    }
+    if (last < s.length) out.push({ tex: 0, s: s.slice(last) });
+    return out;
+  }
+
+  /* ---------- 1. typographie ---------- */
+  /* séparateur décimal : virgule en français, point en anglais */
+  function decimalsText(s, L) {
+    return L === 'fr' ? s.replace(/(\d)\.(\d)/g, '$1,$2') : s.replace(/(\d),(\d{1,2})(?!\d)/g, '$1.$2');
+  }
+  function decimalsTex(t, L) {
+    if (L === 'fr') return t.replace(/(\d)\{\.\}(\d)/g, '$1{,}$2').replace(/(\d)\.(\d)/g, '$1{,}$2');
+    return t.replace(/(\d)\{[,.]\}(\d)/g, '$1.$2').replace(/(?<=\d),(?=\d{3}(?!\d))/g, '{,}');
+  }
+  /* nombres formatés pour TeX mais placés hors formule : 82\,500, 0{,}8, 10{.}0 */
+  function texLeak(s, L) {
+    s = s.replace(/(\d)\\[,;:!](?=\d)/g, L === 'fr' ? '$1\u202f' : '$1,');
+    s = s.replace(/(\d)\{[,.]\}(?=\d)/g, L === 'fr' ? '$1,' : '$1.');
+    return s;
+  }
+  function typo(s, L) {
+    s = texLeak(s, L);
+    s = decimalsText(s, L);
+    if (L === 'fr') {
+      s = s.replace(/([A-Za-z\u00C0-\u017F\)\]\u00bb%\u20ac])[ \u00a0\u202f]*:(?!\/\/)/g, '$1' + NBSP + ':');
+      s = s.replace(/(\d)[ \u00a0\u202f]+:/g, '$1' + NBSP + ':');
+      s = s.replace(/([^\s;!?\u00a0\u202f])[ \u00a0\u202f]*([;!?])/g, '$1' + NNBSP + '$2');
+      s = s.replace(/(\d)[ \u00a0\u202f]*%/g, '$1' + NBSP + '%');
+      s = s.replace(/(\d)[ \u00a0\u202f]*([\u20ac$\u00a3])/g, '$1' + NBSP + '$2');
+      s = s.replace(/\u00ab[ \u00a0\u202f]*/g, '\u00ab' + NBSP);
+      s = s.replace(/[ \u00a0\u202f]*\u00bb/g, NBSP + '\u00bb');
+      s = s.replace(/(\d)[ \u00a0\u202f](\d{3})(?![\d])/g, '$1' + NNBSP + '$2');
+    } else {
+      s = s.replace(/(\d)[ \u00a0\u202f]+%/g, '$1%');
+      s = s.replace(/(\d)[ \u00a0\u202f](\d{3})(?![\d])/g, '$1,$2');
+    }
+    return s;
+  }
+
+  /* ---------- 2. ponctuation finale d'une ligne mathématique ---------- */
+  var SPACING = /(?:\s|~|\\[,;:!>]|\\quad|\\qquad|\{\})+$/;
+  function stripEnd(t) {
+    for (var guard = 0; guard < 12; guard++) {
+      t = t.replace(SPACING, '');
+      if (/\.\.\.$/.test(t)) return t;
+      var n = t.length, ch = t.charAt(n - 1);
+      /* délimiteur invisible « . » de \right. (ou \bigr., \middle.) : ce n'est pas une ponctuation */
+      if (ch === '.' && /\\(?:right|left|middle|[bB]igg?[lrm]?)\s*\.$/.test(t)) return t;
+      if ('.,;:!'.indexOf(ch) >= 0 && ch !== '' && t.charAt(n - 2) !== '\\') { t = t.slice(0, -1); continue; }
+      var m = /\\end\{([a-zA-Z*]+)\}$/.exec(t);
+      if (m) { return stripEnd(t.slice(0, m.index)) + m[0]; }
+      /* ponctuation cachée dans un \text{…} final */
+      var mt = /(\\(?:text|textit|textrm|textbf|mbox|mathrm|operatorname)\{)([^{}]*)\}$/.exec(t);
+      if (mt) {
+        var body = mt[2].replace(/[\s\u00a0\u202f]*[.,;:!]+[\s\u00a0\u202f]*$/, '');
+        if (body !== mt[2]) { t = t.slice(0, mt.index) + mt[1] + body + '}'; continue; }
+      }
+      return t;
+    }
+    return t;
+  }
+  function cleanDisplay(tex) {
+    var open = tex.slice(0, 2), close = tex.slice(-2), inner = tex.slice(2, -2);
+    /* fin de ligne dans un alignement : pas de virgule ni de point avant \\ */
+    inner = inner.replace(/([^\\])(?<!\\(?:right|left|middle|[bB]igg?[lrm]?))([.,;])((?:\s|~|\\[,;:!])*)\\\\/g, '$1$3\\\\');
+    inner = stripEnd(inner);
+    return open + inner + close;
+  }
+
+  /* ---------- 3. deux-points avant une ligne mathématique ---------- */
+  function endWithColon(text, L) {
+    var t = text.replace(/[\s\u00a0\u202f]+$/, '');
+    if (!t) return null;
+    var ch = t.charAt(t.length - 1);
+    var colon = (L === 'fr' ? NBSP : '') + ':';
+    if (ch === ':') return text;
+    if (ch === '?' || ch === '!' || ch === '\u2026') return text;
+    if (/[.,;]$/.test(t)) {
+      if (/\.\.\.$/.test(t)) return text;
+      return t.slice(0, -1).replace(/[\s\u00a0\u202f]+$/, '') + colon;
+    }
+    if (/[A-Za-z0-9\u00C0-\u017F\)\]\u00bb%\u20ac$]$/.test(t)) return t + colon;
+    return null;
+  }
+  /* `child` est-il le seul contenu visible de `el` (enveloppe d'une ligne mathématique) ? */
+  function onlyChild(el, child) {
+    if (/^(LI|TD|TH|TABLE|UL|OL|BODY|MAIN|SECTION|ARTICLE)$/.test(el.nodeName.toUpperCase())) return false;
+    var cs = el.childNodes;
+    for (var i = 0; i < cs.length; i++) {
+      var c = cs[i];
+      if (c === child) continue;
+      if (c.nodeType === 3 && !/\S/.test(c.nodeValue)) continue;
+      if (c.nodeType === 8) continue;
+      if (c.nodeType === 1 && c.nodeName.toUpperCase() === 'BR') continue;
+      return false;
+    }
+    return true;
+  }
+  /* dernier nœud texte non vide qui précède `node`, sans sortir d'un bloc, sans traverser un tableau */
+  function prevTextNode(node, root) {
+    var n = node;
+    for (var guard = 0; guard < 400; guard++) {
+      var p = n.previousSibling;
+      while (!p) {
+        var par = n.parentNode;
+        if (!par || par === root || par.nodeType !== 1) return null;
+        if (!INLINE[par.nodeName.toUpperCase()] && par.nodeName !== 'P' && !onlyChild(par, n)) return null;
+        n = par; p = n.previousSibling;
+      }
+      n = p;
+      if (n.nodeType === 8) continue;
+      if (n.nodeType === 3) {
+        if (/\S/.test(n.nodeValue)) return n;
+        continue;
+      }
+      if (n.nodeType !== 1) continue;
+      var tag = n.nodeName.toUpperCase();
+      if (tag === 'BR') continue;
+      if (skipEl(n) || /^(TABLE|SVG|FIGURE|OL|UL|HR|IMG|H[1-6]|CANVAS)$/.test(tag)) return null;
+      if (n.classList && /\b(kit-tw|journal-wrap|dtable-wrap|math-formula|dossier-title|fig|figure|plot)\b/.test(n.className)) return null;
+      /* descendre vers le dernier nœud texte */
+      var last = n.lastChild;
+      while (last && last.nodeType === 1 && !skipEl(last) && last.lastChild) last = last.lastChild;
+      if (!last) continue;
+      if (last.nodeType === 3) { if (/\S/.test(last.nodeValue)) return last; n = last; continue; }
+      if (skipEl(last) || (last.nodeType === 1 && /^(TABLE|SVG|BR|HR|IMG)$/.test(last.nodeName.toUpperCase()))) {
+        if (last.nodeName.toUpperCase() === 'BR') { n = last; continue; }
+        return null;
+      }
+      n = last;
+    }
+    return null;
+  }
+  function fixColonBefore(textNode, segIndex, segs, root, L) {
+    /* 1) texte précédent dans le même nœud */
+    for (var i = segIndex - 1; i >= 0; i--) {
+      var sg = segs[i];
+      if (sg.tex === 2) return;                   /* deux lignes math qui se suivent */
+      if (sg.tex === 1) {                         /* math en ligne juste avant : deux-points après elle */
+        var nxt = segs[i + 1];
+        if (nxt && !nxt.tex) {
+          if (/^[\s\u00a0\u202f]*$/.test(nxt.s)) nxt.s = (L === 'fr' ? NBSP : '') + ': ';
+          else { var r = endWithColon(nxt.s, L); if (r !== null) nxt.s = r + ' '; }
+        }
+        return;
+      }
+      if (/\S/.test(sg.s)) { var r2 = endWithColon(sg.s, L); if (r2 !== null) sg.s = r2 + ' '; return; }
+    }
+    /* 2) sinon, dernier texte des nœuds précédents */
+    var tn = prevTextNode(textNode, root);
+    if (!tn) return;
+    if (tn.parentNode && tn.parentNode.closest && tn.parentNode.closest('.sq')) return;
+    var sub = segments(tn.nodeValue), k;
+    for (k = sub.length - 1; k >= 0; k--) {
+      if (sub[k].tex === 2) return;
+      if (sub[k].tex === 1) {
+        var after = sub[k + 1];
+        if (after && !after.tex && /^[\s\u00a0\u202f]*$/.test(after.s)) { after.s = (L === 'fr' ? NBSP : '') + ':'; break; }
+        if (!after) { sub.push({ tex: 0, s: (L === 'fr' ? NBSP : '') + ':' }); break; }
+        var r3 = endWithColon(after.s, L); if (r3 !== null) after.s = r3; break;
+      }
+      if (/\S/.test(sub[k].s)) { var r4 = endWithColon(sub[k].s, L); if (r4 !== null) sub[k].s = r4; break; }
+    }
+    var joined = sub.map(function (x) { return x.s; }).join('');
+    if (joined !== tn.nodeValue) tn.nodeValue = joined;
+  }
+
+  /* ---------- traitement d'un nœud texte ---------- */
+  function processText(tn, root, L) {
+    var v = tn.nodeValue;
+    if (!v || !/\S/.test(v)) return;
+    /* délimiteurs sur-échappés (\\[ … \\] ou \\( … \\) ) : MathJax ne les reconnaît pas, on les normalise */
+    if (/\\{2,}[\[\]()]/.test(v)) {
+      var segs0 = segments(v);
+      v = segs0.map(function (sg) { return sg.tex ? sg.s : sg.s.replace(/\\{2,}(?=[\[\]()])/g, '\\'); }).join('');
+      if (v !== tn.nodeValue) tn.nodeValue = v;
+    }
+    var segs = segments(v), changed = false, i;
+    for (i = 0; i < segs.length; i++) {
+      var sg = segs[i], ns;
+      if (sg.tex === 1) {
+        ns = decimalsTex(sg.s, L);
+        if (ns !== sg.s) { sg.s = ns; changed = true; }
+      } else if (sg.tex === 2) {
+        ns = decimalsTex(cleanDisplay(sg.s), L);
+        if (ns !== sg.s) { sg.s = ns; changed = true; }
+        /* ponctuation juste après la ligne : supprimée */
+        var nx = segs[i + 1];
+        if (nx && !nx.tex) {
+          var ns2 = nx.s.replace(/^[\s\u00a0\u202f]*[.,;]+/, '');
+          if (ns2 !== nx.s) { nx.s = ns2; changed = true; }
+        }
+      } else if (!sg.tex) {
+        ns = typo(sg.s, L);
+        if (ns !== sg.s) { sg.s = ns; changed = true; }
+      }
+    }
+    for (i = 0; i < segs.length; i++) {
+      if (segs[i].tex === 2) {
+        var before = segs.map(function (x) { return x.s; }).join('');
+        fixColonBefore(tn, i, segs, root, L);
+        if (segs.map(function (x) { return x.s; }).join('') !== before) changed = true;
+      }
+    }
+    if (changed) {
+      var out = segs.map(function (x) { return x.s; }).join('');
+      if (out !== tn.nodeValue) tn.nodeValue = out;
+    }
+  }
+
+  /* ---------- 3. lettres de sous-questions ---------- */
+  function circleLetters(root) {
+    var scope = root.querySelectorAll ? root.querySelectorAll('.sol-card strong, .sol-card b, #sol-content strong, #sol-content b, .sol-sub, .sol-q') : [];
+    for (var i = 0; i < scope.length; i++) {
+      var el = scope[i];
+      if (el.classList.contains('sq') || el.querySelector('.sq')) continue;
+      var t = (el.textContent || '').replace(/[\s\u00a0\u202f]+/g, '');
+      var m = /^([a-h])[.)]?$/.exec(t);
+      if (!m) continue;
+      /* premier contenu visible de son bloc */
+      var prev = el.previousSibling, first = true;
+      while (prev) {
+        if (prev.nodeType === 3 && /\S/.test(prev.nodeValue)) { first = false; break; }
+        if (prev.nodeType === 1 && prev.nodeName !== 'BR') { first = false; break; }
+        prev = prev.previousSibling;
+      }
+      if (!first) continue;
+      var sp = document.createElement('span');
+      sp.className = 'sq'; sp.textContent = m[1];
+      el.parentNode.replaceChild(sp, el);
+      /* espace suivant superflu */
+      var nx = sp.nextSibling;
+      if (nx && nx.nodeType === 3) nx.nodeValue = nx.nodeValue.replace(/^[\s\u00a0\u202f]+/, '');
+    }
+  }
+
+  /* ---------- 4. tableaux défilables ---------- */
+  function wrapTables(root) {
+    var tabs = root.querySelectorAll ? root.querySelectorAll('table') : [];
+    for (var i = 0; i < tabs.length; i++) {
+      var t = tabs[i], p = t.parentNode;
+      if (!p || p.nodeType !== 1) continue;
+      if (p.closest && p.closest('table')) continue;
+      if (/\b(kit-tw|journal-wrap|dtable-wrap|table-wrap|tbl-wrap|scroll)\b/i.test(p.className || '')) continue;
+      var ov = window.getComputedStyle(p).overflowX;
+      if (ov === 'auto' || ov === 'scroll') continue;
+      var w = document.createElement('div'); w.className = 'kit-tw';
+      p.insertBefore(w, t); w.appendChild(t);
+    }
+  }
+
+  /* ---------- parcours ---------- */
+  function walk(root, L) {
+    var it = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode: function (n) {
+        var p = n.parentNode;
+        while (p && p !== root) { if (skipEl(p)) return NodeFilter.FILTER_REJECT; p = p.parentNode; }
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    var nodes = [], n;
+    while ((n = it.nextNode())) nodes.push(n);
+    for (var i = 0; i < nodes.length; i++) processText(nodes[i], root, L);
+    /* étiquettes des graphiques : seul le séparateur décimal est harmonisé */
+    var labels = root.querySelectorAll ? root.querySelectorAll('svg text, svg tspan') : [];
+    for (var k = 0; k < labels.length; k++) {
+      var cs = labels[k].childNodes;
+      for (var m = 0; m < cs.length; m++) if (cs[m].nodeType === 3) {
+        var nv = decimalsText(cs[m].nodeValue, L);
+        if (nv !== cs[m].nodeValue) cs[m].nodeValue = nv;
+      }
+    }
+  }
+
+  var busy = false, obs = null;
+  function polish(root) {
+    root = root || document.querySelector('main') || document.body;
+    if (!root || busy) return;
+    busy = true;
+    try {
+      var L = lang();
+      walk(root, L);
+      circleLetters(root);
+      wrapTables(root);
+    } catch (e) { if (window.console) console.warn('kit-polish :', e); }
+    finally { if (obs) obs.takeRecords(); busy = false; }
+  }
+  window.KIT = window.KIT || {};
+  window.KIT.polish = polish;
+
+  /* MathJax compose de façon synchrone dans typeset()/typesetPromise() : la finition
+     doit donc s'exécuter DANS sa chaîne de rendu, juste avant la recherche des formules. */
+  var mjBusy = false;
+  /* MathJax peut suspendre un rendu (chargement d'une extension) après avoir repéré les formules :
+     toute modification du texte pendant cette pause décalerait ses positions. On suit donc son état. */
+  function wrapTypeset() {
+    var MJ = window.MathJax;
+    if (!MJ || !MJ.typesetPromise || MJ.typesetPromise.__kit) return;
+    var orig = MJ.typesetPromise;
+    var wrapped = function () {
+      mjBusy = true;
+      var p;
+      try { p = orig.apply(this, arguments); }
+      catch (e) { mjBusy = false; throw e; }
+      var done = function () { mjBusy = false; polish(); };
+      if (p && p.then) p.then(done, done); else { mjBusy = false; }
+      return p;
+    };
+    wrapped.__kit = true;
+    MJ.typesetPromise = wrapped;
+    if (MJ.typeset && !MJ.typeset.__kit) {
+      var origT = MJ.typeset;
+      var wt = function () { mjBusy = true; try { return origT.apply(this, arguments); } finally { mjBusy = false; polish(); } };
+      wt.__kit = true; MJ.typeset = wt;
+    }
+  }
+  function hookMathJax() {
+    var MJ = window.MathJax;
+    if (!MJ) return;
+    mjBusy = true;                       /* jusqu'à la fin du premier rendu */
+    var ready = function () { mjBusy = false; wrapTypeset(); polish(); };
+    if (MJ.startup && MJ.startup.promise && MJ.startup.promise.then) MJ.startup.promise.then(ready, ready);
+    else {
+      MJ.startup = MJ.startup || {};
+      var prev = MJ.startup.pageReady;
+      MJ.startup.pageReady = function () {
+        var S = window.MathJax.startup;
+        var r = prev ? prev.call(S) : S.defaultPageReady();
+        if (r && r.then) r.then(ready, ready); else ready();
+        return r;
+      };
+    }
+    var fn = function (doc) {
+      /* reprise d'un rendu suspendu : les formules sont déjà repérées, on ne touche plus au texte */
+      try { if (doc && doc.processed && doc.processed.isSet && doc.processed.isSet('findMath')) return; } catch (e) {}
+      polish();
+    };
+    function addTo(doc) {
+      if (doc && doc.addRenderAction && !(doc.renderActions && doc.renderActions.findID && doc.renderActions.findID('kitPolish'))) {
+        doc.addRenderAction('kitPolish', 5, fn, '', false);
+      }
+    }
+    if (MJ.startup && MJ.startup.document) { addTo(MJ.startup.document); return; }
+    if (MJ.startup && MJ.startup.promise && MJ.startup.promise.then) {
+      MJ.startup.promise.then(function () { addTo(MJ.startup.document); });
+      return;
+    }
+    MJ.options = MJ.options || {};
+    MJ.options.renderActions = MJ.options.renderActions || {};
+    MJ.options.renderActions.kitPolish = [5, fn, '', false];
+  }
+
+  function install() {
+    var main = document.querySelector('main') || document.body;
+    hookMathJax();
+    polish(main);
+    if (!window.MutationObserver) return;
+    obs = new MutationObserver(function (recs) {
+      if (busy || mjBusy) return;
+      var touched = false;
+      for (var i = 0; i < recs.length; i++) {
+        var r = recs[i];
+        if (r.type !== 'childList' || !r.addedNodes.length) continue;
+        var t = r.target;
+        if (t && t.nodeType === 1 && (t.closest && t.closest('mjx-container'))) continue;
+        for (var j = 0; j < r.addedNodes.length; j++) {
+          var a = r.addedNodes[j];
+          if (a.nodeType === 1 && /^MJX-/i.test(a.nodeName)) continue;
+          if (a.nodeType === 1 && a.classList && (a.classList.contains('sq') || a.classList.contains('kit-tw'))) continue;
+          touched = true; break;
+        }
+        if (touched) break;
+      }
+      if (!touched) return;
+      polish(main);
+    });
+    obs.observe(main, { childList: true, subtree: true });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install);
+  else install();
+})();
+</script>
+<!-- KIT2:JS:END -->
+</body>
+</html>
