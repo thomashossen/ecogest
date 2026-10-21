@@ -834,7 +834,7 @@ function planDegressif(B, n, months0) {
 /* VNC à la cession sans arrondi intermédiaire : sert seulement à fixer le prix de vente (stabilité des seeds) */
 function vncNonArrondie(D) {
   const base = D.B / 100, n = D.n, k = D.k; let vnc = base, cumul = 0;
-  if (D.lin) {
+  if (true) {  /* la VNC comptable est toujours linéaire (amortissement économique) */
     const A = base / n;
     for (let y = 0; y <= k; y++) cumul += y === 0 ? A * D.d1 / 360 : (y === k ? A * D.dk / 360 : A);
   } else {
@@ -874,6 +874,10 @@ PAGE.compute = function () {
     D.dk = (D.saleMonth - 1) * 30 + D.saleDay; D.dotC = roundDiv(B * D.dk, n * 360); D.exactC = (B * D.dk) % (n * 360) === 0;
     D.taux = n === 5 ? pct(20, 0) : pct(12.5, 1);
   } else {
+    D.d1a = 30 - D.serviceDay + 1; D.d1b = (12 - D.serviceMonth) * 30; D.d1 = D.d1a + D.d1b;
+    D.planL = planLineaire(B, n, D.d1); D.AL = D.planL.A; D.exactA = B % n === 0; D.exact0L = (B * D.d1) % (n * 360) === 0;
+    D.dk = (D.saleMonth - 1) * 30 + D.saleDay; D.dotCL = roundDiv(B * D.dk, n * 360); D.exactCL = (B * D.dk) % (n * 360) === 0;
+    D.tauxL = n === 5 ? pct(20, 0) : pct(12.5, 1);
     D.coef = num(n === 5 ? 1.75 : 2.25, 2); D.tauxDeg = n === 5 ? pct(35, 0) : (num(28.125, 3) + (LANG === 'fr' ? '\u00a0%' : '%'));
     D.m1 = 12 - D.acqMonth + 1; D.plan = planDegressif(B, n, D.m1);
     const p = D.plan, rk = p.rows[k];
@@ -885,6 +889,20 @@ PAGE.compute = function () {
   D.dotN = D.plan.rows[0].a; D.cumAvant = D.plan.rows[k - 1].cum; D.cumul = D.cumAvant + D.dotC; D.vncCession = B - D.cumul;
   D.pratique = D.plan.rows.slice(0, k).map(r => ({ i: r.i, dur: D.lin ? r.days : r.months, a: r.a, cum: r.cum, vnc: r.vnc }));
   D.pratique.push({ i: k, dur: D.lin ? D.dk : D.mk, a: D.dotC, cum: D.cumul, vnc: D.vncCession, cession: true });
+  if (!D.lin) {
+    /* fiscal (dégressif) conservé à part ; la comptabilité suit le linéaire */
+    D.F = { dotN: D.dotN, cumAvant: D.cumAvant, cumul: D.cumul, pratique: D.pratique };
+    const PLn = D.planL;
+    D.dotNL = PLn.rows[0].a; D.cumAvantL = PLn.rows[k - 1].cum; D.cumulL = D.cumAvantL + D.dotCL; D.vncCession = B - D.cumulL;
+    D.pratiqueL = PLn.rows.slice(0, k).map(r => ({ i: r.i, dur: r.days, a: r.a, cum: r.cum, vnc: r.vnc }));
+    D.pratiqueL.push({ i: k, dur: D.dk, a: D.dotCL, cum: D.cumulL, vnc: D.vncCession, cession: true });
+    let sol = 0; D.derog = [];
+    for (let i = 0; i <= k; i++) {
+      const f = i < k ? D.plan.rows[i].a : D.dotC, c = i < k ? PLn.rows[i].a : D.dotCL;
+      sol += f - c; D.derog.push({ i, f, c, diff: f - c, solde: sol });
+    }
+    D.soldeDerog = sol;
+  }
   D.pct = randInt(70, 140);
   D.sale = Math.round(Number(Math.max(1000, vncNonArrondie(D) * (D.pct / 100)).toFixed(2)) * 100);
   if (Math.abs(D.sale - D.vncCession) <= 10) D.sale = D.vncCession;
@@ -896,7 +914,7 @@ PAGE.compute = function () {
 PAGE.context = function (D) {
   const meth = D.lin
     ? t("L'amortissement est calculé selon le mode linéaire, <em>prorata temporis</em> en jours (convention 30/360 : mois de 30 jours, année de 360 jours).", "Depreciation is computed on a straight-line basis, time-apportioned in days (30/360 convention: 30-day months, 360-day year).")
-    : t("L'amortissement est calculé selon le mode dégressif, <em>prorata temporis</em> en mois entiers (pour l'exercice de cession, jusqu'au début du mois de la vente).", "Depreciation is computed on a declining-balance basis, time-apportioned in whole months (in the year of disposal, up to the start of the month of sale).");
+    : t("Sur le plan comptable, l'équipement est amorti selon le mode linéaire, <em>prorata temporis</em> en jours (convention 30/360). Sur le plan fiscal, l'entreprise pratique l'amortissement dégressif, <em>prorata temporis</em> en mois entiers (pour l'exercice de cession, jusqu'au début du mois de la vente) : l'écart est constaté en amortissements dérogatoires.", "For accounting purposes, the equipment is depreciated on a straight-line basis, time-apportioned in days (30/360 convention). For tax purposes, the company uses declining-balance depreciation, time-apportioned in whole months (in the year of disposal, up to the start of the month of sale): the difference is recorded as accelerated tax depreciation.");
   return t(`L'entreprise <strong>Industrie Rhône-Alpes SAS</strong> clôture son exercice le 31 décembre et est assujettie à la TVA au taux normal de 20 %. Pour développer son appareil productif, elle réalise un investissement important.<br><br><em>Règles applicables.</em> ${meth} Les frais engagés lors de l'acquisition sont analysés conformément au PCG : ils sont activés chaque fois que c'est possible.`,
            `<strong>Industrie Rhône-Alpes SAS</strong> closes its financial year on 31 December and is subject to VAT at the standard rate of 20%. To develop its production capacity, it makes a major investment.<br><br><em>Applicable rules.</em> ${meth} Costs incurred on acquisition are analysed in accordance with French GAAP: they are capitalised whenever possible.`);
 };
@@ -907,19 +925,22 @@ PAGE.enonce = function (D) {
     t(`<strong class="date">Le ${D.dAcq}/N.</strong> Acquisition auprès du fournisseur <strong>${D.supplier}</strong> d'${D.asset.fr}. Le prix catalogue est de ${eur(D.price)} HT, sur lequel le fournisseur accorde une remise commerciale de ${pct(D.remise, 0)}. ${acc} sont facturés par le même fournisseur pour ${eur(D.acc)} HT. La facture est réglée le jour même par virement. La durée d'utilisation prévue est de ${D.n} ans.`,
       `<strong class="date">${D.dAcq}/N.</strong> Purchase from supplier <strong>${D.supplier}</strong> of ${D.asset.en}. The list price is ${eur(D.price)} before VAT, on which the supplier grants a trade discount of ${pct(D.remise, 0)}. ${acc} are invoiced by the same supplier for ${eur(D.acc)} before VAT. The invoice is paid the same day by bank transfer. The expected useful life is ${D.n} years.`),
     t(`<strong class="date">Le ${D.dServ}/N.</strong> Mise en service effective de l'équipement dans l'usine.`, `<strong class="date">${D.dServ}/N.</strong> The equipment is brought into use in the plant.`),
-    t(`<strong class="date">Le 31/12/N.</strong> Clôture de l'exercice N : enregistrement de l'annuité d'amortissement.`, `<strong class="date">31/12/N.</strong> Close of year N: the depreciation charge is recorded.`),
+    D.lin ? t(`<strong class="date">Le 31/12/N.</strong> Clôture de l'exercice N : enregistrement de l'annuité d'amortissement.`, `<strong class="date">31/12/N.</strong> Close of year N: the depreciation charge is recorded.`)
+      : t(`<strong class="date">Le 31/12/N.</strong> Clôture de l'exercice N : enregistrement de l'amortissement comptable et de l'amortissement dérogatoire.`, `<strong class="date">31/12/N.</strong> Close of year N: accounting depreciation and accelerated tax depreciation are recorded.`),
     t(`<strong class="date">Le ${D.dSale}/N+${D.k}.</strong> À la suite d'un changement de stratégie technologique, l'entreprise revend l'équipement à <strong>${D.client}</strong> pour ${eur(D.sale)} HT, encaissés immédiatement par chèque. Toutes les écritures liées à la sortie de l'actif sont passées le jour même.`,
       `<strong class="date">${D.dSale}/N+${D.k}.</strong> Following a change of technological strategy, the company sells the equipment to <strong>${D.client}</strong> for ${eur(D.sale)} before VAT, received immediately by cheque. All entries relating to the disposal are recorded the same day.`)
   ];
   return head(t("Opérations réalisées au cours des exercices successifs", "Transactions over the successive years")) +
     `<ul class="event-list">${li.map(x => `<li>${x}</li>`).join('')}</ul>` +
-    work(t(`Présentez le plan d'amortissement de l'immobilisation, puis enregistrez au journal les écritures d'acquisition de l'année N, l'écriture d'inventaire au 31/12/N et l'ensemble des écritures de cession de l'année N+${D.k}.`,
-           `Present the depreciation schedule of the asset, then record in the journal the acquisition entries of year N, the year-end entry at 31/12/N and all the disposal entries of year N+${D.k}.`));
+    work(D.lin ? t(`Présentez le plan d'amortissement de l'immobilisation, puis enregistrez au journal les écritures d'acquisition de l'année N, l'écriture d'inventaire au 31/12/N et l'ensemble des écritures de cession de l'année N+${D.k}.`,
+           `Present the depreciation schedule of the asset, then record in the journal the acquisition entries of year N, the year-end entry at 31/12/N and all the disposal entries of year N+${D.k}.`)
+      : t(`Présentez le plan d'amortissement comptable (linéaire), le plan d'amortissement fiscal (dégressif) et le tableau comparatif des amortissements dérogatoires jusqu'à la cession. Enregistrez ensuite au journal les écritures d'acquisition de l'année N, les écritures d'inventaire au 31/12/N et l'ensemble des écritures de cession de l'année N+${D.k}, y compris la reprise des amortissements dérogatoires.`,
+           `Present the accounting (straight-line) depreciation schedule, the tax (declining-balance) depreciation schedule and the comparison table of accelerated tax depreciation up to the disposal. Then record in the journal the acquisition entries of year N, the year-end entries at 31/12/N and all the disposal entries of year N+${D.k}, including the release of accelerated tax depreciation.`));
 };
 
 /* ---------- tableaux et frises ---------- */
 function tableRegles(D) {
-  const lin = D.lin, on = c => c ? ' class="on"' : '';
+  const lin = D.lin, both = !D.lin, on = c => (c || both) ? ' class="on"' : '';
   const rows = LANG === 'fr' ? [
     ["Point de départ", "Date de <b>mise en service</b>, c'est-à-dire le début de la consommation des avantages économiques du bien", "<b>Premier jour du mois d'acquisition</b>, quelle que soit la date de mise en service"],
     ["Décompte du temps", "En <b>jours</b>, avec des mois de 30 jours et une année de 360 jours", "En <b>mois entiers</b>, rapportés à 12"],
@@ -934,7 +955,8 @@ function tableRegles(D) {
     ["Year of disposal", "From 1 January to the date of disposal, in days", "From 1 January to the start of the month of disposal, in whole months"]
   ];
   const hint = t(" (mode de l'énoncé)", " (method in this exercise)");
-  let h = `<div class="journal-wrap"><table class="journal regle"><tr><th>${t("Règle", "Rule")}</th><th${on(lin)}>${t("Mode linéaire", "Straight-line")}${lin ? hint : ""}</th><th${on(!lin)}>${t("Mode dégressif", "Declining-balance")}${!lin ? hint : ""}</th></tr>`;
+  const hL = both ? t(" (amortissement comptable)", " (accounting depreciation)") : (lin ? hint : ""), hD = both ? t(" (amortissement fiscal)", " (tax depreciation)") : "";
+  let h = `<div class="journal-wrap"><table class="journal regle"><tr><th>${t("Règle", "Rule")}</th><th${on(lin)}>${t("Mode linéaire", "Straight-line")}${hL}</th><th${on(!lin)}>${t("Mode dégressif", "Declining-balance")}${hD}</th></tr>`;
   rows.forEach(r => { h += `<tr><td class="crit">${r[0]}</td><td${on(lin)}>${r[1]}</td><td${on(!lin)}>${r[2]}</td></tr>`; });
   return h + `</table></div>`;
 }
@@ -1008,58 +1030,59 @@ function tablePratique(D) {
   return h + `</table></div>`;
 }
 
-PAGE.sol = function (D) {
+function solParts(D) {
+  const P = {};
   const B = D.B, n = D.n, k = D.k, lin = D.lin, cA = "28" + D.asset.acc.substring(1);
   let h = '';
   /* acquisition */
   const accTxt = D.install
     ? t("Les frais de transport et d'installation sont indispensables à la mise en état de fonctionnement de l'équipement : conformément au PCG, ils sont activés et intégrés au coût d'acquisition.", "Transport and installation costs are necessary to bring the equipment into working condition: under French GAAP they are capitalised as part of the acquisition cost.")
     : t("Les frais de formation du personnel ne sont pas directement attribuables à la mise en place de l'actif (l'équipement peut fonctionner sans que le personnel soit formé) : ils sont exclus de la base amortissable et comptabilisés en charges (6228).", "Staff training costs are not directly attributable to bringing the asset into use (the equipment can run without trained staff): they are excluded from the depreciable base and expensed (6228).");
-  h += box(t(`Acquisition de l'immobilisation (${D.dAcq}/N)`, `Acquisition of the asset (${D.dAcq}/N)`),
+  P.acqBox = (P.acqBox || '') + box(t(`Acquisition de l'immobilisation (${D.dAcq}/N)`, `Acquisition of the asset (${D.dAcq}/N)`),
     t(`<p>Le prix d'achat de ${eur(D.price)}, diminué de la remise de ${pct(D.remise, 0)} (${eur(D.mntRemise)}), donne un net commercial de ${eur(D.net)}. ${accTxt} La valeur d'origine, base amortissable, s'établit à ${eur(B)}.</p>`,
       `<p>The purchase price of ${eur(D.price)}, less the ${pct(D.remise, 0)} discount (${eur(D.mntRemise)}), gives a net amount of ${eur(D.net)}. ${accTxt} The original cost, which is the depreciable base, is ${eur(B)}.</p>`));
-  h += D.install ? J(`${D.dAcq}/N`, [{ c: D.asset.acc, l: D.asset.label, d: B / 100 }, { c: "44562", l: "TVA déductible sur immobilisations", d: D.tvaTot / 100 }, { c: "512", l: "Banque", cr: D.ttcAcq / 100 }])
-    : J(`${D.dAcq}/N`, [{ c: D.asset.acc, l: D.asset.label, d: B / 100 }, { c: "6228", l: "Divers (frais de formation)", d: D.acc / 100 }, { c: "44562", l: "TVA déductible sur immobilisations", d: D.tvaImmo / 100 }, { c: "44566", l: "TVA déductible sur autres B&S", d: D.tvaAcc / 100 }, { c: "512", l: "Banque", cr: D.ttcAcq / 100 }]);
+  P.acqJ = (P.acqJ || '') + (D.install ? J(`${D.dAcq}/N`, [{ c: D.asset.acc, l: D.asset.label, d: B / 100 }, { c: "44562", l: "TVA déductible sur immobilisations", d: D.tvaTot / 100 }, { c: "512", l: "Banque", cr: D.ttcAcq / 100 }])
+    : J(`${D.dAcq}/N`, [{ c: D.asset.acc, l: D.asset.label, d: B / 100 }, { c: "6228", l: "Divers (frais de formation)", d: D.acc / 100 }, { c: "44562", l: "TVA déductible sur immobilisations", d: D.tvaImmo / 100 }, { c: "44566", l: "TVA déductible sur autres B&S", d: D.tvaAcc / 100 }, { c: "512", l: "Banque", cr: D.ttcAcq / 100 }]));
 
   /* règle du prorata */
-  h += box(t("La règle du prorata temporis", "The time-apportionment rule"),
+  P.ruleBox = (P.ruleBox || '') + box(t("La règle du prorata temporis", "The time-apportionment rule"),
     t(`<p>Amortir, c'est répartir le coût d'entrée d'un bien sur sa durée d'utilisation. Une annuité pleine correspond à douze mois d'utilisation ; or un bien entre et sort rarement du patrimoine un 1<sup>er</sup> janvier. Pour les exercices incomplets, celui de l'entrée et celui de la sortie, la dotation est réduite <em>prorata temporis</em>, en proportion du temps : elle vaut l'annuité pleine multipliée par le temps couru pendant l'exercice et divisée par la durée de l'exercice.</p><p>Trois choses se fixent avant tout calcul : la date à partir de laquelle le temps court, l'unité dans laquelle on le compte et la manière dont le plan se termine. Les réponses diffèrent selon le mode d'amortissement, comme le résume le tableau suivant.</p>`,
       `<p>Depreciating means spreading the cost of an asset over its useful life. A full annual charge corresponds to twelve months of use; yet an asset rarely enters or leaves the business on 1 January. For incomplete years, the year of entry and the year of exit, the charge is reduced <em>pro rata temporis</em>, in proportion to time: it equals the full annual charge multiplied by the time elapsed during the year and divided by the length of the year.</p><p>Three things must be settled before any computation: the date from which time runs, the unit in which it is counted and how the schedule ends. The answers differ between the two methods, as the following table summarises.</p>`));
-  h += tableRegles(D);
-  h += box('', t(`<p>L'énoncé impose le mode ${lin ? "linéaire" : "dégressif"} : ce sont les règles de cette colonne qui s'appliquent, une première fois à l'exercice N (année d'entrée), une seconde fois à l'exercice N+${k} (année de cession).</p>`,
+  P.ruleTable = (P.ruleTable || '') + tableRegles(D);
+  P.ruleNote = (P.ruleNote || '') + box('', t(`<p>L'énoncé impose le mode ${lin ? "linéaire" : "dégressif"} : ce sont les règles de cette colonne qui s'appliquent, une première fois à l'exercice N (année d'entrée), une seconde fois à l'exercice N+${k} (année de cession).</p>`,
                  `<p>The exercise prescribes the ${lin ? "straight-line" : "declining-balance"} method: the rules of that column apply, first to year N (year of entry), then to year N+${k} (year of disposal).</p>`));
 
   /* exercice N */
   if (lin) {
-    h += box(t("Application à l'exercice N : décompte du temps et première annuité", "Year N: counting time and first charge"),
+    P.nBox = (P.nBox || '') + box(t("Application à l'exercice N : décompte du temps et première annuité", "Year N: counting time and first charge"),
       t(`<p>En mode linéaire, le temps court à compter de la mise en service, le ${D.dServ}/N, et non de l'acquisition du ${D.dAcq}/N : entre ces deux dates, le bien figure à l'actif mais n'est pas encore utilisé, donc pas encore amorti. Le mois de mise en service compte pour 30 − ${D.serviceDay} + 1 = ${D.d1a} jours (du ${D.serviceDay} au 30 inclus, le jour de mise en service étant compté), auxquels s'ajoutent les ${12 - D.serviceMonth} mois entiers ${deMois(D.serviceMonth + 1)} à décembre, soit ${12 - D.serviceMonth} × 30 = ${D.d1b} jours. Le temps retenu pour l'exercice N est donc de ${D.d1a} + ${D.d1b} = ${D.d1} jours sur 360.</p><p>Le taux linéaire est 1/${n} = ${D.taux} et l'annuité pleine vaut ${eur(B)} × ${D.taux} ${eqs(D.exactA)} ${eur(D.A)}. La première annuité en est la fraction ${D.d1}/360 : ${eur(B)} × ${D.taux} × ${D.d1}/360 ${eqs(D.exact0)} ${eur(D.dotN)}.</p>`,
         `<p>Under the straight-line method, time runs from the date of use, ${D.dServ}/N, not from the purchase on ${D.dAcq}/N: between those dates the asset is on the balance sheet but not yet used, hence not yet depreciated. The month of use counts 30 − ${D.serviceDay} + 1 = ${D.d1a} days (from the ${D.serviceDay}th to the 30th inclusive, the day of use being counted), plus the ${12 - D.serviceMonth} whole months from ${mois(D.serviceMonth + 1)} to December, i.e. ${12 - D.serviceMonth} × 30 = ${D.d1b} days. Time counted for year N is therefore ${D.d1a} + ${D.d1b} = ${D.d1} days out of 360.</p><p>The straight-line rate is 1/${n} = ${D.taux} and the full annual charge is ${eur(B)} × ${D.taux} ${eqs(D.exactA)} ${eur(D.A)}. The first charge is the fraction ${D.d1}/360 of it: ${eur(B)} × ${D.taux} × ${D.d1}/360 ${eqs(D.exact0)} ${eur(D.dotN)}.</p>`));
   } else {
     const full = D.m1 === 12;
-    h += box(t("Application à l'exercice N : décompte du temps et première annuité", "Year N: counting time and first charge"),
+    P.nBox = (P.nBox || '') + box(t("Application à l'exercice N : décompte du temps et première annuité", "Year N: counting time and first charge"),
       t(`<p>En mode dégressif, le temps court à compter du premier jour du mois d'acquisition, le 1<sup>er</sup> ${mois(D.acqMonth)} N : ni le jour exact de l'acquisition (le ${D.acqDay}) ni la mise en service (le ${D.dServ}/N) n'interviennent. Le décompte se fait en mois entiers : ${deMois(D.acqMonth)} à décembre, l'exercice N compte pour ${D.m1} mois sur 12${full ? " ; l'acquisition ayant lieu en janvier, la première annuité n'est pas réduite" : ""}.</p><p>Le taux dégressif est le taux linéaire multiplié par le coefficient fiscal lié à la durée d'utilisation (1,25 pour 3 ou 4 ans, 1,75 pour 5 ou 6 ans, 2,25 au-delà) : 1/${n} × ${D.coef} = ${D.tauxDeg}. La première année, la valeur nette comptable est encore égale à la base : la première annuité vaut ${eur(B)} × ${D.tauxDeg} × ${D.m1}/12 ${eqs(D.exact0)} ${eur(D.dotN)}.</p>`,
         `<p>Under the declining-balance method, time runs from the first day of the month of acquisition, 1 ${mois(D.acqMonth)} N: neither the exact purchase day (the ${D.acqDay}th) nor the date of use (${D.dServ}/N) matters. Time is counted in whole months: from ${mois(D.acqMonth)} to December, year N counts ${D.m1} months out of 12${full ? "; as the purchase took place in January, the first charge is not reduced" : ""}.</p><p>The declining rate is the straight-line rate multiplied by the tax coefficient attached to the useful life (1.25 for 3 or 4 years, 1.75 for 5 or 6 years, 2.25 beyond): 1/${n} × ${D.coef} = ${D.tauxDeg}. In the first year the carrying amount still equals the base: the first charge is ${eur(B)} × ${D.tauxDeg} × ${D.m1}/12 ${eqs(D.exact0)} ${eur(D.dotN)}.</p>`));
   }
-  h += friseN(D);
+  P.nFrise = (P.nFrise || '') + friseN(D);
 
   /* plan */
   if (lin) {
     const last = D.plan.rows[n], avant = D.plan.rows[n - 1];
-    h += box(t("Plan d'amortissement", "Depreciation schedule"),
+    P.planBox = (P.planBox || '') + box(t("Plan d'amortissement", "Depreciation schedule"),
       t(`<p>Le plan répartit la base de ${eur(B)} sur ${n} ans à compter de la mise en service. La première annuité étant réduite, il s'étale sur ${n + 1} exercices : N+1 à N+${n - 1} supportent chacun l'annuité pleine de ${eur(D.A)}, et N+${n} reçoit le reliquat, c'est-à-dire les 360 − ${D.d1} = ${360 - D.d1} jours non amortis en N. Cette dernière annuité s'obtient par différence, ${eur(B)} − ${eur(avant.cum)} = ${eur(last.a)}, de sorte que la valeur nette comptable soit exactement nulle en fin de plan.</p>`,
         `<p>The schedule spreads the base of ${eur(B)} over ${n} years from the date of use. As the first charge is reduced, it runs over ${n + 1} years: N+1 to N+${n - 1} each bear the full charge of ${eur(D.A)}, and N+${n} receives the remainder, i.e. the 360 − ${D.d1} = ${360 - D.d1} days not depreciated in N. That last charge is obtained by difference, ${eur(B)} − ${eur(avant.cum)} = ${eur(last.a)}, so that the carrying amount is exactly nil at the end.</p>`));
   } else {
     const s = D.plan.switchAt, rs = D.plan.rows[s];
-    h += box(t("Plan d'amortissement", "Depreciation schedule"),
+    P.planBox = (P.planBox || '') + box(t("Plan d'amortissement", "Depreciation schedule"),
       t(`<p>Chaque annuité dégressive est la valeur nette comptable de début d'exercice multipliée par ${D.tauxDeg}, la première étant réduite à ${D.m1}/12. Le plan n'a pas d'exercice supplémentaire : il s'achève à la clôture de N+${n - 1}, ${n}<sup>e</sup> exercice. À chaque clôture, le taux dégressif est comparé au taux linéaire calculé sur les années restantes ; dès que ce dernier l'emporte, ici en N+${s} où ${fracPct(rs.rest)} dépasse ${D.tauxDeg}, la VNC restante est amortie par parts égales sur les ${rs.rest} exercices restants, ce qui la ramène exactement à zéro. Dans le tableau, le taux retenu figure en gras.</p>`,
         `<p>Each declining charge is the opening carrying amount multiplied by ${D.tauxDeg}, the first being reduced to ${D.m1}/12. The schedule has no extra year: it ends at the close of N+${n - 1}, the ${n}th year. At each year end, the declining rate is compared with the straight-line rate over the remaining years; as soon as the latter is higher, here in N+${s} where ${fracPct(rs.rest)} exceeds ${D.tauxDeg}, the remaining carrying amount is depreciated in equal parts over the ${rs.rest} remaining years, bringing it exactly to nil. In the table, the rate applied is in bold.</p>`));
   }
-  h += tablePlan(D);
+  P.planTable = (P.planTable || '') + tablePlan(D);
 
   /* inventaire N */
-  h += box(t("Écriture d'inventaire au 31/12/N", "Year-end entry at 31/12/N"),
+  P.invBox = (P.invBox || '') + box(t("Écriture d'inventaire au 31/12/N", "Year-end entry at 31/12/N"),
     t(`<p>L'écriture reprend la première ligne du plan : la dotation de l'exercice N est de ${eur(D.dotN)}.</p>`, `<p>The entry follows the first line of the schedule: the charge for year N is ${eur(D.dotN)}.</p>`));
-  h += J("31/12/N", [{ c: "6811", l: "Dotations aux amort. sur immo. corporelles", d: D.dotN / 100 }, { c: cA, l: "Amortissement du matériel", cr: D.dotN / 100 }]);
+  P.invJ = (P.invJ || '') + J("31/12/N", [{ c: "6811", l: "Dotations aux amort. sur immo. corporelles", d: D.dotN / 100 }, { c: cA, l: "Amortissement du matériel", cr: D.dotN / 100 }]);
 
   /* dotation complémentaire */
   const prevu = D.plan.rows[k].a;
@@ -1079,30 +1102,94 @@ PAGE.sol = function (D) {
     detail = t(`<p>Avant de sortir l'actif, il faut constater l'amortissement couru entre le 1<sup>er</sup> janvier N+${k} et la vente. Le plan prévoyait une annuité de ${eur(prevu)}, calculée sur une VNC de début d'exercice de ${eur(D.vdebC)}, mais le bien est cédé en cours d'année : le prorata joue une seconde fois. En mode dégressif, le décompte reste en mois entiers et s'arrête au début du mois de cession : ${duree}, le mois ${deMois(D.saleMonth)} n'étant pas compté.</p><p>${calcul}</p>`,
                `<p>Before derecognising the asset, the depreciation accrued between 1 January N+${k} and the sale must be recorded. The schedule provided a charge of ${eur(prevu)}, computed on an opening carrying amount of ${eur(D.vdebC)}, but the asset is sold during the year: apportionment applies a second time. Under the declining-balance method, time is still counted in whole months and stops at the start of the month of disposal: ${duree}, ${mois(D.saleMonth)} not being counted.</p><p>${calcul}</p>`);
   }
-  h += box(t(`Cession, étape 1 : dotation complémentaire (${D.dSale}/N+${k})`, `Disposal, step 1: additional depreciation (${D.dSale}/N+${k})`), detail);
-  h += friseCession(D);
-  h += box('', t(`<p>Le tableau ci-dessous récapitule les amortissements effectivement pratiqués : les annuités de N à N+${k - 1} sont celles du plan, celle de N+${k} est la dotation complémentaire. Au 31/12/N+${k - 1}, le cumul atteignait ${eur(D.cumAvant)} ; à la date de cession, il s'élève à ${eur(D.cumAvant)} + ${eur(D.dotC)} = ${eur(D.cumul)}.</p>`,
+  P.c1Box = (P.c1Box || '') + box(t(`Cession, étape 1 : dotation complémentaire (${D.dSale}/N+${k})`, `Disposal, step 1: additional depreciation (${D.dSale}/N+${k})`), detail);
+  P.c1Frise = (P.c1Frise || '') + friseCession(D);
+  P.c1Recap = (P.c1Recap || '') + box('', t(`<p>Le tableau ci-dessous récapitule les amortissements effectivement pratiqués : les annuités de N à N+${k - 1} sont celles du plan, celle de N+${k} est la dotation complémentaire. Au 31/12/N+${k - 1}, le cumul atteignait ${eur(D.cumAvant)} ; à la date de cession, il s'élève à ${eur(D.cumAvant)} + ${eur(D.dotC)} = ${eur(D.cumul)}.</p>`,
                  `<p>The table below summarises the depreciation actually recorded: the charges from N to N+${k - 1} are those of the schedule, the charge of N+${k} is the additional one. At 31/12/N+${k - 1} the accumulated amount was ${eur(D.cumAvant)}; at the date of disposal it is ${eur(D.cumAvant)} + ${eur(D.dotC)} = ${eur(D.cumul)}.</p>`));
-  h += tablePratique(D);
-  h += J(`${D.dSale}/N+${k}`, [{ c: "6811", l: "Dotations aux amort. sur immo. corporelles", d: D.dotC / 100 }, { c: cA, l: "Amortissement du matériel", cr: D.dotC / 100 }]);
+  P.c1Table = (P.c1Table || '') + tablePratique(D);
+  P.c1J = (P.c1J || '') + J(`${D.dSale}/N+${k}`, [{ c: "6811", l: "Dotations aux amort. sur immo. corporelles", d: D.dotC / 100 }, { c: cA, l: "Amortissement du matériel", cr: D.dotC / 100 }]);
 
   /* vente */
-  h += box(t(`Cession, étape 2 : facturation de la vente (${D.dSale}/N+${k})`, `Disposal, step 2: invoicing the sale (${D.dSale}/N+${k})`),
+  P.saleBox = (P.saleBox || '') + box(t(`Cession, étape 2 : facturation de la vente (${D.dSale}/N+${k})`, `Disposal, step 2: invoicing the sale (${D.dSale}/N+${k})`),
     t(`<p>La cession d'une immobilisation n'est pas du chiffre d'affaires mais un produit exceptionnel (775). Le prix hors taxes est de ${eur(D.sale)}, la TVA collectée de ${eur(D.tvaSale)} et l'encaissement de ${eur(D.ttcSale)}.</p>`,
       `<p>The disposal of a fixed asset is not revenue but exceptional income (775). The price before VAT is ${eur(D.sale)}, output VAT ${eur(D.tvaSale)} and the cash received ${eur(D.ttcSale)}.</p>`));
-  h += J(`${D.dSale}/N+${k}`, [{ c: "512", l: "Banque", d: D.ttcSale / 100 }, { c: "775", l: "Produits des cessions d'éléments d'actif", cr: D.sale / 100 }, { c: "44571", l: "TVA collectée", cr: D.tvaSale / 100 }]);
+  P.saleJ = (P.saleJ || '') + J(`${D.dSale}/N+${k}`, [{ c: "512", l: "Banque", d: D.ttcSale / 100 }, { c: "775", l: "Produits des cessions d'éléments d'actif", cr: D.sale / 100 }, { c: "44571", l: "TVA collectée", cr: D.tvaSale / 100 }]);
 
   /* sortie */
   let note;
   if (D.resultat > 0) note = t(`l'opération dégage une plus-value de ${eur(D.resultat)} (prix de vente ${eur(D.sale)} − VNC ${eur(D.vncCession)}).`, `the transaction yields a gain of ${eur(D.resultat)} (sale price ${eur(D.sale)} − carrying amount ${eur(D.vncCession)}).`);
   else if (D.resultat < 0) note = t(`l'opération dégage une moins-value de ${eur(-D.resultat)} (prix de vente ${eur(D.sale)} − VNC ${eur(D.vncCession)}).`, `the transaction yields a loss of ${eur(-D.resultat)} (sale price ${eur(D.sale)} − carrying amount ${eur(D.vncCession)}).`);
   else note = t(`le prix de vente de ${eur(D.sale)} étant égal à la VNC, l'opération ne dégage ni plus-value ni moins-value.`, `as the sale price of ${eur(D.sale)} equals the carrying amount, there is neither gain nor loss.`);
-  h += box(t(`Cession, étape 3 : sortie de l'actif (${D.dSale}/N+${k})`, `Disposal, step 3: derecognition (${D.dSale}/N+${k})`),
+  P.outBox = (P.outBox || '') + box(t(`Cession, étape 3 : sortie de l'actif (${D.dSale}/N+${k})`, `Disposal, step 3: derecognition (${D.dSale}/N+${k})`),
     t(`<p>L'immobilisation est retirée du bilan : le compte d'immobilisation est soldé au crédit pour la valeur d'origine, ${eur(B)}, et le compte d'amortissement au débit pour le cumul pratiqué jusqu'au jour de la vente, ${eur(D.cumul)}, lu sur la dernière ligne du tableau. La différence est la valeur nette comptable, enregistrée en charge exceptionnelle (675) : ${eur(B)} − ${eur(D.cumul)} = ${eur(D.vncCession)}. Au total, ${note}</p>`,
       `<p>The asset is removed from the balance sheet: the asset account is credited for the original cost, ${eur(B)}, and the accumulated depreciation account debited for the amount recorded up to the day of sale, ${eur(D.cumul)}, read on the last line of the table. The difference is the carrying amount, recorded as an exceptional expense (675): ${eur(B)} − ${eur(D.cumul)} = ${eur(D.vncCession)}. Overall, ${note}</p>`));
-  h += J(`${D.dSale}/N+${k}`, [{ c: cA, l: "Amortissement du matériel", d: D.cumul / 100 }, { c: "675", l: "Valeurs comptables des éléments d'actif cédés", d: D.vncCession / 100 }, { c: D.asset.acc, l: D.asset.label, cr: B / 100 }]);
-  return h;
+  P.outJ = (P.outJ || '') + J(`${D.dSale}/N+${k}`, [{ c: cA, l: "Amortissement du matériel", d: D.cumul / 100 }, { c: "675", l: "Valeurs comptables des éléments d'actif cédés", d: D.vncCession / 100 }, { c: D.asset.acc, l: D.asset.label, cr: B / 100 }]);
+  return P;
 };
+
+/* ---------- corrigé : mode linéaire seul, ou linéaire comptable + dégressif fiscal ---------- */
+PAGE.sol = function (D) {
+  if (D.lin) { const P0 = solParts(D); return ['acqBox','acqJ','ruleBox','ruleTable','ruleNote','nBox','nFrise','planBox','planTable','invBox','invJ','c1Box','c1Frise','c1Recap','c1Table','c1J','saleBox','saleJ','outBox','outJ'].map(k => P0[k] || '').join(''); }
+  return solDerog(D);
+};
+function solDerog(D) {
+  const k = D.k, B = D.B, cA = "28" + D.asset.acc.substring(1);
+  const DL = Object.assign({}, D, { lin: true, plan: D.planL, A: D.AL, exact0: D.exact0L, dotC: D.dotCL, exactC: D.exactCL, dotN: D.dotNL, cumAvant: D.cumAvantL, cumul: D.cumulL, pratique: D.pratiqueL, taux: D.tauxL });
+  const DF = Object.assign({}, D, { lin: false, dotN: D.F.dotN, cumAvant: D.F.cumAvant, cumul: D.F.cumul, pratique: D.F.pratique, vncCession: D.B - D.F.cumul });
+  const PL = solParts(DL), PF = solParts(DF);
+  const rt = (h, a, b) => h.split(a).join(b);
+  const T1 = ["Application à l'exercice N : décompte du temps et première annuité", "Year N: counting time and first charge"];
+  const T2 = ["Plan d'amortissement", "Depreciation schedule"];
+  let h = PL.acqBox + PL.acqJ + PL.ruleBox + tableRegles(D);
+  h += box('', t(`<p>Ici, les deux colonnes servent. L'amortissement <em>comptable</em> traduit la consommation réelle des avantages économiques du bien : il est linéaire et part de la mise en service. L'amortissement <em>fiscal</em> est dégressif : l'entreprise l'adopte pour déduire plus tôt une partie de la charge. L'excédent de l'amortissement fiscal sur l'amortissement comptable n'est pas un amortissement au sens économique : c'est une <em>provision réglementée</em>, l'amortissement dérogatoire (compte 145), dotée par le compte 68725 et reprise par le compte 78725.</p>`,
+    `<p>Here both columns apply. <em>Accounting</em> depreciation reflects the actual consumption of the asset's economic benefits: it is straight-line and starts at the date of use. <em>Tax</em> depreciation is declining-balance: the company uses it to deduct part of the charge earlier. The excess of tax over accounting depreciation is not depreciation in the economic sense: it is a <em>regulated provision</em>, accelerated tax depreciation (account 145), charged through account 68725 and released through account 78725.</p>`));
+  /* 1. amortissement comptable */
+  h += rt(rt(PL.nBox, T1[0], "Amortissement comptable (linéaire) : exercice N"), T1[1], "Accounting depreciation (straight-line): year N") + PL.nFrise;
+  h += rt(rt(PL.planBox, T2[0], "Plan d'amortissement comptable (linéaire)"), T2[1], "Accounting depreciation schedule (straight-line)") + PL.planTable;
+  /* 2. amortissement fiscal */
+  h += rt(rt(PF.nBox, T1[0], "Amortissement fiscal (dégressif) : exercice N"), T1[1], "Tax depreciation (declining-balance): year N") + PF.nFrise;
+  h += rt(rt(PF.planBox, T2[0], "Plan d'amortissement fiscal (dégressif)"), T2[1], "Tax depreciation schedule (declining-balance)") + PF.planTable;
+  /* 3. tableau comparatif */
+  h += box(t("Tableau comparatif : amortissements dérogatoires", "Comparison table: accelerated tax depreciation"),
+    t(`<p>Chaque année, on compare l'amortissement fiscal à l'amortissement comptable. Si l'amortissement fiscal est le plus élevé, l'écart est <em>doté</em> au compte 145 (débit 68725) ; s'il est le plus faible, l'écart est <em>repris</em> (crédit 78725). Le solde du compte 145 est toujours égal au cumul des amortissements fiscaux diminué du cumul des amortissements comptables. L'exercice N+${k} s'arrête à la cession : on y compare les deux dotations complémentaires.</p>`,
+      `<p>Each year, tax depreciation is compared with accounting depreciation. If tax depreciation is higher, the difference is <em>charged</em> to account 145 (debit 68725); if it is lower, the difference is <em>released</em> (credit 78725). The balance of account 145 always equals accumulated tax depreciation less accumulated accounting depreciation. Year N+${k} stops at the disposal: the two additional charges are compared.</p>`));
+  h += tableDerog(D);
+  /* inventaire N */
+  const d0 = D.derog[0];
+  h += box(t("Écritures d'inventaire au 31/12/N", "Year-end entries at 31/12/N"),
+    t(`<p>Deux écritures sont passées. La première constate l'amortissement comptable de l'exercice, ${eur(D.dotNL)}, lu sur le plan linéaire. La seconde constate l'écart avec l'amortissement fiscal : ${eur(D.F.dotN)} − ${eur(D.dotNL)} = ${eur(Math.abs(d0.diff))}, ${d0.diff >= 0 ? "doté en amortissements dérogatoires" : "repris sur les amortissements dérogatoires"}.</p>`,
+      `<p>Two entries are recorded. The first records the accounting depreciation of the year, ${eur(D.dotNL)}, read on the straight-line schedule. The second records the difference with tax depreciation: ${eur(D.F.dotN)} − ${eur(D.dotNL)} = ${eur(Math.abs(d0.diff))}, ${d0.diff >= 0 ? "charged as accelerated tax depreciation" : "released from accelerated tax depreciation"}.</p>`));
+  h += PL.invJ + jDerog("31/12/N", d0.diff);
+  /* cession, étape 1 */
+  h += PL.c1Box + PL.c1Frise;
+  let pf1 = rt(rt(PF.c1Box, "Avant de sortir l'actif, il faut constater l'amortissement couru", "Sur le plan fiscal, il faut de même calculer l'amortissement couru"), "Le plan prévoyait", "Le plan fiscal prévoyait");
+  pf1 = rt(rt(pf1, "Before derecognising the asset, the depreciation accrued", "For tax purposes, the depreciation accrued"), "The schedule provided", "The tax schedule provided");
+  h += rt(rt(pf1, "Cession, étape 1 : dotation complémentaire", "Cession, étape 1 bis : amortissement fiscal de l'exercice de cession"), "Disposal, step 1: additional depreciation", "Disposal, step 1b: tax depreciation in the year of disposal") + PF.c1Frise;
+  const dk = D.derog[k];
+  h += box('', t(`<p>L'amortissement comptable de l'exercice N+${k} est de ${eur(D.dotCL)} ; l'amortissement fiscal de ${eur(D.dotC)}. L'écart, ${eur(Math.abs(dk.diff))}, est ${dk.diff >= 0 ? "doté" : "repris"} au titre des amortissements dérogatoires. Le tableau ci-dessous récapitule les amortissements comptables pratiqués, les seuls qui figurent au compte ${cA} : au 31/12/N+${k - 1}, leur cumul atteignait ${eur(D.cumAvantL)} ; à la date de cession, il s'élève à ${eur(D.cumAvantL)} + ${eur(D.dotCL)} = ${eur(D.cumulL)}.</p>`,
+    `<p>Accounting depreciation for year N+${k} is ${eur(D.dotCL)}; tax depreciation is ${eur(D.dotC)}. The difference, ${eur(Math.abs(dk.diff))}, is ${dk.diff >= 0 ? "charged" : "released"} as accelerated tax depreciation. The table below summarises the accounting depreciation recorded, the only depreciation recorded in account ${cA}: at 31/12/N+${k - 1} it amounted to ${eur(D.cumAvantL)}; at the date of disposal it is ${eur(D.cumAvantL)} + ${eur(D.dotCL)} = ${eur(D.cumulL)}.</p>`));
+  h += PL.c1Table + PL.c1J + jDerog(`${D.dSale}/N+${k}`, dk.diff);
+  /* cession, étapes 2 et 3 */
+  h += PL.saleBox + PL.saleJ + PL.outBox + PL.outJ;
+  /* étape 4 : reprise du solde */
+  h += box(t(`Cession, étape 4 : reprise des amortissements dérogatoires (${D.dSale}/N+${k})`, `Disposal, step 4: release of accelerated tax depreciation (${D.dSale}/N+${k})`),
+    t(`<p>Le bien sortant du patrimoine, la provision réglementée qui lui est attachée n'a plus d'objet : le solde du compte 145, ${eur(D.soldeDerog)} après l'écriture de l'exercice de cession, est intégralement repris en produit exceptionnel (78725). Le résultat comptable de cession, calculé sur la VNC comptable, n'est pas modifié ; la reprise annule simplement l'avance fiscale prise les années précédentes.</p>`,
+      `<p>As the asset leaves the business, the regulated provision attached to it is no longer needed: the balance of account 145, ${eur(D.soldeDerog)} after the entry of the year of disposal, is fully released as exceptional income (78725). The accounting result on disposal, computed on the accounting carrying amount, is unchanged; the release simply reverses the tax advance taken in earlier years.</p>`));
+  if (D.soldeDerog > 0) h += J(`${D.dSale}/N+${k}`, [{ c: "145", l: "Amortissements dérogatoires", d: D.soldeDerog / 100 }, { c: "78725", l: "Reprises sur amortissements dérogatoires", cr: D.soldeDerog / 100 }]);
+  return h;
+}
+function jDerog(date, diff) {
+  if (diff > 0) return J(date, [{ c: "68725", l: "Dotations aux amortissements dérogatoires", d: diff / 100 }, { c: "145", l: "Amortissements dérogatoires", cr: diff / 100 }]);
+  if (diff < 0) return J(date, [{ c: "145", l: "Amortissements dérogatoires", d: -diff / 100 }, { c: "78725", l: "Reprises sur amortissements dérogatoires", cr: -diff / 100 }]);
+  return '';
+}
+function tableDerog(D) {
+  let h = `<div class="journal-wrap"><table class="journal amort"><tr class="date-row"><td colspan="6">${t(`Amortissements fiscal et comptable jusqu'à la cession (montants en euros)`, `Tax and accounting depreciation up to the disposal (amounts in euros)`)}</td></tr>
+    <tr><th>${t("Exercice", "Year")}</th><th>${t("Amortissement fiscal (dégressif)", "Tax depreciation (declining)")}</th><th>${t("Amortissement comptable (linéaire)", "Accounting depreciation (straight-line)")}</th><th>${t("Dotation (68725)", "Charge (68725)")}</th><th>${t("Reprise (78725)", "Release (78725)")}</th><th>${t("Solde du compte 145", "Balance of account 145")}</th></tr>`;
+  D.derog.forEach(r => { h += `<tr${r.i === D.k ? ' class="last"' : ''}><td class="yr">${annee(r.i)}${r.i === D.k ? t(' (cession)', ' (disposal)') : ''}</td><td>${numc(r.f)}</td><td>${numc(r.c)}</td><td>${r.diff > 0 ? numc(r.diff) : '–'}</td><td>${r.diff < 0 ? numc(-r.diff) : '–'}</td><td>${numc(r.solde)}</td></tr>`; });
+  h += `<tr class="last"><td class="yr">${t('Sortie du bien', 'Derecognition')}</td><td>–</td><td>–</td><td>–</td><td>${D.soldeDerog > 0 ? numc(D.soldeDerog) : '–'}</td><td>${numc(0)}</td></tr>`;
+  return h + `</table></div>`;
+}
 
 </script>
 <!-- KIT:JS:START v1 -->
