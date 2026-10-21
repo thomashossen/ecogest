@@ -1030,6 +1030,25 @@ function eiSurplusFig(o) {
   G.legend([{ c: COL.s1, box: true, o: 0.3, t: fr ? 'surplus des consommateurs' : 'consumer surplus' }, { c: '#2e7d5b', box: true, o: 0.35, t: fr ? 'surplus des producteurs' : 'producer surplus' }, { c: COL.s3, box: true, o: 0.4, t: fr ? 'perte sèche' : 'deadweight loss' }], G.ml + 8, 16);
   return '<div class="sol-fig">' + (o.caption ? `<p style="text-align:center;margin:.2rem 0"><em>${o.caption}</em></p>` : '') + G.svg(o.aria || 'surplus') + '</div>';
 }
+/* corrigé en parties numérotées 1, 2 avec sous-questions a, b, c (comme mcaf3) */
+function regroupSol(html, heads, counts) {
+  const a = html.indexOf('<ol>'), b = html.lastIndexOf('</ol>');
+  if (a < 0 || b < 0) return html;
+  const inner = html.slice(a + 4, b), items = [];
+  let d = 0, start = -1, i = 0;
+  while (i < inner.length) {
+    if (inner.startsWith('<li', i) && /[\s>]/.test(inner[i + 3])) { if (d === 0) start = i; d++; i += 3; continue; }
+    if (inner.startsWith('</li>', i)) { d--; i += 5; if (d === 0) items.push(inner.slice(start, i)); continue; }
+    i++;
+  }
+  let k = 0, out = '<div class="st-parts">';
+  heads.forEach((h, p) => {
+    out += `<div class="calc-box"><span class="sol-sub">${p + 1}. ${h}</span><ol class="sub-list">${items.slice(k, k + counts[p]).join('')}</ol></div>`;
+    k += counts[p];
+  });
+  return out + '</div>';
+}
+
 /* ---------- outils communs : jeux finis à deux joueurs ---------- */
 /* U1[i][j], U2[i][j] : gains des joueurs 1 (ligne i) et 2 (colonne j) */
 function jxBR(U1, U2) {
@@ -1227,31 +1246,21 @@ const J1L = { fr: { pub: ['Pas de publicité', 'Publicité'], A: 'Entreprise A',
 I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
   const L = J1L.fr;
   return String.raw`<div class="context-block">Les deux jeux sont indépendants. Dans chaque case, le premier nombre est le gain du joueur en ligne, le second celui du joueur en colonne.</div>
-<p><strong>Jeu A.</strong> Deux entreprises A (en ligne) et B (en colonne) décident simultanément de lancer ou non une campagne de publicité. Les profits, en millions d'euros, sont les suivants.</p>
-${jxTable(D.A1, D.A2, L.pub, L.pub, 'A \\ B')}
-<p><strong>Jeu B.</strong> Le joueur 1 choisit H ou B, le joueur 2 choisit G, C ou D.</p>
-${jxTable(D.B1, D.B2, L.rows, L.cols, '1 \\ 2')}
 <div class="questions"><ol>
-<li><div class="q-text">(A) Déterminez la meilleure réponse de chaque entreprise à chaque stratégie de l'autre.</div></li>
-<li><div class="q-text">(A) Chaque entreprise a-t-elle une stratégie strictement dominante ? Déduisez-en l'issue du jeu.</div></li>
-<li><div class="q-text">(A) Quels profils sont des optimums de Pareto ? L'issue du jeu en est-elle un ? Représentez les gains des quatre profils dans le plan et commentez.</div></li>
-<li><div class="q-text">(B) Le joueur 1 a-t-il une stratégie strictement dominante ? Et le joueur 2 ?</div></li>
-<li><div class="q-text">(B) En supposant que le joueur 2 sait que le joueur 1 est rationnel, déterminez l'issue du jeu. Représentez la matrice en soulignant les meilleures réponses.</div></li>
+<li><div class="q-text"><strong>Jeu A — Concurrence publicitaire.</strong> Deux entreprises A (en ligne) et B (en colonne) décident simultanément de lancer ou non une campagne de publicité. Les profits, en millions d'euros, sont les suivants.
+${jxTable(D.A1, D.A2, L.pub, L.pub, 'A \\ B')}<ol class="sub-list"><li>Déterminez la meilleure réponse de chaque entreprise à chaque stratégie de l'autre.</li><li>Chaque entreprise a-t-elle une stratégie strictement dominante ? Déduisez-en l'issue du jeu.</li><li>Quels profils sont des optimums de Pareto ? L'issue du jeu en est-elle un ? Représentez les gains des quatre profils dans le plan et commentez.</li></ol></div></li>
+<li><div class="q-text"><strong>Jeu B — Un jeu à stratégie dominante.</strong> Le joueur 1 choisit H ou B, le joueur 2 choisit G, C ou D.
+${jxTable(D.B1, D.B2, L.rows, L.cols, '1 \\ 2')}<ol class="sub-list"><li>Le joueur 1 a-t-il une stratégie strictement dominante ? Et le joueur 2 ?</li><li>En supposant que le joueur 2 sait que le joueur 1 est rationnel, déterminez l'issue du jeu. Représentez la matrice en soulignant les meilleures réponses.</li></ol></div></li>
 </ol></div>`;
 });
 I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
   const L = J1L.en;
   return String.raw`<div class="context-block">The two games are independent. In each cell, the first number is the row player's payoff, the second the column player's.</div>
-<p><strong>Game A.</strong> Two firms A (row) and B (column) simultaneously decide whether to launch an advertising campaign. Profits, in millions of euros, are as follows.</p>
-${jxTable(D.A1, D.A2, L.pub, L.pub, 'A \\ B')}
-<p><strong>Game B.</strong> Player 1 chooses U or D, player 2 chooses L, C or R.</p>
-${jxTable(D.B1, D.B2, L.rows, L.cols, '1 \\ 2')}
 <div class="questions"><ol>
-<li><div class="q-text">(A) Determine each firm's best response to each strategy of the other.</div></li>
-<li><div class="q-text">(A) Does each firm have a strictly dominant strategy? Deduce the outcome of the game.</div></li>
-<li><div class="q-text">(A) Which profiles are Pareto optima? Is the outcome of the game one of them? Plot the payoffs of the four profiles in the plane and comment.</div></li>
-<li><div class="q-text">(B) Does player 1 have a strictly dominant strategy? And player 2?</div></li>
-<li><div class="q-text">(B) Assuming player 2 knows that player 1 is rational, determine the outcome of the game. Draw the matrix underlining the best responses.</div></li>
+<li><div class="q-text"><strong>Game A — Advertising competition.</strong> Two firms A (row) and B (column) simultaneously decide whether to launch an advertising campaign. Profits, in millions of euros, are as follows.
+${jxTable(D.A1, D.A2, L.pub, L.pub, 'A \\ B')}<ol class="sub-list"><li>Determine each firm's best response to each strategy of the other.</li><li>Does each firm have a strictly dominant strategy? Deduce the outcome of the game.</li><li>Which profiles are Pareto optima? Is the outcome of the game one of them? Plot the payoffs of the four profiles in the plane and comment.</li></ol></div></li>
+<li><div class="q-text"><strong>Game B — A game with a dominant strategy.</strong> Player 1 chooses U or D, player 2 chooses L, C or R.
+${jxTable(D.B1, D.B2, L.rows, L.cols, '1 \\ 2')}<ol class="sub-list"><li>Does player 1 have a strictly dominant strategy? And player 2?</li><li>Assuming player 2 knows that player 1 is rational, determine the outcome of the game. Draw the matrix underlining the best responses.</li></ol></div></li>
 </ol></div>`;
 });
 function j1sol(D, lang) {
@@ -1266,11 +1275,11 @@ function j1sol(D, lang) {
   <p>${T_(['Considérons d\'abord l\'entreprise A, en fixant la stratégie de B. Si B ne fait pas de publicité, A obtient', 'Consider firm A first, holding B\'s strategy fixed. If B does not advertise, A gets'])} ${D.R} ${T_(['sans publicité et', 'without advertising and'])} ${D.T} ${T_(['avec', 'with'])} : ${T_(['comme', 'since'])} \(${D.T}&gt;${D.R}\), ${T_(['sa meilleure réponse est de faire de la publicité. Si B fait de la publicité, A obtient', 'its best response is to advertise. If B advertises, A gets'])} ${D.S} ${T_(['sans publicité et', 'without advertising and'])} ${D.P} ${T_(['avec', 'with'])} : ${T_(['comme', 'since'])} \(${D.P}&gt;${D.S}\), ${T_(['sa meilleure réponse est encore de faire de la publicité.', 'its best response is again to advertise.'])} ${T_(['Le jeu étant symétrique, la meilleure réponse de B est, de même, de faire de la publicité quelle que soit la décision de A.', 'The game being symmetric, B\'s best response is likewise to advertise whatever A does.'])}</p>
 </div></li>
 <li><div class="q-content">
-  <p>${T_(['D\'après la question 1, la publicité rapporte strictement plus à A que l\'absence de publicité, quoi que fasse B', 'From question 1, advertising pays A strictly more than not advertising, whatever B does'])} (\(${D.T}&gt;${D.R}\) ${T_(['et', 'and'])} \(${D.P}&gt;${D.S}\)) : ${T_(['c\'est une stratégie strictement dominante pour A, et, par symétrie, pour B. Des entreprises rationnelles jouent leur stratégie strictement dominante : l\'issue du jeu est l\'équilibre en stratégies dominantes (publicité, publicité), où chacune gagne', 'it is a strictly dominant strategy for A, and, by symmetry, for B. Rational firms play their strictly dominant strategy: the outcome of the game is the equilibrium in dominant strategies (advertising, advertising), where each earns'])} ${D.P}.</p>
+  <p>${T_(['D\'après la question 1 a, la publicité rapporte strictement plus à A que l\'absence de publicité, quoi que fasse B', 'From question 1(a), advertising pays A strictly more than not advertising, whatever B does'])} (\(${D.T}&gt;${D.R}\) ${T_(['et', 'and'])} \(${D.P}&gt;${D.S}\)) : ${T_(['c\'est une stratégie strictement dominante pour A, et, par symétrie, pour B. Des entreprises rationnelles jouent leur stratégie strictement dominante : l\'issue du jeu est l\'équilibre en stratégies dominantes (publicité, publicité), où chacune gagne', 'it is a strictly dominant strategy for A, and, by symmetry, for B. Rational firms play their strictly dominant strategy: the outcome of the game is the equilibrium in dominant strategies (advertising, advertising), where each earns'])} ${D.P}.</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Le profil (publicité, publicité), qui donne', 'The profile (advertising, advertising), which gives'])} \((${D.P}\,;\,${D.P})\), ${T_(['est dominé au sens de Pareto par (pas de publicité, pas de publicité), qui donne', 'is Pareto-dominated by (no advertising, no advertising), which gives'])} \((${D.R}\,;\,${D.R})\) : ${T_(['les deux entreprises y gagnent', 'both firms gain'])} (\(${D.R}&gt;${D.P}\)). ${T_(['Les trois autres profils sont des optimums de Pareto : passer de l\'un à un autre réduit toujours le gain d\'au moins une entreprise. L\'issue du jeu n\'est donc pas un optimum de Pareto : c\'est un dilemme du prisonnier, puisque', 'The other three profiles are Pareto optima: moving from one to another always lowers at least one firm\'s payoff. The outcome of the game is therefore not a Pareto optimum: it is a prisoner\'s dilemma, since'])} \(T=${D.T}&gt;R=${D.R}&gt;P=${D.P}&gt;S=${D.S}\). ${T_(['Dans le plan des gains, l\'équilibre (rouge) est situé au sud-ouest de la coopération mutuelle :', 'In the payoff plane, the equilibrium (red) lies south-west of mutual cooperation:'])}</p>
-  <div class="sol-fig">${j1plane(D.A1, D.A2, fr ? [['NN', 'NP'], ['PN', 'PP']] : [['NN', 'NA'], ['AN', 'AA']], lang)}</div>
+  <div class="sol-fig" style="max-width:540px;margin:0 auto">${j1plane(D.A1, D.A2, fr ? [['NN', 'NP'], ['PN', 'PP']] : [['NN', 'NA'], ['AN', 'AA']], lang)}</div>
   <p>${T_(['(N : pas de publicité ; P : publicité ; la première lettre est la décision de A.) Chaque entreprise dépense pour attirer les clients de l\'autre, et les deux campagnes s\'annulent : elles gagneraient toutes deux à s\'entendre pour s\'abstenir, mais un tel accord ne serait pas respecté, puisque chacune aurait alors intérêt à faire de la publicité.', '(N: no advertising; A: advertising; the first letter is A\'s decision.) Each firm spends to attract the other\'s customers, and the two campaigns cancel out: both would gain by agreeing to refrain, but such an agreement would not be kept, since each would then want to advertise.'])}</p>
 </div></li>
 <li><div class="q-content">
@@ -1283,8 +1292,8 @@ function j1sol(D, lang) {
 </div></li>
 </ol></div>`;
 }
-I18N.fr.sol = D => fracClean((D => j1sol(D, 'fr'))(D));
-I18N.en.sol = D => fracClean((D => j1sol(D, 'en'))(D));
+I18N.fr.sol = D => fracClean(regroupSol(j1sol(D, 'fr'), ['Jeu A — Concurrence publicitaire', 'Jeu B — Un jeu à stratégie dominante'], [3, 2]));
+I18N.en.sol = D => fracClean(regroupSol(j1sol(D, 'en'), ['Game A — Advertising competition', 'Game B — A game with a dominant strategy'], [3, 2]));
 initPage();
 </script>
 
