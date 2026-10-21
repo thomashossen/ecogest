@@ -958,6 +958,61 @@ function initPage() {
 const GREY = '#8a857a';
 const KBASE_FR = { 'k-badge': 'MICROÉCONOMIE', 'k-seed': 'Seed de reproductibilité', 'k-seedtip': 'Vide = nouvel exercice aléatoire', 'k-gen': 'Générer', 'k-tag-course': 'Cours', 'k-tag-ex': 'Exercice', 'k-tag-sol': 'Corrigé', 'k-seedbadge': 'Seed&nbsp;:', showSol: 'Afficher le corrigé', hideSol: 'Masquer le corrigé', phSeed: 'auto', copy: 'Copier', copied: 'Copié', 'k-sub': '© Thomas Hossen – Version du 20 octobre 2026' };
 const KBASE_EN = { 'k-badge': 'MICROECONOMICS', 'k-seed': 'Reproducibility seed', 'k-seedtip': 'Empty = new random exercise', 'k-gen': 'Generate', 'k-tag-course': 'Lesson', 'k-tag-ex': 'Exercise', 'k-tag-sol': 'Solution', 'k-seedbadge': 'Seed:', showSol: 'Show solution', hideSol: 'Hide solution', phSeed: 'auto', copy: 'Copy', copied: 'Copied', 'k-sub': '© Thomas Hossen – Version of 20 October 2026' };
+/* ---------- calcul exact : reconnaissance des rationnels et affichage fractionnaire ---------- */
+function ratOf(x) {
+  if (!isFinite(x)) return null;
+  const s = x < 0 ? -1 : 1, y = Math.abs(x);
+  if (Math.abs(y - Math.round(y)) <= 1e-11 * Math.max(1, y)) return [s * Math.round(y), 1];
+  let h0 = 0, h1 = 1, k0 = 1, k1 = 0, z = y;
+  for (let i = 0; i < 40; i++) {
+    const a = Math.floor(z), h2 = a * h1 + h0, k2 = a * k1 + k0;
+    if (k2 > 2e6) return null;
+    if (Math.abs(y - h2 / k2) <= 1e-12 * Math.max(1, y)) return [s * h2, k2];
+    h0 = h1; h1 = h2; k0 = k1; k1 = k2;
+    const f = z - a; if (f < 1e-15) return null; z = 1 / f;
+  }
+  return null;
+}
+/* valeur exacte : entier ou fraction ; décimale si le nombre n'est pas rationnel (racine, puissance non entière) */
+function fq(x) {
+  const r = ratOf(x);
+  if (!r) return texT(x, 4);
+  if (r[1] === 1) return texT(r[0], 0);
+  return (r[0] < 0 ? '-' : '') + '\\frac{' + texT(Math.abs(r[0]), 0) + '}{' + texT(r[1], 0) + '}';
+}
+/* valeur exacte suivie d'une approximation décimale */
+function fqa(x) {
+  const r = ratOf(x);
+  if (!r) return texT(x, 4);
+  if (r[1] === 1) return texT(r[0], 0);
+  return fq(x) + '\\approx ' + texT(x, Math.abs(x) >= 100 ? 2 : 4);
+}
+/* entre parenthèses si fraction ou négatif (avant un exposant) */
+function fqp(x) { const r = ratOf(x), t = fq(x); return (r && r[1] === 1 && r[0] >= 0) || (!r && x >= 0) ? t : '\\left(' + t + '\\right)'; }
+/* cellule de tableau : valeur exacte, approximation en petit */
+function fqt(x) { const r = ratOf(x); return '\\(' + fq(x) + '\\)' + (r && r[1] === 1 ? '' : '<br><small>≈ ' + fmt(x, 2) + '</small>'); }
+
+/* signe = si la valeur est exacte (rationnelle), sinon approximation */
+function eqa(x) { return ratOf(x) ? '=' + fqa(x) : '\\approx ' + texT(x, 4); }
+/* simplification d'affichage : \frac{X}{1} devient X (entre parenthèses si nécessaire) */
+function fracClean(h) {
+  const grp = (s, i) => { if (s[i] !== '{') return -1; let d = 0; for (let j = i; j < s.length; j++) { if (s[j] === '{') d++; else if (s[j] === '}') { d--; if (d === 0) return j; } } return -1; };
+  let out = '', i = 0;
+  for (;;) {
+    const re = /\\[td]?frac\{/g; re.lastIndex = i; const mm = re.exec(h);
+    if (!mm) { out += h.slice(i); break; }
+    const k = mm.index, cmd = mm[0].slice(0, -1), a = k + cmd.length, ae = grp(h, a), b = ae + 1, be = ae > 0 ? grp(h, b) : -1;
+    if (ae < 0 || be < 0) { out += h.slice(i, a + 1); i = a + 1; continue; }
+    const num = h.slice(a + 1, ae), den = h.slice(b + 1, be).trim();
+    if (den === '1') {
+      let top = false, d = 0; for (let j = 0; j < num.length; j++) { const c = num[j]; if (c === '{') d++; else if (c === '}') d--; else if ((c === '+' || c === '-') && d === 0 && j > 0) top = true; }
+      const rest = h.slice(be + 1), end = /^(\s*$|\\\]|\\\)|=|&|\\\\|\\qquad|\\quad|\\text|\\iff|&lt;|&gt;|\s*[,;.<}])/.test(rest);
+      out += h.slice(i, k) + (top && !end ? '\\left(' + fracClean(num) + '\\right)' : fracClean(num));
+    } else out += h.slice(i, k) + cmd + '{' + fracClean(num) + '}{' + fracClean(h.slice(b + 1, be)) + '}';
+    i = be + 1;
+  }
+  return out;
+}
 I18N.fr.k = Object.assign({}, KBASE_FR, { title: 'Économie industrielle 2 – Discrimination par les prix', 'k-h1': 'Discrimination par les prix', 'k-coursetitle': 'Vendre le même bien à des prix différents : conditions, prix optimaux et effets sur le bien-être', 'k-extitle': 'Monopole sur deux marchés : discrimination, prix unique et surplus', 'k-soltitle': 'Monopole sur deux marchés : discrimination, prix unique et surplus' });
 I18N.en.k = Object.assign({}, KBASE_EN, { title: 'Industrial economics 2 – Price discrimination', 'k-h1': 'Price discrimination', 'k-coursetitle': 'Selling the same good at different prices: conditions, optimal prices and welfare effects', 'k-extitle': 'Monopoly on two markets: discrimination, uniform price and surplus', 'k-soltitle': 'Monopoly on two markets: discrimination, uniform price and surplus' });
 
@@ -975,7 +1030,7 @@ function e2solve(a1, b1, a2, b2, c) {
   };
 }
 
-const cfx = (x, d) => Math.abs(x - 1) < 1e-12 ? '' : texT(x, d === undefined ? 4 : d) + '\\,';
+const cfx = (x, d) => Math.abs(x - 1) < 1e-12 ? '' : fq(x) + '\\,';
 /* ---------- cours ---------- */
 I18N.fr.course = String.raw`<div class="context-block">
 <strong>Objectifs.</strong> À la fin de cette page, vous savez dire à quelles conditions une entreprise peut pratiquer des prix différents pour un même bien, calculer les prix optimaux d'un monopole qui sert deux marchés séparés, les comparer au prix unique, et évaluer les conséquences sur les consommateurs, sur l'entreprise et sur le bien-être.<br><br>
@@ -1144,7 +1199,7 @@ PAGE.compute = function (seed) {
   D.W1max = (D.a1 - c) * R.q1p / 2; D.W2max = (D.a2 - c) * R.q2p / 2; D.Wmax = D.W1max + D.W2max;
   return D;
 };
-const e2n = (x, d) => texT(x, d === undefined ? 4 : d);
+const e2n = (x, d) => fq(x);
 /* résolution graphique propre au tirage : deux marchés côte à côte */
 function e2graph(D, lang, uniform) {
   const fr = lang === 'fr', R = D.R, c = D.c, W = 680, H = 300, half = 330, ymax = D.a1 * 1.08;
@@ -1167,7 +1222,7 @@ function e2graph(D, lang, uniform) {
   let x = 50; lg.forEach(l => { svg += `<rect x="${x}" y="8" width="12" height="9" rx="2" fill="${l[0]}" fill-opacity="${l[1]}"/><text x="${x + 17}" y="16" ${FONT_T} font-size="11.5" fill="${COL.ink}">${l[2]}</text>`; x += 190; });
   return '<div class="sol-fig">' + svg + '</svg></div>';
 }
-I18N.fr.ex = function (D) {
+I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">Un laboratoire est seul à produire un médicament, à un coût marginal constant \(c=${D.c}\), sans coût fixe. Il le vend sur deux marchés séparés, entre lesquels la revente est impossible : la métropole, de demande inverse \(P_1=${D.a1}-${cfx(D.b1)}q_1\), et l'étranger, de demande inverse \(P_2=${D.a2}-${cfx(D.b2)}q_2\).</div>
 <div class="questions"><ol>
 <li><div class="q-text">Le laboratoire pratique des prix différents. Déterminez les quantités, les prix et le profit.</div></li>
@@ -1177,8 +1232,8 @@ I18N.fr.ex = function (D) {
 <li><div class="q-text">Représentez graphiquement les deux marchés et les surplus, avec et sans discrimination.</div></li>
 <li><div class="q-text">Que deviendraient le surplus des consommateurs, le profit et le surplus total si le laboratoire pratiquait une discrimination parfaite ?</div></li>
 </ol></div>`;
-};
-I18N.en.ex = function (D) {
+});
+I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">A laboratory is the only producer of a medicine, at a constant marginal cost \(c=${D.c}\), with no fixed cost. It sells it on two separate markets, between which resale is impossible: the home market, with inverse demand \(P_1=${D.a1}-${cfx(D.b1)}q_1\), and the foreign market, with inverse demand \(P_2=${D.a2}-${cfx(D.b2)}q_2\).</div>
 <div class="questions"><ol>
 <li><div class="q-text">The laboratory charges different prices. Determine the quantities, prices and profit.</div></li>
@@ -1188,8 +1243,9 @@ I18N.en.ex = function (D) {
 <li><div class="q-text">Draw the two markets and the surpluses, with and without discrimination.</div></li>
 <li><div class="q-text">What would consumer surplus, profit and total surplus be if the laboratory practised perfect discrimination?</div></li>
 </ol></div>`;
-};
+});
 function e2sol(D, lang) {
+  const texT = (x) => fq(x);
   const fr = lang === 'fr', T_ = s => fr ? s[0] : s[1], R = D.R, c = D.c, RM = T_(['Rm', 'MR']), CM = T_(['Cm', 'MC']), SC = T_(['SC', 'CS']), SP = T_(['SP', 'PS']), n = e2n, m = x => e2n(x, 2);
   const qfr = (num, den, val) => Math.abs(den - 1) < 1e-12 ? `${num}=${n(val)}` : String.raw`\frac{${num}}{${n(den)}}=${n(val)}`;
   const scI = (a, b, p, q) => String.raw`\int_0^{${n(q)}}\big(${a}-${cfx(b)}x-${n(p)}\big)\,dx=\Big[${n(a - p)}\,x-${cfx(b / 2)}x^2\Big]_0^{${n(q)}}=${m(b * q * q / 2)}`;
@@ -1198,22 +1254,22 @@ function e2sol(D, lang) {
 <li><div class="q-content">
   <p>${T_(['Le laboratoire choisit les quantités vendues sur chaque marché pour maximiser son profit', 'The laboratory chooses the quantities sold in each market to maximise its profit'])} \(\Pi=P_1(q_1)\,q_1+P_2(q_2)\,q_2-${c}\,(q_1+q_2)\). ${T_(['Comme le coût marginal est constant, les deux marchés se traitent séparément : sur chacun, la recette marginale doit égaler le coût marginal.', 'Since marginal cost is constant, the two markets can be treated separately: in each, marginal revenue must equal marginal cost.'])} ${T_(['Sur le marché 1, la recette totale', 'In market 1, total revenue'])} \(${D.a1}\,q_1-${cfx(D.b1)}q_1^2\) ${T_(['a pour dérivée', 'has derivative'])} \(${RM}_1=${D.a1}-${cfx(2 * D.b1)}q_1\), ${T_(['d\'où :', 'hence:'])}
   \[${RM}_1(q_1)=${CM}\iff ${D.a1}-${cfx(2 * D.b1)}q_1=${c}\iff q_1=${qfr(D.a1 + '-' + c, 2 * D.b1, R.q1)}\]
-  ${T_(['On en déduit, d\'après la demande inverse du marché 1, le prix pratiqué en métropole :', 'The inverse demand of market 1 then gives the price charged on the home market:'])} \(p_1=${D.a1}-${D.b1 === 1 ? '' : n(D.b1) + '\\times '}${n(R.q1)}=${n(R.p1)}\). ${T_(['De même, sur le marché 2 :', 'Likewise, in market 2:'])}
+  ${T_(['On en déduit, d\'après la demande inverse du marché 1, le prix pratiqué en métropole :', 'The inverse demand of market 1 then gives the price charged on the home market:'])} \(p_1=${D.a1}-${D.b1 === 1 ? '' : n(D.b1) + '\\times '}${n(R.q1)}=${fqa(R.p1)}\). ${T_(['De même, sur le marché 2 :', 'Likewise, in market 2:'])}
   \[${RM}_2(q_2)=${CM}\iff ${D.a2}-${cfx(2 * D.b2)}q_2=${c}\iff q_2=${qfr(D.a2 + '-' + c, 2 * D.b2, R.q2)}\]
-  ${T_(['et la demande inverse du marché 2 donne le prix à l\'étranger :', 'and the inverse demand of market 2 gives the foreign price:'])} \(p_2=${D.a2}-${D.b2 === 1 ? '' : n(D.b2) + '\\times '}${n(R.q2)}=${n(R.p2)}\). ${T_(['Le profit est la somme des marges réalisées sur les deux marchés :', 'Profit is the sum of the margins earned in both markets:'])}
-  \[\Pi^d=(${n(R.p1)}-${c})\times ${n(R.q1)}+(${n(R.p2)}-${c})\times ${n(R.q2)}=${m(R.profD)}\]</p>
+  ${T_(['et la demande inverse du marché 2 donne le prix à l\'étranger :', 'and the inverse demand of market 2 gives the foreign price:'])} \(p_2=${D.a2}-${D.b2 === 1 ? '' : n(D.b2) + '\\times '}${n(R.q2)}=${fqa(R.p2)}\). ${T_(['Le profit est la somme des marges réalisées sur les deux marchés :', 'Profit is the sum of the margins earned in both markets:'])}
+  \[\Pi^d=(${n(R.p1)}-${c})\times ${n(R.q1)}+(${n(R.p2)}-${c})\times ${n(R.q2)}=${fqa(R.profD)}\]</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['La demande du marché', 'The demand of market'])} \(i\) ${T_(['s\'écrit', 'can be written'])} \(q_i=(a_i-p_i)/b_i\), ${T_(['d\'où', 'hence'])} \(\frac{dq_i}{dp_i}=-\frac{1}{b_i}\) ${T_(['et une élasticité', 'and an elasticity'])} \(\varepsilon_i=-\frac{1}{b_i}\cdot\frac{p_i}{q_i}\). ${T_(['Aux prix d\'équilibre :', 'At the equilibrium prices:'])}
-  \[\varepsilon_1=-\frac{1}{${n(D.b1)}}\times\frac{${n(R.p1)}}{${n(R.q1)}}\approx ${n(D.e1)}\qquad\varepsilon_2=-\frac{1}{${n(D.b2)}}\times\frac{${n(R.p2)}}{${n(R.q2)}}\approx ${n(D.e2)}\]
-  ${T_(['Le prix est plus élevé en métropole, où la demande est la moins élastique', 'The price is higher on the home market, where demand is less elastic'])} (\(|\varepsilon_1|&lt;|\varepsilon_2|\)). ${T_(['En effet, l\'égalité des recettes marginales s\'écrit', 'Indeed, equal marginal revenues read'])} \(p_1\big(1-\frac{1}{|\varepsilon_1|}\big)=p_2\big(1-\frac{1}{|\varepsilon_2|}\big)=c\) : ${T_(['le taux de marge de chaque marché est l\'inverse de son élasticité, ce que l\'on vérifie :', 'the markup rate in each market is the inverse of its elasticity, as we check:'])} \(\frac{p_1-c}{p_1}\approx ${n((R.p1 - c) / R.p1)}=\frac{1}{|\varepsilon_1|}\) ${T_(['et', 'and'])} \(\frac{p_2-c}{p_2}\approx ${n((R.p2 - c) / R.p2)}=\frac{1}{|\varepsilon_2|}\).</p>
+  \[\varepsilon_1=-\frac{1}{${n(D.b1)}}\times\frac{${n(R.p1)}}{${n(R.q1)}}${eqa(D.e1)}\qquad\varepsilon_2=-\frac{1}{${n(D.b2)}}\times\frac{${n(R.p2)}}{${n(R.q2)}}${eqa(D.e2)}\]
+  ${T_(['Le prix est plus élevé en métropole, où la demande est la moins élastique', 'The price is higher on the home market, where demand is less elastic'])} (\(|\varepsilon_1|&lt;|\varepsilon_2|\)). ${T_(['En effet, l\'égalité des recettes marginales s\'écrit', 'Indeed, equal marginal revenues read'])} \(p_1\big(1-\frac{1}{|\varepsilon_1|}\big)=p_2\big(1-\frac{1}{|\varepsilon_2|}\big)=c\) : ${T_(['le taux de marge de chaque marché est l\'inverse de son élasticité, ce que l\'on vérifie :', 'the markup rate in each market is the inverse of its elasticity, as we check:'])} \(\frac{p_1-c}{p_1}${eqa((R.p1 - c) / R.p1)}=\frac{1}{|\varepsilon_1|}\) ${T_(['et', 'and'])} \(\frac{p_2-c}{p_2}${eqa((R.p2 - c) / R.p2)}=\frac{1}{|\varepsilon_2|}\).</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Avec un prix unique', 'With a uniform price'])} \(p\) ${T_(['inférieur aux deux prix maximaux', 'below both maximum prices'])} ${D.a1} ${T_(['et', 'and'])} ${D.a2}, ${T_(['les deux marchés achètent, et la demande totale est la somme des demandes :', 'both markets buy, and total demand is the sum of the demands:'])}
   \[\begin{aligned}Q(p)&amp;=\frac{${D.a1}-p}{${n(D.b1)}}+\frac{${D.a2}-p}{${n(D.b2)}}=${n(R.A)}-${n(R.B)}\,p\\P(Q)&amp;=\frac{${n(R.A)}-Q}{${n(R.B)}}=${n(R.A / R.B)}-${n(1 / R.B)}\,Q&amp;&amp;\text{${T_(['en inversant', 'inverting'])}}\end{aligned}\]
-  ${T_(['Le laboratoire se comporte alors comme un monopole face à cette demande : il égalise la recette marginale', 'The laboratory then behaves as a monopoly facing this demand: it equates marginal revenue'])} \(${n(R.A / R.B)}-${n(2 / R.B)}\,Q\) ${T_(['au coût marginal', 'with marginal cost'])} ${c}, ${T_(['ce qui donne', 'which gives'])} \(Q^u=${n(R.qu1 + R.qu2)}\). ${T_(['On en déduit, d\'après la demande inverse totale, le prix unique :', 'The total inverse demand then gives the uniform price:'])} \(p^u=${n(R.A / R.B)}-${n(1 / R.B)}\times ${n(R.qu1 + R.qu2)}=${n(R.pu)}\). ${T_(['Comme', 'Since'])} \(p^u&lt;${D.a2}\), ${T_(['les deux marchés sont bien servis, et chaque demande donne la quantité vendue sur son marché :', 'both markets are indeed served, and each demand gives the quantity sold on its market:'])}
-  \[q_1^u=\frac{${D.a1}-${n(R.pu)}}{${n(D.b1)}}=${n(R.qu1)}\qquad q_2^u=\frac{${D.a2}-${n(R.pu)}}{${n(D.b2)}}=${n(R.qu2)}\]
-  ${T_(['Le profit vaut alors', 'Profit is then'])} \(\Pi^u=(${n(R.pu)}-${c})\times ${n(R.qu1 + R.qu2)}=${m(R.profU)}\), ${T_(['inférieur au profit discriminant', 'below the discriminating profit'])}.</p>
+  ${T_(['Le laboratoire se comporte alors comme un monopole face à cette demande : il égalise la recette marginale', 'The laboratory then behaves as a monopoly facing this demand: it equates marginal revenue'])} \(${n(R.A / R.B)}-${n(2 / R.B)}\,Q\) ${T_(['au coût marginal', 'with marginal cost'])} ${c}, ${T_(['ce qui donne', 'which gives'])} \(Q^u=${fqa(R.qu1 + R.qu2)}\). ${T_(['On en déduit, d\'après la demande inverse totale, le prix unique :', 'The total inverse demand then gives the uniform price:'])} \(p^u=${n(R.A / R.B)}-${n(1 / R.B)}\times ${n(R.qu1 + R.qu2)}=${fqa(R.pu)}\). ${T_(['Comme', 'Since'])} \(p^u&lt;${D.a2}\), ${T_(['les deux marchés sont bien servis, et chaque demande donne la quantité vendue sur son marché :', 'both markets are indeed served, and each demand gives the quantity sold on its market:'])}
+  \[q_1^u=\frac{${D.a1}-${n(R.pu)}}{${n(D.b1)}}=${fqa(R.qu1)}\qquad q_2^u=\frac{${D.a2}-${n(R.pu)}}{${n(D.b2)}}=${fqa(R.qu2)}\]
+  ${T_(['Le profit vaut alors', 'Profit is then'])} \(\Pi^u=(${n(R.pu)}-${c})\times ${n(R.qu1 + R.qu2)}=${fqa(R.profU)}\), ${T_(['inférieur au profit discriminant', 'below the discriminating profit'])}.</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Sur chaque marché, le surplus des consommateurs est l\'intégrale de l\'écart entre la demande inverse et le prix payé ; le surplus du producteur est l\'intégrale de l\'écart entre le prix reçu et le coût marginal, ici égal au profit puisqu\'il n\'y a pas de coût fixe. Avec discrimination :', 'In each market, consumer surplus is the integral of the gap between inverse demand and the price paid; producer surplus is the integral of the gap between the price received and marginal cost, here equal to profit since there is no fixed cost. With discrimination:'])}
@@ -1221,13 +1277,13 @@ function e2sol(D, lang) {
   ${T_(['Avec un prix unique :', 'With a uniform price:'])}
   \[\begin{aligned}${SC}_1^u&amp;=${scI(D.a1, D.b1, R.pu, R.qu1)}\\${SC}_2^u&amp;=${scI(D.a2, D.b2, R.pu, R.qu2)}\\${SP}_1^u&amp;=${spI(R.pu, R.qu1)}\\${SP}_2^u&amp;=${spI(R.pu, R.qu2)}\end{aligned}\]
   ${T_(['Si le prix était égal au coût marginal sur chaque marché, le surplus total atteindrait son maximum, l\'aire entre la demande et le coût marginal :', 'If the price equalled marginal cost in each market, total surplus would reach its maximum, the area between demand and marginal cost:'])}
-  \[W^*=\int_0^{${n(R.q1p)}}(${D.a1}-${cfx(D.b1)}x-${c})\,dx+\int_0^{${n(R.q2p)}}(${D.a2}-${cfx(D.b2)}x-${c})\,dx=${m(D.W1max)}+${m(D.W2max)}=${m(D.Wmax)}\]
+  \[W^*=\int_0^{${n(R.q1p)}}(${D.a1}-${cfx(D.b1)}x-${c})\,dx+\int_0^{${n(R.q2p)}}(${D.a2}-${cfx(D.b2)}x-${c})\,dx=${m(D.W1max)}+${m(D.W2max)}=${fqa(D.Wmax)}\]
   ${T_(['On en déduit les bilans :', 'Hence the totals:'])}</p>
   <div class="dtable-wrap"><table class="dtable"><thead><tr><th></th><th>${T_(['Discrimination', 'Discrimination'])}</th><th>${T_(['Prix unique', 'Uniform price'])}</th></tr></thead><tbody>
-  <tr><td>${T_(['Surplus des consommateurs', 'Consumer surplus'])}</td><td class="num">${fmt(D.SC1 + D.SC2, 2)}</td><td class="num">${fmt(D.SCu1 + D.SCu2, 2)}</td></tr>
-  <tr><td>${T_(['Surplus du producteur (profit)', 'Producer surplus (profit)'])}</td><td class="num">${fmt(D.SP1 + D.SP2, 2)}</td><td class="num">${fmt(D.SPu1 + D.SPu2, 2)}</td></tr>
-  <tr><td>${T_(['Surplus total', 'Total surplus'])}</td><td class="num">${fmt(D.WD, 2)}</td><td class="num">${fmt(D.WU, 2)}</td></tr>
-  <tr><td>${T_(['Perte sèche', 'Deadweight loss'])}</td><td class="num">${fmt(D.Wmax - D.WD, 2)}</td><td class="num">${fmt(D.Wmax - D.WU, 2)}</td></tr></tbody></table></div>
+  <tr><td>${T_(['Surplus des consommateurs', 'Consumer surplus'])}</td><td class="num">${fqt(D.SC1 + D.SC2)}</td><td class="num">${fqt(D.SCu1 + D.SCu2)}</td></tr>
+  <tr><td>${T_(['Surplus du producteur (profit)', 'Producer surplus (profit)'])}</td><td class="num">${fqt(D.SP1 + D.SP2)}</td><td class="num">${fqt(D.SPu1 + D.SPu2)}</td></tr>
+  <tr><td>${T_(['Surplus total', 'Total surplus'])}</td><td class="num">${fqt(D.WD)}</td><td class="num">${fqt(D.WU)}</td></tr>
+  <tr><td>${T_(['Perte sèche', 'Deadweight loss'])}</td><td class="num">${fqt(D.Wmax - D.WD)}</td><td class="num">${fqt(D.Wmax - D.WU)}</td></tr></tbody></table></div>
   <p>${T_(['La production totale est la même dans les deux régimes', 'Total output is the same in both regimes'])} (\(${n(R.q1 + R.q2)}\)). ${T_(['La discrimination augmente le profit, réduit le surplus des consommateurs et augmente la perte sèche : à production égale, elle répartit mal les unités, puisque les consommateurs de la métropole renoncent à des unités qu\'ils valorisent davantage que les consommateurs étrangers qui les obtiennent.', 'Discrimination raises profit, reduces consumer surplus and increases the deadweight loss: with the same output, it misallocates units, since home consumers give up units that they value more than the foreign consumers who obtain them.'])}</p>
 </div></li>
 <li><div class="q-content">
@@ -1237,15 +1293,14 @@ function e2sol(D, lang) {
   ${e2graph(D, lang, true)}
 </div></li>
 <li><div class="q-content">
-  <p>${T_(['En discrimination parfaite, chaque unité est vendue au prix maximal que l\'acheteur est prêt à payer. Le laboratoire vend donc tant que ce prix dépasse le coût marginal, c\'est-à-dire jusqu\'à', 'Under perfect discrimination, each unit is sold at the highest price the buyer is willing to pay. The laboratory therefore sells as long as this price exceeds marginal cost, that is, up to'])} \(q_1=${n(R.q1p)}\) ${T_(['et', 'and'])} \(q_2=${n(R.q2p)}\). ${T_(['Les consommateurs paient exactement leur disposition à payer : leur surplus est nul. Le profit est alors l\'intégrale de l\'écart entre la demande et le coût marginal :', 'Consumers pay exactly their willingness to pay: their surplus is zero. Profit is then the integral of the gap between demand and marginal cost:'])}
-  \[\Pi^{pd}=\int_0^{${n(R.q1p)}}(${D.a1}-${cfx(D.b1)}x-${c})\,dx+\int_0^{${n(R.q2p)}}(${D.a2}-${cfx(D.b2)}x-${c})\,dx=${m(D.Wmax)}\]
+  <p>${T_(['En discrimination parfaite, chaque unité est vendue au prix maximal que l\'acheteur est prêt à payer. Le laboratoire vend donc tant que ce prix dépasse le coût marginal, c\'est-à-dire jusqu\'à', 'Under perfect discrimination, each unit is sold at the highest price the buyer is willing to pay. The laboratory therefore sells as long as this price exceeds marginal cost, that is, up to'])} \(q_1=${fqa(R.q1p)}\) ${T_(['et', 'and'])} \(q_2=${fqa(R.q2p)}\). ${T_(['Les consommateurs paient exactement leur disposition à payer : leur surplus est nul. Le profit est alors l\'intégrale de l\'écart entre la demande et le coût marginal :', 'Consumers pay exactly their willingness to pay: their surplus is zero. Profit is then the integral of the gap between demand and marginal cost:'])}
+  \[\Pi^{pd}=\int_0^{${n(R.q1p)}}(${D.a1}-${cfx(D.b1)}x-${c})\,dx+\int_0^{${n(R.q2p)}}(${D.a2}-${cfx(D.b2)}x-${c})\,dx=${fqa(D.Wmax)}\]
   ${T_(['Le surplus total atteint son maximum : il n\'y a plus de perte sèche, mais tout le surplus revient au laboratoire. La discrimination parfaite est efficace, mais très défavorable aux consommateurs.', 'Total surplus reaches its maximum: there is no deadweight loss any more, but all the surplus goes to the laboratory. Perfect discrimination is efficient, but very unfavourable to consumers.'])}</p>
 </div></li>
 </ol></div>`;
 }
-I18N.fr.sol = D => e2sol(D, 'fr');
-I18N.en.sol = D => e2sol(D, 'en');
-
+I18N.fr.sol = D => fracClean((D => e2sol(D, 'fr'))(D));
+I18N.en.sol = D => fracClean((D => e2sol(D, 'en'))(D));
 initPage();
 </script>
 

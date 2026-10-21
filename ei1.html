@@ -958,6 +958,61 @@ function initPage() {
 const GREY = '#8a857a';
 const KBASE_FR = { 'k-badge': 'MICROÉCONOMIE', 'k-seed': 'Seed de reproductibilité', 'k-seedtip': 'Vide = nouvel exercice aléatoire', 'k-gen': 'Générer', 'k-tag-course': 'Cours', 'k-tag-ex': 'Exercice', 'k-tag-sol': 'Corrigé', 'k-seedbadge': 'Seed&nbsp;:', showSol: 'Afficher le corrigé', hideSol: 'Masquer le corrigé', phSeed: 'auto', copy: 'Copier', copied: 'Copié', 'k-sub': '© Thomas Hossen – Version du 20 octobre 2026' };
 const KBASE_EN = { 'k-badge': 'MICROECONOMICS', 'k-seed': 'Reproducibility seed', 'k-seedtip': 'Empty = new random exercise', 'k-gen': 'Generate', 'k-tag-course': 'Lesson', 'k-tag-ex': 'Exercise', 'k-tag-sol': 'Solution', 'k-seedbadge': 'Seed:', showSol: 'Show solution', hideSol: 'Hide solution', phSeed: 'auto', copy: 'Copy', copied: 'Copied', 'k-sub': '© Thomas Hossen – Version of 20 October 2026' };
+/* ---------- calcul exact : reconnaissance des rationnels et affichage fractionnaire ---------- */
+function ratOf(x) {
+  if (!isFinite(x)) return null;
+  const s = x < 0 ? -1 : 1, y = Math.abs(x);
+  if (Math.abs(y - Math.round(y)) <= 1e-11 * Math.max(1, y)) return [s * Math.round(y), 1];
+  let h0 = 0, h1 = 1, k0 = 1, k1 = 0, z = y;
+  for (let i = 0; i < 40; i++) {
+    const a = Math.floor(z), h2 = a * h1 + h0, k2 = a * k1 + k0;
+    if (k2 > 2e6) return null;
+    if (Math.abs(y - h2 / k2) <= 1e-12 * Math.max(1, y)) return [s * h2, k2];
+    h0 = h1; h1 = h2; k0 = k1; k1 = k2;
+    const f = z - a; if (f < 1e-15) return null; z = 1 / f;
+  }
+  return null;
+}
+/* valeur exacte : entier ou fraction ; décimale si le nombre n'est pas rationnel (racine, puissance non entière) */
+function fq(x) {
+  const r = ratOf(x);
+  if (!r) return texT(x, 4);
+  if (r[1] === 1) return texT(r[0], 0);
+  return (r[0] < 0 ? '-' : '') + '\\frac{' + texT(Math.abs(r[0]), 0) + '}{' + texT(r[1], 0) + '}';
+}
+/* valeur exacte suivie d'une approximation décimale */
+function fqa(x) {
+  const r = ratOf(x);
+  if (!r) return texT(x, 4);
+  if (r[1] === 1) return texT(r[0], 0);
+  return fq(x) + '\\approx ' + texT(x, Math.abs(x) >= 100 ? 2 : 4);
+}
+/* entre parenthèses si fraction ou négatif (avant un exposant) */
+function fqp(x) { const r = ratOf(x), t = fq(x); return (r && r[1] === 1 && r[0] >= 0) || (!r && x >= 0) ? t : '\\left(' + t + '\\right)'; }
+/* cellule de tableau : valeur exacte, approximation en petit */
+function fqt(x) { const r = ratOf(x); return '\\(' + fq(x) + '\\)' + (r && r[1] === 1 ? '' : '<br><small>≈ ' + fmt(x, 2) + '</small>'); }
+
+/* signe = si la valeur est exacte (rationnelle), sinon approximation */
+function eqa(x) { return ratOf(x) ? '=' + fqa(x) : '\\approx ' + texT(x, 4); }
+/* simplification d'affichage : \frac{X}{1} devient X (entre parenthèses si nécessaire) */
+function fracClean(h) {
+  const grp = (s, i) => { if (s[i] !== '{') return -1; let d = 0; for (let j = i; j < s.length; j++) { if (s[j] === '{') d++; else if (s[j] === '}') { d--; if (d === 0) return j; } } return -1; };
+  let out = '', i = 0;
+  for (;;) {
+    const re = /\\[td]?frac\{/g; re.lastIndex = i; const mm = re.exec(h);
+    if (!mm) { out += h.slice(i); break; }
+    const k = mm.index, cmd = mm[0].slice(0, -1), a = k + cmd.length, ae = grp(h, a), b = ae + 1, be = ae > 0 ? grp(h, b) : -1;
+    if (ae < 0 || be < 0) { out += h.slice(i, a + 1); i = a + 1; continue; }
+    const num = h.slice(a + 1, ae), den = h.slice(b + 1, be).trim();
+    if (den === '1') {
+      let top = false, d = 0; for (let j = 0; j < num.length; j++) { const c = num[j]; if (c === '{') d++; else if (c === '}') d--; else if ((c === '+' || c === '-') && d === 0 && j > 0) top = true; }
+      const rest = h.slice(be + 1), end = /^(\s*$|\\\]|\\\)|=|&|\\\\|\\qquad|\\quad|\\text|\\iff|&lt;|&gt;|\s*[,;.<}])/.test(rest);
+      out += h.slice(i, k) + (top && !end ? '\\left(' + fracClean(num) + '\\right)' : fracClean(num));
+    } else out += h.slice(i, k) + cmd + '{' + fracClean(num) + '}{' + fracClean(h.slice(b + 1, be)) + '}';
+    i = be + 1;
+  }
+  return out;
+}
 I18N.fr.k = Object.assign({}, KBASE_FR, { title: 'Économie industrielle 1 – Le monopole', 'k-h1': 'Le monopole', 'k-coursetitle': 'Fixer son prix quand on est seul sur le marché : recette marginale, pouvoir de marché et perte sèche', 'k-extitle': 'Optimum du monopole, indice de Lerner, surplus et taxe', 'k-soltitle': 'Optimum du monopole, indice de Lerner, surplus et taxe' });
 I18N.en.k = Object.assign({}, KBASE_EN, { title: 'Industrial economics 1 – Monopoly', 'k-h1': 'Monopoly', 'k-coursetitle': 'Setting the price as the only seller: marginal revenue, market power and deadweight loss', 'k-extitle': 'Monopoly optimum, Lerner index, surplus and tax', 'k-soltitle': 'Monopoly optimum, Lerner index, surplus and tax' });
 
@@ -972,7 +1027,7 @@ function e1solve(a, b, c, d, t) {
   return { Qm: Qm, Pm: Pm, Qc: Qc, Pc: Pc, Qo: Qo, Po: Po, W: W, cmM: c + 2 * d * Qm };
 }
 
-const cfx = (x, d) => Math.abs(x - 1) < 1e-12 ? '' : texT(x, d === undefined ? 4 : d) + '\\,';
+const cfx = (x, d) => Math.abs(x - 1) < 1e-12 ? '' : fq(x) + '\\,';
 /* ---------- cours ---------- */
 I18N.fr.course = String.raw`<div class="context-block">
 <strong>Objectifs.</strong> À la fin de cette page, vous savez calculer la recette marginale d'un monopole, déterminer sa quantité et son prix optimaux, mesurer son pouvoir de marché par l'indice de Lerner, chiffrer la perte sèche qu'il impose à la collectivité et analyser l'effet d'une taxe sur la production.<br><br>
@@ -1173,7 +1228,7 @@ function e1graph(D, lang, tax) {
   G.legend(lg, G.ml + 8, 16);
   return '<div class="sol-fig">' + G.svg(fr ? 'Résolution graphique' : 'Graphical solution') + '</div>';
 }
-I18N.fr.ex = function (D) {
+I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">Une entreprise est seule à produire un bien dont la demande inverse est \(P(Q)=${D.a}-${cfx(D.b)}Q\). Sa fonction de coût total est \(${e1C(D)}\).</div>
 <div class="questions"><ol>
 <li><div class="q-text">Calculez la recette marginale et le coût marginal, puis déterminez la quantité, le prix et le profit du monopole. Vérifiez la condition du second ordre.</div></li>
@@ -1183,8 +1238,8 @@ I18N.fr.ex = function (D) {
 <li><div class="q-text">Représentez graphiquement la demande, la recette marginale et le coût marginal, les deux équilibres et les surplus de la question 4.</div></li>
 <li><div class="q-text">L'État instaure une taxe de ${D.t} par unité produite. Déterminez le nouvel équilibre, la part de la taxe répercutée sur le prix, puis la répartition du surplus entre consommateurs, producteur et État, et la nouvelle perte sèche.</div></li>
 </ol></div>`;
-};
-I18N.en.ex = function (D) {
+});
+I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">A firm is the only producer of a good whose inverse demand is \(P(Q)=${D.a}-${cfx(D.b)}Q\). Its total cost function is \(${e1C(D)}\).</div>
 <div class="questions"><ol>
 <li><div class="q-text">Compute marginal revenue and marginal cost, then determine the monopoly's quantity, price and profit. Check the second-order condition.</div></li>
@@ -1194,47 +1249,48 @@ I18N.en.ex = function (D) {
 <li><div class="q-text">Draw the demand, marginal revenue and marginal cost curves, the two equilibria and the surpluses of question 4.</div></li>
 <li><div class="q-text">The government introduces a tax of ${D.t} per unit produced. Determine the new equilibrium, the share of the tax passed on to the price, then how surplus is split between consumers, the producer and the government, and the new deadweight loss.</div></li>
 </ol></div>`;
-};
+});
 function e1sol(D, lang) {
+  const texT = (x) => fq(x);
   const fr = lang === 'fr', T_ = s => fr ? s[0] : s[1], R = D.R, Tx = D.T, a = D.a, b = D.b, c = D.c, d = D.d, t = D.t, n = x => texT(x, 4), m = x => texT(x, 2);
   const RM = T_(['Rm', 'MR']), CM = T_(['Cm', 'MC']), SC = T_(['SC', 'CS']), SP = T_(['SP', 'PS']), PS = T_(['PS', 'DWL']);
   const cmE = d ? String.raw`${c}+${cfx(2 * d)}Q` : String(c), den = 2 * b + 2 * d;
   const cmq = d ? String.raw`${c}+${cfx(2 * d)}q` : String(c);
   /* surplus du producteur par intégrale */
-  const spInt = (P, Q, tt) => { const k = P - (tt || 0) - c; return String.raw`\int_0^{${n(Q)}}\big(${n(P)}${tt ? '-' + tt : ''}-${d ? '(' + cmq + ')' : c}\big)\,dq=\Big[${n(k)}\,q${d ? '-' + cfx(d) + 'q^2' : ''}\Big]_0^{${n(Q)}}=${n(k)}\times ${n(Q)}${d ? '-' + n(d) + '\\times ' + n(Q) + '^2' : ''}`; };
-  const scInt = (P, Q) => String.raw`\int_0^{${n(Q)}}\big(${a}-${cfx(b)}q-${n(P)}\big)\,dq=\Big[${n(a - P)}\,q-${cfx(b / 2)}q^2\Big]_0^{${n(Q)}}=${n(a - P)}\times ${n(Q)}-${n(b / 2)}\times ${n(Q)}^2`;
+  const spInt = (P, Q, tt) => { const k = P - (tt || 0) - c; return String.raw`\int_0^{${n(Q)}}\big(${n(P)}${tt ? '-' + tt : ''}-${d ? '(' + cmq + ')' : c}\big)\,dq=\Big[${n(k)}\,q${d ? '-' + cfx(d) + 'q^2' : ''}\Big]_0^{${n(Q)}}=${n(k)}\times ${n(Q)}${d ? '-' + n(d) + '\\times ' + fqp(Q) + '^2' : ''}`; };
+  const scInt = (P, Q) => String.raw`\int_0^{${n(Q)}}\big(${a}-${cfx(b)}q-${n(P)}\big)\,dq=\Big[${n(a - P)}\,q-${cfx(b / 2)}q^2\Big]_0^{${n(Q)}}=${n(a - P)}\times ${n(Q)}-${n(b / 2)}\times ${fqp(Q)}^2`;
   return String.raw`<div class="st"><ol>
 <li><div class="q-content">
   <p>${T_(['La recette totale du monopole est le produit du prix par la quantité vendue,', 'The monopoly\'s total revenue is the price times the quantity sold,'])} \(RT(Q)=P(Q)\,Q=${a}\,Q-${cfx(b)}Q^2\). ${T_(['On en déduit la recette marginale, en dérivant par rapport à', 'Differentiating with respect to'])} \(Q\)${T_(['', ' gives marginal revenue'])}, ${T_(['et, de même, le coût marginal à partir du coût total :', 'and, likewise, marginal cost from total cost:'])}
   \[${RM}(Q)=${a}-${cfx(2 * b)}Q\qquad\text{${T_(['et', 'and'])}}\qquad ${CM}(Q)=C'(Q)=${cmE}\]
   ${T_(['Le profit', 'Profit'])} \(\Pi(Q)=RT(Q)-C(Q)\) ${T_(['est maximal lorsque sa dérivée s\'annule, c\'est-à-dire lorsque la recette marginale est égale au coût marginal :', 'is maximal when its derivative vanishes, that is, when marginal revenue equals marginal cost:'])}
-  \[\begin{aligned}\Pi'(Q)=0&amp;\iff ${RM}(Q)=${CM}(Q)\\&amp;\iff ${a}-${cfx(2 * b)}Q=${cmE}\\&amp;\iff Q^m=${den === 1 ? a + '-' + c : String.raw`\frac{${a}-${c}}{${n(den)}}`}=${n(R.Qm)}\end{aligned}\]
+  \[\begin{aligned}\Pi'(Q)=0&amp;\iff ${RM}(Q)=${CM}(Q)\\&amp;\iff ${a}-${cfx(2 * b)}Q=${cmE}\\&amp;\iff Q^m=${den === 1 ? a + '-' + c : String.raw`\frac{${a}-${c}}{${n(den)}}`}=${fqa(R.Qm)}\end{aligned}\]
   ${T_(['La dérivée seconde', 'The second derivative'])} \(\Pi''(Q)=-${n(den)}\) ${T_(['est négative : il s\'agit bien d\'un maximum. On en déduit, d\'après la fonction de demande inverse, le prix fixé par le monopole :', 'is negative: this is indeed a maximum. The inverse demand function then gives the price set by the monopoly:'])}
-  \[P^m=P(Q^m)=${a}-${b === 1 ? '' : texT(b, 2) + '\\times '}${n(R.Qm)}=${n(R.Pm)}\]
+  \[P^m=P(Q^m)=${a}-${b === 1 ? '' : texT(b, 2) + '\\times '}${n(R.Qm)}=${fqa(R.Pm)}\]
   ${T_(['Le profit est alors la recette totale diminuée du coût total :', 'Profit is then total revenue minus total cost:'])}
-  \[\Pi^m=P^mQ^m-C(Q^m)=${n(R.Pm)}\times ${n(R.Qm)}-${n(c * R.Qm + d * R.Qm * R.Qm + D.F)}\approx ${m(D.prof)}\]
+  \[\Pi^m=P^mQ^m-C(Q^m)=${n(R.Pm)}\times ${n(R.Qm)}-${n(c * R.Qm + d * R.Qm * R.Qm + D.F)}${eqa(D.prof)}\]
   ${T_(['Ce profit est positif : le monopole a intérêt à produire, malgré le coût fixe de', 'This profit is positive: the monopoly finds it worthwhile to produce, despite the fixed cost of'])} ${D.F}.</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['La demande s\'écrit', 'Demand can be written'])} \(Q=\frac{${a}-P}{${texT(b, 2)}}\), ${T_(['donc', 'so'])} \(\frac{dQ}{dP}=-\frac{1}{${texT(b, 2)}}\). ${T_(['L\'élasticité-prix au point d\'équilibre et l\'indice de Lerner valent donc :', 'The price elasticity at the equilibrium point and the Lerner index are therefore:'])}
-  \[\begin{aligned}\varepsilon&amp;=\frac{dQ}{dP}\cdot\frac{P^m}{Q^m}=-\frac{1}{${texT(b, 2)}}\times\frac{${n(R.Pm)}}{${n(R.Qm)}}\approx ${n(D.eps)}\\L&amp;=\frac{P^m-${CM}(Q^m)}{P^m}=\frac{${n(R.Pm)}-${n(R.cmM)}}{${n(R.Pm)}}\approx ${n(D.L)}\end{aligned}\]
-  ${T_(['On vérifie que', 'We check that'])} \(\frac{1}{|\varepsilon|}\approx ${n(1 / Math.abs(D.eps))}=L\) : ${T_(['le taux de marge du monopole est l\'inverse de l\'élasticité de la demande. Comme', 'the monopoly\'s markup rate is the inverse of the elasticity of demand. Since'])} \(|\varepsilon|&gt;1\), ${T_(['le monopole se situe sur la partie élastique de la demande.', 'the monopoly lies on the elastic part of demand.'])}</p>
+  \[\begin{aligned}\varepsilon&amp;=\frac{dQ}{dP}\cdot\frac{P^m}{Q^m}=-\frac{1}{${texT(b, 2)}}\times\frac{${n(R.Pm)}}{${n(R.Qm)}}${eqa(D.eps)}\\L&amp;=\frac{P^m-${CM}(Q^m)}{P^m}=\frac{${n(R.Pm)}-${n(R.cmM)}}{${n(R.Pm)}}${eqa(D.L)}\end{aligned}\]
+  ${T_(['On vérifie que', 'We check that'])} \(\frac{1}{|\varepsilon|}${eqa(1 / Math.abs(D.eps))}=L\) : ${T_(['le taux de marge du monopole est l\'inverse de l\'élasticité de la demande. Comme', 'the monopoly\'s markup rate is the inverse of the elasticity of demand. Since'])} \(|\varepsilon|&gt;1\), ${T_(['le monopole se situe sur la partie élastique de la demande.', 'the monopoly lies on the elastic part of demand.'])}</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Si le prix était égal au coût marginal, la quantité échangée serait celle pour laquelle la demande coupe le coût marginal :', 'If the price equalled marginal cost, the quantity traded would be the one at which demand crosses marginal cost:'])}
-  \[P(Q)=${CM}(Q)\iff ${a}-${cfx(b)}Q=${cmE}\iff Q^c=${b + 2 * d === 1 ? a + '-' + c : String.raw`\frac{${a}-${c}}{${n(b + 2 * d)}}`}=${n(R.Qo)}\]
-  ${T_(['On en déduit, d\'après la fonction de demande inverse, le prix correspondant :', 'The inverse demand function then gives the corresponding price:'])} \(P^c=${a}-${b === 1 ? '' : texT(b, 2) + '\\times '}${n(R.Qo)}=${n(R.Po)}\). ${T_(['Le monopole produit donc', 'The monopoly therefore produces'])} \(${n(R.Qo - R.Qm)}\) ${T_(['unités de moins et vend', 'fewer units and sells'])} \(${n(R.Pm - R.Po)}\) ${T_(['plus cher.', 'more expensively.'])}</p>
+  \[P(Q)=${CM}(Q)\iff ${a}-${cfx(b)}Q=${cmE}\iff Q^c=${b + 2 * d === 1 ? a + '-' + c : String.raw`\frac{${a}-${c}}{${n(b + 2 * d)}}`}=${fqa(R.Qo)}\]
+  ${T_(['On en déduit, d\'après la fonction de demande inverse, le prix correspondant :', 'The inverse demand function then gives the corresponding price:'])} \(P^c=${a}-${b === 1 ? '' : texT(b, 2) + '\\times '}${n(R.Qo)}=${fqa(R.Po)}\). ${T_(['Le monopole produit donc', 'The monopoly therefore produces'])} \(${n(R.Qo - R.Qm)}\) ${T_(['unités de moins et vend', 'fewer units and sells'])} \(${n(R.Pm - R.Po)}\) ${T_(['plus cher.', 'more expensively.'])}</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Le surplus des consommateurs est la somme, sur les unités achetées, de l\'écart entre ce qu\'ils étaient prêts à payer, lu sur la demande, et le prix payé. En monopole :', 'Consumer surplus is the sum, over the units bought, of the gap between what consumers were willing to pay, read on the demand curve, and the price paid. Under monopoly:'])}
-  \[${SC}^m=${scInt(R.Pm, R.Qm)}=${m(D.SCm)}\]
+  \[${SC}^m=${scInt(R.Pm, R.Qm)}=${fqa(D.SCm)}\]
   ${T_(['Le surplus du producteur est la somme, sur les unités vendues, de l\'écart entre le prix reçu et le coût marginal ; il est égal au profit augmenté du coût fixe :', 'Producer surplus is the sum, over the units sold, of the gap between the price received and marginal cost; it equals profit plus the fixed cost:'])}
   \[${SP}^m=${spInt(R.Pm, R.Qm)}=${m(D.SPm)}=\Pi^m+${D.F}\]
   ${T_(['Avec un prix égal au coût marginal, les mêmes calculs donnent :', 'With a price equal to marginal cost, the same computations give:'])}
-  \[\begin{aligned}${SC}^c&amp;=${scInt(R.Po, R.Qo)}=${m(D.SCc)}\\${SP}^c&amp;=${spInt(R.Po, R.Qo)}=${m(D.SPc)}\end{aligned}\]
-  ${T_(['Le surplus total, somme des deux, passe de', 'Total surplus, the sum of the two, goes from'])} \(W^c=${m(D.Wc)}\) ${T_(['à', 'to'])} \(W^m=${m(D.Wm)}\). ${T_(['La différence est la perte sèche :', 'The difference is the deadweight loss:'])}
-  \[${PS}=W^c-W^m=${m(D.Wc)}-${m(D.Wm)}=${m(D.DWL)}\]
-  ${T_(['On retrouve l\'aire du triangle compris entre la demande et le coût marginal, de', 'This is the area of the triangle between demand and marginal cost, from'])} \(Q^m\) ${T_(['à', 'to'])} \(Q^c\) : \(\frac12\,(${n(R.Qo)}-${n(R.Qm)})\,(${n(R.Pm)}-${n(R.cmM)})=${m(D.DWL)}\). ${T_(['Le monopole transfère une partie du surplus des consommateurs vers lui-même, et en détruit une autre partie.', 'The monopoly transfers part of consumer surplus to itself, and destroys another part.'])}</p>
+  \[\begin{aligned}${SC}^c&amp;=${scInt(R.Po, R.Qo)}=${fqa(D.SCc)}\\${SP}^c&amp;=${spInt(R.Po, R.Qo)}=${fqa(D.SPc)}\end{aligned}\]
+  ${T_(['Le surplus total, somme des deux, passe de', 'Total surplus, the sum of the two, goes from'])} \(W^c=${fqa(D.Wc)}\) ${T_(['à', 'to'])} \(W^m=${fqa(D.Wm)}\). ${T_(['La différence est la perte sèche :', 'The difference is the deadweight loss:'])}
+  \[${PS}=W^c-W^m=${m(D.Wc)}-${m(D.Wm)}=${fqa(D.DWL)}\]
+  ${T_(['On retrouve l\'aire du triangle compris entre la demande et le coût marginal, de', 'This is the area of the triangle between demand and marginal cost, from'])} \(Q^m\) ${T_(['à', 'to'])} \(Q^c\) : \(\frac12\,(${n(R.Qo)}-${n(R.Qm)})\,(${n(R.Pm)}-${n(R.cmM)})=${fqa(D.DWL)}\). ${T_(['Le monopole transfère une partie du surplus des consommateurs vers lui-même, et en détruit une autre partie.', 'The monopoly transfers part of consumer surplus to itself, and destroys another part.'])}</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Graphiquement, l\'équilibre du monopole', 'Graphically, the monopoly equilibrium'])} M ${T_(['se lit à l\'intersection de la recette marginale (pointillés) et du coût marginal (doré), en remontant jusqu\'à la demande pour obtenir le prix ; l\'équilibre', 'is read at the intersection of marginal revenue (dashed) and marginal cost (gold), going up to the demand curve to obtain the price; equilibrium'])} C ${T_(['est à l\'intersection de la demande et du coût marginal. Les surplus de la question 4 sont les aires colorées.', 'is at the intersection of demand and marginal cost. The surpluses of question 4 are the shaded areas.'])}</p>
@@ -1242,17 +1298,16 @@ function e1sol(D, lang) {
 </div></li>
 <li><div class="q-content">
   <p>${T_(['La taxe s\'ajoute au coût de chaque unité : le monopole égalise désormais sa recette marginale au coût marginal augmenté de la taxe.', 'The tax adds to the cost of each unit: the monopoly now equates marginal revenue with marginal cost plus the tax.'])}
-  \[${a}-${cfx(2 * b)}Q=${cmE}+${t}\iff Q^m_t=${den === 1 ? a + '-' + c + '-' + t : String.raw`\frac{${a}-${c}-${t}}{${n(den)}}`}=${n(Tx.Qm)}\]
-  ${T_(['On en déduit, d\'après la fonction de demande inverse, le prix payé par les consommateurs :', 'The inverse demand function then gives the price paid by consumers:'])} \(P^m_t=${a}-${b === 1 ? '' : texT(b, 2) + '\\times '}${n(Tx.Qm)}=${n(Tx.Pm)}\). ${T_(['Le prix augmente de', 'The price rises by'])} \(${n(Tx.Pm - R.Pm)}\), ${T_(['soit', 'that is'])} \(${texT(100 * D.passK, 1)}\,\%\) ${T_(['de la taxe : le monopole n\'en répercute qu\'une partie et absorbe le reste sur sa marge. Il reçoit, net de taxe,', 'of the tax: the monopoly only passes on part of it and absorbs the rest on its margin. It receives, net of tax,'])} \(${n(Tx.Pm - t)}\) ${T_(['par unité. Les surplus et la recette fiscale \\(T\\) perçue par l\'État deviennent :', 'per unit. The surpluses, and the tax revenue \\(T\\) collected by the government, become:'])}
-  \[\begin{aligned}${SC}_t&amp;=${scInt(Tx.Pm, Tx.Qm)}=${m(D.SCt)}\\${SP}_t&amp;=${spInt(Tx.Pm, Tx.Qm, String(t))}=${m(D.SPt)}\\T&amp;=${t}\times ${n(Tx.Qm)}=${m(D.Tt)}\end{aligned}\]
-  ${T_(['Le surplus total, recette fiscale comprise, vaut', 'Total surplus, including tax revenue, is'])} \(W_t=${m(D.SCt)}+${m(D.SPt)}+${m(D.Tt)}=${m(D.Wt)}\), ${T_(['d\'où une perte sèche', 'hence a deadweight loss'])} \(W^c-W_t=${m(D.DWLt)}\), ${T_(['supérieure à celle du monopole sans taxe', 'larger than that of the untaxed monopoly'])} (\(${m(D.DWL)}\)). ${T_(['La taxe aggrave la sous-production ; elle est supportée à la fois par les consommateurs, dont le surplus baisse de', 'The tax worsens underproduction; it is borne both by consumers, whose surplus falls by'])} \(${m(D.SCm - D.SCt)}\), ${T_(['et par le monopole, dont le surplus baisse de', 'and by the monopoly, whose surplus falls by'])} \(${m(D.SPm - D.SPt)}\).</p>
+  \[${a}-${cfx(2 * b)}Q=${cmE}+${t}\iff Q^m_t=${den === 1 ? a + '-' + c + '-' + t : String.raw`\frac{${a}-${c}-${t}}{${n(den)}}`}=${fqa(Tx.Qm)}\]
+  ${T_(['On en déduit, d\'après la fonction de demande inverse, le prix payé par les consommateurs :', 'The inverse demand function then gives the price paid by consumers:'])} \(P^m_t=${a}-${b === 1 ? '' : texT(b, 2) + '\\times '}${n(Tx.Qm)}=${fqa(Tx.Pm)}\). ${T_(['Le prix augmente de', 'The price rises by'])} \(${n(Tx.Pm - R.Pm)}\), ${T_(['soit', 'that is'])} \(${texT(100 * D.passK, 1)}\,\%\) ${T_(['de la taxe : le monopole n\'en répercute qu\'une partie et absorbe le reste sur sa marge. Il reçoit, net de taxe,', 'of the tax: the monopoly only passes on part of it and absorbs the rest on its margin. It receives, net of tax,'])} \(${n(Tx.Pm - t)}\) ${T_(['par unité. Les surplus et la recette fiscale \\(T\\) perçue par l\'État deviennent :', 'per unit. The surpluses, and the tax revenue \\(T\\) collected by the government, become:'])}
+  \[\begin{aligned}${SC}_t&amp;=${scInt(Tx.Pm, Tx.Qm)}=${fqa(D.SCt)}\\${SP}_t&amp;=${spInt(Tx.Pm, Tx.Qm, String(t))}=${fqa(D.SPt)}\\T&amp;=${t}\times ${n(Tx.Qm)}=${fqa(D.Tt)}\end{aligned}\]
+  ${T_(['Le surplus total, recette fiscale comprise, vaut', 'Total surplus, including tax revenue, is'])} \(W_t=${m(D.SCt)}+${m(D.SPt)}+${m(D.Tt)}=${fqa(D.Wt)}\), ${T_(['d\'où une perte sèche', 'hence a deadweight loss'])} \(W^c-W_t=${fqa(D.DWLt)}\), ${T_(['supérieure à celle du monopole sans taxe', 'larger than that of the untaxed monopoly'])} (\(${m(D.DWL)}\)). ${T_(['La taxe aggrave la sous-production ; elle est supportée à la fois par les consommateurs, dont le surplus baisse de', 'The tax worsens underproduction; it is borne both by consumers, whose surplus falls by'])} \(${m(D.SCm - D.SCt)}\), ${T_(['et par le monopole, dont le surplus baisse de', 'and by the monopoly, whose surplus falls by'])} \(${m(D.SPm - D.SPt)}\).</p>
   ${e1graph(D, lang, true)}
 </div></li>
 </ol></div>`;
 }
-I18N.fr.sol = D => e1sol(D, 'fr');
-I18N.en.sol = D => e1sol(D, 'en');
-
+I18N.fr.sol = D => fracClean((D => e1sol(D, 'fr'))(D));
+I18N.en.sol = D => fracClean((D => e1sol(D, 'en'))(D));
 initPage();
 </script>
 

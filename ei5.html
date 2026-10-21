@@ -955,7 +955,62 @@ function initPage() {
 const GREY = '#8a857a';
 const KBASE_FR = { 'k-badge': 'MICROÉCONOMIE', 'k-seed': 'Seed de reproductibilité', 'k-seedtip': 'Vide = nouvel exercice aléatoire', 'k-gen': 'Générer', 'k-tag-course': 'Cours', 'k-tag-ex': 'Exercice', 'k-tag-sol': 'Corrigé', 'k-seedbadge': 'Seed&nbsp;:', showSol: 'Afficher le corrigé', hideSol: 'Masquer le corrigé', phSeed: 'auto', copy: 'Copier', copied: 'Copié', 'k-sub': '© Thomas Hossen – Version du 20 octobre 2026' };
 const KBASE_EN = { 'k-badge': 'MICROECONOMICS', 'k-seed': 'Reproducibility seed', 'k-seedtip': 'Empty = new random exercise', 'k-gen': 'Generate', 'k-tag-course': 'Lesson', 'k-tag-ex': 'Exercise', 'k-tag-sol': 'Solution', 'k-seedbadge': 'Seed:', showSol: 'Show solution', hideSol: 'Hide solution', phSeed: 'auto', copy: 'Copy', copied: 'Copied', 'k-sub': '© Thomas Hossen – Version of 20 October 2026' };
-const cfx = (x, d) => Math.abs(x - 1) < 1e-12 ? '' : texT(x, d === undefined ? 4 : d) + '\\,';
+/* ---------- calcul exact : reconnaissance des rationnels et affichage fractionnaire ---------- */
+function ratOf(x) {
+  if (!isFinite(x)) return null;
+  const s = x < 0 ? -1 : 1, y = Math.abs(x);
+  if (Math.abs(y - Math.round(y)) <= 1e-11 * Math.max(1, y)) return [s * Math.round(y), 1];
+  let h0 = 0, h1 = 1, k0 = 1, k1 = 0, z = y;
+  for (let i = 0; i < 40; i++) {
+    const a = Math.floor(z), h2 = a * h1 + h0, k2 = a * k1 + k0;
+    if (k2 > 2e6) return null;
+    if (Math.abs(y - h2 / k2) <= 1e-12 * Math.max(1, y)) return [s * h2, k2];
+    h0 = h1; h1 = h2; k0 = k1; k1 = k2;
+    const f = z - a; if (f < 1e-15) return null; z = 1 / f;
+  }
+  return null;
+}
+/* valeur exacte : entier ou fraction ; décimale si le nombre n'est pas rationnel (racine, puissance non entière) */
+function fq(x) {
+  const r = ratOf(x);
+  if (!r) return texT(x, 4);
+  if (r[1] === 1) return texT(r[0], 0);
+  return (r[0] < 0 ? '-' : '') + '\\frac{' + texT(Math.abs(r[0]), 0) + '}{' + texT(r[1], 0) + '}';
+}
+/* valeur exacte suivie d'une approximation décimale */
+function fqa(x) {
+  const r = ratOf(x);
+  if (!r) return texT(x, 4);
+  if (r[1] === 1) return texT(r[0], 0);
+  return fq(x) + '\\approx ' + texT(x, Math.abs(x) >= 100 ? 2 : 4);
+}
+/* entre parenthèses si fraction ou négatif (avant un exposant) */
+function fqp(x) { const r = ratOf(x), t = fq(x); return (r && r[1] === 1 && r[0] >= 0) || (!r && x >= 0) ? t : '\\left(' + t + '\\right)'; }
+/* cellule de tableau : valeur exacte, approximation en petit */
+function fqt(x) { const r = ratOf(x); return '\\(' + fq(x) + '\\)' + (r && r[1] === 1 ? '' : '<br><small>≈ ' + fmt(x, 2) + '</small>'); }
+
+/* signe = si la valeur est exacte (rationnelle), sinon approximation */
+function eqa(x) { return ratOf(x) ? '=' + fqa(x) : '\\approx ' + texT(x, 4); }
+/* simplification d'affichage : \frac{X}{1} devient X (entre parenthèses si nécessaire) */
+function fracClean(h) {
+  const grp = (s, i) => { if (s[i] !== '{') return -1; let d = 0; for (let j = i; j < s.length; j++) { if (s[j] === '{') d++; else if (s[j] === '}') { d--; if (d === 0) return j; } } return -1; };
+  let out = '', i = 0;
+  for (;;) {
+    const re = /\\[td]?frac\{/g; re.lastIndex = i; const mm = re.exec(h);
+    if (!mm) { out += h.slice(i); break; }
+    const k = mm.index, cmd = mm[0].slice(0, -1), a = k + cmd.length, ae = grp(h, a), b = ae + 1, be = ae > 0 ? grp(h, b) : -1;
+    if (ae < 0 || be < 0) { out += h.slice(i, a + 1); i = a + 1; continue; }
+    const num = h.slice(a + 1, ae), den = h.slice(b + 1, be).trim();
+    if (den === '1') {
+      let top = false, d = 0; for (let j = 0; j < num.length; j++) { const c = num[j]; if (c === '{') d++; else if (c === '}') d--; else if ((c === '+' || c === '-') && d === 0 && j > 0) top = true; }
+      const rest = h.slice(be + 1), end = /^(\s*$|\\\]|\\\)|=|&|\\\\|\\qquad|\\quad|\\text|\\iff|&lt;|&gt;|\s*[,;.<}])/.test(rest);
+      out += h.slice(i, k) + (top && !end ? '\\left(' + fracClean(num) + '\\right)' : fracClean(num));
+    } else out += h.slice(i, k) + cmd + '{' + fracClean(num) + '}{' + fracClean(h.slice(b + 1, be)) + '}';
+    i = be + 1;
+  }
+  return out;
+}
+const cfx = (x, d) => Math.abs(x - 1) < 1e-12 ? '' : fq(x) + '\\,';
 /* figure générique : demande linéaire P = a - bQ, surplus des consommateurs, profits par segments [x0, x1, coût],
    perte sèche par rapport à la tarification au coût marginal minimal cmin */
 function eiSurplusFig(o) {
@@ -1136,7 +1191,7 @@ function e5graphBR(D, lang) {
   G.legend([{ c: COL.s1, t: 'R₁' }, { c: COL.s2, t: 'R₂' }, { c: GREY, dash: '5 4', t: fr ? 'production de cartel' : 'cartel output' }], G.ml + 70, 16);
   return '<div class="sol-fig">' + G.svg(fr ? 'Cournot, cartel et déviation' : 'Cournot, cartel and deviation') + '</div>';
 }
-I18N.fr.ex = function (D) {
+I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">Deux entreprises identiques produisent un bien homogène de demande inverse \(P(Q)=${D.a}-${cfx(D.b)}Q\), avec \(Q=q_1+q_2\). Chacune a un coût marginal constant \(c=${D.c}\), sans coût fixe.</div>
 <div class="questions"><ol>
 <li><div class="q-text">Déterminez l'équilibre de Cournot : quantités, prix et profits.</div></li>
@@ -1146,8 +1201,8 @@ I18N.fr.ex = function (D) {
 <li><div class="q-text">Représentez graphiquement les fonctions de réaction, les points de Cournot, de cartel et de tricherie, puis les surplus en Cournot et en cartel.</div></li>
 <li><div class="q-text">Le jeu est répété indéfiniment, avec un facteur d'actualisation \(\delta\). Chaque entreprise respecte l'accord tant que l'autre l'a respecté, et revient pour toujours à Cournot sinon. À quelle condition sur \(\delta\) le cartel est-il stable ? L'est-il pour \(\delta=${fmtT(D.dTest, 2)}\) ?</div></li>
 </ol></div>`;
-};
-I18N.en.ex = function (D) {
+});
+I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">Two identical firms produce a homogeneous good with inverse demand \(P(Q)=${D.a}-${cfx(D.b)}Q\), with \(Q=q_1+q_2\). Each has a constant marginal cost \(c=${D.c}\), with no fixed cost.</div>
 <div class="questions"><ol>
 <li><div class="q-text">Determine the Cournot equilibrium: quantities, price and profits.</div></li>
@@ -1157,19 +1212,20 @@ I18N.en.ex = function (D) {
 <li><div class="q-text">Draw the reaction functions, the Cournot, cartel and cheating points, then the surpluses under Cournot and under the cartel.</div></li>
 <li><div class="q-text">The game is repeated indefinitely, with a discount factor \(\delta\). Each firm complies as long as the other has complied, and reverts forever to Cournot otherwise. Under which condition on \(\delta\) is the cartel stable? Is it for \(\delta=${fmtT(D.dTest, 2)}\)?</div></li>
 </ol></div>`;
-};
+});
 function e5sol(D, lang) {
+  const texT = (x) => fq(x);
   const fr = lang === 'fr', T_ = s => fr ? s[0] : s[1], a = D.a, b = D.b, c = D.c, n4 = x => texT(x, 4), m = x => texT(x, 2);
   const SC = T_(['SC', 'CS']), SP = T_(['SP', 'PS']), bx = b === 1 ? '' : texT(b, 2) + '\\times ', r = (a - c) / (2 * b);
   const qfr = (num, den, val) => Math.abs(den - 1) < 1e-12 ? `${num}=${n4(val)}` : String.raw`\frac{${num}}{${n4(den)}}=${n4(val)}`;
   const scI = (Q, P) => String.raw`\int_0^{${n4(Q)}}\big(${a}-${cfx(b)}q-${n4(P)}\big)\,dq=\Big[${n4(a - P)}\,q-${cfx(b / 2)}q^2\Big]_0^{${n4(Q)}}=${m(b * Q * Q / 2)}`;
   const spI = (Q, P) => String.raw`\int_0^{${n4(Q)}}(${n4(P)}-${c})\,dq=${m((P - c) * Q)}`;
   const tab = `<div class="dtable-wrap"><table class="dtable"><thead><tr><th></th><th>${T_(['Cournot', 'Cournot'])}</th><th>${T_(['Cartel', 'Cartel'])}</th><th>${T_(['Tricherie', 'Cheating'])}</th><th>${T_(['Concurrence parfaite', 'Perfect competition'])}</th></tr></thead><tbody>
-  <tr><td>${T_(['Production', 'Output'])}</td><td class="num">${fmt(D.QC, 2)}</td><td class="num">${fmt(D.QK, 2)}</td><td class="num">${fmt(D.QD, 2)}</td><td class="num">${fmt(D.Qc, 2)}</td></tr>
-  <tr><td>${T_(['Surplus des consommateurs', 'Consumer surplus'])}</td><td class="num">${fmt(D.SCC, 2)}</td><td class="num">${fmt(D.SCK, 2)}</td><td class="num">${fmt(D.SCD, 2)}</td><td class="num">${fmt(D.Wc, 2)}</td></tr>
-  <tr><td>${T_(['Surplus des producteurs', 'Producer surplus'])}</td><td class="num">${fmt(D.SPC, 2)}</td><td class="num">${fmt(D.SPK, 2)}</td><td class="num">${fmt(D.SPD, 2)}</td><td class="num">${fmt(0, 2)}</td></tr>
-  <tr><td>${T_(['Surplus total', 'Total surplus'])}</td><td class="num">${fmt(D.WC, 2)}</td><td class="num">${fmt(D.WK, 2)}</td><td class="num">${fmt(D.WD, 2)}</td><td class="num">${fmt(D.Wc, 2)}</td></tr>
-  <tr><td>${T_(['Perte sèche', 'Deadweight loss'])}</td><td class="num">${fmt(D.Wc - D.WC, 2)}</td><td class="num">${fmt(D.Wc - D.WK, 2)}</td><td class="num">${fmt(D.Wc - D.WD, 2)}</td><td class="num">${fmt(0, 2)}</td></tr></tbody></table></div>`;
+  <tr><td>${T_(['Production', 'Output'])}</td><td class="num">${fqt(D.QC)}</td><td class="num">${fqt(D.QK)}</td><td class="num">${fqt(D.QD)}</td><td class="num">${fqt(D.Qc)}</td></tr>
+  <tr><td>${T_(['Surplus des consommateurs', 'Consumer surplus'])}</td><td class="num">${fqt(D.SCC)}</td><td class="num">${fqt(D.SCK)}</td><td class="num">${fqt(D.SCD)}</td><td class="num">${fqt(D.Wc)}</td></tr>
+  <tr><td>${T_(['Surplus des producteurs', 'Producer surplus'])}</td><td class="num">${fqt(D.SPC)}</td><td class="num">${fqt(D.SPK)}</td><td class="num">${fqt(D.SPD)}</td><td class="num">${fqt(0)}</td></tr>
+  <tr><td>${T_(['Surplus total', 'Total surplus'])}</td><td class="num">${fqt(D.WC)}</td><td class="num">${fqt(D.WK)}</td><td class="num">${fqt(D.WD)}</td><td class="num">${fqt(D.Wc)}</td></tr>
+  <tr><td>${T_(['Perte sèche', 'Deadweight loss'])}</td><td class="num">${fqt(D.Wc - D.WC)}</td><td class="num">${fqt(D.Wc - D.WK)}</td><td class="num">${fqt(D.Wc - D.WD)}</td><td class="num">${fqt(0)}</td></tr></tbody></table></div>`;
   const mat = `<div class="dtable-wrap"><table class="dtable"><thead><tr><th>${T_(['1 \\ 2', '1 \\ 2'])}</th><th>${T_(['Respecter', 'Comply'])}</th><th>${T_(['Tricher', 'Cheat'])}</th></tr></thead><tbody>
   <tr><td>${T_(['Respecter', 'Comply'])}</td><td class="num">(${fmt(D.piK, 2)} ; ${fmt(D.piK, 2)})</td><td class="num">(${fmt(D.piL, 2)} ; ${fmt(D.piD, 2)})</td></tr>
   <tr><td>${T_(['Tricher', 'Cheat'])}</td><td class="num">(${fmt(D.piD, 2)} ; ${fmt(D.piL, 2)})</td><td class="num">(${fmt(D.piC, 2)} ; ${fmt(D.piC, 2)})</td></tr></tbody></table></div>`;
@@ -1178,25 +1234,25 @@ function e5sol(D, lang) {
 <li><div class="q-content">
   <p>${T_(['Le profit de l\'entreprise 1 est', 'Firm 1\'s profit is'])} \(\Pi_1=(${a}-${cfx(b)}q_1-${cfx(b)}q_2)\,q_1-${c}\,q_1\). ${T_(['Pour une quantité donnée de sa concurrente, elle annule la dérivée de son profit, ce qui donne sa fonction de réaction ; par symétrie, celle de l\'entreprise 2 s\'en déduit en échangeant les indices :', 'For a given rival quantity, it sets the derivative of its profit to zero, which gives its reaction function; by symmetry, firm 2\'s follows by swapping the indices:'])}
   \[\frac{\partial\Pi_1}{\partial q_1}=${a}-${cfx(2 * b)}q_1-${cfx(b)}q_2-${c}=0\iff q_1=${n4(r)}-\frac{q_2}{2}\qquad q_2=${n4(r)}-\frac{q_1}{2}\]
-  ${T_(['L\'équilibre étant symétrique,', 'The equilibrium being symmetric,'])} \(q_1^C=q_2^C=q\) ${T_(['vérifie', 'satisfies'])} \(q=${n4(r)}-\frac{q}{2}\), ${T_(['soit', 'that is'])} \(q^C=\frac{2}{3}\times ${n4(r)}=${n4(D.qC)}\). ${T_(['La production totale est', 'Total output is'])} \(Q^C=${n4(D.QC)}\) ${T_(['et l\'on en déduit, d\'après la fonction de demande inverse, le prix d\'équilibre :', 'and the inverse demand function then gives the equilibrium price:'])}
-  \[P^C=${a}-${bx}${n4(D.QC)}=${n4(D.PC)}\qquad\text{${T_(['d\'où', 'hence'])}}\qquad\Pi^C=(${n4(D.PC)}-${c})\times ${n4(D.qC)}=${m(D.piC)}\ \text{${T_(['chacune', 'each'])}}\]</p>
+  ${T_(['L\'équilibre étant symétrique,', 'The equilibrium being symmetric,'])} \(q_1^C=q_2^C=q\) ${T_(['vérifie', 'satisfies'])} \(q=${n4(r)}-\frac{q}{2}\), ${T_(['soit', 'that is'])} \(q^C=\frac{2}{3}\times ${n4(r)}=${fqa(D.qC)}\). ${T_(['La production totale est', 'Total output is'])} \(Q^C=${fqa(D.QC)}\) ${T_(['et l\'on en déduit, d\'après la fonction de demande inverse, le prix d\'équilibre :', 'and the inverse demand function then gives the equilibrium price:'])}
+  \[P^C=${a}-${bx}${n4(D.QC)}=${fqa(D.PC)}\qquad\text{${T_(['d\'où', 'hence'])}}\qquad\Pi^C=(${n4(D.PC)}-${c})\times ${n4(D.qC)}=${m(D.piC)}\ \text{${T_(['chacune', 'each'])}}\]</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Le cartel maximise le profit joint', 'The cartel maximises joint profit'])} \(\Pi=(${a}-${cfx(b)}Q)\,Q-${c}\,Q\), ${T_(['qui ne dépend que de la production totale. Il annule sa dérivée, c\'est-à-dire égalise la recette marginale au coût marginal :', 'which only depends on total output. It sets its derivative to zero, that is, equates marginal revenue with marginal cost:'])}
   \[${a}-${cfx(2 * b)}Q=${c}\iff Q^K=${qfr(a + '-' + c, 2 * b, D.QK)}\]
-  ${T_(['Chaque entreprise produit la moitié,', 'Each firm produces half,'])} \(q^K=${n4(D.qK)}\). ${T_(['On en déduit, d\'après la fonction de demande inverse, le prix de cartel :', 'The inverse demand function then gives the cartel price:'])} \(P^K=${a}-${bx}${n4(D.QK)}=${n4(D.PK)}\). ${T_(['Chaque entreprise gagne', 'Each firm earns'])} \(\Pi^K=(${n4(D.PK)}-${c})\times ${n4(D.qK)}=${m(D.piK)}\), ${T_(['plus qu\'en Cournot', 'more than under Cournot'])} (\(${m(D.piC)}\)) : ${T_(['en produisant moins, les deux entreprises font monter le prix.', 'by producing less, both firms push the price up.'])}</p>
+  ${T_(['Chaque entreprise produit la moitié,', 'Each firm produces half,'])} \(q^K=${fqa(D.qK)}\). ${T_(['On en déduit, d\'après la fonction de demande inverse, le prix de cartel :', 'The inverse demand function then gives the cartel price:'])} \(P^K=${a}-${bx}${n4(D.QK)}=${fqa(D.PK)}\). ${T_(['Chaque entreprise gagne', 'Each firm earns'])} \(\Pi^K=(${n4(D.PK)}-${c})\times ${n4(D.qK)}=${fqa(D.piK)}\), ${T_(['plus qu\'en Cournot', 'more than under Cournot'])} (\(${m(D.piC)}\)) : ${T_(['en produisant moins, les deux entreprises font monter le prix.', 'by producing less, both firms push the price up.'])}</p>
 </div></li>
 <li><div class="q-content">
-  <p>${T_(['Si l\'entreprise 2 produit sa quote-part', 'If firm 2 produces its quota'])} \(q_2=${n4(D.qK)}\), ${T_(['la meilleure réponse de l\'entreprise 1 est donnée par sa fonction de réaction :', 'firm 1\'s best response is given by its reaction function:'])}
-  \[q_1^D=${n4(r)}-\frac{${n4(D.qK)}}{2}=${n4(D.qD)}\]
-  ${T_(['La production totale devient', 'Total output becomes'])} \(${n4(D.QD)}\), ${T_(['et l\'on en déduit, d\'après la fonction de demande inverse, le prix :', 'and the inverse demand function then gives the price:'])} \(P^D=${a}-${bx}${n4(D.QD)}=${n4(D.PD)}\). ${T_(['Le tricheur gagne', 'The cheater earns'])} \(\Pi^D=(${n4(D.PD)}-${c})\times ${n4(D.qD)}=${m(D.piD)}\), ${T_(['et l\'entreprise fidèle', 'and the loyal firm'])} \((${n4(D.PD)}-${c})\times ${n4(D.qK)}=${m(D.piL)}\). ${T_(['La matrice des profits (entreprise 1 ; entreprise 2) est donc :', 'The payoff matrix (firm 1; firm 2) is therefore:'])}</p>
+  <p>${T_(['Si l\'entreprise 2 produit sa quote-part', 'If firm 2 produces its quota'])} \(q_2=${fqa(D.qK)}\), ${T_(['la meilleure réponse de l\'entreprise 1 est donnée par sa fonction de réaction :', 'firm 1\'s best response is given by its reaction function:'])}
+  \[q_1^D=${n4(r)}-\frac{${n4(D.qK)}}{2}=${fqa(D.qD)}\]
+  ${T_(['La production totale devient', 'Total output becomes'])} \(${n4(D.QD)}\), ${T_(['et l\'on en déduit, d\'après la fonction de demande inverse, le prix :', 'and the inverse demand function then gives the price:'])} \(P^D=${a}-${bx}${n4(D.QD)}=${fqa(D.PD)}\). ${T_(['Le tricheur gagne', 'The cheater earns'])} \(\Pi^D=(${n4(D.PD)}-${c})\times ${n4(D.qD)}=${fqa(D.piD)}\), ${T_(['et l\'entreprise fidèle', 'and the loyal firm'])} \((${n4(D.PD)}-${c})\times ${n4(D.qK)}=${fqa(D.piL)}\). ${T_(['La matrice des profits (entreprise 1 ; entreprise 2) est donc :', 'The payoff matrix (firm 1; firm 2) is therefore:'])}</p>
   ${mat}
   <p>${T_(['Quelle que soit la décision de l\'autre, tricher rapporte davantage', 'Whatever the other does, cheating pays more'])} (\(${m(D.piD)}&gt;${m(D.piK)}\) ${T_(['et', 'and'])} \(${m(D.piC)}&gt;${m(D.piL)}\)) : ${T_(['tricher est une stratégie dominante. L\'équilibre de Nash est « tricher, tricher », c\'est-à-dire Cournot, alors que le respect mutuel donnerait davantage aux deux : c\'est un dilemme du prisonnier.', 'cheating is a dominant strategy. The Nash equilibrium is "cheat, cheat", that is Cournot, whereas mutual compliance would give both more: this is a prisoner\'s dilemma.'])}</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Le surplus des consommateurs est l\'intégrale de l\'écart entre la demande inverse et le prix ; le surplus des producteurs est l\'intégrale de l\'écart entre le prix et le coût marginal, égal à la somme des profits puisqu\'il n\'y a pas de coût fixe :', 'Consumer surplus is the integral of the gap between inverse demand and the price; producer surplus is the integral of the gap between the price and marginal cost, equal to the sum of profits since there is no fixed cost:'])}
   \[\begin{aligned}${SC}^C&amp;=${scI(D.QC, D.PC)}\\${SP}^C&amp;=${spI(D.QC, D.PC)}\\${SC}^K&amp;=${scI(D.QK, D.PK)}\\${SP}^K&amp;=${spI(D.QK, D.PK)}\\${SC}^D&amp;=${scI(D.QD, D.PD)}\\${SP}^D&amp;=${spI(D.QD, D.PD)}\end{aligned}\]
-  ${T_(['En concurrence parfaite, le prix serait égal au coût marginal', 'Under perfect competition, the price would equal marginal cost'])} ${c} ${T_(['et la production', 'and output'])} \(Q^c=${n4(D.Qc)}\) : ${T_(['le surplus total y atteint', 'total surplus there reaches'])} \(\int_0^{${n4(D.Qc)}}(${a}-${cfx(b)}q-${c})\,dq=${m(D.Wc)}\). ${T_(['On en déduit le tableau :', 'Hence the table:'])}</p>
+  ${T_(['En concurrence parfaite, le prix serait égal au coût marginal', 'Under perfect competition, the price would equal marginal cost'])} ${c} ${T_(['et la production', 'and output'])} \(Q^c=${fqa(D.Qc)}\) : ${T_(['le surplus total y atteint', 'total surplus there reaches'])} \(\int_0^{${n4(D.Qc)}}(${a}-${cfx(b)}q-${c})\,dq=${fqa(D.Wc)}\). ${T_(['On en déduit le tableau :', 'Hence the table:'])}</p>
   ${tab}
   <p>${T_(['Le cartel augmente le surplus des producteurs de', 'The cartel raises producer surplus by'])} \(${m(D.SPK - D.SPC)}\) ${T_(['mais réduit celui des consommateurs de', 'but reduces consumer surplus by'])} \(${m(D.SCC - D.SCK)}\) : ${T_(['la perte des consommateurs l\'emporte, et la perte sèche augmente. C\'est la justification économique de l\'interdiction des ententes. La tricherie, en augmentant la production, rapproche le marché de l\'efficacité.', 'the consumers\' loss outweighs it, and the deadweight loss rises. This is the economic justification for banning cartels. Cheating, by raising output, brings the market closer to efficiency.'])}</p>
 </div></li>
@@ -1209,14 +1265,13 @@ function e5sol(D, lang) {
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Avec la stratégie de déclenchement, respecter l\'accord rapporte', 'With the trigger strategy, complying yields'])} \(\Pi^K\) ${T_(['à chaque période, soit au total', 'every period, that is in total'])} \(\frac{\Pi^K}{1-\delta}\). ${T_(['Tricher rapporte', 'Cheating yields'])} \(\Pi^D\) ${T_(['une fois, puis', 'once, then'])} \(\Pi^C\) ${T_(['à chaque période suivante, puisque l\'autre revient à Cournot. Le cartel est stable si respecter rapporte au moins autant :', 'every subsequent period, since the other reverts to Cournot. The cartel is stable if complying pays at least as much:'])}
-  \[\begin{aligned}\frac{\Pi^K}{1-\delta}\ge\Pi^D+\frac{\delta\,\Pi^C}{1-\delta}&amp;\iff\Pi^K\ge(1-\delta)\,\Pi^D+\delta\,\Pi^C&amp;&amp;\text{${T_(['en multipliant par', 'multiplying by'])} }1-\delta&gt;0\\&amp;\iff\delta\ge\frac{\Pi^D-\Pi^K}{\Pi^D-\Pi^C}=\frac{${m(D.piD)}-${m(D.piK)}}{${m(D.piD)}-${m(D.piC)}}=${n4(D.delta)}\end{aligned}\]
+  \[\begin{aligned}\frac{\Pi^K}{1-\delta}\ge\Pi^D+\frac{\delta\,\Pi^C}{1-\delta}&amp;\iff\Pi^K\ge(1-\delta)\,\Pi^D+\delta\,\Pi^C&amp;&amp;\text{${T_(['en multipliant par', 'multiplying by'])} }1-\delta&gt;0\\&amp;\iff\delta\ge\frac{\Pi^D-\Pi^K}{\Pi^D-\Pi^C}=\frac{${m(D.piD)}-${m(D.piK)}}{${m(D.piD)}-${m(D.piC)}}=${fqa(D.delta)}\end{aligned}\]
   ${T_(['On retrouve', 'This is'])} \(\frac{9}{17}\approx 0.5294\), ${T_(['valeur qui ne dépend pas des paramètres pour un duopole linéaire symétrique.', 'a value that does not depend on the parameters for a symmetric linear duopoly.'])} ${stable ? T_(['Avec', 'With']) + ' \\(\\delta=' + texT(D.dTest, 2) + '\\ge\\delta^*\\), ' + T_(['le cartel est stable : la perte future liée au retour à Cournot dissuade de tricher.', 'the cartel is stable: the future loss from reverting to Cournot deters cheating.']) : T_(['Avec', 'With']) + ' \\(\\delta=' + texT(D.dTest, 2) + '&lt;\\delta^*\\), ' + T_(['le cartel n\'est pas stable : les entreprises sont trop impatientes, le gain immédiat de la tricherie l\'emporte.', 'the cartel is not stable: firms are too impatient, the immediate gain from cheating dominates.'])}</p>
 </div></li>
 </ol></div>`;
 }
-I18N.fr.sol = D => e5sol(D, 'fr');
-I18N.en.sol = D => e5sol(D, 'en');
-
+I18N.fr.sol = D => fracClean((D => e5sol(D, 'fr'))(D));
+I18N.en.sol = D => fracClean((D => e5sol(D, 'en'))(D));
 initPage();
 </script>
 

@@ -955,7 +955,62 @@ function initPage() {
 const GREY = '#8a857a';
 const KBASE_FR = { 'k-badge': 'MICROÉCONOMIE', 'k-seed': 'Seed de reproductibilité', 'k-seedtip': 'Vide = nouvel exercice aléatoire', 'k-gen': 'Générer', 'k-tag-course': 'Cours', 'k-tag-ex': 'Exercice', 'k-tag-sol': 'Corrigé', 'k-seedbadge': 'Seed&nbsp;:', showSol: 'Afficher le corrigé', hideSol: 'Masquer le corrigé', phSeed: 'auto', copy: 'Copier', copied: 'Copié', 'k-sub': '© Thomas Hossen – Version du 20 octobre 2026' };
 const KBASE_EN = { 'k-badge': 'MICROECONOMICS', 'k-seed': 'Reproducibility seed', 'k-seedtip': 'Empty = new random exercise', 'k-gen': 'Generate', 'k-tag-course': 'Lesson', 'k-tag-ex': 'Exercise', 'k-tag-sol': 'Solution', 'k-seedbadge': 'Seed:', showSol: 'Show solution', hideSol: 'Hide solution', phSeed: 'auto', copy: 'Copy', copied: 'Copied', 'k-sub': '© Thomas Hossen – Version of 20 October 2026' };
-const cfx = (x, d) => Math.abs(x - 1) < 1e-12 ? '' : texT(x, d === undefined ? 4 : d) + '\\,';
+/* ---------- calcul exact : reconnaissance des rationnels et affichage fractionnaire ---------- */
+function ratOf(x) {
+  if (!isFinite(x)) return null;
+  const s = x < 0 ? -1 : 1, y = Math.abs(x);
+  if (Math.abs(y - Math.round(y)) <= 1e-11 * Math.max(1, y)) return [s * Math.round(y), 1];
+  let h0 = 0, h1 = 1, k0 = 1, k1 = 0, z = y;
+  for (let i = 0; i < 40; i++) {
+    const a = Math.floor(z), h2 = a * h1 + h0, k2 = a * k1 + k0;
+    if (k2 > 2e6) return null;
+    if (Math.abs(y - h2 / k2) <= 1e-12 * Math.max(1, y)) return [s * h2, k2];
+    h0 = h1; h1 = h2; k0 = k1; k1 = k2;
+    const f = z - a; if (f < 1e-15) return null; z = 1 / f;
+  }
+  return null;
+}
+/* valeur exacte : entier ou fraction ; décimale si le nombre n'est pas rationnel (racine, puissance non entière) */
+function fq(x) {
+  const r = ratOf(x);
+  if (!r) return texT(x, 4);
+  if (r[1] === 1) return texT(r[0], 0);
+  return (r[0] < 0 ? '-' : '') + '\\frac{' + texT(Math.abs(r[0]), 0) + '}{' + texT(r[1], 0) + '}';
+}
+/* valeur exacte suivie d'une approximation décimale */
+function fqa(x) {
+  const r = ratOf(x);
+  if (!r) return texT(x, 4);
+  if (r[1] === 1) return texT(r[0], 0);
+  return fq(x) + '\\approx ' + texT(x, Math.abs(x) >= 100 ? 2 : 4);
+}
+/* entre parenthèses si fraction ou négatif (avant un exposant) */
+function fqp(x) { const r = ratOf(x), t = fq(x); return (r && r[1] === 1 && r[0] >= 0) || (!r && x >= 0) ? t : '\\left(' + t + '\\right)'; }
+/* cellule de tableau : valeur exacte, approximation en petit */
+function fqt(x) { const r = ratOf(x); return '\\(' + fq(x) + '\\)' + (r && r[1] === 1 ? '' : '<br><small>≈ ' + fmt(x, 2) + '</small>'); }
+
+/* signe = si la valeur est exacte (rationnelle), sinon approximation */
+function eqa(x) { return ratOf(x) ? '=' + fqa(x) : '\\approx ' + texT(x, 4); }
+/* simplification d'affichage : \frac{X}{1} devient X (entre parenthèses si nécessaire) */
+function fracClean(h) {
+  const grp = (s, i) => { if (s[i] !== '{') return -1; let d = 0; for (let j = i; j < s.length; j++) { if (s[j] === '{') d++; else if (s[j] === '}') { d--; if (d === 0) return j; } } return -1; };
+  let out = '', i = 0;
+  for (;;) {
+    const re = /\\[td]?frac\{/g; re.lastIndex = i; const mm = re.exec(h);
+    if (!mm) { out += h.slice(i); break; }
+    const k = mm.index, cmd = mm[0].slice(0, -1), a = k + cmd.length, ae = grp(h, a), b = ae + 1, be = ae > 0 ? grp(h, b) : -1;
+    if (ae < 0 || be < 0) { out += h.slice(i, a + 1); i = a + 1; continue; }
+    const num = h.slice(a + 1, ae), den = h.slice(b + 1, be).trim();
+    if (den === '1') {
+      let top = false, d = 0; for (let j = 0; j < num.length; j++) { const c = num[j]; if (c === '{') d++; else if (c === '}') d--; else if ((c === '+' || c === '-') && d === 0 && j > 0) top = true; }
+      const rest = h.slice(be + 1), end = /^(\s*$|\\\]|\\\)|=|&|\\\\|\\qquad|\\quad|\\text|\\iff|&lt;|&gt;|\s*[,;.<}])/.test(rest);
+      out += h.slice(i, k) + (top && !end ? '\\left(' + fracClean(num) + '\\right)' : fracClean(num));
+    } else out += h.slice(i, k) + cmd + '{' + fracClean(num) + '}{' + fracClean(h.slice(b + 1, be)) + '}';
+    i = be + 1;
+  }
+  return out;
+}
+const cfx = (x, d) => Math.abs(x - 1) < 1e-12 ? '' : fq(x) + '\\,';
 /* figure générique : demande linéaire P = a - bQ, surplus des consommateurs, profits par segments [x0, x1, coût],
    perte sèche par rapport à la tarification au coût marginal minimal cmin */
 function eiSurplusFig(o) {
@@ -1152,7 +1207,7 @@ function e7graphPE(D, lang) {
   G.dot(R.qL, 0, { c: COL.s3, r: 6 }); G.text(R.qL, 0, 'q_L', { dx: 6, dy: -8, anchor: 'start', bold: true, size: 12, c: COL.s3 });
   return '<div class="sol-fig">' + G.svg(fr ? 'Profit de l\'entrant selon la production du titulaire' : 'Entrant profit as a function of incumbent output') + '</div>';
 }
-I18N.fr.ex = function (D) {
+I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">Une entreprise en place (le titulaire) est seule sur un marché de demande inverse \(P(Q)=${D.a}-${cfx(D.b)}Q\), avec un coût marginal constant \(c=${D.c}\). Un entrant potentiel a le même coût marginal, mais doit payer un coût fixe d'entrée \(F=${texT(D.F, 2)}\). Le titulaire choisit d'abord sa quantité et s'y engage ; l'entrant l'observe, puis décide d'entrer ou non.</div>
 <div class="questions"><ol>
 <li><div class="q-text">En l'absence de menace d'entrée, déterminez la quantité, le prix et le profit du monopole.</div></li>
@@ -1161,8 +1216,8 @@ I18N.fr.ex = function (D) {
 <li><div class="q-text">Calculez, à l'aide d'intégrales, le surplus des consommateurs, le surplus des producteurs (net du coût d'entrée) et le surplus total dans les trois situations : monopole sans menace, dissuasion, entrée acceptée. Commentez.</div></li>
 <li><div class="q-text">Représentez graphiquement le profit de l'entrant en fonction de \(q_I\), puis les surplus dans la situation retenue par le titulaire.</div></li>
 </ol></div>`;
-};
-I18N.en.ex = function (D) {
+});
+I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">An incumbent is alone on a market with inverse demand \(P(Q)=${D.a}-${cfx(D.b)}Q\), with a constant marginal cost \(c=${D.c}\). A potential entrant has the same marginal cost, but must pay a fixed entry cost \(F=${texT(D.F, 2)}\). The incumbent first chooses its quantity and commits to it; the entrant observes it, then decides whether to enter.</div>
 <div class="questions"><ol>
 <li><div class="q-text">Without any entry threat, determine the monopoly quantity, price and profit.</div></li>
@@ -1171,8 +1226,9 @@ I18N.en.ex = function (D) {
 <li><div class="q-text">Compute, using integrals, consumer surplus, producer surplus (net of the entry cost) and total surplus in the three situations: monopoly without threat, deterrence, accommodated entry. Comment.</div></li>
 <li><div class="q-text">Draw the entrant's profit as a function of \(q_I\), then the surpluses in the situation chosen by the incumbent.</div></li>
 </ol></div>`;
-};
+});
 function e7sol(D, lang) {
+  const texT = (x) => fq(x);
   const fr = lang === 'fr', T_ = s => fr ? s[0] : s[1], a = D.a, b = D.b, c = D.c, F = D.F, R = D.R, n4 = x => texT(x, 4), m = x => texT(x, 2);
   const SC = T_(['SC', 'CS']), SP = T_(['SP', 'PS']), bx = b === 1 ? '' : texT(b, 2) + '\\times ', A = a - c;
   const qfr = (num, den, val) => Math.abs(den - 1) < 1e-12 ? (String(num) === n4(val) ? n4(val) : `${num}=${n4(val)}`) : String.raw`\frac{${num}}{${n4(den)}}=${n4(val)}`;
@@ -1180,18 +1236,18 @@ function e7sol(D, lang) {
   const scI = x => String.raw`\int_0^{${n4(x.Q)}}\big(${a}-${cfx(b)}q-${n4(x.P)}\big)\,dq=\Big[${n4(a - x.P)}\,q-${cfx(b / 2)}q^2\Big]_0^{${n4(x.Q)}}=${m(x.SC)}`;
   const spI = x => String.raw`\int_0^{${n4(x.Q)}}(${n4(x.P)}-${c})\,dq${x.F ? '-' + texT(F, 2) : ''}=${m(x.SPb - x.F)}`;
   const tab = `<div class="dtable-wrap"><table class="dtable"><thead><tr><th></th>${names.map(n => `<th>${n}</th>`).join('')}</tr></thead><tbody>
-  <tr><td>${T_(['Production totale', 'Total output'])}</td>${D.sit.map(x => `<td class="num">${fmt(x.Q, 2)}</td>`).join('')}</tr>
-  <tr><td>${T_(['Prix', 'Price'])}</td>${D.sit.map(x => `<td class="num">${fmt(x.P, 2)}</td>`).join('')}</tr>
-  <tr><td>${T_(['Surplus des consommateurs', 'Consumer surplus'])}</td>${D.sit.map(x => `<td class="num">${fmt(x.SC, 2)}</td>`).join('')}</tr>
-  <tr><td>${T_(['Surplus des producteurs (net)', 'Producer surplus (net)'])}</td>${D.sit.map(x => `<td class="num">${fmt(x.SPb - x.F, 2)}</td>`).join('')}</tr>
-  <tr><td>${T_(['Surplus total', 'Total surplus'])}</td>${D.sit.map(x => `<td class="num">${fmt(x.W, 2)}</td>`).join('')}</tr>
-  <tr><td>${T_(['Perte sèche', 'Deadweight loss'])}</td>${D.sit.map(x => `<td class="num">${fmt(D.Wc - x.W, 2)}</td>`).join('')}</tr></tbody></table></div>`;
+  <tr><td>${T_(['Production totale', 'Total output'])}</td>${D.sit.map(x => `<td class="num">${fqt(x.Q)}</td>`).join('')}</tr>
+  <tr><td>${T_(['Prix', 'Price'])}</td>${D.sit.map(x => `<td class="num">${fqt(x.P)}</td>`).join('')}</tr>
+  <tr><td>${T_(['Surplus des consommateurs', 'Consumer surplus'])}</td>${D.sit.map(x => `<td class="num">${fqt(x.SC)}</td>`).join('')}</tr>
+  <tr><td>${T_(['Surplus des producteurs (net)', 'Producer surplus (net)'])}</td>${D.sit.map(x => `<td class="num">${fqt(x.SPb - x.F)}</td>`).join('')}</tr>
+  <tr><td>${T_(['Surplus total', 'Total surplus'])}</td>${D.sit.map(x => `<td class="num">${fqt(x.W)}</td>`).join('')}</tr>
+  <tr><td>${T_(['Perte sèche', 'Deadweight loss'])}</td>${D.sit.map(x => `<td class="num">${fqt(D.Wc - x.W)}</td>`).join('')}</tr></tbody></table></div>`;
   const ch = R.deter ? 1 : 2, X = D.sit[ch];
   return String.raw`<div class="st"><ol>
 <li><div class="q-content">
   <p>${T_(['Sans menace d\'entrée, le titulaire est un monopole : il égalise sa recette marginale', 'Without entry threat, the incumbent is a monopoly: it equates its marginal revenue'])} \(${a}-${cfx(2 * b)}Q\) ${T_(['au coût marginal :', 'with marginal cost:'])}
   \[${a}-${cfx(2 * b)}Q=${c}\iff q_m=${qfr(a + '-' + c, 2 * b, R.qm)}\]
-  ${T_(['On en déduit, d\'après la fonction de demande inverse, le prix de monopole :', 'The inverse demand function then gives the monopoly price:'])} \(P_m=${a}-${bx}${n4(R.qm)}=${n4(R.Pm)}\), ${T_(['et le profit', 'and the profit'])} \(\Pi_m=(${n4(R.Pm)}-${c})\times ${n4(R.qm)}=${m(R.pim)}\).</p>
+  ${T_(['On en déduit, d\'après la fonction de demande inverse, le prix de monopole :', 'The inverse demand function then gives the monopoly price:'])} \(P_m=${a}-${bx}${n4(R.qm)}=${fqa(R.Pm)}\), ${T_(['et le profit', 'and the profit'])} \(\Pi_m=(${n4(R.Pm)}-${c})\times ${n4(R.qm)}=${fqa(R.pim)}\).</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['S\'il entre, l\'entrant fait face à la demande résiduelle', 'If it enters, the entrant faces the residual demand'])} \(P=${a}-${cfx(b)}q_I-${cfx(b)}q_E\). ${T_(['Il maximise', 'It maximises'])} \(\Pi_E=(${a}-${cfx(b)}q_I-${cfx(b)}q_E-${c})\,q_E-F\) ${T_(['en annulant la dérivée par rapport à', 'by setting the derivative with respect to'])} \(q_E\)${T_(['', ' to zero'])} :
@@ -1199,19 +1255,19 @@ function e7sol(D, lang) {
   ${T_(['En reportant cette quantité dans son profit, on obtient le profit de l\'entrant en fonction de', 'Substituting this quantity into its profit gives the entrant\'s profit as a function of'])} \(q_I\) :
   \[\Pi_E(q_I)=\frac{(${a - c}-${cfx(b)}q_I)^2}{${n4(4 * b)}}-${texT(F, 2)}\]
   ${T_(['L\'entrée est dissuadée si ce profit est négatif ou nul. La plus petite quantité qui y parvient, la quantité limite, annule ce profit :', 'Entry is deterred if this profit is non-positive. The smallest quantity that achieves this, the limit quantity, sets this profit to zero:'])}
-  \[\begin{aligned}\Pi_E(q_L)=0&amp;\iff ${a - c}-${cfx(b)}q_L=2\sqrt{${n4(b)}\times ${texT(F, 2)}}=${n4(2 * R.s)}\\&amp;\iff q_L=${qfr(String(a - c) + '-' + n4(2 * R.s), b, R.qL)}\end{aligned}\]
-  ${T_(['On en déduit, d\'après la fonction de demande inverse, le prix limite :', 'The inverse demand function then gives the limit price:'])} \(P_L=${a}-${bx}${n4(R.qL)}=${n4(R.PL)}=c+2\sqrt{bF}\). ${T_(['Comme', 'Since'])} \(q_m=${n4(R.qm)}&lt;q_L=${n4(R.qL)}\), ${T_(['la quantité de monopole ne suffit pas à décourager l\'entrant : l\'entrée n\'est pas bloquée.', 'the monopoly quantity is not enough to discourage the entrant: entry is not blockaded.'])}</p>
+  \[\begin{aligned}\Pi_E(q_L)=0&amp;\iff ${a - c}-${cfx(b)}q_L=2\sqrt{${n4(b)}\times ${texT(F, 2)}}=${fqa(2 * R.s)}\\&amp;\iff q_L=${qfr(String(a - c) + '-' + n4(2 * R.s), b, R.qL)}\end{aligned}\]
+  ${T_(['On en déduit, d\'après la fonction de demande inverse, le prix limite :', 'The inverse demand function then gives the limit price:'])} \(P_L=${a}-${bx}${n4(R.qL)}=${n4(R.PL)}=c+2\sqrt{bF}\). ${T_(['Comme', 'Since'])} \(q_m=${n4(R.qm)}&lt;q_L=${fqa(R.qL)}\), ${T_(['la quantité de monopole ne suffit pas à décourager l\'entrant : l\'entrée n\'est pas bloquée.', 'the monopoly quantity is not enough to discourage the entrant: entry is not blockaded.'])}</p>
 </div></li>
 <li><div class="q-content">
-  <p>${T_(['Pour dissuader l\'entrée, le titulaire produit', 'To deter entry, the incumbent produces'])} \(q_L\) ${T_(['et vend au prix limite ; il gagne', 'and sells at the limit price; it earns'])} \(\Pi_I^L=(${n4(R.PL)}-${c})\times ${n4(R.qL)}=${m(R.piL)}\). ${T_(['S\'il accepte l\'entrée en leader de Stackelberg, il intègre la réaction de l\'entrant dans son profit, maximise ce profit, puis en déduit la quantité de l\'entrant et, d\'après la demande inverse, le prix :', 'If it accommodates entry as a Stackelberg leader, it builds the entrant\'s reaction into its profit, maximises this profit, then deduces the entrant\'s quantity and, from inverse demand, the price:'])}
-  \[\begin{aligned}\Pi_I(q_I)&amp;=\big(${a}-${cfx(b)}q_I-${cfx(b)}q_E(q_I)-${c}\big)\,q_I=\frac{${a - c}-${cfx(b)}q_I}{2}\,q_I&amp;&amp;\text{${T_(['car', 'since'])} }q_E(q_I)=\tfrac{${a - c}-${cfx(b)}q_I}{${n4(2 * b)}}\\q_I^S&amp;=${qfr(String(a - c), 2 * b, R.qIS)}&amp;&amp;\text{${T_(['en annulant la dérivée', 'setting the derivative to zero'])}}\\q_E^S&amp;=\frac{${a - c}-${b === 1 ? '' : texT(b, 2) + '\\times '}${n4(R.qIS)}}{${n4(2 * b)}}=${n4(R.qES)}\\P^S&amp;=${a}-${bx}(${n4(R.qIS)}+${n4(R.qES)})=${n4(R.PS)}\end{aligned}\]
-  ${T_(['Les profits valent', 'Profits are'])} \(\Pi_I^S=(${n4(R.PS)}-${c})\times ${n4(R.qIS)}=${m(R.piIS)}\) ${T_(['et', 'and'])} \(\Pi_E^S=(${n4(R.PS)}-${c})\times ${n4(R.qES)}-${texT(F, 2)}=${m(R.piES)}\).</p>
+  <p>${T_(['Pour dissuader l\'entrée, le titulaire produit', 'To deter entry, the incumbent produces'])} \(q_L\) ${T_(['et vend au prix limite ; il gagne', 'and sells at the limit price; it earns'])} \(\Pi_I^L=(${n4(R.PL)}-${c})\times ${n4(R.qL)}=${fqa(R.piL)}\). ${T_(['S\'il accepte l\'entrée en leader de Stackelberg, il intègre la réaction de l\'entrant dans son profit, maximise ce profit, puis en déduit la quantité de l\'entrant et, d\'après la demande inverse, le prix :', 'If it accommodates entry as a Stackelberg leader, it builds the entrant\'s reaction into its profit, maximises this profit, then deduces the entrant\'s quantity and, from inverse demand, the price:'])}
+  \[\begin{aligned}\Pi_I(q_I)&amp;=\big(${a}-${cfx(b)}q_I-${cfx(b)}q_E(q_I)-${c}\big)\,q_I=\frac{${a - c}-${cfx(b)}q_I}{2}\,q_I&amp;&amp;\text{${T_(['car', 'since'])} }q_E(q_I)=\tfrac{${a - c}-${cfx(b)}q_I}{${n4(2 * b)}}\\q_I^S&amp;=${qfr(String(a - c), 2 * b, R.qIS)}&amp;&amp;\text{${T_(['en annulant la dérivée', 'setting the derivative to zero'])}}\\q_E^S&amp;=\frac{${a - c}-${b === 1 ? '' : texT(b, 2) + '\\times '}${n4(R.qIS)}}{${n4(2 * b)}}=${fqa(R.qES)}\\P^S&amp;=${a}-${bx}(${n4(R.qIS)}+${n4(R.qES)})=${fqa(R.PS)}\end{aligned}\]
+  ${T_(['Les profits valent', 'Profits are'])} \(\Pi_I^S=(${n4(R.PS)}-${c})\times ${n4(R.qIS)}=${fqa(R.piIS)}\) ${T_(['et', 'and'])} \(\Pi_E^S=(${n4(R.PS)}-${c})\times ${n4(R.qES)}-${texT(F, 2)}=${fqa(R.piES)}\).</p>
   <p>${R.deter ? T_(['Comme', 'Since']) + ' \\(' + m(R.piL) + '&gt;' + m(R.piIS) + '\\), ' + T_(['le titulaire préfère dissuader l\'entrée : il sacrifie une partie de son profit de monopole', 'the incumbent prefers to deter entry: it gives up part of its monopoly profit']) + ' (\\(' + m(R.pim - R.piL) + '\\)) ' + T_(['pour rester seul.', 'to remain alone.']) : T_(['Comme', 'Since']) + ' \\(' + m(R.piIS) + '&gt;' + m(R.piL) + '\\), ' + T_(['le titulaire préfère accepter l\'entrée : le coût d\'entrée est trop faible, et dissuader exigerait une production trop élevée.', 'the incumbent prefers to accommodate entry: the entry cost is too low, and deterrence would require too high an output.'])}</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Le surplus des consommateurs est l\'intégrale de l\'écart entre la demande inverse et le prix ; le surplus des producteurs est l\'intégrale de l\'écart entre le prix et le coût marginal, diminuée du coût d\'entrée lorsque l\'entrant entre, car ce coût est une ressource réellement dépensée :', 'Consumer surplus is the integral of the gap between inverse demand and the price; producer surplus is the integral of the gap between the price and marginal cost, minus the entry cost when the entrant enters, since this cost is a resource actually spent:'])}
   \[\begin{aligned}${D.sit.map((x, k) => String.raw`${SC}_{\text{${['m', 'L', 'S'][k]}}}&amp;=${scI(x)}\\${SP}_{\text{${['m', 'L', 'S'][k]}}}&amp;=${spI(x)}`).join('\\\\')}\end{aligned}\]
-  ${T_(['Le surplus total maximal, avec un prix égal au coût marginal et un seul producteur, vaut', 'Maximal total surplus, with a price equal to marginal cost and a single producer, is'])} \(\int_0^{${n4(D.Qc)}}(${a}-${cfx(b)}q-${c})\,dq=${m(D.Wc)}\). ${T_(['On en déduit le tableau :', 'Hence the table:'])}</p>
+  ${T_(['Le surplus total maximal, avec un prix égal au coût marginal et un seul producteur, vaut', 'Maximal total surplus, with a price equal to marginal cost and a single producer, is'])} \(\int_0^{${n4(D.Qc)}}(${a}-${cfx(b)}q-${c})\,dq=${fqa(D.Wc)}\). ${T_(['On en déduit le tableau :', 'Hence the table:'])}</p>
   ${tab}
   <p>${T_(['La menace d\'entrée, même lorsqu\'elle ne se réalise pas, oblige le titulaire à produire plus et à vendre moins cher : le surplus des consommateurs et le surplus total augmentent par rapport au monopole.', 'The threat of entry, even when it does not materialise, forces the incumbent to produce more and sell more cheaply: consumer surplus and total surplus rise relative to monopoly.'])} ${D.sit[2].W > D.sit[1].W ? T_(['L\'entrée acceptée donne le surplus total le plus élevé, malgré le coût d\'entrée.', 'Accommodated entry gives the highest total surplus, despite the entry cost.']) : T_(['La dissuasion donne ici un surplus total plus élevé que l\'entrée acceptée : le coût d\'entrée dépensé par l\'entrant l\'emporte sur le gain de production.', 'Deterrence here gives a higher total surplus than accommodated entry: the entry cost spent by the entrant outweighs the output gain.'])}</p>
 </div></li>
@@ -1223,9 +1279,8 @@ function e7sol(D, lang) {
 </div></li>
 </ol></div>`;
 }
-I18N.fr.sol = D => e7sol(D, 'fr');
-I18N.en.sol = D => e7sol(D, 'en');
-
+I18N.fr.sol = D => fracClean((D => e7sol(D, 'fr'))(D));
+I18N.en.sol = D => fracClean((D => e7sol(D, 'en'))(D));
 initPage();
 </script>
 
