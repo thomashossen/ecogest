@@ -131,7 +131,7 @@ PAGE.compute = function (seed) {
   return D;
 };
 const p2U = D => String.raw`U(x_1,x_2)=x_1${D.al === 1 ? '' : '^{' + D.al + '}'}\,x_2${D.be === 1 ? '' : '^{' + D.be + '}'}`;
-I18N.fr.ex = function (D) {
+I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">Un consommateur a pour fonction d'utilité \(${p2U(D)}\). Il dispose d'un revenu \(R=${D.R}\) et les prix sont \(p_1=${D.p1}\) et \(p_2=${D.p2}\).</div>
 <div class="questions"><ol>
 <li><div class="q-text">Écrivez la contrainte budgétaire. Donnez les intersections de la droite de budget avec les axes et sa pente.</div></li>
@@ -141,8 +141,8 @@ I18N.fr.ex = function (D) {
 <li><div class="q-text">Le prix du bien 1 passe à \(${texT(D.p1n, 2)}\). Déterminez le nouveau panier optimal et représentez graphiquement les deux droites de budget et les deux optimums.</div></li>
 <li><div class="q-text">Un autre consommateur, de même revenu et face aux prix initiaux, a pour utilité \(W(x_1,x_2)=${D.a}\,x_1+${D.b}\,x_2\). Déterminez son panier optimal.</div></li>
 </ol></div>`;
-};
-I18N.en.ex = function (D) {
+});
+I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">A consumer has utility function \(${p2U(D)}\). Their income is \(R=${D.R}\) and prices are \(p_1=${D.p1}\) and \(p_2=${D.p2}\).</div>
 <div class="questions"><ol>
 <li><div class="q-text">Write the budget constraint. Give the intercepts of the budget line with the axes and its slope.</div></li>
@@ -152,18 +152,19 @@ I18N.en.ex = function (D) {
 <li><div class="q-text">The price of good 1 changes to \(${texT(D.p1n, 2)}\). Determine the new optimal bundle and draw the two budget lines and the two optima.</div></li>
 <li><div class="q-text">Another consumer, with the same income and facing the initial prices, has utility \(W(x_1,x_2)=${D.a}\,x_1+${D.b}\,x_2\). Determine their optimal bundle.</div></li>
 </ol></div>`;
-};
+});
 function p2sol(D, lang) {
+  const texT = (x) => fq(x);
   const fr = lang === 'fr', T_ = s => fr ? s[0] : s[1], al = D.al, be = D.be, p1 = D.p1, p2 = D.p2, R = D.R, O = D.O, On = D.On, n = x => texT(x, 4), s = al + be;
   const TMS = T_(['TMS', 'MRS']);
-  const pw = (v, e) => e === 1 ? v : `${v}^{${e}}`;
+  const pw = (v, e) => { v = String(v); if (/^\\frac|^-/.test(v)) v = '\\left(' + v + '\\right)'; return e === 1 ? v : `${v}^{${e}}`; };
   const d1 = al === 1 ? '' : `${al}\\,`, d2 = be === 1 ? '' : `${be}\\,`;
   const mu1 = String.raw`${d1}${al - 1 === 0 ? '' : pw('x_1', al - 1)}\,${pw('x_2', be)}`, mu2 = String.raw`${d2}${pw('x_1', al)}\,${be - 1 === 0 ? '' : pw('x_2', be - 1)}`;
   const X1 = Math.max(R / p1, R / D.p1n) * 1.1, Y1 = R / p2 * 1.1;
   const corner1 = D.a / p1 > D.b / p2;
   return String.raw`<div class="st"><ol>
 <li><div class="q-content">
-  <p>${T_(['Le consommateur ne peut pas dépenser plus que son revenu :', 'The consumer cannot spend more than their income:'])} \(${p1}\,x_1+${p2}\,x_2\le ${R}\). ${T_(['La droite de budget', 'The budget line'])} \(${p1}\,x_1+${p2}\,x_2=${R}\) ${T_(['coupe l\'axe du bien 1 en', 'crosses the good-1 axis at'])} \(R/p_1=${n(R / p1)}\) ${T_(['(tout le revenu en bien 1) et l\'axe du bien 2 en', '(all income on good 1) and the good-2 axis at'])} \(R/p_2=${n(R / p2)}\). ${T_(['En l\'écrivant', 'Writing it as'])} \(x_2=${n(R / p2)}-${n(p1 / p2)}\,x_1\), ${T_(['on lit sa pente', 'we read its slope'])} \(-p_1/p_2=-${n(p1 / p2)}\) : ${T_(['une unité de bien 1 coûte', 'one unit of good 1 costs'])} \(${n(p1 / p2)}\) ${T_(['unité(s) de bien 2.', 'unit(s) of good 2.'])}</p>
+  <p>${T_(['Le consommateur ne peut pas dépenser plus que son revenu :', 'The consumer cannot spend more than their income:'])} \(${p1}\,x_1+${p2}\,x_2\le ${R}\). ${T_(['La droite de budget', 'The budget line'])} \(${p1}\,x_1+${p2}\,x_2=${R}\) ${T_(['coupe l\'axe du bien 1 en', 'crosses the good-1 axis at'])} \(R/p_1=${fqa(R / p1)}\) ${T_(['(tout le revenu en bien 1) et l\'axe du bien 2 en', '(all income on good 1) and the good-2 axis at'])} \(R/p_2=${fqa(R / p2)}\). ${T_(['En l\'écrivant', 'Writing it as'])} \(x_2=${n(R / p2)}-${n(p1 / p2)}\,x_1\), ${T_(['on lit sa pente', 'we read its slope'])} \(-p_1/p_2=-${n(p1 / p2)}\) : ${T_(['une unité de bien 1 coûte', 'one unit of good 1 costs'])} \(${n(p1 / p2)}\) ${T_(['unité(s) de bien 2.', 'unit(s) of good 2.'])}</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Les préférences étant monotones, tout le revenu est dépensé. Le lagrangien est', 'Preferences being monotone, all income is spent. The Lagrangian is'])} \(\mathcal{L}=${pw('x_1', al)}\,${pw('x_2', be)}+\lambda\,(${R}-${p1}\,x_1-${p2}\,x_2)\), ${T_(['et ses dérivées partielles s\'annulent à l\'optimum :', 'and its partial derivatives vanish at the optimum:'])}
@@ -174,22 +175,22 @@ function p2sol(D, lang) {
 </div></li>
 <li><div class="q-content">
   <p>${T_(['La tangence donne', 'Tangency gives'])} \(${p2}\,x_2=\frac{${be}}{${al}}\times ${p1}\,x_1\) : ${T_(['la dépense en bien 2 est', 'spending on good 2 is'])} \(\frac{${be}}{${al}}\) ${T_(['fois la dépense en bien 1. En reportant dans la contrainte,', 'times spending on good 1. Substituting into the constraint,'])} \(${p1}\,x_1\big(1+\frac{${be}}{${al}}\big)=${R}\), ${T_(['d\'où les fonctions de demande et le panier optimal :', 'hence the demand functions and the optimal bundle:'])}
-  \[\begin{aligned}x_1^*&amp;=\frac{${al}}{${s}}\cdot\frac{R}{p_1}=\frac{${al}}{${s}}\times\frac{${R}}{${p1}}=${n(O.x1)}\\x_2^*&amp;=\frac{${be}}{${s}}\cdot\frac{R}{p_2}=\frac{${be}}{${s}}\times\frac{${R}}{${p2}}=${n(O.x2)}\end{aligned}\]
-  ${T_(['Le niveau d\'utilité atteint est', 'The utility level reached is'])} \(U^*=${pw(n(O.x1), al)}\times ${pw(n(O.x2), be)}\approx ${n(O.u)}\). ${T_(['Le consommateur consacre', 'The consumer spends'])} \(\frac{${al}}{${s}}\approx ${texT(100 * al / s, 1)}\,\%\) ${T_(['de son revenu au bien 1 et', 'of income on good 1 and'])} \(${texT(100 * be / s, 1)}\,\%\) ${T_(['au bien 2, quels que soient les prix. D\'après la première condition, le multiplicateur vaut', 'on good 2, whatever the prices. From the first condition, the multiplier is'])} \(\lambda=\frac{${T_(['Um', 'MU'])}_1}{p_1}\approx ${n(D.lam)}\) : ${T_(['un euro de revenu supplémentaire augmenterait l\'utilité d\'environ', 'one extra euro of income would raise utility by about'])} \(${n(D.lam)}\).</p>
+  \[\begin{aligned}x_1^*&amp;=\frac{${al}}{${s}}\cdot\frac{R}{p_1}=\frac{${al}}{${s}}\times\frac{${R}}{${p1}}=${fqa(O.x1)}\\x_2^*&amp;=\frac{${be}}{${s}}\cdot\frac{R}{p_2}=\frac{${be}}{${s}}\times\frac{${R}}{${p2}}=${fqa(O.x2)}\end{aligned}\]
+  ${T_(['Le niveau d\'utilité atteint est', 'The utility level reached is'])} \(U^*=${pw(n(O.x1), al)}\times ${pw(n(O.x2), be)}${eqa(O.u)}\). ${T_(['Le consommateur consacre', 'The consumer spends'])} \(\frac{${al}}{${s}}${eqa(100 * al / s, 1)}\,\%\) ${T_(['de son revenu au bien 1 et', 'of income on good 1 and'])} \(${texT(100 * be / s, 1)}\,\%\) ${T_(['au bien 2, quels que soient les prix. D\'après la première condition, le multiplicateur vaut', 'on good 2, whatever the prices. From the first condition, the multiplier is'])} \(\lambda=\frac{${T_(['Um', 'MU'])}_1}{p_1}${eqa(D.lam)}\) : ${T_(['un euro de revenu supplémentaire augmenterait l\'utilité d\'environ', 'one extra euro of income would raise utility by about'])} \(${n(D.lam)}\).</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['L\'utilité indirecte est l\'utilité du panier optimal, exprimée en fonction des prix et du revenu :', 'Indirect utility is the utility of the optimal bundle, expressed as a function of prices and income:'])}
   \[V(p_1,p_2,R)=${pw(String.raw`\Big(\frac{${al === 1 ? '' : al}R}{${s}p_1}\Big)`, al)}\,${pw(String.raw`\Big(\frac{${be === 1 ? '' : be}R}{${s}p_2}\Big)`, be)}=\frac{${[al, be].filter(v => v !== 1).map(v => pw(v, v)).join('\\,') || '1'}}{${pw(s, s)}}\cdot\frac{R^{${s}}}{${pw('p_1', al)}\,${pw('p_2', be)}}\]
-  ${T_(['Elle est croissante en', 'It is increasing in'])} \(R\) ${T_(['et décroissante en chaque prix. Avec les valeurs de l\'énoncé, on retrouve', 'and decreasing in each price. With the values of the problem, we recover'])} \(V(${p1},${p2},${R})\approx ${n(O.u)}=U^*\).</p>
+  ${T_(['Elle est croissante en', 'It is increasing in'])} \(R\) ${T_(['et décroissante en chaque prix. Avec les valeurs de l\'énoncé, on retrouve', 'and decreasing in each price. With the values of the problem, we recover'])} \(V(${p1},${p2},${R})${eqa(O.u)}=U^*\).</p>
 </div></li>
 <li><div class="q-content">
-  <p>${T_(['Les fonctions de demande donnent directement le nouveau panier :', 'The demand functions directly give the new bundle:'])} \(x_1^*=\frac{${al}}{${s}}\times\frac{${R}}{${texT(D.p1n, 2)}}=${n(On.x1)}\) ${T_(['et', 'and'])} \(x_2^*=${n(On.x2)}\), ${T_(['inchangé : avec une utilité Cobb-Douglas, la demande d\'un bien ne dépend pas du prix de l\'autre. L\'utilité passe de', 'unchanged: with Cobb-Douglas utility, the demand for one good does not depend on the other\'s price. Utility goes from'])} \(${n(O.u)}\) ${T_(['à', 'to'])} \(${n(On.u)}\). ${T_(['La droite de budget pivote autour de son intersection avec l\'axe du bien 2 :', 'The budget line rotates around its intercept on the good-2 axis:'])}</p>
+  <p>${T_(['Les fonctions de demande donnent directement le nouveau panier :', 'The demand functions directly give the new bundle:'])} \(x_1^*=\frac{${al}}{${s}}\times\frac{${R}}{${texT(D.p1n, 2)}}=${fqa(On.x1)}\) ${T_(['et', 'and'])} \(x_2^*=${fqa(On.x2)}\), ${T_(['inchangé : avec une utilité Cobb-Douglas, la demande d\'un bien ne dépend pas du prix de l\'autre. L\'utilité passe de', 'unchanged: with Cobb-Douglas utility, the demand for one good does not depend on the other\'s price. Utility goes from'])} \(${n(O.u)}\) ${T_(['à', 'to'])} \(${n(On.u)}\). ${T_(['La droite de budget pivote autour de son intersection avec l\'axe du bien 2 :', 'The budget line rotates around its intercept on the good-2 axis:'])}</p>
   ${p2fig(al, be, [{ p1: p1, p2: p2, R: R, lab: 'E' }, { p1: D.p1n, p2: p2, R: R, lab: 'E′' }], lang, { X1: X1, Y1: Y1 })}
 </div></li>
 <li><div class="q-content">
-  <p>${T_(['Les biens sont pour lui des substituts parfaits : son TMS vaut', 'For this consumer the goods are perfect substitutes: their MRS is'])} \(\frac{${D.a}}{${D.b}}\) ${T_(['partout, et la condition de tangence ne s\'applique pas. Il compare l\'utilité procurée par un euro dépensé dans chaque bien :', 'everywhere, and the tangency condition does not apply. They compare the utility brought by one euro spent on each good:'])} \(\frac{a}{p_1}=\frac{${D.a}}{${p1}}\approx ${n(D.a / p1)}\) ${T_(['et', 'and'])} \(\frac{b}{p_2}=\frac{${D.b}}{${p2}}\approx ${n(D.b / p2)}\). ${corner1 ? T_(['Le bien 1 est le plus avantageux : il dépense tout son revenu en bien 1, soit', 'Good 1 is the better deal: they spend all their income on good 1, that is']) + ' \\(x_1^*=' + n(R / p1) + '\\), \\(x_2^*=0\\)' : T_(['Le bien 2 est le plus avantageux : il dépense tout son revenu en bien 2, soit', 'Good 2 is the better deal: they spend all their income on good 2, that is']) + ' \\(x_1^*=0\\), \\(x_2^*=' + n(R / p2) + '\\)'}. ${T_(['C\'est une solution en coin : le panier optimal est à une extrémité de la droite de budget.', 'This is a corner solution: the optimal bundle is at one end of the budget line.'])}</p>
+  <p>${T_(['Les biens sont pour lui des substituts parfaits : son TMS vaut', 'For this consumer the goods are perfect substitutes: their MRS is'])} \(\frac{${D.a}}{${D.b}}\) ${T_(['partout, et la condition de tangence ne s\'applique pas. Il compare l\'utilité procurée par un euro dépensé dans chaque bien :', 'everywhere, and the tangency condition does not apply. They compare the utility brought by one euro spent on each good:'])} \(\frac{a}{p_1}=\frac{${D.a}}{${p1}}${eqa(D.a / p1)}\) ${T_(['et', 'and'])} \(\frac{b}{p_2}=\frac{${D.b}}{${p2}}${eqa(D.b / p2)}\). ${corner1 ? T_(['Le bien 1 est le plus avantageux : il dépense tout son revenu en bien 1, soit', 'Good 1 is the better deal: they spend all their income on good 1, that is']) + ' \\(x_1^*=' + n(R / p1) + '\\), \\(x_2^*=0\\)' : T_(['Le bien 2 est le plus avantageux : il dépense tout son revenu en bien 2, soit', 'Good 2 is the better deal: they spend all their income on good 2, that is']) + ' \\(x_1^*=0\\), \\(x_2^*=' + n(R / p2) + '\\)'}. ${T_(['C\'est une solution en coin : le panier optimal est à une extrémité de la droite de budget.', 'This is a corner solution: the optimal bundle is at one end of the budget line.'])}</p>
 </div></li>
 </ol></div>`;
 }
-I18N.fr.sol = D => p2sol(D, 'fr');
-I18N.en.sol = D => p2sol(D, 'en');
+I18N.fr.sol = D => fracClean((D => p2sol(D, 'fr'))(D));
+I18N.en.sol = D => fracClean((D => p2sol(D, 'en'))(D));

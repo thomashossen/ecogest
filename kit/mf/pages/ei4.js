@@ -4,10 +4,65 @@
 const GREY = '#8a857a';
 const KBASE_FR = { 'k-badge': 'MICROÉCONOMIE', 'k-seed': 'Seed de reproductibilité', 'k-seedtip': 'Vide = nouvel exercice aléatoire', 'k-gen': 'Générer', 'k-tag-course': 'Cours', 'k-tag-ex': 'Exercice', 'k-tag-sol': 'Corrigé', 'k-seedbadge': 'Seed&nbsp;:', showSol: 'Afficher le corrigé', hideSol: 'Masquer le corrigé', phSeed: 'auto', copy: 'Copier', copied: 'Copié', 'k-sub': '© Thomas Hossen – Version du 20 octobre 2026' };
 const KBASE_EN = { 'k-badge': 'MICROECONOMICS', 'k-seed': 'Reproducibility seed', 'k-seedtip': 'Empty = new random exercise', 'k-gen': 'Generate', 'k-tag-course': 'Lesson', 'k-tag-ex': 'Exercise', 'k-tag-sol': 'Solution', 'k-seedbadge': 'Seed:', showSol: 'Show solution', hideSol: 'Hide solution', phSeed: 'auto', copy: 'Copy', copied: 'Copied', 'k-sub': '© Thomas Hossen – Version of 20 October 2026' };
+/* ---------- calcul exact : reconnaissance des rationnels et affichage fractionnaire ---------- */
+function ratOf(x) {
+  if (!isFinite(x)) return null;
+  const s = x < 0 ? -1 : 1, y = Math.abs(x);
+  if (Math.abs(y - Math.round(y)) <= 1e-11 * Math.max(1, y)) return [s * Math.round(y), 1];
+  let h0 = 0, h1 = 1, k0 = 1, k1 = 0, z = y;
+  for (let i = 0; i < 40; i++) {
+    const a = Math.floor(z), h2 = a * h1 + h0, k2 = a * k1 + k0;
+    if (k2 > 2e6) return null;
+    if (Math.abs(y - h2 / k2) <= 1e-12 * Math.max(1, y)) return [s * h2, k2];
+    h0 = h1; h1 = h2; k0 = k1; k1 = k2;
+    const f = z - a; if (f < 1e-15) return null; z = 1 / f;
+  }
+  return null;
+}
+/* valeur exacte : entier ou fraction ; décimale si le nombre n'est pas rationnel (racine, puissance non entière) */
+function fq(x) {
+  const r = ratOf(x);
+  if (!r) return texT(x, 4);
+  if (r[1] === 1) return texT(r[0], 0);
+  return (r[0] < 0 ? '-' : '') + '\\frac{' + texT(Math.abs(r[0]), 0) + '}{' + texT(r[1], 0) + '}';
+}
+/* valeur exacte suivie d'une approximation décimale */
+function fqa(x) {
+  const r = ratOf(x);
+  if (!r) return texT(x, 4);
+  if (r[1] === 1) return texT(r[0], 0);
+  return fq(x) + '\\approx ' + texT(x, Math.abs(x) >= 100 ? 2 : 4);
+}
+/* entre parenthèses si fraction ou négatif (avant un exposant) */
+function fqp(x) { const r = ratOf(x), t = fq(x); return (r && r[1] === 1 && r[0] >= 0) || (!r && x >= 0) ? t : '\\left(' + t + '\\right)'; }
+/* cellule de tableau : valeur exacte, approximation en petit */
+function fqt(x) { const r = ratOf(x); return '\\(' + fq(x) + '\\)' + (r && r[1] === 1 ? '' : '<br><small>≈ ' + fmt(x, 2) + '</small>'); }
+
+/* signe = si la valeur est exacte (rationnelle), sinon approximation */
+function eqa(x) { return ratOf(x) ? '=' + fqa(x) : '\\approx ' + texT(x, 4); }
+/* simplification d'affichage : \frac{X}{1} devient X (entre parenthèses si nécessaire) */
+function fracClean(h) {
+  const grp = (s, i) => { if (s[i] !== '{') return -1; let d = 0; for (let j = i; j < s.length; j++) { if (s[j] === '{') d++; else if (s[j] === '}') { d--; if (d === 0) return j; } } return -1; };
+  let out = '', i = 0;
+  for (;;) {
+    const re = /\\[td]?frac\{/g; re.lastIndex = i; const mm = re.exec(h);
+    if (!mm) { out += h.slice(i); break; }
+    const k = mm.index, cmd = mm[0].slice(0, -1), a = k + cmd.length, ae = grp(h, a), b = ae + 1, be = ae > 0 ? grp(h, b) : -1;
+    if (ae < 0 || be < 0) { out += h.slice(i, a + 1); i = a + 1; continue; }
+    const num = h.slice(a + 1, ae), den = h.slice(b + 1, be).trim();
+    if (den === '1') {
+      let top = false, d = 0; for (let j = 0; j < num.length; j++) { const c = num[j]; if (c === '{') d++; else if (c === '}') d--; else if ((c === '+' || c === '-') && d === 0 && j > 0) top = true; }
+      const rest = h.slice(be + 1), end = /^(\s*$|\\\]|\\\)|=|&|\\\\|\\qquad|\\quad|\\text|\\iff|&lt;|&gt;|\s*[,;.<}])/.test(rest);
+      out += h.slice(i, k) + (top && !end ? '\\left(' + fracClean(num) + '\\right)' : fracClean(num));
+    } else out += h.slice(i, k) + cmd + '{' + fracClean(num) + '}{' + fracClean(h.slice(b + 1, be)) + '}';
+    i = be + 1;
+  }
+  return out;
+}
 I18N.fr.k = Object.assign({}, KBASE_FR, { title: 'Économie industrielle 4 – Stackelberg contre Cournot', 'k-h1': 'Stackelberg contre Cournot', 'k-coursetitle': 'Jouer en premier : leader, suiveur, avantage du premier joueur et guerre de Stackelberg', 'k-extitle': 'Cournot, Stackelberg et Bowley avec des coûts quadratiques', 'k-soltitle': 'Cournot, Stackelberg et Bowley avec des coûts quadratiques' });
 I18N.en.k = Object.assign({}, KBASE_EN, { title: 'Industrial economics 4 – Stackelberg versus Cournot', 'k-h1': 'Stackelberg versus Cournot', 'k-coursetitle': 'Moving first: leader, follower, first-mover advantage and Stackelberg warfare', 'k-extitle': 'Cournot, Stackelberg and Bowley with quadratic costs', 'k-soltitle': 'Cournot, Stackelberg and Bowley with quadratic costs' });
 
-const cfx = (x, d) => Math.abs(x - 1) < 1e-12 ? '' : texT(x, d === undefined ? 4 : d) + '\\,';
+const cfx = (x, d) => Math.abs(x - 1) < 1e-12 ? '' : fq(x) + '\\,';
 /* ---------- outils : P = a - bQ, C_i = c_i q_i + e_i q_i^2 / 2 ---------- */
 function e4model(a, b, c, e) {
   const al = [0, 1].map(i => (a - c[i]) / (2 * b + e[i])), be = [0, 1].map(i => b / (2 * b + e[i]));
@@ -182,7 +237,7 @@ function e4graph(D, lang) {
   G.legend([{ c: COL.s1, t: 'R₁' }, { c: COL.s2, t: 'R₂' }], G.ml + 160, 16);
   return '<div class="sol-fig">' + G.svg(fr ? 'Fonctions de réaction et équilibres' : 'Reaction functions and equilibria') + '</div>';
 }
-I18N.fr.ex = function (D) {
+I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">Deux entreprises produisent un bien homogène de demande inverse \(P(Q)=${D.a}-${cfx(D.b)}Q\), avec \(Q=q_1+q_2\). Leurs coûts sont \(${e4C(D, 0)}\) et \(${e4C(D, 1)}\).</div>
 <div class="questions"><ol>
 <li><div class="q-text">Déterminez les fonctions de réaction et l'équilibre de Cournot : quantités, prix, profits.</div></li>
@@ -191,8 +246,8 @@ I18N.fr.ex = function (D) {
 <li><div class="q-text">Calculez, à l'aide d'intégrales, le surplus des consommateurs et le surplus de chaque producteur dans les trois situations, puis le surplus total. Comparez et commentez.</div></li>
 <li><div class="q-text">Représentez graphiquement les fonctions de réaction et les trois situations.</div></li>
 </ol></div>`;
-};
-I18N.en.ex = function (D) {
+});
+I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">Two firms produce a homogeneous good with inverse demand \(P(Q)=${D.a}-${cfx(D.b)}Q\), with \(Q=q_1+q_2\). Their costs are \(${e4C(D, 0)}\) and \(${e4C(D, 1)}\).</div>
 <div class="questions"><ol>
 <li><div class="q-text">Determine the reaction functions and the Cournot equilibrium: quantities, price, profits.</div></li>
@@ -201,39 +256,40 @@ I18N.en.ex = function (D) {
 <li><div class="q-text">Compute, using integrals, consumer surplus and each producer's surplus in the three situations, then total surplus. Compare and comment.</div></li>
 <li><div class="q-text">Draw the reaction functions and the three situations.</div></li>
 </ol></div>`;
-};
+});
 function e4sol(D, lang) {
+  const texT = (x) => fq(x);
   const fr = lang === 'fr', T_ = s => fr ? s[0] : s[1], M = D.M, a = D.a, b = D.b, c = D.c, e = D.e, n4 = x => texT(x, 4), Lr = D.L, Fw = D.F, S = D.S;
   const SC = T_(['SC', 'CS']), SP = T_(['SP', 'PS']), bx = b === 1 ? '' : texT(b, 2) + '\\times ';
   const foc = i => String.raw`${a}-${cfx(2 * b)}q_${i + 1}-${cfx(b)}q_${2 - i}${c[i] ? '-' + c[i] : ''}${e[i] ? '-' + cfx(e[i]) + 'q_' + (i + 1) : ''}=0`;
   const coefL = b * (1 - M.be[Fw]) + e[Lr] / 2, linL = a - b * M.al[Fw] - c[Lr];
   const priceLine = x => String.raw`P=${a}-${bx}(${n4(x.q[0])}+${n4(x.q[1])})=${n4(x.P)}`;
-  const spI = (x, i) => String.raw`\int_0^{${n4(x.q[i])}}\big(${n4(x.P)}-${e[i] ? '(' + e4Cm(D, i, 'q') + ')' : c[i]}\big)\,dq=${n4(x.P - c[i])}\times ${n4(x.q[i])}${e[i] ? '-' + (e[i] === 2 ? '' : n4(e[i] / 2) + '\\times ') + n4(x.q[i]) + '^2' : ''}=${n4(x.pi[i])}`;
+  const spI = (x, i) => String.raw`\int_0^{${n4(x.q[i])}}\big(${n4(x.P)}-${e[i] ? '(' + e4Cm(D, i, 'q') + ')' : c[i]}\big)\,dq=${n4(x.P - c[i])}\times ${n4(x.q[i])}${e[i] ? '-' + (e[i] === 2 ? '' : n4(e[i] / 2) + '\\times ') + fqp(x.q[i]) + '^2' : ''}=${n4(x.pi[i])}`;
   const scI = x => String.raw`\int_0^{${n4(x.Q)}}\big(${a}-${cfx(b)}q-${n4(x.P)}\big)\,dq=\Big[${n4(a - x.P)}\,q-${cfx(b / 2)}q^2\Big]_0^{${n4(x.Q)}}=${n4(x.SC)}`;
   const block = (x, nm) => String.raw`\[\begin{aligned}${SC}^{${nm}}&amp;=${scI(x)}\\${SP}_1^{${nm}}&amp;=${spI(x, 0)}\\${SP}_2^{${nm}}&amp;=${spI(x, 1)}\end{aligned}\]`;
   const rows = [['Cournot', M.C], ['Stackelberg', S], ['Bowley', M.B]];
-  const tab = `<div class="dtable-wrap"><table class="dtable"><thead><tr><th></th><th>\\(Q\\)</th><th>\\(P\\)</th><th>${SC}</th><th>\\(${SP}_1\\)</th><th>\\(${SP}_2\\)</th><th>${T_(['Surplus total', 'Total surplus'])}</th></tr></thead><tbody>${rows.map(r => `<tr><td>${r[0]}</td><td class="num">${fmt(r[1].Q, 3)}</td><td class="num">${fmt(r[1].P, 3)}</td><td class="num">${fmt(r[1].SC, 3)}</td><td class="num">${fmt(r[1].pi[0], 3)}</td><td class="num">${fmt(r[1].pi[1], 3)}</td><td class="num">${fmt(r[1].W, 3)}</td></tr>`).join('')}</tbody></table></div>`;
+  const tab = `<div class="dtable-wrap"><table class="dtable"><thead><tr><th></th><th>\\(Q\\)</th><th>\\(P\\)</th><th>${SC}</th><th>\\(${SP}_1\\)</th><th>\\(${SP}_2\\)</th><th>${T_(['Surplus total', 'Total surplus'])}</th></tr></thead><tbody>${rows.map(r => `<tr><td>${r[0]}</td><td class="num">${fqt(r[1].Q)}</td><td class="num">${fqt(r[1].P)}</td><td class="num">${fqt(r[1].SC)}</td><td class="num">${fqt(r[1].pi[0])}</td><td class="num">${fqt(r[1].pi[1])}</td><td class="num">${fqt(r[1].W)}</td></tr>`).join('')}</tbody></table></div>`;
   return String.raw`<div class="st"><ol>
 <li><div class="q-content">
   <p>${T_(['Le profit de l\'entreprise', 'The profit of firm'])} \(i\) ${T_(['est sa recette, au prix fixé par la demande totale, diminuée de son coût :', 'is its revenue, at the price set by total demand, minus its cost:'])} \(\Pi_i=(${a}-${cfx(b)}q_1-${cfx(b)}q_2)\,q_i-C_i(q_i)\). ${T_(['Pour une quantité donnée de sa concurrente, chaque entreprise annule la dérivée de son profit par rapport à sa propre quantité ; on en déduit les fonctions de réaction :', 'For a given rival quantity, each firm sets the derivative of its profit with respect to its own quantity to zero; this gives the reaction functions:'])}
   \[\begin{aligned}\frac{\partial\Pi_1}{\partial q_1}=0&amp;\iff ${foc(0)}\iff q_1=R_1(q_2)=${n4(M.al[0])}-${n4(M.be[0])}\,q_2\\\frac{\partial\Pi_2}{\partial q_2}=0&amp;\iff ${foc(1)}\iff q_2=R_2(q_1)=${n4(M.al[1])}-${n4(M.be[1])}\,q_1\end{aligned}\]
   ${T_(['À l\'équilibre de Cournot, chaque quantité est la meilleure réponse à l\'autre. En reportant', 'At the Cournot equilibrium, each quantity is the best response to the other. Substituting'])} \(R_2\) ${T_(['dans', 'into'])} \(R_1\), ${T_(['on obtient', 'we get'])} \(q_1=${n4(M.al[0])}-${n4(M.be[0])}\,(${n4(M.al[1])}-${n4(M.be[1])}\,q_1)\), ${T_(['d\'où :', 'hence:'])}
-  \[q_1^C=\frac{${n4(M.al[0])}-${n4(M.be[0])}\times ${n4(M.al[1])}}{1-${n4(M.be[0])}\times ${n4(M.be[1])}}=${n4(M.C.q[0])}\qquad q_2^C=R_2(q_1^C)=${n4(M.C.q[1])}\]
+  \[q_1^C=\frac{${n4(M.al[0])}-${n4(M.be[0])}\times ${n4(M.al[1])}}{1-${n4(M.be[0])}\times ${n4(M.be[1])}}=${fqa(M.C.q[0])}\qquad q_2^C=R_2(q_1^C)=${fqa(M.C.q[1])}\]
   ${T_(['On en déduit, d\'après la fonction de demande inverse, le prix d\'équilibre sur le marché :', 'The inverse demand function then gives the equilibrium market price:'])}
   \[${priceLine(M.C)}\]
-  ${T_(['Les profits valent alors', 'Profits are then'])} \(\Pi_1^C=${n4(M.C.pi[0])}\) ${T_(['et', 'and'])} \(\Pi_2^C=${n4(M.C.pi[1])}\).</p>
+  ${T_(['Les profits valent alors', 'Profits are then'])} \(\Pi_1^C=${fqa(M.C.pi[0])}\) ${T_(['et', 'and'])} \(\Pi_2^C=${fqa(M.C.pi[1])}\).</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['On raisonne par induction à rebours, en commençant par la décision du suiveur, l\'entreprise', 'We reason by backward induction, starting with the decision of the follower, firm'])} ${Fw + 1}. ${T_(['Quelle que soit la quantité observée du leader, elle joue sa meilleure réponse, c\'est-à-dire sa fonction de réaction de la question 1 :', 'Whatever the leader\'s observed quantity, it plays its best response, that is, its reaction function from question 1:'])} \(q_${Fw + 1}=${n4(M.al[Fw])}-${n4(M.be[Fw])}\,q_${Lr + 1}\). ${T_(['Le leader anticipe cette réaction et l\'intègre dans son profit, qui ne dépend plus que de sa propre quantité :', 'The leader anticipates this reaction and builds it into its profit, which then depends only on its own quantity:'])}
   \[\begin{aligned}\Pi_${Lr + 1}(q_${Lr + 1})&amp;=\big(${a}-${cfx(b)}q_${Lr + 1}-${cfx(b)}(${n4(M.al[Fw])}-${n4(M.be[Fw])}\,q_${Lr + 1})\big)\,q_${Lr + 1}-C_${Lr + 1}(q_${Lr + 1})\\&amp;=${n4(linL)}\,q_${Lr + 1}-${n4(coefL)}\,q_${Lr + 1}^2&amp;&amp;\text{${T_(['en développant', 'expanding'])}}\end{aligned}\]
-  ${T_(['Le leader annule la dérivée de ce profit :', 'The leader sets the derivative of this profit to zero:'])} \(${n4(linL)}-${n4(2 * coefL)}\,q_${Lr + 1}=0\), ${T_(['soit', 'that is'])} \(q_${Lr + 1}^S=\frac{${n4(linL)}}{${n4(2 * coefL)}}=${n4(S.q[Lr])}\). ${T_(['On en déduit la quantité du suiveur en reportant ce résultat dans sa fonction de réaction :', 'The follower\'s quantity follows by substituting this result into its reaction function:'])} \(q_${Fw + 1}^S=${n4(M.al[Fw])}-${n4(M.be[Fw])}\times ${n4(S.q[Lr])}=${n4(S.q[Fw])}\). ${T_(['D\'après la fonction de demande inverse, le prix d\'équilibre est alors :', 'From the inverse demand function, the equilibrium price is then:'])}
+  ${T_(['Le leader annule la dérivée de ce profit :', 'The leader sets the derivative of this profit to zero:'])} \(${n4(linL)}-${n4(2 * coefL)}\,q_${Lr + 1}=0\), ${T_(['soit', 'that is'])} \(q_${Lr + 1}^S=\frac{${n4(linL)}}{${n4(2 * coefL)}}=${fqa(S.q[Lr])}\). ${T_(['On en déduit la quantité du suiveur en reportant ce résultat dans sa fonction de réaction :', 'The follower\'s quantity follows by substituting this result into its reaction function:'])} \(q_${Fw + 1}^S=${n4(M.al[Fw])}-${n4(M.be[Fw])}\times ${n4(S.q[Lr])}=${fqa(S.q[Fw])}\). ${T_(['D\'après la fonction de demande inverse, le prix d\'équilibre est alors :', 'From the inverse demand function, the equilibrium price is then:'])}
   \[${priceLine(S)}\]
-  ${T_(['et les profits valent', 'and profits are'])} \(\Pi_1^S=${n4(S.pi[0])}\) ${T_(['et', 'and'])} \(\Pi_2^S=${n4(S.pi[1])}\). ${T_(['Le leader produit plus et gagne plus qu\'en Cournot, le suiveur produit moins et gagne moins : c\'est l\'avantage du premier joueur.', 'The leader produces more and earns more than under Cournot, the follower produces less and earns less: this is the first-mover advantage.'])}</p>
+  ${T_(['et les profits valent', 'and profits are'])} \(\Pi_1^S=${fqa(S.pi[0])}\) ${T_(['et', 'and'])} \(\Pi_2^S=${fqa(S.pi[1])}\). ${T_(['Le leader produit plus et gagne plus qu\'en Cournot, le suiveur produit moins et gagne moins : c\'est l\'avantage du premier joueur.', 'The leader produces more and earns more than under Cournot, the follower produces less and earns less: this is the first-mover advantage.'])}</p>
 </div></li>
 <li><div class="q-content">
-  <p>${T_(['Chaque entreprise produit la quantité qu\'elle choisirait comme leader, calculée comme à la question 2 en supposant que l\'autre suit sa fonction de réaction :', 'Each firm produces the quantity it would choose as leader, computed as in question 2 assuming that the other follows its reaction function:'])} \(q_1^B=${n4(M.B.q[0])}\) ${T_(['et', 'and'])} \(q_2^B=${n4(M.B.q[1])}\). ${T_(['On en déduit, d\'après la fonction de demande inverse, le prix sur le marché :', 'The inverse demand function then gives the market price:'])}
+  <p>${T_(['Chaque entreprise produit la quantité qu\'elle choisirait comme leader, calculée comme à la question 2 en supposant que l\'autre suit sa fonction de réaction :', 'Each firm produces the quantity it would choose as leader, computed as in question 2 assuming that the other follows its reaction function:'])} \(q_1^B=${fqa(M.B.q[0])}\) ${T_(['et', 'and'])} \(q_2^B=${fqa(M.B.q[1])}\). ${T_(['On en déduit, d\'après la fonction de demande inverse, le prix sur le marché :', 'The inverse demand function then gives the market price:'])}
   \[${priceLine(M.B)}\]
-  ${T_(['et les profits', 'and the profits'])} \(\Pi_1^B=${n4(M.B.pi[0])}\) ${T_(['et', 'and'])} \(\Pi_2^B=${n4(M.B.pi[1])}\). ${T_(['Aucune entreprise ne joue sa meilleure réponse à la quantité effective de l\'autre : la production totale dépasse celle des deux équilibres et le prix est le plus bas des trois situations.', 'Neither firm plays its best response to the other\'s actual quantity: total output exceeds that of both equilibria and the price is the lowest of the three situations.'])}${M.B.pi.some(v => v < 0) ? T_([' Un profit est même négatif : l\'entreprise concernée a intérêt à quitter le marché.', ' One profit is even negative: the firm concerned has an incentive to leave the market.']) : ''}</p>
+  ${T_(['et les profits', 'and the profits'])} \(\Pi_1^B=${fqa(M.B.pi[0])}\) ${T_(['et', 'and'])} \(\Pi_2^B=${fqa(M.B.pi[1])}\). ${T_(['Aucune entreprise ne joue sa meilleure réponse à la quantité effective de l\'autre : la production totale dépasse celle des deux équilibres et le prix est le plus bas des trois situations.', 'Neither firm plays its best response to the other\'s actual quantity: total output exceeds that of both equilibria and the price is the lowest of the three situations.'])}${M.B.pi.some(v => v < 0) ? T_([' Un profit est même négatif : l\'entreprise concernée a intérêt à quitter le marché.', ' One profit is even negative: the firm concerned has an incentive to leave the market.']) : ''}</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Le surplus des consommateurs est l\'intégrale de l\'écart entre la demande inverse et le prix payé ; le surplus de chaque producteur est l\'intégrale de l\'écart entre le prix et son coût marginal', 'Consumer surplus is the integral of the gap between inverse demand and the price paid; each producer\'s surplus is the integral of the gap between the price and its marginal cost'])} \(C_i'(q)\), ${T_(['égal ici à son profit puisqu\'il n\'y a pas de coût fixe. En Cournot :', 'here equal to its profit since there is no fixed cost. Under Cournot:'])}</p>
@@ -251,5 +307,5 @@ function e4sol(D, lang) {
 </div></li>
 </ol></div>`;
 }
-I18N.fr.sol = D => e4sol(D, 'fr');
-I18N.en.sol = D => e4sol(D, 'en');
+I18N.fr.sol = D => fracClean((D => e4sol(D, 'fr'))(D));
+I18N.en.sol = D => fracClean((D => e4sol(D, 'en'))(D));

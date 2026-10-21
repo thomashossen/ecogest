@@ -1,7 +1,62 @@
 const GREY = '#8a857a';
 const KBASE_FR = { 'k-badge': 'MICROÉCONOMIE', 'k-seed': 'Seed de reproductibilité', 'k-seedtip': 'Vide = nouvel exercice aléatoire', 'k-gen': 'Générer', 'k-tag-course': 'Cours', 'k-tag-ex': 'Exercice', 'k-tag-sol': 'Corrigé', 'k-seedbadge': 'Seed&nbsp;:', showSol: 'Afficher le corrigé', hideSol: 'Masquer le corrigé', phSeed: 'auto', copy: 'Copier', copied: 'Copié', 'k-sub': '© Thomas Hossen – Version du 20 octobre 2026' };
 const KBASE_EN = { 'k-badge': 'MICROECONOMICS', 'k-seed': 'Reproducibility seed', 'k-seedtip': 'Empty = new random exercise', 'k-gen': 'Generate', 'k-tag-course': 'Lesson', 'k-tag-ex': 'Exercise', 'k-tag-sol': 'Solution', 'k-seedbadge': 'Seed:', showSol: 'Show solution', hideSol: 'Hide solution', phSeed: 'auto', copy: 'Copy', copied: 'Copied', 'k-sub': '© Thomas Hossen – Version of 20 October 2026' };
-const cfx = (x, d) => Math.abs(x - 1) < 1e-12 ? '' : texT(x, d === undefined ? 4 : d) + '\\,';
+/* ---------- calcul exact : reconnaissance des rationnels et affichage fractionnaire ---------- */
+function ratOf(x) {
+  if (!isFinite(x)) return null;
+  const s = x < 0 ? -1 : 1, y = Math.abs(x);
+  if (Math.abs(y - Math.round(y)) <= 1e-11 * Math.max(1, y)) return [s * Math.round(y), 1];
+  let h0 = 0, h1 = 1, k0 = 1, k1 = 0, z = y;
+  for (let i = 0; i < 40; i++) {
+    const a = Math.floor(z), h2 = a * h1 + h0, k2 = a * k1 + k0;
+    if (k2 > 2e6) return null;
+    if (Math.abs(y - h2 / k2) <= 1e-12 * Math.max(1, y)) return [s * h2, k2];
+    h0 = h1; h1 = h2; k0 = k1; k1 = k2;
+    const f = z - a; if (f < 1e-15) return null; z = 1 / f;
+  }
+  return null;
+}
+/* valeur exacte : entier ou fraction ; décimale si le nombre n'est pas rationnel (racine, puissance non entière) */
+function fq(x) {
+  const r = ratOf(x);
+  if (!r) return texT(x, 4);
+  if (r[1] === 1) return texT(r[0], 0);
+  return (r[0] < 0 ? '-' : '') + '\\frac{' + texT(Math.abs(r[0]), 0) + '}{' + texT(r[1], 0) + '}';
+}
+/* valeur exacte suivie d'une approximation décimale */
+function fqa(x) {
+  const r = ratOf(x);
+  if (!r) return texT(x, 4);
+  if (r[1] === 1) return texT(r[0], 0);
+  return fq(x) + '\\approx ' + texT(x, Math.abs(x) >= 100 ? 2 : 4);
+}
+/* entre parenthèses si fraction ou négatif (avant un exposant) */
+function fqp(x) { const r = ratOf(x), t = fq(x); return (r && r[1] === 1 && r[0] >= 0) || (!r && x >= 0) ? t : '\\left(' + t + '\\right)'; }
+/* cellule de tableau : valeur exacte, approximation en petit */
+function fqt(x) { const r = ratOf(x); return '\\(' + fq(x) + '\\)' + (r && r[1] === 1 ? '' : '<br><small>≈ ' + fmt(x, 2) + '</small>'); }
+
+/* signe = si la valeur est exacte (rationnelle), sinon approximation */
+function eqa(x) { return ratOf(x) ? '=' + fqa(x) : '\\approx ' + texT(x, 4); }
+/* simplification d'affichage : \frac{X}{1} devient X (entre parenthèses si nécessaire) */
+function fracClean(h) {
+  const grp = (s, i) => { if (s[i] !== '{') return -1; let d = 0; for (let j = i; j < s.length; j++) { if (s[j] === '{') d++; else if (s[j] === '}') { d--; if (d === 0) return j; } } return -1; };
+  let out = '', i = 0;
+  for (;;) {
+    const re = /\\[td]?frac\{/g; re.lastIndex = i; const mm = re.exec(h);
+    if (!mm) { out += h.slice(i); break; }
+    const k = mm.index, cmd = mm[0].slice(0, -1), a = k + cmd.length, ae = grp(h, a), b = ae + 1, be = ae > 0 ? grp(h, b) : -1;
+    if (ae < 0 || be < 0) { out += h.slice(i, a + 1); i = a + 1; continue; }
+    const num = h.slice(a + 1, ae), den = h.slice(b + 1, be).trim();
+    if (den === '1') {
+      let top = false, d = 0; for (let j = 0; j < num.length; j++) { const c = num[j]; if (c === '{') d++; else if (c === '}') d--; else if ((c === '+' || c === '-') && d === 0 && j > 0) top = true; }
+      const rest = h.slice(be + 1), end = /^(\s*$|\\\]|\\\)|=|&|\\\\|\\qquad|\\quad|\\text|\\iff|&lt;|&gt;|\s*[,;.<}])/.test(rest);
+      out += h.slice(i, k) + (top && !end ? '\\left(' + fracClean(num) + '\\right)' : fracClean(num));
+    } else out += h.slice(i, k) + cmd + '{' + fracClean(num) + '}{' + fracClean(h.slice(b + 1, be)) + '}';
+    i = be + 1;
+  }
+  return out;
+}
+const cfx = (x, d) => Math.abs(x - 1) < 1e-12 ? '' : fq(x) + '\\,';
 /* figure générique : demande linéaire P = a - bQ, surplus des consommateurs, profits par segments [x0, x1, coût],
    perte sèche par rapport à la tarification au coût marginal minimal cmin */
 function eiSurplusFig(o) {
@@ -53,6 +108,29 @@ function jxMatrixSVG(U1, U2, o) {
 /* matrice en tableau HTML pour les énoncés */
 function jxTable(U1, U2, rows, cols, corner) {
   return `<div class="dtable-wrap"><table class="dtable"><thead><tr><th>${corner || ''}</th>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>${U1.map((r, i) => `<tr><td><strong>${rows[i]}</strong></td>${r.map((v, j) => `<td class="num">(${fmtT(v, 2)} ; ${fmtT(U2[i][j], 2)})</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+}
+/* ---------- arbres de jeu ---------- */
+/* nœud : { pl: 1|2|3, lab: 'nom', ch: [{ a: 'action', n: nœud }] } ou feuille { u: [gains] } */
+function jxBack(node) {
+  /* induction à rebours : renvoie les gains et marque node.best */
+  if (node.u) return node.u;
+  let best = -1, val = null;
+  node.ch.forEach((c, k) => { const v = jxBack(c.n); if (!val || v[node.pl - 1] > val[node.pl - 1]) { val = v; best = k; } });
+  node.best = best; node.val = val; return val;
+}
+function jxTreeSVG(root, o) {
+  o = o || {};
+  const leaves = []; const walk = (n, d) => { n.d = d; if (n.u) { n.x = leaves.length; leaves.push(n); return; } n.ch.forEach(c => walk(c.n, d + 1)); n.x = (n.ch[0].n.x + n.ch[n.ch.length - 1].n.x) / 2; };
+  walk(root, 0);
+  let depth = 0; const md = n => { depth = Math.max(depth, n.d); if (!n.u) n.ch.forEach(c => md(c.n)); }; md(root);
+  const W = Math.max(360, leaves.length * (o.lw || 90) + 40), H = (depth) * (o.dh || 90) + 110, px = n => 20 + (n.x + 0.5) * (W - 40) / leaves.length, py = n => 34 + n.d * (o.dh || 90);
+  const cols = [COL.s1, COL.s2, COL.s4 || COL.s3];
+  let s = `<svg viewBox="0 0 ${W} ${H}" style="max-width:${W}px;display:block;margin:0 auto" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${o.aria || 'arbre'}">`;
+  const edges = (n, onPath) => { if (n.u) return; n.ch.forEach((c, k) => { const hot = o.bi && n.best === k, path = hot && onPath; s += `<line x1="${px(n)}" y1="${py(n)}" x2="${px(c.n)}" y2="${py(c.n)}" stroke="${hot ? COL.s3 : COL.axis}" stroke-width="${path ? 4 : hot ? 2.6 : 1.4}"/>`; s += `<text x="${(px(n) + px(c.n)) / 2 + (k === 0 ? -8 : 8)}" y="${(py(n) + py(c.n)) / 2}" text-anchor="${k === 0 ? 'end' : 'start'}" ${FONT_T} font-size="12" font-style="italic" fill="${hot ? COL.s3 : COL.ink}">${c.a}</text>`; edges(c.n, path); }); };
+  edges(root, true);
+  const nodes = n => { if (n.u) { s += `<text x="${px(n)}" y="${py(n) + 18}" text-anchor="middle" ${FONT_M} font-size="12" fill="${COL.ink}">(${n.u.map(v => fmtT(v, 2)).join(' ; ')})</text>`; return; } s += `<circle cx="${px(n)}" cy="${py(n)}" r="13" fill="${cols[n.pl - 1]}"/><text x="${px(n)}" y="${py(n) + 4.5}" text-anchor="middle" ${FONT_T} font-size="12" font-weight="700" fill="#fff">${n.lab || n.pl}</text>`; n.ch.forEach(c => nodes(c.n)); };
+  nodes(root);
+  return s + '</svg>';
 }
 I18N.fr.k = Object.assign({}, KBASE_FR, { title: 'Théorie des jeux 2 – Élimination des stratégies dominées', 'k-h1': 'Élimination répétée des stratégies strictement dominées', 'k-coursetitle': 'Raisonner sur la rationalité de l\'autre : dominance stricte, élimination itérée et ses limites', 'k-extitle': 'Résoudre un jeu par élimination répétée', 'k-soltitle': 'Résoudre un jeu par élimination répétée' });
 I18N.en.k = Object.assign({}, KBASE_EN, { title: 'Game theory 2 – Eliminating dominated strategies', 'k-h1': 'Iterated elimination of strictly dominated strategies', 'k-coursetitle': 'Reasoning about the other\'s rationality: strict dominance, iterated elimination and its limits', 'k-extitle': 'Solving a game by iterated elimination', 'k-soltitle': 'Solving a game by iterated elimination' });
@@ -193,7 +271,7 @@ PAGE.compute = function (seed) {
   D.i = D.E.R[0]; D.j = D.E.C[0];
   return D;
 };
-I18N.fr.ex = function (D) {
+I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
   const L = I18N.fr.f;
   return String.raw`<div class="context-block">Deux joueurs choisissent simultanément une stratégie : le joueur 1 parmi H, M et B, le joueur 2 parmi G, C et D. Dans chaque case, le premier nombre est le gain du joueur 1, le second celui du joueur 2.</div>
 ${jxTable(D.U1, D.U2, L.rows, L.cols, '1 \\ 2')}
@@ -204,8 +282,8 @@ ${jxTable(D.U1, D.U2, L.rows, L.cols, '1 \\ 2')}
 <li><div class="q-text">Représentez la matrice à chaque étape de l'élimination.</div></li>
 <li><div class="q-text">Reprenez l'élimination en examinant d'abord le joueur 2 à chaque étape. Le résultat change-t-il ?</div></li>
 </ol></div>`;
-};
-I18N.en.ex = function (D) {
+});
+I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
   const L = I18N.en.f;
   return String.raw`<div class="context-block">Two players simultaneously choose a strategy: player 1 among U, M and D, player 2 among L, C and R. In each cell, the first number is player 1's payoff, the second player 2's.</div>
 ${jxTable(D.U1, D.U2, L.rows, L.cols, '1 \\ 2')}
@@ -216,7 +294,7 @@ ${jxTable(D.U1, D.U2, L.rows, L.cols, '1 \\ 2')}
 <li><div class="q-text">Draw the matrix at each step of the elimination.</div></li>
 <li><div class="q-text">Redo the elimination examining player 2 first at each step. Does the result change?</div></li>
 </ol></div>`;
-};
+});
 function j2step(D, st, k, lang) {
   const fr = lang === 'fr', T_ = s => fr ? s[0] : s[1], L = I18N[lang].f, U1 = D.U1, U2 = D.U2;
   const nm = st.p === 1 ? L.rows : L.cols, other = st.p === 1 ? st.C : st.R, onm = st.p === 1 ? L.cols : L.rows;
@@ -225,6 +303,7 @@ function j2step(D, st, k, lang) {
   return `<p><strong>${T_(['Étape', 'Step'])} ${k}.</strong> ${T_(['Dans le jeu restant, la stratégie', 'In the remaining game, strategy'])} ${nm[st.out]} ${T_(['du joueur', 'of player'])} ${st.p} ${T_(['est strictement dominée par', 'is strictly dominated by'])} ${nm[st.by]} : ${T_(['contre chacune des stratégies restantes de l\'adversaire', 'against each of the opponent\'s remaining strategies'])} (${remain}), ${nm[st.by]} ${T_(['rapporte strictement plus', 'pays strictly more'])} : ${cmp}. ${k === 1 ? T_(['Un joueur rationnel ne joue donc pas', 'A rational player therefore does not play']) : T_(['L\'adversaire, sachant que le joueur', 'The opponent, knowing that player']) + ' ' + st.p + ' ' + T_(['est rationnel et connaît le jeu restant, sait qu\'il ne jouera pas', 'is rational and knows the remaining game, knows that they will not play'])} ${nm[st.out]} : ${T_(['on la supprime.', 'we remove it.'])}</p>`;
 }
 function j2sol(D, lang) {
+  const texT = (x) => fq(x);
   const fr = lang === 'fr', T_ = s => fr ? s[0] : s[1], L = I18N[lang].f, U1 = D.U1, U2 = D.U2, E = D.E, F = D.F, i = D.i, j = D.j;
   const noDom1 = [0, 1, 2].map(x => { const y = [0, 1, 2].find(y => y !== x && !([0, 1, 2].every(c => U1[x][c] > U1[y][c]))); const c = [0, 1, 2].find(c => U1[x][c] <= U1[y][c]); return `${L.rows[x]} ${T_(['ne fait pas mieux que', 'does no better than'])} ${L.rows[y]} ${T_(['face à', 'against'])} ${L.cols[c]} (\\(${U1[x][c]}\\le ${U1[y][c]}\\))`; }).join(' ; ');
   const noDom2 = [0, 1, 2].map(x => { const y = [0, 1, 2].find(y => y !== x && !([0, 1, 2].every(r => U2[r][x] > U2[r][y]))); const r = [0, 1, 2].find(r => U2[r][x] <= U2[r][y]); return `${L.cols[x]} ${T_(['ne fait pas mieux que', 'does no better than'])} ${L.cols[y]} ${T_(['face à', 'against'])} ${L.rows[r]} (\\(${U2[r][x]}\\le ${U2[r][y]}\\))`; }).join(' ; ');
@@ -251,5 +330,5 @@ function j2sol(D, lang) {
 </div></li>
 </ol></div>`;
 }
-I18N.fr.sol = D => j2sol(D, 'fr');
-I18N.en.sol = D => j2sol(D, 'en');
+I18N.fr.sol = D => fracClean((D => j2sol(D, 'fr'))(D));
+I18N.en.sol = D => fracClean((D => j2sol(D, 'en'))(D));

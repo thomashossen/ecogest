@@ -148,7 +148,7 @@ PAGE.compute = function (seed) {
   return D;
 };
 const p9U = (n, e) => String.raw`U_${n}(x,y)=x^{${texT(e, 2)}}\,y^{${texT(1 - e, 2)}}`;
-I18N.fr.ex = function (D) {
+I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">Deux consommateurs A et B échangent deux biens \(x\) et \(y\). Leurs utilités sont \(${p9U('A', D.al)}\) et \(${p9U('B', D.be)}\). A possède initialement \(\omega_A=(${D.xa}\,;\,${D.ya})\) et B \(\omega_B=(${D.xb}\,;\,${D.yb})\). On prend le bien \(y\) comme numéraire (\(p_y=1\)) et l'on note \(p\) le prix du bien \(x\).</div>
 <div class="questions"><ol>
 <li><div class="q-text">Quelles sont les dimensions de la boîte d'Edgeworth ? Calculez l'utilité de chaque agent à la dotation initiale.</div></li>
@@ -158,8 +158,8 @@ I18N.fr.ex = function (D) {
 <li><div class="q-text">Vérifiez que le marché du bien \(y\) est aussi équilibré, que chaque agent gagne à l'échange et que l'équilibre est un optimum de Pareto. Quel théorème illustre-t-on ?</div></li>
 <li><div class="q-text">Représentez la boîte d'Edgeworth : dotation, courbes d'indifférence, courbe des contrats, droite de budget d'équilibre et équilibre.</div></li>
 </ol></div>`;
-};
-I18N.en.ex = function (D) {
+});
+I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">Two consumers A and B trade two goods \(x\) and \(y\). Their utilities are \(${p9U('A', D.al)}\) and \(${p9U('B', D.be)}\). A initially owns \(\omega_A=(${D.xa}\,;\,${D.ya})\) and B \(\omega_B=(${D.xb}\,;\,${D.yb})\). Good \(y\) is the numéraire (\(p_y=1\)) and \(p\) denotes the price of good \(x\).</div>
 <div class="questions"><ol>
 <li><div class="q-text">What are the dimensions of the Edgeworth box? Compute each agent's utility at the initial endowment.</div></li>
@@ -169,8 +169,9 @@ I18N.en.ex = function (D) {
 <li><div class="q-text">Check that the market for good \(y\) also clears, that each agent gains from trade and that the equilibrium is a Pareto optimum. Which theorem does this illustrate?</div></li>
 <li><div class="q-text">Draw the Edgeworth box: endowment, indifference curves, contract curve, equilibrium budget line and equilibrium.</div></li>
 </ol></div>`;
-};
+});
 function p9sol(D, lang) {
+  const texT = (x) => fq(x);
   const fr = lang === 'fr', T_ = s => fr ? s[0] : s[1], al = D.al, be = D.be, E = D.E, X = E.X, Y = E.Y, n = x => texT(x, 4), ta = texT(al, 2), tb = texT(be, 2), ta1 = texT(1 - al, 2), tb1 = texT(1 - be, 2);
   const TMS = T_(['TMS', 'MRS']);
   const B = p9box(al, be, D.xa, D.ya, D.xb, D.yb, lang);
@@ -179,7 +180,7 @@ function p9sol(D, lang) {
   const tmsE = al * E.A.y / ((1 - al) * E.A.x), tmsEB = be * E.B.y / ((1 - be) * E.B.x);
   return String.raw`<div class="st"><ol>
 <li><div class="q-content">
-  <p>${T_(['Les ressources totales sont', 'Total resources are'])} \(X=${D.xa}+${D.xb}=${X}\) ${T_(['et', 'and'])} \(Y=${D.ya}+${D.yb}=${Y}\) : ${T_(['la boîte mesure', 'the box measures'])} \(${X}\times ${Y}\). ${T_(['La dotation est le point de coordonnées', 'The endowment is the point with coordinates'])} \((${D.xa}\,;\,${D.ya})\) ${T_(['depuis l\'origine de A. Les utilités initiales sont', 'from A\'s origin. Initial utilities are'])} \(U_A(\omega_A)=${D.xa}^{${ta}}\times ${D.ya}^{${ta1}}\approx ${n(D.u0A)}\) ${T_(['et', 'and'])} \(U_B(\omega_B)=${D.xb}^{${tb}}\times ${D.yb}^{${tb1}}\approx ${n(D.u0B)}\).</p>
+  <p>${T_(['Les ressources totales sont', 'Total resources are'])} \(X=${D.xa}+${D.xb}=${X}\) ${T_(['et', 'and'])} \(Y=${D.ya}+${D.yb}=${Y}\) : ${T_(['la boîte mesure', 'the box measures'])} \(${X}\times ${Y}\). ${T_(['La dotation est le point de coordonnées', 'The endowment is the point with coordinates'])} \((${D.xa}\,;\,${D.ya})\) ${T_(['depuis l\'origine de A. Les utilités initiales sont', 'from A\'s origin. Initial utilities are'])} \(U_A(\omega_A)=${D.xa}^{${ta}}\times ${D.ya}^{${ta1}}${eqa(D.u0A)}\) ${T_(['et', 'and'])} \(U_B(\omega_B)=${D.xb}^{${tb}}\times ${D.yb}^{${tb1}}${eqa(D.u0B)}\).</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Pour une Cobb-Douglas', 'For a Cobb-Douglas'])} \(x^ay^{1-a}\), ${T_(['le TMS vaut', 'the MRS is'])} \(\frac{a\,y}{(1-a)\,x}\) (${T_(['page 1', 'page 1'])}) : \(${TMS}_A=\frac{${ta}\,y_A}{${ta1}\,x_A}\) ${T_(['et', 'and'])} \(${TMS}_B=\frac{${tb}\,y_B}{${tb1}\,x_B}\). ${T_(['Une allocation intérieure est optimale au sens de Pareto si les courbes d\'indifférence sont tangentes, c\'est-à-dire si les TMS sont égaux. Avec', 'An interior allocation is Pareto optimal if the indifference curves are tangent, that is, if the MRS are equal. With'])} \(x_B=${X}-x_A\) ${T_(['et', 'and'])} \(y_B=${Y}-y_A\) :
@@ -187,15 +188,15 @@ function p9sol(D, lang) {
   ${T_(['C\'est l\'équation de la courbe des contrats, qui relie les deux origines.', 'This is the equation of the contract curve, which joins the two origins.'])}</p>
 </div></li>
 <li><div class="q-content">
-  <p>${T_(['À la dotation,', 'At the endowment,'])} \(${TMS}_A=\frac{${ta}\times ${D.ya}}{${ta1}\times ${D.xa}}\approx ${n(D.tA)}\) ${T_(['et', 'and'])} \(${TMS}_B=\frac{${tb}\times ${D.yb}}{${tb1}\times ${D.xb}}\approx ${n(D.tB)}\). ${T_(['Les TMS diffèrent : la dotation n\'est pas un optimum de Pareto, et un échange peut améliorer la situation des deux agents.', 'The MRS differ: the endowment is not a Pareto optimum, and trade can make both agents better off.'])} ${giveX ? T_(['A est prêt à céder moins de y pour une unité de x que B : A a intérêt à vendre du x à B contre du y.', 'A is willing to give up less y for one unit of x than B: A should sell x to B in exchange for y.']) : T_(['A valorise relativement plus le bien x que B : A a intérêt à acheter du x à B en échange de y.', 'A values good x relatively more than B: A should buy x from B in exchange for y.'])}</p>
+  <p>${T_(['À la dotation,', 'At the endowment,'])} \(${TMS}_A=\frac{${ta}\times ${D.ya}}{${ta1}\times ${D.xa}}${eqa(D.tA)}\) ${T_(['et', 'and'])} \(${TMS}_B=\frac{${tb}\times ${D.yb}}{${tb1}\times ${D.xb}}${eqa(D.tB)}\). ${T_(['Les TMS diffèrent : la dotation n\'est pas un optimum de Pareto, et un échange peut améliorer la situation des deux agents.', 'The MRS differ: the endowment is not a Pareto optimum, and trade can make both agents better off.'])} ${giveX ? T_(['A est prêt à céder moins de y pour une unité de x que B : A a intérêt à vendre du x à B contre du y.', 'A is willing to give up less y for one unit of x than B: A should sell x to B in exchange for y.']) : T_(['A valorise relativement plus le bien x que B : A a intérêt à acheter du x à B en échange de y.', 'A values good x relatively more than B: A should buy x from B in exchange for y.'])}</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Au prix', 'At price'])} \(p\), ${T_(['A vend sa dotation et dispose du revenu', 'A sells their endowment and has income'])} \(I_A=${D.xa}\,p+${D.ya}\) ; ${T_(['B dispose de', 'B has'])} \(I_B=${D.xb}\,p+${D.yb}\). ${T_(['Les demandes Cobb-Douglas sont', 'Cobb-Douglas demands are'])} \(x_A=\frac{${ta}\,I_A}{p}\), \(y_A=${ta1}\,I_A\), \(x_B=\frac{${tb}\,I_B}{p}\), \(y_B=${tb1}\,I_B\). ${T_(['Le marché du bien x est équilibré si', 'The market for good x clears if'])}
-  \[\begin{aligned}\frac{${ta}\,(${D.xa}p+${D.ya})+${tb}\,(${D.xb}p+${D.yb})}{p}&amp;=${X}\\(${X}-${n(al * D.xa + be * D.xb)})\,p&amp;=${n(al * D.ya + be * D.yb)}\\p^*&amp;=${n(E.p)}\end{aligned}\]
-  ${T_(['On en déduit les revenus', 'Hence the incomes'])} \(I_A=${n(E.IA)}\) ${T_(['et', 'and'])} \(I_B=${n(E.IB)}\), ${T_(['puis l\'allocation d\'équilibre :', 'then the equilibrium allocation:'])} \(A=(${n(E.A.x)}\,;\,${n(E.A.y)})\), \(B=(${n(E.B.x)}\,;\,${n(E.B.y)})\).</p>
+  \[\begin{aligned}\frac{${ta}\,(${D.xa}p+${D.ya})+${tb}\,(${D.xb}p+${D.yb})}{p}&amp;=${X}\\(${X}-${n(al * D.xa + be * D.xb)})\,p&amp;=${fqa(al * D.ya + be * D.yb)}\\p^*&amp;=${fqa(E.p)}\end{aligned}\]
+  ${T_(['On en déduit les revenus', 'Hence the incomes'])} \(I_A=${fqa(E.IA)}\) ${T_(['et', 'and'])} \(I_B=${fqa(E.IB)}\), ${T_(['puis l\'allocation d\'équilibre :', 'then the equilibrium allocation:'])} \(A=(${n(E.A.x)}\,;\,${n(E.A.y)})\), \(B=(${n(E.B.x)}\,;\,${n(E.B.y)})\).</p>
 </div></li>
 <li><div class="q-content">
-  <p>${T_(['Marché du bien y :', 'Market for good y:'])} \(y_A+y_B=${n(E.A.y)}+${n(E.B.y)}=${n(E.A.y + E.B.y)}=Y\) : ${T_(['il est équilibré, comme le prévoit la loi de Walras. Les utilités augmentent :', 'it clears, as Walras\'s law predicts. Utilities rise:'])} ${cmp('A', D.u0A, D.u1A)} ${T_(['et', 'and'])} ${cmp('B', D.u0B, D.u1B)}. ${T_(['À l\'équilibre,', 'In equilibrium,'])} \(${TMS}_A=\frac{${ta}\times ${n(E.A.y)}}{${ta1}\times ${n(E.A.x)}}\approx ${n(tmsE)}\) ${T_(['et', 'and'])} \(${TMS}_B\approx ${n(tmsEB)}\), ${T_(['tous deux égaux au prix relatif', 'both equal to the relative price'])} \(p^*=${n(E.p)}\) : ${T_(['les TMS sont égaux, l\'équilibre est sur la courbe des contrats. C\'est le premier théorème du bien-être : l\'équilibre concurrentiel est un optimum de Pareto.', 'the MRS are equal, the equilibrium lies on the contract curve. This is the first welfare theorem: the competitive equilibrium is a Pareto optimum.'])}</p>
+  <p>${T_(['Marché du bien y :', 'Market for good y:'])} \(y_A+y_B=${n(E.A.y)}+${n(E.B.y)}=${n(E.A.y + E.B.y)}=Y\) : ${T_(['il est équilibré, comme le prévoit la loi de Walras. Les utilités augmentent :', 'it clears, as Walras\'s law predicts. Utilities rise:'])} ${cmp('A', D.u0A, D.u1A)} ${T_(['et', 'and'])} ${cmp('B', D.u0B, D.u1B)}. ${T_(['À l\'équilibre,', 'In equilibrium,'])} \(${TMS}_A=\frac{${ta}\times ${n(E.A.y)}}{${ta1}\times ${n(E.A.x)}}${eqa(tmsE)}\) ${T_(['et', 'and'])} \(${TMS}_B${eqa(tmsEB)}\), ${T_(['tous deux égaux au prix relatif', 'both equal to the relative price'])} \(p^*=${fqa(E.p)}\) : ${T_(['les TMS sont égaux, l\'équilibre est sur la courbe des contrats. C\'est le premier théorème du bien-être : l\'équilibre concurrentiel est un optimum de Pareto.', 'the MRS are equal, the equilibrium lies on the contract curve. This is the first welfare theorem: the competitive equilibrium is a Pareto optimum.'])}</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Les courbes d\'indifférence de A (bleu) et de B (vert) passant par la dotation délimitent la lentille des échanges avantageux ; à l\'équilibre E, les deux courbes d\'indifférence sont tangentes entre elles et à la droite de budget, qui passe par la dotation avec la pente', 'A\'s (blue) and B\'s (green) indifference curves through the endowment delimit the lens of mutually beneficial trades; at equilibrium E, both indifference curves are tangent to each other and to the budget line, which goes through the endowment with slope'])} \(-p^*\) :</p>
@@ -203,5 +204,5 @@ function p9sol(D, lang) {
 </div></li>
 </ol></div>`;
 }
-I18N.fr.sol = D => p9sol(D, 'fr');
-I18N.en.sol = D => p9sol(D, 'en');
+I18N.fr.sol = D => fracClean((D => p9sol(D, 'fr'))(D));
+I18N.en.sol = D => fracClean((D => p9sol(D, 'en'))(D));

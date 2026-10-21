@@ -125,7 +125,7 @@ PAGE.compute = function (seed) {
   D.ESC = th * E.H.SC + (1 - th) * E.L.SC; D.ESCC = th * E.CH.SC + (1 - th) * E.CL.SC;
   return D;
 };
-I18N.fr.ex = function (D) {
+I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">Deux entreprises produisent un bien homogène de demande inverse \(P(Q)=${D.a}-Q\) et choisissent simultanément leurs quantités. Le coût marginal de l'entreprise 1 vaut \(c_1=${D.c1}\) et est connu de tous. Celui de l'entreprise 2 vaut \(c_H=${D.cH}\) avec probabilité \(\theta=${fmtT(D.th, 2)}\) et \(c_L=${D.cL}\) sinon ; l'entreprise 2 le connaît, l'entreprise 1 n'en connaît que la loi. Il n'y a pas de coût fixe.</div>
 <div class="questions"><ol>
 <li><div class="q-text">Quels sont les types de l'entreprise 2 ? Qu'est-ce qu'une stratégie pour chaque entreprise ?</div></li>
@@ -135,8 +135,8 @@ I18N.fr.ex = function (D) {
 <li><div class="q-text">Comparez avec l'équilibre de Cournot en information complète, dans chacun des deux cas. Quel type de l'entreprise 2 gagne à l'asymétrie d'information ? Combien l'entreprise 1 serait-elle prête à payer pour connaître le coût de sa concurrente ?</div></li>
 <li><div class="q-text">Représentez graphiquement les fonctions de réaction et l'équilibre bayésien.</div></li>
 </ol></div>`;
-};
-I18N.en.ex = function (D) {
+});
+I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">Two firms produce a homogeneous good with inverse demand \(P(Q)=${D.a}-Q\) and choose their quantities simultaneously. Firm 1's marginal cost is \(c_1=${D.c1}\) and is known to all. Firm 2's is \(c_H=${D.cH}\) with probability \(\theta=${fmtT(D.th, 2)}\) and \(c_L=${D.cL}\) otherwise; firm 2 knows it, firm 1 only knows its distribution. There is no fixed cost.</div>
 <div class="questions"><ol>
 <li><div class="q-text">What are firm 2's types? What is a strategy for each firm?</div></li>
@@ -146,13 +146,14 @@ I18N.en.ex = function (D) {
 <li><div class="q-text">Compare with the complete-information Cournot equilibrium in each case. Which type of firm 2 gains from the information asymmetry? How much would firm 1 be willing to pay to learn its rival's cost?</div></li>
 <li><div class="q-text">Draw the reaction functions and the Bayesian equilibrium.</div></li>
 </ol></div>`;
-};
+});
 function j9sol(D, lang) {
+  const texT = (x) => fq(x);
   const fr = lang === 'fr', T_ = s => fr ? s[0] : s[1], a = D.a, c1 = D.c1, cH = D.cH, cL = D.cL, th = D.th, E = D.E, n4 = x => texT(x, 4), m2 = x => texT(x, 2);
   const SC = T_(['SC', 'CS']);
-  const row = (nm, S, C) => `<tr><td>${nm}</td><td class="num">${fmt(S.q1 !== undefined ? S.q1 : E.q1, 2)}</td><td class="num">${fmt(S.q2, 2)}</td><td class="num">${fmt(S.P, 2)}</td><td class="num">${fmt(S.pi1, 2)}</td><td class="num">${fmt(S.pi2, 2)}</td><td class="num">${fmt(S.SC, 2)}</td></tr>`;
+  const row = (nm, S, C) => `<tr><td>${nm}</td><td class="num">${fqt(S.q1 !== undefined ? S.q1 : E.q1)}</td><td class="num">${fqt(S.q2)}</td><td class="num">${fqt(S.P)}</td><td class="num">${fqt(S.pi1)}</td><td class="num">${fqt(S.pi2)}</td><td class="num">${fqt(S.SC)}</td></tr>`;
   const tab = `<div class="dtable-wrap"><table class="dtable"><thead><tr><th></th><th>\\(q_1\\)</th><th>\\(q_2\\)</th><th>\\(P\\)</th><th>\\(\\Pi_1\\)</th><th>\\(\\Pi_2\\)</th><th>${SC}</th></tr></thead><tbody>${row(T_(['Incomplète, ', 'Incomplete, ']) + '\\(c_H\\)', E.H)}${row(T_(['Complète, ', 'Complete, ']) + '\\(c_H\\)', E.CH)}${row(T_(['Incomplète, ', 'Incomplete, ']) + '\\(c_L\\)', E.L)}${row(T_(['Complète, ', 'Complete, ']) + '\\(c_L\\)', E.CL)}</tbody></table></div>`;
-  const st = (S, nm, c) => String.raw`${T_(['Si', 'If'])} \(c=c_${nm}\), ${T_(['la production totale est', 'total output is'])} \(Q=${n4(E.q1)}+${n4(S.q2)}=${n4(S.Q)}\), ${T_(['et l\'on en déduit, d\'après la fonction de demande inverse, le prix', 'and the inverse demand function gives the price'])} \(P=${a}-${n4(S.Q)}=${n4(S.P)}\). ${T_(['Les profits valent', 'Profits are'])} \(\Pi_1=(${n4(S.P)}-${c1})\times ${n4(E.q1)}=${m2(S.pi1)}\) ${T_(['et', 'and'])} \(\Pi_2=(${n4(S.P)}-${c})\times ${n4(S.q2)}=${m2(S.pi2)}\), ${T_(['et le surplus des consommateurs', 'and consumer surplus'])} \(${SC}=\int_0^{${n4(S.Q)}}(${a}-q-${n4(S.P)})\,dq=\Big[${n4(a - S.P)}\,q-\tfrac12q^2\Big]_0^{${n4(S.Q)}}=${m2(S.SC)}\).`;
+  const st = (S, nm, c) => String.raw`${T_(['Si', 'If'])} \(c=c_${nm}\), ${T_(['la production totale est', 'total output is'])} \(Q=${n4(E.q1)}+${n4(S.q2)}=${fqa(S.Q)}\), ${T_(['et l\'on en déduit, d\'après la fonction de demande inverse, le prix', 'and the inverse demand function gives the price'])} \(P=${a}-${n4(S.Q)}=${fqa(S.P)}\). ${T_(['Les profits valent', 'Profits are'])} \(\Pi_1=(${n4(S.P)}-${c1})\times ${n4(E.q1)}=${fqa(S.pi1)}\) ${T_(['et', 'and'])} \(\Pi_2=(${n4(S.P)}-${c})\times ${n4(S.q2)}=${fqa(S.pi2)}\), ${T_(['et le surplus des consommateurs', 'and consumer surplus'])} \(${SC}=\int_0^{${n4(S.Q)}}(${a}-q-${n4(S.P)})\,dq=\Big[${n4(a - S.P)}\,q-\tfrac12q^2\Big]_0^{${n4(S.Q)}}=${fqa(S.SC)}\).`;
   return String.raw`<div class="st"><ol>
 <li><div class="q-content">
   <p>${T_(['L\'entreprise 2 a deux types possibles, selon son coût :', 'Firm 2 has two possible types, according to its cost:'])} \(c_H=${cH}\) (${T_(['probabilité', 'probability'])} ${fmtT(th, 2)}) ${T_(['et', 'and'])} \(c_L=${cL}\) (${T_(['probabilité', 'probability'])} ${fmtT(1 - th, 2)}). ${T_(['L\'entreprise 1 n\'a qu\'un type. Une stratégie de l\'entreprise 1 est une quantité', 'Firm 1 has a single type. A strategy of firm 1 is a quantity'])} \(q_1\) ; ${T_(['une stratégie de l\'entreprise 2 est un couple de quantités', 'a strategy of firm 2 is a pair of quantities'])} \((q_2(c_H),q_2(c_L))\), ${T_(['une pour chaque type, puisqu\'elle choisit en connaissant son coût.', 'one per type, since it chooses knowing its cost.'])}</p>
@@ -163,19 +164,19 @@ function j9sol(D, lang) {
   ${T_(['L\'entreprise 1 ne connaît pas', 'Firm 1 does not know'])} \(q_2\) ; ${T_(['elle maximise son profit espéré', 'it maximises its expected profit'])} \(\big(${a}-q_1-\mathbb{E}[q_2]-${c1}\big)\,q_1\), ${T_(['avec', 'with'])} \(\mathbb{E}[q_2]=${fmtT(th, 2)}\,q_2(c_H)+${fmtT(1 - th, 2)}\,q_2(c_L)\), ${T_(['d\'où', 'hence'])} \(q_1=\frac{${a - c1}-\mathbb{E}[q_2]}{2}\).</p>
 </div></li>
 <li><div class="q-content">
-  <p>${T_(['En reportant les meilleures réponses de l\'entreprise 2 dans l\'espérance, on obtient', 'Substituting firm 2\'s best responses into the expectation gives'])} \(\mathbb{E}[q_2]=\frac{${a}-\bar c-q_1}{2}\), ${T_(['avec le coût moyen', 'with the average cost'])} \(\bar c=${fmtT(th, 2)}\times ${cH}+${fmtT(1 - th, 2)}\times ${cL}=${n4(E.Ec)}\). ${T_(['La réaction de l\'entreprise 1 devient', 'Firm 1\'s reaction becomes'])} :
-  \[\begin{aligned}q_1&amp;=\frac{1}{2}\Big(${a - c1}-\frac{${a}-${n4(E.Ec)}-q_1}{2}\Big)\\\frac34\,q_1&amp;=\frac{${a}-2\times ${c1}+${n4(E.Ec)}}{4}&amp;&amp;\text{${T_(['en regroupant', 'grouping'])}}\\q_1^*&amp;=${n4(E.q1)}\end{aligned}\]
-  ${T_(['On en déduit les quantités des deux types en reportant', 'The quantities of the two types follow by substituting'])} \(q_1^*\) ${T_(['dans leurs meilleures réponses', 'into their best responses'])} : \(q_2^*(c_H)=${n4((a - cH) / 2)}-\frac{${n4(E.q1)}}{2}=${n4(E.H.q2)}\) ${T_(['et', 'and'])} \(q_2^*(c_L)=${n4((a - cL) / 2)}-\frac{${n4(E.q1)}}{2}=${n4(E.L.q2)}\).</p>
+  <p>${T_(['En reportant les meilleures réponses de l\'entreprise 2 dans l\'espérance, on obtient', 'Substituting firm 2\'s best responses into the expectation gives'])} \(\mathbb{E}[q_2]=\frac{${a}-\bar c-q_1}{2}\), ${T_(['avec le coût moyen', 'with the average cost'])} \(\bar c=${fmtT(th, 2)}\times ${cH}+${fmtT(1 - th, 2)}\times ${cL}=${fqa(E.Ec)}\). ${T_(['La réaction de l\'entreprise 1 devient', 'Firm 1\'s reaction becomes'])} :
+  \[\begin{aligned}q_1&amp;=\frac{1}{2}\Big(${a - c1}-\frac{${a}-${n4(E.Ec)}-q_1}{2}\Big)\\\frac34\,q_1&amp;=\frac{${a}-2\times ${c1}+${n4(E.Ec)}}{4}&amp;&amp;\text{${T_(['en regroupant', 'grouping'])}}\\q_1^*&amp;=${fqa(E.q1)}\end{aligned}\]
+  ${T_(['On en déduit les quantités des deux types en reportant', 'The quantities of the two types follow by substituting'])} \(q_1^*\) ${T_(['dans leurs meilleures réponses', 'into their best responses'])} : \(q_2^*(c_H)=${n4((a - cH) / 2)}-\frac{${n4(E.q1)}}{2}=${fqa(E.H.q2)}\) ${T_(['et', 'and'])} \(q_2^*(c_L)=${n4((a - cL) / 2)}-\frac{${n4(E.q1)}}{2}=${fqa(E.L.q2)}\).</p>
 </div></li>
 <li><div class="q-content">
   <p>${st(E.H, 'H', cH)}</p>
   <p>${st(E.L, 'L', cL)}</p>
-  <p>${T_(['En pondérant par les probabilités, le profit espéré de l\'entreprise 1 vaut', 'Weighting by the probabilities, firm 1\'s expected profit is'])} \(${fmtT(th, 2)}\times ${m2(E.H.pi1)}+${fmtT(1 - th, 2)}\times ${m2(E.L.pi1)}=${m2(D.Epi1)}\), ${T_(['et le surplus espéré des consommateurs', 'and expected consumer surplus'])} \(${fmtT(th, 2)}\times ${m2(E.H.SC)}+${fmtT(1 - th, 2)}\times ${m2(E.L.SC)}=${m2(D.ESC)}\).</p>
+  <p>${T_(['En pondérant par les probabilités, le profit espéré de l\'entreprise 1 vaut', 'Weighting by the probabilities, firm 1\'s expected profit is'])} \(${fmtT(th, 2)}\times ${m2(E.H.pi1)}+${fmtT(1 - th, 2)}\times ${m2(E.L.pi1)}=${fqa(D.Epi1)}\), ${T_(['et le surplus espéré des consommateurs', 'and expected consumer surplus'])} \(${fmtT(th, 2)}\times ${m2(E.H.SC)}+${fmtT(1 - th, 2)}\times ${m2(E.L.SC)}=${fqa(D.ESC)}\).</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['En information complète, dans l\'état', 'Under complete information, in state'])} \(c\), ${T_(['on retrouve l\'équilibre de Cournot', 'we recover the Cournot equilibrium'])} \(q_1=\frac{${a}-2\times ${c1}+c}{3}\), \(q_2=\frac{${a}-2c+${c1}}{3}\) :</p>
   ${tab}
-  <p>${T_(['Face à un concurrent coûteux, l\'entreprise 1 produirait', 'Facing a costly rival, firm 1 would produce'])} \(${n4(E.CH.q1)}\) ${T_(['en le sachant, mais ne produit que', 'if it knew, but only produces'])} \(${n4(E.q1)}\) : ${T_(['le type à coût élevé en profite', 'the high-cost type benefits'])} (\(${m2(E.H.pi2)}\) ${T_(['contre', 'against'])} \(${m2(E.CH.pi2)}\)). ${T_(['À l\'inverse, le type à coût faible affronte une entreprise 1 qui produit plus qu\'elle ne le ferait en le sachant, et il y perd', 'Conversely, the low-cost type faces a firm 1 producing more than it would if it knew, and it loses'])} (\(${m2(E.L.pi2)}\) ${T_(['contre', 'against'])} \(${m2(E.CL.pi2)}\)). ${T_(['L\'entreprise 1 obtiendrait en information complète un profit espéré', 'Under complete information, firm 1 would get an expected profit'])} \(${fmtT(th, 2)}\times ${m2(E.CH.pi1)}+${fmtT(1 - th, 2)}\times ${m2(E.CL.pi1)}=${m2(D.Epi1C)}\) : ${T_(['elle serait prête à payer jusqu\'à', 'it would be willing to pay up to'])} \(${m2(D.Epi1C - D.Epi1)}\) ${T_(['pour connaître le coût de sa concurrente. Le surplus espéré des consommateurs passerait de', 'to learn its rival\'s cost. Expected consumer surplus would go from'])} \(${m2(D.ESC)}\) ${T_(['à', 'to'])} \(${m2(D.ESCC)}\).</p>
+  <p>${T_(['Face à un concurrent coûteux, l\'entreprise 1 produirait', 'Facing a costly rival, firm 1 would produce'])} \(${n4(E.CH.q1)}\) ${T_(['en le sachant, mais ne produit que', 'if it knew, but only produces'])} \(${n4(E.q1)}\) : ${T_(['le type à coût élevé en profite', 'the high-cost type benefits'])} (\(${m2(E.H.pi2)}\) ${T_(['contre', 'against'])} \(${m2(E.CH.pi2)}\)). ${T_(['À l\'inverse, le type à coût faible affronte une entreprise 1 qui produit plus qu\'elle ne le ferait en le sachant, et il y perd', 'Conversely, the low-cost type faces a firm 1 producing more than it would if it knew, and it loses'])} (\(${m2(E.L.pi2)}\) ${T_(['contre', 'against'])} \(${m2(E.CL.pi2)}\)). ${T_(['L\'entreprise 1 obtiendrait en information complète un profit espéré', 'Under complete information, firm 1 would get an expected profit'])} \(${fmtT(th, 2)}\times ${m2(E.CH.pi1)}+${fmtT(1 - th, 2)}\times ${m2(E.CL.pi1)}=${fqa(D.Epi1C)}\) : ${T_(['elle serait prête à payer jusqu\'à', 'it would be willing to pay up to'])} \(${m2(D.Epi1C - D.Epi1)}\) ${T_(['pour connaître le coût de sa concurrente. Le surplus espéré des consommateurs passerait de', 'to learn its rival\'s cost. Expected consumer surplus would go from'])} \(${m2(D.ESC)}\) ${T_(['à', 'to'])} \(${m2(D.ESCC)}\).</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['La droite bleue est la réaction de l\'entreprise 1 à la quantité de sa concurrente ; les deux droites dorées sont les réactions des deux types de l\'entreprise 2 (pointillés : coût élevé). L\'entreprise 1 produit la même quantité', 'The blue line is firm 1\'s reaction to its rival\'s quantity; the two gold lines are the reactions of firm 2\'s two types (dashed: high cost). Firm 1 produces the same quantity'])} \(q_1^*\) ${T_(['dans les deux cas : les deux points rouges sont sur la même verticale, et le point noir, la quantité espérée de l\'entreprise 2, est sur la réaction de l\'entreprise 1.', 'in both cases: the two red dots are on the same vertical line, and the black dot, firm 2\'s expected quantity, lies on firm 1\'s reaction.'])}</p>
@@ -183,5 +184,5 @@ function j9sol(D, lang) {
 </div></li>
 </ol></div>`;
 }
-I18N.fr.sol = D => j9sol(D, 'fr');
-I18N.en.sol = D => j9sol(D, 'en');
+I18N.fr.sol = D => fracClean((D => j9sol(D, 'fr'))(D));
+I18N.en.sol = D => fracClean((D => j9sol(D, 'en'))(D));

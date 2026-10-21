@@ -138,9 +138,9 @@ PAGE.compute = function (seed) {
   D.xB = D.xA + 2; D.yB = Math.pow(D.UA / Math.pow(D.xB, D.al), 1 / D.be); D.tmsB = D.al * D.yB / (D.be * D.xB);
   return D;
 };
-const p1n = x => texT(x, 4);
+const p1n = x => fq(x);
 const p1U = D => String.raw`U(x_1,x_2)=x_1^{${texT(D.al, 2)}}\,x_2^{${texT(D.be, 2)}}`.replace('^{1}', '').replace('^{1}', '');
-I18N.fr.ex = function (D) {
+I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">Un consommateur a des préférences représentées par la fonction d'utilité \(${p1U(D)}\), définie pour \(x_1&gt;0\) et \(x_2&gt;0\). On considère le panier \(A=(${D.xA}\,;\,${D.yA})\).</div>
 <div class="questions"><ol>
 <li><div class="q-text">Calculez les utilités marginales des deux biens, puis leur valeur au point \(A\).</div></li>
@@ -150,8 +150,8 @@ I18N.fr.ex = function (D) {
 <li><div class="q-text">On considère \(V=\ln U\). Calculez le TMS associé à \(V\). Que peut-on en conclure ?</div></li>
 <li><div class="q-text">Un autre consommateur a pour utilité \(W(x_1,x_2)=${D.a}\,x_1+${D.b}\,x_2\). Calculez son TMS et tracez, sur un même graphique, sa courbe d'indifférence passant par \(A\) et celle du premier consommateur, avec la tangente en \(A\).</div></li>
 </ol></div>`;
-};
-I18N.en.ex = function (D) {
+});
+I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">A consumer has preferences represented by the utility function \(${p1U(D)}\), defined for \(x_1&gt;0\) and \(x_2&gt;0\). Consider the bundle \(A=(${D.xA}\,;\,${D.yA})\).</div>
 <div class="questions"><ol>
 <li><div class="q-text">Compute the marginal utilities of both goods, then their value at point \(A\).</div></li>
@@ -161,10 +161,11 @@ I18N.en.ex = function (D) {
 <li><div class="q-text">Consider \(V=\ln U\). Compute the MRS associated with \(V\). What can we conclude?</div></li>
 <li><div class="q-text">Another consumer has utility \(W(x_1,x_2)=${D.a}\,x_1+${D.b}\,x_2\). Compute their MRS and draw, on the same graph, their indifference curve through \(A\) and that of the first consumer, with the tangent at \(A\).</div></li>
 </ol></div>`;
-};
+});
 function p1sol(D, lang) {
+  const texT = (x) => fq(x);
   const fr = lang === 'fr', T_ = s => fr ? s[0] : s[1], al = D.al, be = D.be, xA = D.xA, yA = D.yA, n = p1n, UM = T_(['Um', 'MU']), TMS = T_(['TMS', 'MRS']);
-  const pw = (v, e) => e === 1 ? v : `${v}^{${texT(e, 2)}}`;
+  const pw = (v, e) => { v = String(v); if (/^\\frac|^-/.test(v)) v = '\\left(' + v + '\\right)'; return e === 1 ? v : `${v}^{${texT(e, 2)}}`; };
   const ex1 = al - 1, ex2 = be - 1, A = cfx(al, 2), B = cfx(be, 2);
   const G = Plot({ w: 520, h: 440, x0: 0, x1: Math.max(12, xA + 6), y0: 0, y1: Math.max(12, yA + 6), mt: 26, mb: 42, ml: 46 });
   const X1 = G.x1, Y1 = G.y1;
@@ -180,18 +181,18 @@ function p1sol(D, lang) {
 <li><div class="q-content">
   <p>${T_(['Les utilités marginales sont les dérivées partielles de', 'Marginal utilities are the partial derivatives of'])} \(U\) ${T_(['par rapport à chaque quantité, l\'autre étant fixée :', 'with respect to each quantity, the other being held fixed:'])}
   \[${UM}_1=\frac{\partial U}{\partial x_1}=${A}${ex1 === 0 ? '' : pw('x_1', ex1)}\,${pw('x_2', be)}\qquad ${UM}_2=\frac{\partial U}{\partial x_2}=${B}${pw('x_1', al)}\,${ex2 === 0 ? '' : pw('x_2', ex2)}\]
-  ${T_(['Au point', 'At point'])} \(A\), ${T_(['on a', 'we have'])} \(U(A)=${pw(xA, al)}\times ${pw(yA, be)}\approx ${n(D.UA)}\), ${T_(['et l\'on peut écrire', 'and we can write'])} \(${UM}_1=\frac{${A}U}{x_1}\), \(${UM}_2=\frac{${B}U}{x_2}\) :
-  \[${UM}_1(A)=\frac{${texT(al, 2)}\times ${n(D.UA)}}{${xA}}\approx ${n(D.U1)}\qquad ${UM}_2(A)=\frac{${texT(be, 2)}\times ${n(D.UA)}}{${yA}}\approx ${n(D.U2)}\]</p>
+  ${T_(['Au point', 'At point'])} \(A\), ${T_(['on a', 'we have'])} \(U(A)=${pw(xA, al)}\times ${pw(yA, be)}${eqa(D.UA)}\), ${T_(['et l\'on peut écrire', 'and we can write'])} \(${UM}_1=\frac{${A}U}{x_1}\), \(${UM}_2=\frac{${B}U}{x_2}\) :
+  \[${UM}_1(A)=\frac{${texT(al, 2)}\times ${n(D.UA)}}{${xA}}${eqa(D.U1)}\qquad ${UM}_2(A)=\frac{${texT(be, 2)}\times ${n(D.UA)}}{${yA}}${eqa(D.U2)}\]</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Le TMS est le rapport des utilités marginales ; les puissances communes se simplifient :', 'The MRS is the ratio of marginal utilities; common powers cancel out:'])}
-  \[${TMS}_{1,2}=\frac{${UM}_1}{${UM}_2}=\frac{${A}x_2}{${B}x_1}\qquad ${TMS}_{1,2}(A)=\frac{${texT(al, 2)}\times ${yA}}{${texT(be, 2)}\times ${xA}}=${n(D.tms)}\]
+  \[${TMS}_{1,2}=\frac{${UM}_1}{${UM}_2}=\frac{${A}x_2}{${B}x_1}\qquad ${TMS}_{1,2}(A)=\frac{${texT(al, 2)}\times ${yA}}{${texT(be, 2)}\times ${xA}}=${fqa(D.tms)}\]
   ${T_(['Au point', 'At point'])} \(A\), ${T_(['le consommateur est prêt à céder environ', 'the consumer is willing to give up about'])} \(${n(D.tms)}\) ${T_(['unité(s) de bien 2 pour obtenir une unité supplémentaire de bien 1, en restant au même niveau de satisfaction. C\'est la valeur absolue de la pente de la courbe d\'indifférence en', 'unit(s) of good 2 to obtain one extra unit of good 1, while staying at the same satisfaction level. It is the absolute value of the slope of the indifference curve at'])} \(A\).</p>
 </div></li>
 <li><div class="q-content">
-  <p>${T_(['La courbe d\'indifférence passant par', 'The indifference curve through'])} \(A\) ${T_(['est l\'ensemble des paniers tels que', 'is the set of bundles such that'])} \(U(x_1,x_2)=U(A)\approx ${n(D.UA)}\). ${T_(['En isolant', 'Solving for'])} \(x_2\) :
+  <p>${T_(['La courbe d\'indifférence passant par', 'The indifference curve through'])} \(A\) ${T_(['est l\'ensemble des paniers tels que', 'is the set of bundles such that'])} \(U(x_1,x_2)=U(A)${eqa(D.UA)}\). ${T_(['En isolant', 'Solving for'])} \(x_2\) :
   \[${pw('x_1', al)}\,${pw('x_2', be)}=${n(D.UA)}\iff x_2=\Big(\frac{${n(D.UA)}}{${pw('x_1', al)}}\Big)^{${texT(1 / be, 4)}}\]
-  ${T_(['Pour', 'For'])} \(x_1=${D.xB}\), ${T_(['on obtient', 'we get'])} \(x_2=\big(${n(D.UA)}/${pw(D.xB, al)}\big)^{${texT(1 / be, 4)}}\approx ${n(D.yB)}\) : ${T_(['le panier', 'bundle'])} \(B=(${D.xB}\,;\,${n(D.yB)})\) ${T_(['est indifférent à', 'is indifferent to'])} \(A\). ${T_(['Le TMS y vaut', 'The MRS there is'])} \(\frac{${texT(al, 2)}\times ${n(D.yB)}}{${texT(be, 2)}\times ${D.xB}}\approx ${n(D.tmsB)}\), ${T_(['plus faible qu\'en', 'lower than at'])} \(A\).</p>
+  ${T_(['Pour', 'For'])} \(x_1=${D.xB}\), ${T_(['on obtient', 'we get'])} \(x_2=\big(${n(D.UA)}/${pw(D.xB, al)}\big)^{${texT(1 / be, 4)}}${eqa(D.yB)}\) : ${T_(['le panier', 'bundle'])} \(B=(${D.xB}\,;\,${n(D.yB)})\) ${T_(['est indifférent à', 'is indifferent to'])} \(A\). ${T_(['Le TMS y vaut', 'The MRS there is'])} \(\frac{${texT(al, 2)}\times ${n(D.yB)}}{${texT(be, 2)}\times ${D.xB}}${eqa(D.tmsB)}\), ${T_(['plus faible qu\'en', 'lower than at'])} \(A\).</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Le long de la courbe d\'indifférence, quand', 'Along the indifference curve, as'])} \(x_1\) ${T_(['augmente,', 'rises,'])} \(x_2=\big(u/x_1^{${texT(al, 2)}}\big)^{1/${texT(be, 2)}}\) ${T_(['diminue ; le TMS', 'falls; the MRS'])} \(\frac{${A}x_2}{${B}x_1}\) ${T_(['a donc un numérateur qui diminue et un dénominateur qui augmente : il est strictement décroissant. On le vérifie entre', 'thus has a falling numerator and a rising denominator: it is strictly decreasing. This is checked between'])} \(A\) ${T_(['et', 'and'])} \(B\) (\(${n(D.tms)}&gt;${n(D.tmsB)}\)). ${T_(['Cette propriété traduit la convexité des préférences : plus le consommateur possède de bien 1 relativement au bien 2, moins il est prêt à sacrifier de bien 2 pour une unité de plus de bien 1. Les courbes d\'indifférence sont tournées vers l\'origine.', 'This property reflects the convexity of preferences: the more good 1 the consumer has relative to good 2, the less good 2 they are willing to sacrifice for one more unit of good 1. Indifference curves are bowed towards the origin.'])}</p>
@@ -202,11 +203,11 @@ function p1sol(D, lang) {
   ${T_(['Les deux fonctions ont le même TMS en tout point, donc les mêmes courbes d\'indifférence : elles représentent les mêmes préférences. C\'est attendu, puisque', 'Both functions have the same MRS everywhere, hence the same indifference curves: they represent the same preferences. This is expected, since'])} \(\ln\) ${T_(['est strictement croissante : l\'utilité est ordinale.', 'is strictly increasing: utility is ordinal.'])}</p>
 </div></li>
 <li><div class="q-content">
-  <p>${T_(['Pour', 'For'])} \(W\), \(\frac{\partial W}{\partial x_1}=${D.a}\) ${T_(['et', 'and'])} \(\frac{\partial W}{\partial x_2}=${D.b}\) : ${T_(['le TMS vaut', 'the MRS is'])} \(\frac{${D.a}}{${D.b}}=${n(D.a / D.b)}\) ${T_(['en tout point. Ce consommateur considère les biens comme des substituts parfaits : il échange toujours', 'at every point. This consumer regards the goods as perfect substitutes: they always trade'])} ${D.b} ${T_(['unité(s) de bien 1 contre', 'unit(s) of good 1 for'])} ${D.a} ${T_(['unité(s) de bien 2, quelle que soit la composition du panier. Sa courbe d\'indifférence passant par', 'unit(s) of good 2, whatever the composition of the bundle. Their indifference curve through'])} \(A\) ${T_(['est la droite', 'is the line'])} \(${D.a}\,x_1+${D.b}\,x_2=${D.a * xA + D.b * yA}\), ${T_(['de pente', 'with slope'])} \(-${n(D.a / D.b)}\) :</p>
+  <p>${T_(['Pour', 'For'])} \(W\), \(\frac{\partial W}{\partial x_1}=${D.a}\) ${T_(['et', 'and'])} \(\frac{\partial W}{\partial x_2}=${D.b}\) : ${T_(['le TMS vaut', 'the MRS is'])} \(\frac{${D.a}}{${D.b}}=${fqa(D.a / D.b)}\) ${T_(['en tout point. Ce consommateur considère les biens comme des substituts parfaits : il échange toujours', 'at every point. This consumer regards the goods as perfect substitutes: they always trade'])} ${D.b} ${T_(['unité(s) de bien 1 contre', 'unit(s) of good 1 for'])} ${D.a} ${T_(['unité(s) de bien 2, quelle que soit la composition du panier. Sa courbe d\'indifférence passant par', 'unit(s) of good 2, whatever the composition of the bundle. Their indifference curve through'])} \(A\) ${T_(['est la droite', 'is the line'])} \(${D.a}\,x_1+${D.b}\,x_2=${D.a * xA + D.b * yA}\), ${T_(['de pente', 'with slope'])} \(-${n(D.a / D.b)}\) :</p>
   <div class="sol-fig"><div style="max-width:540px;margin:0 auto">${G.svg('ic')}</div></div>
   <p>${T_(['Au point', 'At point'])} \(A\), ${T_(['la courbe de', 'the curve of'])} \(U\) ${T_(['a pour pente', 'has slope'])} \(-${n(D.tms)}\) ${T_(['(tangente en pointillés) ; elle est plus', '(dashed tangent); it is'])} ${D.tms > D.a / D.b ? T_(['pentue que la droite de', 'steeper than the line of']) : T_(['plate que la droite de', 'flatter than the line of'])} \(W\) : ${T_(['en', 'at'])} \(A\), ${T_(['le premier consommateur valorise relativement', 'the first consumer values good 1 relatively'])} ${D.tms > D.a / D.b ? T_(['plus', 'more']) : T_(['moins', 'less'])} ${T_(['le bien 1 que le second.', 'than the second consumer.'])}</p>
 </div></li>
 </ol></div>`;
 }
-I18N.fr.sol = D => p1sol(D, 'fr');
-I18N.en.sol = D => p1sol(D, 'en');
+I18N.fr.sol = D => fracClean((D => p1sol(D, 'fr'))(D));
+I18N.en.sol = D => fracClean((D => p1sol(D, 'en'))(D));

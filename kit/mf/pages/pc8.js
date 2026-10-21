@@ -1,7 +1,62 @@
 const GREY = '#8a857a';
 const KBASE_FR = { 'k-badge': 'MICROÉCONOMIE', 'k-seed': 'Seed de reproductibilité', 'k-seedtip': 'Vide = nouvel exercice aléatoire', 'k-gen': 'Générer', 'k-tag-course': 'Cours', 'k-tag-ex': 'Exercice', 'k-tag-sol': 'Corrigé', 'k-seedbadge': 'Seed&nbsp;:', showSol: 'Afficher le corrigé', hideSol: 'Masquer le corrigé', phSeed: 'auto', copy: 'Copier', copied: 'Copié', 'k-sub': '© Thomas Hossen – Version du 20 octobre 2026' };
 const KBASE_EN = { 'k-badge': 'MICROECONOMICS', 'k-seed': 'Reproducibility seed', 'k-seedtip': 'Empty = new random exercise', 'k-gen': 'Generate', 'k-tag-course': 'Lesson', 'k-tag-ex': 'Exercise', 'k-tag-sol': 'Solution', 'k-seedbadge': 'Seed:', showSol: 'Show solution', hideSol: 'Hide solution', phSeed: 'auto', copy: 'Copy', copied: 'Copied', 'k-sub': '© Thomas Hossen – Version of 20 October 2026' };
-const cfx = (x, d) => Math.abs(x - 1) < 1e-12 ? '' : texT(x, d === undefined ? 4 : d) + '\\,';
+/* ---------- calcul exact : reconnaissance des rationnels et affichage fractionnaire ---------- */
+function ratOf(x) {
+  if (!isFinite(x)) return null;
+  const s = x < 0 ? -1 : 1, y = Math.abs(x);
+  if (Math.abs(y - Math.round(y)) <= 1e-11 * Math.max(1, y)) return [s * Math.round(y), 1];
+  let h0 = 0, h1 = 1, k0 = 1, k1 = 0, z = y;
+  for (let i = 0; i < 40; i++) {
+    const a = Math.floor(z), h2 = a * h1 + h0, k2 = a * k1 + k0;
+    if (k2 > 2e6) return null;
+    if (Math.abs(y - h2 / k2) <= 1e-12 * Math.max(1, y)) return [s * h2, k2];
+    h0 = h1; h1 = h2; k0 = k1; k1 = k2;
+    const f = z - a; if (f < 1e-15) return null; z = 1 / f;
+  }
+  return null;
+}
+/* valeur exacte : entier ou fraction ; décimale si le nombre n'est pas rationnel (racine, puissance non entière) */
+function fq(x) {
+  const r = ratOf(x);
+  if (!r) return texT(x, 4);
+  if (r[1] === 1) return texT(r[0], 0);
+  return (r[0] < 0 ? '-' : '') + '\\frac{' + texT(Math.abs(r[0]), 0) + '}{' + texT(r[1], 0) + '}';
+}
+/* valeur exacte suivie d'une approximation décimale */
+function fqa(x) {
+  const r = ratOf(x);
+  if (!r) return texT(x, 4);
+  if (r[1] === 1) return texT(r[0], 0);
+  return fq(x) + '\\approx ' + texT(x, Math.abs(x) >= 100 ? 2 : 4);
+}
+/* entre parenthèses si fraction ou négatif (avant un exposant) */
+function fqp(x) { const r = ratOf(x), t = fq(x); return (r && r[1] === 1 && r[0] >= 0) || (!r && x >= 0) ? t : '\\left(' + t + '\\right)'; }
+/* cellule de tableau : valeur exacte, approximation en petit */
+function fqt(x) { const r = ratOf(x); return '\\(' + fq(x) + '\\)' + (r && r[1] === 1 ? '' : '<br><small>≈ ' + fmt(x, 2) + '</small>'); }
+
+/* signe = si la valeur est exacte (rationnelle), sinon approximation */
+function eqa(x) { return ratOf(x) ? '=' + fqa(x) : '\\approx ' + texT(x, 4); }
+/* simplification d'affichage : \frac{X}{1} devient X (entre parenthèses si nécessaire) */
+function fracClean(h) {
+  const grp = (s, i) => { if (s[i] !== '{') return -1; let d = 0; for (let j = i; j < s.length; j++) { if (s[j] === '{') d++; else if (s[j] === '}') { d--; if (d === 0) return j; } } return -1; };
+  let out = '', i = 0;
+  for (;;) {
+    const re = /\\[td]?frac\{/g; re.lastIndex = i; const mm = re.exec(h);
+    if (!mm) { out += h.slice(i); break; }
+    const k = mm.index, cmd = mm[0].slice(0, -1), a = k + cmd.length, ae = grp(h, a), b = ae + 1, be = ae > 0 ? grp(h, b) : -1;
+    if (ae < 0 || be < 0) { out += h.slice(i, a + 1); i = a + 1; continue; }
+    const num = h.slice(a + 1, ae), den = h.slice(b + 1, be).trim();
+    if (den === '1') {
+      let top = false, d = 0; for (let j = 0; j < num.length; j++) { const c = num[j]; if (c === '{') d++; else if (c === '}') d--; else if ((c === '+' || c === '-') && d === 0 && j > 0) top = true; }
+      const rest = h.slice(be + 1), end = /^(\s*$|\\\]|\\\)|=|&|\\\\|\\qquad|\\quad|\\text|\\iff|&lt;|&gt;|\s*[,;.<}])/.test(rest);
+      out += h.slice(i, k) + (top && !end ? '\\left(' + fracClean(num) + '\\right)' : fracClean(num));
+    } else out += h.slice(i, k) + cmd + '{' + fracClean(num) + '}{' + fracClean(h.slice(b + 1, be)) + '}';
+    i = be + 1;
+  }
+  return out;
+}
+const cfx = (x, d) => Math.abs(x - 1) < 1e-12 ? '' : fq(x) + '\\,';
 /* figure générique : demande linéaire P = a - bQ, surplus des consommateurs, profits par segments [x0, x1, coût],
    perte sèche par rapport à la tarification au coût marginal minimal cmin */
 function eiSurplusFig(o) {
@@ -161,7 +216,7 @@ PAGE.compute = function (seed) {
   return D;
 };
 const p8L = D => ({ dem: String.raw`Q_d=${D.b === 1 ? '' : D.b}\,(${D.pM}-p)`, off: String.raw`Q_s=${D.d === 1 ? '' : D.d}\,(p-${D.p0})` });
-I18N.fr.ex = function (D) {
+I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
   const L = p8L(D);
   return String.raw`<div class="context-block">Sur un marché concurrentiel, la demande est \(${L.dem}\) et l'offre \(${L.off}\), où \(p\) est le prix.</div>
 <div class="questions"><ol>
@@ -172,8 +227,8 @@ I18N.fr.ex = function (D) {
 <li><div class="q-text">Sans taxe, l'État impose un prix plafond \(\bar p=${D.ceil}\). Déterminez la quantité échangée, la pénurie, les surplus (en supposant que le bien va aux consommateurs qui le valorisent le plus) et la perte sèche.</div></li>
 <li><div class="q-text">Représentez graphiquement les deux situations, avec les surplus, la recette fiscale et la perte sèche.</div></li>
 </ol></div>`;
-};
-I18N.en.ex = function (D) {
+});
+I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
   const L = p8L(D);
   return String.raw`<div class="context-block">In a competitive market, demand is \(${L.dem}\) and supply \(${L.off}\), where \(p\) is the price.</div>
 <div class="questions"><ol>
@@ -184,36 +239,37 @@ I18N.en.ex = function (D) {
 <li><div class="q-text">Without a tax, the government imposes a price ceiling \(\bar p=${D.ceil}\). Determine the quantity traded, the shortage, the surpluses (assuming the good goes to the consumers who value it most) and the deadweight loss.</div></li>
 <li><div class="q-text">Draw both situations, with the surpluses, tax revenue and deadweight loss.</div></li>
 </ol></div>`;
-};
+});
 function p8sol(D, lang) {
+  const texT = (x) => fq(x);
   const fr = lang === 'fr', T_ = s => fr ? s[0] : s[1], b = D.b, d = D.d, pM = D.pM, p0 = D.p0, t = D.t, E = D.E, Et = D.Et, n = x => texT(x, 4), m = x => texT(x, 2);
   const SC = T_(['SC', 'CS']), SP = T_(['SP', 'PS']), PS = T_(['PS', 'DWL']), cb = b === 1 ? '' : b, cd = d === 1 ? '' : d;
   const Pd = b === 1 ? `${pM}-q` : String.raw`${pM}-\frac{q}{${b}}`, Ps = d === 1 ? `${p0}+q` : String.raw`${p0}+\frac{q}{${d}}`;
   return String.raw`<div class="st"><ol>
 <li><div class="q-content">
   <p>${T_(['À l\'équilibre, la quantité demandée est égale à la quantité offerte :', 'In equilibrium, quantity demanded equals quantity supplied:'])}
-  \[${cb}\,(${pM}-p)=${cd}\,(p-${p0})\iff p^*=\frac{${b}\times ${pM}+${d}\times ${p0}}{${b}+${d}}=${n(E.pc)}\]
-  ${T_(['On en déduit, d\'après la fonction de demande, la quantité échangée :', 'The demand function then gives the quantity traded:'])} \(Q^*=${cb}\,(${pM}-${n(E.pc)})=${n(E.Q)}\).</p>
+  \[${cb}\,(${pM}-p)=${cd}\,(p-${p0})\iff p^*=\frac{${b}\times ${pM}+${d}\times ${p0}}{${b}+${d}}=${fqa(E.pc)}\]
+  ${T_(['On en déduit, d\'après la fonction de demande, la quantité échangée :', 'The demand function then gives the quantity traded:'])} \(Q^*=${cb}\,(${pM}-${n(E.pc)})=${fqa(E.Q)}\).</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Les fonctions inverses sont', 'The inverse functions are'])} \(P_d(q)=${Pd}\) ${T_(['et', 'and'])} \(P_s(q)=${Ps}\). ${T_(['Les surplus sont les aires entre ces courbes et le prix d\'équilibre :', 'The surpluses are the areas between these curves and the equilibrium price:'])}
-  \[\begin{aligned}${SC}&amp;=\int_0^{${n(E.Q)}}\big(${Pd}-${n(E.pc)}\big)\,dq=\Big[${n(pM - E.pc)}\,q-\frac{q^2}{${2 * b}}\Big]_0^{${n(E.Q)}}=${m(E.SC)}\\${SP}&amp;=\int_0^{${n(E.Q)}}\big(${n(E.pc)}-${Ps}\big)\,dq=\Big[${n(E.pc - p0)}\,q-\frac{q^2}{${2 * d}}\Big]_0^{${n(E.Q)}}=${m(E.SP)}\end{aligned}\]
-  ${T_(['Le surplus total vaut', 'Total surplus is'])} \(W^*=${m(D.W)}\), ${T_(['maximal à l\'équilibre concurrentiel.', 'maximal at the competitive equilibrium.'])}</p>
+  \[\begin{aligned}${SC}&amp;=\int_0^{${n(E.Q)}}\big(${Pd}-${n(E.pc)}\big)\,dq=\Big[${n(pM - E.pc)}\,q-\frac{q^2}{${2 * b}}\Big]_0^{${n(E.Q)}}=${fqa(E.SC)}\\${SP}&amp;=\int_0^{${n(E.Q)}}\big(${n(E.pc)}-${Ps}\big)\,dq=\Big[${n(E.pc - p0)}\,q-\frac{q^2}{${2 * d}}\Big]_0^{${n(E.Q)}}=${fqa(E.SP)}\end{aligned}\]
+  ${T_(['Le surplus total vaut', 'Total surplus is'])} \(W^*=${fqa(D.W)}\), ${T_(['maximal à l\'équilibre concurrentiel.', 'maximal at the competitive equilibrium.'])}</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Les producteurs reçoivent', 'Producers receive'])} \(p_p=p_c-${t}\) : ${T_(['l\'offre dépend du prix reçu, la demande du prix payé. L\'équilibre vérifie', 'supply depends on the price received, demand on the price paid. Equilibrium satisfies'])}
-  \[${cb}\,(${pM}-p_c)=${cd}\,(p_c-${t}-${p0})\iff p_c=\frac{${b}\times ${pM}+${d}\times ${p0 + t}}{${b + d}}=${n(Et.pc)}\]
-  ${T_(['On en déduit le prix reçu', 'Hence the price received'])} \(p_p=${n(Et.pc)}-${t}=${n(Et.pp)}\) ${T_(['et, d\'après la demande, la quantité', 'and, from demand, the quantity'])} \(Q_t=${cb}\,(${pM}-${n(Et.pc)})=${n(Et.Q)}\). ${T_(['Le prix payé augmente de', 'The price paid rises by'])} \(${n(Et.pc - E.pc)}\), ${T_(['soit', 'that is'])} \(\frac{${d}}{${b + d}}=${texT(100 * d / (b + d), 1)}\,\%\) ${T_(['de la taxe ; le prix reçu baisse de', 'of the tax; the price received falls by'])} \(${n(E.pc - Et.pp)}\), ${T_(['soit', 'that is'])} \(${texT(100 * b / (b + d), 1)}\,\%\). ${T_(['Le côté du marché dont la courbe est la plus raide, le moins élastique, supporte la plus grande part, même si ce sont les producteurs qui versent la taxe.', 'The side of the market with the steeper curve, the less elastic one, bears the larger share, even though producers pay the tax.'])}</p>
+  \[${cb}\,(${pM}-p_c)=${cd}\,(p_c-${t}-${p0})\iff p_c=\frac{${b}\times ${pM}+${d}\times ${p0 + t}}{${b + d}}=${fqa(Et.pc)}\]
+  ${T_(['On en déduit le prix reçu', 'Hence the price received'])} \(p_p=${n(Et.pc)}-${t}=${fqa(Et.pp)}\) ${T_(['et, d\'après la demande, la quantité', 'and, from demand, the quantity'])} \(Q_t=${cb}\,(${pM}-${n(Et.pc)})=${fqa(Et.Q)}\). ${T_(['Le prix payé augmente de', 'The price paid rises by'])} \(${n(Et.pc - E.pc)}\), ${T_(['soit', 'that is'])} \(\frac{${d}}{${b + d}}=${texT(100 * d / (b + d), 1)}\,\%\) ${T_(['de la taxe ; le prix reçu baisse de', 'of the tax; the price received falls by'])} \(${n(E.pc - Et.pp)}\), ${T_(['soit', 'that is'])} \(${texT(100 * b / (b + d), 1)}\,\%\). ${T_(['Le côté du marché dont la courbe est la plus raide, le moins élastique, supporte la plus grande part, même si ce sont les producteurs qui versent la taxe.', 'The side of the market with the steeper curve, the less elastic one, bears the larger share, even though producers pay the tax.'])}</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Les nouveaux surplus se calculent avec les prix payé et reçu :', 'The new surpluses are computed with the prices paid and received:'])}
-  \[\begin{aligned}${SC}_t&amp;=\int_0^{${n(Et.Q)}}\big(${Pd}-${n(Et.pc)}\big)\,dq=${m(Et.SC)}\\${SP}_t&amp;=\int_0^{${n(Et.Q)}}\big(${n(Et.pp)}-${Ps}\big)\,dq=${m(Et.SP)}\\T&amp;=${t}\times ${n(Et.Q)}=${m(Et.T)}\end{aligned}\]
+  \[\begin{aligned}${SC}_t&amp;=\int_0^{${n(Et.Q)}}\big(${Pd}-${n(Et.pc)}\big)\,dq=${fqa(Et.SC)}\\${SP}_t&amp;=\int_0^{${n(Et.Q)}}\big(${n(Et.pp)}-${Ps}\big)\,dq=${fqa(Et.SP)}\\T&amp;=${t}\times ${n(Et.Q)}=${fqa(Et.T)}\end{aligned}\]
   ${T_(['Le surplus total, recette fiscale comprise, vaut', 'Total surplus, including tax revenue, is'])} \(${m(D.Wt)}\), ${T_(['d\'où une perte sèche', 'hence a deadweight loss'])} \(${PS}=${m(D.W)}-${m(D.Wt)}=${m(D.DWLt)}=\tfrac12\times ${t}\times(${n(E.Q)}-${n(Et.Q)})\). ${T_(['Elle correspond aux échanges mutuellement avantageux que la taxe empêche.', 'It corresponds to the mutually beneficial trades that the tax prevents.'])}</p>
 </div></li>
 <li><div class="q-content">
-  <p>${T_(['Au prix plafond', 'At the ceiling price'])} \(${D.ceil}&lt;p^*\), ${T_(['les producteurs offrent', 'producers supply'])} \(Q_s=${cd}\,(${D.ceil}-${p0})=${n(D.Qs)}\) ${T_(['et les consommateurs demandent', 'and consumers demand'])} \(Q_d=${cb}\,(${pM}-${D.ceil})=${n(D.Qd)}\) : ${T_(['la quantité échangée est la plus petite des deux,', 'the quantity traded is the smaller of the two,'])} \(${n(D.Qs)}\), ${T_(['et la pénurie vaut', 'and the shortage is'])} \(${n(D.Qd - D.Qs)}\). ${T_(['Si le bien va aux consommateurs qui le valorisent le plus, leur surplus est l\'aire entre la demande et le prix plafond sur les', 'If the good goes to the consumers who value it most, their surplus is the area between demand and the ceiling price over the first'])} \(${n(D.Qs)}\) ${T_(['premières unités :', 'units:'])}
-  \[\begin{aligned}${SC}_c&amp;=\int_0^{${n(D.Qs)}}\big(${Pd}-${D.ceil}\big)\,dq=${m(D.SCc)}\\${SP}_c&amp;=\int_0^{${n(D.Qs)}}\big(${D.ceil}-${Ps}\big)\,dq=${m(D.SPc)}\end{aligned}\]
-  ${T_(['Les consommateurs servis gagnent', 'Consumers who are served gain'])} \(${m(D.SCc - E.SC)}\) ${T_(['par rapport à l\'équilibre, les producteurs perdent', 'relative to equilibrium, producers lose'])} \(${m(E.SP - D.SPc)}\), ${T_(['et la perte sèche vaut', 'and the deadweight loss is'])} \(${m(D.W)}-${m(D.SCc)}-${m(D.SPc)}=${m(D.DWLc)}\).</p>
+  <p>${T_(['Au prix plafond', 'At the ceiling price'])} \(${D.ceil}&lt;p^*\), ${T_(['les producteurs offrent', 'producers supply'])} \(Q_s=${cd}\,(${D.ceil}-${p0})=${fqa(D.Qs)}\) ${T_(['et les consommateurs demandent', 'and consumers demand'])} \(Q_d=${cb}\,(${pM}-${D.ceil})=${fqa(D.Qd)}\) : ${T_(['la quantité échangée est la plus petite des deux,', 'the quantity traded is the smaller of the two,'])} \(${n(D.Qs)}\), ${T_(['et la pénurie vaut', 'and the shortage is'])} \(${n(D.Qd - D.Qs)}\). ${T_(['Si le bien va aux consommateurs qui le valorisent le plus, leur surplus est l\'aire entre la demande et le prix plafond sur les', 'If the good goes to the consumers who value it most, their surplus is the area between demand and the ceiling price over the first'])} \(${n(D.Qs)}\) ${T_(['premières unités :', 'units:'])}
+  \[\begin{aligned}${SC}_c&amp;=\int_0^{${n(D.Qs)}}\big(${Pd}-${D.ceil}\big)\,dq=${fqa(D.SCc)}\\${SP}_c&amp;=\int_0^{${n(D.Qs)}}\big(${D.ceil}-${Ps}\big)\,dq=${fqa(D.SPc)}\end{aligned}\]
+  ${T_(['Les consommateurs servis gagnent', 'Consumers who are served gain'])} \(${m(D.SCc - E.SC)}\) ${T_(['par rapport à l\'équilibre, les producteurs perdent', 'relative to equilibrium, producers lose'])} \(${m(E.SP - D.SPc)}\), ${T_(['et la perte sèche vaut', 'and the deadweight loss is'])} \(${m(D.W)}-${m(D.SCc)}-${m(D.SPc)}=${fqa(D.DWLc)}\).</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Avec la taxe : coin fiscal entre prix payé et prix reçu, recette fiscale et perte sèche.', 'With the tax: tax wedge between price paid and price received, tax revenue and deadweight loss.'])}</p>
@@ -223,5 +279,5 @@ function p8sol(D, lang) {
 </div></li>
 </ol></div>`;
 }
-I18N.fr.sol = D => p8sol(D, 'fr');
-I18N.en.sol = D => p8sol(D, 'en');
+I18N.fr.sol = D => fracClean((D => p8sol(D, 'fr'))(D));
+I18N.en.sol = D => fracClean((D => p8sol(D, 'en'))(D));

@@ -122,7 +122,7 @@ PAGE.compute = function (seed) {
   }
   return D;
 };
-I18N.fr.ex = function (D) {
+I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
   const P = D.P;
   return String.raw`<div class="context-block">Le joueur 1 choisit H ou B. Le joueur 2 observe ce choix, puis choisit g ou d. Les gains (joueur 1 ; joueur 2) sont : après (H, g) : \((${P[0][0][0]}\,;\,${P[0][0][1]})\) ; après (H, d) : \((${P[0][1][0]}\,;\,${P[0][1][1]})\) ; après (B, g) : \((${P[1][0][0]}\,;\,${P[1][0][1]})\) ; après (B, d) : \((${P[1][1][0]}\,;\,${P[1][1][1]})\).</div>
 <div class="questions"><ol>
@@ -132,8 +132,8 @@ I18N.fr.ex = function (D) {
 <li><div class="q-text">Déterminez l'équilibre parfait en sous-jeux par induction à rebours. Quels équilibres de Nash reposent sur une menace non crédible ?</div></li>
 <li><div class="q-text">On suppose maintenant que le joueur 2 ne peut pas observer le choix du joueur 1 : les deux joueurs choisissent simultanément. Déterminez les équilibres de Nash et comparez.</div></li>
 </ol></div>`;
-};
-I18N.en.ex = function (D) {
+});
+I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
   const P = D.P;
   return String.raw`<div class="context-block">Player 1 chooses U or D. Player 2 observes this choice, then chooses l or r. Payoffs (player 1; player 2) are: after (U, l): \((${P[0][0][0]}\,;\,${P[0][0][1]})\); after (U, r): \((${P[0][1][0]}\,;\,${P[0][1][1]})\); after (D, l): \((${P[1][0][0]}\,;\,${P[1][0][1]})\); after (D, r): \((${P[1][1][0]}\,;\,${P[1][1][1]})\).</div>
 <div class="questions"><ol>
@@ -143,8 +143,9 @@ I18N.en.ex = function (D) {
 <li><div class="q-text">Determine the subgame perfect equilibrium by backward induction. Which Nash equilibria rely on a non-credible threat?</div></li>
 <li><div class="q-text">Now assume player 2 cannot observe player 1's choice: both players choose simultaneously. Determine the Nash equilibria and compare.</div></li>
 </ol></div>`;
-};
+});
 function j5sol(D, lang) {
+  const texT = (x) => fq(x);
   const fr = lang === 'fr', T_ = s => fr ? s[0] : s[1], L = J5L[lang], P = D.P, N = D.N, b2 = D.b2, b1 = D.b1;
   const T = j5tree(P, L); jxBack(T);
   const a1 = L.a1, a2 = L.a2, NEtxt = D.NE.map(e => `(${a1[e[0]]}, ${j5s2(N.S2[e[1]], L)})`).join(', ');
@@ -175,5 +176,5 @@ function j5sol(D, lang) {
 </div></li>
 </ol></div>`;
 }
-I18N.fr.sol = D => j5sol(D, 'fr');
-I18N.en.sol = D => j5sol(D, 'en');
+I18N.fr.sol = D => fracClean((D => j5sol(D, 'fr'))(D));
+I18N.en.sol = D => fracClean((D => j5sol(D, 'en'))(D));

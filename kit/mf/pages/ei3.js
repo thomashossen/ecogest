@@ -4,10 +4,65 @@
 const GREY = '#8a857a';
 const KBASE_FR = { 'k-badge': 'MICROÉCONOMIE', 'k-seed': 'Seed de reproductibilité', 'k-seedtip': 'Vide = nouvel exercice aléatoire', 'k-gen': 'Générer', 'k-tag-course': 'Cours', 'k-tag-ex': 'Exercice', 'k-tag-sol': 'Corrigé', 'k-seedbadge': 'Seed&nbsp;:', showSol: 'Afficher le corrigé', hideSol: 'Masquer le corrigé', phSeed: 'auto', copy: 'Copier', copied: 'Copié', 'k-sub': '© Thomas Hossen – Version du 20 octobre 2026' };
 const KBASE_EN = { 'k-badge': 'MICROECONOMICS', 'k-seed': 'Reproducibility seed', 'k-seedtip': 'Empty = new random exercise', 'k-gen': 'Generate', 'k-tag-course': 'Lesson', 'k-tag-ex': 'Exercise', 'k-tag-sol': 'Solution', 'k-seedbadge': 'Seed:', showSol: 'Show solution', hideSol: 'Hide solution', phSeed: 'auto', copy: 'Copy', copied: 'Copied', 'k-sub': '© Thomas Hossen – Version of 20 October 2026' };
+/* ---------- calcul exact : reconnaissance des rationnels et affichage fractionnaire ---------- */
+function ratOf(x) {
+  if (!isFinite(x)) return null;
+  const s = x < 0 ? -1 : 1, y = Math.abs(x);
+  if (Math.abs(y - Math.round(y)) <= 1e-11 * Math.max(1, y)) return [s * Math.round(y), 1];
+  let h0 = 0, h1 = 1, k0 = 1, k1 = 0, z = y;
+  for (let i = 0; i < 40; i++) {
+    const a = Math.floor(z), h2 = a * h1 + h0, k2 = a * k1 + k0;
+    if (k2 > 2e6) return null;
+    if (Math.abs(y - h2 / k2) <= 1e-12 * Math.max(1, y)) return [s * h2, k2];
+    h0 = h1; h1 = h2; k0 = k1; k1 = k2;
+    const f = z - a; if (f < 1e-15) return null; z = 1 / f;
+  }
+  return null;
+}
+/* valeur exacte : entier ou fraction ; décimale si le nombre n'est pas rationnel (racine, puissance non entière) */
+function fq(x) {
+  const r = ratOf(x);
+  if (!r) return texT(x, 4);
+  if (r[1] === 1) return texT(r[0], 0);
+  return (r[0] < 0 ? '-' : '') + '\\frac{' + texT(Math.abs(r[0]), 0) + '}{' + texT(r[1], 0) + '}';
+}
+/* valeur exacte suivie d'une approximation décimale */
+function fqa(x) {
+  const r = ratOf(x);
+  if (!r) return texT(x, 4);
+  if (r[1] === 1) return texT(r[0], 0);
+  return fq(x) + '\\approx ' + texT(x, Math.abs(x) >= 100 ? 2 : 4);
+}
+/* entre parenthèses si fraction ou négatif (avant un exposant) */
+function fqp(x) { const r = ratOf(x), t = fq(x); return (r && r[1] === 1 && r[0] >= 0) || (!r && x >= 0) ? t : '\\left(' + t + '\\right)'; }
+/* cellule de tableau : valeur exacte, approximation en petit */
+function fqt(x) { const r = ratOf(x); return '\\(' + fq(x) + '\\)' + (r && r[1] === 1 ? '' : '<br><small>≈ ' + fmt(x, 2) + '</small>'); }
+
+/* signe = si la valeur est exacte (rationnelle), sinon approximation */
+function eqa(x) { return ratOf(x) ? '=' + fqa(x) : '\\approx ' + texT(x, 4); }
+/* simplification d'affichage : \frac{X}{1} devient X (entre parenthèses si nécessaire) */
+function fracClean(h) {
+  const grp = (s, i) => { if (s[i] !== '{') return -1; let d = 0; for (let j = i; j < s.length; j++) { if (s[j] === '{') d++; else if (s[j] === '}') { d--; if (d === 0) return j; } } return -1; };
+  let out = '', i = 0;
+  for (;;) {
+    const re = /\\[td]?frac\{/g; re.lastIndex = i; const mm = re.exec(h);
+    if (!mm) { out += h.slice(i); break; }
+    const k = mm.index, cmd = mm[0].slice(0, -1), a = k + cmd.length, ae = grp(h, a), b = ae + 1, be = ae > 0 ? grp(h, b) : -1;
+    if (ae < 0 || be < 0) { out += h.slice(i, a + 1); i = a + 1; continue; }
+    const num = h.slice(a + 1, ae), den = h.slice(b + 1, be).trim();
+    if (den === '1') {
+      let top = false, d = 0; for (let j = 0; j < num.length; j++) { const c = num[j]; if (c === '{') d++; else if (c === '}') d--; else if ((c === '+' || c === '-') && d === 0 && j > 0) top = true; }
+      const rest = h.slice(be + 1), end = /^(\s*$|\\\]|\\\)|=|&|\\\\|\\qquad|\\quad|\\text|\\iff|&lt;|&gt;|\s*[,;.<}])/.test(rest);
+      out += h.slice(i, k) + (top && !end ? '\\left(' + fracClean(num) + '\\right)' : fracClean(num));
+    } else out += h.slice(i, k) + cmd + '{' + fracClean(num) + '}{' + fracClean(h.slice(b + 1, be)) + '}';
+    i = be + 1;
+  }
+  return out;
+}
 I18N.fr.k = Object.assign({}, KBASE_FR, { title: 'Économie industrielle 3 – Le duopole de Cournot', 'k-h1': 'Le duopole de Cournot', 'k-coursetitle': 'Se concurrencer en quantités : fonctions de réaction, équilibre de Nash et nombre de firmes', 'k-extitle': 'Duopole de Cournot à coûts différents, comparaison avec le monopole et oligopole à n firmes', 'k-soltitle': 'Duopole de Cournot à coûts différents, comparaison avec le monopole et oligopole à n firmes' });
 I18N.en.k = Object.assign({}, KBASE_EN, { title: 'Industrial economics 3 – The Cournot duopoly', 'k-h1': 'The Cournot duopoly', 'k-coursetitle': 'Competing in quantities: reaction functions, Nash equilibrium and number of firms', 'k-extitle': 'Cournot duopoly with different costs, comparison with monopoly and n-firm oligopoly', 'k-soltitle': 'Cournot duopoly with different costs, comparison with monopoly and n-firm oligopoly' });
 
-const cfx = (x, d) => Math.abs(x - 1) < 1e-12 ? '' : texT(x, d === undefined ? 4 : d) + '\\,';
+const cfx = (x, d) => Math.abs(x - 1) < 1e-12 ? '' : fq(x) + '\\,';
 /* ---------- outils : P = a - bQ, coûts c_i q_i ---------- */
 function e3cournot(a, b, c1, c2) {
   let q1 = (a - 2 * c1 + c2) / (3 * b), q2 = (a - 2 * c2 + c1) / (3 * b);
@@ -210,7 +265,7 @@ function e3graphS(D, lang) {
   G.legend([{ c: COL.s1, box: true, o: 0.3, t: fr ? 'surplus des consommateurs' : 'consumer surplus' }, { c: '#2e7d5b', box: true, o: 0.35, t: fr ? 'profits (1 puis 2)' : 'profits (1 then 2)' }, { c: COL.s3, box: true, o: 0.4, t: fr ? 'perte sèche' : 'deadweight loss' }], G.ml + 8, 16);
   return '<div class="sol-fig">' + G.svg(fr ? 'Surplus à l\'équilibre de Cournot' : 'Surplus at the Cournot equilibrium') + '</div>';
 }
-I18N.fr.ex = function (D) {
+I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">Deux entreprises produisent un bien homogène dont la demande inverse est \(P(Q)=${D.a}-${cfx(D.b)}Q\), où \(Q=q_1+q_2\). Leurs coûts marginaux sont constants : \(c_1=${D.c1}\) et \(c_2=${D.c2}\), sans coût fixe. Elles choisissent simultanément leurs quantités.</div>
 <div class="questions"><ol>
 <li><div class="q-text">Écrivez le profit de chaque entreprise et déduisez-en sa fonction de réaction.</div></li>
@@ -220,8 +275,8 @@ I18N.fr.ex = function (D) {
 <li><div class="q-text">Calculez, à l'aide d'intégrales, le surplus des consommateurs et le surplus de chaque producteur à l'équilibre de Cournot, puis le surplus total. Comparez avec la fusion des deux entreprises en un monopole et avec la concurrence parfaite, et représentez les surplus de Cournot.</div></li>
 <li><div class="q-text">On considère maintenant ${D.n} entreprises identiques, toutes de coût marginal ${D.cmin}. Déterminez l'équilibre de Cournot et la perte sèche. Que se passe-t-il quand le nombre d'entreprises augmente ?</div></li>
 </ol></div>`;
-};
-I18N.en.ex = function (D) {
+});
+I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">Two firms produce a homogeneous good whose inverse demand is \(P(Q)=${D.a}-${cfx(D.b)}Q\), where \(Q=q_1+q_2\). Their marginal costs are constant: \(c_1=${D.c1}\) and \(c_2=${D.c2}\), with no fixed cost. They choose their quantities simultaneously.</div>
 <div class="questions"><ol>
 <li><div class="q-text">Write each firm's profit and derive its reaction function.</div></li>
@@ -231,8 +286,9 @@ I18N.en.ex = function (D) {
 <li><div class="q-text">Compute, using integrals, consumer surplus and each producer's surplus at the Cournot equilibrium, then total surplus. Compare with a merger of the two firms into a monopoly and with perfect competition, and draw the Cournot surpluses.</div></li>
 <li><div class="q-text">Now consider ${D.n} identical firms, all with marginal cost ${D.cmin}. Determine the Cournot equilibrium and the deadweight loss. What happens as the number of firms grows?</div></li>
 </ol></div>`;
-};
+});
 function e3sol(D, lang) {
+  const texT = (x) => fq(x);
   const fr = lang === 'fr', T_ = s => fr ? s[0] : s[1], E = D.E, a = D.a, b = D.b, c1 = D.c1, c2 = D.c2, n4 = x => texT(x, 4), m = x => texT(x, 2);
   const SC = T_(['SC', 'CS']), SP = T_(['SP', 'PS']), PS = T_(['PS', 'DWL']);
   const r1 = (a - c1) / (2 * b), r2 = (a - c2) / (2 * b), bx = b === 1 ? '' : texT(b, 2) + '\\times ';
@@ -248,11 +304,11 @@ function e3sol(D, lang) {
 </div></li>
 <li><div class="q-content">
   <p>${T_(['À l\'équilibre de Cournot, chaque entreprise joue sa meilleure réponse à la quantité de l\'autre. On reporte donc', 'At the Cournot equilibrium, each firm plays its best response to the other\'s quantity. We therefore substitute'])} \(R_2\) ${T_(['dans', 'into'])} \(R_1\) :
-  \[\begin{aligned}q_1^*&amp;=${n4(r1)}-\frac12\Big(${n4(r2)}-\frac{q_1^*}{2}\Big)&amp;&amp;\text{${T_(['car', 'since'])} }q_2^*=R_2(q_1^*)\\\frac34\,q_1^*&amp;=${n4(r1)}-${n4(r2 / 2)}=${n4(r1 - r2 / 2)}&amp;&amp;\text{${T_(['en regroupant les termes en', 'grouping the terms in'])} }q_1^*\\q_1^*&amp;=${n4(E.q1)}\end{aligned}\]
-  ${T_(['On en déduit la quantité de l\'entreprise 2 en reportant ce résultat dans sa fonction de réaction :', 'Firm 2\'s quantity follows by substituting this result into its reaction function:'])} \(q_2^*=${n4(r2)}-\frac{${n4(E.q1)}}{2}=${n4(E.q2)}\). ${T_(['La production totale est', 'Total output is'])} \(Q^*=${n4(D.Q)}\), ${T_(['et l\'on en déduit, d\'après la fonction de demande inverse, le prix d\'équilibre sur le marché :', 'and the inverse demand function then gives the equilibrium market price:'])}
-  \[P^*=${a}-${bx}${n4(D.Q)}=${n4(E.P)}\]
+  \[\begin{aligned}q_1^*&amp;=${n4(r1)}-\frac12\Big(${n4(r2)}-\frac{q_1^*}{2}\Big)&amp;&amp;\text{${T_(['car', 'since'])} }q_2^*=R_2(q_1^*)\\\frac34\,q_1^*&amp;=${n4(r1)}-${n4(r2 / 2)}=${fqa(r1 - r2 / 2)}&amp;&amp;\text{${T_(['en regroupant les termes en', 'grouping the terms in'])} }q_1^*\\q_1^*&amp;=${fqa(E.q1)}\end{aligned}\]
+  ${T_(['On en déduit la quantité de l\'entreprise 2 en reportant ce résultat dans sa fonction de réaction :', 'Firm 2\'s quantity follows by substituting this result into its reaction function:'])} \(q_2^*=${n4(r2)}-\frac{${n4(E.q1)}}{2}=${fqa(E.q2)}\). ${T_(['La production totale est', 'Total output is'])} \(Q^*=${fqa(D.Q)}\), ${T_(['et l\'on en déduit, d\'après la fonction de demande inverse, le prix d\'équilibre sur le marché :', 'and the inverse demand function then gives the equilibrium market price:'])}
+  \[P^*=${a}-${bx}${n4(D.Q)}=${fqa(E.P)}\]
   ${T_(['Les profits sont alors les marges unitaires multipliées par les quantités :', 'Profits are then the unit margins times the quantities:'])}
-  \[\Pi_1^*=(${n4(E.P)}-${c1})\times ${n4(E.q1)}=${m(E.p1)}\qquad\Pi_2^*=(${n4(E.P)}-${c2})\times ${n4(E.q2)}=${m(E.p2)}\]
+  \[\Pi_1^*=(${n4(E.P)}-${c1})\times ${n4(E.q1)}=${fqa(E.p1)}\qquad\Pi_2^*=(${n4(E.P)}-${c2})\times ${n4(E.q2)}=${fqa(E.p2)}\]
   ${T_(['L\'entreprise au coût le plus bas produit davantage et gagne plus.', 'The lower-cost firm produces more and earns more.'])}</p>
 </div></li>
 <li><div class="q-content">
@@ -260,33 +316,33 @@ function e3sol(D, lang) {
   ${e3graphBR(D, lang)}
 </div></li>
 <li><div class="q-content">
-  <p>${T_(['Les parts de marché sont', 'Market shares are'])} \(s_1=\frac{${n4(E.q1)}}{${n4(D.Q)}}=${n4(D.s1)}\) ${T_(['et', 'and'])} \(s_2=${n4(D.s2)}\). ${T_(['L\'élasticité de la demande au point d\'équilibre vaut', 'The elasticity of demand at the equilibrium point is'])} \(\varepsilon=-\frac{1}{${texT(b, 2)}}\cdot\frac{P^*}{Q^*}=-\frac{1}{${texT(b, 2)}}\times\frac{${n4(E.P)}}{${n4(D.Q)}}\approx ${n4(D.eps)}\). ${T_(['On compare alors les indices de Lerner aux rapports', 'We then compare the Lerner indices with the ratios'])} \(s_i/|\varepsilon|\) :
-  \[\begin{aligned}L_1&amp;=\frac{${n4(E.P)}-${c1}}{${n4(E.P)}}\approx ${n4((E.P - c1) / E.P)}\qquad\frac{s_1}{|\varepsilon|}=\frac{${n4(D.s1)}}{${n4(-D.eps)}}\approx ${n4(D.s1 / -D.eps)}\\L_2&amp;=\frac{${n4(E.P)}-${c2}}{${n4(E.P)}}\approx ${n4((E.P - c2) / E.P)}\qquad\frac{s_2}{|\varepsilon|}=\frac{${n4(D.s2)}}{${n4(-D.eps)}}\approx ${n4(D.s2 / -D.eps)}\end{aligned}\]
+  <p>${T_(['Les parts de marché sont', 'Market shares are'])} \(s_1=\frac{${n4(E.q1)}}{${n4(D.Q)}}=${fqa(D.s1)}\) ${T_(['et', 'and'])} \(s_2=${fqa(D.s2)}\). ${T_(['L\'élasticité de la demande au point d\'équilibre vaut', 'The elasticity of demand at the equilibrium point is'])} \(\varepsilon=-\frac{1}{${texT(b, 2)}}\cdot\frac{P^*}{Q^*}=-\frac{1}{${texT(b, 2)}}\times\frac{${n4(E.P)}}{${n4(D.Q)}}${eqa(D.eps)}\). ${T_(['On compare alors les indices de Lerner aux rapports', 'We then compare the Lerner indices with the ratios'])} \(s_i/|\varepsilon|\) :
+  \[\begin{aligned}L_1&amp;=\frac{${n4(E.P)}-${c1}}{${n4(E.P)}}${eqa((E.P - c1) / E.P)}\qquad\frac{s_1}{|\varepsilon|}=\frac{${n4(D.s1)}}{${n4(-D.eps)}}${eqa(D.s1 / -D.eps)}\\L_2&amp;=\frac{${n4(E.P)}-${c2}}{${n4(E.P)}}${eqa((E.P - c2) / E.P)}\qquad\frac{s_2}{|\varepsilon|}=\frac{${n4(D.s2)}}{${n4(-D.eps)}}${eqa(D.s2 / -D.eps)}\end{aligned}\]
   ${T_(['Les deux expressions coïncident, ce qui découle de la condition du premier ordre', 'The two expressions coincide, which follows from the first-order condition'])} \(P^*-c_i=${cfx(b)}q_i^*\) ${T_(['divisée par', 'divided by'])} \(P^*\) : ${T_(['le pouvoir de marché d\'une entreprise croît avec sa part de marché.', 'a firm\'s market power grows with its market share.'])}</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Le surplus des consommateurs est l\'intégrale de l\'écart entre la demande inverse et le prix d\'équilibre, sur les quantités achetées :', 'Consumer surplus is the integral of the gap between inverse demand and the equilibrium price, over the quantities bought:'])}
-  \[${SC}^*=\int_0^{${n4(D.Q)}}\big(${a}-${cfx(b)}q-${n4(E.P)}\big)\,dq=\Big[${n4(a - E.P)}\,q-${cfx(b / 2)}q^2\Big]_0^{${n4(D.Q)}}=${m(D.SC)}\]
+  \[${SC}^*=\int_0^{${n4(D.Q)}}\big(${a}-${cfx(b)}q-${n4(E.P)}\big)\,dq=\Big[${n4(a - E.P)}\,q-${cfx(b / 2)}q^2\Big]_0^{${n4(D.Q)}}=${fqa(D.SC)}\]
   ${T_(['Le surplus de chaque producteur est l\'intégrale de l\'écart entre le prix et son coût marginal, sur les quantités qu\'il vend ; sans coût fixe, il est égal à son profit :', 'Each producer\'s surplus is the integral of the gap between the price and its marginal cost, over the quantities it sells; with no fixed cost, it equals its profit:'])}
-  \[${SP}_1^*=\int_0^{${n4(E.q1)}}(${n4(E.P)}-${c1})\,dq=${m(E.p1)}\qquad ${SP}_2^*=\int_0^{${n4(E.q2)}}(${n4(E.P)}-${c2})\,dq=${m(E.p2)}\]
-  ${T_(['Le surplus total de Cournot vaut donc', 'Total Cournot surplus is therefore'])} \(W^*=${m(D.SC)}+${m(E.p1)}+${m(E.p2)}=${m(D.W)}\). ${T_(['Si les deux entreprises fusionnaient, le monopole produirait avec la technologie la moins coûteuse,', 'If the two firms merged, the monopoly would produce with the cheaper technology,'])} \(c=${D.cmin}\) : \(Q^m=\frac{${a}-${D.cmin}}{${n4(2 * b)}}=${n4(D.Qm)}\), ${T_(['et, d\'après la demande inverse,', 'and, from inverse demand,'])} \(P^m=${n4(D.Pm)}\). ${T_(['En concurrence parfaite, le prix serait égal au plus bas coût marginal,', 'Under perfect competition, the price would equal the lowest marginal cost,'])} ${D.cmin}, ${T_(['pour une production', 'for an output of'])} \(Q^c=${n4(D.Qc)}\). ${T_(['Les mêmes intégrales donnent :', 'The same integrals give:'])}</p>
+  \[${SP}_1^*=\int_0^{${n4(E.q1)}}(${n4(E.P)}-${c1})\,dq=${fqa(E.p1)}\qquad ${SP}_2^*=\int_0^{${n4(E.q2)}}(${n4(E.P)}-${c2})\,dq=${fqa(E.p2)}\]
+  ${T_(['Le surplus total de Cournot vaut donc', 'Total Cournot surplus is therefore'])} \(W^*=${m(D.SC)}+${m(E.p1)}+${m(E.p2)}=${fqa(D.W)}\). ${T_(['Si les deux entreprises fusionnaient, le monopole produirait avec la technologie la moins coûteuse,', 'If the two firms merged, the monopoly would produce with the cheaper technology,'])} \(c=${D.cmin}\) : \(Q^m=\frac{${a}-${D.cmin}}{${n4(2 * b)}}=${fqa(D.Qm)}\), ${T_(['et, d\'après la demande inverse,', 'and, from inverse demand,'])} \(P^m=${fqa(D.Pm)}\). ${T_(['En concurrence parfaite, le prix serait égal au plus bas coût marginal,', 'Under perfect competition, the price would equal the lowest marginal cost,'])} ${D.cmin}, ${T_(['pour une production', 'for an output of'])} \(Q^c=${fqa(D.Qc)}\). ${T_(['Les mêmes intégrales donnent :', 'The same integrals give:'])}</p>
   <div class="dtable-wrap"><table class="dtable"><thead><tr><th></th><th>${T_(['Monopole (fusion)', 'Monopoly (merger)'])}</th><th>Cournot</th><th>${T_(['Concurrence parfaite', 'Perfect competition'])}</th></tr></thead><tbody>
-  <tr><td>${T_(['Prix', 'Price'])}</td><td class="num">${fmt(D.Pm, 2)}</td><td class="num">${fmt(E.P, 2)}</td><td class="num">${fmt(D.cmin, 2)}</td></tr>
-  <tr><td>${T_(['Surplus des consommateurs', 'Consumer surplus'])}</td><td class="num">${fmt(D.SCm, 2)}</td><td class="num">${fmt(D.SC, 2)}</td><td class="num">${fmt(D.SCc, 2)}</td></tr>
-  <tr><td>${T_(['Surplus des producteurs', 'Producer surplus'])}</td><td class="num">${fmt(D.pim, 2)}</td><td class="num">${fmt(E.p1 + E.p2, 2)}</td><td class="num">${fmt(0, 2)}</td></tr>
-  <tr><td>${T_(['Surplus total', 'Total surplus'])}</td><td class="num">${fmt(D.Wm, 2)}</td><td class="num">${fmt(D.W, 2)}</td><td class="num">${fmt(D.Wc, 2)}</td></tr>
-  <tr><td>${T_(['Perte sèche', 'Deadweight loss'])}</td><td class="num">${fmt(D.Wc - D.Wm, 2)}</td><td class="num">${fmt(D.Wc - D.W, 2)}</td><td class="num">${fmt(0, 2)}</td></tr></tbody></table></div>
+  <tr><td>${T_(['Prix', 'Price'])}</td><td class="num">${fqt(D.Pm)}</td><td class="num">${fqt(E.P)}</td><td class="num">${fqt(D.cmin)}</td></tr>
+  <tr><td>${T_(['Surplus des consommateurs', 'Consumer surplus'])}</td><td class="num">${fqt(D.SCm)}</td><td class="num">${fqt(D.SC)}</td><td class="num">${fqt(D.SCc)}</td></tr>
+  <tr><td>${T_(['Surplus des producteurs', 'Producer surplus'])}</td><td class="num">${fqt(D.pim)}</td><td class="num">${fqt(E.p1 + E.p2)}</td><td class="num">${fqt(0)}</td></tr>
+  <tr><td>${T_(['Surplus total', 'Total surplus'])}</td><td class="num">${fqt(D.Wm)}</td><td class="num">${fqt(D.W)}</td><td class="num">${fqt(D.Wc)}</td></tr>
+  <tr><td>${T_(['Perte sèche', 'Deadweight loss'])}</td><td class="num">${fqt(D.Wc - D.Wm)}</td><td class="num">${fqt(D.Wc - D.W)}</td><td class="num">${fqt(0)}</td></tr></tbody></table></div>
   <p>${T_(['Le duopole se situe entre le monopole et la concurrence parfaite. Sa perte sèche a deux sources : la production est inférieure à celle de la concurrence parfaite, et une partie est réalisée par l\'entreprise la moins efficace, à un coût supérieur au coût minimal (rectangle rouge sur le graphique). La fusion augmente le profit total mais réduit le surplus des consommateurs et le surplus total.', 'The duopoly lies between monopoly and perfect competition. Its deadweight loss has two sources: output is below the perfectly competitive level, and part of it is produced by the less efficient firm, at a cost above the minimum cost (red rectangle in the graph). The merger raises total profit but lowers consumer surplus and total surplus.'])}</p>
   ${e3graphS(D, lang)}
 </div></li>
 <li><div class="q-content">
   <p>${T_(['En équilibre symétrique, chaque entreprise produit', 'In a symmetric equilibrium, each firm produces'])} \(q\) ${T_(['et la production totale est', 'and total output is'])} \(${D.n}\,q\). ${T_(['La condition du premier ordre d\'une entreprise s\'écrit alors', 'A firm\'s first-order condition then reads'])} \(${a}-${cfx(b)}(${D.n}+1)\,q-${D.cmin}=0\), ${T_(['d\'où :', 'hence:'])}
-  \[q^*=\frac{${a}-${D.cmin}}{(${D.n}+1)\times ${texT(b, 2)}}=${n4(D.qn)}\qquad Q^*=${D.n}\times ${n4(D.qn)}=${n4(D.Qn)}\]
-  ${T_(['On en déduit, d\'après la fonction de demande inverse, le prix d\'équilibre :', 'The inverse demand function then gives the equilibrium price:'])} \(P^*=${a}-${bx}${n4(D.Qn)}=${n4(D.Pn)}\). ${T_(['La perte sèche est l\'aire du triangle compris entre la demande et le coût marginal, de', 'The deadweight loss is the area of the triangle between demand and marginal cost, from'])} \(Q^*\) ${T_(['à', 'to'])} \(Q^c\) :
-  \[${PS}_{${D.n}}=\int_{${n4(D.Qn)}}^{${n4(D.Qc)}}\big(${a}-${cfx(b)}q-${D.cmin}\big)\,dq=\frac{${texT(b, 2)}}{2}\,(${n4(D.Qc)}-${n4(D.Qn)})^2=${m(D.Wc - D.Wn)}\]
+  \[q^*=\frac{${a}-${D.cmin}}{(${D.n}+1)\times ${texT(b, 2)}}=${fqa(D.qn)}\qquad Q^*=${D.n}\times ${n4(D.qn)}=${fqa(D.Qn)}\]
+  ${T_(['On en déduit, d\'après la fonction de demande inverse, le prix d\'équilibre :', 'The inverse demand function then gives the equilibrium price:'])} \(P^*=${a}-${bx}${n4(D.Qn)}=${fqa(D.Pn)}\). ${T_(['La perte sèche est l\'aire du triangle compris entre la demande et le coût marginal, de', 'The deadweight loss is the area of the triangle between demand and marginal cost, from'])} \(Q^*\) ${T_(['à', 'to'])} \(Q^c\) :
+  \[${PS}_{${D.n}}=\int_{${n4(D.Qn)}}^{${n4(D.Qc)}}\big(${a}-${cfx(b)}q-${D.cmin}\big)\,dq=\frac{${texT(b, 2)}}{2}\,(${n4(D.Qc)}-${n4(D.Qn)})^2=${fqa(D.Wc - D.Wn)}\]
   ${T_(['Quand', 'As'])} \(n\) ${T_(['augmente, la production totale', 'grows, total output'])} \(\frac{n}{n+1}Q^c\) ${T_(['se rapproche de', 'approaches'])} \(Q^c\), ${T_(['le prix tend vers le coût marginal et la perte sèche, proportionnelle à', 'the price tends to marginal cost and the deadweight loss, proportional to'])} \(\frac{1}{(n+1)^2}\), ${T_(['tend vers zéro : la concurrence parfaite est la limite de l\'oligopole de Cournot.', 'tends to zero: perfect competition is the limit of the Cournot oligopoly.'])}</p>
 </div></li>
 </ol></div>`;
 }
-I18N.fr.sol = D => e3sol(D, 'fr');
-I18N.en.sol = D => e3sol(D, 'en');
+I18N.fr.sol = D => fracClean((D => e3sol(D, 'fr'))(D));
+I18N.en.sol = D => fracClean((D => e3sol(D, 'en'))(D));

@@ -131,7 +131,7 @@ PAGE.compute = function (seed) {
   return D;
 };
 const p3U = D => String.raw`U(x_1,x_2)=x_1${D.al === 1 ? '' : '^{' + D.al + '}'}\,x_2${D.be === 1 ? '' : '^{' + D.be + '}'}`;
-I18N.fr.ex = function (D) {
+I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">Un consommateur a pour utilité \(${p3U(D)}\), un revenu \(R=${D.R}\), et fait face aux prix \(p_1=${D.p1}\) et \(p_2=${D.p2}\). Le prix du bien 1 passe à \(p_1'=${texT(D.p1n, 2)}\), le revenu et \(p_2\) restant inchangés.</div>
 <div class="questions"><ol>
 <li><div class="q-text">Déterminez le panier optimal initial \(A\) et le niveau d'utilité \(u_A\).</div></li>
@@ -141,8 +141,8 @@ I18N.fr.ex = function (D) {
 <li><div class="q-text">Le bien 1 est-il normal ou inférieur ? Quelle somme faudrait-il donner (ou retirer) au consommateur pour qu'il retrouve son utilité initiale aux nouveaux prix ?</div></li>
 <li><div class="q-text">Représentez graphiquement la décomposition de Hicks.</div></li>
 </ol></div>`;
-};
-I18N.en.ex = function (D) {
+});
+I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">A consumer has utility \(${p3U(D)}\), income \(R=${D.R}\), and faces prices \(p_1=${D.p1}\) and \(p_2=${D.p2}\). The price of good 1 changes to \(p_1'=${texT(D.p1n, 2)}\), income and \(p_2\) remaining unchanged.</div>
 <div class="questions"><ol>
 <li><div class="q-text">Determine the initial optimal bundle \(A\) and the utility level \(u_A\).</div></li>
@@ -152,32 +152,33 @@ I18N.en.ex = function (D) {
 <li><div class="q-text">Is good 1 normal or inferior? What amount should be given to (or taken from) the consumer for them to regain their initial utility at the new prices?</div></li>
 <li><div class="q-text">Draw the Hicks decomposition.</div></li>
 </ol></div>`;
-};
+});
 function p3sol(D, lang) {
+  const texT = (x) => fq(x);
   const fr = lang === 'fr', T_ = s => fr ? s[0] : s[1], al = D.al, be = D.be, s = al + be, p1 = D.p1, p1n = D.p1n, p2 = D.p2, R = D.R, A = D.A, B = D.B, C = D.C, S = D.S, n = x => texT(x, 4);
-  const pw = (v, e) => e === 1 ? v : `${v}^{${e}}`, up = D.p1n > D.p1;
+  const pw = (v, e) => { v = String(v); if (/^\\frac|^-/.test(v)) v = '\\left(' + v + '\\right)'; return e === 1 ? v : `${v}^{${e}}`; }, up = D.p1n > D.p1;
   const F = p3fig(al, be, p1, p1n, p2, R, lang, false);
   return String.raw`<div class="st"><ol>
 <li><div class="q-content">
   <p>${T_(['Pour une utilité Cobb-Douglas, la tangence et la contrainte budgétaire donnent les demandes', 'For a Cobb-Douglas utility, tangency and the budget constraint give the demands'])} \(x_1=\frac{${al}}{${s}}\frac{R}{p_1}\) ${T_(['et', 'and'])} \(x_2=\frac{${be}}{${s}}\frac{R}{p_2}\) (${T_(['page 2', 'page 2'])}). ${T_(['Aux prix initiaux :', 'At the initial prices:'])}
-  \[x_1^A=\frac{${al}}{${s}}\times\frac{${R}}{${p1}}=${n(A.x1)}\qquad x_2^A=\frac{${be}}{${s}}\times\frac{${R}}{${p2}}=${n(A.x2)}\qquad u_A=${pw(n(A.x1), al)}\times ${pw(n(A.x2), be)}\approx ${n(A.u)}\]</p>
+  \[x_1^A=\frac{${al}}{${s}}\times\frac{${R}}{${p1}}=${fqa(A.x1)}\qquad x_2^A=\frac{${be}}{${s}}\times\frac{${R}}{${p2}}=${fqa(A.x2)}\qquad u_A=${pw(n(A.x1), al)}\times ${pw(n(A.x2), be)}${eqa(A.u)}\]</p>
 </div></li>
 <li><div class="q-content">
-  <p>${T_(['Au nouveau prix, la même formule donne', 'At the new price, the same formula gives'])} \(x_1^C=\frac{${al}}{${s}}\times\frac{${R}}{${texT(p1n, 2)}}=${n(C.x1)}\) ${T_(['et', 'and'])} \(x_2^C=${n(C.x2)}\), ${T_(['inchangé. L\'effet total sur le bien 1 est', 'unchanged. The total effect on good 1 is'])} \(x_1^C-x_1^A=${n(C.x1 - A.x1)}\).</p>
+  <p>${T_(['Au nouveau prix, la même formule donne', 'At the new price, the same formula gives'])} \(x_1^C=\frac{${al}}{${s}}\times\frac{${R}}{${texT(p1n, 2)}}=${fqa(C.x1)}\) ${T_(['et', 'and'])} \(x_2^C=${fqa(C.x2)}\), ${T_(['inchangé. L\'effet total sur le bien 1 est', 'unchanged. The total effect on good 1 is'])} \(x_1^C-x_1^A=${fqa(C.x1 - A.x1)}\).</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Le panier', 'Bundle'])} \(B\) ${T_(['minimise la dépense', 'minimises expenditure'])} \(${texT(p1n, 2)}\,x_1+${p2}\,x_2\) ${T_(['sous la contrainte', 'subject to'])} \(U(x_1,x_2)=u_A\). ${T_(['La condition de tangence est la même qu\'au choix optimal :', 'The tangency condition is the same as for the optimal choice:'])} \(\frac{${al === 1 ? '' : al}\,x_2}{${be === 1 ? '' : be}\,x_1}=\frac{${texT(p1n, 2)}}{${p2}}\), ${T_(['soit', 'that is'])} \(x_2=${n(be * p1n / (al * p2))}\,x_1\). ${T_(['En reportant dans', 'Substituting into'])} \(U=u_A\) :
-  \[\begin{aligned}${pw('x_1', al)}\,${pw(String.raw`(${n(be * p1n / (al * p2))}\,x_1)`, be)}&amp;=${n(A.u)}\\x_1^B&amp;=\Big(\frac{${n(A.u)}}{${n(Math.pow(be * p1n / (al * p2), be))}}\Big)^{1/${s}}=${n(B.x1)}\qquad x_2^B=${n(B.x2)}\end{aligned}\]
+  \[\begin{aligned}${pw('x_1', al)}\,${pw(String.raw`(${n(be * p1n / (al * p2))}\,x_1)`, be)}&amp;=${fqa(A.u)}\\x_1^B&amp;=\Big(\frac{${n(A.u)}}{${n(Math.pow(be * p1n / (al * p2), be))}}\Big)^{1/${s}}=${fqa(B.x1)}\qquad x_2^B=${fqa(B.x2)}\end{aligned}\]
   ${T_(['On en déduit la décomposition :', 'Hence the decomposition:'])}
   \[\underbrace{x_1^C-x_1^A}_{${n(C.x1 - A.x1)}}=\underbrace{x_1^B-x_1^A}_{\text{${T_(['substitution', 'substitution'])}}\,=\,${n(B.x1 - A.x1)}}+\underbrace{x_1^C-x_1^B}_{\text{${T_(['revenu', 'income'])}}\,=\,${n(C.x1 - B.x1)}}\]
   ${T_(['L\'effet de substitution est', 'The substitution effect is'])} ${up ? T_(['négatif : le bien 1 devient relativement plus cher, on en consomme moins à utilité constante.', 'negative: good 1 becomes relatively dearer, less of it is consumed at constant utility.']) : T_(['positif : le bien 1 devient relativement moins cher, on en consomme plus à utilité constante.', 'positive: good 1 becomes relatively cheaper, more of it is consumed at constant utility.'])}</p>
 </div></li>
 <li><div class="q-content">
-  <p>${T_(['Le revenu qui permet tout juste d\'acheter', 'The income that just allows buying'])} \(A\) ${T_(['aux nouveaux prix est', 'at the new prices is'])} \(R'=${texT(p1n, 2)}\times ${n(A.x1)}+${p2}\times ${n(A.x2)}=${n(D.Rs)}\). ${T_(['Avec ce revenu, le consommateur choisit', 'With this income, the consumer chooses'])} \(x_1^S=\frac{${al}}{${s}}\times\frac{${n(D.Rs)}}{${texT(p1n, 2)}}=${n(S.x1)}\). ${T_(['L\'effet de substitution de Slutsky vaut', 'The Slutsky substitution effect is'])} \(${n(S.x1 - A.x1)}\) ${T_(['et l\'effet de revenu', 'and the income effect'])} \(${n(C.x1 - S.x1)}\). ${T_(['Les deux décompositions ont le même effet total, mais diffèrent légèrement : la compensation de Slutsky, qui permet de racheter', 'Both decompositions share the same total effect, but differ slightly: Slutsky compensation, which allows buying back'])} \(A\), ${T_(['laisse le consommateur sur une courbe d\'indifférence un peu plus haute que celle de Hicks', 'leaves the consumer on a slightly higher indifference curve than Hicks\'s'])} (\(R'=${n(D.Rs)}\ge ${n(B.e)}\)).</p>
+  <p>${T_(['Le revenu qui permet tout juste d\'acheter', 'The income that just allows buying'])} \(A\) ${T_(['aux nouveaux prix est', 'at the new prices is'])} \(R'=${texT(p1n, 2)}\times ${n(A.x1)}+${p2}\times ${n(A.x2)}=${fqa(D.Rs)}\). ${T_(['Avec ce revenu, le consommateur choisit', 'With this income, the consumer chooses'])} \(x_1^S=\frac{${al}}{${s}}\times\frac{${n(D.Rs)}}{${texT(p1n, 2)}}=${fqa(S.x1)}\). ${T_(['L\'effet de substitution de Slutsky vaut', 'The Slutsky substitution effect is'])} \(${n(S.x1 - A.x1)}\) ${T_(['et l\'effet de revenu', 'and the income effect'])} \(${n(C.x1 - S.x1)}\). ${T_(['Les deux décompositions ont le même effet total, mais diffèrent légèrement : la compensation de Slutsky, qui permet de racheter', 'Both decompositions share the same total effect, but differ slightly: Slutsky compensation, which allows buying back'])} \(A\), ${T_(['laisse le consommateur sur une courbe d\'indifférence un peu plus haute que celle de Hicks', 'leaves the consumer on a slightly higher indifference curve than Hicks\'s'])} (\(R'=${n(D.Rs)}\ge ${n(B.e)}\)).</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['La demande', 'Demand'])} \(x_1=\frac{${al}}{${s}}\frac{R}{p_1}\) ${T_(['croît avec le revenu : le bien 1 est normal, et l\'effet de revenu va dans le même sens que l\'effet de substitution. La somme qui rend au consommateur son utilité initiale est la variation compensatrice : la dépense minimale pour atteindre', 'rises with income: good 1 is normal, and the income effect goes the same way as the substitution effect. The amount that restores the consumer\'s initial utility is the compensating variation: the minimal expenditure to reach'])} \(u_A\) ${T_(['aux nouveaux prix, moins le revenu :', 'at the new prices, minus income:'])}
-  \[VC=e(p_1',p_2,u_A)-R=${texT(p1n, 2)}\times ${n(B.x1)}+${p2}\times ${n(B.x2)}-${R}=${n(D.VC)}\]
+  \[VC=e(p_1',p_2,u_A)-R=${texT(p1n, 2)}\times ${n(B.x1)}+${p2}\times ${n(B.x2)}-${R}=${fqa(D.VC)}\]
   ${D.VC > 0 ? T_(['Il faudrait donner', 'One would have to give']) + ' \\(' + n(D.VC) + '\\) ' + T_(['au consommateur : la hausse de prix le rend plus pauvre.', 'to the consumer: the price rise makes them poorer.']) : T_(['On pourrait retirer', 'One could take']) + ' \\(' + n(-D.VC) + '\\) ' + T_(['au consommateur sans réduire son utilité : la baisse de prix l\'enrichit.', 'from the consumer without reducing their utility: the price fall makes them richer.'])}</p>
 </div></li>
 <li><div class="q-content">
@@ -186,5 +187,5 @@ function p3sol(D, lang) {
 </div></li>
 </ol></div>`;
 }
-I18N.fr.sol = D => p3sol(D, 'fr');
-I18N.en.sol = D => p3sol(D, 'en');
+I18N.fr.sol = D => fracClean((D => p3sol(D, 'fr'))(D));
+I18N.en.sol = D => fracClean((D => p3sol(D, 'en'))(D));

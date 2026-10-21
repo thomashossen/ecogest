@@ -124,7 +124,7 @@ PAGE.compute = function (seed) {
   D.M2 = j7mix(2, D.r); D.Mn = j7mix(D.n, D.r);
   return D;
 };
-I18N.fr.ex = function (D) {
+I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">Des témoins assistent à une agression. Chacun décide simultanément d'appeler la police ou non. Si au moins un témoin appelle, chacun retire un bénéfice \(v=${D.v}\) ; celui qui appelle supporte de plus un coût \(c=${texT(D.c, 2)}\). Si personne n'appelle, chacun obtient 0.</div>
 <div class="questions"><ol>
 <li><div class="q-text">On suppose d'abord qu'il y a deux témoins. Écrivez la matrice des gains, puis déterminez les équilibres de Nash en stratégies pures et l'équilibre symétrique en stratégies mixtes.</div></li>
@@ -134,8 +134,8 @@ I18N.fr.ex = function (D) {
 <li><div class="q-text">Représentez graphiquement la probabilité que personne n'appelle et la probabilité qu'un témoin donné appelle, en fonction du nombre de témoins.</div></li>
 <li><div class="q-text">Comparez le surplus total espéré à l'équilibre symétrique avec \(${D.n}\) témoins à celui obtenu si un témoin était désigné pour appeler. Quelles mesures pourraient réduire la perte ?</div></li>
 </ol></div>`;
-};
-I18N.en.ex = function (D) {
+});
+I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">Witnesses observe an assault. Each simultaneously decides whether to call the police. If at least one witness calls, each obtains a benefit \(v=${D.v}\); whoever calls also bears a cost \(c=${texT(D.c, 2)}\). If nobody calls, each gets 0.</div>
 <div class="questions"><ol>
 <li><div class="q-text">First assume there are two witnesses. Write the payoff matrix, then determine the pure-strategy Nash equilibria and the symmetric mixed-strategy equilibrium.</div></li>
@@ -145,8 +145,9 @@ I18N.en.ex = function (D) {
 <li><div class="q-text">Draw the probability that nobody calls and the probability that a given witness calls, as functions of the number of witnesses.</div></li>
 <li><div class="q-text">Compare expected total surplus in the symmetric equilibrium with \(${D.n}\) witnesses with the surplus obtained if one witness were designated to call. Which measures could reduce the loss?</div></li>
 </ol></div>`;
-};
+});
 function j7sol(D, lang) {
+  const texT = (x) => fq(x);
   const fr = lang === 'fr', T_ = s => fr ? s[0] : s[1], v = D.v, c = D.c, n = D.n, r = D.r, M2 = D.M2, Mn = D.Mn, n4 = x => texT(x, 4), m2 = x => texT(x, 2);
   const lab = T_([['Appeler', 'Ne pas appeler'], ['Call', 'Not call']]);
   const U1 = [[v - c, v - c], [v, 0]], U2 = [[v - c, v], [v - c, 0]];
@@ -159,31 +160,31 @@ function j7sol(D, lang) {
   G.legend([{ c: COL.s3, t: T_(['personne n\'appelle', 'nobody calls']) }, { c: COL.s1, t: T_(['un témoin donné appelle', 'a given witness calls']) }, { c: GREY, dash: '4 4', t: 'c/v' }], G.ml + 8, 16);
   return String.raw`<div class="st"><ol>
 <li><div class="q-content">
-  <p>${T_(['Un témoin qui appelle obtient', 'A witness who calls gets'])} \(v-c=${m2(v - c)}\) ${T_(['quoi que fasse l\'autre ; s\'il n\'appelle pas, il obtient', 'whatever the other does; if they do not call, they get'])} ${v} ${T_(['si l\'autre appelle et 0 sinon :', 'if the other calls and 0 otherwise:'])}</p>
+  <p>${T_(['Un témoin qui appelle obtient', 'A witness who calls gets'])} \(v-c=${fqa(v - c)}\) ${T_(['quoi que fasse l\'autre ; s\'il n\'appelle pas, il obtient', 'whatever the other does; if they do not call, they get'])} ${v} ${T_(['si l\'autre appelle et 0 sinon :', 'if the other calls and 0 otherwise:'])}</p>
   <div class="sol-fig">${jxMatrixSVG(U1, U2, { rows: lab, cols: lab, p1: T_(['Témoin 1', 'Witness 1']), p2: T_(['Témoin 2', 'Witness 2']), br: true, ne: true, cw: 140, aria: 'n2' })}</div>
-  <p>${T_(['Si l\'autre appelle, la meilleure réponse est de ne pas appeler', 'If the other calls, the best response is not to call'])} (\(${v}&gt;${m2(v - c)}\)) ; ${T_(['s\'il n\'appelle pas, c\'est d\'appeler', 'if they do not call, it is to call'])} (\(${m2(v - c)}&gt;0\)). ${T_(['Les équilibres purs sont les deux profils où un seul témoin appelle. Pour l\'équilibre symétrique, notons', 'The pure equilibria are the two profiles where a single witness calls. For the symmetric equilibrium, let'])} \(q\) ${T_(['la probabilité que l\'autre n\'appelle pas ; l\'indifférence s\'écrit', 'be the probability that the other does not call; indifference reads'])} \(${m2(v - c)}=${v}\,(1-q)\), ${T_(['d\'où', 'hence'])} \(q^*=\frac{${m2(c)}}{${v}}=${n4(M2.q)}\) ${T_(['et une probabilité d\'appeler', 'and a probability of calling'])} \(${n4(M2.p)}\).</p>
+  <p>${T_(['Si l\'autre appelle, la meilleure réponse est de ne pas appeler', 'If the other calls, the best response is not to call'])} (\(${v}&gt;${m2(v - c)}\)) ; ${T_(['s\'il n\'appelle pas, c\'est d\'appeler', 'if they do not call, it is to call'])} (\(${m2(v - c)}&gt;0\)). ${T_(['Les équilibres purs sont les deux profils où un seul témoin appelle. Pour l\'équilibre symétrique, notons', 'The pure equilibria are the two profiles where a single witness calls. For the symmetric equilibrium, let'])} \(q\) ${T_(['la probabilité que l\'autre n\'appelle pas ; l\'indifférence s\'écrit', 'be the probability that the other does not call; indifference reads'])} \(${m2(v - c)}=${v}\,(1-q)\), ${T_(['d\'où', 'hence'])} \(q^*=\frac{${m2(c)}}{${v}}=${fqa(M2.q)}\) ${T_(['et une probabilité d\'appeler', 'and a probability of calling'])} \(${n4(M2.p)}\).</p>
 </div></li>
 <li><div class="q-content">
-  <p>${T_(['Si personne n\'appelle, chacun gagnerait', 'If nobody calls, each would gain'])} \(${m2(v - c)}&gt;0\) ${T_(['en appelant : ce n\'est pas un équilibre. Si au moins deux témoins appellent, chacun d\'eux gagnerait', 'by calling: not an equilibrium. If at least two witnesses call, each of them would gain'])} \(c=${m2(c)}\) ${T_(['en s\'abstenant : ce n\'est pas un équilibre non plus. Si exactement un témoin appelle, il perdrait', 'by abstaining: not an equilibrium either. If exactly one witness calls, they would lose'])} \(${m2(v - c)}\) ${T_(['en s\'abstenant, et chacun des autres perdrait', 'by abstaining, and each of the others would lose'])} \(${m2(c)}\) ${T_(['en appelant aussi : c\'est un équilibre. Il y a donc', 'by calling too: it is an equilibrium. There are therefore'])} ${n} ${T_(['équilibres en stratégies pures, un par volontaire possible. Ils supposent que chacun sait qui doit appeler, ce qu\'aucune règle ne fixe entre inconnus qui ne peuvent pas communiquer.', 'pure-strategy equilibria, one per possible volunteer. They assume each knows who should call, which no rule determines among strangers who cannot communicate.'])}</p>
+  <p>${T_(['Si personne n\'appelle, chacun gagnerait', 'If nobody calls, each would gain'])} \(${m2(v - c)}&gt;0\) ${T_(['en appelant : ce n\'est pas un équilibre. Si au moins deux témoins appellent, chacun d\'eux gagnerait', 'by calling: not an equilibrium. If at least two witnesses call, each of them would gain'])} \(c=${fqa(c)}\) ${T_(['en s\'abstenant : ce n\'est pas un équilibre non plus. Si exactement un témoin appelle, il perdrait', 'by abstaining: not an equilibrium either. If exactly one witness calls, they would lose'])} \(${m2(v - c)}\) ${T_(['en s\'abstenant, et chacun des autres perdrait', 'by abstaining, and each of the others would lose'])} \(${m2(c)}\) ${T_(['en appelant aussi : c\'est un équilibre. Il y a donc', 'by calling too: it is an equilibrium. There are therefore'])} ${n} ${T_(['équilibres en stratégies pures, un par volontaire possible. Ils supposent que chacun sait qui doit appeler, ce qu\'aucune règle ne fixe entre inconnus qui ne peuvent pas communiquer.', 'pure-strategy equilibria, one per possible volunteer. They assume each knows who should call, which no rule determines among strangers who cannot communicate.'])}</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Chaque témoin n\'appelle pas avec probabilité', 'Each witness does not call with probability'])} \(q\). ${T_(['S\'il appelle, il obtient', 'If they call, they get'])} \(${m2(v - c)}\) ${T_(['à coup sûr. S\'il n\'appelle pas, il obtient', 'for sure. If they do not call, they get'])} ${v} ${T_(['si au moins l\'un des', 'if at least one of the'])} ${n - 1} ${T_(['autres appelle, ce qui arrive avec probabilité', 'others calls, which happens with probability'])} \(1-q^{${n - 1}}\). ${T_(['L\'indifférence donne :', 'Indifference gives:'])}
-  \[\begin{aligned}${m2(v - c)}&amp;=${v}\,(1-q^{${n - 1}})\\q^{${n - 1}}&amp;=\frac{${m2(c)}}{${v}}=${n4(r)}\\q^*&amp;=${n4(r)}^{1/${n - 1}}=${n4(Mn.q)}\end{aligned}\]
-  ${T_(['Chaque témoin appelle donc avec probabilité', 'Each witness therefore calls with probability'])} \(p^*=1-q^*=${n4(Mn.p)}\), ${T_(['et son gain espéré est', 'and their expected payoff is'])} \(v-c=${m2(v - c)}\), ${T_(['puisqu\'il est indifférent avec le fait d\'appeler.', 'since they are indifferent with calling.'])}</p>
+  \[\begin{aligned}${m2(v - c)}&amp;=${v}\,(1-q^{${n - 1}})\\q^{${n - 1}}&amp;=\frac{${m2(c)}}{${v}}=${fqa(r)}\\q^*&amp;=${fqp(r)}^{1/${n - 1}}=${fqa(Mn.q)}\end{aligned}\]
+  ${T_(['Chaque témoin appelle donc avec probabilité', 'Each witness therefore calls with probability'])} \(p^*=1-q^*=${fqa(Mn.p)}\), ${T_(['et son gain espéré est', 'and their expected payoff is'])} \(v-c=${fqa(v - c)}\), ${T_(['puisqu\'il est indifférent avec le fait d\'appeler.', 'since they are indifferent with calling.'])}</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Les choix étant indépendants, personne n\'appelle avec probabilité', 'Choices being independent, nobody calls with probability'])} \(P_0=(q^*)^n=\big(\frac{c}{v}\big)^{\frac{n}{n-1}}\) :
-  \[P_0(2)=${n4(r)}^{2}=${n4(M2.P0)}\qquad P_0(${n})=${n4(r)}^{${n}/${n - 1}}=${n4(Mn.P0)}\]
-  ${T_(['La victime a moins de chances d\'être secourue avec', 'The victim is less likely to be rescued with'])} ${n} ${T_(['témoins qu\'avec 2 : chacun appelle avec une probabilité plus faible', 'witnesses than with 2: each calls with a lower probability'])} (\(${n4(Mn.p)}\) ${T_(['contre', 'against'])} \(${n4(M2.p)}\)), ${T_(['et cette baisse l\'emporte sur l\'augmentation du nombre de témoins. Quand', 'and this fall outweighs the increase in the number of witnesses. As'])} \(n\to\infty\), ${T_(['l\'exposant', 'the exponent'])} \(\frac{n}{n-1}\) ${T_(['tend vers 1 et', 'tends to 1 and'])} \(P_0\) ${T_(['tend vers', 'tends to'])} \(\frac{c}{v}=${n4(r)}\).</p>
+  \[P_0(2)=${fqp(r)}^{2}=${fqa(M2.P0)}\qquad P_0(${n})=${fqp(r)}^{${n}/${n - 1}}=${fqa(Mn.P0)}\]
+  ${T_(['La victime a moins de chances d\'être secourue avec', 'The victim is less likely to be rescued with'])} ${n} ${T_(['témoins qu\'avec 2 : chacun appelle avec une probabilité plus faible', 'witnesses than with 2: each calls with a lower probability'])} (\(${n4(Mn.p)}\) ${T_(['contre', 'against'])} \(${n4(M2.p)}\)), ${T_(['et cette baisse l\'emporte sur l\'augmentation du nombre de témoins. Quand', 'and this fall outweighs the increase in the number of witnesses. As'])} \(n\to\infty\), ${T_(['l\'exposant', 'the exponent'])} \(\frac{n}{n-1}\) ${T_(['tend vers 1 et', 'tends to 1 and'])} \(P_0\) ${T_(['tend vers', 'tends to'])} \(\frac{c}{v}=${fqa(r)}\).</p>
 </div></li>
 <li><div class="q-content">
-  <p>${T_(['Les deux courbes, calculées avec', 'Both curves, computed with'])} \(c/v=${n4(r)}\) ; ${T_(['les points agrandis correspondent à 2 et à', 'the enlarged points correspond to 2 and'])} ${n} ${T_(['témoins :', 'witnesses:'])}</p>
+  <p>${T_(['Les deux courbes, calculées avec', 'Both curves, computed with'])} \(c/v=${fqa(r)}\) ; ${T_(['les points agrandis correspondent à 2 et à', 'the enlarged points correspond to 2 and'])} ${n} ${T_(['témoins :', 'witnesses:'])}</p>
   <div class="sol-fig">${G.svg('volunteer')}</div>
 </div></li>
 <li><div class="q-content">
-  <p>${T_(['À l\'équilibre symétrique, chaque témoin obtient en espérance', 'In the symmetric equilibrium, each witness gets in expectation'])} \(v-c\), ${T_(['soit un surplus total', 'a total surplus of'])} \(${n}\times ${m2(v - c)}=${m2(n * (v - c))}\). ${T_(['Si un témoin était désigné, il appellerait toujours ; le surplus total serait', 'If one witness were designated, they would always call; total surplus would be'])} \(${n}\times ${v}-${m2(c)}=${m2(n * v - c)}\). ${T_(['La perte due au défaut de coordination vaut', 'The loss due to the lack of coordination is'])} \((n-1)\,c=${m2((n - 1) * c)}\), ${T_(['et elle augmente avec le nombre de témoins. Désigner nommément quelqu\'un, rendre l\'appel gratuit et anonyme, ou imposer une obligation légale de porter assistance brisent la symétrie et réduisent cette perte.', 'and it grows with the number of witnesses. Designating someone by name, making calls free and anonymous, or imposing a legal duty to assist break the symmetry and reduce this loss.'])}</p>
+  <p>${T_(['À l\'équilibre symétrique, chaque témoin obtient en espérance', 'In the symmetric equilibrium, each witness gets in expectation'])} \(v-c\), ${T_(['soit un surplus total', 'a total surplus of'])} \(${n}\times ${m2(v - c)}=${fqa(n * (v - c))}\). ${T_(['Si un témoin était désigné, il appellerait toujours ; le surplus total serait', 'If one witness were designated, they would always call; total surplus would be'])} \(${n}\times ${v}-${m2(c)}=${fqa(n * v - c)}\). ${T_(['La perte due au défaut de coordination vaut', 'The loss due to the lack of coordination is'])} \((n-1)\,c=${fqa((n - 1) * c)}\), ${T_(['et elle augmente avec le nombre de témoins. Désigner nommément quelqu\'un, rendre l\'appel gratuit et anonyme, ou imposer une obligation légale de porter assistance brisent la symétrie et réduisent cette perte.', 'and it grows with the number of witnesses. Designating someone by name, making calls free and anonymous, or imposing a legal duty to assist break the symmetry and reduce this loss.'])}</p>
 </div></li>
 </ol></div>`;
 }
-I18N.fr.sol = D => j7sol(D, 'fr');
-I18N.en.sol = D => j7sol(D, 'en');
+I18N.fr.sol = D => fracClean((D => j7sol(D, 'fr'))(D));
+I18N.en.sol = D => fracClean((D => j7sol(D, 'en'))(D));

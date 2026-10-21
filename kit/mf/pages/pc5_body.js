@@ -122,7 +122,7 @@ PAGE.compute = function (seed) {
   return D;
 };
 const p5f = D => String.raw`f(K,L)=${D.A === 1 ? '' : D.A}\,K^{${texT(D.a, 2)}}L^{${texT(D.b, 2)}}`;
-I18N.fr.ex = function (D) {
+I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">Une entreprise produit selon la fonction \(q=${p5f(D)}\). Elle emploie actuellement \(K=${D.K}\) unités de capital et \(L=${D.L}\) unités de travail.</div>
 <div class="questions"><ol>
 <li><div class="q-text">Calculez la production, les productivités marginales du travail et du capital, et la productivité moyenne du travail. Les productivités marginales sont-elles décroissantes ?</div></li>
@@ -132,8 +132,8 @@ I18N.fr.ex = function (D) {
 <li><div class="q-text">À court terme, le capital est fixé à \(K=${D.K}\). Écrivez la fonction de production de court terme, ses productivités moyenne et marginale, et comparez-les.</div></li>
 <li><div class="q-text">Représentez l'isoquante passant par le point actuel, celle correspondant au double de la production, et la tangente au point actuel.</div></li>
 </ol></div>`;
-};
-I18N.en.ex = function (D) {
+});
+I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">A firm produces according to the function \(q=${p5f(D)}\). It currently employs \(K=${D.K}\) units of capital and \(L=${D.L}\) units of labour.</div>
 <div class="questions"><ol>
 <li><div class="q-text">Compute output, the marginal products of labour and capital, and the average product of labour. Are the marginal products decreasing?</div></li>
@@ -143,8 +143,9 @@ I18N.en.ex = function (D) {
 <li><div class="q-text">In the short run, capital is fixed at \(K=${D.K}\). Write the short-run production function, its average and marginal products, and compare them.</div></li>
 <li><div class="q-text">Draw the isoquant through the current point, the one corresponding to twice the output, and the tangent at the current point.</div></li>
 </ol></div>`;
-};
+});
 function p5sol(D, lang) {
+  const texT = (x) => fq(x);
   const fr = lang === 'fr', T_ = s => fr ? s[0] : s[1], A = D.A, a = D.a, b = D.b, K = D.K, L = D.L, q = D.q, n = x => texT(x, 4), ta = texT(a, 2), tb = texT(b, 2), Ac = A === 1 ? '' : A + '\\,', An = A === 1 ? '' : A + '\\times ';
   const PM = T_(['Pm', 'MP']), PMo = T_(['PM', 'AP']), TM = T_(['TMST', 'MRTS']), s = a + b;
   const rts = s > 1 ? T_(['croissants', 'increasing']) : s < 1 ? T_(['décroissants', 'decreasing']) : T_(['constants', 'constant']);
@@ -159,21 +160,21 @@ function p5sol(D, lang) {
   G.legend([{ c: COL.s1, t: 'q = ' + fmtT(q, 2) }, { c: COL.s2, t: 'q = ' + fmtT(2 * q, 2) }, { c: COL.s3, dash: '6 4', t: T_(['tangente', 'tangent']) }], G.ml + 60, 16);
   return String.raw`<div class="st"><ol>
 <li><div class="q-content">
-  <p>${T_(['La production vaut', 'Output is'])} \(q=${An}${K}^{${ta}}\times ${L}^{${tb}}=${n(q)}\). ${T_(['Les productivités marginales sont les dérivées partielles ; on peut les écrire en fonction de', 'Marginal products are the partial derivatives; they can be written in terms of'])} \(q\) :
-  \[\begin{aligned}${PM}_L&amp;=\frac{\partial f}{\partial L}=${tb}\times ${Ac}K^{${ta}}L^{${texT(b - 1, 2)}}=\frac{${tb}\,q}{L}=\frac{${tb}\times ${n(q)}}{${L}}=${n(D.PmL)}\\${PM}_K&amp;=\frac{\partial f}{\partial K}=\frac{${ta}\,q}{K}=\frac{${ta}\times ${n(q)}}{${K}}=${n(D.PmK)}\\${PMo}_L&amp;=\frac{q}{L}=\frac{${n(q)}}{${L}}=${n(D.PML)}\end{aligned}\]
+  <p>${T_(['La production vaut', 'Output is'])} \(q=${An}${K}^{${ta}}\times ${L}^{${tb}}=${fqa(q)}\). ${T_(['Les productivités marginales sont les dérivées partielles ; on peut les écrire en fonction de', 'Marginal products are the partial derivatives; they can be written in terms of'])} \(q\) :
+  \[\begin{aligned}${PM}_L&amp;=\frac{\partial f}{\partial L}=${tb}\times ${Ac}K^{${ta}}L^{${texT(b - 1, 2)}}=\frac{${tb}\,q}{L}=\frac{${tb}\times ${n(q)}}{${L}}=${fqa(D.PmL)}\\${PM}_K&amp;=\frac{\partial f}{\partial K}=\frac{${ta}\,q}{K}=\frac{${ta}\times ${n(q)}}{${K}}=${fqa(D.PmK)}\\${PMo}_L&amp;=\frac{q}{L}=\frac{${n(q)}}{${L}}=${fqa(D.PML)}\end{aligned}\]
   ${T_(['Comme', 'Since'])} \(\frac{\partial^2f}{\partial L^2}=${tb}\,(${tb}-1)\,\frac{q}{L^2}&lt;0\) ${T_(['et de même pour', 'and likewise for'])} \(K\) (${T_(['exposants inférieurs à 1', 'exponents below 1'])}), ${T_(['les productivités marginales sont décroissantes : chaque facteur obéit à la loi des rendements décroissants.', 'marginal products are decreasing: each factor obeys the law of diminishing returns.'])}</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['En multipliant les deux facteurs par', 'Multiplying both factors by'])} \(t&gt;1\) :
   \[f(tK,tL)=${Ac}(tK)^{${ta}}(tL)^{${tb}}=t^{${ta}+${tb}}\,f(K,L)=t^{${texT(s, 2)}}\,f(K,L)\]
-  ${T_(['Comme', 'Since'])} \(a+b=${texT(s, 2)}${s > 1 ? '&gt;' : s < 1 ? '&lt;' : '='}1\), ${T_(['les rendements d\'échelle sont', 'returns to scale are'])} ${rts} : ${T_(['doubler les facteurs multiplie la production par', 'doubling inputs multiplies output by'])} \(2^{${texT(s, 2)}}\approx ${n(Math.pow(2, s))}\).</p>
+  ${T_(['Comme', 'Since'])} \(a+b=${texT(s, 2)}${s > 1 ? '&gt;' : s < 1 ? '&lt;' : '='}1\), ${T_(['les rendements d\'échelle sont', 'returns to scale are'])} ${rts} : ${T_(['doubler les facteurs multiplie la production par', 'doubling inputs multiplies output by'])} \(2^{${texT(s, 2)}}${eqa(Math.pow(2, s))}\).</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Le TMST est le rapport des productivités marginales :', 'The MRTS is the ratio of marginal products:'])}
-  \[${TM}_{L,K}=\frac{${PM}_L}{${PM}_K}=\frac{${tb}\,K}{${ta}\,L}=\frac{${tb}\times ${K}}{${ta}\times ${L}}=${n(D.tmst)}\]
-  ${T_(['Au point actuel, une unité de travail supplémentaire permet d\'économiser environ', 'At the current point, one extra unit of labour saves about'])} \(${n(D.tmst)}\) ${T_(['unité(s) de capital à production constante. L\'isoquante passant par ce point est l\'ensemble des combinaisons telles que', 'unit(s) of capital at constant output. The isoquant through this point is the set of combinations such that'])} \(${Ac}K^{${ta}}L^{${tb}}=${n(q)}\), ${T_(['soit', 'that is'])}
+  \[${TM}_{L,K}=\frac{${PM}_L}{${PM}_K}=\frac{${tb}\,K}{${ta}\,L}=\frac{${tb}\times ${K}}{${ta}\times ${L}}=${fqa(D.tmst)}\]
+  ${T_(['Au point actuel, une unité de travail supplémentaire permet d\'économiser environ', 'At the current point, one extra unit of labour saves about'])} \(${n(D.tmst)}\) ${T_(['unité(s) de capital à production constante. L\'isoquante passant par ce point est l\'ensemble des combinaisons telles que', 'unit(s) of capital at constant output. The isoquant through this point is the set of combinations such that'])} \(${Ac}K^{${ta}}L^{${tb}}=${fqa(q)}\), ${T_(['soit', 'that is'])}
   \[K=\Big(\frac{${n(q)}}{${Ac}L^{${tb}}}\Big)^{${texT(1 / a, 4)}}\]
-  ${T_(['Pour', 'For'])} \(L=${D.L2}\), ${T_(['on en déduit', 'we get'])} \(K=${n(D.K2)}\) : ${T_(['doubler le travail permet de réduire le capital de', 'doubling labour allows capital to be cut from'])} ${K} ${T_(['à', 'to'])} \(${n(D.K2)}\).</p>
+  ${T_(['Pour', 'For'])} \(L=${D.L2}\), ${T_(['on en déduit', 'we get'])} \(K=${fqa(D.K2)}\) : ${T_(['doubler le travail permet de réduire le capital de', 'doubling labour allows capital to be cut from'])} ${K} ${T_(['à', 'to'])} \(${n(D.K2)}\).</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['L\'élasticité de la production par rapport au travail est', 'The output elasticity with respect to labour is'])} \(\frac{${PM}_L\,L}{q}=${tb}\), ${T_(['par rapport au capital', 'with respect to capital'])} \(\frac{${PM}_K\,K}{q}=${ta}\) : ${T_(['une hausse de 1 % du travail augmente la production de', 'a 1% rise in labour raises output by'])} \(${texT(100 * b, 0)}\,\%\). ${T_(['On vérifie', 'We check'])} \(${PM}_L\,L+${PM}_K\,K=${n(D.PmL)}\times ${L}+${n(D.PmK)}\times ${K}=${n(D.PmL * L + D.PmK * K)}=${texT(s, 2)}\times ${n(q)}\). ${s === 1 ? T_(['Les rendements étant constants, la production est exactement épuisée par la rémunération des facteurs à leur productivité marginale (théorème d\'Euler).', 'Returns being constant, output is exactly exhausted by paying factors their marginal product (Euler\'s theorem).']) : s > 1 ? T_(['Avec des rendements croissants, payer chaque facteur à sa productivité marginale coûterait plus que la production : l\'entreprise ferait des pertes.', 'With increasing returns, paying each factor its marginal product would cost more than output: the firm would make losses.']) : T_(['Avec des rendements décroissants, la rémunération des facteurs à leur productivité marginale laisse un reste, qui rémunère un facteur fixe implicite.', 'With decreasing returns, paying factors their marginal product leaves a residual, which rewards an implicit fixed factor.'])}</p>
@@ -187,5 +188,5 @@ function p5sol(D, lang) {
 </div></li>
 </ol></div>`;
 }
-I18N.fr.sol = D => p5sol(D, 'fr');
-I18N.en.sol = D => p5sol(D, 'en');
+I18N.fr.sol = D => fracClean((D => p5sol(D, 'fr'))(D));
+I18N.en.sol = D => fracClean((D => p5sol(D, 'en'))(D));

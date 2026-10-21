@@ -128,7 +128,7 @@ PAGE.compute = function (seed) {
   return D;
 };
 const p6f = D => String.raw`q=${D.A === 1 ? '' : D.A + '\\,'}K^{${texT(D.a, 2)}}L^{${texT(D.b, 2)}}`;
-I18N.fr.ex = function (D) {
+I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">Une entreprise produit selon la fonction \(${p6f(D)}\). Le salaire est \(w=${D.w}\) et le coût d'usage du capital \(r=${D.r}\). Elle souhaite produire \(q=${D.q}\).</div>
 <div class="questions"><ol>
 <li><div class="q-text">Écrivez le problème de minimisation du coût et son lagrangien. Montrez qu'à l'optimum le TMST est égal au rapport des prix des facteurs.</div></li>
@@ -137,8 +137,8 @@ I18N.fr.ex = function (D) {
 <li><div class="q-text">Le salaire passe à \(w'=${texT(D.wn, 2)}\). Déterminez la nouvelle combinaison de moindre coût pour produire la même quantité, et le nouveau coût. Commentez la substitution entre facteurs.</div></li>
 <li><div class="q-text">Représentez l'isoquante \(q=${D.q}\) et les isocoûts tangents avant et après la hausse du salaire.</div></li>
 </ol></div>`;
-};
-I18N.en.ex = function (D) {
+});
+I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">A firm produces according to the function \(${p6f(D)}\). The wage is \(w=${D.w}\) and the user cost of capital \(r=${D.r}\). It wishes to produce \(q=${D.q}\).</div>
 <div class="questions"><ol>
 <li><div class="q-text">Write the cost-minimisation problem and its Lagrangian. Show that at the optimum the MRTS equals the ratio of factor prices.</div></li>
@@ -147,8 +147,9 @@ I18N.en.ex = function (D) {
 <li><div class="q-text">The wage rises to \(w'=${texT(D.wn, 2)}\). Determine the new least-cost combination to produce the same quantity, and the new cost. Comment on the substitution between factors.</div></li>
 <li><div class="q-text">Draw the isoquant \(q=${D.q}\) and the tangent isocosts before and after the wage rise.</div></li>
 </ol></div>`;
-};
+});
 function p6sol(D, lang) {
+  const texT = (x) => fq(x);
   const fr = lang === 'fr', T_ = s => fr ? s[0] : s[1], A = D.A, a = D.a, b = D.b, w = D.w, r = D.r, q = D.q, O = D.O, On = D.On, s = D.s, n = x => texT(x, 4), ta = texT(a, 2), tb = texT(b, 2), ts = texT(s, 2);
   const TM = T_(['TMST', 'MRTS']), PM = T_(['Pm', 'MP']), CMn = T_(['CM', 'AC']), Cmn = T_(['Cm', 'MC']), Ac = A === 1 ? '' : A + '\\,';
   const k = a * w / (b * r);
@@ -164,17 +165,17 @@ function p6sol(D, lang) {
 </div></li>
 <li><div class="q-content">
   <p>${T_(['La tangence donne', 'Tangency gives'])} \(K=\frac{${ta}\times ${w}}{${tb}\times ${r}}\,L=${n(k)}\,L\). ${T_(['En reportant dans l\'isoquante :', 'Substituting into the isoquant:'])}
-  \[\begin{aligned}${Ac}(${n(k)}\,L)^{${ta}}L^{${tb}}&amp;=q\\L^{${ts}}&amp;=\frac{q}{${A === 1 ? '' : A + '\\times '}${n(k)}^{${ta}}}\\L^*(q)&amp;=\Big(\frac{q}{${n(A * Math.pow(k, a))}}\Big)^{${texT(1 / s, 4)}}\qquad K^*(q)=${n(k)}\,L^*(q)\end{aligned}\]
-  ${T_(['Pour', 'For'])} \(q=${q}\), ${T_(['on obtient', 'we get'])} \(L^*=${n(O.L)}\) ${T_(['et', 'and'])} \(K^*=${n(O.K)}\).</p>
-  <p class="check">${T_(['Vérification', 'Check'])} : \(${A === 1 ? '' : A + '\\times '}${n(O.K)}^{${ta}}\times ${n(O.L)}^{${tb}}\approx ${n(A * Math.pow(O.K, a) * Math.pow(O.L, b))}=q\).</p>
+  \[\begin{aligned}${Ac}(${n(k)}\,L)^{${ta}}L^{${tb}}&amp;=q\\L^{${ts}}&amp;=\frac{q}{${A === 1 ? '' : A + '\\times '}${fqp(k)}^{${ta}}}\\L^*(q)&amp;=\Big(\frac{q}{${n(A * Math.pow(k, a))}}\Big)^{${texT(1 / s, 4)}}\qquad K^*(q)=${n(k)}\,L^*(q)\end{aligned}\]
+  ${T_(['Pour', 'For'])} \(q=${q}\), ${T_(['on obtient', 'we get'])} \(L^*=${fqa(O.L)}\) ${T_(['et', 'and'])} \(K^*=${fqa(O.K)}\).</p>
+  <p class="check">${T_(['Vérification', 'Check'])} : \(${A === 1 ? '' : A + '\\times '}${fqp(O.K)}^{${ta}}\times ${fqp(O.L)}^{${tb}}${eqa(A * Math.pow(O.K, a) * Math.pow(O.L, b))}=q\).</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Le coût minimal est', 'The minimal cost is'])} \(C(q)=w\,L^*+r\,K^*=(${w}+${r}\times ${n(k)})\,L^*(q)=${n(w + r * k)}\,\Big(\frac{q}{${n(A * Math.pow(k, a))}}\Big)^{${texT(1 / s, 4)}}\), ${T_(['proportionnel à', 'proportional to'])} \(q^{1/${ts}}\). ${T_(['Pour', 'For'])} \(q=${q}\) :
-  \[\begin{aligned}C(${q})&amp;=${w}\times ${n(O.L)}+${r}\times ${n(O.K)}=${n(O.C)}\\${CMn}&amp;=\frac{C(q)}{q}=\frac{${n(O.C)}}{${q}}=${n(D.CM)}\\${Cmn}&amp;=C'(q)=\frac{C(q)}{${ts}\,q}=${n(D.Cm)}\end{aligned}\]
+  \[\begin{aligned}C(${q})&amp;=${w}\times ${n(O.L)}+${r}\times ${n(O.K)}=${fqa(O.C)}\\${CMn}&amp;=\frac{C(q)}{q}=\frac{${n(O.C)}}{${q}}=${fqa(D.CM)}\\${Cmn}&amp;=C'(q)=\frac{C(q)}{${ts}\,q}=${fqa(D.Cm)}\end{aligned}\]
   ${T_(['Les rendements d\'échelle sont', 'Returns to scale are'])} ${rts}</p>
 </div></li>
 <li><div class="q-content">
-  <p>${T_(['Avec', 'With'])} \(w'=${texT(D.wn, 2)}\), ${T_(['la tangence devient', 'tangency becomes'])} \(K=${n(a * D.wn / (b * r))}\,L\) : ${T_(['le capital devient relativement moins cher, et la combinaison optimale s\'enrichit en capital. Les mêmes calculs donnent', 'capital becomes relatively cheaper, and the optimal combination becomes more capital-intensive. The same computations give'])} \(L^{*\prime}=${n(On.L)}\), \(K^{*\prime}=${n(On.K)}\) ${T_(['et un coût', 'and a cost'])} \(${n(On.C)}\). ${T_(['L\'entreprise emploie moins de travail', 'The firm employs less labour'])} (\(${n(On.L)}&lt;${n(O.L)}\)) ${T_(['et plus de capital', 'and more capital'])} (\(${n(On.K)}&gt;${n(O.K)}\)) : ${T_(['c\'est la substitution du capital au travail. Le coût augmente de', 'this is the substitution of capital for labour. Cost rises by'])} \(${n(On.C - O.C)}\), ${T_(['soit moins que ce que coûterait la combinaison initiale au nouveau salaire', 'less than the initial combination would cost at the new wage'])}, \(${n(D.wn * O.L + r * O.K)}\).</p>
+  <p>${T_(['Avec', 'With'])} \(w'=${fqa(D.wn)}\), ${T_(['la tangence devient', 'tangency becomes'])} \(K=${n(a * D.wn / (b * r))}\,L\) : ${T_(['le capital devient relativement moins cher, et la combinaison optimale s\'enrichit en capital. Les mêmes calculs donnent', 'capital becomes relatively cheaper, and the optimal combination becomes more capital-intensive. The same computations give'])} \(L^{*\prime}=${fqa(On.L)}\), \(K^{*\prime}=${fqa(On.K)}\) ${T_(['et un coût', 'and a cost'])} \(${n(On.C)}\). ${T_(['L\'entreprise emploie moins de travail', 'The firm employs less labour'])} (\(${n(On.L)}&lt;${n(O.L)}\)) ${T_(['et plus de capital', 'and more capital'])} (\(${n(On.K)}&gt;${n(O.K)}\)) : ${T_(['c\'est la substitution du capital au travail. Le coût augmente de', 'this is the substitution of capital for labour. Cost rises by'])} \(${n(On.C - O.C)}\), ${T_(['soit moins que ce que coûterait la combinaison initiale au nouveau salaire', 'less than the initial combination would cost at the new wage'])}, \(${n(D.wn * O.L + r * O.K)}\).</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['L\'isoquante (noir) est la même ; le nouvel isocoût, plus pentu, est tangent plus haut sur l\'isoquante :', 'The isoquant (black) is the same; the new, steeper isocost is tangent higher up the isoquant:'])}</p>
@@ -182,5 +183,5 @@ function p6sol(D, lang) {
 </div></li>
 </ol></div>`;
 }
-I18N.fr.sol = D => p6sol(D, 'fr');
-I18N.en.sol = D => p6sol(D, 'en');
+I18N.fr.sol = D => fracClean((D => p6sol(D, 'fr'))(D));
+I18N.en.sol = D => fracClean((D => p6sol(D, 'en'))(D));

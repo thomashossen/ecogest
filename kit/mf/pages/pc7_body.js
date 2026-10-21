@@ -146,7 +146,7 @@ PAGE.compute = function (seed) {
   return D;
 };
 const p7C = D => String.raw`CT(q)=q^3-${D.k}\,q^2+${texT(D.m, 2)}\,q+${D.F}`;
-I18N.fr.ex = function (D) {
+I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">Une entreprise en concurrence parfaite a pour coût total de court terme \(${p7C(D)}\). Le prix de marché est \(p=${texT(D.p, 2)}\).</div>
 <div class="questions"><ol>
 <li><div class="q-text">Identifiez le coût fixe et le coût variable, puis calculez le coût moyen, le coût variable moyen et le coût marginal.</div></li>
@@ -156,8 +156,8 @@ I18N.fr.ex = function (D) {
 <li><div class="q-text">Calculez, à l'aide d'une intégrale, le surplus du producteur, et vérifiez qu'il est égal au profit augmenté du coût fixe.</div></li>
 <li><div class="q-text">Représentez les courbes de coût, le prix, la quantité produite, le profit (ou la perte) et le surplus du producteur.</div></li>
 </ol></div>`;
-};
-I18N.en.ex = function (D) {
+});
+I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">A perfectly competitive firm has short-run total cost \(${p7C(D).replace('CT', 'TC')}\). The market price is \(p=${texT(D.p, 2)}\).</div>
 <div class="questions"><ol>
 <li><div class="q-text">Identify fixed cost and variable cost, then compute average cost, average variable cost and marginal cost.</div></li>
@@ -167,8 +167,9 @@ I18N.en.ex = function (D) {
 <li><div class="q-text">Compute, using an integral, producer surplus, and check that it equals profit plus fixed cost.</div></li>
 <li><div class="q-text">Draw the cost curves, the price, the quantity produced, the profit (or loss) and producer surplus.</div></li>
 </ol></div>`;
-};
+});
 function p7sol(D, lang) {
+  const texT = (x) => fq(x);
   const fr = lang === 'fr', T_ = s => fr ? s[0] : s[1], k = D.k, m = D.m, F = D.F, p = D.p, M = D.M, q = D.q, n = x => texT(x, 4);
   const CF = T_(['CF', 'FC']), CV = T_(['CV', 'VC']), CM = T_(['CM', 'AC']), CVM = T_(['CVM', 'AVC']), Cm = T_(['Cm', 'MC']), SP = T_(['SP', 'PS']), tm = texT(m, 2);
   const F7 = p7fig(k, m, F, p, lang, { X1: Math.max(q, M.qr) * 1.5, Y1: Math.max(p, M.pr) * 1.6, sp: true });
@@ -178,20 +179,20 @@ function p7sol(D, lang) {
   \[\begin{aligned}${CM}(q)&amp;=\frac{CT(q)}{q}=q^2-${k}\,q+${tm}+\frac{${F}}{q}\\${CVM}(q)&amp;=\frac{${CV}(q)}{q}=q^2-${k}\,q+${tm}\\${Cm}(q)&amp;=CT'(q)=3q^2-${2 * k}\,q+${tm}\end{aligned}\]</p>
 </div></li>
 <li><div class="q-content">
-  <p>${T_(['Le seuil de fermeture est le minimum du coût variable moyen ; sa dérivée', 'The shutdown point is the minimum of average variable cost; its derivative'])} \(2q-${k}\) ${T_(['s\'annule en', 'vanishes at'])} \(q=${n(M.qf)}\), ${T_(['d\'où', 'hence'])} \(\min ${CVM}=${n(M.qf)}^2-${k}\times ${n(M.qf)}+${tm}=${n(M.pf)}\). ${T_(['On vérifie que le coût marginal y est égal :', 'We check that marginal cost equals it there:'])} \(${Cm}(${n(M.qf)})=${n(M.Cm(M.qf))}\).</p>
-  <p>${T_(['Le seuil de rentabilité est le minimum du coût moyen, atteint là où', 'The break-even point is the minimum of average cost, reached where'])} \(${Cm}=${CM}\) : \(3q^2-${2 * k}q+${tm}=q^2-${k}q+${tm}+\frac{${F}}{q}\), ${T_(['soit', 'that is'])} \(2q^3-${k}\,q^2-${F}=0\). ${T_(['Cette équation se résout numériquement (par dichotomie) :', 'This equation is solved numerically (by bisection):'])} \(q\approx ${n(M.qr)}\), ${T_(['et', 'and'])} \(\min ${CM}=${CM}(${n(M.qr)})\approx ${n(M.pr)}\).</p>
+  <p>${T_(['Le seuil de fermeture est le minimum du coût variable moyen ; sa dérivée', 'The shutdown point is the minimum of average variable cost; its derivative'])} \(2q-${k}\) ${T_(['s\'annule en', 'vanishes at'])} \(q=${fqa(M.qf)}\), ${T_(['d\'où', 'hence'])} \(\min ${CVM}=${fqp(M.qf)}^2-${k}\times ${n(M.qf)}+${tm}=${fqa(M.pf)}\). ${T_(['On vérifie que le coût marginal y est égal :', 'We check that marginal cost equals it there:'])} \(${Cm}(${n(M.qf)})=${fqa(M.Cm(M.qf))}\).</p>
+  <p>${T_(['Le seuil de rentabilité est le minimum du coût moyen, atteint là où', 'The break-even point is the minimum of average cost, reached where'])} \(${Cm}=${CM}\) : \(3q^2-${2 * k}q+${tm}=q^2-${k}q+${tm}+\frac{${F}}{q}\), ${T_(['soit', 'that is'])} \(2q^3-${k}\,q^2-${F}=0\). ${T_(['Cette équation se résout numériquement (par dichotomie) :', 'This equation is solved numerically (by bisection):'])} \(q${eqa(M.qr)}\), ${T_(['et', 'and'])} \(\min ${CM}=${CM}(${n(M.qr)})${eqa(M.pr)}\).</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Au-dessus du seuil de fermeture, l\'entreprise produit la quantité qui égalise le prix et le coût marginal, sur sa partie croissante :', 'Above the shutdown point, the firm produces the quantity equating price and marginal cost, on its rising part:'])} \(3q^2-${2 * k}\,q+${tm}=p\). ${T_(['En retenant la plus grande racine :', 'Keeping the larger root:'])}
   \[q(p)=\begin{cases}0&amp;\text{${T_(['si', 'if'])} }p&lt;${n(M.pf)}\\\dfrac{${2 * k}+\sqrt{${4 * k * k}-12\,(${tm}-p)}}{6}&amp;\text{${T_(['si', 'if'])} }p\ge ${n(M.pf)}\end{cases}\]</p>
 </div></li>
 <li><div class="q-content">
-  <p>${T_(['Au prix', 'At price'])} \(${texT(p, 2)}\), ${T_(['supérieur au seuil de fermeture, l\'offre donne', 'above the shutdown point, supply gives'])} \(q^*=\frac{${2 * k}+\sqrt{${4 * k * k}-12\,(${tm}-${texT(p, 2)})}}{6}=${n(q)}\). ${T_(['Le profit vaut', 'Profit is'])} \(\Pi=p\,q^*-CT(q^*)=${texT(p, 2)}\times ${n(q)}-${n(D.CTq)}=${n(D.pi)}\). ${D.pi >= 0 ? T_(['Le prix dépasse le seuil de rentabilité : le profit est positif.', 'The price exceeds the break-even point: profit is positive.']) : T_(['Le prix est compris entre les deux seuils : l\'entreprise fait une perte de', 'The price lies between the two thresholds: the firm makes a loss of']) + ' \\(' + n(-D.pi) + '\\), ' + T_(['inférieure au coût fixe', 'smaller than the fixed cost']) + ' (' + F + ') ' + T_(['qu\'elle perdrait en s\'arrêtant : elle a intérêt à produire à court terme, mais quittera le marché à long terme si le prix ne remonte pas.', 'it would lose by shutting down: it should produce in the short run, but will leave the market in the long run if the price does not recover.'])}</p>
+  <p>${T_(['Au prix', 'At price'])} \(${texT(p, 2)}\), ${T_(['supérieur au seuil de fermeture, l\'offre donne', 'above the shutdown point, supply gives'])} \(q^*=\frac{${2 * k}+\sqrt{${4 * k * k}-12\,(${tm}-${texT(p, 2)})}}{6}=${fqa(q)}\). ${T_(['Le profit vaut', 'Profit is'])} \(\Pi=p\,q^*-CT(q^*)=${texT(p, 2)}\times ${n(q)}-${n(D.CTq)}=${fqa(D.pi)}\). ${D.pi >= 0 ? T_(['Le prix dépasse le seuil de rentabilité : le profit est positif.', 'The price exceeds the break-even point: profit is positive.']) : T_(['Le prix est compris entre les deux seuils : l\'entreprise fait une perte de', 'The price lies between the two thresholds: the firm makes a loss of']) + ' \\(' + n(-D.pi) + '\\), ' + T_(['inférieure au coût fixe', 'smaller than the fixed cost']) + ' (' + F + ') ' + T_(['qu\'elle perdrait en s\'arrêtant : elle a intérêt à produire à court terme, mais quittera le marché à long terme si le prix ne remonte pas.', 'it would lose by shutting down: it should produce in the short run, but will leave the market in the long run if the price does not recover.'])}</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Le surplus du producteur est l\'intégrale de l\'écart entre le prix et le coût marginal :', 'Producer surplus is the integral of the gap between the price and marginal cost:'])}
-  \[\begin{aligned}${SP}&amp;=\int_0^{${n(q)}}\big(${texT(p, 2)}-(3q^2-${2 * k}\,q+${tm})\big)\,dq\\&amp;=\Big[${texT(p - m, 4)}\,q+${k}\,q^2-q^3\Big]_0^{${n(q)}}=${n(D.SP)}\end{aligned}\]
-  ${T_(['On vérifie', 'We check'])} \(\Pi+${CF}=${n(D.pi)}+${F}=${n(D.pi + F)}\) : ${T_(['le surplus du producteur est la recette diminuée des seuls coûts variables, qui sont les coûts liés à la décision de produire.', 'producer surplus is revenue minus variable costs only, which are the costs tied to the decision to produce.'])}</p>
+  \[\begin{aligned}${SP}&amp;=\int_0^{${n(q)}}\big(${texT(p, 2)}-(3q^2-${2 * k}\,q+${tm})\big)\,dq\\&amp;=\Big[${texT(p - m, 4)}\,q+${k}\,q^2-q^3\Big]_0^{${n(q)}}=${fqa(D.SP)}\end{aligned}\]
+  ${T_(['On vérifie', 'We check'])} \(\Pi+${CF}=${n(D.pi)}+${F}=${fqa(D.pi + F)}\) : ${T_(['le surplus du producteur est la recette diminuée des seuls coûts variables, qui sont les coûts liés à la décision de produire.', 'producer surplus is revenue minus variable costs only, which are the costs tied to the decision to produce.'])}</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Le rectangle entre le prix et le coût moyen, de largeur', 'The rectangle between the price and average cost, of width'])} \(q^*\), ${T_(['est le profit (vert) ou la perte (rouge). Le surplus du producteur est l\'aire dorée entre le prix et le coût marginal, diminuée, le cas échéant, de l\'aire rose où les premières unités coûtent plus que le prix :', 'is the profit (green) or the loss (red). Producer surplus is the gold area between the price and marginal cost, minus, where relevant, the pink area where the first units cost more than the price:'])}</p>
@@ -199,5 +200,5 @@ function p7sol(D, lang) {
 </div></li>
 </ol></div>`;
 }
-I18N.fr.sol = D => p7sol(D, 'fr');
-I18N.en.sol = D => p7sol(D, 'en');
+I18N.fr.sol = D => fracClean((D => p7sol(D, 'fr'))(D));
+I18N.en.sol = D => fracClean((D => p7sol(D, 'en'))(D));

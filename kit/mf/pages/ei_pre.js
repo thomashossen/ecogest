@@ -1,7 +1,62 @@
 const GREY = '#8a857a';
 const KBASE_FR = { 'k-badge': 'MICROÉCONOMIE', 'k-seed': 'Seed de reproductibilité', 'k-seedtip': 'Vide = nouvel exercice aléatoire', 'k-gen': 'Générer', 'k-tag-course': 'Cours', 'k-tag-ex': 'Exercice', 'k-tag-sol': 'Corrigé', 'k-seedbadge': 'Seed&nbsp;:', showSol: 'Afficher le corrigé', hideSol: 'Masquer le corrigé', phSeed: 'auto', copy: 'Copier', copied: 'Copié', 'k-sub': '© Thomas Hossen – Version du 20 octobre 2026' };
 const KBASE_EN = { 'k-badge': 'MICROECONOMICS', 'k-seed': 'Reproducibility seed', 'k-seedtip': 'Empty = new random exercise', 'k-gen': 'Generate', 'k-tag-course': 'Lesson', 'k-tag-ex': 'Exercise', 'k-tag-sol': 'Solution', 'k-seedbadge': 'Seed:', showSol: 'Show solution', hideSol: 'Hide solution', phSeed: 'auto', copy: 'Copy', copied: 'Copied', 'k-sub': '© Thomas Hossen – Version of 20 October 2026' };
-const cfx = (x, d) => Math.abs(x - 1) < 1e-12 ? '' : texT(x, d === undefined ? 4 : d) + '\\,';
+/* ---------- calcul exact : reconnaissance des rationnels et affichage fractionnaire ---------- */
+function ratOf(x) {
+  if (!isFinite(x)) return null;
+  const s = x < 0 ? -1 : 1, y = Math.abs(x);
+  if (Math.abs(y - Math.round(y)) <= 1e-11 * Math.max(1, y)) return [s * Math.round(y), 1];
+  let h0 = 0, h1 = 1, k0 = 1, k1 = 0, z = y;
+  for (let i = 0; i < 40; i++) {
+    const a = Math.floor(z), h2 = a * h1 + h0, k2 = a * k1 + k0;
+    if (k2 > 2e6) return null;
+    if (Math.abs(y - h2 / k2) <= 1e-12 * Math.max(1, y)) return [s * h2, k2];
+    h0 = h1; h1 = h2; k0 = k1; k1 = k2;
+    const f = z - a; if (f < 1e-15) return null; z = 1 / f;
+  }
+  return null;
+}
+/* valeur exacte : entier ou fraction ; décimale si le nombre n'est pas rationnel (racine, puissance non entière) */
+function fq(x) {
+  const r = ratOf(x);
+  if (!r) return texT(x, 4);
+  if (r[1] === 1) return texT(r[0], 0);
+  return (r[0] < 0 ? '-' : '') + '\\frac{' + texT(Math.abs(r[0]), 0) + '}{' + texT(r[1], 0) + '}';
+}
+/* valeur exacte suivie d'une approximation décimale */
+function fqa(x) {
+  const r = ratOf(x);
+  if (!r) return texT(x, 4);
+  if (r[1] === 1) return texT(r[0], 0);
+  return fq(x) + '\\approx ' + texT(x, Math.abs(x) >= 100 ? 2 : 4);
+}
+/* entre parenthèses si fraction ou négatif (avant un exposant) */
+function fqp(x) { const r = ratOf(x), t = fq(x); return (r && r[1] === 1 && r[0] >= 0) || (!r && x >= 0) ? t : '\\left(' + t + '\\right)'; }
+/* cellule de tableau : valeur exacte, approximation en petit */
+function fqt(x) { const r = ratOf(x); return '\\(' + fq(x) + '\\)' + (r && r[1] === 1 ? '' : '<br><small>≈ ' + fmt(x, 2) + '</small>'); }
+
+/* signe = si la valeur est exacte (rationnelle), sinon approximation */
+function eqa(x) { return ratOf(x) ? '=' + fqa(x) : '\\approx ' + texT(x, 4); }
+/* simplification d'affichage : \frac{X}{1} devient X (entre parenthèses si nécessaire) */
+function fracClean(h) {
+  const grp = (s, i) => { if (s[i] !== '{') return -1; let d = 0; for (let j = i; j < s.length; j++) { if (s[j] === '{') d++; else if (s[j] === '}') { d--; if (d === 0) return j; } } return -1; };
+  let out = '', i = 0;
+  for (;;) {
+    const re = /\\[td]?frac\{/g; re.lastIndex = i; const mm = re.exec(h);
+    if (!mm) { out += h.slice(i); break; }
+    const k = mm.index, cmd = mm[0].slice(0, -1), a = k + cmd.length, ae = grp(h, a), b = ae + 1, be = ae > 0 ? grp(h, b) : -1;
+    if (ae < 0 || be < 0) { out += h.slice(i, a + 1); i = a + 1; continue; }
+    const num = h.slice(a + 1, ae), den = h.slice(b + 1, be).trim();
+    if (den === '1') {
+      let top = false, d = 0; for (let j = 0; j < num.length; j++) { const c = num[j]; if (c === '{') d++; else if (c === '}') d--; else if ((c === '+' || c === '-') && d === 0 && j > 0) top = true; }
+      const rest = h.slice(be + 1), end = /^(\s*$|\\\]|\\\)|=|&|\\\\|\\qquad|\\quad|\\text|\\iff|&lt;|&gt;|\s*[,;.<}])/.test(rest);
+      out += h.slice(i, k) + (top && !end ? '\\left(' + fracClean(num) + '\\right)' : fracClean(num));
+    } else out += h.slice(i, k) + cmd + '{' + fracClean(num) + '}{' + fracClean(h.slice(b + 1, be)) + '}';
+    i = be + 1;
+  }
+  return out;
+}
+const cfx = (x, d) => Math.abs(x - 1) < 1e-12 ? '' : fq(x) + '\\,';
 /* figure générique : demande linéaire P = a - bQ, surplus des consommateurs, profits par segments [x0, x1, coût],
    perte sèche par rapport à la tarification au coût marginal minimal cmin */
 function eiSurplusFig(o) {

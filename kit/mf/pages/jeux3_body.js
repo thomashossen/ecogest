@@ -148,7 +148,7 @@ PAGE.compute = function (seed) {
   return D;
 };
 const J3L = { fr: { rows: ['H', 'M', 'B'], cols: ['G', 'C', 'D'], ch: ['Dévier', 'Continuer'] }, en: { rows: ['U', 'M', 'D'], cols: ['L', 'C', 'R'], ch: ['Swerve', 'Straight'] } };
-I18N.fr.ex = function (D) {
+I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
   const L = J3L.fr;
   return String.raw`<div class="context-block">Les deux jeux sont indépendants. Dans chaque case, le premier nombre est le gain du joueur en ligne, le second celui du joueur en colonne.</div>
 <p><strong>Jeu A.</strong> Le joueur 1 choisit H, M ou B ; le joueur 2 choisit G, C ou D.</p>
@@ -162,8 +162,8 @@ ${jxTable(D.C1, D.C2, L.ch, L.ch, '1 \\ 2')}
 <li><div class="q-text">(B) Déterminez les équilibres de Nash en stratégies pures. Existe-t-il un équilibre symétrique en stratégies pures ? Situez ce jeu dans le classement des jeux symétriques.</div></li>
 <li><div class="q-text">(B) Le conducteur 1 peut s'engager, avant le jeu, à continuer quoi qu'il arrive (en arrachant son volant, par exemple), et le conducteur 2 le voit. Quelle est alors l'issue du jeu ?</div></li>
 </ol></div>`;
-};
-I18N.en.ex = function (D) {
+});
+I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
   const L = J3L.en;
   return String.raw`<div class="context-block">The two games are independent. In each cell, the first number is the row player's payoff, the second the column player's.</div>
 <p><strong>Game A.</strong> Player 1 chooses U, M or D; player 2 chooses L, C or R.</p>
@@ -177,8 +177,9 @@ ${jxTable(D.C1, D.C2, L.ch, L.ch, '1 \\ 2')}
 <li><div class="q-text">(B) Determine the pure-strategy Nash equilibria. Is there a symmetric pure-strategy equilibrium? Place this game in the classification of symmetric games.</div></li>
 <li><div class="q-text">(B) Driver 1 can commit, before the game, to go straight whatever happens (by tearing off the steering wheel, for instance), and driver 2 sees it. What is the outcome of the game then?</div></li>
 </ol></div>`;
-};
+});
 function j3sol(D, lang) {
+  const texT = (x) => fq(x);
   const fr = lang === 'fr', T_ = s => fr ? s[0] : s[1], L = J3L[lang], U1 = D.U1, U2 = D.U2, B = D.B;
   const br1 = [0, 1, 2].map(j => { const col = U1.map(r => r[j]), mx = Math.max(...col), i = col.indexOf(mx); return `${T_(['face à', 'against'])} ${L.cols[j]}, ${T_(['le joueur 1 obtient', 'player 1 gets'])} ${col.join(', ')} ${T_(['avec', 'with'])} ${L.rows.join(', ')} : ${T_(['sa meilleure réponse est', 'their best response is'])} ${L.rows[i]}`; }).join(' ; ');
   const br2 = [0, 1, 2].map(i => { const row = U2[i], mx = Math.max(...row), j = row.indexOf(mx); return `${T_(['face à', 'against'])} ${L.rows[i]}, ${T_(['le joueur 2 obtient', 'player 2 gets'])} ${row.join(', ')} ${T_(['avec', 'with'])} ${L.cols.join(', ')} : ${T_(['sa meilleure réponse est', 'their best response is'])} ${L.cols[j]}`; }).join(' ; ');
@@ -205,5 +206,5 @@ function j3sol(D, lang) {
 </div></li>
 </ol></div>`;
 }
-I18N.fr.sol = D => j3sol(D, 'fr');
-I18N.en.sol = D => j3sol(D, 'en');
+I18N.fr.sol = D => fracClean((D => j3sol(D, 'fr'))(D));
+I18N.en.sol = D => fracClean((D => j3sol(D, 'en'))(D));

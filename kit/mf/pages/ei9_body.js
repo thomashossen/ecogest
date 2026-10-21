@@ -152,7 +152,7 @@ PAGE.compute = function (seed) {
   D.HHIpre = 10000 / N; D.HHIpost = 10000 / (N - m + 1);
   return D;
 };
-I18N.fr.ex = function (D) {
+I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">Un marché de demande inverse \(P(Q)=${D.a}-${cfx(D.b)}Q\) est servi par \(N=${D.N}\) entreprises identiques, de coût marginal constant \(c=${D.c}\), sans coût fixe, qui se font concurrence à la Cournot.</div>
 <div class="questions"><ol>
 <li><div class="q-text">Déterminez l'équilibre de Cournot : quantité de chaque entreprise, production totale, prix et profits. Calculez l'indice de Herfindahl-Hirschman.</div></li>
@@ -162,8 +162,8 @@ I18N.fr.ex = function (D) {
 <li><div class="q-text">On suppose maintenant que la fusion réduit le coût marginal de l'entité fusionnée à \(c_M\). Quelle valeur de \(c_M\) laisse le prix inchangé ? Avec \(c_M=${D.cM}\), déterminez le nouvel équilibre et les surplus, et dites si la fusion doit être autorisée du point de vue des consommateurs.</div></li>
 <li><div class="q-text">Représentez graphiquement les surplus avant la fusion, puis après la fusion avec synergies.</div></li>
 </ol></div>`;
-};
-I18N.en.ex = function (D) {
+});
+I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">A market with inverse demand \(P(Q)=${D.a}-${cfx(D.b)}Q\) is served by \(N=${D.N}\) identical firms, with constant marginal cost \(c=${D.c}\) and no fixed cost, competing à la Cournot.</div>
 <div class="questions"><ol>
 <li><div class="q-text">Determine the Cournot equilibrium: each firm's quantity, total output, price and profits. Compute the Herfindahl-Hirschman index.</div></li>
@@ -173,8 +173,9 @@ I18N.en.ex = function (D) {
 <li><div class="q-text">Now assume the merger lowers the merged entity's marginal cost to \(c_M\). Which value of \(c_M\) leaves the price unchanged? With \(c_M=${D.cM}\), determine the new equilibrium and the surpluses, and say whether the merger should be cleared from the consumers' point of view.</div></li>
 <li><div class="q-text">Draw the surpluses before the merger, then after the merger with synergies.</div></li>
 </ol></div>`;
-};
+});
 function e9sol(D, lang) {
+  const texT = (x) => fq(x);
   const fr = lang === 'fr', T_ = s => fr ? s[0] : s[1], a = D.a, b = D.b, c = D.c, N = D.N, mm = D.m, n4 = x => texT(x, 4), m2 = x => texT(x, 2);
   const SC = T_(['SC', 'CS']), SP = T_(['SP', 'PS']), PS = T_(['PS', 'DWL']), bx = b === 1 ? '' : texT(b, 2) + '\\times ';
   const pre = D.pre, post = D.post, syn = D.syn, K = N - mm + 1;
@@ -185,29 +186,29 @@ function e9sol(D, lang) {
   <p>${T_(['Chaque entreprise', 'Each firm'])} \(i\) ${T_(['maximise', 'maximises'])} \(\Pi_i=(${a}-${cfx(b)}Q)\,q_i-${c}\,q_i\), ${T_(['où', 'where'])} \(Q\) ${T_(['inclut sa propre production. En annulant la dérivée par rapport à', 'includes its own output. Setting the derivative with respect to'])} \(q_i\)${T_(['', ' to zero'])} :
   \[${a}-${cfx(b)}Q-${cfx(b)}q_i-${c}=0\iff P-${c}=${cfx(b)}q_i\]
   ${T_(['Toutes les entreprises étant identiques, elles produisent la même quantité', 'All firms being identical, they produce the same quantity'])} \(q\), ${T_(['et', 'and'])} \(Q=${N}\,q\). ${T_(['En reportant dans la condition du premier ordre :', 'Substituting into the first-order condition:'])}
-  \[${a}-${cfx(b)}\times ${N}\,q-${cfx(b)}q-${c}=0\iff q^*=\frac{${a}-${c}}{${N + 1}\times ${texT(b, 2)}}=${n4(pre.q[0])}\qquad Q^*=${N}\times ${n4(pre.q[0])}=${n4(pre.Q)}\]
-  ${T_(['On en déduit, d\'après la fonction de demande inverse, le prix d\'équilibre sur le marché :', 'The inverse demand function then gives the equilibrium market price:'])} \(P^*=${a}-${bx}${n4(pre.Q)}=${n4(pre.P)}\). ${T_(['Chaque entreprise gagne', 'Each firm earns'])} \(\Pi^*=(${n4(pre.P)}-${c})\times ${n4(pre.q[0])}=${m2(pre.pi[0])}\). ${T_(['Chaque part de marché vaut', 'Each market share is'])} \(\frac{100}{${N}}\,\%\), ${T_(['d\'où', 'hence'])} \(HHI=${N}\times\big(\frac{100}{${N}}\big)^2=${m2(D.HHIpre)}\).</p>
+  \[${a}-${cfx(b)}\times ${N}\,q-${cfx(b)}q-${c}=0\iff q^*=\frac{${a}-${c}}{${N + 1}\times ${texT(b, 2)}}=${fqa(pre.q[0])}\qquad Q^*=${N}\times ${n4(pre.q[0])}=${fqa(pre.Q)}\]
+  ${T_(['On en déduit, d\'après la fonction de demande inverse, le prix d\'équilibre sur le marché :', 'The inverse demand function then gives the equilibrium market price:'])} \(P^*=${a}-${bx}${n4(pre.Q)}=${fqa(pre.P)}\). ${T_(['Chaque entreprise gagne', 'Each firm earns'])} \(\Pi^*=(${n4(pre.P)}-${c})\times ${n4(pre.q[0])}=${fqa(pre.pi[0])}\). ${T_(['Chaque part de marché vaut', 'Each market share is'])} \(\frac{100}{${N}}\,\%\), ${T_(['d\'où', 'hence'])} \(HHI=${N}\times\big(\frac{100}{${N}}\big)^2=${fqa(D.HHIpre)}\).</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Le surplus des consommateurs est l\'intégrale de l\'écart entre la demande inverse et le prix ; le surplus des producteurs est l\'intégrale de l\'écart entre le prix et le coût marginal, égal à la somme des profits :', 'Consumer surplus is the integral of the gap between inverse demand and the price; producer surplus is the integral of the gap between the price and marginal cost, equal to the sum of profits:'])}
-  \[\begin{aligned}${SC}&amp;=${scI(pre)}\\${SP}&amp;=\int_0^{${n4(pre.Q)}}(${n4(pre.P)}-${c})\,dq=${m2(D.Spre.SP)}\end{aligned}\]
-  ${T_(['Le surplus total vaut', 'Total surplus is'])} \(W=${m2(D.Spre.W)}\). ${T_(['Le maximum, atteint au prix', 'The maximum, reached at price'])} \(c\), ${T_(['est', 'is'])} \(\int_0^{${n4((a - c) / b)}}(${a}-${cfx(b)}q-${c})\,dq=${m2(D.Wc)}\), ${T_(['d\'où une perte sèche', 'hence a deadweight loss'])} \(${PS}=${m2(D.Wc - D.Spre.W)}\).</p>
+  \[\begin{aligned}${SC}&amp;=${scI(pre)}\\${SP}&amp;=\int_0^{${n4(pre.Q)}}(${n4(pre.P)}-${c})\,dq=${fqa(D.Spre.SP)}\end{aligned}\]
+  ${T_(['Le surplus total vaut', 'Total surplus is'])} \(W=${fqa(D.Spre.W)}\). ${T_(['Le maximum, atteint au prix', 'The maximum, reached at price'])} \(c\), ${T_(['est', 'is'])} \(\int_0^{${n4((a - c) / b)}}(${a}-${cfx(b)}q-${c})\,dq=${fqa(D.Wc)}\), ${T_(['d\'où une perte sèche', 'hence a deadweight loss'])} \(${PS}=${fqa(D.Wc - D.Spre.W)}\).</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Après la fusion, il reste', 'After the merger,'])} \(${K}\) ${T_(['entreprises identiques. Le même raisonnement donne :', 'identical firms remain. The same reasoning gives:'])}
-  \[q'=\frac{${a}-${c}}{${K + 1}\times ${texT(b, 2)}}=${n4(post.q[0])}\qquad Q'=${K}\times ${n4(post.q[0])}=${n4(post.Q)}\]
-  ${T_(['On en déduit, d\'après la fonction de demande inverse, le nouveau prix :', 'The inverse demand function then gives the new price:'])} \(P'=${a}-${bx}${n4(post.Q)}=${n4(post.P)}\), ${T_(['puis le profit de chaque entreprise, y compris l\'entité fusionnée :', 'then each firm\'s profit, including the merged entity:'])} \(\Pi'=(${n4(post.P)}-${c})\times ${n4(post.q[0])}=${m2(post.pi[0])}\).</p>
-  <p>${T_(['Avant la fusion, les', 'Before the merger, the'])} ${mm} ${T_(['entreprises gagnaient ensemble', 'firms earned together'])} \(${mm}\times ${m2(pre.pi[0])}=${m2(mm * pre.pi[0])}\). ${post.pi[0] >= mm * pre.pi[0] ? T_(['L\'entité fusionnée gagne davantage : la fusion est rentable.', 'The merged entity earns more: the merger is profitable.']) : T_(['L\'entité fusionnée gagne moins : la fusion n\'est pas rentable pour ses participants. C\'est le paradoxe des fusions : l\'entité fusionnée réduit sa production, mais les autres entreprises augmentent la leur.', 'The merged entity earns less: the merger is not profitable for its participants. This is the merger paradox: the merged entity cuts its output, but the other firms raise theirs.'])} ${T_(['Chaque entreprise extérieure passe de', 'Each outside firm goes from'])} \(${m2(pre.pi[0])}\) ${T_(['à', 'to'])} \(${m2(post.pi[0])}\) : ${T_(['elle profite de la fusion.', 'it benefits from the merger.'])}</p>
+  \[q'=\frac{${a}-${c}}{${K + 1}\times ${texT(b, 2)}}=${fqa(post.q[0])}\qquad Q'=${K}\times ${n4(post.q[0])}=${fqa(post.Q)}\]
+  ${T_(['On en déduit, d\'après la fonction de demande inverse, le nouveau prix :', 'The inverse demand function then gives the new price:'])} \(P'=${a}-${bx}${n4(post.Q)}=${fqa(post.P)}\), ${T_(['puis le profit de chaque entreprise, y compris l\'entité fusionnée :', 'then each firm\'s profit, including the merged entity:'])} \(\Pi'=(${n4(post.P)}-${c})\times ${n4(post.q[0])}=${fqa(post.pi[0])}\).</p>
+  <p>${T_(['Avant la fusion, les', 'Before the merger, the'])} ${mm} ${T_(['entreprises gagnaient ensemble', 'firms earned together'])} \(${mm}\times ${m2(pre.pi[0])}=${fqa(mm * pre.pi[0])}\). ${post.pi[0] >= mm * pre.pi[0] ? T_(['L\'entité fusionnée gagne davantage : la fusion est rentable.', 'The merged entity earns more: the merger is profitable.']) : T_(['L\'entité fusionnée gagne moins : la fusion n\'est pas rentable pour ses participants. C\'est le paradoxe des fusions : l\'entité fusionnée réduit sa production, mais les autres entreprises augmentent la leur.', 'The merged entity earns less: the merger is not profitable for its participants. This is the merger paradox: the merged entity cuts its output, but the other firms raise theirs.'])} ${T_(['Chaque entreprise extérieure passe de', 'Each outside firm goes from'])} \(${m2(pre.pi[0])}\) ${T_(['à', 'to'])} \(${m2(post.pi[0])}\) : ${T_(['elle profite de la fusion.', 'it benefits from the merger.'])}</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Les mêmes intégrales, au nouveau prix et à la nouvelle production, donnent :', 'The same integrals, at the new price and output, give:'])}
-  \[\begin{aligned}${SC}'&amp;=${scI(post)}\\${SP}'&amp;=\int_0^{${n4(post.Q)}}(${n4(post.P)}-${c})\,dq=${m2(D.Spost.SP)}\end{aligned}\]
-  ${T_(['Le surplus des consommateurs baisse de', 'Consumer surplus falls by'])} \(${m2(D.Spre.SC - D.Spost.SC)}\), ${T_(['celui des producteurs augmente de', 'producer surplus rises by'])} \(${m2(D.Spost.SP - D.Spre.SP)}\), ${T_(['et le surplus total baisse de', 'and total surplus falls by'])} \(${m2(D.Spre.W - D.Spost.W)}\) : ${T_(['la perte sèche augmente. Le HHI passe de', 'the deadweight loss rises. The HHI goes from'])} \(${m2(D.HHIpre)}\) ${T_(['à', 'to'])} \(\frac{10\,000}{${K}}=${m2(D.HHIpost)}\), ${T_(['une hausse de', 'an increase of'])} \(${m2(D.HHIpost - D.HHIpre)}\) ${T_(['points.', 'points.'])}</p>
+  \[\begin{aligned}${SC}'&amp;=${scI(post)}\\${SP}'&amp;=\int_0^{${n4(post.Q)}}(${n4(post.P)}-${c})\,dq=${fqa(D.Spost.SP)}\end{aligned}\]
+  ${T_(['Le surplus des consommateurs baisse de', 'Consumer surplus falls by'])} \(${m2(D.Spre.SC - D.Spost.SC)}\), ${T_(['celui des producteurs augmente de', 'producer surplus rises by'])} \(${m2(D.Spost.SP - D.Spre.SP)}\), ${T_(['et le surplus total baisse de', 'and total surplus falls by'])} \(${m2(D.Spre.W - D.Spost.W)}\) : ${T_(['la perte sèche augmente. Le HHI passe de', 'the deadweight loss rises. The HHI goes from'])} \(${m2(D.HHIpre)}\) ${T_(['à', 'to'])} \(\frac{10\,000}{${K}}=${fqa(D.HHIpost)}\), ${T_(['une hausse de', 'an increase of'])} \(${m2(D.HHIpost - D.HHIpre)}\) ${T_(['points.', 'points.'])}</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Avec', 'With'])} \(${N - mm}\) ${T_(['entreprises au coût', 'firms at cost'])} ${c} ${T_(['et l\'entité fusionnée au coût', 'and the merged entity at cost'])} \(c_M\), ${T_(['la somme des conditions du premier ordre donne', 'summing the first-order conditions gives'])} \(P'=\frac{${a}+${N - mm}\times ${c}+c_M}{${K + 1}}\). ${T_(['Le prix est inchangé si cette expression vaut', 'The price is unchanged if this expression equals'])} \(${n4(D.Pb)}\) :
-  \[\frac{${a}+${(N - mm) * c}+c_M}{${K + 1}}=${n4(D.Pb)}\iff c_M=${K + 1}\times ${n4(D.Pb)}-${a}-${(N - mm) * c}=${n4(D.th)}\]
-  ${T_(['Avec', 'With'])} \(c_M=${D.cM}\), ${T_(['le prix devient', 'the price becomes'])} \(P''=\frac{${a}+${(N - mm) * c}+${D.cM}}{${K + 1}}=${n4(syn.P)}\). ${T_(['Chaque entreprise produit', 'Each firm produces'])} \(q_i=\frac{P''-c_i}{${texT(b, 2)}}\) : ${T_(['l\'entité fusionnée', 'the merged entity'])} \(${n4(syn.q[0])}\), ${T_(['chaque autre entreprise', 'each other firm'])} \(${n4(syn.q[1])}\), ${T_(['soit une production totale', 'a total output of'])} \(${n4(syn.Q)}\). ${T_(['Les surplus valent', 'Surpluses are'])} \(${SC}''=\frac{${texT(b, 2)}}{2}\times ${n4(syn.Q)}^2=${m2(D.Ssyn.SC)}\) ${T_(['et', 'and'])} \(${SP}''=\int_0^{${n4(syn.q[0])}}(${n4(syn.P)}-${D.cM})\,dq+${N - mm}\int_0^{${n4(syn.q[1])}}(${n4(syn.P)}-${c})\,dq=${m2(D.Ssyn.SP)}\), ${T_(['soit un surplus total de', 'that is, a total surplus of'])} \(${m2(D.Ssyn.W)}\).</p>
+  \[\frac{${a}+${(N - mm) * c}+c_M}{${K + 1}}=${n4(D.Pb)}\iff c_M=${K + 1}\times ${n4(D.Pb)}-${a}-${(N - mm) * c}=${fqa(D.th)}\]
+  ${T_(['Avec', 'With'])} \(c_M=${D.cM}\), ${T_(['le prix devient', 'the price becomes'])} \(P''=\frac{${a}+${(N - mm) * c}+${D.cM}}{${K + 1}}=${fqa(syn.P)}\). ${T_(['Chaque entreprise produit', 'Each firm produces'])} \(q_i=\frac{P''-c_i}{${texT(b, 2)}}\) : ${T_(['l\'entité fusionnée', 'the merged entity'])} \(${n4(syn.q[0])}\), ${T_(['chaque autre entreprise', 'each other firm'])} \(${n4(syn.q[1])}\), ${T_(['soit une production totale', 'a total output of'])} \(${n4(syn.Q)}\). ${T_(['Les surplus valent', 'Surpluses are'])} \(${SC}''=\frac{${texT(b, 2)}}{2}\times ${fqp(syn.Q)}^2=${fqa(D.Ssyn.SC)}\) ${T_(['et', 'and'])} \(${SP}''=\int_0^{${n4(syn.q[0])}}(${n4(syn.P)}-${D.cM})\,dq+${N - mm}\int_0^{${n4(syn.q[1])}}(${n4(syn.P)}-${c})\,dq=${fqa(D.Ssyn.SP)}\), ${T_(['soit un surplus total de', 'that is, a total surplus of'])} \(${m2(D.Ssyn.W)}\).</p>
   <p>${D.cM <= D.th ? T_(['Comme', 'Since']) + ' \\(c_M\\le' + n4(D.th) + '\\), ' + T_(['le prix baisse et le surplus des consommateurs augmente par rapport à la situation avant fusion : du point de vue des consommateurs, la fusion peut être autorisée.', 'the price falls and consumer surplus rises compared with the pre-merger situation: from the consumers\' point of view, the merger can be cleared.']) : T_(['Comme', 'Since']) + ' \\(c_M&gt;' + n4(D.th) + '\\), ' + T_(['le prix augmente et le surplus des consommateurs baisse par rapport à la situation avant fusion : les synergies ne suffisent pas, la fusion ne devrait pas être autorisée en l\'état.', 'the price rises and consumer surplus falls compared with the pre-merger situation: synergies are not enough, the merger should not be cleared as it stands.'])}</p>
 </div></li>
 <li><div class="q-content">
@@ -218,5 +219,5 @@ function e9sol(D, lang) {
 </div></li>
 </ol></div>`;
 }
-I18N.fr.sol = D => e9sol(D, 'fr');
-I18N.en.sol = D => e9sol(D, 'en');
+I18N.fr.sol = D => fracClean((D => e9sol(D, 'fr'))(D));
+I18N.en.sol = D => fracClean((D => e9sol(D, 'en'))(D));

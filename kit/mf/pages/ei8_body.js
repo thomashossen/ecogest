@@ -183,7 +183,7 @@ function e8graph(D, lang) {
   G.legend([{ c: COL.s1, box: true, o: 0.25, t: fr ? 'surplus des consommateurs' : 'consumer surplus' }, { c: COL.s3, box: true, o: 0.35, t: fr ? 'coût de transport' : 'transport cost' }, { c: '#2e7d5b', box: true, o: 0.35, t: fr ? 'profits' : 'profits' }], G.ml + 8, 16);
   return '<div class="sol-fig">' + G.svg(fr ? 'Prix complets et surplus' : 'Full prices and surplus') + '</div>';
 }
-I18N.fr.ex = function (D) {
+I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">Des consommateurs de masse 1 sont répartis uniformément sur \([0,1]\). Chacun achète une unité d'un bien qu'il valorise \(v=${D.v}\). Deux entreprises, de coût marginal \(c=${D.c}\), sont situées en \(x_1=${texT(D.x1, 2)}\) et \(x_2=${texT(D.x2, 2)}\). Un consommateur situé en \(x\) qui achète à l'entreprise \(i\) supporte un coût de transport \(${D.t}\,(x-x_i)^2\). Les entreprises fixent simultanément leurs prix.</div>
 <div class="questions"><ol>
 <li><div class="q-text">Déterminez la position du consommateur indifférent, puis la demande adressée à chaque entreprise.</div></li>
@@ -192,8 +192,8 @@ I18N.fr.ex = function (D) {
 <li><div class="q-text">Représentez graphiquement les prix complets le long de la ville, le consommateur indifférent et la décomposition du surplus.</div></li>
 <li><div class="q-text">L'entreprise 1 a-t-elle intérêt à se rapprocher de sa concurrente, une fois anticipé l'effet sur les prix ? Où les entreprises finiront-elles par se placer, et que deviennent alors les prix et le surplus total ?</div></li>
 </ol></div>`;
-};
-I18N.en.ex = function (D) {
+});
+I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">Consumers of mass 1 are uniformly spread over \([0,1]\). Each buys one unit of a good they value at \(v=${D.v}\). Two firms, with marginal cost \(c=${D.c}\), are located at \(x_1=${texT(D.x1, 2)}\) and \(x_2=${texT(D.x2, 2)}\). A consumer at \(x\) who buys from firm \(i\) bears a transport cost \(${D.t}\,(x-x_i)^2\). Firms set their prices simultaneously.</div>
 <div class="questions"><ol>
 <li><div class="q-text">Determine the location of the indifferent consumer, then the demand addressed to each firm.</div></li>
@@ -202,8 +202,9 @@ I18N.en.ex = function (D) {
 <li><div class="q-text">Draw the full prices along the city, the indifferent consumer and the breakdown of surplus.</div></li>
 <li><div class="q-text">Does firm 1 want to move closer to its rival, once the effect on prices is anticipated? Where will the firms eventually locate, and what then happens to prices and total surplus?</div></li>
 </ol></div>`;
-};
+});
 function e8sol(D, lang) {
+  const texT = (x) => fq(x);
   const fr = lang === 'fr', T_ = s => fr ? s[0] : s[1], E = D.E, t = D.t, c = D.c, x1 = D.x1, x2 = D.x2, n4 = x => texT(x, 4), m = x => texT(x, 2);
   const SC = T_(['SC', 'CS']), SP = T_(['SP', 'PS']);
   const k = 2 * t * E.Dl, r1 = (c + k * E.m) / 2, r2 = (c + k * (1 - E.m)) / 2;
@@ -217,16 +218,16 @@ function e8sol(D, lang) {
   <p>${T_(['L\'entreprise 1 maximise', 'Firm 1 maximises'])} \(\Pi_1=(p_1-${c})\Big(${n4(E.m)}+\frac{p_2-p_1}{${n4(k)}}\Big)\). ${T_(['En annulant la dérivée par rapport à', 'Setting the derivative with respect to'])} \(p_1\)${T_(['', ' to zero'])} :
   \[\begin{aligned}${n4(E.m)}+\frac{p_2-p_1}{${n4(k)}}-\frac{p_1-${c}}{${n4(k)}}=0&amp;&amp;\text{${T_(['dérivée d\'un produit', 'derivative of a product'])}}\\p_1=R_1(p_2)=\frac{p_2}{2}+${n4(r1)}\end{aligned}\]
   ${T_(['De même, l\'entreprise 2 maximise', 'Likewise, firm 2 maximises'])} \((p_2-${c})(1-\hat x)\), ${T_(['ce qui donne', 'which gives'])} \(p_2=R_2(p_1)=\frac{p_1}{2}+${n4(r2)}\). ${T_(['Les fonctions de réaction sont croissantes : les prix sont des compléments stratégiques. En reportant', 'The reaction functions are increasing: prices are strategic complements. Substituting'])} \(R_2\) ${T_(['dans', 'into'])} \(R_1\) :
-  \[\begin{aligned}p_1&amp;=\frac12\Big(\frac{p_1}{2}+${n4(r2)}\Big)+${n4(r1)}\iff\frac34\,p_1=${n4(r2 / 2 + r1)}\iff p_1^*=${n4(E.p1)}\\p_2^*&amp;=\frac{${n4(E.p1)}}{2}+${n4(r2)}=${n4(E.p2)}\end{aligned}\]
-  ${T_(['On en déduit, d\'après la position du consommateur indifférent, les parts de marché', 'The position of the indifferent consumer then gives the market shares'])} \(\hat x^*=${n4(E.m)}+\frac{${n4(E.p2)}-${n4(E.p1)}}{${n4(k)}}=${n4(E.xh)}\) ${T_(['et', 'and'])} \(1-\hat x^*=${n4(1 - E.xh)}\), ${T_(['puis les profits :', 'then the profits:'])}
-  \[\Pi_1^*=(${n4(E.p1)}-${c})\times ${n4(E.xh)}=${n4(E.pi1)}\qquad\Pi_2^*=(${n4(E.p2)}-${c})\times ${n4(1 - E.xh)}=${n4(E.pi2)}\]</p>
+  \[\begin{aligned}p_1&amp;=\frac12\Big(\frac{p_1}{2}+${n4(r2)}\Big)+${n4(r1)}\iff\frac34\,p_1=${n4(r2 / 2 + r1)}\iff p_1^*=${fqa(E.p1)}\\p_2^*&amp;=\frac{${n4(E.p1)}}{2}+${n4(r2)}=${fqa(E.p2)}\end{aligned}\]
+  ${T_(['On en déduit, d\'après la position du consommateur indifférent, les parts de marché', 'The position of the indifferent consumer then gives the market shares'])} \(\hat x^*=${n4(E.m)}+\frac{${n4(E.p2)}-${n4(E.p1)}}{${n4(k)}}=${fqa(E.xh)}\) ${T_(['et', 'and'])} \(1-\hat x^*=${fqa(1 - E.xh)}\), ${T_(['puis les profits :', 'then the profits:'])}
+  \[\Pi_1^*=(${n4(E.p1)}-${c})\times ${n4(E.xh)}=${fqa(E.pi1)}\qquad\Pi_2^*=(${n4(E.p2)}-${c})\times ${n4(1 - E.xh)}=${fqa(E.pi2)}\]</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Le coût de transport total est la somme des coûts supportés par chaque consommateur, de part et d\'autre de', 'Total transport cost is the sum of the costs borne by each consumer, on either side of'])} \(\hat x\) :
-  \[\begin{aligned}T&amp;=\int_0^{${n4(E.xh)}}${t}(x-${n4(x1)})^2\,dx+\int_{${n4(E.xh)}}^{1}${t}(${n4(x2)}-x)^2\,dx\\&amp;=${t}\Big[\frac{(x-${n4(x1)})^3}{3}\Big]_0^{${n4(E.xh)}}+${t}\Big[-\frac{(${n4(x2)}-x)^3}{3}\Big]_{${n4(E.xh)}}^{1}\\&amp;=${n4(t * ((E.xh - x1) ** 3 + x1 ** 3) / 3)}+${n4(t * ((x2 - E.xh) ** 3 + (1 - x2) ** 3) / 3)}=${n4(E.T)}\end{aligned}\]
+  \[\begin{aligned}T&amp;=\int_0^{${n4(E.xh)}}${t}(x-${n4(x1)})^2\,dx+\int_{${n4(E.xh)}}^{1}${t}(${n4(x2)}-x)^2\,dx\\&amp;=${t}\Big[\frac{(x-${n4(x1)})^3}{3}\Big]_0^{${n4(E.xh)}}+${t}\Big[-\frac{(${n4(x2)}-x)^3}{3}\Big]_{${n4(E.xh)}}^{1}\\&amp;=${n4(t * ((E.xh - x1) ** 3 + x1 ** 3) / 3)}+${n4(t * ((x2 - E.xh) ** 3 + (1 - x2) ** 3) / 3)}=${fqa(E.T)}\end{aligned}\]
   ${T_(['Chaque consommateur retire', 'Each consumer obtains'])} \(v\) ${T_(['moins le prix complet. Le surplus des consommateurs est donc la valeur', 'minus the full price. Consumer surplus is therefore the value'])} \(v\) ${T_(['moins les dépenses et moins le coût de transport ; le surplus des producteurs est la somme des profits :', 'minus expenditure and minus transport cost; producer surplus is the sum of profits:'])}
-  \[\begin{aligned}${SC}&amp;=${D.v}-(${n4(E.p1)}\times ${n4(E.xh)}+${n4(E.p2)}\times ${n4(1 - E.xh)})-${n4(E.T)}=${n4(D.SC)}\\${SP}&amp;=${n4(E.pi1)}+${n4(E.pi2)}=${n4(D.SP)}\\W&amp;=${SC}+${SP}=${n4(D.W)}=v-c-T\end{aligned}\]
-  ${T_(['Les prix sont de simples transferts : seul le coût de transport réduit le surplus total. Avec des entreprises en', 'Prices are mere transfers: only transport cost reduces total surplus. With firms at'])} \(\frac14\) ${T_(['et', 'and'])} \(\frac34\), ${T_(['chaque consommateur va au plus proche, et', 'each consumer goes to the nearest one, and'])} \(T^{\text{opt}}=2\int_0^{1/2}${t}(x-\tfrac14)^2\,dx=\frac{${t}}{48}=${n4(t / 48)}\), ${T_(['d\'où un surplus total optimal', 'hence an optimal total surplus'])} \(${n4(D.Wopt)}\). ${T_(['La perte due à la localisation actuelle est donc', 'The loss due to the current locations is therefore'])} \(${n4(D.Wopt - D.W)}\).</p>
+  \[\begin{aligned}${SC}&amp;=${D.v}-(${n4(E.p1)}\times ${n4(E.xh)}+${n4(E.p2)}\times ${n4(1 - E.xh)})-${n4(E.T)}=${fqa(D.SC)}\\${SP}&amp;=${n4(E.pi1)}+${n4(E.pi2)}=${fqa(D.SP)}\\W&amp;=${SC}+${SP}=${n4(D.W)}=v-c-T\end{aligned}\]
+  ${T_(['Les prix sont de simples transferts : seul le coût de transport réduit le surplus total. Avec des entreprises en', 'Prices are mere transfers: only transport cost reduces total surplus. With firms at'])} \(\frac14\) ${T_(['et', 'and'])} \(\frac34\), ${T_(['chaque consommateur va au plus proche, et', 'each consumer goes to the nearest one, and'])} \(T^{\text{opt}}=2\int_0^{1/2}${t}(x-\tfrac14)^2\,dx=\frac{${t}}{48}=${fqa(t / 48)}\), ${T_(['d\'où un surplus total optimal', 'hence an optimal total surplus'])} \(${n4(D.Wopt)}\). ${T_(['La perte due à la localisation actuelle est donc', 'The loss due to the current locations is therefore'])} \(${n4(D.Wopt - D.W)}\).</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Les deux paraboles sont les prix complets chez chaque entreprise ; chaque consommateur suit la plus basse, et elles se croisent en', 'The two parabolas are the full prices at each firm; each consumer follows the lower one, and they cross at'])} \(\hat x\). ${T_(['Entre', 'Between'])} \(v\) ${T_(['et ce prix complet se trouve le surplus des consommateurs, entre le prix complet et le prix le coût de transport, entre le prix et', 'and this full price lies consumer surplus, between the full price and the price the transport cost, between the price and'])} \(c\) ${T_(['les profits :', 'the profits:'])}</p>
@@ -235,9 +236,9 @@ function e8sol(D, lang) {
 <li><div class="q-content">
   <p>${T_(['En remplaçant les prix par leurs valeurs d\'équilibre, le profit de l\'entreprise 1 s\'écrit', 'Replacing prices by their equilibrium values, firm 1\'s profit reads'])} \(\Pi_1=\frac{2t\,(x_2-x_1)(1+m)^2}{9}\). ${T_(['Sa dérivée par rapport à', 'Its derivative with respect to'])} \(x_1\), ${T_(['aux positions actuelles, vaut :', 'at the current locations, is:'])}
   \[\frac{\partial\Pi_1}{\partial x_1}=\frac{2\times ${t}\times(1+${n4(E.m)})}{9}\Big(\frac{${n4(x2)}}{2}-1-\frac{3\times ${n4(x1)}}{2}\Big)=${n4(D.dPi1)}&lt;0\]
-  ${T_(['Se rapprocher du centre réduirait le profit de l\'entreprise 1 : l\'effet stratégique, une concurrence en prix plus vive, l\'emporte sur le gain de clientèle. Ce signe négatif vaut pour toutes les positions : l\'entreprise 1 s\'éloigne jusqu\'en 0, et symétriquement l\'entreprise 2 jusqu\'en 1. Les prix deviennent alors', 'Moving towards the centre would reduce firm 1\'s profit: the strategic effect, fiercer price competition, outweighs the gain in customers. This negative sign holds for all locations: firm 1 moves away to 0, and symmetrically firm 2 to 1. Prices then become'])} \(p_1=p_2=c+t=${n4(D.Eext.p1)}\), ${T_(['et le coût de transport total', 'and total transport cost'])} \(\frac{t}{12}=${n4(t / 12)}\) : ${T_(['le surplus total tombe à', 'total surplus falls to'])} \(${n4(D.Wext)}\). ${T_(['La différenciation maximale profite aux entreprises, mais elle est excessive du point de vue social.', 'Maximum differentiation benefits firms, but it is socially excessive.'])}</p>
+  ${T_(['Se rapprocher du centre réduirait le profit de l\'entreprise 1 : l\'effet stratégique, une concurrence en prix plus vive, l\'emporte sur le gain de clientèle. Ce signe négatif vaut pour toutes les positions : l\'entreprise 1 s\'éloigne jusqu\'en 0, et symétriquement l\'entreprise 2 jusqu\'en 1. Les prix deviennent alors', 'Moving towards the centre would reduce firm 1\'s profit: the strategic effect, fiercer price competition, outweighs the gain in customers. This negative sign holds for all locations: firm 1 moves away to 0, and symmetrically firm 2 to 1. Prices then become'])} \(p_1=p_2=c+t=${fqa(D.Eext.p1)}\), ${T_(['et le coût de transport total', 'and total transport cost'])} \(\frac{t}{12}=${fqa(t / 12)}\) : ${T_(['le surplus total tombe à', 'total surplus falls to'])} \(${n4(D.Wext)}\). ${T_(['La différenciation maximale profite aux entreprises, mais elle est excessive du point de vue social.', 'Maximum differentiation benefits firms, but it is socially excessive.'])}</p>
 </div></li>
 </ol></div>`;
 }
-I18N.fr.sol = D => e8sol(D, 'fr');
-I18N.en.sol = D => e8sol(D, 'en');
+I18N.fr.sol = D => fracClean((D => e8sol(D, 'fr'))(D));
+I18N.en.sol = D => fracClean((D => e8sol(D, 'en'))(D));

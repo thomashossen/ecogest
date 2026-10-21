@@ -122,7 +122,7 @@ PAGE.compute = function (seed) {
   D.Dexp0 = D.p0 * D.Q0; D.Dexp1 = D.p1 * D.Q1;
   return D;
 };
-I18N.fr.ex = function (D) {
+I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">La demande d'un bien \(x\) est \(Q=${D.a}-${cfx(D.b)}p+${texT(D.c, 2)}\,R${D.d < 0 ? '-' : '+'}${cfx(Math.abs(D.d))}p_y\), où \(p\) est son prix, \(R\) le revenu des consommateurs et \(p_y\) le prix d'un autre bien \(y\). Initialement, \(R=${D.R}\), \(p_y=${D.py}\) et \(p=${D.p0}\).</div>
 <div class="questions"><ol>
 <li><div class="q-text">Calculez la quantité demandée et l'élasticité-prix de la demande. La demande est-elle élastique ?</div></li>
@@ -132,8 +132,8 @@ I18N.fr.ex = function (D) {
 <li><div class="q-text">Le prix passe à \(p=${D.p1}\). Calculez l'élasticité d'arc, la nouvelle dépense et la variation du surplus des consommateurs, par une intégrale puis par la décomposition en rectangle et triangle.</div></li>
 <li><div class="q-text">Représentez graphiquement la demande, le surplus initial et la perte de surplus.</div></li>
 </ol></div>`;
-};
-I18N.en.ex = function (D) {
+});
+I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">Demand for a good \(x\) is \(Q=${D.a}-${cfx(D.b)}p+${texT(D.c, 2)}\,R${D.d < 0 ? '-' : '+'}${cfx(Math.abs(D.d))}p_y\), where \(p\) is its price, \(R\) consumers' income and \(p_y\) the price of another good \(y\). Initially, \(R=${D.R}\), \(p_y=${D.py}\) and \(p=${D.p0}\).</div>
 <div class="questions"><ol>
 <li><div class="q-text">Compute the quantity demanded and the price elasticity of demand. Is demand elastic?</div></li>
@@ -143,8 +143,9 @@ I18N.en.ex = function (D) {
 <li><div class="q-text">The price rises to \(p=${D.p1}\). Compute the arc elasticity, the new expenditure and the change in consumer surplus, by an integral then by the rectangle-and-triangle decomposition.</div></li>
 <li><div class="q-text">Draw demand, the initial surplus and the surplus loss.</div></li>
 </ol></div>`;
-};
+});
 function p4sol(D, lang) {
+  const texT = (x) => fq(x);
   const fr = lang === 'fr', T_ = s => fr ? s[0] : s[1], n = x => texT(x, 4), m = x => texT(x, 2), b = D.b, A = D.A, p0 = D.p0, p1 = D.p1, Q0 = D.Q0, Q1 = D.Q1;
   const SC = T_(['SC', 'CS']);
   const G = Plot({ w: 640, h: 320, x0: 0, x1: A * 1.03, y0: 0, y1: D.pmax * 1.08, mt: 26, mb: 42 });
@@ -158,24 +159,24 @@ function p4sol(D, lang) {
   const rect = (p1 - p0) * Q1, tri = (p1 - p0) * (Q0 - Q1) / 2;
   return String.raw`<div class="st"><ol>
 <li><div class="q-content">
-  <p>${T_(['En remplaçant', 'Substituting'])} \(R\) ${T_(['et', 'and'])} \(p_y\), ${T_(['la demande s\'écrit', 'demand reads'])} \(Q=${n(A)}-${cfx(b)}p\). ${T_(['Au prix', 'At price'])} \(p=${p0}\), \(Q_0=${n(A)}-${b === 1 ? '' : b + '\\times '}${p0}=${n(Q0)}\). ${T_(['L\'élasticité-prix est', 'The price elasticity is'])}
-  \[\varepsilon=\frac{\partial Q}{\partial p}\cdot\frac{p}{Q}=-${b}\times\frac{${p0}}{${n(Q0)}}\approx ${n(D.eps)}\]
+  <p>${T_(['En remplaçant', 'Substituting'])} \(R\) ${T_(['et', 'and'])} \(p_y\), ${T_(['la demande s\'écrit', 'demand reads'])} \(Q=${n(A)}-${cfx(b)}p\). ${T_(['Au prix', 'At price'])} \(p=${p0}\), \(Q_0=${n(A)}-${b === 1 ? '' : b + '\\times '}${p0}=${fqa(Q0)}\). ${T_(['L\'élasticité-prix est', 'The price elasticity is'])}
+  \[\varepsilon=\frac{\partial Q}{\partial p}\cdot\frac{p}{Q}=-${b}\times\frac{${p0}}{${n(Q0)}}${eqa(D.eps)}\]
   ${T_(['Comme', 'Since'])} \(|\varepsilon|${Math.abs(D.eps) > 1 ? '&gt;' : '&lt;'}1\), ${T_(['la demande est', 'demand is'])} ${Math.abs(D.eps) > 1 ? T_(['élastique : une hausse de 1 % du prix réduit la quantité de plus de 1 %.', 'elastic: a 1% price rise reduces quantity by more than 1%.']) : T_(['inélastique : une hausse de 1 % du prix réduit la quantité de moins de 1 %.', 'inelastic: a 1% price rise reduces quantity by less than 1%.'])}</p>
 </div></li>
 <li><div class="q-content">
-  <p>\(\eta=\frac{\partial Q}{\partial R}\cdot\frac{R}{Q}=${texT(D.c, 2)}\times\frac{${D.R}}{${n(Q0)}}\approx ${n(D.eta)}\) : ${D.eta > 1 ? T_(['le bien est normal et de luxe, sa part dans le budget augmente avec le revenu.', 'the good is normal and a luxury, its budget share rises with income.']) : T_(['le bien est normal et de première nécessité : sa demande augmente avec le revenu, mais moins que proportionnellement.', 'the good is normal and a necessity: its demand rises with income, but less than proportionally.'])} \(\varepsilon_{xy}=\frac{\partial Q}{\partial p_y}\cdot\frac{p_y}{Q}=${D.d}\times\frac{${D.py}}{${n(Q0)}}\approx ${n(D.cross)}\) : ${D.d > 0 ? T_(['positive, les biens sont substituts : une hausse du prix de y reporte la demande vers x.', 'positive, the goods are substitutes: a rise in the price of y shifts demand towards x.']) : T_(['négative, les biens sont compléments : une hausse du prix de y réduit aussi la demande de x.', 'negative, the goods are complements: a rise in the price of y also reduces demand for x.'])}</p>
+  <p>\(\eta=\frac{\partial Q}{\partial R}\cdot\frac{R}{Q}=${texT(D.c, 2)}\times\frac{${D.R}}{${n(Q0)}}${eqa(D.eta)}\) : ${D.eta > 1 ? T_(['le bien est normal et de luxe, sa part dans le budget augmente avec le revenu.', 'the good is normal and a luxury, its budget share rises with income.']) : T_(['le bien est normal et de première nécessité : sa demande augmente avec le revenu, mais moins que proportionnellement.', 'the good is normal and a necessity: its demand rises with income, but less than proportionally.'])} \(\varepsilon_{xy}=\frac{\partial Q}{\partial p_y}\cdot\frac{p_y}{Q}=${D.d}\times\frac{${D.py}}{${n(Q0)}}${eqa(D.cross)}\) : ${D.d > 0 ? T_(['positive, les biens sont substituts : une hausse du prix de y reporte la demande vers x.', 'positive, the goods are substitutes: a rise in the price of y shifts demand towards x.']) : T_(['négative, les biens sont compléments : une hausse du prix de y réduit aussi la demande de x.', 'negative, the goods are complements: a rise in the price of y also reduces demand for x.'])}</p>
 </div></li>
 <li><div class="q-content">
-  <p>${T_(['La dépense est', 'Expenditure is'])} \(D(p)=p\,(${n(A)}-${cfx(b)}p)\), ${T_(['de dérivée', 'with derivative'])} \(D'(p)=${n(A)}-${n(2 * b)}\,p\), ${T_(['nulle en', 'zero at'])} \(p^*=\frac{${n(A)}}{${n(2 * b)}}=${n(D.pstar)}\), ${T_(['où', 'where'])} \(|\varepsilon|=1\). ${p0 < D.pstar ? T_(['Au prix actuel, inférieur à', 'At the current price, below']) + ' \\(p^*\\), ' + T_(['la demande est inélastique et une hausse de prix augmente la dépense.', 'demand is inelastic and a price rise increases expenditure.']) : T_(['Au prix actuel, supérieur à', 'At the current price, above']) + ' \\(p^*\\), ' + T_(['la demande est élastique et une hausse de prix diminue la dépense.', 'demand is elastic and a price rise decreases expenditure.'])} ${T_(['On le vérifie avec', 'We check this with'])} \(D'(p)=Q(1+\varepsilon)\).</p>
+  <p>${T_(['La dépense est', 'Expenditure is'])} \(D(p)=p\,(${n(A)}-${cfx(b)}p)\), ${T_(['de dérivée', 'with derivative'])} \(D'(p)=${n(A)}-${n(2 * b)}\,p\), ${T_(['nulle en', 'zero at'])} \(p^*=\frac{${n(A)}}{${n(2 * b)}}=${fqa(D.pstar)}\), ${T_(['où', 'where'])} \(|\varepsilon|=1\). ${p0 < D.pstar ? T_(['Au prix actuel, inférieur à', 'At the current price, below']) + ' \\(p^*\\), ' + T_(['la demande est inélastique et une hausse de prix augmente la dépense.', 'demand is inelastic and a price rise increases expenditure.']) : T_(['Au prix actuel, supérieur à', 'At the current price, above']) + ' \\(p^*\\), ' + T_(['la demande est élastique et une hausse de prix diminue la dépense.', 'demand is elastic and a price rise decreases expenditure.'])} ${T_(['On le vérifie avec', 'We check this with'])} \(D'(p)=Q(1+\varepsilon)\).</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['La demande inverse est', 'Inverse demand is'])} \(P(q)=${b === 1 ? n(A) + '-q' : String.raw`\frac{${n(A)}-q}{${b}}`}\), ${T_(['de prix maximal', 'with maximum price'])} \(${n(D.pmax)}\). ${T_(['Le surplus est l\'intégrale de l\'écart entre ce que les consommateurs sont prêts à payer et le prix :', 'Surplus is the integral of the gap between what consumers are willing to pay and the price:'])}
-  \[${SC}_0=\int_0^{${n(Q0)}}\Big(${b === 1 ? n(A) + '-q' : String.raw`\frac{${n(A)}-q}{${b}}`}-${p0}\Big)\,dq=\Big[${n(D.pmax - p0)}\,q-\frac{q^2}{${2 * b}}\Big]_0^{${n(Q0)}}=${m(D.SC0)}\]</p>
+  \[${SC}_0=\int_0^{${n(Q0)}}\Big(${b === 1 ? n(A) + '-q' : String.raw`\frac{${n(A)}-q}{${b}}`}-${p0}\Big)\,dq=\Big[${n(D.pmax - p0)}\,q-\frac{q^2}{${2 * b}}\Big]_0^{${n(Q0)}}=${fqa(D.SC0)}\]</p>
 </div></li>
 <li><div class="q-content">
-  <p>${T_(['Au nouveau prix, la quantité est', 'At the new price, quantity is'])} \(Q_1=${n(Q1)}\). ${T_(['L\'élasticité d\'arc, calculée aux points moyens, vaut', 'Arc elasticity, computed at midpoints, is'])} \(\frac{(${n(Q1)}-${n(Q0)})/${n((Q0 + Q1) / 2)}}{(${p1}-${p0})/${n((p0 + p1) / 2)}}\approx ${n(D.arc)}\). ${T_(['La dépense passe de', 'Expenditure goes from'])} \(${m(D.Dexp0)}\) ${T_(['à', 'to'])} \(${p1}\times ${n(Q1)}=${m(D.Dexp1)}\). ${T_(['La perte de surplus est l\'intégrale de la demande entre les deux prix :', 'The surplus loss is the integral of demand between the two prices:'])}
-  \[-\Delta ${SC}=\int_{${p0}}^{${p1}}(${n(A)}-${cfx(b)}p)\,dp=\Big[${n(A)}\,p-${n(b / 2)}\,p^2\Big]_{${p0}}^{${p1}}=${m(-D.dSC)}\]
-  ${T_(['Elle se décompose en un rectangle, supplément payé sur les', 'It splits into a rectangle, the extra paid on the'])} \(${n(Q1)}\) ${T_(['unités encore achetées,', 'units still bought,'])} \((${p1}-${p0})\times ${n(Q1)}=${m(rect)}\), ${T_(['et un triangle, valeur perdue des unités abandonnées,', 'and a triangle, the lost value of the units given up,'])} \(\frac12(${p1}-${p0})(${n(Q0)}-${n(Q1)})=${m(tri)}\) ; ${T_(['on retrouve', 'together'])} \(${m(rect)}+${m(tri)}=${m(-D.dSC)}\).</p>
+  <p>${T_(['Au nouveau prix, la quantité est', 'At the new price, quantity is'])} \(Q_1=${fqa(Q1)}\). ${T_(['L\'élasticité d\'arc, calculée aux points moyens, vaut', 'Arc elasticity, computed at midpoints, is'])} \(\frac{(${n(Q1)}-${n(Q0)})/${n((Q0 + Q1) / 2)}}{(${p1}-${p0})/${n((p0 + p1) / 2)}}${eqa(D.arc)}\). ${T_(['La dépense passe de', 'Expenditure goes from'])} \(${m(D.Dexp0)}\) ${T_(['à', 'to'])} \(${p1}\times ${n(Q1)}=${fqa(D.Dexp1)}\). ${T_(['La perte de surplus est l\'intégrale de la demande entre les deux prix :', 'The surplus loss is the integral of demand between the two prices:'])}
+  \[-\Delta ${SC}=\int_{${p0}}^{${p1}}(${n(A)}-${cfx(b)}p)\,dp=\Big[${n(A)}\,p-${n(b / 2)}\,p^2\Big]_{${p0}}^{${p1}}=${fqa(-D.dSC)}\]
+  ${T_(['Elle se décompose en un rectangle, supplément payé sur les', 'It splits into a rectangle, the extra paid on the'])} \(${n(Q1)}\) ${T_(['unités encore achetées,', 'units still bought,'])} \((${p1}-${p0})\times ${n(Q1)}=${fqa(rect)}\), ${T_(['et un triangle, valeur perdue des unités abandonnées,', 'and a triangle, the lost value of the units given up,'])} \(\frac12(${p1}-${p0})(${n(Q0)}-${n(Q1)})=${fqa(tri)}\) ; ${T_(['on retrouve', 'together'])} \(${m(rect)}+${m(tri)}=${fqa(-D.dSC)}\).</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Le surplus restant est le triangle bleu ; la perte se compose du rectangle et du triangle rouges :', 'The remaining surplus is the blue triangle; the loss consists of the red rectangle and triangle:'])}</p>
@@ -183,5 +184,5 @@ function p4sol(D, lang) {
 </div></li>
 </ol></div>`;
 }
-I18N.fr.sol = D => p4sol(D, 'fr');
-I18N.en.sol = D => p4sol(D, 'en');
+I18N.fr.sol = D => fracClean((D => p4sol(D, 'fr'))(D));
+I18N.en.sol = D => fracClean((D => p4sol(D, 'en'))(D));

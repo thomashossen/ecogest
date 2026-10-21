@@ -1,7 +1,62 @@
 const GREY = '#8a857a';
 const KBASE_FR = { 'k-badge': 'MICROÉCONOMIE', 'k-seed': 'Seed de reproductibilité', 'k-seedtip': 'Vide = nouvel exercice aléatoire', 'k-gen': 'Générer', 'k-tag-course': 'Cours', 'k-tag-ex': 'Exercice', 'k-tag-sol': 'Corrigé', 'k-seedbadge': 'Seed&nbsp;:', showSol: 'Afficher le corrigé', hideSol: 'Masquer le corrigé', phSeed: 'auto', copy: 'Copier', copied: 'Copié', 'k-sub': '© Thomas Hossen – Version du 20 octobre 2026' };
 const KBASE_EN = { 'k-badge': 'MICROECONOMICS', 'k-seed': 'Reproducibility seed', 'k-seedtip': 'Empty = new random exercise', 'k-gen': 'Generate', 'k-tag-course': 'Lesson', 'k-tag-ex': 'Exercise', 'k-tag-sol': 'Solution', 'k-seedbadge': 'Seed:', showSol: 'Show solution', hideSol: 'Hide solution', phSeed: 'auto', copy: 'Copy', copied: 'Copied', 'k-sub': '© Thomas Hossen – Version of 20 October 2026' };
-const cfx = (x, d) => Math.abs(x - 1) < 1e-12 ? '' : texT(x, d === undefined ? 4 : d) + '\\,';
+/* ---------- calcul exact : reconnaissance des rationnels et affichage fractionnaire ---------- */
+function ratOf(x) {
+  if (!isFinite(x)) return null;
+  const s = x < 0 ? -1 : 1, y = Math.abs(x);
+  if (Math.abs(y - Math.round(y)) <= 1e-11 * Math.max(1, y)) return [s * Math.round(y), 1];
+  let h0 = 0, h1 = 1, k0 = 1, k1 = 0, z = y;
+  for (let i = 0; i < 40; i++) {
+    const a = Math.floor(z), h2 = a * h1 + h0, k2 = a * k1 + k0;
+    if (k2 > 2e6) return null;
+    if (Math.abs(y - h2 / k2) <= 1e-12 * Math.max(1, y)) return [s * h2, k2];
+    h0 = h1; h1 = h2; k0 = k1; k1 = k2;
+    const f = z - a; if (f < 1e-15) return null; z = 1 / f;
+  }
+  return null;
+}
+/* valeur exacte : entier ou fraction ; décimale si le nombre n'est pas rationnel (racine, puissance non entière) */
+function fq(x) {
+  const r = ratOf(x);
+  if (!r) return texT(x, 4);
+  if (r[1] === 1) return texT(r[0], 0);
+  return (r[0] < 0 ? '-' : '') + '\\frac{' + texT(Math.abs(r[0]), 0) + '}{' + texT(r[1], 0) + '}';
+}
+/* valeur exacte suivie d'une approximation décimale */
+function fqa(x) {
+  const r = ratOf(x);
+  if (!r) return texT(x, 4);
+  if (r[1] === 1) return texT(r[0], 0);
+  return fq(x) + '\\approx ' + texT(x, Math.abs(x) >= 100 ? 2 : 4);
+}
+/* entre parenthèses si fraction ou négatif (avant un exposant) */
+function fqp(x) { const r = ratOf(x), t = fq(x); return (r && r[1] === 1 && r[0] >= 0) || (!r && x >= 0) ? t : '\\left(' + t + '\\right)'; }
+/* cellule de tableau : valeur exacte, approximation en petit */
+function fqt(x) { const r = ratOf(x); return '\\(' + fq(x) + '\\)' + (r && r[1] === 1 ? '' : '<br><small>≈ ' + fmt(x, 2) + '</small>'); }
+
+/* signe = si la valeur est exacte (rationnelle), sinon approximation */
+function eqa(x) { return ratOf(x) ? '=' + fqa(x) : '\\approx ' + texT(x, 4); }
+/* simplification d'affichage : \frac{X}{1} devient X (entre parenthèses si nécessaire) */
+function fracClean(h) {
+  const grp = (s, i) => { if (s[i] !== '{') return -1; let d = 0; for (let j = i; j < s.length; j++) { if (s[j] === '{') d++; else if (s[j] === '}') { d--; if (d === 0) return j; } } return -1; };
+  let out = '', i = 0;
+  for (;;) {
+    const re = /\\[td]?frac\{/g; re.lastIndex = i; const mm = re.exec(h);
+    if (!mm) { out += h.slice(i); break; }
+    const k = mm.index, cmd = mm[0].slice(0, -1), a = k + cmd.length, ae = grp(h, a), b = ae + 1, be = ae > 0 ? grp(h, b) : -1;
+    if (ae < 0 || be < 0) { out += h.slice(i, a + 1); i = a + 1; continue; }
+    const num = h.slice(a + 1, ae), den = h.slice(b + 1, be).trim();
+    if (den === '1') {
+      let top = false, d = 0; for (let j = 0; j < num.length; j++) { const c = num[j]; if (c === '{') d++; else if (c === '}') d--; else if ((c === '+' || c === '-') && d === 0 && j > 0) top = true; }
+      const rest = h.slice(be + 1), end = /^(\s*$|\\\]|\\\)|=|&|\\\\|\\qquad|\\quad|\\text|\\iff|&lt;|&gt;|\s*[,;.<}])/.test(rest);
+      out += h.slice(i, k) + (top && !end ? '\\left(' + fracClean(num) + '\\right)' : fracClean(num));
+    } else out += h.slice(i, k) + cmd + '{' + fracClean(num) + '}{' + fracClean(h.slice(b + 1, be)) + '}';
+    i = be + 1;
+  }
+  return out;
+}
+const cfx = (x, d) => Math.abs(x - 1) < 1e-12 ? '' : fq(x) + '\\,';
 /* figure générique : demande linéaire P = a - bQ, surplus des consommateurs, profits par segments [x0, x1, coût],
    perte sèche par rapport à la tarification au coût marginal minimal cmin */
 function eiSurplusFig(o) {
@@ -53,6 +108,29 @@ function jxMatrixSVG(U1, U2, o) {
 /* matrice en tableau HTML pour les énoncés */
 function jxTable(U1, U2, rows, cols, corner) {
   return `<div class="dtable-wrap"><table class="dtable"><thead><tr><th>${corner || ''}</th>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>${U1.map((r, i) => `<tr><td><strong>${rows[i]}</strong></td>${r.map((v, j) => `<td class="num">(${fmtT(v, 2)} ; ${fmtT(U2[i][j], 2)})</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+}
+/* ---------- arbres de jeu ---------- */
+/* nœud : { pl: 1|2|3, lab: 'nom', ch: [{ a: 'action', n: nœud }] } ou feuille { u: [gains] } */
+function jxBack(node) {
+  /* induction à rebours : renvoie les gains et marque node.best */
+  if (node.u) return node.u;
+  let best = -1, val = null;
+  node.ch.forEach((c, k) => { const v = jxBack(c.n); if (!val || v[node.pl - 1] > val[node.pl - 1]) { val = v; best = k; } });
+  node.best = best; node.val = val; return val;
+}
+function jxTreeSVG(root, o) {
+  o = o || {};
+  const leaves = []; const walk = (n, d) => { n.d = d; if (n.u) { n.x = leaves.length; leaves.push(n); return; } n.ch.forEach(c => walk(c.n, d + 1)); n.x = (n.ch[0].n.x + n.ch[n.ch.length - 1].n.x) / 2; };
+  walk(root, 0);
+  let depth = 0; const md = n => { depth = Math.max(depth, n.d); if (!n.u) n.ch.forEach(c => md(c.n)); }; md(root);
+  const W = Math.max(360, leaves.length * (o.lw || 90) + 40), H = (depth) * (o.dh || 90) + 110, px = n => 20 + (n.x + 0.5) * (W - 40) / leaves.length, py = n => 34 + n.d * (o.dh || 90);
+  const cols = [COL.s1, COL.s2, COL.s4 || COL.s3];
+  let s = `<svg viewBox="0 0 ${W} ${H}" style="max-width:${W}px;display:block;margin:0 auto" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${o.aria || 'arbre'}">`;
+  const edges = (n, onPath) => { if (n.u) return; n.ch.forEach((c, k) => { const hot = o.bi && n.best === k, path = hot && onPath; s += `<line x1="${px(n)}" y1="${py(n)}" x2="${px(c.n)}" y2="${py(c.n)}" stroke="${hot ? COL.s3 : COL.axis}" stroke-width="${path ? 4 : hot ? 2.6 : 1.4}"/>`; s += `<text x="${(px(n) + px(c.n)) / 2 + (k === 0 ? -8 : 8)}" y="${(py(n) + py(c.n)) / 2}" text-anchor="${k === 0 ? 'end' : 'start'}" ${FONT_T} font-size="12" font-style="italic" fill="${hot ? COL.s3 : COL.ink}">${c.a}</text>`; edges(c.n, path); }); };
+  edges(root, true);
+  const nodes = n => { if (n.u) { s += `<text x="${px(n)}" y="${py(n) + 18}" text-anchor="middle" ${FONT_M} font-size="12" fill="${COL.ink}">(${n.u.map(v => fmtT(v, 2)).join(' ; ')})</text>`; return; } s += `<circle cx="${px(n)}" cy="${py(n)}" r="13" fill="${cols[n.pl - 1]}"/><text x="${px(n)}" y="${py(n) + 4.5}" text-anchor="middle" ${FONT_T} font-size="12" font-weight="700" fill="#fff">${n.lab || n.pl}</text>`; n.ch.forEach(c => nodes(c.n)); };
+  nodes(root);
+  return s + '</svg>';
 }
 I18N.fr.k = Object.assign({}, KBASE_FR, { title: 'Théorie des jeux 3 – Équilibre de Nash en stratégies pures', 'k-h1': 'Équilibre de Nash en stratégies pures', 'k-coursetitle': 'Meilleures réponses mutuelles : coordination, bataille des sexes, poule mouillée et équilibres multiples', 'k-extitle': 'Trouver les équilibres de Nash d\'un jeu fini', 'k-soltitle': 'Trouver les équilibres de Nash d\'un jeu fini' });
 I18N.en.k = Object.assign({}, KBASE_EN, { title: 'Game theory 3 – Pure-strategy Nash equilibrium', 'k-h1': 'Pure-strategy Nash equilibrium', 'k-coursetitle': 'Mutual best responses: coordination, battle of the sexes, chicken and multiple equilibria', 'k-extitle': 'Finding the Nash equilibria of a finite game', 'k-soltitle': 'Finding the Nash equilibria of a finite game' });
@@ -204,7 +282,7 @@ PAGE.compute = function (seed) {
   return D;
 };
 const J3L = { fr: { rows: ['H', 'M', 'B'], cols: ['G', 'C', 'D'], ch: ['Dévier', 'Continuer'] }, en: { rows: ['U', 'M', 'D'], cols: ['L', 'C', 'R'], ch: ['Swerve', 'Straight'] } };
-I18N.fr.ex = function (D) {
+I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
   const L = J3L.fr;
   return String.raw`<div class="context-block">Les deux jeux sont indépendants. Dans chaque case, le premier nombre est le gain du joueur en ligne, le second celui du joueur en colonne.</div>
 <p><strong>Jeu A.</strong> Le joueur 1 choisit H, M ou B ; le joueur 2 choisit G, C ou D.</p>
@@ -218,8 +296,8 @@ ${jxTable(D.C1, D.C2, L.ch, L.ch, '1 \\ 2')}
 <li><div class="q-text">(B) Déterminez les équilibres de Nash en stratégies pures. Existe-t-il un équilibre symétrique en stratégies pures ? Situez ce jeu dans le classement des jeux symétriques.</div></li>
 <li><div class="q-text">(B) Le conducteur 1 peut s'engager, avant le jeu, à continuer quoi qu'il arrive (en arrachant son volant, par exemple), et le conducteur 2 le voit. Quelle est alors l'issue du jeu ?</div></li>
 </ol></div>`;
-};
-I18N.en.ex = function (D) {
+});
+I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
   const L = J3L.en;
   return String.raw`<div class="context-block">The two games are independent. In each cell, the first number is the row player's payoff, the second the column player's.</div>
 <p><strong>Game A.</strong> Player 1 chooses U, M or D; player 2 chooses L, C or R.</p>
@@ -233,8 +311,9 @@ ${jxTable(D.C1, D.C2, L.ch, L.ch, '1 \\ 2')}
 <li><div class="q-text">(B) Determine the pure-strategy Nash equilibria. Is there a symmetric pure-strategy equilibrium? Place this game in the classification of symmetric games.</div></li>
 <li><div class="q-text">(B) Driver 1 can commit, before the game, to go straight whatever happens (by tearing off the steering wheel, for instance), and driver 2 sees it. What is the outcome of the game then?</div></li>
 </ol></div>`;
-};
+});
 function j3sol(D, lang) {
+  const texT = (x) => fq(x);
   const fr = lang === 'fr', T_ = s => fr ? s[0] : s[1], L = J3L[lang], U1 = D.U1, U2 = D.U2, B = D.B;
   const br1 = [0, 1, 2].map(j => { const col = U1.map(r => r[j]), mx = Math.max(...col), i = col.indexOf(mx); return `${T_(['face à', 'against'])} ${L.cols[j]}, ${T_(['le joueur 1 obtient', 'player 1 gets'])} ${col.join(', ')} ${T_(['avec', 'with'])} ${L.rows.join(', ')} : ${T_(['sa meilleure réponse est', 'their best response is'])} ${L.rows[i]}`; }).join(' ; ');
   const br2 = [0, 1, 2].map(i => { const row = U2[i], mx = Math.max(...row), j = row.indexOf(mx); return `${T_(['face à', 'against'])} ${L.rows[i]}, ${T_(['le joueur 2 obtient', 'player 2 gets'])} ${row.join(', ')} ${T_(['avec', 'with'])} ${L.cols.join(', ')} : ${T_(['sa meilleure réponse est', 'their best response is'])} ${L.cols[j]}`; }).join(' ; ');
@@ -261,5 +340,5 @@ function j3sol(D, lang) {
 </div></li>
 </ol></div>`;
 }
-I18N.fr.sol = D => j3sol(D, 'fr');
-I18N.en.sol = D => j3sol(D, 'en');
+I18N.fr.sol = D => fracClean((D => j3sol(D, 'fr'))(D));
+I18N.en.sol = D => fracClean((D => j3sol(D, 'en'))(D));

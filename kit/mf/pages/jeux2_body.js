@@ -137,7 +137,7 @@ PAGE.compute = function (seed) {
   D.i = D.E.R[0]; D.j = D.E.C[0];
   return D;
 };
-I18N.fr.ex = function (D) {
+I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
   const L = I18N.fr.f;
   return String.raw`<div class="context-block">Deux joueurs choisissent simultanément une stratégie : le joueur 1 parmi H, M et B, le joueur 2 parmi G, C et D. Dans chaque case, le premier nombre est le gain du joueur 1, le second celui du joueur 2.</div>
 ${jxTable(D.U1, D.U2, L.rows, L.cols, '1 \\ 2')}
@@ -148,8 +148,8 @@ ${jxTable(D.U1, D.U2, L.rows, L.cols, '1 \\ 2')}
 <li><div class="q-text">Représentez la matrice à chaque étape de l'élimination.</div></li>
 <li><div class="q-text">Reprenez l'élimination en examinant d'abord le joueur 2 à chaque étape. Le résultat change-t-il ?</div></li>
 </ol></div>`;
-};
-I18N.en.ex = function (D) {
+});
+I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
   const L = I18N.en.f;
   return String.raw`<div class="context-block">Two players simultaneously choose a strategy: player 1 among U, M and D, player 2 among L, C and R. In each cell, the first number is player 1's payoff, the second player 2's.</div>
 ${jxTable(D.U1, D.U2, L.rows, L.cols, '1 \\ 2')}
@@ -160,7 +160,7 @@ ${jxTable(D.U1, D.U2, L.rows, L.cols, '1 \\ 2')}
 <li><div class="q-text">Draw the matrix at each step of the elimination.</div></li>
 <li><div class="q-text">Redo the elimination examining player 2 first at each step. Does the result change?</div></li>
 </ol></div>`;
-};
+});
 function j2step(D, st, k, lang) {
   const fr = lang === 'fr', T_ = s => fr ? s[0] : s[1], L = I18N[lang].f, U1 = D.U1, U2 = D.U2;
   const nm = st.p === 1 ? L.rows : L.cols, other = st.p === 1 ? st.C : st.R, onm = st.p === 1 ? L.cols : L.rows;
@@ -169,6 +169,7 @@ function j2step(D, st, k, lang) {
   return `<p><strong>${T_(['Étape', 'Step'])} ${k}.</strong> ${T_(['Dans le jeu restant, la stratégie', 'In the remaining game, strategy'])} ${nm[st.out]} ${T_(['du joueur', 'of player'])} ${st.p} ${T_(['est strictement dominée par', 'is strictly dominated by'])} ${nm[st.by]} : ${T_(['contre chacune des stratégies restantes de l\'adversaire', 'against each of the opponent\'s remaining strategies'])} (${remain}), ${nm[st.by]} ${T_(['rapporte strictement plus', 'pays strictly more'])} : ${cmp}. ${k === 1 ? T_(['Un joueur rationnel ne joue donc pas', 'A rational player therefore does not play']) : T_(['L\'adversaire, sachant que le joueur', 'The opponent, knowing that player']) + ' ' + st.p + ' ' + T_(['est rationnel et connaît le jeu restant, sait qu\'il ne jouera pas', 'is rational and knows the remaining game, knows that they will not play'])} ${nm[st.out]} : ${T_(['on la supprime.', 'we remove it.'])}</p>`;
 }
 function j2sol(D, lang) {
+  const texT = (x) => fq(x);
   const fr = lang === 'fr', T_ = s => fr ? s[0] : s[1], L = I18N[lang].f, U1 = D.U1, U2 = D.U2, E = D.E, F = D.F, i = D.i, j = D.j;
   const noDom1 = [0, 1, 2].map(x => { const y = [0, 1, 2].find(y => y !== x && !([0, 1, 2].every(c => U1[x][c] > U1[y][c]))); const c = [0, 1, 2].find(c => U1[x][c] <= U1[y][c]); return `${L.rows[x]} ${T_(['ne fait pas mieux que', 'does no better than'])} ${L.rows[y]} ${T_(['face à', 'against'])} ${L.cols[c]} (\\(${U1[x][c]}\\le ${U1[y][c]}\\))`; }).join(' ; ');
   const noDom2 = [0, 1, 2].map(x => { const y = [0, 1, 2].find(y => y !== x && !([0, 1, 2].every(r => U2[r][x] > U2[r][y]))); const r = [0, 1, 2].find(r => U2[r][x] <= U2[r][y]); return `${L.cols[x]} ${T_(['ne fait pas mieux que', 'does no better than'])} ${L.cols[y]} ${T_(['face à', 'against'])} ${L.rows[r]} (\\(${U2[r][x]}\\le ${U2[r][y]}\\))`; }).join(' ; ');
@@ -195,5 +196,5 @@ function j2sol(D, lang) {
 </div></li>
 </ol></div>`;
 }
-I18N.fr.sol = D => j2sol(D, 'fr');
-I18N.en.sol = D => j2sol(D, 'en');
+I18N.fr.sol = D => fracClean((D => j2sol(D, 'fr'))(D));
+I18N.en.sol = D => fracClean((D => j2sol(D, 'en'))(D));

@@ -136,7 +136,7 @@ PAGE.compute = function (seed) {
   return D;
 };
 const J1L = { fr: { pub: ['Pas de publicité', 'Publicité'], A: 'Entreprise A', Bn: 'Entreprise B', rows: ['H', 'B'], cols: ['G', 'C', 'D'] }, en: { pub: ['No advertising', 'Advertising'], A: 'Firm A', Bn: 'Firm B', rows: ['U', 'D'], cols: ['L', 'C', 'R'] } };
-I18N.fr.ex = function (D) {
+I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
   const L = J1L.fr;
   return String.raw`<div class="context-block">Les deux jeux sont indépendants. Dans chaque case, le premier nombre est le gain du joueur en ligne, le second celui du joueur en colonne.</div>
 <p><strong>Jeu A.</strong> Deux entreprises A (en ligne) et B (en colonne) décident simultanément de lancer ou non une campagne de publicité. Les profits, en millions d'euros, sont les suivants.</p>
@@ -150,8 +150,8 @@ ${jxTable(D.B1, D.B2, L.rows, L.cols, '1 \\ 2')}
 <li><div class="q-text">(B) Le joueur 1 a-t-il une stratégie strictement dominante ? Et le joueur 2 ?</div></li>
 <li><div class="q-text">(B) En supposant que le joueur 2 sait que le joueur 1 est rationnel, déterminez l'issue du jeu. Représentez la matrice en soulignant les meilleures réponses.</div></li>
 </ol></div>`;
-};
-I18N.en.ex = function (D) {
+});
+I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
   const L = J1L.en;
   return String.raw`<div class="context-block">The two games are independent. In each cell, the first number is the row player's payoff, the second the column player's.</div>
 <p><strong>Game A.</strong> Two firms A (row) and B (column) simultaneously decide whether to launch an advertising campaign. Profits, in millions of euros, are as follows.</p>
@@ -165,8 +165,9 @@ ${jxTable(D.B1, D.B2, L.rows, L.cols, '1 \\ 2')}
 <li><div class="q-text">(B) Does player 1 have a strictly dominant strategy? And player 2?</div></li>
 <li><div class="q-text">(B) Assuming player 2 knows that player 1 is rational, determine the outcome of the game. Draw the matrix underlining the best responses.</div></li>
 </ol></div>`;
-};
+});
 function j1sol(D, lang) {
+  const texT = (x) => fq(x);
   const fr = lang === 'fr', T_ = s => fr ? s[0] : s[1], L = J1L[lang], np = L.pub[0].toLowerCase(), pp = L.pub[1].toLowerCase();
   const B1 = D.B1, B2 = D.B2, r = L.rows, c = L.cols, d = D.dom1, o = 1 - d;
   const colCmp = [0, 1, 2].map(j => `${T_(['si le joueur 2 joue', 'if player 2 plays'])} ${c[j]}, ${r[d]} ${T_(['rapporte', 'pays'])} ${B1[d][j]} ${T_(['contre', 'against'])} ${B1[o][j]} ${T_(['pour', 'for'])} ${r[o]}`).join(' ; ');
@@ -194,5 +195,5 @@ function j1sol(D, lang) {
 </div></li>
 </ol></div>`;
 }
-I18N.fr.sol = D => j1sol(D, 'fr');
-I18N.en.sol = D => j1sol(D, 'en');
+I18N.fr.sol = D => fracClean((D => j1sol(D, 'fr'))(D));
+I18N.en.sol = D => fracClean((D => j1sol(D, 'en'))(D));

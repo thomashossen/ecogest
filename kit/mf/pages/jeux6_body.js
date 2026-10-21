@@ -133,7 +133,7 @@ PAGE.compute = function (seed) {
   return D;
 };
 function j6leaves(T) { const out = []; const w = (n, path) => { if (n.u) { out.push({ path: path, u: n.u }); return; } n.ch.forEach(c => w(c.n, path.concat(c.a))); }; w(T, []); return out; }
-I18N.fr.ex = function (D) {
+I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
   const L = J6L.fr, lv = j6leaves(D.T3);
   return String.raw`<div class="context-block">Les deux parties sont indépendantes.<br><strong>Partie A.</strong> Un entrant décide d'entrer sur un marché ou de rester dehors. S'il reste dehors, il gagne 0 et le titulaire garde un profit de monopole \(M=${D.M}\). S'il entre, le titulaire choisit de combattre (gains : entrant \(${-D.fE}\), titulaire \(${D.fI}\)) ou d'accepter (gains : entrant \(${D.aE}\), titulaire \(${D.aI}\)).<br><strong>Partie B.</strong> Le joueur 1 choisit G ou D, puis le joueur 2, qui a observé ce choix, choisit g ou d, puis le joueur 3, qui a tout observé, choisit x ou y. Les gains (joueur 1 ; joueur 2 ; joueur 3) sont : ${lv.map(l => '(' + l.path.join(', ') + ') : \\((' + l.u.join('\\,;\\,') + ')\\)').join(' ; ')}.</div>
 <div class="questions"><ol>
@@ -143,8 +143,8 @@ I18N.fr.ex = function (D) {
 <li><div class="q-text">(B) Déterminez l'équilibre parfait en sous-jeux par induction à rebours, en justifiant chaque étape. Donnez la stratégie complète de chaque joueur et l'issue du jeu.</div></li>
 <li><div class="q-text">(B) Représentez l'arbre en mettant en évidence les choix de l'induction à rebours.</div></li>
 </ol></div>`;
-};
-I18N.en.ex = function (D) {
+});
+I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
   const L = J6L.en, lv = j6leaves(D.T3);
   const tr = s => ({ G: 'L', D: 'R', g: 'l', d: 'r' })[s] || s;
   return String.raw`<div class="context-block">The two parts are independent.<br><strong>Part A.</strong> An entrant decides whether to enter a market or stay out. If it stays out, it earns 0 and the incumbent keeps a monopoly profit \(M=${D.M}\). If it enters, the incumbent chooses to fight (payoffs: entrant \(${-D.fE}\), incumbent \(${D.fI}\)) or to accommodate (payoffs: entrant \(${D.aE}\), incumbent \(${D.aI}\)).<br><strong>Part B.</strong> Player 1 chooses L or R, then player 2, having observed this choice, chooses l or r, then player 3, having observed everything, chooses x or y. Payoffs (player 1; player 2; player 3) are: ${lv.map(l => '(' + l.path.map(tr).join(', ') + '): \\((' + l.u.join('\\,;\\,') + ')\\)').join('; ')}.</div>
@@ -155,8 +155,9 @@ I18N.en.ex = function (D) {
 <li><div class="q-text">(B) Determine the subgame perfect equilibrium by backward induction, justifying each step. Give each player's complete strategy and the outcome of the game.</div></li>
 <li><div class="q-text">(B) Draw the tree highlighting the backward-induction choices.</div></li>
 </ol></div>`;
-};
+});
 function j6sol(D, lang) {
+  const texT = (x) => fq(x);
   const fr = lang === 'fr', T_ = s => fr ? s[0] : s[1], L = J6L[lang], M = D.M, aE = D.aE, aI = D.aI, fE = D.fE, fI = D.fI, g = D.g, k = D.k;
   const tr = s => fr ? s : ({ G: 'L', D: 'R', g: 'l', d: 'r' })[s] || s;
   const T = j6entry(L, M, aE, aI, fE, fI); jxBack(T);
@@ -201,5 +202,5 @@ function j6sol(D, lang) {
 </div></li>
 </ol></div>`;
 }
-I18N.fr.sol = D => j6sol(D, 'fr');
-I18N.en.sol = D => j6sol(D, 'en');
+I18N.fr.sol = D => fracClean((D => j6sol(D, 'fr'))(D));
+I18N.en.sol = D => fracClean((D => j6sol(D, 'en'))(D));

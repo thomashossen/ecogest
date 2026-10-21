@@ -167,7 +167,7 @@ function e6graphR(D, lang) {
   G.legend([{ c: COL.s1, t: 'R₁' }, { c: COL.s2, t: 'R₂' }], G.ml + 160, 16);
   return '<div class="sol-fig">' + G.svg(fr ? 'Fonctions de réaction en prix' : 'Price reaction functions') + '</div>';
 }
-I18N.fr.ex = function (D) {
+I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">Les deux parties sont indépendantes.<br><strong>Partie A.</strong> Deux entreprises vendent un bien homogène dont la demande est \(Q=\frac{${D.a}-p}{${texT(D.b, 2)}}\), c'est-à-dire \(P(Q)=${D.a}-${cfx(D.b)}Q\). Elles fixent simultanément leurs prix ; les consommateurs achètent chez la moins chère. Leurs coûts marginaux sont constants : \(c_1=${D.c1}\) et \(c_2=${D.c2}\).<br><strong>Partie B.</strong> Deux entreprises vendent des produits différenciés, de demandes \(q_1=${D.al}-${cfx(D.be)}p_1+${cfx(D.ga)}p_2\) et \(q_2=${D.al}-${cfx(D.be)}p_2+${cfx(D.ga)}p_1\), avec un coût marginal commun \(c=${D.c}\).</div>
 <div class="questions"><ol>
 <li><div class="q-text">(A) Montrez qu'à l'équilibre de Bertrand, l'entreprise 1 fixe un prix égal (ou juste inférieur) à \(c_2\). Déterminez la quantité vendue, puis les profits.</div></li>
@@ -177,8 +177,8 @@ I18N.fr.ex = function (D) {
 <li><div class="q-text">(B) Représentez graphiquement les fonctions de réaction et l'équilibre. Pourquoi les fonctions de réaction sont-elles croissantes ?</div></li>
 <li><div class="q-text">(B) Les deux entreprises s'entendent pour fixer le même prix qui maximise leur profit joint. Déterminez ce prix, les quantités et les profits, et comparez avec l'équilibre de Bertrand du point de vue des entreprises et des consommateurs.</div></li>
 </ol></div>`;
-};
-I18N.en.ex = function (D) {
+});
+I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">The two parts are independent.<br><strong>Part A.</strong> Two firms sell a homogeneous good whose demand is \(Q=\frac{${D.a}-p}{${texT(D.b, 2)}}\), that is \(P(Q)=${D.a}-${cfx(D.b)}Q\). They set their prices simultaneously; consumers buy from the cheaper one. Their marginal costs are constant: \(c_1=${D.c1}\) and \(c_2=${D.c2}\).<br><strong>Part B.</strong> Two firms sell differentiated products, with demands \(q_1=${D.al}-${cfx(D.be)}p_1+${cfx(D.ga)}p_2\) and \(q_2=${D.al}-${cfx(D.be)}p_2+${cfx(D.ga)}p_1\), and a common marginal cost \(c=${D.c}\).</div>
 <div class="questions"><ol>
 <li><div class="q-text">(A) Show that in the Bertrand equilibrium, firm 1 sets a price equal to (or just below) \(c_2\). Determine the quantity sold, then the profits.</div></li>
@@ -188,26 +188,27 @@ I18N.en.ex = function (D) {
 <li><div class="q-text">(B) Draw the reaction functions and the equilibrium. Why are the reaction functions increasing?</div></li>
 <li><div class="q-text">(B) The two firms agree to set the same price maximising their joint profit. Determine this price, the quantities and the profits, and compare with the Bertrand equilibrium from the point of view of firms and consumers.</div></li>
 </ol></div>`;
-};
+});
 function e6sol(D, lang) {
+  const texT = (x) => fq(x);
   const fr = lang === 'fr', T_ = s => fr ? s[0] : s[1], a = D.a, b = D.b, c1 = D.c1, c2 = D.c2, n4 = x => texT(x, 4), m = x => texT(x, 2);
   const SC = T_(['SC', 'CS']), SP = T_(['SP', 'PS']), PS = T_(['PS', 'DWL']);
   const qd = p => Math.abs(b - 1) < 1e-12 ? String.raw`${a}-${p}` : String.raw`\frac{${a}-${p}}{${texT(b, 2)}}`;
   const al = D.al, be = D.be, ga = D.ga, c = D.c;
   return String.raw`<div class="st"><ol>
 <li><div class="q-content">
-  <p>${T_(['Raisonnons par élimination des situations qui ne peuvent pas être un équilibre. Si l\'entreprise 1 fixait un prix supérieur à', 'Let us rule out the situations that cannot be an equilibrium. If firm 1 set a price above'])} \(c_2\), ${T_(['l\'entreprise 2 pourrait se placer juste en dessous, entre', 'firm 2 could undercut it, between'])} \(c_2\) ${T_(['et ce prix, capter tout le marché et faire un profit positif : ce ne serait pas un équilibre. Si l\'entreprise 1 fixait un prix inférieur à', 'and that price, capture the whole market and make a positive profit: this would not be an equilibrium. If firm 1 set a price below'])} \(c_2\), ${T_(['elle gagnerait à le remonter, puisque l\'entreprise 2 ne peut pas vendre en dessous de son coût. Elle fixe donc', 'it would gain by raising it, since firm 2 cannot sell below its cost. It therefore sets'])} \(p=c_2=${c2}\) ${T_(['(ou un prix infiniment proche, juste en dessous) et sert tout le marché. Ce prix est bien inférieur à son prix de monopole', '(or a price infinitely close, just below) and serves the whole market. This price is indeed below its monopoly price'])} \(p^m_1=\frac{${a}+${c1}}{2}=${n4(D.pm1)}\) : ${T_(['la concurrence potentielle de l\'entreprise 2 la contraint.', 'the potential competition of firm 2 constrains it.'])}</p>
+  <p>${T_(['Raisonnons par élimination des situations qui ne peuvent pas être un équilibre. Si l\'entreprise 1 fixait un prix supérieur à', 'Let us rule out the situations that cannot be an equilibrium. If firm 1 set a price above'])} \(c_2\), ${T_(['l\'entreprise 2 pourrait se placer juste en dessous, entre', 'firm 2 could undercut it, between'])} \(c_2\) ${T_(['et ce prix, capter tout le marché et faire un profit positif : ce ne serait pas un équilibre. Si l\'entreprise 1 fixait un prix inférieur à', 'and that price, capture the whole market and make a positive profit: this would not be an equilibrium. If firm 1 set a price below'])} \(c_2\), ${T_(['elle gagnerait à le remonter, puisque l\'entreprise 2 ne peut pas vendre en dessous de son coût. Elle fixe donc', 'it would gain by raising it, since firm 2 cannot sell below its cost. It therefore sets'])} \(p=c_2=${c2}\) ${T_(['(ou un prix infiniment proche, juste en dessous) et sert tout le marché. Ce prix est bien inférieur à son prix de monopole', '(or a price infinitely close, just below) and serves the whole market. This price is indeed below its monopoly price'])} \(p^m_1=\frac{${a}+${c1}}{2}=${fqa(D.pm1)}\) : ${T_(['la concurrence potentielle de l\'entreprise 2 la contraint.', 'the potential competition of firm 2 constrains it.'])}</p>
   <p>${T_(['On en déduit, d\'après la fonction de demande, la quantité vendue :', 'The demand function then gives the quantity sold:'])}
-  \[Q=${qd(c2)}=${n4(D.Q)}\]
+  \[Q=${qd(c2)}=${fqa(D.Q)}\]
   ${T_(['Le profit de l\'entreprise 1 est sa marge unitaire multipliée par cette quantité, celui de l\'entreprise 2 est nul :', 'Firm 1\'s profit is its unit margin times this quantity; firm 2\'s profit is zero:'])}
-  \[\Pi_1=(${c2}-${c1})\times ${n4(D.Q)}=${m(D.pi1)}\qquad\Pi_2=0\]</p>
+  \[\Pi_1=(${c2}-${c1})\times ${n4(D.Q)}=${fqa(D.pi1)}\qquad\Pi_2=0\]</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Le surplus des consommateurs est l\'intégrale de l\'écart entre la demande inverse et le prix payé, et le surplus des producteurs l\'intégrale de l\'écart entre le prix et le coût marginal de l\'entreprise qui produit :', 'Consumer surplus is the integral of the gap between inverse demand and the price paid, and producer surplus the integral of the gap between the price and the marginal cost of the producing firm:'])}
-  \[\begin{aligned}${SC}&amp;=\int_0^{${n4(D.Q)}}\big(${a}-${cfx(b)}q-${c2}\big)\,dq=\Big[${a - c2}\,q-${cfx(b / 2)}q^2\Big]_0^{${n4(D.Q)}}=${m(D.SC)}\\${SP}&amp;=\int_0^{${n4(D.Q)}}(${c2}-${c1})\,dq=${m(D.pi1)}\end{aligned}\]
-  ${T_(['Le surplus total vaut donc', 'Total surplus is therefore'])} \(W=${m(D.SC)}+${m(D.pi1)}=${m(D.W)}\). ${T_(['L\'optimum serait de vendre au coût marginal le plus bas,', 'The optimum would be to sell at the lowest marginal cost,'])} ${c1}, ${T_(['soit', 'that is'])} \(Q^e=${n4(D.Qe)}\) ${T_(['et un surplus total', 'and a total surplus'])} \(W^e=\int_0^{${n4(D.Qe)}}(${a}-${cfx(b)}q-${c1})\,dq=${m(D.We)}\). ${T_(['On en déduit la perte sèche :', 'Hence the deadweight loss:'])}
+  \[\begin{aligned}${SC}&amp;=\int_0^{${n4(D.Q)}}\big(${a}-${cfx(b)}q-${c2}\big)\,dq=\Big[${a - c2}\,q-${cfx(b / 2)}q^2\Big]_0^{${n4(D.Q)}}=${fqa(D.SC)}\\${SP}&amp;=\int_0^{${n4(D.Q)}}(${c2}-${c1})\,dq=${fqa(D.pi1)}\end{aligned}\]
+  ${T_(['Le surplus total vaut donc', 'Total surplus is therefore'])} \(W=${m(D.SC)}+${m(D.pi1)}=${fqa(D.W)}\). ${T_(['L\'optimum serait de vendre au coût marginal le plus bas,', 'The optimum would be to sell at the lowest marginal cost,'])} ${c1}, ${T_(['soit', 'that is'])} \(Q^e=${fqa(D.Qe)}\) ${T_(['et un surplus total', 'and a total surplus'])} \(W^e=\int_0^{${n4(D.Qe)}}(${a}-${cfx(b)}q-${c1})\,dq=${fqa(D.We)}\). ${T_(['On en déduit la perte sèche :', 'Hence the deadweight loss:'])}
   \[${PS}=W^e-W=${m(D.We)}-${m(D.W)}=${m(D.DWL)}=\tfrac12\,(${n4(D.Qe)}-${n4(D.Q)})\,(${c2}-${c1})\]
-  ${T_(['Si l\'entreprise 1 était seule, elle fixerait son prix de monopole', 'If firm 1 were alone, it would charge its monopoly price'])} \(${n4(D.pm1)}\), ${T_(['vendrait', 'sell'])} \(Q^m=${Math.abs(2 * b - 1) < 1e-12 ? a + '-' + c1 : String.raw`\frac{${a}-${c1}}{${n4(2 * b)}}`}=${n4(D.Qm)}\), ${T_(['et les mêmes intégrales donneraient', 'and the same integrals would give'])} \(${SC}^m=${m(D.SCm)}\), \(${SP}^m=${m(D.pim)}\), ${T_(['soit un surplus total de', 'that is a total surplus of'])} \(${m(D.Wm)}\). ${T_(['La seule présence de l\'entreprise 2, même si elle ne vend rien, fait baisser le prix, augmente le surplus des consommateurs de', 'The mere presence of firm 2, even though it sells nothing, lowers the price, raises consumer surplus by'])} \(${m(D.SC - D.SCm)}\) ${T_(['et réduit la perte sèche.', 'and reduces the deadweight loss.'])}</p>
+  ${T_(['Si l\'entreprise 1 était seule, elle fixerait son prix de monopole', 'If firm 1 were alone, it would charge its monopoly price'])} \(${n4(D.pm1)}\), ${T_(['vendrait', 'sell'])} \(Q^m=${Math.abs(2 * b - 1) < 1e-12 ? a + '-' + c1 : String.raw`\frac{${a}-${c1}}{${n4(2 * b)}}`}=${fqa(D.Qm)}\), ${T_(['et les mêmes intégrales donneraient', 'and the same integrals would give'])} \(${SC}^m=${fqa(D.SCm)}\), \(${SP}^m=${fqa(D.pim)}\), ${T_(['soit un surplus total de', 'that is a total surplus of'])} \(${m(D.Wm)}\). ${T_(['La seule présence de l\'entreprise 2, même si elle ne vend rien, fait baisser le prix, augmente le surplus des consommateurs de', 'The mere presence of firm 2, even though it sells nothing, lowers the price, raises consumer surplus by'])} \(${m(D.SC - D.SCm)}\) ${T_(['et réduit la perte sèche.', 'and reduces the deadweight loss.'])}</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Le prix d\'équilibre est la droite horizontale', 'The equilibrium price is the horizontal line'])} \(p=c_2\) ; ${T_(['la quantité se lit sur la demande. Le rectangle vert, entre', 'the quantity is read on the demand curve. The green rectangle, between'])} \(c_2\) ${T_(['et', 'and'])} \(c_1\), ${T_(['est le profit de l\'entreprise 1 ; le triangle rouge, au-delà, la perte sèche :', 'is firm 1\'s profit; the red triangle beyond it is the deadweight loss:'])}</p>
@@ -217,9 +218,9 @@ function e6sol(D, lang) {
   <p>${T_(['Le profit de l\'entreprise 1 est', 'Firm 1\'s profit is'])} \(\Pi_1=(p_1-${c})(${al}-${cfx(be)}p_1+${cfx(ga)}p_2)\). ${T_(['Pour un prix donné de sa concurrente, elle annule la dérivée de son profit par rapport à son propre prix :', 'For a given rival price, it sets the derivative of its profit with respect to its own price to zero:'])}
   \[\begin{aligned}\frac{\partial\Pi_1}{\partial p_1}=0&amp;\iff ${al}-${cfx(2 * be)}p_1+${cfx(ga)}p_2+${n4(be * c)}=0&amp;&amp;\text{${T_(['dérivée d\'un produit', 'derivative of a product'])}}\\&amp;\iff p_1=R_1(p_2)=${n4((al + be * c) / (2 * be))}+${n4(ga / (2 * be))}\,p_2\end{aligned}\]
   ${T_(['Par symétrie,', 'By symmetry,'])} \(p_2=R_2(p_1)=${n4((al + be * c) / (2 * be))}+${n4(ga / (2 * be))}\,p_1\). ${T_(['L\'équilibre est symétrique :', 'The equilibrium is symmetric:'])} \(p^*=${n4((al + be * c) / (2 * be))}+${n4(ga / (2 * be))}\,p^*\), ${T_(['d\'où', 'hence'])}
-  \[p^*=\frac{${al}+${n4(be * c)}}{${n4(2 * be)}-${n4(ga)}}=${n4(D.pB)}\]
+  \[p^*=\frac{${al}+${n4(be * c)}}{${n4(2 * be)}-${n4(ga)}}=${fqa(D.pB)}\]
   ${T_(['On en déduit, d\'après la fonction de demande, la quantité vendue par chaque entreprise, puis son profit :', 'The demand function then gives the quantity sold by each firm, then its profit:'])}
-  \[q^*=${al}-${cfx(be)}\times ${n4(D.pB)}+${cfx(ga)}\times ${n4(D.pB)}=${n4(D.qB)}\qquad\Pi^*=(${n4(D.pB)}-${c})\times ${n4(D.qB)}=${m(D.piB)}\]
+  \[q^*=${al}-${cfx(be)}\times ${n4(D.pB)}+${cfx(ga)}\times ${n4(D.pB)}=${fqa(D.qB)}\qquad\Pi^*=(${n4(D.pB)}-${c})\times ${n4(D.qB)}=${fqa(D.piB)}\]
   ${T_(['Le prix dépasse le coût marginal : la différenciation donne à chaque entreprise un pouvoir de marché, et le paradoxe de Bertrand disparaît.', 'The price exceeds marginal cost: differentiation gives each firm market power, and the Bertrand paradox disappears.'])}</p>
 </div></li>
 <li><div class="q-content">
@@ -228,10 +229,10 @@ function e6sol(D, lang) {
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Avec un prix commun', 'With a common price'])} \(p\), ${T_(['chaque entreprise vend', 'each firm sells'])} \(q=${al}-${n4(be - ga)}\,p\) ${T_(['et le profit joint vaut', 'and joint profit is'])} \(2\,(p-${c})(${al}-${n4(be - ga)}\,p)\). ${T_(['Il est maximal quand sa dérivée s\'annule :', 'It is maximal when its derivative vanishes:'])}
-  \[${al}-${n4(2 * (be - ga))}\,p+${n4((be - ga) * c)}=0\iff p^K=\frac{${al}+${n4((be - ga) * c)}}{${n4(2 * (be - ga))}}=${n4(D.pK)}\]
-  ${T_(['On en déduit, d\'après la fonction de demande, la quantité de chaque entreprise', 'The demand function then gives each firm\'s quantity'])}, \(q^K=${n4(D.qK)}\), ${T_(['et son profit', 'and its profit'])}, \(\Pi^K=(${n4(D.pK)}-${c})\times ${n4(D.qK)}=${m(D.piK)}\). ${T_(['La collusion augmente le prix', 'Collusion raises the price'])} (\(${n4(D.pK)}&gt;${n4(D.pB)}\)) ${T_(['et le profit de chaque entreprise, qui est son surplus de producteur', 'and each firm\'s profit, which is its producer surplus'])} (\(${m(D.piK)}&gt;${m(D.piB)}\)). ${T_(['Les consommateurs achètent moins de chaque produit, plus cher : leur surplus diminue. Comme pour le cartel en quantités, l\'entente n\'est pas un équilibre du jeu simultané : au prix', 'Consumers buy less of each product, at a higher price: their surplus falls. As for the quantity cartel, the agreement is not an equilibrium of the simultaneous game: at price'])} \(p^K\), ${T_(['la meilleure réponse de chaque entreprise est', 'each firm\'s best response is'])} \(R(p^K)=${n4((al + be * c + ga * D.pK) / (2 * be))}&lt;p^K\) : ${T_(['chacune a intérêt à baisser son prix.', 'each has an incentive to cut its price.'])}</p>
+  \[${al}-${n4(2 * (be - ga))}\,p+${n4((be - ga) * c)}=0\iff p^K=\frac{${al}+${n4((be - ga) * c)}}{${n4(2 * (be - ga))}}=${fqa(D.pK)}\]
+  ${T_(['On en déduit, d\'après la fonction de demande, la quantité de chaque entreprise', 'The demand function then gives each firm\'s quantity'])}, \(q^K=${fqa(D.qK)}\), ${T_(['et son profit', 'and its profit'])}, \(\Pi^K=(${n4(D.pK)}-${c})\times ${n4(D.qK)}=${fqa(D.piK)}\). ${T_(['La collusion augmente le prix', 'Collusion raises the price'])} (\(${n4(D.pK)}&gt;${n4(D.pB)}\)) ${T_(['et le profit de chaque entreprise, qui est son surplus de producteur', 'and each firm\'s profit, which is its producer surplus'])} (\(${m(D.piK)}&gt;${m(D.piB)}\)). ${T_(['Les consommateurs achètent moins de chaque produit, plus cher : leur surplus diminue. Comme pour le cartel en quantités, l\'entente n\'est pas un équilibre du jeu simultané : au prix', 'Consumers buy less of each product, at a higher price: their surplus falls. As for the quantity cartel, the agreement is not an equilibrium of the simultaneous game: at price'])} \(p^K\), ${T_(['la meilleure réponse de chaque entreprise est', 'each firm\'s best response is'])} \(R(p^K)=${n4((al + be * c + ga * D.pK) / (2 * be))}&lt;p^K\) : ${T_(['chacune a intérêt à baisser son prix.', 'each has an incentive to cut its price.'])}</p>
 </div></li>
 </ol></div>`;
 }
-I18N.fr.sol = D => e6sol(D, 'fr');
-I18N.en.sol = D => e6sol(D, 'en');
+I18N.fr.sol = D => fracClean((D => e6sol(D, 'fr'))(D));
+I18N.en.sol = D => fracClean((D => e6sol(D, 'en'))(D));

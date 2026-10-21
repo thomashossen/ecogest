@@ -165,7 +165,7 @@ PAGE.compute = function (seed) {
   return D;
 };
 const J4L = { fr: { r: ['Contrôler', 'Ne pas contrôler'], c: ['Frauder', 'Déclarer'], ch: ['Dévier', 'Continuer'] }, en: { r: ['Inspect', 'Not inspect'], c: ['Cheat', 'Declare'], ch: ['Swerve', 'Straight'] } };
-I18N.fr.ex = function (D) {
+I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
   const L = J4L.fr;
   return String.raw`<div class="context-block">Les deux jeux sont indépendants. Dans chaque case, le premier nombre est le gain du joueur en ligne, le second celui du joueur en colonne.</div>
 <p><strong>Jeu A.</strong> Un contrôleur fiscal (en ligne) choisit de contrôler ou non un contribuable (en colonne), qui choisit simultanément de frauder ou de déclarer honnêtement. Le contrôleur joue « contrôler » avec probabilité \(p\), le contribuable « frauder » avec probabilité \(q\).</p>
@@ -179,8 +179,8 @@ ${jxTable(D.CA, D.CB, L.ch, L.ch, '1 \\ 2')}
 <li><div class="q-text">(B) Déterminez tous les équilibres de Nash, purs et mixtes. Quelle est, à l'équilibre mixte, la probabilité d'accident ?</div></li>
 <li><div class="q-text">(B) Tracez les correspondances de meilleure réponse. Comment évolue la probabilité de continuer à l'équilibre mixte si le coût de l'accident augmente ?</div></li>
 </ol></div>`;
-};
-I18N.en.ex = function (D) {
+});
+I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
   const L = J4L.en;
   return String.raw`<div class="context-block">The two games are independent. In each cell, the first number is the row player's payoff, the second the column player's.</div>
 <p><strong>Game A.</strong> A tax inspector (row) chooses whether to inspect a taxpayer (column), who simultaneously chooses to cheat or to declare honestly. The inspector plays "inspect" with probability \(p\), the taxpayer "cheat" with probability \(q\).</p>
@@ -194,8 +194,9 @@ ${jxTable(D.CA, D.CB, L.ch, L.ch, '1 \\ 2')}
 <li><div class="q-text">(B) Determine all Nash equilibria, pure and mixed. In the mixed equilibrium, what is the probability of a crash?</div></li>
 <li><div class="q-text">(B) Draw the best-response correspondences. How does the probability of going straight in the mixed equilibrium change if the cost of a crash rises?</div></li>
 </ol></div>`;
-};
+});
 function j4sol(D, lang) {
+  const texT = (x) => fq(x);
   const fr = lang === 'fr', T_ = s => fr ? s[0] : s[1], L = J4L[lang], A = D.A, B = D.B, M = D.M, n4 = x => texT(x, 4);
   const bc = j => { const i = A[0][j] > A[1][j] ? 0 : 1; return `${T_(['face à', 'against'])} « ${L.c[j]} », ${T_(['le contrôleur obtient', 'the inspector gets'])} ${A[0][j]} ${T_(['en contrôlant et', 'by inspecting and'])} ${A[1][j]} ${T_(['sinon : il préfère', 'otherwise: they prefer'])} « ${L.r[i]} »`; };
   const br = i => { const j = B[i][0] > B[i][1] ? 0 : 1; return `${T_(['face à', 'against'])} « ${L.r[i]} », ${T_(['le contribuable obtient', 'the taxpayer gets'])} ${B[i][0]} ${T_(['en fraudant et', 'by cheating and'])} ${B[i][1]} ${T_(['en déclarant : il préfère', 'by declaring: they prefer'])} « ${L.c[j]} »`; };
@@ -210,10 +211,10 @@ function j4sol(D, lang) {
   <p>${T_(['À l\'équilibre mixte, le contribuable choisit', 'In the mixed equilibrium, the taxpayer chooses'])} \(q\) ${T_(['de façon que le contrôleur soit indifférent entre ses deux stratégies. Les gains espérés du contrôleur sont :', 'so that the inspector is indifferent between their two strategies. The inspector\'s expected payoffs are:'])}
   \[\begin{aligned}E(\text{${L.r[0]}})&amp;=${A[0][0]}\,q+${A[0][1]}\,(1-q)\\E(\text{${L.r[1]}})&amp;=${A[1][0]}\,q+${A[1][1]}\,(1-q)\end{aligned}\]
   ${T_(['En les égalisant :', 'Equating them:'])}
-  \[${A[0][0]}\,q+${A[0][1]}\,(1-q)=${A[1][0]}\,q+${A[1][1]}\,(1-q)\iff q^*=\frac{${A[1][1]}-${A[0][1]}}{${den1}}=${n4(M.q)}\]
+  \[${A[0][0]}\,q+${A[0][1]}\,(1-q)=${A[1][0]}\,q+${A[1][1]}\,(1-q)\iff q^*=\frac{${A[1][1]}-${A[0][1]}}{${den1}}=${fqa(M.q)}\]
   ${T_(['De même, le contrôleur choisit', 'Likewise, the inspector chooses'])} \(p\) ${T_(['de façon que le contribuable soit indifférent entre frauder et déclarer :', 'so that the taxpayer is indifferent between cheating and declaring:'])}
-  \[${B[0][0]}\,p+${B[1][0]}\,(1-p)=${B[0][1]}\,p+${B[1][1]}\,(1-p)\iff p^*=\frac{${B[1][1]}-${B[1][0]}}{${den2}}=${n4(M.p)}\]
-  ${T_(['Les deux probabilités sont comprises strictement entre 0 et 1 : l\'équilibre est bien strictement mixte. On en déduit les gains espérés en reportant', 'Both probabilities lie strictly between 0 and 1: the equilibrium is indeed strictly mixed. The expected payoffs follow by substituting'])} \(q^*\) ${T_(['dans le gain d\'une ligne quelconque du contrôleur, et', 'into the payoff of either of the inspector\'s rows, and'])} \(p^*\) ${T_(['dans celui d\'une colonne quelconque du contribuable :', 'into that of either of the taxpayer\'s columns:'])} \(U_C^*=${A[0][0]}\times ${n4(M.q)}+${A[0][1]}\times ${n4(1 - M.q)}=${n4(D.U1)}\) ${T_(['et', 'and'])} \(U_F^*=${B[0][0]}\times ${n4(M.p)}+${B[1][0]}\times ${n4(1 - M.p)}=${n4(D.U2)}\). ${T_(['La probabilité de fraude ne dépend que des gains du contrôleur : rendre les contrôles moins coûteux ne réduit pas la fraude à l\'équilibre, mais la fréquence des contrôles.', 'The probability of cheating only depends on the inspector\'s payoffs: making inspections cheaper does not reduce cheating in equilibrium, but the frequency of inspections.'])}</p>
+  \[${B[0][0]}\,p+${B[1][0]}\,(1-p)=${B[0][1]}\,p+${B[1][1]}\,(1-p)\iff p^*=\frac{${B[1][1]}-${B[1][0]}}{${den2}}=${fqa(M.p)}\]
+  ${T_(['Les deux probabilités sont comprises strictement entre 0 et 1 : l\'équilibre est bien strictement mixte. On en déduit les gains espérés en reportant', 'Both probabilities lie strictly between 0 and 1: the equilibrium is indeed strictly mixed. The expected payoffs follow by substituting'])} \(q^*\) ${T_(['dans le gain d\'une ligne quelconque du contrôleur, et', 'into the payoff of either of the inspector\'s rows, and'])} \(p^*\) ${T_(['dans celui d\'une colonne quelconque du contribuable :', 'into that of either of the taxpayer\'s columns:'])} \(U_C^*=${A[0][0]}\times ${n4(M.q)}+${A[0][1]}\times ${n4(1 - M.q)}=${fqa(D.U1)}\) ${T_(['et', 'and'])} \(U_F^*=${B[0][0]}\times ${n4(M.p)}+${B[1][0]}\times ${n4(1 - M.p)}=${fqa(D.U2)}\). ${T_(['La probabilité de fraude ne dépend que des gains du contrôleur : rendre les contrôles moins coûteux ne réduit pas la fraude à l\'équilibre, mais la fréquence des contrôles.', 'The probability of cheating only depends on the inspector\'s payoffs: making inspections cheaper does not reduce cheating in equilibrium, but the frequency of inspections.'])}</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['La meilleure réponse du contrôleur est', 'The inspector\'s best response is'])} \(p=1\) ${T_(['ou', 'or'])} \(p=0\) ${T_(['selon que', 'depending on whether'])} \(q\) ${T_(['est d\'un côté ou de l\'autre de', 'is on one side or the other of'])} \(q^*\), ${T_(['et tout', 'and any'])} \(p\) ${T_(['en', 'at'])} \(q=q^*\) ; ${T_(['de même pour le contribuable autour de', 'likewise for the taxpayer around'])} \(p^*\). ${T_(['Les deux correspondances ne se coupent qu\'en un point, à l\'intérieur du carré :', 'The two correspondences only cross at one point, inside the square:'])} \((q^*\,;\,p^*)=(${n4(M.q)}\,;\,${n4(M.p)})\).</p>
@@ -221,8 +222,8 @@ function j4sol(D, lang) {
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Si l\'autre dévie, continuer rapporte', 'If the other swerves, going straight pays'])} \(${w}\) ${T_(['contre', 'against'])} \(${t}\) ; ${T_(['s\'il continue, dévier rapporte', 'if they go straight, swerving pays'])} \(${l}\) ${T_(['contre', 'against'])} \(${-k}\). ${T_(['Les équilibres purs sont donc', 'The pure equilibria are therefore'])} (${ch[1]}, ${ch[0]}) ${T_(['et', 'and'])} (${ch[0]}, ${ch[1]}). ${T_(['Pour l\'équilibre mixte, notons', 'For the mixed equilibrium, let'])} \(q\) ${T_(['la probabilité que le conducteur 2 dévie ; le conducteur 1 est indifférent si :', 'be the probability that driver 2 swerves; driver 1 is indifferent if:'])}
-  \[${t}\,q+${l < 0 ? '(' + l + ')' : l}\,(1-q)=${w}\,q-${k}\,(1-q)\iff q^*=\frac{${-k}-${l < 0 ? '(' + l + ')' : l}}{${t}-${l < 0 ? '(' + l + ')' : l}-${w}-${k}}=${n4(CM.q)}\]
-  ${T_(['Par symétrie,', 'By symmetry,'])} \(p^*=${n4(CM.p)}\). ${T_(['Chacun continue avec probabilité', 'Each goes straight with probability'])} \(1-q^*=${n4(1 - CM.q)}\). ${T_(['Les tirages étant indépendants, l\'accident, qui se produit quand les deux continuent, a lieu avec probabilité', 'Draws being independent, a crash, which happens when both go straight, occurs with probability'])} \((1-p^*)(1-q^*)=${n4(D.crash)}\). ${T_(['Le gain espéré de chacun est', 'Each one\'s expected payoff is'])} \(${n4(D.CU)}\), ${T_(['inférieur à celui de la coopération mutuelle', 'below that of mutual swerving'])} (${t}).</p>
+  \[${t}\,q+${l < 0 ? '(' + l + ')' : l}\,(1-q)=${w}\,q-${k}\,(1-q)\iff q^*=\frac{${-k}-${l < 0 ? '(' + l + ')' : l}}{${t}-${l < 0 ? '(' + l + ')' : l}-${w}-${k}}=${fqa(CM.q)}\]
+  ${T_(['Par symétrie,', 'By symmetry,'])} \(p^*=${fqa(CM.p)}\). ${T_(['Chacun continue avec probabilité', 'Each goes straight with probability'])} \(1-q^*=${fqa(1 - CM.q)}\). ${T_(['Les tirages étant indépendants, l\'accident, qui se produit quand les deux continuent, a lieu avec probabilité', 'Draws being independent, a crash, which happens when both go straight, occurs with probability'])} \((1-p^*)(1-q^*)=${fqa(D.crash)}\). ${T_(['Le gain espéré de chacun est', 'Each one\'s expected payoff is'])} \(${n4(D.CU)}\), ${T_(['inférieur à celui de la coopération mutuelle', 'below that of mutual swerving'])} (${t}).</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Les correspondances se coupent en trois points : les deux coins des équilibres purs et le point intérieur de l\'équilibre mixte.', 'The correspondences cross at three points: the two corners of the pure equilibria and the interior point of the mixed equilibrium.'])}</p>
@@ -231,5 +232,5 @@ function j4sol(D, lang) {
 </div></li>
 </ol></div>`;
 }
-I18N.fr.sol = D => j4sol(D, 'fr');
-I18N.en.sol = D => j4sol(D, 'en');
+I18N.fr.sol = D => fracClean((D => j4sol(D, 'fr'))(D));
+I18N.en.sol = D => fracClean((D => j4sol(D, 'en'))(D));

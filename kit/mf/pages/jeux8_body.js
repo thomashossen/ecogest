@@ -130,7 +130,7 @@ PAGE.compute = function (seed) {
   D.k = j8k(D.T, D.R, D.P, D.d2);
   return D;
 };
-I18N.fr.ex = function (D) {
+I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">Deux entreprises jouent à chaque période le jeu suivant, où C signifie coopérer (respecter un accord de prix élevés) et D dévier (baisser son prix). Les gains sont en millions d'euros par période.</div>
 ${jxTable([[D.R, D.S], [D.T, D.P]], [[D.R, D.T], [D.S, D.P]], ['C', 'D'], ['C', 'D'], '1 \\ 2')}
 <div class="questions"><ol>
@@ -140,8 +140,8 @@ ${jxTable([[D.R, D.S], [D.T, D.P]], [[D.R, D.T], [D.S, D.P]], ['C', 'D'], ['C', 
 <li><div class="q-text">Avec \(\delta=${fmtT(D.d2, 2)}\), on remplace la punition éternelle par une punition de \(k\) périodes, après lesquelles on revient à la coopération. Quelle est la plus petite valeur de \(k\) qui dissuade la déviation ?</div></li>
 <li><div class="q-text">Représentez les gains cumulés actualisés de la coopération et de la déviation pour \(\delta=${fmtT(D.d, 2)}\), puis l'ensemble des gains moyens réalisables et individuellement rationnels. Que dit le théorème folk ?</div></li>
 </ol></div>`;
-};
-I18N.en.ex = function (D) {
+});
+I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">Two firms play the following game every period, where C means cooperate (keep a high-price agreement) and D means deviate (cut one's price). Payoffs are in millions of euros per period.</div>
 ${jxTable([[D.R, D.S], [D.T, D.P]], [[D.R, D.T], [D.S, D.P]], ['C', 'D'], ['C', 'D'], '1 \\ 2')}
 <div class="questions"><ol>
@@ -151,8 +151,9 @@ ${jxTable([[D.R, D.S], [D.T, D.P]], [[D.R, D.T], [D.S, D.P]], ['C', 'D'], ['C', 
 <li><div class="q-text">With \(\delta=${fmtT(D.d2, 2)}\), the eternal punishment is replaced by a punishment lasting \(k\) periods, after which cooperation resumes. What is the smallest \(k\) that deters deviation?</div></li>
 <li><div class="q-text">Draw the cumulative discounted payoffs of cooperation and deviation for \(\delta=${fmtT(D.d, 2)}\), then the set of feasible and individually rational average payoffs. What does the folk theorem say?</div></li>
 </ol></div>`;
-};
+});
 function j8sol(D, lang) {
+  const texT = (x) => fq(x);
   const fr = lang === 'fr', T_ = s => fr ? s[0] : s[1], T = D.T, R = D.R, P = D.P, S = D.S, d = D.d, d2 = D.d2, n4 = x => texT(x, 4);
   const ok = d >= D.crit, k = D.k;
   const sumk = kk => { let s = 0; for (let t = 1; t <= kk; t++) s += Math.pow(d2, t) * (R - P); return s; };
@@ -171,7 +172,7 @@ function j8sol(D, lang) {
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Si les deux entreprises suivent la stratégie de déclenchement, coopérer rapporte', 'If both firms follow the trigger strategy, cooperating yields'])} ${R} ${T_(['à chaque période. Une entreprise qui dévie obtient', 'every period. A firm that deviates gets'])} ${T} ${T_(['une fois, puis', 'once, then'])} ${P} ${T_(['pour toujours, puisque l\'autre la punit. En sommant les séries géométriques :', 'forever, since the other punishes it. Summing the geometric series:'])}
-  \[\begin{aligned}\frac{${R}}{1-\delta}\ge ${T}+\frac{${P}\,\delta}{1-\delta}&amp;\iff ${R}\ge ${T}\,(1-\delta)+${P}\,\delta&amp;&amp;\text{${T_(['en multipliant par', 'multiplying by'])} }1-\delta&gt;0\\&amp;\iff\delta\ge\delta^*=\frac{${T}-${R}}{${T}-${P}}=${n4(D.crit)}\end{aligned}\]
+  \[\begin{aligned}\frac{${R}}{1-\delta}\ge ${T}+\frac{${P}\,\delta}{1-\delta}&amp;\iff ${R}\ge ${T}\,(1-\delta)+${P}\,\delta&amp;&amp;\text{${T_(['en multipliant par', 'multiplying by'])} }1-\delta&gt;0\\&amp;\iff\delta\ge\delta^*=\frac{${T}-${R}}{${T}-${P}}=${fqa(D.crit)}\end{aligned}\]
   ${ok ? T_(['Avec', 'With']) + ' \\(\\delta=' + texT(d, 2) + '\\ge\\delta^*\\), ' + T_(['la coopération est un équilibre parfait : la perte future liée à la punition l\'emporte sur le gain immédiat de la déviation.', 'cooperation is a perfect equilibrium: the future loss from punishment outweighs the immediate gain from deviating.']) : T_(['Avec', 'With']) + ' \\(\\delta=' + texT(d, 2) + '&lt;\\delta^*\\), ' + T_(['la coopération n\'est pas soutenable : les entreprises accordent trop peu de poids à l\'avenir.', 'cooperation is not sustainable: firms give too little weight to the future.'])} ${T_(['La punition est crédible : dévier pour toujours est un équilibre de Nash à chaque période, donc dans chaque sous-jeu.', 'The punishment is credible: deviating forever is a Nash equilibrium in every period, hence in every subgame.'])}</p>
 </div></li>
 <li><div class="q-content">
@@ -180,7 +181,7 @@ function j8sol(D, lang) {
   ${isFinite(k) ? T_(['Les sommes partielles valent', 'The partial sums are']) + ' ' + [...Array(Math.min(k, 6))].map((_, i) => '\\(' + n4(sumk(i + 1)) + '\\)').join(T_([' ; ', '; '])) + (k > 6 ? '…' : '') + ' : ' + T_(['la condition est satisfaite pour la première fois à', 'the condition first holds at']) + ' \\(k=' + k + '\\). ' + T_(['Une punition de', 'A punishment of']) + ' ' + k + ' ' + T_(['période(s) suffit donc à dissuader la déviation, sans condamner les entreprises à une guerre des prix éternelle.', 'period(s) is therefore enough to deter deviation, without condemning firms to an eternal price war.']) : T_(['Même une punition infinie ne suffit pas, puisque', 'Even an infinite punishment is not enough, since']) + ' \\(\\delta&lt;\\delta^*\\).'}</p>
 </div></li>
 <li><div class="q-content">
-  <p>${T_(['Gains cumulés actualisés pour', 'Cumulative discounted payoffs for'])} \(\delta=${texT(d, 2)}\) : ${ok ? T_(['la courbe de la coopération finit par dépasser celle de la déviation.', 'the cooperation curve ends up above the deviation curve.']) : T_(['la courbe de la déviation reste au-dessus.', 'the deviation curve stays above.'])}</p>
+  <p>${T_(['Gains cumulés actualisés pour', 'Cumulative discounted payoffs for'])} \(\delta=${fqa(d)}\) : ${ok ? T_(['la courbe de la coopération finit par dépasser celle de la déviation.', 'the cooperation curve ends up above the deviation curve.']) : T_(['la courbe de la déviation reste au-dessus.', 'the deviation curve stays above.'])}</p>
   <div class="sol-fig">${G.svg('cum')}</div>
   <p>${T_(['Les gains moyens réalisables sont les combinaisons convexes des quatre couples du jeu de base ; ils sont individuellement rationnels si chacun obtient au moins', 'Feasible average payoffs are the convex combinations of the four stage-game pairs; they are individually rational if each gets at least'])} ${P}, ${T_(['ce que chaque entreprise peut se garantir en déviant toujours :', 'what each firm can guarantee itself by always deviating:'])}</p>
   ${j8folk(T, R, P, S, lang)}
@@ -188,5 +189,5 @@ function j8sol(D, lang) {
 </div></li>
 </ol></div>`;
 }
-I18N.fr.sol = D => j8sol(D, 'fr');
-I18N.en.sol = D => j8sol(D, 'en');
+I18N.fr.sol = D => fracClean((D => j8sol(D, 'fr'))(D));
+I18N.en.sol = D => fracClean((D => j8sol(D, 'en'))(D));
