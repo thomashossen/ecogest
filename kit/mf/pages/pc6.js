@@ -76,6 +76,24 @@ function eiSurplusFig(o) {
   G.legend([{ c: COL.s1, box: true, o: 0.3, t: fr ? 'surplus des consommateurs' : 'consumer surplus' }, { c: '#2e7d5b', box: true, o: 0.35, t: fr ? 'surplus des producteurs' : 'producer surplus' }, { c: COL.s3, box: true, o: 0.4, t: fr ? 'perte sèche' : 'deadweight loss' }], G.ml + 8, 16);
   return '<div class="sol-fig">' + (o.caption ? `<p style="text-align:center;margin:.2rem 0"><em>${o.caption}</em></p>` : '') + G.svg(o.aria || 'surplus') + '</div>';
 }
+/* corrigé en parties numérotées 1, 2 avec sous-questions a, b, c (comme mcaf3) */
+function regroupSol(html, heads, counts) {
+  const a = html.indexOf('<ol>'), b = html.lastIndexOf('</ol>');
+  if (a < 0 || b < 0) return html;
+  const inner = html.slice(a + 4, b), items = [];
+  let d = 0, start = -1, i = 0;
+  while (i < inner.length) {
+    if (inner.startsWith('<li', i) && /[\s>]/.test(inner[i + 3])) { if (d === 0) start = i; d++; i += 3; continue; }
+    if (inner.startsWith('</li>', i)) { d--; i += 5; if (d === 0) items.push(inner.slice(start, i)); continue; }
+    i++;
+  }
+  let k = 0, out = '<div class="st-parts">';
+  heads.forEach((h, p) => {
+    out += `<div class="calc-box"><span class="sol-sub">${p + 1}. ${h}</span><ol class="sub-list">${items.slice(k, k + counts[p]).join('')}</ol></div>`;
+    k += counts[p];
+  });
+  return out + '</div>';
+}
 I18N.fr.k = Object.assign({}, KBASE_FR, { title: 'Producteur et consommateur 6 – Minimisation du coût', 'k-h1': 'Minimisation du coût et fonction de coût', 'k-coursetitle': 'Isocoûts, condition de tangence, demandes conditionnelles de facteurs et fonction de coût', 'k-extitle': 'Demandes conditionnelles, fonction de coût et substitution des facteurs', 'k-soltitle': 'Demandes conditionnelles, fonction de coût et substitution des facteurs' });
 I18N.en.k = Object.assign({}, KBASE_EN, { title: 'Producer and consumer 6 – Cost minimisation', 'k-h1': 'Cost minimisation and the cost function', 'k-coursetitle': 'Isocosts, tangency condition, conditional factor demands and the cost function', 'k-extitle': 'Conditional demands, cost function and factor substitution', 'k-soltitle': 'Conditional demands, cost function and factor substitution' });
 
@@ -205,14 +223,14 @@ PAGE.compute = function (seed) {
   D.s = D.a + D.b; D.CM = D.O.C / D.q; D.Cm = D.O.C / (D.s * D.q);
   return D;
 };
-const p6f = D => String.raw`q=${D.A === 1 ? '' : D.A + '\\,'}K^{${texT(D.a, 2)}}L^{${texT(D.b, 2)}}`;
+const p6f = D => String.raw`q=${D.A === 1 ? '' : D.A + '\\,'}K^{${fq(D.a, 2)}}L^{${fq(D.b, 2)}}`;
 I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">Une entreprise produit selon la fonction \(${p6f(D)}\). Le salaire est \(w=${D.w}\) et le coût d'usage du capital \(r=${D.r}\). Elle souhaite produire \(q=${D.q}\).</div>
 <div class="questions"><ol>
 <li><div class="q-text">Écrivez le problème de minimisation du coût et son lagrangien. Montrez qu'à l'optimum le TMST est égal au rapport des prix des facteurs.</div></li>
 <li><div class="q-text">Déduisez-en les demandes conditionnelles de facteurs, puis leur valeur pour \(q=${D.q}\).</div></li>
 <li><div class="q-text">Déterminez la fonction de coût \(C(q)\), le coût moyen et le coût marginal. Calculez-les pour \(q=${D.q}\) et reliez leur évolution aux rendements d'échelle.</div></li>
-<li><div class="q-text">Le salaire passe à \(w'=${texT(D.wn, 2)}\). Déterminez la nouvelle combinaison de moindre coût pour produire la même quantité, et le nouveau coût. Commentez la substitution entre facteurs.</div></li>
+<li><div class="q-text">Le salaire passe à \(w'=${fq(D.wn, 2)}\). Déterminez la nouvelle combinaison de moindre coût pour produire la même quantité, et le nouveau coût. Commentez la substitution entre facteurs.</div></li>
 <li><div class="q-text">Représentez l'isoquante \(q=${D.q}\) et les isocoûts tangents avant et après la hausse du salaire.</div></li>
 </ol></div>`;
 });
@@ -222,7 +240,7 @@ I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
 <li><div class="q-text">Write the cost-minimisation problem and its Lagrangian. Show that at the optimum the MRTS equals the ratio of factor prices.</div></li>
 <li><div class="q-text">Deduce the conditional factor demands, then their value for \(q=${D.q}\).</div></li>
 <li><div class="q-text">Determine the cost function \(C(q)\), average cost and marginal cost. Compute them for \(q=${D.q}\) and relate their behaviour to returns to scale.</div></li>
-<li><div class="q-text">The wage rises to \(w'=${texT(D.wn, 2)}\). Determine the new least-cost combination to produce the same quantity, and the new cost. Comment on the substitution between factors.</div></li>
+<li><div class="q-text">The wage rises to \(w'=${fq(D.wn, 2)}\). Determine the new least-cost combination to produce the same quantity, and the new cost. Comment on the substitution between factors.</div></li>
 <li><div class="q-text">Draw the isoquant \(q=${D.q}\) and the tangent isocosts before and after the wage rise.</div></li>
 </ol></div>`;
 });

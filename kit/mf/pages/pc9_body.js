@@ -147,7 +147,7 @@ PAGE.compute = function (seed) {
   D.u0A = E.uA(D.xa, D.ya); D.u0B = E.uB(D.xb, D.yb); D.u1A = E.uA(E.A.x, E.A.y); D.u1B = E.uB(E.B.x, E.B.y);
   return D;
 };
-const p9U = (n, e) => String.raw`U_${n}(x,y)=x^{${texT(e, 2)}}\,y^{${texT(1 - e, 2)}}`;
+const p9U = (n, e) => String.raw`U_${n}(x,y)=x^{${fq(e, 2)}}\,y^{${fq(1 - e, 2)}}`;
 I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">Deux consommateurs A et B échangent deux biens \(x\) et \(y\). Leurs utilités sont \(${p9U('A', D.al)}\) et \(${p9U('B', D.be)}\). A possède initialement \(\omega_A=(${D.xa}\,;\,${D.ya})\) et B \(\omega_B=(${D.xb}\,;\,${D.yb})\). On prend le bien \(y\) comme numéraire (\(p_y=1\)) et l'on note \(p\) le prix du bien \(x\).</div>
 <div class="questions"><ol>

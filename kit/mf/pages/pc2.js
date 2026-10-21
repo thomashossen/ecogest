@@ -76,6 +76,24 @@ function eiSurplusFig(o) {
   G.legend([{ c: COL.s1, box: true, o: 0.3, t: fr ? 'surplus des consommateurs' : 'consumer surplus' }, { c: '#2e7d5b', box: true, o: 0.35, t: fr ? 'surplus des producteurs' : 'producer surplus' }, { c: COL.s3, box: true, o: 0.4, t: fr ? 'perte sèche' : 'deadweight loss' }], G.ml + 8, 16);
   return '<div class="sol-fig">' + (o.caption ? `<p style="text-align:center;margin:.2rem 0"><em>${o.caption}</em></p>` : '') + G.svg(o.aria || 'surplus') + '</div>';
 }
+/* corrigé en parties numérotées 1, 2 avec sous-questions a, b, c (comme mcaf3) */
+function regroupSol(html, heads, counts) {
+  const a = html.indexOf('<ol>'), b = html.lastIndexOf('</ol>');
+  if (a < 0 || b < 0) return html;
+  const inner = html.slice(a + 4, b), items = [];
+  let d = 0, start = -1, i = 0;
+  while (i < inner.length) {
+    if (inner.startsWith('<li', i) && /[\s>]/.test(inner[i + 3])) { if (d === 0) start = i; d++; i += 3; continue; }
+    if (inner.startsWith('</li>', i)) { d--; i += 5; if (d === 0) items.push(inner.slice(start, i)); continue; }
+    i++;
+  }
+  let k = 0, out = '<div class="st-parts">';
+  heads.forEach((h, p) => {
+    out += `<div class="calc-box"><span class="sol-sub">${p + 1}. ${h}</span><ol class="sub-list">${items.slice(k, k + counts[p]).join('')}</ol></div>`;
+    k += counts[p];
+  });
+  return out + '</div>';
+}
 I18N.fr.k = Object.assign({}, KBASE_FR, { title: 'Producteur et consommateur 2 – Choix optimal et demandes', 'k-h1': 'Choix optimal du consommateur et fonctions de demande', 'k-coursetitle': 'Contrainte budgétaire, condition de tangence, lagrangien, demandes marshalliennes et solutions en coin', 'k-extitle': 'Choix optimal Cobb-Douglas, utilité indirecte et substituts parfaits', 'k-soltitle': 'Choix optimal Cobb-Douglas, utilité indirecte et substituts parfaits' });
 I18N.en.k = Object.assign({}, KBASE_EN, { title: 'Producer and consumer 2 – Optimal choice and demand', 'k-h1': 'Consumer\'s optimal choice and demand functions', 'k-coursetitle': 'Budget constraint, tangency condition, Lagrangian, Marshallian demands and corner solutions', 'k-extitle': 'Cobb-Douglas optimal choice, indirect utility and perfect substitutes', 'k-soltitle': 'Cobb-Douglas optimal choice, indirect utility and perfect substitutes' });
 
@@ -216,7 +234,7 @@ I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
 <li><div class="q-text">Écrivez le lagrangien du problème du consommateur et les conditions du premier ordre. Montrez qu'elles impliquent l'égalité du TMS et du rapport des prix.</div></li>
 <li><div class="q-text">Déduisez-en les fonctions de demande, le panier optimal, le niveau d'utilité atteint et la part du revenu consacrée à chaque bien. Calculez le multiplicateur de Lagrange et interprétez-le.</div></li>
 <li><div class="q-text">Déterminez l'utilité indirecte \(V(p_1,p_2,R)\) et vérifiez sa valeur.</div></li>
-<li><div class="q-text">Le prix du bien 1 passe à \(${texT(D.p1n, 2)}\). Déterminez le nouveau panier optimal et représentez graphiquement les deux droites de budget et les deux optimums.</div></li>
+<li><div class="q-text">Le prix du bien 1 passe à \(${fq(D.p1n, 2)}\). Déterminez le nouveau panier optimal et représentez graphiquement les deux droites de budget et les deux optimums.</div></li>
 <li><div class="q-text">Un autre consommateur, de même revenu et face aux prix initiaux, a pour utilité \(W(x_1,x_2)=${D.a}\,x_1+${D.b}\,x_2\). Déterminez son panier optimal.</div></li>
 </ol></div>`;
 });
@@ -227,7 +245,7 @@ I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
 <li><div class="q-text">Write the Lagrangian of the consumer's problem and the first-order conditions. Show that they imply the equality of the MRS and the price ratio.</div></li>
 <li><div class="q-text">Deduce the demand functions, the optimal bundle, the utility level reached and the share of income spent on each good. Compute the Lagrange multiplier and interpret it.</div></li>
 <li><div class="q-text">Determine the indirect utility \(V(p_1,p_2,R)\) and check its value.</div></li>
-<li><div class="q-text">The price of good 1 changes to \(${texT(D.p1n, 2)}\). Determine the new optimal bundle and draw the two budget lines and the two optima.</div></li>
+<li><div class="q-text">The price of good 1 changes to \(${fq(D.p1n, 2)}\). Determine the new optimal bundle and draw the two budget lines and the two optima.</div></li>
 <li><div class="q-text">Another consumer, with the same income and facing the initial prices, has utility \(W(x_1,x_2)=${D.a}\,x_1+${D.b}\,x_2\). Determine their optimal bundle.</div></li>
 </ol></div>`;
 });

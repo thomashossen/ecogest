@@ -138,7 +138,7 @@ I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
 <li><div class="q-text">Écrivez le lagrangien du problème du consommateur et les conditions du premier ordre. Montrez qu'elles impliquent l'égalité du TMS et du rapport des prix.</div></li>
 <li><div class="q-text">Déduisez-en les fonctions de demande, le panier optimal, le niveau d'utilité atteint et la part du revenu consacrée à chaque bien. Calculez le multiplicateur de Lagrange et interprétez-le.</div></li>
 <li><div class="q-text">Déterminez l'utilité indirecte \(V(p_1,p_2,R)\) et vérifiez sa valeur.</div></li>
-<li><div class="q-text">Le prix du bien 1 passe à \(${texT(D.p1n, 2)}\). Déterminez le nouveau panier optimal et représentez graphiquement les deux droites de budget et les deux optimums.</div></li>
+<li><div class="q-text">Le prix du bien 1 passe à \(${fq(D.p1n, 2)}\). Déterminez le nouveau panier optimal et représentez graphiquement les deux droites de budget et les deux optimums.</div></li>
 <li><div class="q-text">Un autre consommateur, de même revenu et face aux prix initiaux, a pour utilité \(W(x_1,x_2)=${D.a}\,x_1+${D.b}\,x_2\). Déterminez son panier optimal.</div></li>
 </ol></div>`;
 });
@@ -149,7 +149,7 @@ I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
 <li><div class="q-text">Write the Lagrangian of the consumer's problem and the first-order conditions. Show that they imply the equality of the MRS and the price ratio.</div></li>
 <li><div class="q-text">Deduce the demand functions, the optimal bundle, the utility level reached and the share of income spent on each good. Compute the Lagrange multiplier and interpret it.</div></li>
 <li><div class="q-text">Determine the indirect utility \(V(p_1,p_2,R)\) and check its value.</div></li>
-<li><div class="q-text">The price of good 1 changes to \(${texT(D.p1n, 2)}\). Determine the new optimal bundle and draw the two budget lines and the two optima.</div></li>
+<li><div class="q-text">The price of good 1 changes to \(${fq(D.p1n, 2)}\). Determine the new optimal bundle and draw the two budget lines and the two optima.</div></li>
 <li><div class="q-text">Another consumer, with the same income and facing the initial prices, has utility \(W(x_1,x_2)=${D.a}\,x_1+${D.b}\,x_2\). Determine their optimal bundle.</div></li>
 </ol></div>`;
 });

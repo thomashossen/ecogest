@@ -245,7 +245,7 @@ PAGE.compute = function (seed) {
   D.passK = b / (2 * (b + d));
   return D;
 };
-function e1C(D) { return String.raw`C(Q)=${D.c}\,Q${D.d ? '+' + texT(D.d, 2) + '\\,Q^2' : ''}+${D.F}`; }
+function e1C(D) { return String.raw`C(Q)=${D.c}\,Q${D.d ? '+' + fq(D.d, 2) + '\\,Q^2' : ''}+${D.F}`; }
 /* résolution graphique : figure propre au tirage */
 function e1graph(D, lang, tax) {
   const fr = lang === 'fr', R = D.R, a = D.a, b = D.b, c = D.c, d = D.d, Qmax = a / b, M = tax ? D.T : R, t = tax ? D.t : 0;

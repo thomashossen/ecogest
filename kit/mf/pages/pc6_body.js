@@ -127,14 +127,14 @@ PAGE.compute = function (seed) {
   D.s = D.a + D.b; D.CM = D.O.C / D.q; D.Cm = D.O.C / (D.s * D.q);
   return D;
 };
-const p6f = D => String.raw`q=${D.A === 1 ? '' : D.A + '\\,'}K^{${texT(D.a, 2)}}L^{${texT(D.b, 2)}}`;
+const p6f = D => String.raw`q=${D.A === 1 ? '' : D.A + '\\,'}K^{${fq(D.a, 2)}}L^{${fq(D.b, 2)}}`;
 I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">Une entreprise produit selon la fonction \(${p6f(D)}\). Le salaire est \(w=${D.w}\) et le coût d'usage du capital \(r=${D.r}\). Elle souhaite produire \(q=${D.q}\).</div>
 <div class="questions"><ol>
 <li><div class="q-text">Écrivez le problème de minimisation du coût et son lagrangien. Montrez qu'à l'optimum le TMST est égal au rapport des prix des facteurs.</div></li>
 <li><div class="q-text">Déduisez-en les demandes conditionnelles de facteurs, puis leur valeur pour \(q=${D.q}\).</div></li>
 <li><div class="q-text">Déterminez la fonction de coût \(C(q)\), le coût moyen et le coût marginal. Calculez-les pour \(q=${D.q}\) et reliez leur évolution aux rendements d'échelle.</div></li>
-<li><div class="q-text">Le salaire passe à \(w'=${texT(D.wn, 2)}\). Déterminez la nouvelle combinaison de moindre coût pour produire la même quantité, et le nouveau coût. Commentez la substitution entre facteurs.</div></li>
+<li><div class="q-text">Le salaire passe à \(w'=${fq(D.wn, 2)}\). Déterminez la nouvelle combinaison de moindre coût pour produire la même quantité, et le nouveau coût. Commentez la substitution entre facteurs.</div></li>
 <li><div class="q-text">Représentez l'isoquante \(q=${D.q}\) et les isocoûts tangents avant et après la hausse du salaire.</div></li>
 </ol></div>`;
 });
@@ -144,7 +144,7 @@ I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
 <li><div class="q-text">Write the cost-minimisation problem and its Lagrangian. Show that at the optimum the MRTS equals the ratio of factor prices.</div></li>
 <li><div class="q-text">Deduce the conditional factor demands, then their value for \(q=${D.q}\).</div></li>
 <li><div class="q-text">Determine the cost function \(C(q)\), average cost and marginal cost. Compute them for \(q=${D.q}\) and relate their behaviour to returns to scale.</div></li>
-<li><div class="q-text">The wage rises to \(w'=${texT(D.wn, 2)}\). Determine the new least-cost combination to produce the same quantity, and the new cost. Comment on the substitution between factors.</div></li>
+<li><div class="q-text">The wage rises to \(w'=${fq(D.wn, 2)}\). Determine the new least-cost combination to produce the same quantity, and the new cost. Comment on the substitution between factors.</div></li>
 <li><div class="q-text">Draw the isoquant \(q=${D.q}\) and the tangent isocosts before and after the wage rise.</div></li>
 </ol></div>`;
 });

@@ -176,7 +176,7 @@ function e7graphPE(D, lang) {
   return '<div class="sol-fig">' + G.svg(fr ? 'Profit de l\'entrant selon la production du titulaire' : 'Entrant profit as a function of incumbent output') + '</div>';
 }
 I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
-  return String.raw`<div class="context-block">Une entreprise en place (le titulaire) est seule sur un marché de demande inverse \(P(Q)=${D.a}-${cfx(D.b)}Q\), avec un coût marginal constant \(c=${D.c}\). Un entrant potentiel a le même coût marginal, mais doit payer un coût fixe d'entrée \(F=${texT(D.F, 2)}\). Le titulaire choisit d'abord sa quantité et s'y engage ; l'entrant l'observe, puis décide d'entrer ou non.</div>
+  return String.raw`<div class="context-block">Une entreprise en place (le titulaire) est seule sur un marché de demande inverse \(P(Q)=${D.a}-${cfx(D.b)}Q\), avec un coût marginal constant \(c=${D.c}\). Un entrant potentiel a le même coût marginal, mais doit payer un coût fixe d'entrée \(F=${fq(D.F, 2)}\). Le titulaire choisit d'abord sa quantité et s'y engage ; l'entrant l'observe, puis décide d'entrer ou non.</div>
 <div class="questions"><ol>
 <li><div class="q-text">En l'absence de menace d'entrée, déterminez la quantité, le prix et le profit du monopole.</div></li>
 <li><div class="q-text">Déterminez la meilleure réponse de l'entrant à une quantité \(q_I\) du titulaire, puis son profit. Déduisez-en la quantité limite et le prix limite. L'entrée est-elle bloquée ?</div></li>
@@ -186,7 +186,7 @@ I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
 </ol></div>`;
 });
 I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
-  return String.raw`<div class="context-block">An incumbent is alone on a market with inverse demand \(P(Q)=${D.a}-${cfx(D.b)}Q\), with a constant marginal cost \(c=${D.c}\). A potential entrant has the same marginal cost, but must pay a fixed entry cost \(F=${texT(D.F, 2)}\). The incumbent first chooses its quantity and commits to it; the entrant observes it, then decides whether to enter.</div>
+  return String.raw`<div class="context-block">An incumbent is alone on a market with inverse demand \(P(Q)=${D.a}-${cfx(D.b)}Q\), with a constant marginal cost \(c=${D.c}\). A potential entrant has the same marginal cost, but must pay a fixed entry cost \(F=${fq(D.F, 2)}\). The incumbent first chooses its quantity and commits to it; the entrant observes it, then decides whether to enter.</div>
 <div class="questions"><ol>
 <li><div class="q-text">Without any entry threat, determine the monopoly quantity, price and profit.</div></li>
 <li><div class="q-text">Determine the entrant's best response to an incumbent quantity \(q_I\), then its profit. Deduce the limit quantity and the limit price. Is entry blockaded?</div></li>

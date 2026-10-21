@@ -151,31 +151,21 @@ const J3L = { fr: { rows: ['H', 'M', 'B'], cols: ['G', 'C', 'D'], ch: ['Dévier'
 I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
   const L = J3L.fr;
   return String.raw`<div class="context-block">Les deux jeux sont indépendants. Dans chaque case, le premier nombre est le gain du joueur en ligne, le second celui du joueur en colonne.</div>
-<p><strong>Jeu A.</strong> Le joueur 1 choisit H, M ou B ; le joueur 2 choisit G, C ou D.</p>
-${jxTable(D.U1, D.U2, L.rows, L.cols, '1 \\ 2')}
-<p><strong>Jeu B.</strong> Deux conducteurs foncent l'un vers l'autre et choisissent simultanément de dévier ou de continuer.</p>
-${jxTable(D.C1, D.C2, L.ch, L.ch, '1 \\ 2')}
 <div class="questions"><ol>
-<li><div class="q-text">(A) Déterminez la meilleure réponse du joueur 1 à chaque stratégie du joueur 2, puis la meilleure réponse du joueur 2 à chaque stratégie du joueur 1.</div></li>
-<li><div class="q-text">(A) Déduisez-en tous les équilibres de Nash en stratégies pures, et représentez la matrice en soulignant les meilleures réponses.</div></li>
-<li><div class="q-text">(A) Comparez les équilibres du point de vue des joueurs. Peut-on prédire lequel sera joué ?</div></li>
-<li><div class="q-text">(B) Déterminez les équilibres de Nash en stratégies pures. Existe-t-il un équilibre symétrique en stratégies pures ? Situez ce jeu dans le classement des jeux symétriques.</div></li>
-<li><div class="q-text">(B) Le conducteur 1 peut s'engager, avant le jeu, à continuer quoi qu'il arrive (en arrachant son volant, par exemple), et le conducteur 2 le voit. Quelle est alors l'issue du jeu ?</div></li>
+<li><div class="q-text"><strong>Jeu A — Un jeu à deux équilibres.</strong> Le joueur 1 choisit H, M ou B ; le joueur 2 choisit G, C ou D.
+${jxTable(D.U1, D.U2, L.rows, L.cols, '1 \\ 2')}<ol class="sub-list"><li>Déterminez la meilleure réponse du joueur 1 à chaque stratégie du joueur 2, puis la meilleure réponse du joueur 2 à chaque stratégie du joueur 1.</li><li>Déduisez-en tous les équilibres de Nash en stratégies pures, et représentez la matrice en soulignant les meilleures réponses.</li><li>Comparez les équilibres du point de vue des joueurs. Peut-on prédire lequel sera joué ?</li></ol></div></li>
+<li><div class="q-text"><strong>Jeu B — La poule mouillée.</strong> Deux conducteurs foncent l'un vers l'autre et choisissent simultanément de dévier ou de continuer.
+${jxTable(D.C1, D.C2, L.ch, L.ch, '1 \\ 2')}<ol class="sub-list"><li>Déterminez les équilibres de Nash en stratégies pures. Existe-t-il un équilibre symétrique en stratégies pures ? Situez ce jeu dans le classement des jeux symétriques.</li><li>Le conducteur 1 peut s'engager, avant le jeu, à continuer quoi qu'il arrive (en arrachant son volant, par exemple), et le conducteur 2 le voit. Quelle est alors l'issue du jeu ?</li></ol></div></li>
 </ol></div>`;
 });
 I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
   const L = J3L.en;
   return String.raw`<div class="context-block">The two games are independent. In each cell, the first number is the row player's payoff, the second the column player's.</div>
-<p><strong>Game A.</strong> Player 1 chooses U, M or D; player 2 chooses L, C or R.</p>
-${jxTable(D.U1, D.U2, L.rows, L.cols, '1 \\ 2')}
-<p><strong>Game B.</strong> Two drivers race towards each other and simultaneously choose to swerve or go straight.</p>
-${jxTable(D.C1, D.C2, L.ch, L.ch, '1 \\ 2')}
 <div class="questions"><ol>
-<li><div class="q-text">(A) Determine player 1's best response to each strategy of player 2, then player 2's best response to each strategy of player 1.</div></li>
-<li><div class="q-text">(A) Deduce all the pure-strategy Nash equilibria, and draw the matrix underlining the best responses.</div></li>
-<li><div class="q-text">(A) Compare the equilibria from the players' point of view. Can we predict which one will be played?</div></li>
-<li><div class="q-text">(B) Determine the pure-strategy Nash equilibria. Is there a symmetric pure-strategy equilibrium? Place this game in the classification of symmetric games.</div></li>
-<li><div class="q-text">(B) Driver 1 can commit, before the game, to go straight whatever happens (by tearing off the steering wheel, for instance), and driver 2 sees it. What is the outcome of the game then?</div></li>
+<li><div class="q-text"><strong>Game A — A game with two equilibria.</strong> Player 1 chooses U, M or D; player 2 chooses L, C or R.
+${jxTable(D.U1, D.U2, L.rows, L.cols, '1 \\ 2')}<ol class="sub-list"><li>Determine player 1's best response to each strategy of player 2, then player 2's best response to each strategy of player 1.</li><li>Deduce all the pure-strategy Nash equilibria, and draw the matrix underlining the best responses.</li><li>Compare the equilibria from the players' point of view. Can we predict which one will be played?</li></ol></div></li>
+<li><div class="q-text"><strong>Game B — Chicken.</strong> Two drivers race towards each other and simultaneously choose to swerve or go straight.
+${jxTable(D.C1, D.C2, L.ch, L.ch, '1 \\ 2')}<ol class="sub-list"><li>Determine the pure-strategy Nash equilibria. Is there a symmetric pure-strategy equilibrium? Place this game in the classification of symmetric games.</li><li>Driver 1 can commit, before the game, to go straight whatever happens (by tearing off the steering wheel, for instance), and driver 2 sees it. What is the outcome of the game then?</li></ol></div></li>
 </ol></div>`;
 });
 function j3sol(D, lang) {
@@ -191,7 +181,7 @@ function j3sol(D, lang) {
   <p>${T_(['Pour le joueur 2, on fixe la ligne choisie par le joueur 1 et l\'on compare ses gains dans cette ligne :', 'For player 2, fix the row chosen by player 1 and compare their payoffs in that row:'])} ${br2}.</p>
 </div></li>
 <li><div class="q-content">
-  <p>${T_(['Un équilibre de Nash est un profil où chaque stratégie est la meilleure réponse à l\'autre. On cherche donc les cases où la stratégie du joueur 1 est sa meilleure réponse à la colonne et où celle du joueur 2 est sa meilleure réponse à la ligne. D\'après la question 1, il y en a deux :', 'A Nash equilibrium is a profile where each strategy is the best response to the other. We therefore look for the cells where player 1\'s strategy is their best response to the column and player 2\'s is their best response to the row. From question 1, there are two:'])} ${nm(e)}, ${T_(['de gains', 'with payoffs'])} ${pay(e)}, ${T_(['et', 'and'])} ${nm(f)}, ${T_(['de gains', 'with payoffs'])} ${pay(f)}. ${T_(['Dans la matrice, ce sont les deux cases dont les deux gains sont soulignés :', 'In the matrix, these are the two cells whose two payoffs are underlined:'])}</p>
+  <p>${T_(['Un équilibre de Nash est un profil où chaque stratégie est la meilleure réponse à l\'autre. On cherche donc les cases où la stratégie du joueur 1 est sa meilleure réponse à la colonne et où celle du joueur 2 est sa meilleure réponse à la ligne. D\'après la question 1 a, il y en a deux :', 'A Nash equilibrium is a profile where each strategy is the best response to the other. We therefore look for the cells where player 1\'s strategy is their best response to the column and player 2\'s is their best response to the row. From question 1(a), there are two:'])} ${nm(e)}, ${T_(['de gains', 'with payoffs'])} ${pay(e)}, ${T_(['et', 'and'])} ${nm(f)}, ${T_(['de gains', 'with payoffs'])} ${pay(f)}. ${T_(['Dans la matrice, ce sont les deux cases dont les deux gains sont soulignés :', 'In the matrix, these are the two cells whose two payoffs are underlined:'])}</p>
   <div class="sol-fig">${jxMatrixSVG(U1, U2, { rows: L.rows, cols: L.cols, p1: T_(['Joueur 1', 'Player 1']), p2: T_(['Joueur 2', 'Player 2']), br: true, ne: true, aria: 'A' })}</div>
 </div></li>
 <li><div class="q-content">
@@ -206,5 +196,5 @@ function j3sol(D, lang) {
 </div></li>
 </ol></div>`;
 }
-I18N.fr.sol = D => fracClean((D => j3sol(D, 'fr'))(D));
-I18N.en.sol = D => fracClean((D => j3sol(D, 'en'))(D));
+I18N.fr.sol = D => fracClean(regroupSol(j3sol(D, 'fr'), ['Jeu A — Un jeu à deux équilibres', 'Jeu B — La poule mouillée'], [3, 2]));
+I18N.en.sol = D => fracClean(regroupSol(j3sol(D, 'en'), ['Game A — A game with two equilibria', 'Game B — Chicken'], [3, 2]));

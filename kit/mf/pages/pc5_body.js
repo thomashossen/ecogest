@@ -121,7 +121,7 @@ PAGE.compute = function (seed) {
   D.L2 = D.L * 2; D.K2 = Math.pow(D.q / (D.A * Math.pow(D.L2, D.b)), 1 / D.a);
   return D;
 };
-const p5f = D => String.raw`f(K,L)=${D.A === 1 ? '' : D.A}\,K^{${texT(D.a, 2)}}L^{${texT(D.b, 2)}}`;
+const p5f = D => String.raw`f(K,L)=${D.A === 1 ? '' : D.A}\,K^{${fq(D.a, 2)}}L^{${fq(D.b, 2)}}`;
 I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">Une entreprise produit selon la fonction \(q=${p5f(D)}\). Elle emploie actuellement \(K=${D.K}\) unités de capital et \(L=${D.L}\) unités de travail.</div>
 <div class="questions"><ol>

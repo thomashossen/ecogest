@@ -168,25 +168,17 @@ function e6graphR(D, lang) {
   return '<div class="sol-fig">' + G.svg(fr ? 'Fonctions de réaction en prix' : 'Price reaction functions') + '</div>';
 }
 I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
-  return String.raw`<div class="context-block">Les deux parties sont indépendantes.<br><strong>Partie A.</strong> Deux entreprises vendent un bien homogène dont la demande est \(Q=\frac{${D.a}-p}{${texT(D.b, 2)}}\), c'est-à-dire \(P(Q)=${D.a}-${cfx(D.b)}Q\). Elles fixent simultanément leurs prix ; les consommateurs achètent chez la moins chère. Leurs coûts marginaux sont constants : \(c_1=${D.c1}\) et \(c_2=${D.c2}\).<br><strong>Partie B.</strong> Deux entreprises vendent des produits différenciés, de demandes \(q_1=${D.al}-${cfx(D.be)}p_1+${cfx(D.ga)}p_2\) et \(q_2=${D.al}-${cfx(D.be)}p_2+${cfx(D.ga)}p_1\), avec un coût marginal commun \(c=${D.c}\).</div>
+  return String.raw`<div class="context-block">Les deux parties sont indépendantes.</div>
 <div class="questions"><ol>
-<li><div class="q-text">(A) Montrez qu'à l'équilibre de Bertrand, l'entreprise 1 fixe un prix égal (ou juste inférieur) à \(c_2\). Déterminez la quantité vendue, puis les profits.</div></li>
-<li><div class="q-text">(A) Calculez, à l'aide d'intégrales, le surplus des consommateurs, le surplus des producteurs, le surplus total et la perte sèche. Comparez avec la situation où l'entreprise 1 serait seule sur le marché.</div></li>
-<li><div class="q-text">(A) Représentez graphiquement l'équilibre et les surplus.</div></li>
-<li><div class="q-text">(B) Déterminez les fonctions de réaction en prix, l'équilibre de Bertrand, les quantités et les profits.</div></li>
-<li><div class="q-text">(B) Représentez graphiquement les fonctions de réaction et l'équilibre. Pourquoi les fonctions de réaction sont-elles croissantes ?</div></li>
-<li><div class="q-text">(B) Les deux entreprises s'entendent pour fixer le même prix qui maximise leur profit joint. Déterminez ce prix, les quantités et les profits, et comparez avec l'équilibre de Bertrand du point de vue des entreprises et des consommateurs.</div></li>
+<li><div class="q-text"><strong>Partie A — Bien homogène et coûts différents.</strong> Deux entreprises vendent un bien homogène dont la demande est \(Q=\frac{${D.a}-p}{${fq(D.b, 2)}}\), c'est-à-dire \(P(Q)=${D.a}-${cfx(D.b)}Q\). Elles fixent simultanément leurs prix ; les consommateurs achètent chez la moins chère. Leurs coûts marginaux sont constants : \(c_1=${D.c1}\) et \(c_2=${D.c2}\).<ol class="sub-list"><li>Montrez qu'à l'équilibre de Bertrand, l'entreprise 1 fixe un prix égal (ou juste inférieur) à \(c_2\). Déterminez la quantité vendue, puis les profits.</li><li>Calculez, à l'aide d'intégrales, le surplus des consommateurs, le surplus des producteurs, le surplus total et la perte sèche. Comparez avec la situation où l'entreprise 1 serait seule sur le marché.</li><li>Représentez graphiquement l'équilibre et les surplus.</li></ol></div></li>
+<li><div class="q-text"><strong>Partie B — Produits différenciés.</strong> Deux entreprises vendent des produits différenciés, de demandes \(q_1=${D.al}-${cfx(D.be)}p_1+${cfx(D.ga)}p_2\) et \(q_2=${D.al}-${cfx(D.be)}p_2+${cfx(D.ga)}p_1\), avec un coût marginal commun \(c=${D.c}\).<ol class="sub-list"><li>Déterminez les fonctions de réaction en prix, l'équilibre de Bertrand, les quantités et les profits.</li><li>Représentez graphiquement les fonctions de réaction et l'équilibre. Pourquoi les fonctions de réaction sont-elles croissantes ?</li><li>Les deux entreprises s'entendent pour fixer le même prix qui maximise leur profit joint. Déterminez ce prix, les quantités et les profits, et comparez avec l'équilibre de Bertrand du point de vue des entreprises et des consommateurs.</li></ol></div></li>
 </ol></div>`;
 });
 I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
-  return String.raw`<div class="context-block">The two parts are independent.<br><strong>Part A.</strong> Two firms sell a homogeneous good whose demand is \(Q=\frac{${D.a}-p}{${texT(D.b, 2)}}\), that is \(P(Q)=${D.a}-${cfx(D.b)}Q\). They set their prices simultaneously; consumers buy from the cheaper one. Their marginal costs are constant: \(c_1=${D.c1}\) and \(c_2=${D.c2}\).<br><strong>Part B.</strong> Two firms sell differentiated products, with demands \(q_1=${D.al}-${cfx(D.be)}p_1+${cfx(D.ga)}p_2\) and \(q_2=${D.al}-${cfx(D.be)}p_2+${cfx(D.ga)}p_1\), and a common marginal cost \(c=${D.c}\).</div>
+  return String.raw`<div class="context-block">The two parts are independent.</div>
 <div class="questions"><ol>
-<li><div class="q-text">(A) Show that in the Bertrand equilibrium, firm 1 sets a price equal to (or just below) \(c_2\). Determine the quantity sold, then the profits.</div></li>
-<li><div class="q-text">(A) Compute, using integrals, consumer surplus, producer surplus, total surplus and the deadweight loss. Compare with the situation where firm 1 would be alone on the market.</div></li>
-<li><div class="q-text">(A) Draw the equilibrium and the surpluses.</div></li>
-<li><div class="q-text">(B) Determine the price reaction functions, the Bertrand equilibrium, the quantities and the profits.</div></li>
-<li><div class="q-text">(B) Draw the reaction functions and the equilibrium. Why are the reaction functions increasing?</div></li>
-<li><div class="q-text">(B) The two firms agree to set the same price maximising their joint profit. Determine this price, the quantities and the profits, and compare with the Bertrand equilibrium from the point of view of firms and consumers.</div></li>
+<li><div class="q-text"><strong>Part A — Homogeneous good and different costs.</strong> Two firms sell a homogeneous good whose demand is \(Q=\frac{${D.a}-p}{${fq(D.b, 2)}}\), that is \(P(Q)=${D.a}-${cfx(D.b)}Q\). They set their prices simultaneously; consumers buy from the cheaper one. Their marginal costs are constant: \(c_1=${D.c1}\) and \(c_2=${D.c2}\).<ol class="sub-list"><li>Show that in the Bertrand equilibrium, firm 1 sets a price equal to (or just below) \(c_2\). Determine the quantity sold, then the profits.</li><li>Compute, using integrals, consumer surplus, producer surplus, total surplus and the deadweight loss. Compare with the situation where firm 1 would be alone on the market.</li><li>Draw the equilibrium and the surpluses.</li></ol></div></li>
+<li><div class="q-text"><strong>Part B — Differentiated products.</strong> Two firms sell differentiated products, with demands \(q_1=${D.al}-${cfx(D.be)}p_1+${cfx(D.ga)}p_2\) and \(q_2=${D.al}-${cfx(D.be)}p_2+${cfx(D.ga)}p_1\), and a common marginal cost \(c=${D.c}\).<ol class="sub-list"><li>Determine the price reaction functions, the Bertrand equilibrium, the quantities and the profits.</li><li>Draw the reaction functions and the equilibrium. Why are the reaction functions increasing?</li><li>The two firms agree to set the same price maximising their joint profit. Determine this price, the quantities and the profits, and compare with the Bertrand equilibrium from the point of view of firms and consumers.</li></ol></div></li>
 </ol></div>`;
 });
 function e6sol(D, lang) {
@@ -234,5 +226,5 @@ function e6sol(D, lang) {
 </div></li>
 </ol></div>`;
 }
-I18N.fr.sol = D => fracClean((D => e6sol(D, 'fr'))(D));
-I18N.en.sol = D => fracClean((D => e6sol(D, 'en'))(D));
+I18N.fr.sol = D => fracClean(regroupSol(e6sol(D, 'fr'), ['Partie A — Bien homogène et coûts différents', 'Partie B — Produits différenciés'], [3, 3]));
+I18N.en.sol = D => fracClean(regroupSol(e6sol(D, 'en'), ['Part A — Homogeneous good and different costs', 'Part B — Differentiated products'], [3, 3]));

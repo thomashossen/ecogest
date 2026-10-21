@@ -123,7 +123,7 @@ PAGE.compute = function (seed) {
   return D;
 };
 I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
-  return String.raw`<div class="context-block">La demande d'un bien \(x\) est \(Q=${D.a}-${cfx(D.b)}p+${texT(D.c, 2)}\,R${D.d < 0 ? '-' : '+'}${cfx(Math.abs(D.d))}p_y\), où \(p\) est son prix, \(R\) le revenu des consommateurs et \(p_y\) le prix d'un autre bien \(y\). Initialement, \(R=${D.R}\), \(p_y=${D.py}\) et \(p=${D.p0}\).</div>
+  return String.raw`<div class="context-block">La demande d'un bien \(x\) est \(Q=${D.a}-${cfx(D.b)}p+${fq(D.c, 2)}\,R${D.d < 0 ? '-' : '+'}${cfx(Math.abs(D.d))}p_y\), où \(p\) est son prix, \(R\) le revenu des consommateurs et \(p_y\) le prix d'un autre bien \(y\). Initialement, \(R=${D.R}\), \(p_y=${D.py}\) et \(p=${D.p0}\).</div>
 <div class="questions"><ol>
 <li><div class="q-text">Calculez la quantité demandée et l'élasticité-prix de la demande. La demande est-elle élastique ?</div></li>
 <li><div class="q-text">Calculez l'élasticité-revenu et l'élasticité croisée. Quelle est la nature du bien \(x\), et sa relation avec le bien \(y\) ?</div></li>
@@ -134,7 +134,7 @@ I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
 </ol></div>`;
 });
 I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
-  return String.raw`<div class="context-block">Demand for a good \(x\) is \(Q=${D.a}-${cfx(D.b)}p+${texT(D.c, 2)}\,R${D.d < 0 ? '-' : '+'}${cfx(Math.abs(D.d))}p_y\), where \(p\) is its price, \(R\) consumers' income and \(p_y\) the price of another good \(y\). Initially, \(R=${D.R}\), \(p_y=${D.py}\) and \(p=${D.p0}\).</div>
+  return String.raw`<div class="context-block">Demand for a good \(x\) is \(Q=${D.a}-${cfx(D.b)}p+${fq(D.c, 2)}\,R${D.d < 0 ? '-' : '+'}${cfx(Math.abs(D.d))}p_y\), where \(p\) is its price, \(R\) consumers' income and \(p_y\) the price of another good \(y\). Initially, \(R=${D.R}\), \(p_y=${D.py}\) and \(p=${D.p0}\).</div>
 <div class="questions"><ol>
 <li><div class="q-text">Compute the quantity demanded and the price elasticity of demand. Is demand elastic?</div></li>
 <li><div class="q-text">Compute the income elasticity and the cross elasticity. What is the nature of good \(x\), and its relation with good \(y\)?</div></li>

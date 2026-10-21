@@ -76,6 +76,25 @@ function eiSurplusFig(o) {
   G.legend([{ c: COL.s1, box: true, o: 0.3, t: fr ? 'surplus des consommateurs' : 'consumer surplus' }, { c: '#2e7d5b', box: true, o: 0.35, t: fr ? 'surplus des producteurs' : 'producer surplus' }, { c: COL.s3, box: true, o: 0.4, t: fr ? 'perte sèche' : 'deadweight loss' }], G.ml + 8, 16);
   return '<div class="sol-fig">' + (o.caption ? `<p style="text-align:center;margin:.2rem 0"><em>${o.caption}</em></p>` : '') + G.svg(o.aria || 'surplus') + '</div>';
 }
+/* corrigé en parties numérotées 1, 2 avec sous-questions a, b, c (comme mcaf3) */
+function regroupSol(html, heads, counts) {
+  const a = html.indexOf('<ol>'), b = html.lastIndexOf('</ol>');
+  if (a < 0 || b < 0) return html;
+  const inner = html.slice(a + 4, b), items = [];
+  let d = 0, start = -1, i = 0;
+  while (i < inner.length) {
+    if (inner.startsWith('<li', i) && /[\s>]/.test(inner[i + 3])) { if (d === 0) start = i; d++; i += 3; continue; }
+    if (inner.startsWith('</li>', i)) { d--; i += 5; if (d === 0) items.push(inner.slice(start, i)); continue; }
+    i++;
+  }
+  let k = 0, out = '<div class="st-parts">';
+  heads.forEach((h, p) => {
+    out += `<div class="calc-box"><span class="sol-sub">${p + 1}. ${h}</span><ol class="sub-list">${items.slice(k, k + counts[p]).join('')}</ol></div>`;
+    k += counts[p];
+  });
+  return out + '</div>';
+}
+
 /* ---------- outils communs : jeux finis à deux joueurs ---------- */
 /* U1[i][j], U2[i][j] : gains des joueurs 1 (ligne i) et 2 (colonne j) */
 function jxBR(U1, U2) {
@@ -259,7 +278,7 @@ PAGE.compute = function (seed) {
   return D;
 };
 I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
-  return String.raw`<div class="context-block">Des témoins assistent à une agression. Chacun décide simultanément d'appeler la police ou non. Si au moins un témoin appelle, chacun retire un bénéfice \(v=${D.v}\) ; celui qui appelle supporte de plus un coût \(c=${texT(D.c, 2)}\). Si personne n'appelle, chacun obtient 0.</div>
+  return String.raw`<div class="context-block">Des témoins assistent à une agression. Chacun décide simultanément d'appeler la police ou non. Si au moins un témoin appelle, chacun retire un bénéfice \(v=${D.v}\) ; celui qui appelle supporte de plus un coût \(c=${fq(D.c, 2)}\). Si personne n'appelle, chacun obtient 0.</div>
 <div class="questions"><ol>
 <li><div class="q-text">On suppose d'abord qu'il y a deux témoins. Écrivez la matrice des gains, puis déterminez les équilibres de Nash en stratégies pures et l'équilibre symétrique en stratégies mixtes.</div></li>
 <li><div class="q-text">Il y a maintenant \(n=${D.n}\) témoins. Déterminez les équilibres de Nash en stratégies pures. Pourquoi sont-ils peu plausibles entre inconnus ?</div></li>
@@ -270,7 +289,7 @@ I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
 </ol></div>`;
 });
 I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
-  return String.raw`<div class="context-block">Witnesses observe an assault. Each simultaneously decides whether to call the police. If at least one witness calls, each obtains a benefit \(v=${D.v}\); whoever calls also bears a cost \(c=${texT(D.c, 2)}\). If nobody calls, each gets 0.</div>
+  return String.raw`<div class="context-block">Witnesses observe an assault. Each simultaneously decides whether to call the police. If at least one witness calls, each obtains a benefit \(v=${D.v}\); whoever calls also bears a cost \(c=${fq(D.c, 2)}\). If nobody calls, each gets 0.</div>
 <div class="questions"><ol>
 <li><div class="q-text">First assume there are two witnesses. Write the payoff matrix, then determine the pure-strategy Nash equilibria and the symmetric mixed-strategy equilibrium.</div></li>
 <li><div class="q-text">There are now \(n=${D.n}\) witnesses. Determine the pure-strategy Nash equilibria. Why are they implausible among strangers?</div></li>

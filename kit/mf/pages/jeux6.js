@@ -76,6 +76,25 @@ function eiSurplusFig(o) {
   G.legend([{ c: COL.s1, box: true, o: 0.3, t: fr ? 'surplus des consommateurs' : 'consumer surplus' }, { c: '#2e7d5b', box: true, o: 0.35, t: fr ? 'surplus des producteurs' : 'producer surplus' }, { c: COL.s3, box: true, o: 0.4, t: fr ? 'perte sèche' : 'deadweight loss' }], G.ml + 8, 16);
   return '<div class="sol-fig">' + (o.caption ? `<p style="text-align:center;margin:.2rem 0"><em>${o.caption}</em></p>` : '') + G.svg(o.aria || 'surplus') + '</div>';
 }
+/* corrigé en parties numérotées 1, 2 avec sous-questions a, b, c (comme mcaf3) */
+function regroupSol(html, heads, counts) {
+  const a = html.indexOf('<ol>'), b = html.lastIndexOf('</ol>');
+  if (a < 0 || b < 0) return html;
+  const inner = html.slice(a + 4, b), items = [];
+  let d = 0, start = -1, i = 0;
+  while (i < inner.length) {
+    if (inner.startsWith('<li', i) && /[\s>]/.test(inner[i + 3])) { if (d === 0) start = i; d++; i += 3; continue; }
+    if (inner.startsWith('</li>', i)) { d--; i += 5; if (d === 0) items.push(inner.slice(start, i)); continue; }
+    i++;
+  }
+  let k = 0, out = '<div class="st-parts">';
+  heads.forEach((h, p) => {
+    out += `<div class="calc-box"><span class="sol-sub">${p + 1}. ${h}</span><ol class="sub-list">${items.slice(k, k + counts[p]).join('')}</ol></div>`;
+    k += counts[p];
+  });
+  return out + '</div>';
+}
+
 /* ---------- outils communs : jeux finis à deux joueurs ---------- */
 /* U1[i][j], U2[i][j] : gains des joueurs 1 (ligne i) et 2 (colonne j) */
 function jxBR(U1, U2) {
@@ -269,25 +288,19 @@ PAGE.compute = function (seed) {
 function j6leaves(T) { const out = []; const w = (n, path) => { if (n.u) { out.push({ path: path, u: n.u }); return; } n.ch.forEach(c => w(c.n, path.concat(c.a))); }; w(T, []); return out; }
 I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
   const L = J6L.fr, lv = j6leaves(D.T3);
-  return String.raw`<div class="context-block">Les deux parties sont indépendantes.<br><strong>Partie A.</strong> Un entrant décide d'entrer sur un marché ou de rester dehors. S'il reste dehors, il gagne 0 et le titulaire garde un profit de monopole \(M=${D.M}\). S'il entre, le titulaire choisit de combattre (gains : entrant \(${-D.fE}\), titulaire \(${D.fI}\)) ou d'accepter (gains : entrant \(${D.aE}\), titulaire \(${D.aI}\)).<br><strong>Partie B.</strong> Le joueur 1 choisit G ou D, puis le joueur 2, qui a observé ce choix, choisit g ou d, puis le joueur 3, qui a tout observé, choisit x ou y. Les gains (joueur 1 ; joueur 2 ; joueur 3) sont : ${lv.map(l => '(' + l.path.join(', ') + ') : \\((' + l.u.join('\\,;\\,') + ')\\)').join(' ; ')}.</div>
+  return String.raw`<div class="context-block">Les deux parties sont indépendantes.</div>
 <div class="questions"><ol>
-<li><div class="q-text">(A) Représentez le jeu sous forme extensive puis sous forme normale, et déterminez ses équilibres de Nash en stratégies pures.</div></li>
-<li><div class="q-text">(A) Déterminez l'équilibre parfait en sous-jeux. Quel équilibre de Nash repose sur une menace non crédible ?</div></li>
-<li><div class="q-text">(A) Avant que l'entrant ne décide, le titulaire peut investir dans des capacités, pour un coût \(k\), ce qui augmente de \(${D.g}\) son gain en cas de combat. Montrez que la menace devient alors crédible. Jusqu'à quel coût \(k\) cet investissement est-il rentable ? Le titulaire investit-il si \(k=${D.k}\) ?</div></li>
-<li><div class="q-text">(B) Déterminez l'équilibre parfait en sous-jeux par induction à rebours, en justifiant chaque étape. Donnez la stratégie complète de chaque joueur et l'issue du jeu.</div></li>
-<li><div class="q-text">(B) Représentez l'arbre en mettant en évidence les choix de l'induction à rebours.</div></li>
+<li><div class="q-text"><strong>Partie A — Le jeu d'entrée.</strong> Un entrant décide d'entrer sur un marché ou de rester dehors. S'il reste dehors, il gagne 0 et le titulaire garde un profit de monopole \(M=${D.M}\). S'il entre, le titulaire choisit de combattre (gains : entrant \(${-D.fE}\), titulaire \(${D.fI}\)) ou d'accepter (gains : entrant \(${D.aE}\), titulaire \(${D.aI}\)).<ol class="sub-list"><li>Représentez le jeu sous forme extensive puis sous forme normale, et déterminez ses équilibres de Nash en stratégies pures.</li><li>Déterminez l'équilibre parfait en sous-jeux. Quel équilibre de Nash repose sur une menace non crédible ?</li><li>Avant que l'entrant ne décide, le titulaire peut investir dans des capacités, pour un coût \(k\), ce qui augmente de \(${D.g}\) son gain en cas de combat. Montrez que la menace devient alors crédible. Jusqu'à quel coût \(k\) cet investissement est-il rentable ? Le titulaire investit-il si \(k=${D.k}\) ?</li></ol></div></li>
+<li><div class="q-text"><strong>Partie B — Un jeu à trois joueurs.</strong> Le joueur 1 choisit G ou D, puis le joueur 2, qui a observé ce choix, choisit g ou d, puis le joueur 3, qui a tout observé, choisit x ou y. Les gains (joueur 1 ; joueur 2 ; joueur 3) sont : ${lv.map(l => '(' + l.path.join(', ') + ') : \\((' + l.u.join('\\,;\\,') + ')\\)').join(' ; ')}.<ol class="sub-list"><li>Déterminez l'équilibre parfait en sous-jeux par induction à rebours, en justifiant chaque étape. Donnez la stratégie complète de chaque joueur et l'issue du jeu.</li><li>Représentez l'arbre en mettant en évidence les choix de l'induction à rebours.</li></ol></div></li>
 </ol></div>`;
 });
 I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
   const L = J6L.en, lv = j6leaves(D.T3);
   const tr = s => ({ G: 'L', D: 'R', g: 'l', d: 'r' })[s] || s;
-  return String.raw`<div class="context-block">The two parts are independent.<br><strong>Part A.</strong> An entrant decides whether to enter a market or stay out. If it stays out, it earns 0 and the incumbent keeps a monopoly profit \(M=${D.M}\). If it enters, the incumbent chooses to fight (payoffs: entrant \(${-D.fE}\), incumbent \(${D.fI}\)) or to accommodate (payoffs: entrant \(${D.aE}\), incumbent \(${D.aI}\)).<br><strong>Part B.</strong> Player 1 chooses L or R, then player 2, having observed this choice, chooses l or r, then player 3, having observed everything, chooses x or y. Payoffs (player 1; player 2; player 3) are: ${lv.map(l => '(' + l.path.map(tr).join(', ') + '): \\((' + l.u.join('\\,;\\,') + ')\\)').join('; ')}.</div>
+  return String.raw`<div class="context-block">The two parts are independent.</div>
 <div class="questions"><ol>
-<li><div class="q-text">(A) Represent the game in extensive form then in normal form, and determine its pure-strategy Nash equilibria.</div></li>
-<li><div class="q-text">(A) Determine the subgame perfect equilibrium. Which Nash equilibrium relies on a non-credible threat?</div></li>
-<li><div class="q-text">(A) Before the entrant decides, the incumbent can invest in capacity, at a cost \(k\), which raises its fighting payoff by \(${D.g}\). Show that the threat then becomes credible. Up to which cost \(k\) is this investment profitable? Does the incumbent invest if \(k=${D.k}\)?</div></li>
-<li><div class="q-text">(B) Determine the subgame perfect equilibrium by backward induction, justifying each step. Give each player's complete strategy and the outcome of the game.</div></li>
-<li><div class="q-text">(B) Draw the tree highlighting the backward-induction choices.</div></li>
+<li><div class="q-text"><strong>Part A — The entry game.</strong> An entrant decides whether to enter a market or stay out. If it stays out, it earns 0 and the incumbent keeps a monopoly profit \(M=${D.M}\). If it enters, the incumbent chooses to fight (payoffs: entrant \(${-D.fE}\), incumbent \(${D.fI}\)) or to accommodate (payoffs: entrant \(${D.aE}\), incumbent \(${D.aI}\)).<ol class="sub-list"><li>Represent the game in extensive form then in normal form, and determine its pure-strategy Nash equilibria.</li><li>Determine the subgame perfect equilibrium. Which Nash equilibrium relies on a non-credible threat?</li><li>Before the entrant decides, the incumbent can invest in capacity, at a cost \(k\), which raises its fighting payoff by \(${D.g}\). Show that the threat then becomes credible. Up to which cost \(k\) is this investment profitable? Does the incumbent invest if \(k=${D.k}\)?</li></ol></div></li>
+<li><div class="q-text"><strong>Part B — A three-player game.</strong> Player 1 chooses L or R, then player 2, having observed this choice, chooses l or r, then player 3, having observed everything, chooses x or y. Payoffs (player 1; player 2; player 3) are: ${lv.map(l => '(' + l.path.map(tr).join(', ') + '): \\((' + l.u.join('\\,;\\,') + ')\\)').join('; ')}.<ol class="sub-list"><li>Determine the subgame perfect equilibrium by backward induction, justifying each step. Give each player's complete strategy and the outcome of the game.</li><li>Draw the tree highlighting the backward-induction choices.</li></ol></div></li>
 </ol></div>`;
 });
 function j6sol(D, lang) {
@@ -319,7 +332,7 @@ function j6sol(D, lang) {
   <p>${T_(['Par induction à rebours, si l\'entrant entre, le titulaire compare', 'By backward induction, if the entrant enters, the incumbent compares'])} ${fI} ${T_(['(combattre) et', '(fight) and'])} ${aI} ${T_(['(accepter) : il accepte. L\'entrant, qui l\'anticipe, compare', '(accommodate): it accommodates. The entrant, anticipating this, compares'])} ${aE} ${T_(['(entrer) et 0 (rester dehors) : il entre. L\'équilibre parfait est', '(enter) and 0 (stay out): it enters. The perfect equilibrium is'])} (${L.ent}, ${L.ac}), ${T_(['de gains', 'with payoffs'])} \((${aE}\,;\,${aI})\). ${T_(['L\'équilibre', 'The equilibrium'])} (${L.out}, ${L.fi}) ${T_(['repose sur une menace de combat qui ne serait pas exécutée : une fois l\'entrée réalisée, combattre rapporterait', 'relies on a threat to fight that would not be carried out: once entry has occurred, fighting would pay'])} ${fI} ${T_(['au lieu de', 'instead of'])} ${aI}.</p>
 </div></li>
 <li><div class="q-content">
-  <p>${T_(['Après investissement, le gain du titulaire est diminué de', 'After investing, the incumbent\'s payoff is reduced by'])} \(k\) ${T_(['dans tous les cas, et augmenté de', 'in all cases, and raised by'])} ${g} ${T_(['en cas de combat. Si l\'entrant entre, le titulaire compare donc', 'in case of a fight. If the entrant enters, the incumbent therefore compares'])} \(${fI}+${g}-k=${fI + g}-k\) ${T_(['et', 'and'])} \(${aI}-k\) : ${T_(['comme', 'since'])} \(${fI + g}&gt;${aI}\), ${T_(['il combat. La menace est devenue crédible ; l\'entrant, qui le sait, reste dehors, et le titulaire obtient', 'it fights. The threat has become credible; the entrant, knowing this, stays out, and the incumbent gets'])} \(${M}-k\). ${T_(['Sans investissement, il obtiendrait', 'Without investing, it would get'])} ${aI} ${T_(['(question 2). L\'investissement est rentable si', '(question 2). The investment pays if'])}
+  <p>${T_(['Après investissement, le gain du titulaire est diminué de', 'After investing, the incumbent\'s payoff is reduced by'])} \(k\) ${T_(['dans tous les cas, et augmenté de', 'in all cases, and raised by'])} ${g} ${T_(['en cas de combat. Si l\'entrant entre, le titulaire compare donc', 'in case of a fight. If the entrant enters, the incumbent therefore compares'])} \(${fI}+${g}-k=${fI + g}-k\) ${T_(['et', 'and'])} \(${aI}-k\) : ${T_(['comme', 'since'])} \(${fI + g}&gt;${aI}\), ${T_(['il combat. La menace est devenue crédible ; l\'entrant, qui le sait, reste dehors, et le titulaire obtient', 'it fights. The threat has become credible; the entrant, knowing this, stays out, and the incumbent gets'])} \(${M}-k\). ${T_(['Sans investissement, il obtiendrait', 'Without investing, it would get'])} ${aI} ${T_(['(question 1 b). L\'investissement est rentable si', '(question 1(b)). The investment pays if'])}
   \[${M}-k&gt;${aI}\iff k&lt;${M - aI}\]
   ${invest ? T_(['Avec', 'With']) + ' \\(k=' + k + '\\), ' + T_(['le titulaire investit : il obtient', 'the incumbent invests: it gets']) + ' \\(' + (M - k) + '\\) ' + T_(['au lieu de', 'instead of']) + ' ' + aI + '. ' + T_(['En se liant les mains, il rend sa menace crédible et dissuade l\'entrée.', 'By tying its hands, it makes its threat credible and deters entry.']) : T_(['Avec', 'With']) + ' \\(k=' + k + '\\), ' + T_(['l\'investissement coûte trop cher : le titulaire n\'investit pas et accepte l\'entrée.', 'the investment is too costly: the incumbent does not invest and accommodates entry.'])}</p>
   <div class="sol-fig">${jxTreeSVG(Ti, { bi: true, lw: 140, aria: 'invest' })}</div>
@@ -336,5 +349,5 @@ function j6sol(D, lang) {
 </div></li>
 </ol></div>`;
 }
-I18N.fr.sol = D => fracClean((D => j6sol(D, 'fr'))(D));
-I18N.en.sol = D => fracClean((D => j6sol(D, 'en'))(D));
+I18N.fr.sol = D => fracClean(regroupSol(j6sol(D, 'fr'), ["Partie A — Le jeu d'entrée", 'Partie B — Un jeu à trois joueurs'], [3, 2]));
+I18N.en.sol = D => fracClean(regroupSol(j6sol(D, 'en'), ['Part A — The entry game', 'Part B — A three-player game'], [3, 2]));

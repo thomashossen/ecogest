@@ -76,6 +76,24 @@ function eiSurplusFig(o) {
   G.legend([{ c: COL.s1, box: true, o: 0.3, t: fr ? 'surplus des consommateurs' : 'consumer surplus' }, { c: '#2e7d5b', box: true, o: 0.35, t: fr ? 'surplus des producteurs' : 'producer surplus' }, { c: COL.s3, box: true, o: 0.4, t: fr ? 'perte sèche' : 'deadweight loss' }], G.ml + 8, 16);
   return '<div class="sol-fig">' + (o.caption ? `<p style="text-align:center;margin:.2rem 0"><em>${o.caption}</em></p>` : '') + G.svg(o.aria || 'surplus') + '</div>';
 }
+/* corrigé en parties numérotées 1, 2 avec sous-questions a, b, c (comme mcaf3) */
+function regroupSol(html, heads, counts) {
+  const a = html.indexOf('<ol>'), b = html.lastIndexOf('</ol>');
+  if (a < 0 || b < 0) return html;
+  const inner = html.slice(a + 4, b), items = [];
+  let d = 0, start = -1, i = 0;
+  while (i < inner.length) {
+    if (inner.startsWith('<li', i) && /[\s>]/.test(inner[i + 3])) { if (d === 0) start = i; d++; i += 3; continue; }
+    if (inner.startsWith('</li>', i)) { d--; i += 5; if (d === 0) items.push(inner.slice(start, i)); continue; }
+    i++;
+  }
+  let k = 0, out = '<div class="st-parts">';
+  heads.forEach((h, p) => {
+    out += `<div class="calc-box"><span class="sol-sub">${p + 1}. ${h}</span><ol class="sub-list">${items.slice(k, k + counts[p]).join('')}</ol></div>`;
+    k += counts[p];
+  });
+  return out + '</div>';
+}
 I18N.fr.k = Object.assign({}, KBASE_FR, { title: 'Producteur et consommateur 1 – Préférences, utilité et TMS', 'k-h1': 'Préférences, utilité et taux marginal de substitution', 'k-coursetitle': 'Représenter les goûts d\'un consommateur : axiomes, fonctions d\'utilité, courbes d\'indifférence et TMS', 'k-extitle': 'Utilité Cobb-Douglas et substituts parfaits : utilités marginales, TMS et courbes d\'indifférence', 'k-soltitle': 'Utilité Cobb-Douglas et substituts parfaits : utilités marginales, TMS et courbes d\'indifférence' });
 I18N.en.k = Object.assign({}, KBASE_EN, { title: 'Producer and consumer 1 – Preferences, utility and MRS', 'k-h1': 'Preferences, utility and the marginal rate of substitution', 'k-coursetitle': 'Representing a consumer\'s tastes: axioms, utility functions, indifference curves and MRS', 'k-extitle': 'Cobb-Douglas utility and perfect substitutes: marginal utilities, MRS and indifference curves', 'k-soltitle': 'Cobb-Douglas utility and perfect substitutes: marginal utilities, MRS and indifference curves' });
 
@@ -217,7 +235,7 @@ PAGE.compute = function (seed) {
   return D;
 };
 const p1n = x => fq(x);
-const p1U = D => String.raw`U(x_1,x_2)=x_1^{${texT(D.al, 2)}}\,x_2^{${texT(D.be, 2)}}`.replace('^{1}', '').replace('^{1}', '');
+const p1U = D => String.raw`U(x_1,x_2)=x_1^{${fq(D.al, 2)}}\,x_2^{${fq(D.be, 2)}}`.replace('^{1}', '').replace('^{1}', '');
 I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">Un consommateur a des préférences représentées par la fonction d'utilité \(${p1U(D)}\), définie pour \(x_1&gt;0\) et \(x_2&gt;0\). On considère le panier \(A=(${D.xA}\,;\,${D.yA})\).</div>
 <div class="questions"><ol>

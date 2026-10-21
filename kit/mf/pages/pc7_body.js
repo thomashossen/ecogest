@@ -145,25 +145,25 @@ PAGE.compute = function (seed) {
   const M = D.M; D.q = M.supply(D.p); D.CTq = M.CV(D.q) + D.F; D.pi = D.p * D.q - D.CTq; D.SP = D.p * D.q - M.CV(D.q);
   return D;
 };
-const p7C = D => String.raw`CT(q)=q^3-${D.k}\,q^2+${texT(D.m, 2)}\,q+${D.F}`;
+const p7C = D => String.raw`CT(q)=q^3-${D.k}\,q^2+${fq(D.m, 2)}\,q+${D.F}`;
 I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
-  return String.raw`<div class="context-block">Une entreprise en concurrence parfaite a pour coût total de court terme \(${p7C(D)}\). Le prix de marché est \(p=${texT(D.p, 2)}\).</div>
+  return String.raw`<div class="context-block">Une entreprise en concurrence parfaite a pour coût total de court terme \(${p7C(D)}\). Le prix de marché est \(p=${fq(D.p, 2)}\).</div>
 <div class="questions"><ol>
 <li><div class="q-text">Identifiez le coût fixe et le coût variable, puis calculez le coût moyen, le coût variable moyen et le coût marginal.</div></li>
 <li><div class="q-text">Déterminez le seuil de fermeture et le seuil de rentabilité.</div></li>
 <li><div class="q-text">Déterminez la courbe d'offre de court terme de l'entreprise.</div></li>
-<li><div class="q-text">Au prix \(p=${texT(D.p, 2)}\), quelle quantité l'entreprise produit-elle ? Calculez son profit. A-t-elle intérêt à produire ?</div></li>
+<li><div class="q-text">Au prix \(p=${fq(D.p, 2)}\), quelle quantité l'entreprise produit-elle ? Calculez son profit. A-t-elle intérêt à produire ?</div></li>
 <li><div class="q-text">Calculez, à l'aide d'une intégrale, le surplus du producteur, et vérifiez qu'il est égal au profit augmenté du coût fixe.</div></li>
 <li><div class="q-text">Représentez les courbes de coût, le prix, la quantité produite, le profit (ou la perte) et le surplus du producteur.</div></li>
 </ol></div>`;
 });
 I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
-  return String.raw`<div class="context-block">A perfectly competitive firm has short-run total cost \(${p7C(D).replace('CT', 'TC')}\). The market price is \(p=${texT(D.p, 2)}\).</div>
+  return String.raw`<div class="context-block">A perfectly competitive firm has short-run total cost \(${p7C(D).replace('CT', 'TC')}\). The market price is \(p=${fq(D.p, 2)}\).</div>
 <div class="questions"><ol>
 <li><div class="q-text">Identify fixed cost and variable cost, then compute average cost, average variable cost and marginal cost.</div></li>
 <li><div class="q-text">Determine the shutdown point and the break-even point.</div></li>
 <li><div class="q-text">Determine the firm's short-run supply curve.</div></li>
-<li><div class="q-text">At price \(p=${texT(D.p, 2)}\), what quantity does the firm produce? Compute its profit. Should it produce?</div></li>
+<li><div class="q-text">At price \(p=${fq(D.p, 2)}\), what quantity does the firm produce? Compute its profit. Should it produce?</div></li>
 <li><div class="q-text">Compute, using an integral, producer surplus, and check that it equals profit plus fixed cost.</div></li>
 <li><div class="q-text">Draw the cost curves, the price, the quantity produced, the profit (or loss) and producer surplus.</div></li>
 </ol></div>`;

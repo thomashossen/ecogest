@@ -76,6 +76,24 @@ function eiSurplusFig(o) {
   G.legend([{ c: COL.s1, box: true, o: 0.3, t: fr ? 'surplus des consommateurs' : 'consumer surplus' }, { c: '#2e7d5b', box: true, o: 0.35, t: fr ? 'surplus des producteurs' : 'producer surplus' }, { c: COL.s3, box: true, o: 0.4, t: fr ? 'perte sèche' : 'deadweight loss' }], G.ml + 8, 16);
   return '<div class="sol-fig">' + (o.caption ? `<p style="text-align:center;margin:.2rem 0"><em>${o.caption}</em></p>` : '') + G.svg(o.aria || 'surplus') + '</div>';
 }
+/* corrigé en parties numérotées 1, 2 avec sous-questions a, b, c (comme mcaf3) */
+function regroupSol(html, heads, counts) {
+  const a = html.indexOf('<ol>'), b = html.lastIndexOf('</ol>');
+  if (a < 0 || b < 0) return html;
+  const inner = html.slice(a + 4, b), items = [];
+  let d = 0, start = -1, i = 0;
+  while (i < inner.length) {
+    if (inner.startsWith('<li', i) && /[\s>]/.test(inner[i + 3])) { if (d === 0) start = i; d++; i += 3; continue; }
+    if (inner.startsWith('</li>', i)) { d--; i += 5; if (d === 0) items.push(inner.slice(start, i)); continue; }
+    i++;
+  }
+  let k = 0, out = '<div class="st-parts">';
+  heads.forEach((h, p) => {
+    out += `<div class="calc-box"><span class="sol-sub">${p + 1}. ${h}</span><ol class="sub-list">${items.slice(k, k + counts[p]).join('')}</ol></div>`;
+    k += counts[p];
+  });
+  return out + '</div>';
+}
 I18N.fr.k = Object.assign({}, KBASE_FR, { title: 'Économie industrielle 7 – Prix limite et dissuasion à l\'entrée', 'k-h1': 'Prix limite et dissuasion à l\'entrée', 'k-coursetitle': 'Protéger un monopole : quantité limite, entrée bloquée, dissuadée ou acceptée', 'k-extitle': 'Dissuader ou accepter l\'entrée d\'un concurrent', 'k-soltitle': 'Dissuader ou accepter l\'entrée d\'un concurrent' });
 I18N.en.k = Object.assign({}, KBASE_EN, { title: 'Industrial economics 7 – Limit pricing and entry deterrence', 'k-h1': 'Limit pricing and entry deterrence', 'k-coursetitle': 'Protecting a monopoly: limit quantity, blockaded, deterred or accommodated entry', 'k-extitle': 'Deterring or accommodating a rival\'s entry', 'k-soltitle': 'Deterring or accommodating a rival\'s entry' });
 
@@ -254,7 +272,7 @@ function e7graphPE(D, lang) {
   return '<div class="sol-fig">' + G.svg(fr ? 'Profit de l\'entrant selon la production du titulaire' : 'Entrant profit as a function of incumbent output') + '</div>';
 }
 I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
-  return String.raw`<div class="context-block">Une entreprise en place (le titulaire) est seule sur un marché de demande inverse \(P(Q)=${D.a}-${cfx(D.b)}Q\), avec un coût marginal constant \(c=${D.c}\). Un entrant potentiel a le même coût marginal, mais doit payer un coût fixe d'entrée \(F=${texT(D.F, 2)}\). Le titulaire choisit d'abord sa quantité et s'y engage ; l'entrant l'observe, puis décide d'entrer ou non.</div>
+  return String.raw`<div class="context-block">Une entreprise en place (le titulaire) est seule sur un marché de demande inverse \(P(Q)=${D.a}-${cfx(D.b)}Q\), avec un coût marginal constant \(c=${D.c}\). Un entrant potentiel a le même coût marginal, mais doit payer un coût fixe d'entrée \(F=${fq(D.F, 2)}\). Le titulaire choisit d'abord sa quantité et s'y engage ; l'entrant l'observe, puis décide d'entrer ou non.</div>
 <div class="questions"><ol>
 <li><div class="q-text">En l'absence de menace d'entrée, déterminez la quantité, le prix et le profit du monopole.</div></li>
 <li><div class="q-text">Déterminez la meilleure réponse de l'entrant à une quantité \(q_I\) du titulaire, puis son profit. Déduisez-en la quantité limite et le prix limite. L'entrée est-elle bloquée ?</div></li>
@@ -264,7 +282,7 @@ I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
 </ol></div>`;
 });
 I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
-  return String.raw`<div class="context-block">An incumbent is alone on a market with inverse demand \(P(Q)=${D.a}-${cfx(D.b)}Q\), with a constant marginal cost \(c=${D.c}\). A potential entrant has the same marginal cost, but must pay a fixed entry cost \(F=${texT(D.F, 2)}\). The incumbent first chooses its quantity and commits to it; the entrant observes it, then decides whether to enter.</div>
+  return String.raw`<div class="context-block">An incumbent is alone on a market with inverse demand \(P(Q)=${D.a}-${cfx(D.b)}Q\), with a constant marginal cost \(c=${D.c}\). A potential entrant has the same marginal cost, but must pay a fixed entry cost \(F=${fq(D.F, 2)}\). The incumbent first chooses its quantity and commits to it; the entrant observes it, then decides whether to enter.</div>
 <div class="questions"><ol>
 <li><div class="q-text">Without any entry threat, determine the monopoly quantity, price and profit.</div></li>
 <li><div class="q-text">Determine the entrant's best response to an incumbent quantity \(q_I\), then its profit. Deduce the limit quantity and the limit price. Is entry blockaded?</div></li>

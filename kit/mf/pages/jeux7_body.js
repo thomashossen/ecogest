@@ -125,7 +125,7 @@ PAGE.compute = function (seed) {
   return D;
 };
 I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
-  return String.raw`<div class="context-block">Des témoins assistent à une agression. Chacun décide simultanément d'appeler la police ou non. Si au moins un témoin appelle, chacun retire un bénéfice \(v=${D.v}\) ; celui qui appelle supporte de plus un coût \(c=${texT(D.c, 2)}\). Si personne n'appelle, chacun obtient 0.</div>
+  return String.raw`<div class="context-block">Des témoins assistent à une agression. Chacun décide simultanément d'appeler la police ou non. Si au moins un témoin appelle, chacun retire un bénéfice \(v=${D.v}\) ; celui qui appelle supporte de plus un coût \(c=${fq(D.c, 2)}\). Si personne n'appelle, chacun obtient 0.</div>
 <div class="questions"><ol>
 <li><div class="q-text">On suppose d'abord qu'il y a deux témoins. Écrivez la matrice des gains, puis déterminez les équilibres de Nash en stratégies pures et l'équilibre symétrique en stratégies mixtes.</div></li>
 <li><div class="q-text">Il y a maintenant \(n=${D.n}\) témoins. Déterminez les équilibres de Nash en stratégies pures. Pourquoi sont-ils peu plausibles entre inconnus ?</div></li>
@@ -136,7 +136,7 @@ I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
 </ol></div>`;
 });
 I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
-  return String.raw`<div class="context-block">Witnesses observe an assault. Each simultaneously decides whether to call the police. If at least one witness calls, each obtains a benefit \(v=${D.v}\); whoever calls also bears a cost \(c=${texT(D.c, 2)}\). If nobody calls, each gets 0.</div>
+  return String.raw`<div class="context-block">Witnesses observe an assault. Each simultaneously decides whether to call the police. If at least one witness calls, each obtains a benefit \(v=${D.v}\); whoever calls also bears a cost \(c=${fq(D.c, 2)}\). If nobody calls, each gets 0.</div>
 <div class="questions"><ol>
 <li><div class="q-text">First assume there are two witnesses. Write the payoff matrix, then determine the pure-strategy Nash equilibria and the symmetric mixed-strategy equilibrium.</div></li>
 <li><div class="q-text">There are now \(n=${D.n}\) witnesses. Determine the pure-strategy Nash equilibria. Why are they implausible among strangers?</div></li>

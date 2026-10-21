@@ -184,7 +184,7 @@ function e8graph(D, lang) {
   return '<div class="sol-fig">' + G.svg(fr ? 'Prix complets et surplus' : 'Full prices and surplus') + '</div>';
 }
 I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
-  return String.raw`<div class="context-block">Des consommateurs de masse 1 sont répartis uniformément sur \([0,1]\). Chacun achète une unité d'un bien qu'il valorise \(v=${D.v}\). Deux entreprises, de coût marginal \(c=${D.c}\), sont situées en \(x_1=${texT(D.x1, 2)}\) et \(x_2=${texT(D.x2, 2)}\). Un consommateur situé en \(x\) qui achète à l'entreprise \(i\) supporte un coût de transport \(${D.t}\,(x-x_i)^2\). Les entreprises fixent simultanément leurs prix.</div>
+  return String.raw`<div class="context-block">Des consommateurs de masse 1 sont répartis uniformément sur \([0,1]\). Chacun achète une unité d'un bien qu'il valorise \(v=${D.v}\). Deux entreprises, de coût marginal \(c=${D.c}\), sont situées en \(x_1=${fq(D.x1, 2)}\) et \(x_2=${fq(D.x2, 2)}\). Un consommateur situé en \(x\) qui achète à l'entreprise \(i\) supporte un coût de transport \(${D.t}\,(x-x_i)^2\). Les entreprises fixent simultanément leurs prix.</div>
 <div class="questions"><ol>
 <li><div class="q-text">Déterminez la position du consommateur indifférent, puis la demande adressée à chaque entreprise.</div></li>
 <li><div class="q-text">Déterminez les fonctions de réaction, les prix d'équilibre, les parts de marché et les profits.</div></li>
@@ -194,7 +194,7 @@ I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
 </ol></div>`;
 });
 I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
-  return String.raw`<div class="context-block">Consumers of mass 1 are uniformly spread over \([0,1]\). Each buys one unit of a good they value at \(v=${D.v}\). Two firms, with marginal cost \(c=${D.c}\), are located at \(x_1=${texT(D.x1, 2)}\) and \(x_2=${texT(D.x2, 2)}\). A consumer at \(x\) who buys from firm \(i\) bears a transport cost \(${D.t}\,(x-x_i)^2\). Firms set their prices simultaneously.</div>
+  return String.raw`<div class="context-block">Consumers of mass 1 are uniformly spread over \([0,1]\). Each buys one unit of a good they value at \(v=${D.v}\). Two firms, with marginal cost \(c=${D.c}\), are located at \(x_1=${fq(D.x1, 2)}\) and \(x_2=${fq(D.x2, 2)}\). A consumer at \(x\) who buys from firm \(i\) bears a transport cost \(${D.t}\,(x-x_i)^2\). Firms set their prices simultaneously.</div>
 <div class="questions"><ol>
 <li><div class="q-text">Determine the location of the indifferent consumer, then the demand addressed to each firm.</div></li>
 <li><div class="q-text">Determine the reaction functions, the equilibrium prices, the market shares and the profits.</div></li>

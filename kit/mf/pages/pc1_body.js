@@ -139,7 +139,7 @@ PAGE.compute = function (seed) {
   return D;
 };
 const p1n = x => fq(x);
-const p1U = D => String.raw`U(x_1,x_2)=x_1^{${texT(D.al, 2)}}\,x_2^{${texT(D.be, 2)}}`.replace('^{1}', '').replace('^{1}', '');
+const p1U = D => String.raw`U(x_1,x_2)=x_1^{${fq(D.al, 2)}}\,x_2^{${fq(D.be, 2)}}`.replace('^{1}', '').replace('^{1}', '');
 I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">Un consommateur a des préférences représentées par la fonction d'utilité \(${p1U(D)}\), définie pour \(x_1&gt;0\) et \(x_2&gt;0\). On considère le panier \(A=(${D.xA}\,;\,${D.yA})\).</div>
 <div class="questions"><ol>

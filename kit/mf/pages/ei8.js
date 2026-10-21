@@ -76,6 +76,24 @@ function eiSurplusFig(o) {
   G.legend([{ c: COL.s1, box: true, o: 0.3, t: fr ? 'surplus des consommateurs' : 'consumer surplus' }, { c: '#2e7d5b', box: true, o: 0.35, t: fr ? 'surplus des producteurs' : 'producer surplus' }, { c: COL.s3, box: true, o: 0.4, t: fr ? 'perte sèche' : 'deadweight loss' }], G.ml + 8, 16);
   return '<div class="sol-fig">' + (o.caption ? `<p style="text-align:center;margin:.2rem 0"><em>${o.caption}</em></p>` : '') + G.svg(o.aria || 'surplus') + '</div>';
 }
+/* corrigé en parties numérotées 1, 2 avec sous-questions a, b, c (comme mcaf3) */
+function regroupSol(html, heads, counts) {
+  const a = html.indexOf('<ol>'), b = html.lastIndexOf('</ol>');
+  if (a < 0 || b < 0) return html;
+  const inner = html.slice(a + 4, b), items = [];
+  let d = 0, start = -1, i = 0;
+  while (i < inner.length) {
+    if (inner.startsWith('<li', i) && /[\s>]/.test(inner[i + 3])) { if (d === 0) start = i; d++; i += 3; continue; }
+    if (inner.startsWith('</li>', i)) { d--; i += 5; if (d === 0) items.push(inner.slice(start, i)); continue; }
+    i++;
+  }
+  let k = 0, out = '<div class="st-parts">';
+  heads.forEach((h, p) => {
+    out += `<div class="calc-box"><span class="sol-sub">${p + 1}. ${h}</span><ol class="sub-list">${items.slice(k, k + counts[p]).join('')}</ol></div>`;
+    k += counts[p];
+  });
+  return out + '</div>';
+}
 I18N.fr.k = Object.assign({}, KBASE_FR, { title: 'Économie industrielle 8 – Concurrence spatiale', 'k-h1': 'Concurrence spatiale : Hotelling et Salop', 'k-coursetitle': 'Se différencier par la localisation : ville linéaire, prix d\'équilibre, choix de localisation et cercle de Salop', 'k-extitle': 'Duopole de Hotelling avec coûts de transport quadratiques', 'k-soltitle': 'Duopole de Hotelling avec coûts de transport quadratiques' });
 I18N.en.k = Object.assign({}, KBASE_EN, { title: 'Industrial economics 8 – Spatial competition', 'k-h1': 'Spatial competition: Hotelling and Salop', 'k-coursetitle': 'Differentiating through location: the linear city, equilibrium prices, location choice and the Salop circle', 'k-extitle': 'Hotelling duopoly with quadratic transport costs', 'k-soltitle': 'Hotelling duopoly with quadratic transport costs' });
 
@@ -262,7 +280,7 @@ function e8graph(D, lang) {
   return '<div class="sol-fig">' + G.svg(fr ? 'Prix complets et surplus' : 'Full prices and surplus') + '</div>';
 }
 I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
-  return String.raw`<div class="context-block">Des consommateurs de masse 1 sont répartis uniformément sur \([0,1]\). Chacun achète une unité d'un bien qu'il valorise \(v=${D.v}\). Deux entreprises, de coût marginal \(c=${D.c}\), sont situées en \(x_1=${texT(D.x1, 2)}\) et \(x_2=${texT(D.x2, 2)}\). Un consommateur situé en \(x\) qui achète à l'entreprise \(i\) supporte un coût de transport \(${D.t}\,(x-x_i)^2\). Les entreprises fixent simultanément leurs prix.</div>
+  return String.raw`<div class="context-block">Des consommateurs de masse 1 sont répartis uniformément sur \([0,1]\). Chacun achète une unité d'un bien qu'il valorise \(v=${D.v}\). Deux entreprises, de coût marginal \(c=${D.c}\), sont situées en \(x_1=${fq(D.x1, 2)}\) et \(x_2=${fq(D.x2, 2)}\). Un consommateur situé en \(x\) qui achète à l'entreprise \(i\) supporte un coût de transport \(${D.t}\,(x-x_i)^2\). Les entreprises fixent simultanément leurs prix.</div>
 <div class="questions"><ol>
 <li><div class="q-text">Déterminez la position du consommateur indifférent, puis la demande adressée à chaque entreprise.</div></li>
 <li><div class="q-text">Déterminez les fonctions de réaction, les prix d'équilibre, les parts de marché et les profits.</div></li>
@@ -272,7 +290,7 @@ I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
 </ol></div>`;
 });
 I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
-  return String.raw`<div class="context-block">Consumers of mass 1 are uniformly spread over \([0,1]\). Each buys one unit of a good they value at \(v=${D.v}\). Two firms, with marginal cost \(c=${D.c}\), are located at \(x_1=${texT(D.x1, 2)}\) and \(x_2=${texT(D.x2, 2)}\). A consumer at \(x\) who buys from firm \(i\) bears a transport cost \(${D.t}\,(x-x_i)^2\). Firms set their prices simultaneously.</div>
+  return String.raw`<div class="context-block">Consumers of mass 1 are uniformly spread over \([0,1]\). Each buys one unit of a good they value at \(v=${D.v}\). Two firms, with marginal cost \(c=${D.c}\), are located at \(x_1=${fq(D.x1, 2)}\) and \(x_2=${fq(D.x2, 2)}\). A consumer at \(x\) who buys from firm \(i\) bears a transport cost \(${D.t}\,(x-x_i)^2\). Firms set their prices simultaneously.</div>
 <div class="questions"><ol>
 <li><div class="q-text">Determine the location of the indifferent consumer, then the demand addressed to each firm.</div></li>
 <li><div class="q-text">Determine the reaction functions, the equilibrium prices, the market shares and the profits.</div></li>

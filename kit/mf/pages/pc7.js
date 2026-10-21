@@ -76,6 +76,24 @@ function eiSurplusFig(o) {
   G.legend([{ c: COL.s1, box: true, o: 0.3, t: fr ? 'surplus des consommateurs' : 'consumer surplus' }, { c: '#2e7d5b', box: true, o: 0.35, t: fr ? 'surplus des producteurs' : 'producer surplus' }, { c: COL.s3, box: true, o: 0.4, t: fr ? 'perte sèche' : 'deadweight loss' }], G.ml + 8, 16);
   return '<div class="sol-fig">' + (o.caption ? `<p style="text-align:center;margin:.2rem 0"><em>${o.caption}</em></p>` : '') + G.svg(o.aria || 'surplus') + '</div>';
 }
+/* corrigé en parties numérotées 1, 2 avec sous-questions a, b, c (comme mcaf3) */
+function regroupSol(html, heads, counts) {
+  const a = html.indexOf('<ol>'), b = html.lastIndexOf('</ol>');
+  if (a < 0 || b < 0) return html;
+  const inner = html.slice(a + 4, b), items = [];
+  let d = 0, start = -1, i = 0;
+  while (i < inner.length) {
+    if (inner.startsWith('<li', i) && /[\s>]/.test(inner[i + 3])) { if (d === 0) start = i; d++; i += 3; continue; }
+    if (inner.startsWith('</li>', i)) { d--; i += 5; if (d === 0) items.push(inner.slice(start, i)); continue; }
+    i++;
+  }
+  let k = 0, out = '<div class="st-parts">';
+  heads.forEach((h, p) => {
+    out += `<div class="calc-box"><span class="sol-sub">${p + 1}. ${h}</span><ol class="sub-list">${items.slice(k, k + counts[p]).join('')}</ol></div>`;
+    k += counts[p];
+  });
+  return out + '</div>';
+}
 I18N.fr.k = Object.assign({}, KBASE_FR, { title: 'Producteur et consommateur 7 – Coûts et offre concurrentielle', 'k-h1': 'Coûts de court terme et offre de la firme concurrentielle', 'k-coursetitle': 'Coûts fixes et variables, seuils de fermeture et de rentabilité, courbe d\'offre et surplus du producteur', 'k-extitle': 'Courbes de coût, décision de production et surplus du producteur', 'k-soltitle': 'Courbes de coût, décision de production et surplus du producteur' });
 I18N.en.k = Object.assign({}, KBASE_EN, { title: 'Producer and consumer 7 – Costs and competitive supply', 'k-h1': 'Short-run costs and the competitive firm\'s supply', 'k-coursetitle': 'Fixed and variable costs, shutdown and break-even points, supply curve and producer surplus', 'k-extitle': 'Cost curves, production decision and producer surplus', 'k-soltitle': 'Cost curves, production decision and producer surplus' });
 
@@ -223,25 +241,25 @@ PAGE.compute = function (seed) {
   const M = D.M; D.q = M.supply(D.p); D.CTq = M.CV(D.q) + D.F; D.pi = D.p * D.q - D.CTq; D.SP = D.p * D.q - M.CV(D.q);
   return D;
 };
-const p7C = D => String.raw`CT(q)=q^3-${D.k}\,q^2+${texT(D.m, 2)}\,q+${D.F}`;
+const p7C = D => String.raw`CT(q)=q^3-${D.k}\,q^2+${fq(D.m, 2)}\,q+${D.F}`;
 I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
-  return String.raw`<div class="context-block">Une entreprise en concurrence parfaite a pour coût total de court terme \(${p7C(D)}\). Le prix de marché est \(p=${texT(D.p, 2)}\).</div>
+  return String.raw`<div class="context-block">Une entreprise en concurrence parfaite a pour coût total de court terme \(${p7C(D)}\). Le prix de marché est \(p=${fq(D.p, 2)}\).</div>
 <div class="questions"><ol>
 <li><div class="q-text">Identifiez le coût fixe et le coût variable, puis calculez le coût moyen, le coût variable moyen et le coût marginal.</div></li>
 <li><div class="q-text">Déterminez le seuil de fermeture et le seuil de rentabilité.</div></li>
 <li><div class="q-text">Déterminez la courbe d'offre de court terme de l'entreprise.</div></li>
-<li><div class="q-text">Au prix \(p=${texT(D.p, 2)}\), quelle quantité l'entreprise produit-elle ? Calculez son profit. A-t-elle intérêt à produire ?</div></li>
+<li><div class="q-text">Au prix \(p=${fq(D.p, 2)}\), quelle quantité l'entreprise produit-elle ? Calculez son profit. A-t-elle intérêt à produire ?</div></li>
 <li><div class="q-text">Calculez, à l'aide d'une intégrale, le surplus du producteur, et vérifiez qu'il est égal au profit augmenté du coût fixe.</div></li>
 <li><div class="q-text">Représentez les courbes de coût, le prix, la quantité produite, le profit (ou la perte) et le surplus du producteur.</div></li>
 </ol></div>`;
 });
 I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
-  return String.raw`<div class="context-block">A perfectly competitive firm has short-run total cost \(${p7C(D).replace('CT', 'TC')}\). The market price is \(p=${texT(D.p, 2)}\).</div>
+  return String.raw`<div class="context-block">A perfectly competitive firm has short-run total cost \(${p7C(D).replace('CT', 'TC')}\). The market price is \(p=${fq(D.p, 2)}\).</div>
 <div class="questions"><ol>
 <li><div class="q-text">Identify fixed cost and variable cost, then compute average cost, average variable cost and marginal cost.</div></li>
 <li><div class="q-text">Determine the shutdown point and the break-even point.</div></li>
 <li><div class="q-text">Determine the firm's short-run supply curve.</div></li>
-<li><div class="q-text">At price \(p=${texT(D.p, 2)}\), what quantity does the firm produce? Compute its profit. Should it produce?</div></li>
+<li><div class="q-text">At price \(p=${fq(D.p, 2)}\), what quantity does the firm produce? Compute its profit. Should it produce?</div></li>
 <li><div class="q-text">Compute, using an integral, producer surplus, and check that it equals profit plus fixed cost.</div></li>
 <li><div class="q-text">Draw the cost curves, the price, the quantity produced, the profit (or loss) and producer surplus.</div></li>
 </ol></div>`;

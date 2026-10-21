@@ -132,7 +132,7 @@ PAGE.compute = function (seed) {
 };
 const p3U = D => String.raw`U(x_1,x_2)=x_1${D.al === 1 ? '' : '^{' + D.al + '}'}\,x_2${D.be === 1 ? '' : '^{' + D.be + '}'}`;
 I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
-  return String.raw`<div class="context-block">Un consommateur a pour utilité \(${p3U(D)}\), un revenu \(R=${D.R}\), et fait face aux prix \(p_1=${D.p1}\) et \(p_2=${D.p2}\). Le prix du bien 1 passe à \(p_1'=${texT(D.p1n, 2)}\), le revenu et \(p_2\) restant inchangés.</div>
+  return String.raw`<div class="context-block">Un consommateur a pour utilité \(${p3U(D)}\), un revenu \(R=${D.R}\), et fait face aux prix \(p_1=${D.p1}\) et \(p_2=${D.p2}\). Le prix du bien 1 passe à \(p_1'=${fq(D.p1n, 2)}\), le revenu et \(p_2\) restant inchangés.</div>
 <div class="questions"><ol>
 <li><div class="q-text">Déterminez le panier optimal initial \(A\) et le niveau d'utilité \(u_A\).</div></li>
 <li><div class="q-text">Déterminez le nouveau panier optimal \(C\). Quel est l'effet total sur la demande de bien 1 ?</div></li>
@@ -143,7 +143,7 @@ I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
 </ol></div>`;
 });
 I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
-  return String.raw`<div class="context-block">A consumer has utility \(${p3U(D)}\), income \(R=${D.R}\), and faces prices \(p_1=${D.p1}\) and \(p_2=${D.p2}\). The price of good 1 changes to \(p_1'=${texT(D.p1n, 2)}\), income and \(p_2\) remaining unchanged.</div>
+  return String.raw`<div class="context-block">A consumer has utility \(${p3U(D)}\), income \(R=${D.R}\), and faces prices \(p_1=${D.p1}\) and \(p_2=${D.p2}\). The price of good 1 changes to \(p_1'=${fq(D.p1n, 2)}\), income and \(p_2\) remaining unchanged.</div>
 <div class="questions"><ol>
 <li><div class="q-text">Determine the initial optimal bundle \(A\) and the utility level \(u_A\).</div></li>
 <li><div class="q-text">Determine the new optimal bundle \(C\). What is the total effect on the demand for good 1?</div></li>
