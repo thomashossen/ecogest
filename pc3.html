@@ -1030,6 +1030,24 @@ function eiSurplusFig(o) {
   G.legend([{ c: COL.s1, box: true, o: 0.3, t: fr ? 'surplus des consommateurs' : 'consumer surplus' }, { c: '#2e7d5b', box: true, o: 0.35, t: fr ? 'surplus des producteurs' : 'producer surplus' }, { c: COL.s3, box: true, o: 0.4, t: fr ? 'perte sèche' : 'deadweight loss' }], G.ml + 8, 16);
   return '<div class="sol-fig">' + (o.caption ? `<p style="text-align:center;margin:.2rem 0"><em>${o.caption}</em></p>` : '') + G.svg(o.aria || 'surplus') + '</div>';
 }
+/* corrigé en parties numérotées 1, 2 avec sous-questions a, b, c (comme mcaf3) */
+function regroupSol(html, heads, counts) {
+  const a = html.indexOf('<ol>'), b = html.lastIndexOf('</ol>');
+  if (a < 0 || b < 0) return html;
+  const inner = html.slice(a + 4, b), items = [];
+  let d = 0, start = -1, i = 0;
+  while (i < inner.length) {
+    if (inner.startsWith('<li', i) && /[\s>]/.test(inner[i + 3])) { if (d === 0) start = i; d++; i += 3; continue; }
+    if (inner.startsWith('</li>', i)) { d--; i += 5; if (d === 0) items.push(inner.slice(start, i)); continue; }
+    i++;
+  }
+  let k = 0, out = '<div class="st-parts">';
+  heads.forEach((h, p) => {
+    out += `<div class="calc-box"><span class="sol-sub">${p + 1}. ${h}</span><ol class="sub-list">${items.slice(k, k + counts[p]).join('')}</ol></div>`;
+    k += counts[p];
+  });
+  return out + '</div>';
+}
 I18N.fr.k = Object.assign({}, KBASE_FR, { title: 'Producteur et consommateur 3 – Effets de substitution et de revenu', 'k-h1': 'Effets de substitution et de revenu', 'k-coursetitle': 'Décomposer l\'effet d\'une variation de prix : demande compensée, décompositions de Hicks et de Slutsky', 'k-extitle': 'Hausse ou baisse d\'un prix : décompositions de Hicks et de Slutsky pour une utilité Cobb-Douglas', 'k-soltitle': 'Hausse ou baisse d\'un prix : décompositions de Hicks et de Slutsky pour une utilité Cobb-Douglas' });
 I18N.en.k = Object.assign({}, KBASE_EN, { title: 'Producer and consumer 3 – Substitution and income effects', 'k-h1': 'Substitution and income effects', 'k-coursetitle': 'Decomposing the effect of a price change: compensated demand, Hicks and Slutsky decompositions', 'k-extitle': 'A price rise or fall: Hicks and Slutsky decompositions for a Cobb-Douglas utility', 'k-soltitle': 'A price rise or fall: Hicks and Slutsky decompositions for a Cobb-Douglas utility' });
 
@@ -1164,7 +1182,7 @@ PAGE.compute = function (seed) {
 };
 const p3U = D => String.raw`U(x_1,x_2)=x_1${D.al === 1 ? '' : '^{' + D.al + '}'}\,x_2${D.be === 1 ? '' : '^{' + D.be + '}'}`;
 I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
-  return String.raw`<div class="context-block">Un consommateur a pour utilité \(${p3U(D)}\), un revenu \(R=${D.R}\), et fait face aux prix \(p_1=${D.p1}\) et \(p_2=${D.p2}\). Le prix du bien 1 passe à \(p_1'=${texT(D.p1n, 2)}\), le revenu et \(p_2\) restant inchangés.</div>
+  return String.raw`<div class="context-block">Un consommateur a pour utilité \(${p3U(D)}\), un revenu \(R=${D.R}\), et fait face aux prix \(p_1=${D.p1}\) et \(p_2=${D.p2}\). Le prix du bien 1 passe à \(p_1'=${fq(D.p1n, 2)}\), le revenu et \(p_2\) restant inchangés.</div>
 <div class="questions"><ol>
 <li><div class="q-text">Déterminez le panier optimal initial \(A\) et le niveau d'utilité \(u_A\).</div></li>
 <li><div class="q-text">Déterminez le nouveau panier optimal \(C\). Quel est l'effet total sur la demande de bien 1 ?</div></li>
@@ -1175,7 +1193,7 @@ I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
 </ol></div>`;
 });
 I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
-  return String.raw`<div class="context-block">A consumer has utility \(${p3U(D)}\), income \(R=${D.R}\), and faces prices \(p_1=${D.p1}\) and \(p_2=${D.p2}\). The price of good 1 changes to \(p_1'=${texT(D.p1n, 2)}\), income and \(p_2\) remaining unchanged.</div>
+  return String.raw`<div class="context-block">A consumer has utility \(${p3U(D)}\), income \(R=${D.R}\), and faces prices \(p_1=${D.p1}\) and \(p_2=${D.p2}\). The price of good 1 changes to \(p_1'=${fq(D.p1n, 2)}\), income and \(p_2\) remaining unchanged.</div>
 <div class="questions"><ol>
 <li><div class="q-text">Determine the initial optimal bundle \(A\) and the utility level \(u_A\).</div></li>
 <li><div class="q-text">Determine the new optimal bundle \(C\). What is the total effect on the demand for good 1?</div></li>

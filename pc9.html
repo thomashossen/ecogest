@@ -1030,6 +1030,24 @@ function eiSurplusFig(o) {
   G.legend([{ c: COL.s1, box: true, o: 0.3, t: fr ? 'surplus des consommateurs' : 'consumer surplus' }, { c: '#2e7d5b', box: true, o: 0.35, t: fr ? 'surplus des producteurs' : 'producer surplus' }, { c: COL.s3, box: true, o: 0.4, t: fr ? 'perte sèche' : 'deadweight loss' }], G.ml + 8, 16);
   return '<div class="sol-fig">' + (o.caption ? `<p style="text-align:center;margin:.2rem 0"><em>${o.caption}</em></p>` : '') + G.svg(o.aria || 'surplus') + '</div>';
 }
+/* corrigé en parties numérotées 1, 2 avec sous-questions a, b, c (comme mcaf3) */
+function regroupSol(html, heads, counts) {
+  const a = html.indexOf('<ol>'), b = html.lastIndexOf('</ol>');
+  if (a < 0 || b < 0) return html;
+  const inner = html.slice(a + 4, b), items = [];
+  let d = 0, start = -1, i = 0;
+  while (i < inner.length) {
+    if (inner.startsWith('<li', i) && /[\s>]/.test(inner[i + 3])) { if (d === 0) start = i; d++; i += 3; continue; }
+    if (inner.startsWith('</li>', i)) { d--; i += 5; if (d === 0) items.push(inner.slice(start, i)); continue; }
+    i++;
+  }
+  let k = 0, out = '<div class="st-parts">';
+  heads.forEach((h, p) => {
+    out += `<div class="calc-box"><span class="sol-sub">${p + 1}. ${h}</span><ol class="sub-list">${items.slice(k, k + counts[p]).join('')}</ol></div>`;
+    k += counts[p];
+  });
+  return out + '</div>';
+}
 I18N.fr.k = Object.assign({}, KBASE_FR, { title: 'Producteur et consommateur 9 – Équilibre général d\'échange', 'k-h1': 'Équilibre général d\'échange : la boîte d\'Edgeworth', 'k-coursetitle': 'Allocations, optimum de Pareto, courbe des contrats, équilibre walrasien et théorèmes du bien-être', 'k-extitle': 'Économie d\'échange à deux agents Cobb-Douglas', 'k-soltitle': 'Économie d\'échange à deux agents Cobb-Douglas' });
 I18N.en.k = Object.assign({}, KBASE_EN, { title: 'Producer and consumer 9 – General exchange equilibrium', 'k-h1': 'General exchange equilibrium: the Edgeworth box', 'k-coursetitle': 'Allocations, Pareto optimum, contract curve, Walrasian equilibrium and the welfare theorems', 'k-extitle': 'A two-agent Cobb-Douglas exchange economy', 'k-soltitle': 'A two-agent Cobb-Douglas exchange economy' });
 
@@ -1179,7 +1197,7 @@ PAGE.compute = function (seed) {
   D.u0A = E.uA(D.xa, D.ya); D.u0B = E.uB(D.xb, D.yb); D.u1A = E.uA(E.A.x, E.A.y); D.u1B = E.uB(E.B.x, E.B.y);
   return D;
 };
-const p9U = (n, e) => String.raw`U_${n}(x,y)=x^{${texT(e, 2)}}\,y^{${texT(1 - e, 2)}}`;
+const p9U = (n, e) => String.raw`U_${n}(x,y)=x^{${fq(e, 2)}}\,y^{${fq(1 - e, 2)}}`;
 I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
   return String.raw`<div class="context-block">Deux consommateurs A et B échangent deux biens \(x\) et \(y\). Leurs utilités sont \(${p9U('A', D.al)}\) et \(${p9U('B', D.be)}\). A possède initialement \(\omega_A=(${D.xa}\,;\,${D.ya})\) et B \(\omega_B=(${D.xb}\,;\,${D.yb})\). On prend le bien \(y\) comme numéraire (\(p_y=1\)) et l'on note \(p\) le prix du bien \(x\).</div>
 <div class="questions"><ol>

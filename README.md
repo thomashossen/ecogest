@@ -52,3 +52,13 @@ Pages équipées : econ2, econ3, econ6, econ7, econ8, econ10, econ11, econ12, ec
 Les pages mf16 à mf22 (dédication, VaR et CVaR, optimisation robuste, immunisation, Markowitz, contraintes en probabilité, variables entières) sont construites à partir du gabarit mf15.html : `kit/mf/pages/build_mf.py` remplace la partie propre à la page par le fichier `kit/mf/pages/mfNN.js` (cours, figures, générateur, énoncé et corrigé, en français et en anglais). Pour modifier une de ces pages, éditer le .js puis relancer le script, par exemple :
 `python3 kit/mf/pages/build_mf.py 17 kit/mf/pages/mf17.js '{"title": "...", "h1": "...", "course": "...", "ex": "..."}' mf17.html`
 Le script `kit/mf/pages/rebuild_all.sh` (à lancer depuis le dossier parent de `site/`, ou en adaptant les chemins) les reconstruit toutes. L'index les range dans une nouvelle rubrique « Optimisation et gestion des risques », avec mf15.
+
+
+## Microéconomie (27 pages : pc1–pc9, jeux1–jeux9, ei1–ei9)
+
+Les pages d'économie industrielle ei1 à ei8 (monopole, discrimination, Cournot, Stackelberg, cartel, Bertrand, prix limite, concurrence spatiale) sont construites comme les pages mf16 et suivantes : sources dans `kit/mf/pages/eiN.js`, construction par `build_mf.py` avec l'option `badge` (« MICROÉCONOMIE »). L'index les range dans la catégorie « Microéconomie », placée juste avant « Macroéconomie ».
+Les pages ei5 à ei8 sont assemblées à partir du préambule commun `ei_pre.js` (libellés et figure générique des surplus) et de leur corps `eiN_body.js` : voir `build_ei5-8.sh`.
+Les pages de théorie des jeux jeux1 à jeux3 utilisent le préambule `jeux_pre.js` (= `ei_pre.js` + `jx_pre.js` : matrices de gains en SVG, meilleures réponses) : voir `build_jeux.sh`.
+
+### Calcul exact dans les corrigés de microéconomie
+Les préambules (`ei_pre.js`, `jeux_pre.js`, et le début de `ei1.js` à `ei4.js`) contiennent un module de calcul exact : `ratOf` reconnaît les nombres rationnels, `fq` les affiche en fraction, `fqa` ajoute l'approximation décimale pour les résultats finaux, `fqp` met une fraction entre parenthèses devant un exposant, `fqt` sert dans les tableaux, `eqa` choisit entre « = » et « ≈ », et `fracClean` simplifie les écritures du type \frac{X}{1}. Le script `fracify.py` a converti les corrigés existants ; les valeurs irrationnelles (puissances non entières, racines) restent en décimales précédées de « ≈ ».

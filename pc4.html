@@ -1030,6 +1030,24 @@ function eiSurplusFig(o) {
   G.legend([{ c: COL.s1, box: true, o: 0.3, t: fr ? 'surplus des consommateurs' : 'consumer surplus' }, { c: '#2e7d5b', box: true, o: 0.35, t: fr ? 'surplus des producteurs' : 'producer surplus' }, { c: COL.s3, box: true, o: 0.4, t: fr ? 'perte sèche' : 'deadweight loss' }], G.ml + 8, 16);
   return '<div class="sol-fig">' + (o.caption ? `<p style="text-align:center;margin:.2rem 0"><em>${o.caption}</em></p>` : '') + G.svg(o.aria || 'surplus') + '</div>';
 }
+/* corrigé en parties numérotées 1, 2 avec sous-questions a, b, c (comme mcaf3) */
+function regroupSol(html, heads, counts) {
+  const a = html.indexOf('<ol>'), b = html.lastIndexOf('</ol>');
+  if (a < 0 || b < 0) return html;
+  const inner = html.slice(a + 4, b), items = [];
+  let d = 0, start = -1, i = 0;
+  while (i < inner.length) {
+    if (inner.startsWith('<li', i) && /[\s>]/.test(inner[i + 3])) { if (d === 0) start = i; d++; i += 3; continue; }
+    if (inner.startsWith('</li>', i)) { d--; i += 5; if (d === 0) items.push(inner.slice(start, i)); continue; }
+    i++;
+  }
+  let k = 0, out = '<div class="st-parts">';
+  heads.forEach((h, p) => {
+    out += `<div class="calc-box"><span class="sol-sub">${p + 1}. ${h}</span><ol class="sub-list">${items.slice(k, k + counts[p]).join('')}</ol></div>`;
+    k += counts[p];
+  });
+  return out + '</div>';
+}
 I18N.fr.k = Object.assign({}, KBASE_FR, { title: 'Producteur et consommateur 4 – Élasticités et surplus du consommateur', 'k-h1': 'Élasticités et surplus du consommateur', 'k-coursetitle': 'Mesurer la sensibilité de la demande, relier élasticité et dépense, calculer le surplus des consommateurs', 'k-extitle': 'Élasticités prix, revenu et croisée, dépense et surplus', 'k-soltitle': 'Élasticités prix, revenu et croisée, dépense et surplus' });
 I18N.en.k = Object.assign({}, KBASE_EN, { title: 'Producer and consumer 4 – Elasticities and consumer surplus', 'k-h1': 'Elasticities and consumer surplus', 'k-coursetitle': 'Measuring the sensitivity of demand, linking elasticity and expenditure, computing consumer surplus', 'k-extitle': 'Price, income and cross elasticities, expenditure and surplus', 'k-soltitle': 'Price, income and cross elasticities, expenditure and surplus' });
 
@@ -1155,7 +1173,7 @@ PAGE.compute = function (seed) {
   return D;
 };
 I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
-  return String.raw`<div class="context-block">La demande d'un bien \(x\) est \(Q=${D.a}-${cfx(D.b)}p+${texT(D.c, 2)}\,R${D.d < 0 ? '-' : '+'}${cfx(Math.abs(D.d))}p_y\), où \(p\) est son prix, \(R\) le revenu des consommateurs et \(p_y\) le prix d'un autre bien \(y\). Initialement, \(R=${D.R}\), \(p_y=${D.py}\) et \(p=${D.p0}\).</div>
+  return String.raw`<div class="context-block">La demande d'un bien \(x\) est \(Q=${D.a}-${cfx(D.b)}p+${fq(D.c, 2)}\,R${D.d < 0 ? '-' : '+'}${cfx(Math.abs(D.d))}p_y\), où \(p\) est son prix, \(R\) le revenu des consommateurs et \(p_y\) le prix d'un autre bien \(y\). Initialement, \(R=${D.R}\), \(p_y=${D.py}\) et \(p=${D.p0}\).</div>
 <div class="questions"><ol>
 <li><div class="q-text">Calculez la quantité demandée et l'élasticité-prix de la demande. La demande est-elle élastique ?</div></li>
 <li><div class="q-text">Calculez l'élasticité-revenu et l'élasticité croisée. Quelle est la nature du bien \(x\), et sa relation avec le bien \(y\) ?</div></li>
@@ -1166,7 +1184,7 @@ I18N.fr.ex = ((f) => D => fracClean(f(D)))(function (D) {
 </ol></div>`;
 });
 I18N.en.ex = ((f) => D => fracClean(f(D)))(function (D) {
-  return String.raw`<div class="context-block">Demand for a good \(x\) is \(Q=${D.a}-${cfx(D.b)}p+${texT(D.c, 2)}\,R${D.d < 0 ? '-' : '+'}${cfx(Math.abs(D.d))}p_y\), where \(p\) is its price, \(R\) consumers' income and \(p_y\) the price of another good \(y\). Initially, \(R=${D.R}\), \(p_y=${D.py}\) and \(p=${D.p0}\).</div>
+  return String.raw`<div class="context-block">Demand for a good \(x\) is \(Q=${D.a}-${cfx(D.b)}p+${fq(D.c, 2)}\,R${D.d < 0 ? '-' : '+'}${cfx(Math.abs(D.d))}p_y\), where \(p\) is its price, \(R\) consumers' income and \(p_y\) the price of another good \(y\). Initially, \(R=${D.R}\), \(p_y=${D.py}\) and \(p=${D.p0}\).</div>
 <div class="questions"><ol>
 <li><div class="q-text">Compute the quantity demanded and the price elasticity of demand. Is demand elastic?</div></li>
 <li><div class="q-text">Compute the income elasticity and the cross elasticity. What is the nature of good \(x\), and its relation with good \(y\)?</div></li>
