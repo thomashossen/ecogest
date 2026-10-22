@@ -1076,6 +1076,37 @@ function s1graph(M, lang, o) {
   G.legend([{ c: COL.s1, t: 'R₁' }, { c: COL.s2, t: 'R₂' }, { c: GREY, dash: '4 4', t: fr ? 'production du cartel' : 'cartel output' }], G.ml + 70, 16);
   return '<div style="max-width:540px;margin:0 auto">' + G.svg(fr ? 'Les quatre situations du dossier 1' : 'The four situations of file 1') + '</div>';
 }
+
+function s1surfig(x, D, lang, tag) {
+  const fr = lang === 'fr', a = D.a, b = D.b, c = D.c, e = D.e, W = 680, H = 270, pw = 220;
+  let svg = `<svg viewBox="0 0 ${W} ${H + 26}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${fr ? 'Surplus' : 'Surplus'}">`;
+  const panels = [
+    { t: fr ? 'marché' : 'market', xmax: a / b, xl: 'Q', draw: G => {
+      G.add(`<path d="M${G.X(0)} ${G.Y(a)} L${G.X(x.Q)} ${G.Y(x.P)} L${G.X(0)} ${G.Y(x.P)} Z" fill="${COL.s1}" fill-opacity="0.25"/>`);
+      G.line([[0, a], [a / b, 0]], { c: COL.s1, w: 2 }); G.seg(0, x.P, x.Q, x.P, { c: COL.ink, w: 1.2, dash: '4 3' }); G.dot(x.Q, x.P, { c: COL.s1, r: 4 }); } },
+    { t: fr ? 'firme 1' : 'firm 1', i: 0 }, { t: fr ? 'firme 2' : 'firm 2', i: 1 }
+  ];
+  panels.forEach((pn, k) => {
+    let xmax = pn.xmax;
+    if (pn.i !== undefined) xmax = x.q[pn.i] * 1.6;
+    const G = Plot({ w: pw, h: H, x0: 0, x1: xmax, y0: 0, y1: a * 1.05, mt: 22, mb: 38, ml: 38, mr: 8 });
+    G.axes({ xt: ticks(0, xmax, 3), yt: ticks(0, a, 4), xl: pn.i === undefined ? pn.xl : 'q' + '₁₂'[pn.i], xf: v => fmtT(v, 0), yf: v => fmtT(v, 0) });
+    G.clip();
+    if (pn.draw) pn.draw(G);
+    else {
+      const i = pn.i, q = x.q[i], cm = z => c[i] + e[i] * z;
+      G.add(`<path d="M${G.X(0)} ${G.Y(x.P)} L${G.X(q)} ${G.Y(x.P)} L${G.X(q)} ${G.Y(cm(q))} L${G.X(0)} ${G.Y(c[i])} Z" fill="#2e7d5b" fill-opacity="0.3"/>`);
+      G.line([[0, x.P], [xmax, x.P]], { c: COL.ink, w: 1.2, dash: '4 3' });
+      G.line([[0, c[i]], [xmax, cm(xmax)]], { c: COL.s2, w: 2, clip: true });
+      G.dot(q, x.P, { c: COL.s3, r: 4 });
+    }
+    G.text(xmax / 2, a * 1.05, pn.t, { dy: -6, size: 11, bold: true });
+    svg += `<g transform="translate(${k * (pw + 10)},26)">${G.el.join('')}</g>`;
+  });
+  const lg = [[COL.s1, 0.3, fr ? 'surplus des consommateurs' : 'consumer surplus'], ['#2e7d5b', 0.35, fr ? 'surplus du producteur' : 'producer surplus'], [COL.s2, 1, fr ? 'coût marginal' : 'marginal cost']];
+  let lx = 40; lg.forEach(l => { svg += `<rect x="${lx}" y="8" width="12" height="9" rx="2" fill="${l[0]}" fill-opacity="${l[1]}"/><text x="${lx + 17}" y="16" ${FONT_T} font-size="11.5" fill="${COL.ink}">${l[2]}</text>`; lx += 200; });
+  return '<div class="sol-fig">' + svg + '</svg></div>';
+}
 /* ---------- dossier 2 : Q_i = a_i - b P_i + d P_j, C_i = c_i Q_i ---------- */
 function s2model(a1, a2, b, d, c1, c2) {
   const den = 4 * b * b - d * d, A1 = a1 + b * c1, A2 = a2 + b * c2;
@@ -1295,7 +1326,18 @@ function s10sol(D, lang) {
   const foc = i => String.raw`${a}-${cfx(2 * b)}Q_${i + 1}-${cfx(b)}Q_${2 - i}-${cm(i)}=0`;
   const spI = (x, i) => { const cq = cm(i).split('Q_' + (i + 1)).join('q'), cmq = c[i] ? '(' + cq + ')' : cq;
     return String.raw`\int_0^{${n(x.q[i])}}\big(${n(x.P)}-${cmq}\big)\,dq=\Big[${n(x.P - c[i])}\,q-${cfx(e[i] / 2)}q^2\Big]_0^{${n(x.q[i])}}=${na(x.pi[i])}`; };
-  const surp = (x, nm) => String.raw`\[\begin{aligned}${SC}^{${nm}}&amp;=\int_0^{${n(x.Q)}}\big(${a}-${cfx(b)}q-${n(x.P)}\big)\,dq=\frac{${b}}{2}\Big(${n(x.Q)}\Big)^2=${na(x.SC)}\\${SP}_1^{${nm}}&amp;=${spI(x, 0)}\\${SP}_2^{${nm}}&amp;=${spI(x, 1)}\end{aligned}\]`;
+  const surp = (x, nm) => {
+    const h = i => [x.P - c[i], x.P - c[i] - e[i] * x.q[i]];
+    let o = '<p>' + T_(['Le surplus des consommateurs est l\'intégrale de l\'écart entre la demande inverse et le prix payé :', 'Consumer surplus is the integral of the gap between inverse demand and the price paid:']) + '</p>';
+    o += String.raw`\[${SC}^{${nm}}=\int_0^{${n(x.Q)}}\Big(${a}-${cfx(b)}q-${n(x.P)}\Big)\,dq=\Big[${n(a - x.P)}\,q-${cfx(b / 2)}q^2\Big]_0^{${n(x.Q)}}=${na(x.SC)}\]`;
+    o += '<p>' + T_(['On retrouve ce résultat avec l\'aire du triangle compris entre la demande et le prix, de base', 'This result is recovered with the area of the triangle between demand and the price, with base']) + String.raw` \(Q=${n(x.Q)}\) ` + T_(['et de hauteur', 'and height']) + String.raw` \(${a}-p=${n(a - x.P)}\) : \(\frac12\times ${n(x.Q)}\times ${n(a - x.P)}=${na(x.SC)}\). ` + T_(['Le surplus de chaque firme est l\'intégrale de l\'écart entre le prix et son coût marginal ; sans coût fixe, il est égal à son profit. Pour la firme 1 :', 'Each firm\'s surplus is the integral of the gap between the price and its marginal cost; with no fixed cost, it equals its profit. For firm 1:']) + '</p>';
+    o += String.raw`\[${SP}_1^{${nm}}=${spI(x, 0)}\]`;
+    const h1 = h(0), h2 = h(1);
+    o += '<p>' + T_(['Géométriquement, c\'est l\'aire du trapèze compris entre le prix et le coût marginal, de largeur', 'Geometrically, it is the area of the trapezoid between the price and marginal cost, with width']) + String.raw` \(Q_1=${n(x.q[0])}\) ` + T_(['et de hauteurs', 'and heights']) + String.raw` \(p-${CM}_1(0)=${n(h1[0])}\) ` + T_(['et', 'and']) + String.raw` \(p-${CM}_1(Q_1)=${n(h1[1])}\)` + T_([' ; son aire vaut donc', '; its area is therefore']) + String.raw` \(${n(x.q[0])}\times\frac{${n(h1[0])}+${n(h1[1])}}{2}=${na(x.pi[0])}\). ` + T_(['De même pour la firme 2 :', 'Likewise for firm 2:']) + '</p>';
+    o += String.raw`\[${SP}_2^{${nm}}=${spI(x, 1)}\]`;
+    o += '<p>' + T_(['et l\'aire du trapèze correspondant, de largeur', 'and the area of the corresponding trapezoid, with width']) + String.raw` \(Q_2=${n(x.q[1])}\) ` + T_(['et de hauteurs', 'and heights']) + String.raw` \(${n(h2[0])}\) ` + T_(['et', 'and']) + String.raw` \(${n(h2[1])}\), ` + T_(['vaut', 'is']) + String.raw` \(${n(x.q[1])}\times\frac{${n(h2[0])}+${n(h2[1])}}{2}=${na(x.pi[1])}\). ` + T_(['Les trois surplus sont représentés ci-dessous :', 'The three surpluses are shown below:']) + '</p>';
+    return o + s1surfig(x, D, lang);
+  };
   const price = x => String.raw`p=${a}-${bx}\Big(${n(x.q[0])}+${n(x.q[1])}\Big)=${na(x.P)}`;
   const linL = a - b * M.al[1] - c[0], coefL = b * (1 - M.be[1]) + e[0] / 2;
   const tab = `<div class="dtable-wrap"><table class="dtable"><thead><tr><th></th><th>\\(Q_1\\)</th><th>\\(Q_2\\)</th><th>\\(p\\)</th><th>\\(\\Pi_1\\)</th><th>\\(\\Pi_2\\)</th><th>\\(\\Pi_1+\\Pi_2\\)</th><th>${SC}</th></tr></thead><tbody>${[['Cournot', M.C], ['Stackelberg', M.S], ['Bowley', M.B], [T_(['Cartel', 'Cartel']), M.K]].map(r => `<tr><td>${r[0]}</td><td class="num">${fqt(r[1].q[0])}</td><td class="num">${fqt(r[1].q[1])}</td><td class="num">${fqt(r[1].P)}</td><td class="num">${fqt(r[1].pi[0])}</td><td class="num">${fqt(r[1].pi[1])}</td><td class="num">${fqt(r[1].pi[0] + r[1].pi[1])}</td><td class="num">${fqt(r[1].SC)}</td></tr>`).join('')}</tbody></table></div>`;
@@ -1310,30 +1352,35 @@ function s10sol(D, lang) {
   <p>${T_(['Le profit de la firme', 'The profit of firm'])} \(i\) ${T_(['est sa recette, au prix fixé par la demande totale, diminuée de son coût :', 'is its revenue, at the price set by total demand, minus its cost:'])} \(\Pi_i=(${a}-${cfx(b)}Q_1-${cfx(b)}Q_2)\,Q_i-CT_i(Q_i)\). ${T_(['Pour une quantité donnée de sa concurrente, chaque firme annule la dérivée de son profit par rapport à sa propre quantité ; on en déduit les fonctions de réaction :', 'For a given rival quantity, each firm sets the derivative of its profit with respect to its own quantity to zero; this gives the reaction functions:'])}
   \[\begin{aligned}\frac{\partial\Pi_1}{\partial Q_1}=0&amp;\iff ${foc(0)}\iff Q_1=R_1(Q_2)=${n(M.al[0])}-${n(M.be[0])}\,Q_2\\\frac{\partial\Pi_2}{\partial Q_2}=0&amp;\iff ${foc(1)}\iff Q_2=R_2(Q_1)=${n(M.al[1])}-${n(M.be[1])}\,Q_1\end{aligned}\]
   ${T_(['À l\'équilibre de Cournot, chaque quantité est la meilleure réponse à l\'autre. En reportant', 'At the Cournot equilibrium, each quantity is the best response to the other. Substituting'])} \(R_2\) ${T_(['dans', 'into'])} \(R_1\) :
-  \[\begin{aligned}Q_1^*&amp;=\frac{${n(M.al[0])}-${n(M.be[0])}\times ${n(M.al[1])}}{1-${n(M.be[0])}\times ${n(M.be[1])}}=${na(M.C.q[0])}\\Q_2^*&amp;=${n(M.al[1])}-${n(M.be[1])}\times ${n(M.C.q[0])}=${na(M.C.q[1])}\end{aligned}\]
-  ${T_(['On en déduit, d\'après la fonction de demande inverse, le prix d\'équilibre sur le marché :', 'The inverse demand function then gives the equilibrium market price:'])} \(${price(M.C)}\). ${T_(['Sans coût fixe, le surplus de chaque firme est l\'intégrale de l\'écart entre le prix et son coût marginal, égale à son profit ; celui des consommateurs est l\'intégrale de l\'écart entre la demande inverse et le prix :', 'With no fixed cost, each firm\'s surplus is the integral of the gap between the price and its marginal cost, equal to its profit; consumer surplus is the integral of the gap between inverse demand and the price:'])}
-  ${surp(M.C, 'C')}</p>
+  \[Q_1^*=${n(M.al[0])}-${n(M.be[0])}\Big(${n(M.al[1])}-${n(M.be[1])}\,Q_1^*\Big)\iff Q_1^*=\frac{${n(M.al[0])}-${n(M.be[0])}\times ${n(M.al[1])}}{1-${n(M.be[0])}\times ${n(M.be[1])}}=${na(M.C.q[0])}\]
+  ${T_(['On en déduit la quantité de la firme 2 en reportant ce résultat dans sa fonction de réaction :', 'Firm 2\'s quantity follows by substituting this result into its reaction function:'])}
+  \[Q_2^*=${n(M.al[1])}-${n(M.be[1])}\times ${n(M.C.q[0])}=${na(M.C.q[1])}\]
+  ${T_(['On en déduit, d\'après la fonction de demande inverse, le prix d\'équilibre sur le marché :', 'The inverse demand function then gives the equilibrium market price:'])} \(${price(M.C)}\). ${T_(['Calculons enfin les surplus de cette situation.', 'Finally, let us compute the surpluses of this situation.'])}</p>
+  ${surp(M.C, 'C')}<p></p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['La firme 1, dominante, choisit sa quantité en premier en anticipant la réaction de la firme 2,', 'Firm 1, dominant, chooses its quantity first, anticipating firm 2\'s reaction,'])} \(Q_2=${n(M.al[1])}-${n(M.be[1])}\,Q_1\). ${T_(['En reportant cette réaction dans son profit, celui-ci ne dépend plus que de', 'Substituting this reaction into its profit, the latter only depends on'])} \(Q_1\) :
   \[\Pi_1(Q_1)=\big(${a}-${cfx(b)}Q_1-${cfx(b)}(${n(M.al[1])}-${n(M.be[1])}\,Q_1)\big)\,Q_1-CT_1(Q_1)=${n(linL)}\,Q_1-${n(coefL)}\,Q_1^2\]
-  ${T_(['La firme 1 annule la dérivée de ce profit :', 'Firm 1 sets the derivative of this profit to zero:'])} \(${n(linL)}-${n(2 * coefL)}\,Q_1=0\), ${T_(['d\'où', 'hence'])} \(Q_1^*=${na(M.S.q[0])}\). ${T_(['On en déduit la quantité de la firme 2 en reportant ce résultat dans sa réaction :', 'Firm 2\'s quantity follows by substituting this result into its reaction:'])} \(Q_2^*=${n(M.al[1])}-${n(M.be[1])}\times ${n(M.S.q[0])}=${na(M.S.q[1])}\), ${T_(['puis le prix, d\'après la demande inverse :', 'then the price, from inverse demand:'])} \(${price(M.S)}\). ${T_(['Les surplus valent :', 'Surpluses are:'])}
+  ${T_(['La firme 1 annule la dérivée de ce profit :', 'Firm 1 sets the derivative of this profit to zero:'])} \(${n(linL)}-${n(2 * coefL)}\,Q_1=0\), ${T_(['d\'où', 'hence'])} \(Q_1^*=${na(M.S.q[0])}\). ${T_(['On en déduit la quantité de la firme 2 en reportant ce résultat dans sa réaction :', 'Firm 2\'s quantity follows by substituting this result into its reaction:'])} \(Q_2^*=${n(M.al[1])}-${n(M.be[1])}\times ${n(M.S.q[0])}=${na(M.S.q[1])}\), ${T_(['puis le prix, d\'après la demande inverse :', 'then the price, from inverse demand:'])} \(${price(M.S)}\). ${T_(['Calculons les surplus de cette situation.', 'Let us compute the surpluses of this situation.'])}</p>
   ${surp(M.S, 'S')}
-  ${T_(['La firme dominante produit plus et gagne plus qu\'en Cournot ; la firme 2 produit moins et gagne moins ; le prix baisse et les consommateurs y gagnent.', 'The dominant firm produces and earns more than under Cournot; firm 2 produces and earns less; the price falls and consumers gain.'])}</p>
+  <p>${T_(['La firme dominante produit plus et gagne plus qu\'en Cournot ; la firme 2 produit moins et gagne moins ; le prix baisse et les consommateurs y gagnent.', 'The dominant firm produces and earns more than under Cournot; firm 2 produces and earns less; the price falls and consumers gain.'])}</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Si la firme 2 se comporte aussi en firme dominante, elle calcule sa quantité de leader en anticipant la réaction de la firme 1,', 'If firm 2 also behaves as a dominant firm, it computes its leader quantity anticipating firm 1\'s reaction,'])} \(Q_1=${n(M.al[0])}-${n(M.be[0])}\,Q_2\), ${T_(['selon le même raisonnement :', 'with the same reasoning:'])}
   \[\Pi_2(Q_2)=${n(a - b * M.al[0] - c[1])}\,Q_2-${n(b * (1 - M.be[0]) + e[1] / 2)}\,Q_2^2\iff Q_2^*=\frac{${n(a - b * M.al[0] - c[1])}}{${n(2 * b * (1 - M.be[0]) + e[1])}}=${na(M.B.q[1])}\]
-  ${T_(['La firme 1 conserve sa quantité de leader', 'Firm 1 keeps its leader quantity'])} \(Q_1^*=${na(M.B.q[0])}\). ${T_(['C\'est la situation de Bowley : aucune firme ne joue sa meilleure réponse à la quantité effective de l\'autre. D\'après la demande inverse, le prix est', 'This is the Bowley situation: neither firm plays its best response to the other\'s actual quantity. From inverse demand, the price is'])} \(${price(M.B)}\), ${T_(['et les surplus valent :', 'and surpluses are:'])}
+  ${T_(['La firme 1 conserve sa quantité de leader', 'Firm 1 keeps its leader quantity'])} \(Q_1^*=${na(M.B.q[0])}\). ${T_(['C\'est la situation de Bowley : aucune firme ne joue sa meilleure réponse à la quantité effective de l\'autre. D\'après la demande inverse, le prix est', 'This is the Bowley situation: neither firm plays its best response to the other\'s actual quantity. From inverse demand, the price is'])} \(${price(M.B)}\), ${T_(['et les surplus se calculent comme précédemment.', 'and surpluses are computed as before.'])}</p>
   ${surp(M.B, 'B')}
-  ${T_(['La production totale dépasse celle des deux équilibres précédents ; le prix est le plus bas et le surplus des consommateurs le plus élevé, mais la rivalité pour la position dominante réduit les profits.', 'Total output exceeds that of both previous equilibria; the price is the lowest and consumer surplus the highest, but the rivalry for the dominant position reduces profits.'])}</p>
+  <p>${T_(['La production totale dépasse celle des deux équilibres précédents ; le prix est le plus bas et le surplus des consommateurs le plus élevé, mais la rivalité pour la position dominante réduit les profits.', 'Total output exceeds that of both previous equilibria; the price is the lowest and consumer surplus the highest, but the rivalry for the dominant position reduces profits.'])}</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Le cartel maximise le profit joint', 'The cartel maximises joint profit'])} \((${a}-${cfx(b)}Q)\,Q-CT_1(Q_1)-CT_2(Q_2)\). ${T_(['Les conditions du premier ordre égalisent la recette marginale de la production totale au coût marginal de chaque firme :', 'The first-order conditions equate the marginal revenue of total output with each firm\'s marginal cost:'])}
   \[\begin{aligned}${a}-${cfx(2 * b)}(Q_1+Q_2)&amp;=${cm(0)}\\${a}-${cfx(2 * b)}(Q_1+Q_2)&amp;=${cm(1)}\end{aligned}\]
-  ${T_(['Ce système linéaire, de déterminant', 'This linear system, with determinant'])} \(${n(M.det)}\), ${T_(['donne', 'gives'])} \(Q_1^*=${na(M.K.q[0])}\) ${T_(['et', 'and'])} \(Q_2^*=${na(M.K.q[1])}\). ${T_(['D\'après la demande inverse,', 'From inverse demand,'])} \(${price(M.K)}\) ; ${T_(['les profits valent', 'profits are'])} \(\Pi_1=${na(M.K.pi[0])}\) ${T_(['et', 'and'])} \(\Pi_2=${na(M.K.pi[1])}\), ${T_(['et le surplus des consommateurs', 'and consumer surplus'])} \(${SC}^K=${na(M.K.SC)}\).</p>
+  ${T_(['Ce système linéaire, de déterminant', 'This linear system, with determinant'])} \(${n(M.det)}\), ${T_(['donne', 'gives'])} \(Q_1^*=${na(M.K.q[0])}\) ${T_(['et', 'and'])} \(Q_2^*=${na(M.K.q[1])}\). ${T_(['D\'après la demande inverse,', 'From inverse demand,'])} \(${price(M.K)}\) ; ${T_(['les profits valent', 'profits are'])} \(\Pi_1=${na(M.K.pi[0])}\) ${T_(['et', 'and'])} \(\Pi_2=${na(M.K.pi[1])}\). ${T_(['Les surplus se calculent comme dans les questions précédentes.', 'Surpluses are computed as in the previous questions.'])}</p>
+  ${surp(M.K, 'K')}
+  <p>${T_(['Le tableau suivant récapitule les quatre situations :', 'The following table summarises the four situations:'])}</p>
   ${tab}
   <p>${T_(['Le profit joint du cartel', 'The cartel\'s joint profit'])} (\(${na(M.K.pi[0] + M.K.pi[1])}\)) ${T_(['dépasse la somme des profits de Cournot', 'exceeds the sum of Cournot profits'])} (\(${na(M.C.pi[0] + M.C.pi[1])}\)) : ${T_(['collectivement, les firmes ont intérêt à s\'entendre.', 'collectively, the firms gain from colluding.'])} ${bothGain ? T_(['Ici, chacune gagne plus qu\'en Cournot : l\'entente est avantageuse pour les deux, mais chacune aurait intérêt à tricher en jouant sa meilleure réponse, d\'où la fragilité des cartels.', 'Here each earns more than under Cournot: the agreement benefits both, but each would gain by cheating with its best response, hence the fragility of cartels.']) : T_([`Cependant, la firme ${loser + 1} gagne moins qu'en Cournot : elle n'acceptera l'entente que si l'autre lui verse une compensation, ce que permet le gain joint.`, `However, firm ${loser + 1} earns less than under Cournot: it will only accept the agreement if the other compensates it, which the joint gain allows.`])} ${T_(['Les consommateurs, eux, y perdent : le prix est le plus élevé des quatre situations.', 'Consumers lose: the price is the highest of the four situations.'])}</p>
+  <p>${T_(['Dans le plan des quantités, Cournot (C) est à l\'intersection des deux fonctions de réaction, Stackelberg (S) sur la réaction de la firme 2, Bowley (B) en dehors des deux réactions, et le cartel (K) sur la droite de production jointe, plus près de l\'origine :', 'In the quantity plane, Cournot (C) lies at the intersection of both reaction functions, Stackelberg (S) on firm 2\'s reaction, Bowley (B) off both reactions, and the cartel (K) on the joint-output line, closer to the origin:'])}</p>
   ${s1graph(M, lang)}
 </div></li>
 <li><div class="q-content">
@@ -1346,15 +1393,18 @@ function s10sol(D, lang) {
   ${T_(['Les réactions sont croissantes : les prix sont des compléments stratégiques.', 'The reactions are increasing: prices are strategic complements.'])}</p>
 </div></li>
 <li><div class="q-content">
-  <p>${T_(['En reportant', 'Substituting'])} \(R_2\) ${T_(['dans', 'into'])} \(R_1\) ${T_(['et en résolvant, on obtient', 'and solving, we get'])}
-  \[P_1^*=\frac{${n(2 * B)}\times ${n(a1 + B * c1)}+${n(d)}\times ${n(a2 + B * c2)}}{${n(den)}}=${na(M2.P1)}\qquad P_2^*=\frac{${n(2 * B)}\times ${n(a2 + B * c2)}+${n(d)}\times ${n(a1 + B * c1)}}{${n(den)}}=${na(M2.P2)}\]
+  <p>${T_(['À l\'équilibre, chaque prix est la meilleure réponse à l\'autre. En reportant', 'In equilibrium, each price is the best response to the other. Substituting'])} \(R_2\) ${T_(['dans', 'into'])} \(R_1\) :
+  \[P_1^*=${n(M2.r1[0])}+${n(M2.r1[1])}\Big(${n(M2.r2[0])}+${n(M2.r2[1])}\,P_1^*\Big)\iff\Big(1-${fqp(M2.r1[1])}^2\Big)P_1^*=${n(M2.r1[0] + M2.r1[1] * M2.r2[0])}\iff P_1^*=${na(M2.P1)}\]
+  ${T_(['On en déduit le prix de la firme 2 en reportant ce résultat dans sa fonction de réaction :', 'Firm 2\'s price follows by substituting this result into its reaction function:'])}
+  \[P_2^*=${n(M2.r2[0])}+${n(M2.r2[1])}\times ${n(M2.P1)}=${na(M2.P2)}\]
   ${T_(['On en déduit, d\'après les fonctions de demande, les quantités vendues :', 'The demand functions then give the quantities sold:'])} \(Q_1^*=${na(M2.Q1)}\) ${T_(['et', 'and'])} \(Q_2^*=${na(M2.Q2)}\). ${T_(['On vérifie que', 'We check that'])} \(Q_i^*=${cfx(B)}(P_i^*-c_i)\), ${T_(['conséquence de la condition du premier ordre.', 'a consequence of the first-order condition.'])}</p>
+  <p>${T_(['Graphiquement, l\'équilibre est à l\'intersection des deux fonctions de réaction, croissantes :', 'Graphically, the equilibrium lies at the intersection of the two increasing reaction functions:'])}</p>
   ${s2graph(M2, lang)}
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Le coût marginal étant constant et sans coût fixe, le surplus économique de chaque firme est l\'intégrale de sa marge sur les quantités vendues, égale à son profit :', 'Marginal cost being constant and with no fixed cost, each firm\'s economic surplus is the integral of its margin over the quantities sold, equal to its profit:'])}
   \[\begin{aligned}${SP}_1&amp;=\int_0^{${n(M2.Q1)}}(${n(M2.P1)}-${c1})\,dq=${n(M2.P1 - c1)}\times ${n(M2.Q1)}=${na(M2.pi1)}\\${SP}_2&amp;=\int_0^{${n(M2.Q2)}}(${n(M2.P2)}-${c2})\,dq=${n(M2.P2 - c2)}\times ${n(M2.Q2)}=${na(M2.pi2)}\end{aligned}\]
-  ${T_(['La différenciation des produits permet aux deux firmes de vendre au-dessus de leur coût marginal : le paradoxe de Bertrand ne s\'applique pas.', 'Product differentiation allows both firms to sell above marginal cost: the Bertrand paradox does not apply.'])}</p>
+  ${T_(['Géométriquement, le coût marginal étant constant, chaque surplus est l\'aire d\'un rectangle compris entre le prix et le coût marginal, de largeur la quantité vendue :', 'Geometrically, marginal cost being constant, each surplus is the area of a rectangle between the price and marginal cost, whose width is the quantity sold:'])} \(${n(M2.Q1)}\times(${n(M2.P1)}-${c1})=${na(M2.pi1)}\) ${T_(['et', 'and'])} \(${n(M2.Q2)}\times(${n(M2.P2)}-${c2})=${na(M2.pi2)}\) ; ${T_(['on retrouve les mêmes valeurs. ', 'the same values are recovered. '])}${T_(['La différenciation des produits permet aux deux firmes de vendre au-dessus de leur coût marginal : le paradoxe de Bertrand ne s\'applique pas.', 'Product differentiation allows both firms to sell above marginal cost: the Bertrand paradox does not apply.'])}</p>
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Un consommateur situé en', 'A consumer located at'])} \(x\) ${T_(['parcourt la distance', 'travels the distance'])} \(x\) ${T_(['pour aller chez la firme 1 et', 'to reach firm 1 and'])} \(1-x\) ${T_(['pour aller chez la firme 2 :', 'to reach firm 2:'])}
@@ -1378,8 +1428,11 @@ function s10sol(D, lang) {
 </div></li>
 <li><div class="q-content">
   <p>${T_(['Le coût de transport total est la somme des coûts supportés de part et d\'autre du consommateur marginal :', 'Total transport cost is the sum of the costs borne on either side of the marginal consumer:'])}
-  \[\begin{aligned}T&amp;=\int_0^{${n(M3.x)}}${t}\,s^2\,ds+\int_{${n(M3.x)}}^{1}${t}\,(1-s)^2\,ds=${t}\Big[\frac{s^3}{3}\Big]_0^{${n(M3.x)}}+${t}\Big[-\frac{(1-s)^3}{3}\Big]_{${n(M3.x)}}^{1}=${na(M3.T)}\\${SC}&amp;=v-\big(P_1^*\,x^*+P_2^*\,(1-x^*)\big)-T=${v}-\Big(${n(M3.P1)}\times ${n(M3.x)}+${n(M3.P2)}\times ${n(1 - M3.x)}\Big)-${n(M3.T)}=${na(M3.SC)}\end{aligned}\]
+  \[T=\int_0^{${n(M3.x)}}${t}\,s^2\,ds+\int_{${n(M3.x)}}^{1}${t}\,(1-s)^2\,ds=${t}\Big[\frac{s^3}{3}\Big]_0^{${n(M3.x)}}+${t}\Big[-\frac{(1-s)^3}{3}\Big]_{${n(M3.x)}}^{1}=${na(M3.T)}\]
+  ${T_(['Chaque consommateur retire', 'Each consumer obtains'])} \(v\) ${T_(['moins le prix complet qu\'il paie. En sommant sur tous les consommateurs, le surplus des consommateurs est donc la valeur totale', 'minus the full price they pay. Summing over all consumers, consumer surplus is therefore the total value'])} \(v\), ${T_(['diminuée des dépenses et du coût de transport total :', 'less expenditure and total transport cost:'])}
+  \[${SC}=v-\big(P_1^*\,x^*+P_2^*\,(1-x^*)\big)-T=${v}-\Big(${n(M3.P1)}\times ${n(M3.x)}+${n(M3.P2)}\times ${n(1 - M3.x)}\Big)-${n(M3.T)}=${na(M3.SC)}\]
   ${T_(['Le surplus total vaut', 'Total surplus is'])} \(${SC}+\Pi_1+\Pi_2=${na(M3.W)}\) : ${T_(['les prix sont des transferts, seuls les coûts de production et de transport le réduisent.', 'prices are transfers; only production and transport costs reduce it.'])}</p>
+  <p>${T_(['Sur le graphique, entre la valeur', 'On the graph, between the value'])} \(v\) ${T_(['et le prix complet se trouve le surplus des consommateurs, entre le prix complet et le prix le coût de transport, entre le prix et le coût marginal les profits :', 'and the full price lies consumer surplus, between the full price and the price the transport cost, between the price and marginal cost the profits:'])}</p>
   <div class="sol-fig">${s3graph(M3, t, k1, k2, v, lang)}</div>
 </div></li>
 </ol></div>`;
