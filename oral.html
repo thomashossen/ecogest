@@ -776,13 +776,13 @@ details.refs summary{cursor:pointer}
   <div class="grid g2">
     <div class="card small">
       <h4 style="margin-top:0">Note de dossier simulée</h4>
-      <p style="margin:0">Base académique tirée de la moyenne (une moyenne de 10 donne 5, de 14 donne environ 10,6), corrigée par le classement, puis bonus pour l’expérience en entreprise (jusqu’à 2 points pour douze mois), l’international (jusqu’à 1), l’engagement (jusqu’à 1) et la clarté du projet (de −0,75 à +0,75). La note est plafonnée à 19. Chaque école pondère ensuite l’établissement d’origine et le niveau d’études. Pour HEC et l’ESSEC, une candidature en fin de licence est pénalisée, un M1 validé est valorisé.</p>
+      <p style="margin:0">Base académique tirée de la moyenne (une moyenne de 10 donne 5, de 14 donne environ 10,6), corrigée par le classement, puis bonus pour l’expérience en entreprise (jusqu’à 2 points pour douze mois), l’international (jusqu’à 1), l’engagement (jusqu’à 1) et la clarté du projet (de −0,75 à +0,75). La note est plafonnée à 19. Chaque école pondère ensuite l’établissement d’origine et le niveau d’études. Pour HEC, l’ESSEC et l’ESCP, alignées sur le même niveau d’exigence, une candidature en fin de licence est pénalisée, un M1 validé est valorisé.</p>
     </div>
     <div class="card small">
       <h4 style="margin-top:0">Note d’admissibilité estimée</h4>
       <ul class="clean" style="margin:0">
         <li><b>SKEMA</b> (coefficients officiels 2026) : test d’anglais 6, test d’aptitude 6, dossier 4.</li>
-        <li><b>EDHEC</b> (dernière grille publiée trouvée, 2020) : dossier 8, test d’aptitude 12, test d’anglais 10 ; TOEIC de 850 au minimum.</li>
+        <li><b>EDHEC</b> (coefficients 2026) : dossier 12, test d’aptitude 10, test d’anglais 8 ; TOEIC de 850 au minimum.</li>
         <li><b>emlyon</b> (selon un guide) : dossier 6, test d’aptitude 4 ; l’anglais est intégré au dossier.</li>
         <li><b>ESCP</b> (selon des guides) : dossier, anglais compris, pour 60 %, test pour 40 %.</li>
         <li><b>HEC et ESSEC</b> : pondérations non publiées ; seuls la note de dossier et l’écart aux repères sont affichés.</li>
@@ -1909,8 +1909,8 @@ function resetNotes(){G.scores={};G.checks={};G.c={fort:"",ent:"",dev:"",gom:"",
 
 /* ---------- simulation de dossier ---------- */
 const SIM_SCHOOLS=["skema","emlyon","edhec","escp","essec","hec"];
-const SIM_T={skema:{tm:350,eng:895,dos:10},emlyon:{tm:405,eng:900,dos:12},edhec:{tm:400,eng:900,dos:12},escp:{tm:435,eng:950,dos:13},essec:{tm:430,eng:945,dos:14},hec:{tm:450,eng:950,dos:15}};
-const ETAB={skema:{esdhem:1,usel:1,univ:0,but:0,bach:0},emlyon:{esdhem:0,usel:1,univ:0,but:-.5,bach:0},edhec:{esdhem:0,usel:1,univ:0,but:-.5,bach:0},escp:{esdhem:0,usel:1.5,univ:0,but:-1,bach:-.5},essec:{esdhem:-.5,usel:2,univ:-.5,but:-1.5,bach:-.5},hec:{esdhem:-.5,usel:2,univ:-.5,but:-1.5,bach:-.5}};
+const SIM_T={skema:{tm:350,eng:895,dos:10},emlyon:{tm:405,eng:900,dos:12},edhec:{tm:400,eng:900,dos:12},escp:{tm:435,eng:950,dos:14},essec:{tm:430,eng:945,dos:14},hec:{tm:450,eng:950,dos:15}};
+const ETAB={skema:{esdhem:1,usel:1,univ:0,but:0,bach:0},emlyon:{esdhem:0,usel:1,univ:0,but:-.5,bach:0},edhec:{esdhem:0,usel:1,univ:0,but:-.5,bach:0},escp:{esdhem:-.5,usel:2,univ:-.5,but:-1.5,bach:-.5},essec:{esdhem:-.5,usel:2,univ:-.5,but:-1.5,bach:-.5},hec:{esdhem:-.5,usel:2,univ:-.5,but:-1.5,bach:-.5}};
 const NIV={top:{L3c:-2.5,L3v:-1.5,M1c:.5,M1v:1.5},std:{L3c:0,L3v:0,M1c:.5,M1v:.5}};
 const SIM_DEF={sNiv:"L3c",sEtab:"esdhem",sMoy:13,sRang:"50",sTM:360,sEng:920,sExp:4,sIntl:0,sAsso:"0",sProj:"0"};
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -1921,21 +1921,21 @@ function simulate(){
   const acad=clamp(5+(moy-10)*1.4,2,13)+({10:1.5,25:.75,50:0,100:-1}[p.sRang]||0);
   const comps={acad,exp:Math.min(exp,12)/12*2,intl:Math.min(intl,6)/6*1,asso:[0,.5,1][asso],proj:proj*.75};
   const rows=SIM_SCHOOLS.map(k=>{
-    const top=k==="hec"||k==="essec";
+    const top=k==="hec"||k==="essec"||k==="escp";
     let d=acad+comps.exp+comps.intl+comps.asso+comps.proj+ETAB[k][p.sEtab]+NIV[top?"top":"std"][p.sNiv];
     d=clamp(d,0,19);let capped=false;
     if(k==="edhec"&&p.sEtab==="esdhem"){capped=d>5;d=Math.min(d,5)}
     const ntm=k==="skema"?nTMsk(tm):clamp(tm/25,0,20),ne=nEng(eng);
     let adm=null;
     if(k==="skema")adm=(6*nEngSk(eng)+6*ntm+4*d)/16;
-    if(k==="edhec")adm=(8*d+12*ntm+10*ne)/30;
+    if(k==="edhec")adm=(12*d+10*ntm+8*ne)/30;
     if(k==="emlyon")adm=(6*d+4*ntm)/10;
     if(k==="escp")adm=.6*d+.4*ntm;
     const T=SIM_T[k],miss=[];
     if(tm<T.tm)miss.push(`Tage Mage : +${T.tm-tm} points pour atteindre le repère de ${T.tm}`);
     if(eng<T.eng)miss.push(`Anglais : +${T.eng-eng} points de TOEIC (repère ${T.eng})`);
     if(k==="edhec"&&eng<850)miss.push("TOEIC sous le minimum de 850 exigé dans la dernière grille publiée : candidature non recevable");
-    if(top&&(p.sNiv==="L3c"||p.sNiv==="L3v"))miss.push("Valider un M1 avant de candidater : fortement recommandé pour HEC et l’ESSEC, même si le bac+3 suffit officiellement");
+    if(top&&(p.sNiv==="L3c"||p.sNiv==="L3v"))miss.push("Valider un M1 avant de candidater : fortement recommandé pour HEC, l’ESSEC et l’ESCP, même si le bac+3 suffit officiellement");
     if(moy<(top?14:12.5))miss.push(`Relever la moyenne (viser ${top?"14":"12,5"} et plus, idéalement dans le premier quart)`);
     if(exp<6)miss.push("Une expérience en entreprise d’au moins six mois (stage long, alternance, césure)");
     if(intl<3&&(k==="escp"||top||k==="skema"))miss.push("Une expérience à l’étranger d’au moins un semestre");
