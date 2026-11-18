@@ -129,7 +129,7 @@ main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
 body{background:#fff;font-size:11pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 header{padding:1rem 1.5rem .8rem}
 header .subtitle{display:none}
-#controls-bar,.top-bar,.sol-toggle-wrap,#pdf-ov,#pdf-modal{display:none!important}
+#controls-bar,.top-bar,.sol-toggle-wrap,#pdf-ov,#pdf-modal,#course-card{display:none!important}
 .card{box-shadow:none;border-radius:0;page-break-inside:avoid;margin-bottom:1rem}
 main{padding:1rem 1.5rem;max-width:100%}
 body.print-no-header header{display:none!important}
@@ -158,6 +158,30 @@ body.print-force-solution .sol-card{display:block!important}
 .dtable caption{caption-side:bottom;font-size:.76rem;color:var(--text-muted);font-style:italic;padding-top:.5rem;text-align:justify}
 .dtable-narrow{max-width:560px;margin:0 auto}
 .context-block .dtable-wrap{margin:1rem 0 1.1rem}
+
+/* ECON12 : BLOC DE COURS (INSTALLATION ET BASES) */
+.course-card{margin-bottom:1.8rem}
+.crs-intro{margin:0 0 .4rem}
+details.crs{border:1px solid var(--border);border-radius:6px;margin:.9rem 0 0;background:#fff}
+details.crs>summary{cursor:pointer;padding:.75rem 1.1rem;font-family:'Source Serif 4',serif;font-weight:600;font-size:1.05rem;color:var(--navy);display:flex;justify-content:space-between;align-items:center;gap:1rem;list-style:none}
+details.crs>summary::-webkit-details-marker{display:none}
+details.crs>summary::before{content:'▸';color:var(--gold);margin-right:.5rem;transition:transform .15s}
+details.crs[open]>summary::before{transform:rotate(90deg)}
+details.crs>summary>span:first-child{flex:1}
+details.crs[open]>summary{border-bottom:1px solid var(--border)}
+.crs-sel{font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.06em;color:var(--text-muted);border:1px solid var(--border);border-radius:3px;padding:2px 8px;font-weight:400;white-space:nowrap}
+.crs-in{padding:.6rem 1.2rem 1rem}
+.crs-in h4{font-family:'Source Serif 4',serif;font-size:1rem;color:var(--navy);margin:1.2rem 0 .4rem}
+.crs-in p{margin:.45rem 0}
+.crs-in a{color:#1f5fa6;overflow-wrap:anywhere}
+.crs-in code{font-family:'JetBrains Mono',monospace;font-size:.82em;background:var(--cream-dark);padding:0 .25rem;border-radius:2px}
+.crs-in .code-block code{background:none;padding:0;font-size:inherit}
+ol.crs-steps{list-style:none;counter-reset:st;padding-left:0;margin:.4rem 0}
+ol.crs-steps>li{counter-increment:st;position:relative;padding-left:2.3rem;margin:.85rem 0}
+ol.crs-steps>li::before{content:counter(st);position:absolute;left:0;top:.1rem;width:1.55rem;height:1.55rem;border-radius:50%;background:var(--navy);color:var(--cream);font-family:'JetBrains Mono',monospace;font-size:.75rem;display:flex;align-items:center;justify-content:center}
+ol.crs-steps .code-lbl{margin-top:.55rem}
+.crs-note{background:#fbf8f1;border-left:3px solid var(--gold);padding:.55rem .85rem;margin:.6rem 0 .2rem;font-size:.95em}
+.crs-in kbd{font-family:'JetBrains Mono',monospace;font-size:.78em;border:1px solid var(--border);border-bottom-width:2px;border-radius:3px;padding:0 .35rem;background:#fff;white-space:nowrap}
 
 /* ECON12 : CODE, PARTIES, TELECHARGEMENTS, CHOIX DU LANGAGE */
 .code-lbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);margin:.2rem 0 .25rem}
@@ -702,6 +726,12 @@ p.check .chk-lbl{ font-weight:600; color:var(--green); margin-right:.3rem }
         <span class="ctrl-tip" data-k="k-progtip">Même énoncé, code adapté</span>
       </div>
       <div class="ctrl-vsep"></div>
+      <div class="ctrl-g">
+        <span class="ctrl-lbl" data-k="k-os">Système</span>
+        <div class="prog-switch"><button type="button" class="prog-btn" id="os-win" onclick="setOS('win')">PC</button><button type="button" class="prog-btn" id="os-mac" onclick="setOS('mac')">Mac</button></div>
+        <span class="ctrl-tip" data-k="k-ostip">Pour la fiche d’installation</span>
+      </div>
+      <div class="ctrl-vsep"></div>
       <button class="btn-gen" onclick="generateFromControls()"><span data-k="k-gen">Générer</span></button>
     </div>
   </div>
@@ -712,6 +742,11 @@ p.check .chk-lbl{ font-weight:600; color:var(--green); margin-right:.3rem }
   <div id="welcome" class="welcome-msg">
     <span class="arrow">↑</span>
     <span data-k="k-welcome">Configurez les paramètres (ou laissez vide pour de l'aléatoire), puis cliquez sur Générer.</span>
+  </div>
+
+  <div id="course-card" class="card course-card">
+    <div class="card-header"><span class="tag" data-k="k-tag-course">Cours</span><h2 id="course-title">Installer et prendre en main R</h2></div>
+    <div class="card-body" id="course-content"></div>
   </div>
 
   <div id="ex-area" style="display:none">
@@ -2620,6 +2655,213 @@ LANG = detectLang();
 PROG = detectProg();
 applyLang();
 
+</script>
+
+<script id="econ12-course">
+/* ═════════ BLOC DE COURS : INSTALLER R OU PYTHON (WINDOWS / MAC) ET PREMIERS PAS ═════════ */
+let OS = (function () {
+  try {
+    const q = (new URLSearchParams(window.location.search).get('os') || '').toLowerCase();
+    if (q === 'mac' || q === 'win') return q;
+  } catch (e) {}
+  return /Mac|iPhone|iPad/i.test(navigator.platform || navigator.userAgent || '') ? 'mac' : 'win';
+})();
+let courseOpen = { inst: false, base: false };
+
+Object.assign(I18N.fr, { 'k-os': 'Système', 'k-ostip': 'Pour la fiche d\u2019installation', 'k-tag-course': 'Cours' });
+Object.assign(I18N.en, { 'k-os': 'System', 'k-ostip': 'For the installation guide', 'k-tag-course': 'Lesson' });
+
+const K = (...keys) => keys.map(k => `<kbd>${k}</kbd>`).join(' + ');
+const lnk = (u, t) => `<a href="${u}" target="_blank" rel="noopener">${t || u}</a>`;
+const CB = (lbl, lines) => `<div class="code-lbl">${lbl}</div>` + codeBlock(lines);
+const PKG_R = 'install.packages(c("dplyr", "ggplot2", "lmtest", "stargazer", "corrplot", "mctest", "tseries", "forecast"))';
+const PKG_PY = 'numpy pandas scipy matplotlib statsmodels pmdarima';
+
+const COURSE = {
+  fr: {
+    title: { r: 'Installer et prendre en main R', py: 'Installer et prendre en main Python' },
+    intro: p => `Ce bloc de cours accompagne l'exercice. Il suit le langage choisi (<b>${p === 'r' ? 'R' : 'Python'}</b>) et le système sélectionné dans la barre de réglages ci-dessus : changez l'un ou l'autre pour adapter les instructions. Si votre installation fonctionne déjà, passez directement à la seconde partie.`,
+    s1: 'Installation', s2: p => `Les bases de ${p === 'r' ? 'R' : 'Python'}`,
+    sys: { win: 'Windows', mac: 'macOS' },
+    inst: {
+      r: {
+        win: () => `<ol class="crs-steps">
+<li><b>Installer R.</b> Sur le site du CRAN, ${lnk('https://cran.r-project.org')}, cliquez sur « Download R for Windows », puis sur « base », puis sur « Download R-4.x.y for Windows ». Lancez le fichier <code>.exe</code> téléchargé et acceptez les options proposées par défaut.</li>
+<li><b>Installer RStudio.</b> R s'utilise beaucoup plus confortablement dans RStudio Desktop, un environnement gratuit. Sur ${lnk('https://posit.co/download/rstudio-desktop/')}, cliquez sur « Download RStudio Desktop for Windows » et installez le fichier <code>.exe</code> avec les options par défaut. R doit être installé <em>avant</em> RStudio.</li>
+<li><b>Découvrir RStudio.</b> Lancez RStudio depuis le menu Démarrer. La fenêtre comporte quatre panneaux : le <em>script</em> en haut à gauche (menu File &gt; New File &gt; R Script), la <em>console</em> en bas à gauche, l'<em>environnement</em> (objets créés) en haut à droite, et les fichiers, graphiques et l'aide en bas à droite.</li>
+<li><b>Installer les packages utilisés dans le corrigé.</b> Tapez une seule fois, dans la console :${CB('Console R', [PKG_R])}Si R demande « Do you want to install from sources the packages which need compilation? », répondez <code>no</code>.</li>
+<li><b>Vérifier l'installation.</b> Les deux commandes suivantes doivent s'exécuter sans message d'erreur :${CB('Console R', ['R.version.string', 'library(lmtest)'])}</li>
+<li><b>Préparer le dossier de travail.</b> Créez un dossier <code>econometrie</code> dans vos Documents (<code>C:\\Users\\votre_nom\\Documents\\econometrie</code>) et placez-y les fichiers CSV téléchargés avec l'énoncé. Indiquez ensuite ce dossier à R, soit par le menu Session &gt; Set Working Directory &gt; Choose Directory…, soit par :${CB('Script R', ['setwd("C:/Users/votre_nom/Documents/econometrie")', 'getwd()   # affiche le dossier courant'])}<div class="crs-note">Sous Windows, les chemins s'écrivent dans R avec des barres obliques <code>/</code> (ou des doubles barres <code>\\\\</code>), jamais avec une barre simple <code>\\</code>. Par ailleurs, sous Windows, le raccourci <code>~</code> désigne déjà le dossier Documents : la ligne <code>setwd("~/Documents/econometrie")</code> du corrigé s'écrit donc ici <code>setwd("~/econometrie")</code>.</div></li>
+</ol>`,
+        mac: () => `<ol class="crs-steps">
+<li><b>Identifier le processeur du Mac.</b> Menu Pomme &gt; « À propos de ce Mac » : la mention « Puce Apple M1, M2, M3… » indique un Mac <em>Apple Silicon</em> ; la mention « Processeur … Intel » un Mac <em>Intel</em>.</li>
+<li><b>Installer R.</b> Sur ${lnk('https://cran.r-project.org')}, cliquez sur « Download R for macOS », puis téléchargez le fichier <code>R-4.x.y-arm64.pkg</code> (Apple Silicon) ou <code>R-4.x.y-x86_64.pkg</code> (Intel). Ouvrez-le et suivez l'installateur.</li>
+<li><b>Installer RStudio.</b> Sur ${lnk('https://posit.co/download/rstudio-desktop/')}, téléchargez RStudio Desktop pour macOS (fichier <code>.dmg</code>), ouvrez-le et faites glisser l'icône RStudio dans le dossier Applications. Si macOS refuse de l'ouvrir la première fois, faites un clic droit sur l'application puis « Ouvrir », ou autorisez-la dans Réglages Système &gt; Confidentialité et sécurité.</li>
+<li><b>Découvrir RStudio.</b> La fenêtre comporte quatre panneaux : le <em>script</em> en haut à gauche (menu File &gt; New File &gt; R Script), la <em>console</em> en bas à gauche, l'<em>environnement</em> en haut à droite, et les fichiers, graphiques et l'aide en bas à droite.</li>
+<li><b>Installer les packages utilisés dans le corrigé.</b> Tapez une seule fois, dans la console :${CB('Console R', [PKG_R])}Si R propose une installation « from sources », répondez <code>no</code>. Si macOS demande d'installer les « outils de ligne de commande », acceptez : certains packages en ont besoin.</li>
+<li><b>Vérifier l'installation.</b> Les deux commandes suivantes doivent s'exécuter sans message d'erreur :${CB('Console R', ['R.version.string', 'library(lmtest)'])}</li>
+<li><b>Préparer le dossier de travail.</b> Créez un dossier <code>econometrie</code> dans vos Documents et placez-y les fichiers CSV téléchargés avec l'énoncé. Indiquez-le à R, soit par le menu Session &gt; Set Working Directory &gt; Choose Directory…, soit comme dans le corrigé :${CB('Script R', ['setwd("~/Documents/econometrie")   # ~ = /Users/votre_nom', 'getwd()   # affiche le dossier courant'])}</li>
+</ol>`
+      },
+      py: {
+        win: () => `<ol class="crs-steps">
+<li><b>Installer Anaconda.</b> La distribution Anaconda installe en une fois Python, les principales bibliothèques scientifiques (numpy, pandas, scipy, matplotlib, statsmodels) et deux environnements de travail, Spyder et Jupyter. Sur ${lnk('https://www.anaconda.com/download')} (l'inscription est facultative), téléchargez l'installateur graphique 64 bits pour Windows, lancez le fichier <code>.exe</code>, choisissez « Just Me » et conservez les options par défaut.</li>
+<li><b>Installer le package manquant.</b> Ouvrez « Anaconda Prompt » depuis le menu Démarrer et tapez :${CB('Anaconda Prompt', ['pip install pmdarima'])}</li>
+<li><b>Écrire et exécuter du code.</b> Lancez Spyder depuis le menu Démarrer (ou depuis Anaconda Navigator). L'éditeur de script est à gauche, la console en bas à droite. ${K('F9')} exécute la ligne courante ou la sélection, ${K('F5')} tout le script. Autre possibilité : Jupyter Notebook, où chaque cellule s'exécute avec ${K('Maj', 'Entrée')}.</li>
+<li><b>Vérifier l'installation.</b> Dans la console de Spyder, les commandes suivantes doivent s'exécuter sans erreur :${CB('Console Python', ['import numpy, pandas, statsmodels, pmdarima', 'print(statsmodels.__version__)'])}<div class="crs-note">Le package <code>pmdarima</code> est le plus capricieux. Si son import échoue (message d'erreur mentionnant numpy), créez un environnement dédié dans Anaconda Prompt, puis choisissez-le dans Spyder ou Jupyter :<br><code>conda create -n econ python=3.11 numpy pandas scipy matplotlib statsmodels spyder</code><br><code>conda activate econ</code> puis <code>pip install pmdarima</code></div></li>
+<li><b>Préparer le dossier de travail.</b> Créez un dossier <code>econometrie</code> dans vos Documents et placez-y les fichiers CSV téléchargés avec l'énoncé. En tête de script :${CB('Script Python', ['import os', 'os.chdir(r"C:\\Users\\votre_nom\\Documents\\econometrie")', 'print(os.getcwd())   # affiche le dossier courant'])}Le préfixe <code>r</code> devant le chemin évite que les barres <code>\\</code> soient interprétées comme des caractères spéciaux.</li>
+<li><b>Variante légère, sans Anaconda.</b> Installez Python depuis ${lnk('https://www.python.org/downloads/')} en cochant impérativement « Add python.exe to PATH » sur le premier écran, puis, dans l'Invite de commandes :${CB('Invite de commandes', ['py -m pip install ' + PKG_PY])}Pour écrire le code, utilisez par exemple Visual Studio Code avec l'extension Python.</li>
+</ol>`,
+        mac: () => `<ol class="crs-steps">
+<li><b>Identifier le processeur du Mac.</b> Menu Pomme &gt; « À propos de ce Mac » : « Puce Apple M1, M2, M3… » indique un Mac <em>Apple Silicon</em>, « Processeur … Intel » un Mac <em>Intel</em>.</li>
+<li><b>Installer Anaconda.</b> La distribution Anaconda installe en une fois Python, les principales bibliothèques scientifiques (numpy, pandas, scipy, matplotlib, statsmodels) et deux environnements de travail, Spyder et Jupyter. Sur ${lnk('https://www.anaconda.com/download')} (l'inscription est facultative), téléchargez l'installateur graphique pour macOS correspondant à votre processeur (Apple Silicon ou Intel), ouvrez le fichier <code>.pkg</code> et suivez l'installateur.</li>
+<li><b>Installer le package manquant.</b> Ouvrez le Terminal (Applications &gt; Utilitaires) : l'invite commence par <code>(base)</code> si Anaconda est bien activé. Tapez :${CB('Terminal', ['pip install pmdarima'])}</li>
+<li><b>Écrire et exécuter du code.</b> Lancez Spyder depuis Anaconda Navigator. L'éditeur de script est à gauche, la console en bas à droite. ${K('F9')} exécute la ligne courante ou la sélection, ${K('F5')} tout le script (sur certains claviers, il faut maintenir la touche ${K('fn')}). Autre possibilité : Jupyter Notebook, où chaque cellule s'exécute avec ${K('⇧', 'Entrée')}.</li>
+<li><b>Vérifier l'installation.</b> Dans la console de Spyder :${CB('Console Python', ['import numpy, pandas, statsmodels, pmdarima', 'print(statsmodels.__version__)'])}<div class="crs-note">Le package <code>pmdarima</code> est le plus capricieux. Si son import échoue (message d'erreur mentionnant numpy), créez un environnement dédié dans le Terminal, puis choisissez-le dans Spyder ou Jupyter :<br><code>conda create -n econ python=3.11 numpy pandas scipy matplotlib statsmodels spyder</code><br><code>conda activate econ</code> puis <code>pip install pmdarima</code></div></li>
+<li><b>Préparer le dossier de travail.</b> Créez un dossier <code>econometrie</code> dans vos Documents et placez-y les fichiers CSV téléchargés avec l'énoncé. En tête de script :${CB('Script Python', ['import os', 'os.chdir(os.path.expanduser("~/Documents/econometrie"))', 'print(os.getcwd())   # affiche le dossier courant'])}</li>
+<li><b>Variante légère, sans Anaconda.</b> Installez Python depuis ${lnk('https://www.python.org/downloads/')} (installateur macOS), puis double-cliquez sur « Install Certificates.command » dans le dossier Applications &gt; Python 3.x. Dans le Terminal, utilisez la commande <code>python3</code> (et non <code>python</code>) :${CB('Terminal', ['python3 -m pip install ' + PKG_PY])}Pour écrire le code, utilisez par exemple Visual Studio Code avec l'extension Python.</li>
+</ol>`
+      }
+    },
+    base: {
+      r: os => `<p>R est un langage interprété : chaque instruction est exécutée dès qu'on la lance, et son résultat s'affiche dans la console. On écrit les instructions dans un <em>script</em> (fichier <code>.R</code>), que l'on enregistre pour pouvoir le relancer : ${K(os === 'mac' ? '⌘ Cmd' : 'Ctrl', 'Entrée')} exécute la ligne courante ou la sélection, ${K(os === 'mac' ? '⌘ Cmd' : 'Ctrl', os === 'mac' ? '⇧' : 'Maj', 'S')} tout le script.</p>
+<h4>1. Objets et affectation</h4>
+<p>On crée un objet avec la flèche <code>&lt;-</code>. Tout ce qui suit <code>#</code> est un commentaire, ignoré par R. R distingue les majuscules des minuscules.</p>
+${CB('Script R', ['x <- 5            # affectation', 'y <- x^2 + 1      # calcul : y vaut 26', 'print(y)', 'nom <- "econometrie"   # une chaîne de caractères'])}
+<h4>2. Vecteurs et fonctions</h4>
+<p>Le vecteur est l'objet de base de R ; les opérations et la plupart des fonctions s'appliquent élément par élément. Les indices commencent à 1.</p>
+${CB('Script R', ['v <- c(2, 4, 6, 8)        # c() combine des valeurs', 'length(v); mean(v); sd(v); summary(v)', 'v[2]                      # deuxième élément : 4', 'log(v)                    # logarithme népérien de chaque élément', 'v[v > 3]                  # éléments supérieurs à 3'])}
+<h4>3. Tableaux de données (data frames)</h4>
+<p>Les données s'importent dans un <em>data frame</em>, un tableau dont chaque colonne est une variable. Pour un fichier « à la française » (séparateur <code>;</code> et virgule décimale), on utilise <code>read.csv2</code>.</p>
+${CB('Script R', ['db <- read.csv("donnees.csv", header = TRUE, sep = ",", dec = ".")', 'head(db)          # premières lignes', 'str(db)           # type de chaque variable', 'dim(db)           # nombre de lignes et de colonnes', 'summary(db)       # statistiques descriptives', 'db$prix           # une colonne, par son nom', 'db$lprix <- log(db$prix)       # nouvelle variable', 'sub <- db[db$prix > 100, ]     # lignes vérifiant une condition'])}
+<h4>4. Régression linéaire</h4>
+<p>La fonction <code>lm</code> estime un modèle par les moindres carrés ordinaires ; la formule <code>y ~ x1 + x2</code> se lit « y expliqué par x1 et x2 », la constante étant incluse d'office.</p>
+${CB('Script R', ['mod <- lm(lprix ~ x1 + x2, data = db)', 'summary(mod)          # coefficients, écarts-types, t, p-values, R²', 'coef(mod)             # estimations', 'confint(mod)          # intervalles de confiance à 95 %', 'res <- resid(mod)     # résidus', 'library(lmtest)       # charger un package (à chaque session)', 'bptest(mod)           # test de Breusch-Pagan'])}
+<h4>5. Graphiques</h4>
+${CB('Script R', ['plot(db$x1, db$lprix)     # nuage de points', 'hist(res)                 # histogramme des résidus', 'library(ggplot2)', 'ggplot(db, aes(x = x1, y = lprix)) + geom_point() + geom_smooth(method = "lm")'])}
+<h4>6. Aide et erreurs fréquentes</h4>
+<p><code>?lm</code> ouvre l'aide d'une fonction. Les erreurs les plus courantes sont : « object 'x' not found » (objet non créé ou faute de frappe, majuscules comprises) ; « could not find function » (package non chargé par <code>library</code>) ; « cannot open file » (fichier absent du dossier de travail : vérifier avec <code>getwd()</code> et <code>list.files()</code>).</p>`,
+      py: os => `<p>Python est un langage interprété : chaque instruction s'exécute dès qu'on la lance. On écrit le code dans un <em>script</em> (fichier <code>.py</code>) ou dans un <em>notebook</em> Jupyter, découpé en cellules. Les outils statistiques ne font pas partie du langage de base : on les charge avec <code>import</code> depuis des bibliothèques (numpy, pandas, statsmodels…).</p>
+<h4>1. Variables et affectation</h4>
+<p>On crée une variable avec <code>=</code>. Tout ce qui suit <code>#</code> est un commentaire. Python distingue les majuscules des minuscules, et l'<em>indentation</em> (le décalage en début de ligne) fait partie de la syntaxe : ne mettez pas d'espaces en début de ligne sans raison.</p>
+${CB('Script Python', ['x = 5              # affectation', 'y = x**2 + 1       # puissance : ** (et non ^)', 'print(y)', 'nom = "econometrie"   # une chaîne de caractères'])}
+<h4>2. Tableaux numpy et fonctions</h4>
+<p>Le tableau <code>numpy</code> permet les calculs élément par élément. Attention : les indices commencent à 0, et l'écart-type corrigé (celui de la statistique) s'obtient avec <code>ddof=1</code>.</p>
+${CB('Script Python', ['import numpy as np', 'v = np.array([2, 4, 6, 8])', 'len(v), v.mean(), v.std(ddof=1)', 'v[1]               # deuxième élément : 4', 'np.log(v)          # logarithme népérien de chaque élément', 'v[v > 3]           # éléments supérieurs à 3'])}
+<h4>3. Tableaux de données (pandas)</h4>
+<p>Les données s'importent dans un <em>DataFrame</em> pandas, un tableau dont chaque colonne est une variable. Pour un fichier « à la française », on précise <code>sep=";"</code> et <code>decimal=","</code>.</p>
+${CB('Script Python', ['import pandas as pd', 'db = pd.read_csv("donnees.csv", sep=",", decimal=".")', 'db.head()          # premières lignes', 'db.info()          # type de chaque variable', 'db.shape           # nombre de lignes et de colonnes', 'db.describe()      # statistiques descriptives', 'db["prix"]         # une colonne, par son nom', 'db["lprix"] = np.log(db["prix"])     # nouvelle variable', 'sub = db[db["prix"] > 100]           # lignes vérifiant une condition'])}
+<h4>4. Régression linéaire</h4>
+<p>Le module <code>statsmodels.formula.api</code> permet d'écrire le modèle sous forme de formule, comme en R ; la constante est incluse d'office.</p>
+${CB('Script Python', ['import statsmodels.formula.api as smf', 'mod = smf.ols("lprix ~ x1 + x2", data=db).fit()', 'print(mod.summary())     # coefficients, écarts-types, t, p-values, R²', 'mod.params               # estimations', 'mod.conf_int()           # intervalles de confiance à 95 %', 'res = mod.resid          # résidus', 'from statsmodels.stats.diagnostic import het_breuschpagan', 'het_breuschpagan(res, mod.model.exog)    # test de Breusch-Pagan'])}
+<h4>5. Graphiques</h4>
+${CB('Script Python', ['import matplotlib.pyplot as plt', 'plt.scatter(db["x1"], db["lprix"])    # nuage de points', 'plt.xlabel("x1"); plt.ylabel("lprix")', 'plt.show()'])}
+<h4>6. Aide et erreurs fréquentes</h4>
+<p><code>help(np.log)</code> affiche l'aide d'une fonction (dans Spyder, ${K(os === 'mac' ? '⌘ Cmd' : 'Ctrl', 'I')} sur un nom de fonction). Les erreurs les plus courantes sont : <code>NameError</code> (variable non créée ou faute de frappe) ; <code>ModuleNotFoundError</code> (bibliothèque non installée : <code>pip install …</code>) ; <code>IndentationError</code> (décalage incorrect en début de ligne) ; <code>FileNotFoundError</code> (fichier absent du dossier de travail : vérifier avec <code>os.getcwd()</code>).</p>`
+    }
+  },
+  en: {
+    title: { r: 'Installing and getting started with R', py: 'Installing and getting started with Python' },
+    intro: p => `This lesson accompanies the exercise. It follows the language selected (<b>${p === 'r' ? 'R' : 'Python'}</b>) and the system chosen in the settings bar above: change either to adapt the instructions. If your installation already works, go straight to the second part.`,
+    s1: 'Installation', s2: p => `The basics of ${p === 'r' ? 'R' : 'Python'}`,
+    sys: { win: 'Windows', mac: 'macOS' },
+    inst: {
+      r: {
+        win: () => `<ol class="crs-steps">
+<li><b>Install R.</b> On the CRAN website, ${lnk('https://cran.r-project.org')}, click “Download R for Windows”, then “base”, then “Download R-4.x.y for Windows”. Run the downloaded <code>.exe</code> file and accept the default options.</li>
+<li><b>Install RStudio.</b> R is much more comfortable to use within RStudio Desktop, a free environment. On ${lnk('https://posit.co/download/rstudio-desktop/')}, click “Download RStudio Desktop for Windows” and install the <code>.exe</code> file with the default options. R must be installed <em>before</em> RStudio.</li>
+<li><b>Discover RStudio.</b> Launch RStudio from the Start menu. The window has four panes: the <em>script</em> at the top left (File &gt; New File &gt; R Script), the <em>console</em> at the bottom left, the <em>environment</em> (objects created) at the top right, and files, plots and help at the bottom right.</li>
+<li><b>Install the packages used in the solution.</b> Type once, in the console:${CB('R console', [PKG_R])}If R asks “Do you want to install from sources the packages which need compilation?”, answer <code>no</code>.</li>
+<li><b>Check the installation.</b> Both commands below must run without any error message:${CB('R console', ['R.version.string', 'library(lmtest)'])}</li>
+<li><b>Prepare the working folder.</b> Create a folder <code>econometrie</code> in your Documents (<code>C:\\Users\\your_name\\Documents\\econometrie</code>) and put the CSV files downloaded with the exercise in it. Then point R to this folder, either through Session &gt; Set Working Directory &gt; Choose Directory…, or with:${CB('R script', ['setwd("C:/Users/your_name/Documents/econometrie")', 'getwd()   # shows the current folder'])}<div class="crs-note">On Windows, paths are written in R with forward slashes <code>/</code> (or double backslashes <code>\\\\</code>), never with a single <code>\\</code>. Also, on Windows, the shortcut <code>~</code> already refers to the Documents folder: the line <code>setwd("~/Documents/econometrie")</code> of the solution therefore becomes <code>setwd("~/econometrie")</code> here.</div></li>
+</ol>`,
+        mac: () => `<ol class="crs-steps">
+<li><b>Identify the Mac's processor.</b> Apple menu &gt; “About This Mac”: “Chip Apple M1, M2, M3…” means an <em>Apple Silicon</em> Mac; “Processor … Intel” an <em>Intel</em> Mac.</li>
+<li><b>Install R.</b> On ${lnk('https://cran.r-project.org')}, click “Download R for macOS”, then download <code>R-4.x.y-arm64.pkg</code> (Apple Silicon) or <code>R-4.x.y-x86_64.pkg</code> (Intel). Open it and follow the installer.</li>
+<li><b>Install RStudio.</b> On ${lnk('https://posit.co/download/rstudio-desktop/')}, download RStudio Desktop for macOS (<code>.dmg</code> file), open it and drag the RStudio icon into the Applications folder. If macOS refuses to open it the first time, right-click the application and choose “Open”, or allow it in System Settings &gt; Privacy &amp; Security.</li>
+<li><b>Discover RStudio.</b> The window has four panes: the <em>script</em> at the top left (File &gt; New File &gt; R Script), the <em>console</em> at the bottom left, the <em>environment</em> at the top right, and files, plots and help at the bottom right.</li>
+<li><b>Install the packages used in the solution.</b> Type once, in the console:${CB('R console', [PKG_R])}If R offers an installation “from sources”, answer <code>no</code>. If macOS asks to install the “command line developer tools”, accept: some packages need them.</li>
+<li><b>Check the installation.</b> Both commands below must run without any error message:${CB('R console', ['R.version.string', 'library(lmtest)'])}</li>
+<li><b>Prepare the working folder.</b> Create a folder <code>econometrie</code> in your Documents and put the CSV files downloaded with the exercise in it. Point R to it, either through Session &gt; Set Working Directory &gt; Choose Directory…, or as in the solution:${CB('R script', ['setwd("~/Documents/econometrie")   # ~ = /Users/your_name', 'getwd()   # shows the current folder'])}</li>
+</ol>`
+      },
+      py: {
+        win: () => `<ol class="crs-steps">
+<li><b>Install Anaconda.</b> The Anaconda distribution installs in one go Python, the main scientific libraries (numpy, pandas, scipy, matplotlib, statsmodels) and two working environments, Spyder and Jupyter. On ${lnk('https://www.anaconda.com/download')} (registration is optional), download the 64-bit graphical installer for Windows, run the <code>.exe</code> file, choose “Just Me” and keep the default options.</li>
+<li><b>Install the missing package.</b> Open “Anaconda Prompt” from the Start menu and type:${CB('Anaconda Prompt', ['pip install pmdarima'])}</li>
+<li><b>Write and run code.</b> Launch Spyder from the Start menu (or from Anaconda Navigator). The script editor is on the left, the console at the bottom right. ${K('F9')} runs the current line or selection, ${K('F5')} the whole script. Alternatively, in a Jupyter Notebook each cell runs with ${K('Shift', 'Enter')}.</li>
+<li><b>Check the installation.</b> In Spyder's console, the following commands must run without error:${CB('Python console', ['import numpy, pandas, statsmodels, pmdarima', 'print(statsmodels.__version__)'])}<div class="crs-note">The <code>pmdarima</code> package is the most temperamental. If importing it fails (error message mentioning numpy), create a dedicated environment in Anaconda Prompt, then select it in Spyder or Jupyter:<br><code>conda create -n econ python=3.11 numpy pandas scipy matplotlib statsmodels spyder</code><br><code>conda activate econ</code> then <code>pip install pmdarima</code></div></li>
+<li><b>Prepare the working folder.</b> Create a folder <code>econometrie</code> in your Documents and put the CSV files downloaded with the exercise in it. At the top of the script:${CB('Python script', ['import os', 'os.chdir(r"C:\\Users\\your_name\\Documents\\econometrie")', 'print(os.getcwd())   # shows the current folder'])}The <code>r</code> prefix before the path prevents the backslashes <code>\\</code> from being read as special characters.</li>
+<li><b>Lightweight alternative, without Anaconda.</b> Install Python from ${lnk('https://www.python.org/downloads/')}, making sure to tick “Add python.exe to PATH” on the first screen, then, in the Command Prompt:${CB('Command Prompt', ['py -m pip install ' + PKG_PY])}To write code, use for instance Visual Studio Code with the Python extension.</li>
+</ol>`,
+        mac: () => `<ol class="crs-steps">
+<li><b>Identify the Mac's processor.</b> Apple menu &gt; “About This Mac”: “Chip Apple M1, M2, M3…” means an <em>Apple Silicon</em> Mac, “Processor … Intel” an <em>Intel</em> Mac.</li>
+<li><b>Install Anaconda.</b> The Anaconda distribution installs in one go Python, the main scientific libraries (numpy, pandas, scipy, matplotlib, statsmodels) and two working environments, Spyder and Jupyter. On ${lnk('https://www.anaconda.com/download')} (registration is optional), download the graphical installer for macOS matching your processor (Apple Silicon or Intel), open the <code>.pkg</code> file and follow the installer.</li>
+<li><b>Install the missing package.</b> Open the Terminal (Applications &gt; Utilities): the prompt starts with <code>(base)</code> if Anaconda is active. Type:${CB('Terminal', ['pip install pmdarima'])}</li>
+<li><b>Write and run code.</b> Launch Spyder from Anaconda Navigator. The script editor is on the left, the console at the bottom right. ${K('F9')} runs the current line or selection, ${K('F5')} the whole script (on some keyboards, hold the ${K('fn')} key). Alternatively, in a Jupyter Notebook each cell runs with ${K('⇧', 'Return')}.</li>
+<li><b>Check the installation.</b> In Spyder's console:${CB('Python console', ['import numpy, pandas, statsmodels, pmdarima', 'print(statsmodels.__version__)'])}<div class="crs-note">The <code>pmdarima</code> package is the most temperamental. If importing it fails (error message mentioning numpy), create a dedicated environment in the Terminal, then select it in Spyder or Jupyter:<br><code>conda create -n econ python=3.11 numpy pandas scipy matplotlib statsmodels spyder</code><br><code>conda activate econ</code> then <code>pip install pmdarima</code></div></li>
+<li><b>Prepare the working folder.</b> Create a folder <code>econometrie</code> in your Documents and put the CSV files downloaded with the exercise in it. At the top of the script:${CB('Python script', ['import os', 'os.chdir(os.path.expanduser("~/Documents/econometrie"))', 'print(os.getcwd())   # shows the current folder'])}</li>
+<li><b>Lightweight alternative, without Anaconda.</b> Install Python from ${lnk('https://www.python.org/downloads/')} (macOS installer), then double-click “Install Certificates.command” in Applications &gt; Python 3.x. In the Terminal, use the command <code>python3</code> (not <code>python</code>):${CB('Terminal', ['python3 -m pip install ' + PKG_PY])}To write code, use for instance Visual Studio Code with the Python extension.</li>
+</ol>`
+      }
+    },
+    base: {
+      r: os => `<p>R is an interpreted language: each instruction is executed as soon as it is run, and its result is shown in the console. Instructions are written in a <em>script</em> (<code>.R</code> file), saved so that it can be run again: ${K(os === 'mac' ? '⌘ Cmd' : 'Ctrl', 'Enter')} runs the current line or selection, ${K(os === 'mac' ? '⌘ Cmd' : 'Ctrl', os === 'mac' ? '⇧' : 'Shift', 'S')} the whole script.</p>
+<h4>1. Objects and assignment</h4>
+<p>An object is created with the arrow <code>&lt;-</code>. Everything after <code>#</code> is a comment, ignored by R. R is case-sensitive.</p>
+${CB('R script', ['x <- 5            # assignment', 'y <- x^2 + 1      # computation: y equals 26', 'print(y)', 'name <- "econometrics"   # a character string'])}
+<h4>2. Vectors and functions</h4>
+<p>The vector is R's basic object; operations and most functions apply element by element. Indices start at 1.</p>
+${CB('R script', ['v <- c(2, 4, 6, 8)        # c() combines values', 'length(v); mean(v); sd(v); summary(v)', 'v[2]                      # second element: 4', 'log(v)                    # natural logarithm of each element', 'v[v > 3]                  # elements greater than 3'])}
+<h4>3. Data frames</h4>
+<p>Data are imported into a <em>data frame</em>, a table in which each column is a variable. For a “French-style” file (separator <code>;</code> and decimal comma), use <code>read.csv2</code>.</p>
+${CB('R script', ['db <- read.csv("data.csv", header = TRUE, sep = ",", dec = ".")', 'head(db)          # first rows', 'str(db)           # type of each variable', 'dim(db)           # number of rows and columns', 'summary(db)       # descriptive statistics', 'db$price          # one column, by its name', 'db$lprice <- log(db$price)      # new variable', 'sub <- db[db$price > 100, ]     # rows meeting a condition'])}
+<h4>4. Linear regression</h4>
+<p>The function <code>lm</code> estimates a model by ordinary least squares; the formula <code>y ~ x1 + x2</code> reads “y explained by x1 and x2”, the constant being included automatically.</p>
+${CB('R script', ['mod <- lm(lprice ~ x1 + x2, data = db)', 'summary(mod)          # coefficients, standard errors, t, p-values, R²', 'coef(mod)             # estimates', 'confint(mod)          # 95% confidence intervals', 'res <- resid(mod)     # residuals', 'library(lmtest)       # load a package (in each session)', 'bptest(mod)           # Breusch-Pagan test'])}
+<h4>5. Plots</h4>
+${CB('R script', ['plot(db$x1, db$lprice)    # scatter plot', 'hist(res)                 # histogram of residuals', 'library(ggplot2)', 'ggplot(db, aes(x = x1, y = lprice)) + geom_point() + geom_smooth(method = "lm")'])}
+<h4>6. Help and common errors</h4>
+<p><code>?lm</code> opens the help page of a function. The most common errors are: “object 'x' not found” (object not created, or a typo, case included); “could not find function” (package not loaded with <code>library</code>); “cannot open file” (file missing from the working folder: check with <code>getwd()</code> and <code>list.files()</code>).</p>`,
+      py: os => `<p>Python is an interpreted language: each instruction runs as soon as it is executed. Code is written in a <em>script</em> (<code>.py</code> file) or in a Jupyter <em>notebook</em>, split into cells. Statistical tools are not part of the core language: they are loaded with <code>import</code> from libraries (numpy, pandas, statsmodels…).</p>
+<h4>1. Variables and assignment</h4>
+<p>A variable is created with <code>=</code>. Everything after <code>#</code> is a comment. Python is case-sensitive, and <em>indentation</em> (the offset at the start of a line) is part of the syntax: do not put spaces at the start of a line without reason.</p>
+${CB('Python script', ['x = 5              # assignment', 'y = x**2 + 1       # power: ** (not ^)', 'print(y)', 'name = "econometrics"   # a character string'])}
+<h4>2. numpy arrays and functions</h4>
+<p>The <code>numpy</code> array allows element-by-element computations. Beware: indices start at 0, and the corrected standard deviation (the statistical one) requires <code>ddof=1</code>.</p>
+${CB('Python script', ['import numpy as np', 'v = np.array([2, 4, 6, 8])', 'len(v), v.mean(), v.std(ddof=1)', 'v[1]               # second element: 4', 'np.log(v)          # natural logarithm of each element', 'v[v > 3]           # elements greater than 3'])}
+<h4>3. Data frames (pandas)</h4>
+<p>Data are imported into a pandas <em>DataFrame</em>, a table in which each column is a variable. For a “French-style” file, specify <code>sep=";"</code> and <code>decimal=","</code>.</p>
+${CB('Python script', ['import pandas as pd', 'db = pd.read_csv("data.csv", sep=",", decimal=".")', 'db.head()          # first rows', 'db.info()          # type of each variable', 'db.shape           # number of rows and columns', 'db.describe()      # descriptive statistics', 'db["price"]        # one column, by its name', 'db["lprice"] = np.log(db["price"])   # new variable', 'sub = db[db["price"] > 100]          # rows meeting a condition'])}
+<h4>4. Linear regression</h4>
+<p>The module <code>statsmodels.formula.api</code> lets you write the model as a formula, as in R; the constant is included automatically.</p>
+${CB('Python script', ['import statsmodels.formula.api as smf', 'mod = smf.ols("lprice ~ x1 + x2", data=db).fit()', 'print(mod.summary())     # coefficients, standard errors, t, p-values, R²', 'mod.params               # estimates', 'mod.conf_int()           # 95% confidence intervals', 'res = mod.resid          # residuals', 'from statsmodels.stats.diagnostic import het_breuschpagan', 'het_breuschpagan(res, mod.model.exog)    # Breusch-Pagan test'])}
+<h4>5. Plots</h4>
+${CB('Python script', ['import matplotlib.pyplot as plt', 'plt.scatter(db["x1"], db["lprice"])   # scatter plot', 'plt.xlabel("x1"); plt.ylabel("lprice")', 'plt.show()'])}
+<h4>6. Help and common errors</h4>
+<p><code>help(np.log)</code> displays the help of a function (in Spyder, ${K(os === 'mac' ? '⌘ Cmd' : 'Ctrl', 'I')} on a function name). The most common errors are: <code>NameError</code> (variable not created, or a typo); <code>ModuleNotFoundError</code> (library not installed: <code>pip install …</code>); <code>IndentationError</code> (wrong offset at the start of a line); <code>FileNotFoundError</code> (file missing from the working folder: check with <code>os.getcwd()</code>).</p>`
+    }
+  }
+};
+
+function renderCourse() {
+  const C = COURSE[LANG] || COURSE.fr, box = document.getElementById('course-content');
+  if (!box) return;
+  const ttl = document.getElementById('course-title'); if (ttl) ttl.textContent = C.title[PROG];
+  const tag = `<span class="crs-sel">${PROG === 'r' ? 'R' : 'Python'} · ${C.sys[OS]}</span>`;
+  box.innerHTML = `<p class="crs-intro">${C.intro(PROG)}</p>`
+    + `<details class="crs" data-s="inst"${courseOpen.inst ? ' open' : ''}><summary><span>1. ${C.s1}</span>${tag}</summary><div class="crs-in">${C.inst[PROG][OS]()}</div></details>`
+    + `<details class="crs" data-s="base"${courseOpen.base ? ' open' : ''}><summary><span>2. ${C.s2(PROG)}</span>${tag}</summary><div class="crs-in">${C.base[PROG](OS)}</div></details>`;
+  box.querySelectorAll('details.crs').forEach(d => d.addEventListener('toggle', () => { courseOpen[d.getAttribute('data-s')] = d.open; }));
+  ['win', 'mac'].forEach(o => { const b = document.getElementById('os-' + o); if (b) b.classList.toggle('active', OS === o); });
+}
+function setOS(o) {
+  if (o === OS) return;
+  OS = o; setParam('os', o); renderCourse();
+}
+const _applyLangBase = applyLang;
+applyLang = function () { _applyLangBase(); renderCourse(); };
+renderCourse();
 </script>
 
 <!-- KIT:JS:START v1 -->
