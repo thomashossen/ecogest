@@ -571,7 +571,18 @@ p.kit-num::before{
     } else return '';
     const crit = (neg ? -val : val);
     let lu = fr ? `On lit <b class="kit-raw">${val.toFixed(key === 'normal' ? 2 : 3)}</b>${neg ? ` ; le test étant unilatéral à gauche, la valeur critique est \\(-${val.toFixed(3)}\\)` : ''}.` : `We read <b class="kit-raw">${val.toFixed(key === 'normal' ? 2 : 3)}</b>${neg ? `; the test being left-tailed, the critical value is \\(-${val.toFixed(3)}\\)` : ''}.`;
-    if (exact !== null && exact !== undefined && Math.abs(Math.abs(exact) - val) > 0.0015)
+    if (o.multi && o.multi.length) {
+      const N = o.multi.length, two = side === 'B';
+      const rejT = m => two ? Math.abs(m.stat) > val : (neg ? m.stat < -val : m.stat > val);
+      const rejE = m => exact === null || exact === undefined ? rejT(m) : (two ? Math.abs(m.stat) > Math.abs(exact) : (neg ? m.stat < exact : m.stat > exact));
+      const diff = o.multi.filter(m => rejT(m) !== rejE(m));
+      const ex = (exact !== null && exact !== undefined && Math.abs(Math.abs(exact) - val) > 0.0015) ? (fr ? ` Elle diffère légèrement de la valeur exacte utilisée dans le corrigé, \\(${f3(Math.abs(exact))}\\).` : ` It differs slightly from the exact value used in the solution, \\(${f3(Math.abs(exact))}\\).`) : '';
+      lu += ex + (diff.length === 0
+        ? (fr ? ` Cette valeur critique sert pour les ${N} tests de la question : comparée à chacune des statistiques observées, elle conduit, pour les ${N} coefficients, exactement aux mêmes conclusions que dans le corrigé.`
+              : ` This critical value is used for all ${N} tests of the question: compared with each observed statistic, it leads, for all ${N} coefficients, to exactly the same conclusions as in the solution.`)
+        : (fr ? ` Cette valeur critique sert pour les ${N} tests de la question. Elle conduit aux mêmes conclusions que dans le corrigé, sauf pour ${diff.map(m => m.lab).join(', ')}, dont la statistique est très proche du seuil : il faut alors être prudent dans la conclusion.`
+              : ` This critical value is used for all ${N} tests of the question. It leads to the same conclusions as in the solution, except for ${diff.map(m => m.lab).join(', ')}, whose statistic is very close to the threshold: the conclusion must then be drawn with caution.`));
+    } else if (exact !== null && exact !== undefined && Math.abs(Math.abs(exact) - val) > 0.0015)
       lu += fr ? ` La valeur exacte, utilisée dans le corrigé, vaut \\(${exact < 0 ? '-' : ''}${f3(Math.abs(exact))}\\) : l'écart est sans conséquence sur la conclusion${Math.sign(o.stat - crit) === Math.sign(o.stat - exact) ? '' : ' en général, mais il faut ici être prudent car la statistique est très proche du seuil'}.`
                 : ` The exact value, used in the solution, is \\(${exact < 0 ? '-' : ''}${f3(Math.abs(exact))}\\): the difference does not affect the conclusion${Math.sign(o.stat - crit) === Math.sign(o.stat - exact) ? '' : ' in general, but caution is needed here as the statistic is very close to the threshold'}.`;
     p.push(lu);
@@ -686,7 +697,7 @@ p.kit-num::before{
     s += `<rect x="${W - mr - bw}" y="24" width="${bw}" height="22" rx="4" fill="${col}" fill-opacity="0.10" stroke="${col}" stroke-width="1"/>`;
     s += `<text x="${W - mr - bw / 2}" y="39.5" text-anchor="middle" ${SERIF} font-size="12.5" font-weight="700" fill="${col}">${verdict}</text>`;
     s += `</svg>`;
-    return `<div class="fig-wrap" style="margin:1rem 0 .4rem;padding:.7rem .6rem .3rem;border:1px solid var(--border);border-radius:6px;background:#fff">${s}</div>` + levels.map((lv, i) => ltBox(o, lv, side === 'L' ? crits[i][0] : crits[i][1], fr)).join('');
+    return `<div class="fig-wrap" style="margin:1rem 0 .4rem;padding:.7rem .6rem .3rem;border:1px solid var(--border);border-radius:6px;background:#fff">${s}</div>` + (o.noTable ? '' : levels.map((lv, i) => ltBox(o, lv, side === 'L' ? crits[i][0] : crits[i][1], fr)).join(''));
   };
 })();
 </script>
@@ -1789,7 +1800,7 @@ function interpConst(D,L,FR,t){
 }
 
 function sigSentence(D,L,FR,t,idx){
-  return sigSentence0(D,L,FR,t,idx) + testFig({law:'t', df1:D.df, stat:t.t, crit:[D.tcrit], side:'B', levels:[95], lab:'t̂' + String(idx).split('').map(c => '₀₁₂₃₄₅₆₇₈₉'[+c]).join('')});
+  return sigSentence0(D,L,FR,t,idx) + testFig({law:'t', df1:D.df, stat:t.t, crit:[D.tcrit], side:'B', levels:[95], noTable:true, lab:'t̂' + String(idx).split('').map(c => '₀₁₂₃₄₅₆₇₈₉'[+c]).join('')});
 }
 function sigSentence0(D,L,FR,t,idx){
   const lbl=(idx===0)?'0':String(idx);
@@ -1840,6 +1851,11 @@ function coefSection(D,L,FR){
     h += '<p>\\[\\mathbb{P}\\left(-q\\leq\\frac{\\widehat{b}_{'+fi+'}-b_{'+fi+'}}{s_{'+fi+'}}\\leq q\\right)=0.95\\iff\\mathbb{P}\\left(\\widehat{b}_{'+fi+'}-q\\,s_{'+fi+'}\\leq b_{'+fi+'}\\leq\\widehat{b}_{'+fi+'}+q\\,s_{'+fi+'}\\right)=0.95\\]</p>';
     h += '<p>Hence the interval:</p><p>\\[\\begin{aligned}\\left[\\widehat{b}_{'+fi+'}-q\\,s_{'+fi+'},\\ \\widehat{b}_{'+fi+'}+q\\,s_{'+fi+'}\\right]&=\\left['+nb(f.coef,f.dec)+'-'+D.tcrit.toFixed(3)+'\\times '+nb(f.se,f.dec)+',\\ '+nb(f.coef,f.dec)+'+'+D.tcrit.toFixed(3)+'\\times '+nb(f.se,f.dec)+'\\right]\\\\&\\approx\\left['+nb(f.ciLo,f.dec)+'\\,;\\,'+nb(f.ciHi,f.dec)+'\\right]\\end{aligned}\\]</p><p>This interval matches the last column of the table.</p>';
   }
+  /* une seule table de loi pour l'ensemble des tests de la question */
+  const multi=D.terms.map((t,i)=>({lab:'\\(\\widehat{t}_{'+i+'}\\)', stat:t.t}));
+  h += '<p>'+(FR?'Les '+D.terms.length+' tests de significativité de cette question reposent tous sur la même loi de Student à '+D.df+' degrés de liberté et sur la même valeur critique : la lecture de la table est donc la même pour chacun d\'eux.'
+               :'The '+D.terms.length+' significance tests of this question all rely on the same Student distribution with '+D.df+' degrees of freedom and on the same critical value: the table is therefore read in the same way for each of them.')+'</p>';
+  h += lawTableBox({law:'t', df1:D.df, side:'B', multi:multi}, 95, D.tcrit, FR);
   return h;
 }
 
